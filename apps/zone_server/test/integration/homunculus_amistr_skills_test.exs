@@ -456,11 +456,14 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAmistrSkillsTest do
     owner_id = initial.game_state.character_id
     gid = initial.homunculus.world_gid
 
+    # The live Homunculus AI retaliates against the redirected mob; the large HP
+    # pool keeps every mob alive through the assertions.
     first =
       start_mob_session(
         unit_id: 1_810_001,
         map_name: initial.game_state.map_name,
         position: {initial.game_state.x + 1, initial.game_state.y},
+        max_hp: 1_000_000,
         awake: false
       )
 
@@ -469,6 +472,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAmistrSkillsTest do
         unit_id: 1_810_002,
         map_name: initial.game_state.map_name,
         position: {initial.game_state.x, initial.game_state.y + 1},
+        max_hp: 1_000_000,
         awake: false
       )
 
@@ -477,6 +481,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAmistrSkillsTest do
         unit_id: 1_810_003,
         map_name: initial.game_state.map_name,
         position: {initial.game_state.x + 1, initial.game_state.y + 1},
+        max_hp: 1_000_000,
         awake: false
       )
 
@@ -534,8 +539,11 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAmistrSkillsTest do
 
   # The AI target lock refuses units it cannot fight (an absent player among
   # them), so the targets under test are written on the real sessions directly.
+  # Castling rolls among the units whose published attack target is the owner.
   defp force_target(mob, target_ref) do
-    updated = :sys.replace_state(mob.pid, &%{&1 | target_ref: target_ref})
+    updated =
+      :sys.replace_state(mob.pid, &%{&1 | target_ref: target_ref, attack_target: target_ref})
+
     :ok = UnitRegistry.update_unit_state(:mob, mob.unit_id, updated)
   end
 

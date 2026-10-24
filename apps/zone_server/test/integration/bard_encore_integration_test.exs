@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Integration.BardEncoreIntegrationTest do
   alias Aesir.Repo
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
@@ -65,6 +66,10 @@ defmodule Aesir.ZoneServer.Integration.BardEncoreIntegrationTest do
 
     map_cache = EtsTable.table_for(:map_cache)
     :ets.insert(map_cache, {@map, MapData.new(@map, 200, 200)})
+
+    # Renewal's skill map restrictions keep Dissonance to versus ground.
+    :ok = MapFlags.set_runtime(@map, :pvp, true)
+    on_exit(fn -> MapFlags.clear_runtime(@map, :pvp) end)
 
     :ok
   end

@@ -193,14 +193,18 @@ defmodule Aesir.ZoneServer.Integration.EquipAutobonusIntegrationTest do
     row = seed_item(character.id, @skill_item)
     session = start_session(character, {150, 150})
     key = {row.id, 0}
+    sp = get_player_state(session.pid).stats.current_state.sp
+    set_sp(session.pid, 0)
 
     simulate_incoming_message(session.pid, %SkillCast{
       skill_id: @heal,
-      level: 2,
+      level: 1,
       target_id: character.id
     })
 
     refute key in active_keys(session.pid)
+    assert get_player_state(session.pid).stats.current_state.hp == 1
+    set_sp(session.pid, sp)
 
     before_ordinary_hp = get_player_state(session.pid).stats.current_state.hp
 
@@ -231,6 +235,10 @@ defmodule Aesir.ZoneServer.Integration.EquipAutobonusIntegrationTest do
                state.stats.current_state.sp == before_sp and
                Map.fetch!(state.stats.active_autobonuses, key) != generation
            end)
+  end
+
+  defp set_sp(pid, sp) do
+    :sys.replace_state(pid, &put_in(&1.game_state.stats.current_state.sp, sp))
   end
 
   test "primary and secondary effects refresh, survive death, and honor generation expiry" do

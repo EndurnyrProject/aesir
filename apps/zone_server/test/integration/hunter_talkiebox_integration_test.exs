@@ -144,7 +144,14 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
 
   describe "rejected paths spend nothing and place no group" do
     test "capability absence rejects before preflight" do
-      caster = start_player_session(id: 98_530, name: "NoCap", position: {150, 150})
+      caster =
+        start_player_session(
+          id: 98_530,
+          name: "NoCap",
+          position: {150, 150},
+          learned_skills: %{Integer.to_string(@skill_id) => 1}
+        )
+
       flush_packets()
 
       simulate_incoming_message(caster.pid, %GroundSkillCast{
@@ -326,7 +333,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
       assert {:error, :skill_input_required} =
                Interpreter.item_cast(game_state, @skill_id, 1, target)
 
-      assert {:error, :skill_input_required} =
+      assert {:error, :skill_input_required, _caster} =
                Interpreter.auto_cast(game_state, @skill_id, 1, target)
 
       mob = spawn_test_mob(@map, {160, 160})

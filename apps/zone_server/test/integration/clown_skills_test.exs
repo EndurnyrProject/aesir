@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Integration.ClownSkillsTest do
   alias Aesir.Net.SkillCastFailed
   alias Aesir.Net.SkillDamage
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -87,6 +88,7 @@ defmodule Aesir.ZoneServer.Integration.ClownSkillsTest do
 
   @tag game_mode: :renewal, integration_pre_re: false
   test "renewal Hermode strips a party member's buffs, not the caster's, and voids magic" do
+    gvg_ground()
     clown = ClownSessions.character(:clown, @map, {150, 150}, %{@hermode => 1})
     novice = ClownSessions.character(:novice, @map, {152, 150}, %{})
     ClownSessions.party([clown, novice])
@@ -123,6 +125,7 @@ defmodule Aesir.ZoneServer.Integration.ClownSkillsTest do
     @describetag game_mode: :pre_renewal, integration_re: false
 
     test "is refused away from any NPC or warp" do
+      gvg_ground()
       position = {300, 50}
       {x, y} = position
       refute Proximity.touch_area_within?(@map, x, y, 1)
@@ -136,6 +139,7 @@ defmodule Aesir.ZoneServer.Integration.ClownSkillsTest do
     end
 
     test "next to a warp places a rooted field that party members gain and lose" do
+      gvg_ground()
       :ok = Warps.reload()
       {:ok, [warp | _]} = Warps.for_map(@map)
       {x, y} = {warp.x + warp.xs + 1, warp.y}
@@ -319,4 +323,10 @@ defmodule Aesir.ZoneServer.Integration.ClownSkillsTest do
 
   defp act_ready?(session),
     do: PlayerState.act_ready?(get_player_state(session.pid), System.monotonic_time(:millisecond))
+
+  # Hermode's skill map restriction allows it only on GvG ground in both modes.
+  defp gvg_ground do
+    :ok = MapFlags.set_runtime(@map, :gvg, true)
+    on_exit(fn -> MapFlags.clear_runtime(@map, :gvg) end)
+  end
 end

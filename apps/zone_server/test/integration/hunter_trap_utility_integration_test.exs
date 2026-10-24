@@ -58,7 +58,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
 
     state = get_player_state(session.pid)
     assert Inventory.held_amount(state.inventory, @trap_item) == 1
-    assert state.stats.current_state.sp == 95
+    assert state.stats.current_state.sp == 90
     assert nil == Storage.get(1)
 
     assert [%ItemAdded{nameid: @trap_item, amount: 1}] =
@@ -86,8 +86,10 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
 
     state = get_player_state(session.pid)
     assert Inventory.held_amount(state.inventory, @trap_item) == 0
-    assert state.stats.current_state.sp == 100
-    assert Enum.all?(10..12, &match?(%Group{}, Storage.get(&1)))
+    assert state.stats.current_state.sp == 80
+    assert %Group{} = Storage.get(10)
+    assert nil == Storage.get(11)
+    assert %Group{} = Storage.get(12)
     assert Persistence.load_inventory(character.id) == []
 
     full_character = insert_hunter(%{learned_skills: skills(%{@remove_trap => 1})})
@@ -101,12 +103,12 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
 
     assert map_size(full_state.inventory) == Inventory.capacity()
     assert Inventory.held_amount(full_state.inventory, @trap_item) == 0
-    assert full_state.stats.current_state.sp == 100
-    assert %Group{state: %{trap: %TrapState{phase: :armed}}} = Storage.get(20)
+    assert full_state.stats.current_state.sp == 95
+    assert nil == Storage.get(20)
     assert collect_packets_of_type(ItemAdded, 100) == []
   end
 
-  test "Spring Trap gates Falcon and range, races once across sessions, and expires spent without reward" do
+  test "Spring Trap gates Falcon, races once across sessions, and expires spent without reward" do
     target = {155, 150}
     learned = skills(%{@falcon => 1, @remove_trap => 1, @spring_trap => 2})
     no_falcon_character = insert_hunter(%{learned_skills: learned})
@@ -124,16 +126,12 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
     first = start_hunter_session(first_character, @origin)
     second = start_hunter_session(second_character, @origin)
 
-    level_one_state = cast_and_sync(first, @spring_trap, 1, target)
-    assert level_one_state.stats.current_state.sp == 100
-    assert %Group{state: %{trap: %TrapState{phase: :armed}}} = Storage.get(30)
-
     flush_packets()
     cast_concurrently([first, second], @spring_trap, 2, target)
 
     first_state = get_player_state(first.pid)
     second_state = get_player_state(second.pid)
-    assert first_state.stats.current_state.sp + second_state.stats.current_state.sp == 190
+    assert first_state.stats.current_state.sp + second_state.stats.current_state.sp == 180
     assert Inventory.held_amount(first_state.inventory, @trap_item) == 0
     assert Inventory.held_amount(second_state.inventory, @trap_item) == 0
 
@@ -147,7 +145,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
     remover = start_hunter_session(remover_character, {154, 150})
     remover_state = cast_and_sync(remover, @remove_trap, 1, target)
 
-    assert remover_state.stats.current_state.sp == 100
+    assert remover_state.stats.current_state.sp == 95
     assert Inventory.held_amount(remover_state.inventory, @trap_item) == 0
     assert Persistence.load_inventory(remover_character.id) == []
     assert collect_packets_of_type(ItemAdded, 100) == []

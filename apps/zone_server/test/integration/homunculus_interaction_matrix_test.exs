@@ -205,7 +205,13 @@ defmodule Aesir.ZoneServer.HomunculusInteractionMatrixTest do
              StatusInterpreter.apply_status(:homunculus, gid, :sc_poison, bypass_resistance: true)
 
     before_homunculus = PlayerSession.get_state(owner.pid).homunculus
-    before_statuses = StatusStorage.get_unit_statuses(:homunculus, gid)
+
+    status_identity =
+      &Enum.map(&1, fn entry ->
+        Map.drop(entry, [:next_tick_at, :tick_count, :generation])
+      end)
+
+    before_statuses = status_identity.(StatusStorage.get_unit_statuses(:homunculus, gid))
 
     # Every one is refused silently before the cast (status.cpp:2265-2266 via
     # unit.cpp:2217).
@@ -232,8 +238,14 @@ defmodule Aesir.ZoneServer.HomunculusInteractionMatrixTest do
       assert after_caster.stats.current_state.sp == before_caster.stats.current_state.sp
       assert after_caster.skill_cooldowns == before_caster.skill_cooldowns
       assert after_caster.act_delay_until == before_caster.act_delay_until
-      assert PlayerSession.get_state(owner.pid).homunculus == before_homunculus
-      assert StatusStorage.get_unit_statuses(:homunculus, gid) == before_statuses
+      after_homunculus = PlayerSession.get_state(owner.pid).homunculus
+
+      # Poison keeps draining the Homunculus's HP while the casts are refused.
+      assert after_homunculus.hp <= before_homunculus.hp
+      assert Map.delete(after_homunculus, :hp) == Map.delete(before_homunculus, :hp)
+
+      assert status_identity.(StatusStorage.get_unit_statuses(:homunculus, gid)) ==
+               before_statuses
     end
   end
 

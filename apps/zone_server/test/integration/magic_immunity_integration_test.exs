@@ -181,23 +181,27 @@ defmodule Aesir.ZoneServer.Integration.MagicImmunityIntegrationTest do
       cast(caster, @blessing, control_id)
       assert_eventually(fn -> StatusStorage.has_status?(:player, control_id, :sc_blessing) end)
 
-      settle_cast(caster)
-      refill(caster)
-      cast(caster, @dispell, control_id)
+      # Dispell reaches another player only as a party or guild member or an
+      # enemy, so both casts run with PvP on.
+      with_pvp(fn ->
+        settle_cast(caster)
+        refill(caster)
+        cast(caster, @dispell, control_id)
 
-      assert_eventually(fn ->
-        not StatusStorage.has_status?(:player, control_id, :sc_blessing)
+        assert_eventually(fn ->
+          not StatusStorage.has_status?(:player, control_id, :sc_blessing)
+        end)
+
+        settle_cast(caster)
+        refill(caster)
+        cast(caster, @dispell, wearer_id)
+        settle_cast(caster)
+
+        refute eventually(
+                 fn -> not StatusStorage.has_status?(:player, wearer_id, :sc_energycoat) end,
+                 500
+               )
       end)
-
-      settle_cast(caster)
-      refill(caster)
-      cast(caster, @dispell, wearer_id)
-      settle_cast(caster)
-
-      refute eventually(
-               fn -> not StatusStorage.has_status?(:player, wearer_id, :sc_energycoat) end,
-               500
-             )
     end
 
     test "Sanctuary heals the wearer for nothing while healing a bystander" do

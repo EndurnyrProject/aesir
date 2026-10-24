@@ -815,7 +815,9 @@ defmodule Aesir.ZoneServer.Integration.HomunculusCommandsIntegrationTest do
   end
 
   defp command_gate_error(:insufficient_sp), do: :HOMUNCULUS_ERROR_INSUFFICIENT_SP
-  defp command_gate_error(:on_cooldown), do: :HOMUNCULUS_ERROR_ON_COOLDOWN
+  # A cooldown is a use restriction refused silently (no @showdelay), which the
+  # command protocol answers as busy.
+  defp command_gate_error(:on_cooldown), do: :HOMUNCULUS_ERROR_BUSY
   defp command_gate_error(:pending_deferred), do: :HOMUNCULUS_ERROR_BUSY
   defp command_gate_error(_busy), do: :HOMUNCULUS_ERROR_BUSY
 end

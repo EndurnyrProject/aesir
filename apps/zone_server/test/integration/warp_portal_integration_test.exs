@@ -39,7 +39,7 @@ defmodule Aesir.ZoneServer.Integration.WarpPortalIntegrationTest do
         int: 50,
         hp: 500,
         max_hp: 500,
-        sp: 500,
+        sp: 400,
         max_sp: 500,
         last_map: "prontera",
         last_x: 150,

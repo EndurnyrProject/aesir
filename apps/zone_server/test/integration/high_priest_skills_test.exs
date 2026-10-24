@@ -156,6 +156,8 @@ defmodule Aesir.ZoneServer.Integration.HighPriestSkillsTest do
 
       flush_packets()
       clear_act_delay(priest)
+      # Cooldown refusals are reported only to a player with delay notices on (@showdelay).
+      show_delay(priest)
       cast(priest, @basilica, 5)
 
       assert_receive {:packet_sent,
@@ -204,10 +206,19 @@ defmodule Aesir.ZoneServer.Integration.HighPriestSkillsTest do
       sp = current_sp(priest)
       flush_packets()
 
+      clear_act_delay(priest)
+      ally_hp = get_player_state(ally.pid).stats.current_state.hp
       cast(priest, @heal, 1, ally.character.id)
-      assert_cast_refused(@heal, priest.character.id)
+
+      # The caster's own Basilica refuses every other skill request silently.
+      _sync = get_player_state(priest.pid)
+      refute_received {:packet_sent, %SkillCastFailed{skill_id: @heal}, _}
+      assert current_sp(priest) == sp
+      assert get_player_state(ally.pid).stats.current_state.hp == ally_hp
 
       clear_act_delay(priest)
+      # Natural SP regeneration may have ticked during the refused Heal.
+      sp = current_sp(priest)
       before = System.monotonic_time(:millisecond)
       cast(priest, @basilica, 1)
 
@@ -219,7 +230,8 @@ defmodule Aesir.ZoneServer.Integration.HighPriestSkillsTest do
              end)
 
       state = get_player_state(priest.pid)
-      assert state.stats.current_state.sp == sp - 80
+      # 80 SP less Mana Recharge 5's 20% (481 is learned at 5).
+      assert state.stats.current_state.sp == sp - 64
       for id <- @catalysts, do: assert(holds?(priest, id))
       assert state.act_delay_until >= before + 2_000
     end
@@ -573,4 +585,8 @@ defmodule Aesir.ZoneServer.Integration.HighPriestSkillsTest do
   defp current_hp(session), do: get_player_state(session.pid).stats.current_state.hp
   defp current_sp(session), do: get_player_state(session.pid).stats.current_state.sp
   defp max_sp(session), do: get_player_state(session.pid).stats.derived_stats.max_sp
+
+  defp show_delay(%{pid: pid}) do
+    :sys.replace_state(pid, fn state -> put_in(state.game_state.show_delay, true) end)
+  end
 end

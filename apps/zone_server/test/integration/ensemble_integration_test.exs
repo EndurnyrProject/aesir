@@ -68,8 +68,9 @@ defmodule Aesir.ZoneServer.Integration.EnsembleIntegrationTest do
 
     cast(bard, @first_aid, 1)
 
-    assert_receive {:packet_sent, %CastCancel{gid: gid}, _}, 1_000
-    assert gid == bard.character.id
+    # A performer's other skill requests are refused silently.
+    _sync = get_player_state(bard.pid)
+    refute_received {:packet_sent, %CastCancel{}, _}
 
     assert current_hp(bard) == bard.character.hp - 10
     assert current_sp(bard) == sp

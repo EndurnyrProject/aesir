@@ -203,6 +203,8 @@ defmodule Aesir.ZoneServer.Integration.GuildProgressionIntegrationTest do
 
       StatusStorage.remove_status(:player, master_id, :sc_battleorder)
       flush_packets()
+      # Cooldown refusals are reported only to a player with delay notices on (@showdelay).
+      show_delay(master_session)
       simulate_incoming_message(master_session.pid, cast)
 
       assert_receive {:packet_sent,
@@ -241,6 +243,8 @@ defmodule Aesir.ZoneServer.Integration.GuildProgressionIntegrationTest do
 
       on_exit(fn -> end_player_session(relog) end)
       flush_packets()
+      # Cooldown refusals are reported only to a player with delay notices on (@showdelay).
+      show_delay(relog)
       simulate_incoming_message(relog.pid, cast)
 
       assert_receive {:packet_sent,
@@ -431,5 +435,9 @@ defmodule Aesir.ZoneServer.Integration.GuildProgressionIntegrationTest do
     :sys.replace_state(pid, fn state ->
       %{state | game_state: %{state.game_state | skill_cooldowns: %{}}}
     end)
+  end
+
+  defp show_delay(%{pid: pid}) do
+    :sys.replace_state(pid, fn state -> put_in(state.game_state.show_delay, true) end)
   end
 end

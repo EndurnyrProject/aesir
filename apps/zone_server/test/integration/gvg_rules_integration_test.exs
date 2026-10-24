@@ -30,6 +30,9 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
   alias Aesir.Net.SkillCast
   alias Aesir.Net.SkillCastFailed
   alias Aesir.Net.SkillDamage
+  alias Aesir.Net.SkillMenu
+  alias Aesir.Net.SkillMenuReply
+  alias Aesir.Net.SystemNotice
   alias Aesir.Net.UseItem
   alias Aesir.Repo
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
@@ -484,7 +487,7 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
     assert hp(victim) > 0
   end
 
-  test "Portal respects ground admission across mode-specific cast timing" do
+  test "Portal checks castle ground at the request only, across mode-specific cast timing" do
     player = fighter("prontera", skills: %{"27" => 1}, items: [%{nameid: 717, equip: 0}])
     before_sp = get_player_state(player.pid).stats.current_state.sp
     cast_ground(player, 27, {151, 150})
@@ -499,19 +502,35 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
         :ok = :sys.resume(player.pid)
       end
 
-      assert_receive {:packet_sent, %SkillCastFailed{skill_id: 27}, _}, 2000
-      assert FieldStorage.all() == []
+      assert_receive {:packet_sent,
+                      %SkillMenu{src_skill_id: 27, kind: :OPTIONS, labels: ["prontera"]}, _},
+                     2000
+
+      assert get_player_state(player.pid).stats.current_state.sp == before_sp - 35
       assert inventory_amount(player, 717) == 1
-      assert get_player_state(player.pid).stats.current_state.sp == before_sp
+      simulate_incoming_message(player.pid, %SkillMenuReply{src_skill_id: 27, selected_id: 0})
+      assert field(27).state.dest == {"prontera", 150, 150}
+      assert inventory_amount(player, 717) == 0
+      assert get_player_state(player.pid).stats.current_state.sp == before_sp - 35
     else
+      assert_receive {:packet_sent, %SkillMenu{src_skill_id: 27, labels: ["prontera"]}, _}, 2000
+      simulate_incoming_message(player.pid, %SkillMenuReply{src_skill_id: 27, selected_id: 0})
       assert field(27).caster_id == player.character.id
       assert inventory_amount(player, 717) == 0
       assert get_player_state(player.pid).stats.current_state.sp == before_sp - 35
       :ok = MapFlags.set_runtime("prontera", :gvg_castle, true)
       newcomer = fighter("prontera", skills: %{"27" => 1}, items: [%{nameid: 717, equip: 0}])
+      newcomer_sp = get_player_state(newcomer.pid).stats.current_state.sp
+      flush_packets()
       cast_ground(newcomer, 27, {152, 150})
-      assert_receive {:packet_sent, %SkillCastFailed{skill_id: 27}, _}, 1000
+
+      assert_receive {:packet_sent, %SystemNotice{id: :SYSTEM_NOTICE_ID_IMPOSSIBLE_SKILL_AREA},
+                      _},
+                     1000
+
+      refute_packet_sent(SkillMenu)
       assert inventory_amount(newcomer, 717) == 1
+      assert get_player_state(newcomer.pid).stats.current_state.sp == newcomer_sp
     end
   end
 
@@ -752,7 +771,12 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
           else: %SkillCast{skill_id: id, level: 1, target_id: target_id}
 
       simulate_incoming_message(player.pid, message)
-      assert_receive {:packet_sent, %SkillCastFailed{skill_id: ^id}, _}, 1000
+
+      assert_receive {:packet_sent, %SystemNotice{id: :SYSTEM_NOTICE_ID_IMPOSSIBLE_SKILL_AREA},
+                      _},
+                     1000
+
+      refute_packet_sent(SkillCastFailed)
       assert get_player_state(player.pid).stats.current_state.sp == before.stats.current_state.sp
       assert get_player_state(player.pid).pending_warp == nil
 
@@ -789,7 +813,7 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
     refute_packet_sent(MapMove)
   end
 
-  test "Greed cast, Greed Scroll and Anodyne honor their mode and entry-specific exceptions" do
+  test "Greed cast, Greed Scroll and Anodyne follow their mode's castle skill and item masks" do
     player =
       fighter(@map,
         class: 10,
@@ -810,47 +834,40 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
         get_player_state(player.pid).stats.current_state.sp == before_sp - 10
       end)
     else
-      assert_receive {:packet_sent, %SkillCastFailed{skill_id: 1013}, _}, 1000
+      assert_receive {:packet_sent, %SystemNotice{id: :SYSTEM_NOTICE_ID_IMPOSSIBLE_SKILL_AREA},
+                      _},
+                     1000
+
+      refute_packet_sent(SkillCastFailed)
       assert get_player_state(player.pid).stats.current_state.sp == before_sp
     end
 
+    flush_packets()
     use_item(player, 14_529)
-    assert_receive {:packet_sent, %ItemUseResult{ok: true}, _}, 1000
-    assert_receive {:packet_sent, %ItemSkillReady{skill_id: 1013, level: 1}, _}, 1000
+    assert_receive {:packet_sent, %ItemUseResult{ok: false, reason: 5}, _}, 1000
+    refute_packet_sent(ItemSkillReady)
     assert inventory_amount(player, 14_529) == 1
-
-    simulate_incoming_message(player.pid, %SkillCast{
-      skill_id: 1013,
-      level: 1,
-      target_id: 99_999
-    })
-
-    # A target that cannot be resolved is refused silently, before the item is
-    # claimed.
-    refute_packet_sent(SkillCastFailed)
-    assert inventory_amount(player, 14_529) == 1
-    assert :sys.get_state(player.pid).pending_item_skill.skill_id == 1013
-
-    simulate_incoming_message(player.pid, %SkillCast{
-      skill_id: 1013,
-      level: 1,
-      target_id: player.character.id
-    })
-
-    assert_eventually(fn -> inventory_amount(player, 14_529) == 0 end)
 
     use_item(player, 605)
-    assert_receive {:packet_sent, %ItemUseResult{ok: true}, _}, 1000
-    assert_receive {:packet_sent, %ItemSkillReady{skill_id: 8, level: 1}, _}, 1000
-    assert inventory_amount(player, 605) == 1
 
-    simulate_incoming_message(player.pid, %SkillCast{
-      skill_id: 8,
-      level: 1,
-      target_id: player.character.id
-    })
+    if GameMode.mode() == :renewal do
+      assert_receive {:packet_sent, %ItemUseResult{ok: false, reason: 5}, _}, 1000
+      refute_packet_sent(ItemSkillReady)
+      assert inventory_amount(player, 605) == 1
+    else
+      assert_receive {:packet_sent, %ItemUseResult{ok: true}, _}, 1000
+      assert_receive {:packet_sent, %ItemSkillReady{skill_id: 8, level: 1}, _}, 1000
+      assert inventory_amount(player, 605) == 1
 
-    assert_eventually(fn -> inventory_amount(player, 605) == 0 end)
+      simulate_incoming_message(player.pid, %SkillCast{
+        skill_id: 8,
+        level: 1,
+        target_id: player.character.id
+      })
+
+      assert_eventually(fn -> inventory_amount(player, 605) == 0 end)
+    end
+
     refute StatusStorage.has_status?(:player, player.character.id, :sc_endure)
   end
 

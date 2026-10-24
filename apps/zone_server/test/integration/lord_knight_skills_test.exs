@@ -93,9 +93,12 @@ defmodule Aesir.ZoneServer.Integration.LordKnightSkillsTest do
     simulate_incoming_message(knight.pid, %ChatRequest{message: message})
     refute_receive {:packet_sent, %ChatMessage{message: ^message}, _}, 200
 
+    sp = get_player_state(knight.pid).stats.current_state.sp
     cast(knight, 355, 1)
-    id = knight.character.id
-    assert_receive {:packet_sent, %CastCancel{gid: ^id}, _}, 1_000
+    # Berserk refuses another skill request silently.
+    _sync = get_player_state(knight.pid)
+    refute_received {:packet_sent, %CastCancel{}, _}
+    assert get_player_state(knight.pid).stats.current_state.sp == sp
   end
 
   test "Berserk ends at 100 HP after direct damage without an expiry penalty" do

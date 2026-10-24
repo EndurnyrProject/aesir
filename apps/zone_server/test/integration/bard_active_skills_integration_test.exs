@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Integration.BardActiveSkillsIntegrationTest do
   alias Aesir.Repo
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
@@ -103,6 +104,9 @@ defmodule Aesir.ZoneServer.Integration.BardActiveSkillsIntegrationTest do
 
   @tag game_mode: :renewal, integration_pre_re: false
   test "Dissonance deals one immediate splash and leaves no skill-unit state" do
+    # Renewal's skill map restrictions keep Dissonance to versus ground.
+    :ok = MapFlags.set_runtime(@map, :pvp, true)
+    on_exit(fn -> MapFlags.clear_runtime(@map, :pvp) end)
     bard = start_bard([@dissonance], instrument?: true)
     target = start_target({151, 150}, hp: 50_000)
 

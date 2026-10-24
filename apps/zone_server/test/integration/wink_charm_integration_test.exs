@@ -249,7 +249,7 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
     assert_receive {:packet_sent,
                     %SkillCastFailed{
                       skill_id: @wink_charm,
-                      reason: :SKILL_CAST_FAILURE_REASON_UNSPECIFIED
+                      reason: :SKILL_CAST_FAILURE_REASON_TO_TARGET
                     }, _},
                    1_000
 

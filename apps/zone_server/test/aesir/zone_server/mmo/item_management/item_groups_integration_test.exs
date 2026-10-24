@@ -127,7 +127,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsIntegrationTest do
   end
 
   @tag game_mode: :renewal, integration_re: true, integration_pre_re: false
-  test "a full inventory keeps the box and restores the shared pool", %{character: character} do
+  test "a full inventory still spends the box and its shared-pool draw", %{character: character} do
     box = insert_item(character.id, @box_id)
 
     inventory =
@@ -143,9 +143,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsIntegrationTest do
 
     assert {:noreply, rejected} = ItemHandler.handle_use_item(2, state)
 
-    assert rejected.game_state.inventory == inventory
-    assert pool_counts(owner) == before_counts
-    assert [%InventoryItem{nameid: @box_id, amount: 1}] = Persistence.load_inventory(character.id)
+    assert rejected.game_state.inventory == Map.delete(inventory, 0)
+    refute pool_counts(owner) == before_counts
+    assert [] = Persistence.load_inventory(character.id)
   end
 
   test "getitem groupranditem grants an item selected by the transpiled read", %{

@@ -31,6 +31,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest.FakeMob do
 
   # A status notification (the delayed stun's) needs no reaction from the fake.
   def handle_cast({:casting, {:status_changed, _status, _change}}, state), do: {:noreply, state}
+
+  # Monster skill events (a trap's skill use observed by the mob) need no reaction either.
+  def handle_cast({:ai, {:skill_event, _source, _event, _tick}}, state), do: {:noreply, state}
 end
 
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
@@ -274,7 +277,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
     assert StatusStorage.has_status?(:player, @caster_id, :sc_ankle)
   end
 
-  test "a captured snare catches nothing more and rejects reclaim and spring", %{
+  test "a captured snare catches nothing more, reclaims without a refund and rejects a spring", %{
     manager: manager
   } do
     _caster = start_real_player(id: @caster_id, map_name: @map, position: {40, 40})
@@ -292,7 +295,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
     refute StatusStorage.has_status?(:mob, other_id, :sc_ankle)
     assert Storage.get(5).state.caught == {:mob, caught_id}
 
-    assert {:error, _reason} =
+    assert {:ok, %{group_id: 5, item_id: nil}} =
              Manager.reclaim_trap(manager, {:player, @caster_id}, @map, 50, 50)
 
     assert {:error, _reason} = Manager.spring_trap(manager, @map, 50, 50)

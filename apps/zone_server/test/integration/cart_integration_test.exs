@@ -169,8 +169,7 @@ defmodule Aesir.ZoneServer.Integration.CartIntegrationTest do
       mount!(pid)
       mounted = get_player_state(pid)
 
-      assert {:error, :no_cart_upgrade} =
-               McChangecart.cast(mounted, :self, 1, skill_def(:mc_changecart))
+      assert {:ok, ^mounted} = McChangecart.cast(mounted, :self, 1, skill_def(:mc_changecart))
 
       assert %StatusEntry{val2: 1} = StatusStorage.get_status(:player, char.id, @status_id)
       assert Repo.get(Character, char.id).cart == 1

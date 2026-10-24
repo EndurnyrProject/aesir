@@ -12,7 +12,9 @@ defmodule Aesir.ZoneServer.Integration.LootOwnershipIntegrationTest do
   alias Aesir.Net.PickupResult
   alias Aesir.Net.SkillCast
   alias Aesir.Repo
+  alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Coordinator
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Map.MapManager
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
@@ -23,6 +25,8 @@ defmodule Aesir.ZoneServer.Integration.LootOwnershipIntegrationTest do
   alias Phoenix.PubSub
 
   @map "prontera"
+  # A field map outside every skill-restricted zone: renewal refuses Greed in towns.
+  @field_map "loot_greed_field"
   @potion 501
   @normal_windows {100, 60, 40}
   @boss_windows {170, 90, 50}
@@ -172,12 +176,20 @@ defmodule Aesir.ZoneServer.Integration.LootOwnershipIntegrationTest do
   end
 
   test "Greed collects public loot and leaves a neighbor's protected loot" do
-    owner = start_looter("Neighbor")
-    smith = start_looter(character_fixture("Smith", class: 10, learned_skills: %{"1013" => 1}))
+    :ets.insert(EtsTable.table_for(:map_cache), {@field_map, MapData.new(@field_map, 200, 200)})
+    {:ok, _coordinator} = start_per_test_map(@field_map)
 
-    protected_id = drop_owned(%LootOwnership{first: owner.character.id}, {151, 150})
+    owner = start_looter("Neighbor", @field_map)
+
+    smith =
+      start_looter(
+        character_fixture("Smith", class: 10, learned_skills: %{"1013" => 1}),
+        @field_map
+      )
+
+    protected_id = drop_owned(%LootOwnership{first: owner.character.id}, {151, 150}, @field_map)
     flush_packets()
-    public_id = drop_public({149, 150})
+    public_id = drop_public({149, 150}, @field_map)
     flush_packets()
 
     simulate_incoming_message(smith.pid, %SkillCast{
@@ -187,8 +199,8 @@ defmodule Aesir.ZoneServer.Integration.LootOwnershipIntegrationTest do
     })
 
     assert_receive {:packet_sent, %ItemAdded{nameid: @potion}, _}, 1_000
-    assert {:ok, %GroundItem{}} = GroundItemStore.get(@map, protected_id)
-    assert {:error, :gone} = GroundItemStore.get(@map, public_id)
+    assert {:ok, %GroundItem{}} = GroundItemStore.get(@field_map, protected_id)
+    assert {:error, :gone} = GroundItemStore.get(@field_map, public_id)
   end
 
   defp kill_and_get_drop(player, ownership, opts \\ []) do
@@ -213,11 +225,11 @@ defmodule Aesir.ZoneServer.Integration.LootOwnershipIntegrationTest do
     ground_id
   end
 
-  defp drop_owned(ownership, position \\ {150, 150}) do
+  defp drop_owned(ownership, position \\ {150, 150}, map \\ @map) do
     {x, y} = position
 
     Coordinator.drop_items(
-      @map,
+      map,
       [{@potion, 1, x, y, true}],
       x,
       y,
@@ -228,8 +240,8 @@ defmodule Aesir.ZoneServer.Integration.LootOwnershipIntegrationTest do
     ground_id
   end
 
-  defp drop_public({x, y}) do
-    Coordinator.drop_items(@map, [{@potion, 1, x, y, true}], x, y)
+  defp drop_public({x, y}, map) do
+    Coordinator.drop_items(map, [{@potion, 1, x, y, true}], x, y)
     assert_receive {:packet_sent, %ItemOnGround{nameid: @potion, ground_id: ground_id}, _}, 1_000
     ground_id
   end
@@ -238,16 +250,18 @@ defmodule Aesir.ZoneServer.Integration.LootOwnershipIntegrationTest do
     simulate_incoming_message(player.pid, %PickupItemRequest{ground_id: ground_id})
   end
 
-  defp start_looter(%Character{} = character) do
+  defp start_looter(character, map \\ @map)
+
+  defp start_looter(%Character{} = character, map) do
     session =
-      start_player_session(character: character, map_name: @map, position: {150, 150})
+      start_player_session(character: character, map_name: map, position: {150, 150})
 
     on_exit(fn -> end_player_session(session) end)
     flush_packets()
     session
   end
 
-  defp start_looter(name), do: name |> character_fixture() |> start_looter()
+  defp start_looter(name, map), do: name |> character_fixture() |> start_looter(map)
 
   defp character_fixture(prefix, attrs \\ []) do
     unique = System.unique_integer([:positive])

@@ -34,7 +34,9 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
   @sbr44 8012
   @gid 1_500_901
   @mob_gid 1_600_901
-  @map "filir_skill_map"
+  @map "prontera"
+  @origin_x 150
+  @origin_y 150
 
   # DamageDealt swing types, mirroring Combat.PacketFactory's private constants.
   @attack_type_normal 0
@@ -427,8 +429,8 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
       ai_config: Keyword.get(opts, :ai_config, %{}),
       world_gid: @gid,
       map_name: @map,
-      x: 10,
-      y: 10,
+      x: @origin_x,
+      y: @origin_y,
       race: :brute,
       size: :medium,
       combat_stats: %{
@@ -454,8 +456,8 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
     owner = %PlayerState{
       character_id: homunculus.owner_character_id,
       map_name: @map,
-      x: 10,
-      y: 10
+      x: @origin_x,
+      y: @origin_y
     }
 
     %SessionState{game_state: owner, connection_pid: self(), homunculus: homunculus}
@@ -474,7 +476,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
 
   defp register_homunculus(homunculus) do
     UnitRegistry.register_unit(:homunculus, @gid, HomunculusState, homunculus, self())
-    SpatialIndex.add_unit(:homunculus, @gid, 10, 10, @map)
+    SpatialIndex.add_unit(:homunculus, @gid, @origin_x, @origin_y, @map)
   end
 
   defp clear_units do
@@ -507,7 +509,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
       damage_motion: 500
     }
 
-    MobState.new(@mob_gid, definition, %{respawn_time: 0}, @map, x, 10)
+    MobState.new(@mob_gid, definition, %{respawn_time: 0}, @map, @origin_x - 10 + x, @origin_y)
   end
 
   defp auto_skill_config(id, target) do

@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemEffectsIntegrationTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
   alias Aesir.ZoneServer.Mmo.MobManagement
+  alias Aesir.ZoneServer.Mmo.MobManagement.SummonGroups
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler
@@ -42,6 +43,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemEffectsIntegrationTest do
     Mimic.copy(InventoryOps)
     Mimic.copy(Coordinator)
     Mimic.copy(MobManagement)
+    Mimic.copy(SummonGroups)
     Mimic.copy(StatusInterpreter)
 
     stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
@@ -86,7 +88,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemEffectsIntegrationTest do
       {:ok, definition} = Items.by_id(@dead_branch_id)
       stub(Items, :by_id, fn @dead_branch_id -> {:ok, definition} end)
 
-      stub(MobManagement, :get_all_mobs, fn -> [%{id: 1002}] end)
+      stub(SummonGroups, :pick, fn 0 -> 1002 end)
+      stub(SummonGroups, :pick, fn 0, _rng -> 1002 end)
 
       expect(Coordinator, :summon_mob, fn "prontera", 1002, 50, 50, opts ->
         assert Keyword.get(opts, :aggressive) == true

@@ -176,7 +176,16 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
     Mimic.copy(Combat)
     Mimic.copy(SkillAttack)
 
-    target = start_mob_session(unit_id: unique_id(), map_name: @map, position: {11, 10})
+    # Pre-renewal Venom Splasher needs the target at or below three quarters HP.
+    target =
+      start_mob_session(
+        unit_id: unique_id(),
+        map_name: @map,
+        position: {11, 10},
+        hp: 70,
+        max_hp: 100
+      )
+
     on_exit(fn -> if Process.alive?(target.pid), do: end_mob_session(target) end)
 
     expect(Combat, :execute_sonic_blow_attack, 2, fn _caster, target_id, opts ->
@@ -343,21 +352,26 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
     before = live_resource_snapshot(assassin.pid)
     target_hp = get_mob_state(target.pid).hp
 
+    # A request above the learned level is capped to it and a level-zero target
+    # request runs at level one, so the invalid requests aim at a unit that does
+    # not exist, ask a ground skill for level zero, or come from a seated caster.
+    missing = 99_999_999
+
     invalid_casts = [
-      {:target, 135, 11, assassin_id},
-      {:target, 136, 11, target.unit_id},
-      {:target, 137, 6, target.unit_id},
-      {:target, 138, 11, assassin_id},
-      {:target, 139, 11, assassin_id},
-      {:ground, 140, 11, {12, 10}},
-      {:target, 141, 11, target.unit_id},
-      {:target, 1_004, 2, target.unit_id}
+      {:target, 136, 1, missing},
+      {:target, 137, 1, missing},
+      {:ground, 140, 0, {12, 10}},
+      {:target, 141, 1, missing},
+      {:target, 1_004, 1, missing},
+      {:seated, {:target, 135, 1, assassin_id}},
+      {:seated, {:target, 138, 1, assassin_id}},
+      {:seated, {:target, 139, 1, assassin_id}}
     ]
 
     for invalid_cast <- invalid_casts do
       drive_invalid_cast(assassin.pid, invalid_cast)
       refute get_player_state(assassin.pid).casting
-      assert live_resource_snapshot(assassin.pid) == before
+      assert live_resource_snapshot(assassin.pid) == before, inspect(invalid_cast)
       assert get_mob_state(target.pid).hp == target_hp
     end
 
@@ -433,6 +447,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
          target_type: :self,
          status: :sc_cloaking,
          sp_cost: List.duplicate(15, 10),
+         toggleable: true,
          requires: []
        ), :active},
       {AsSonicblow,
@@ -668,6 +683,14 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
                equip: equip,
                identify: 1
              })
+  end
+
+  defp drive_invalid_cast(pid, {:seated, cast}) do
+    standing = :sys.get_state(pid).game_state.action_state
+    :sys.replace_state(pid, &put_in(&1.game_state.action_state, :sitting))
+    drive_invalid_cast(pid, cast)
+    :sys.replace_state(pid, &put_in(&1.game_state.action_state, standing))
+    :ok
   end
 
   defp drive_invalid_cast(pid, {:target, skill_id, level, target_id}) do

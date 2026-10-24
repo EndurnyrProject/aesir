@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Integration.DancerActiveSkillsTest do
   alias Aesir.Net.SkillCast
   alias Aesir.Net.SkillCastFailed
   alias Aesir.Net.SkillDamage
+  alias Aesir.Net.SystemNotice
   alias Aesir.Repo
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.MapData
@@ -100,6 +101,7 @@ defmodule Aesir.ZoneServer.Integration.DancerActiveSkillsTest do
     assert eventually(fn -> persisted_arrow_amount(dancer.character.id) == 2 end)
   end
 
+  @tag game_mode: :pre_renewal, integration_re: false
   test "Hip Shaker casts on a normal map" do
     dancer = start_dancer([@hip_shaker], whip?: true)
     state = get_player_state(dancer.pid)
@@ -111,6 +113,19 @@ defmodule Aesir.ZoneServer.Integration.DancerActiveSkillsTest do
 
     assert eventually(fn -> player_sp(dancer.pid) <= initial_sp - 23 end)
     refute_received {:packet_sent, %SkillCastFailed{skill_id: @hip_shaker}, _}
+  end
+
+  @tag game_mode: :renewal, integration_pre_re: false
+  test "renewal refuses Hip Shaker on a normal map with the area notice and spends nothing" do
+    dancer = start_dancer([@hip_shaker], whip?: true)
+    initial_sp = player_sp(dancer.pid)
+
+    cast(dancer, @hip_shaker, dancer.character.id)
+
+    assert_receive {:packet_sent, %SystemNotice{id: :SYSTEM_NOTICE_ID_IMPOSSIBLE_SKILL_AREA}, _},
+                   1_000
+
+    assert player_sp(dancer.pid) == initial_sp
   end
 
   @tag integration_pre_re: false

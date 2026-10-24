@@ -328,7 +328,7 @@ defmodule Aesir.ZoneServer.Integration.MonkIntegrationTest do
     test "Asura Strike is hard-gated below Root level five and admitted at five" do
       {monk_low, mob_low} = rooted_pair(3_006, 4_104, 4, spheres: 5, sp: 300, fury: true)
 
-      assert {:error, :insufficient_root_level} =
+      assert {:error, :caster_restricted} =
                Interpreter.cast(monk_low, 271, 5, {:unit, mob_low.unit_id})
 
       # A rejected follow-up spends nothing and leaves the pair intact.

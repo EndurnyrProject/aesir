@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Integration.DancerDanceSnapshotIntegrationTest do
   alias Aesir.Repo
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.StatusEffect.Dispel
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
@@ -72,6 +73,9 @@ defmodule Aesir.ZoneServer.Integration.DancerDanceSnapshotIntegrationTest do
   end
 
   test "party and enemy snapshots use disjoint recipients and radii" do
+    # Renewal's skill map restrictions keep Slow Grace to versus ground.
+    :ok = MapFlags.set_runtime(@map, :pvp, true)
+    on_exit(fn -> MapFlags.clear_runtime(@map, :pvp) end)
     dancer = start_performer("Scope", :dancer, @origin, [@focus_ballet, @slow_grace])
     recipient = start_recipient("Party", {165, 150})
     create_party(dancer, [recipient])

@@ -55,7 +55,11 @@ defmodule Aesir.ZoneServer.Integration.SkillTextInputIntegrationTest do
       sp_cost: [1]
     }
 
-    stub(Catalog, :by_id, fn @skill_id -> {:ok, definition} end)
+    stub(Catalog, :by_id, fn
+      @skill_id -> {:ok, definition}
+      skill_id -> Mimic.call_original(Catalog, :by_id, [skill_id])
+    end)
+
     stub(Catalog, :active_module_for, fn :fixture_input -> {:ok, InputFixtureSkill} end)
     stub(Catalog, :ground_module_for, fn :fixture_input -> {:ok, InputFixtureSkill} end)
     Mimic.allow(Catalog, self(), session.pid)

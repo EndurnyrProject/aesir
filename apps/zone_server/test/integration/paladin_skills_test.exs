@@ -11,7 +11,6 @@ defmodule Aesir.ZoneServer.Integration.PaladinSkillsTest do
   alias Aesir.Commons.ClusterTestHelper
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
-  alias Aesir.Net.CastCancel
   alias Aesir.Net.EquipItem
   alias Aesir.Net.SkillCast
   alias Aesir.Net.SkillCastFailed
@@ -66,9 +65,13 @@ defmodule Aesir.ZoneServer.Integration.PaladinSkillsTest do
       refute Interpreter.can_move?(:player, paladin.character.id)
 
       flush_packets()
+      sp_before_pressure = get_player_state(paladin.pid).stats.current_state.sp
       cast(paladin, @pressure, 1, mob.unit_id)
-      assert_cast_refused(@pressure, paladin.character.id)
-      assert get_mob_state(mob.pid).hp == 100_000
+      # The chanting caster's other skill requests are refused silently.
+      _sync = get_player_state(paladin.pid)
+      refute_received {:packet_sent, %SkillCastFailed{skill_id: @pressure}, _}
+      # Pressure never ran (its SP is untouched); the field's own ticks may hurt the mob.
+      assert get_player_state(paladin.pid).stats.current_state.sp == sp_before_pressure
 
       ally_hp = get_player_state(ally.pid).stats.current_state.hp
       mob_hp = get_mob_state(mob.pid).hp
@@ -80,7 +83,7 @@ defmodule Aesir.ZoneServer.Integration.PaladinSkillsTest do
       assert eventually(fn -> afflicted?(mob, mob_hp) end)
     end
 
-    test "recasting ends the chant and the field, paying the cast's SP" do
+    test "recasting ends the chant and the field without paying the cast's SP" do
       %{paladin: paladin} = party_pair()
       cast(paladin, @gospel, 1)
       group_id = await_chant(paladin)
@@ -93,7 +96,8 @@ defmodule Aesir.ZoneServer.Integration.PaladinSkillsTest do
                  SkillUnitStorage.get(group_id) == nil
              end)
 
-      assert get_player_state(paladin.pid).stats.current_state.sp == sp - 80
+      # Toggling a toggleable skill off spends no requirement.
+      assert get_player_state(paladin.pid).stats.current_state.sp == sp
     end
 
     test "an unpaid upkeep tick and Silence each end the chant" do
@@ -294,16 +298,6 @@ defmodule Aesir.ZoneServer.Integration.PaladinSkillsTest do
     %{val2: group_id} = StatusStorage.get_status(:player, paladin.character.id, :sc_gospel)
     assert eventually(fn -> SkillUnitStorage.get(group_id) != nil end)
     group_id
-  end
-
-  defp assert_cast_refused(skill_id, character_id) do
-    assert_receive {:packet_sent, packet, _}, 1_000
-
-    case packet do
-      %SkillCastFailed{skill_id: ^skill_id} -> :ok
-      %CastCancel{gid: ^character_id} -> :ok
-      _other -> assert_cast_refused(skill_id, character_id)
-    end
   end
 
   defp blessed?(ally, hp_before) do
