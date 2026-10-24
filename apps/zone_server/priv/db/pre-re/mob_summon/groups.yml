@@ -1,0 +1,2453 @@
+---
+- default: 1039
+  entries:
+    - id: 1038
+      rate: 500000
+    - id: 1039
+      rate: 500000
+    - id: 1046
+      rate: 500000
+    - id: 1059
+      rate: 500000
+    - id: 1086
+      rate: 500000
+    - id: 1087
+      rate: 500000
+    - id: 1096
+      rate: 500000
+    - id: 1112
+      rate: 500000
+    - id: 1115
+      rate: 500000
+    - id: 1120
+      rate: 500000
+    - id: 1147
+      rate: 500000
+    - id: 1150
+      rate: 500000
+    - id: 1157
+      rate: 500000
+    - id: 1159
+      rate: 500000
+    - id: 1190
+      rate: 500000
+    - id: 1251
+      rate: 500000
+    - id: 1252
+      rate: 500000
+    - id: 1272
+      rate: 500000
+    - id: 1312
+      rate: 500000
+    - id: 1373
+      rate: 500000
+    - id: 1388
+      rate: 500000
+    - id: 1389
+      rate: 500000
+    - id: 1418
+      rate: 500000
+    - id: 1492
+      rate: 500000
+    - id: 1511
+      rate: 500000
+    - id: 1582
+      rate: 500000
+    - id: 1583
+      rate: 500000
+    - id: 1623
+      rate: 500000
+    - id: 1630
+      rate: 500000
+    - id: 1658
+      rate: 500000
+    - id: 1685
+      rate: 500000
+    - id: 1688
+      rate: 500000
+    - id: 1708
+      rate: 500000
+    - id: 1719
+      rate: 500000
+    - id: 1734
+      rate: 500000
+    - id: 1751
+      rate: 500000
+    - id: 1768
+      rate: 500000
+    - id: 1779
+      rate: 500000
+    - id: 1785
+      rate: 1000000
+    - id: 1832
+      rate: 500000
+    - id: 1871
+      rate: 500000
+    - id: 1873
+      rate: 500000
+    - id: 1885
+      rate: 500000
+    - id: 2022
+      rate: 500000
+  group: bloody_dead_branch
+- default: 1001
+  entries:
+    - id: 1001
+      rate: 214285
+    - id: 1002
+      rate: 1000000
+    - id: 1004
+      rate: 357142
+    - id: 1005
+      rate: 357142
+    - id: 1007
+      rate: 428571
+    - id: 1008
+      rate: 71428
+    - id: 1009
+      rate: 357142
+    - id: 1010
+      rate: 357142
+    - id: 1011
+      rate: 357142
+    - id: 1012
+      rate: 357142
+    - id: 1013
+      rate: 357142
+    - id: 1014
+      rate: 357142
+    - id: 1015
+      rate: 357142
+    - id: 1016
+      rate: 214285
+    - id: 1018
+      rate: 357142
+    - id: 1019
+      rate: 357142
+    - id: 1020
+      rate: 357142
+    - id: 1023
+      rate: 214285
+    - id: 1024
+      rate: 357142
+    - id: 1025
+      rate: 357142
+    - id: 1026
+      rate: 214285
+    - id: 1028
+      rate: 214285
+    - id: 1029
+      rate: 71428
+    - id: 1030
+      rate: 214285
+    - id: 1031
+      rate: 357142
+    - id: 1032
+      rate: 214285
+    - id: 1033
+      rate: 214285
+    - id: 1034
+      rate: 214285
+    - id: 1035
+      rate: 71428
+    - id: 1036
+      rate: 214285
+    - id: 1037
+      rate: 71428
+    - id: 1040
+      rate: 214285
+    - id: 1041
+      rate: 214285
+    - id: 1042
+      rate: 357142
+    - id: 1044
+      rate: 214285
+    - id: 1045
+      rate: 214285
+    - id: 1047
+      rate: 71428
+    - id: 1048
+      rate: 71428
+    - id: 1049
+      rate: 357142
+    - id: 1050
+      rate: 357142
+    - id: 1051
+      rate: 357142
+    - id: 1052
+      rate: 357142
+    - id: 1053
+      rate: 357142
+    - id: 1054
+      rate: 357142
+    - id: 1055
+      rate: 357142
+    - id: 1056
+      rate: 357142
+    - id: 1057
+      rate: 357142
+    - id: 1058
+      rate: 214285
+    - id: 1060
+      rate: 214285
+    - id: 1061
+      rate: 71428
+    - id: 1062
+      rate: 357142
+    - id: 1063
+      rate: 357142
+    - id: 1064
+      rate: 214285
+    - id: 1065
+      rate: 214285
+    - id: 1066
+      rate: 357142
+    - id: 1067
+      rate: 214285
+    - id: 1068
+      rate: 357142
+    - id: 1069
+      rate: 214285
+    - id: 1070
+      rate: 357142
+    - id: 1071
+      rate: 214285
+    - id: 1072
+      rate: 71428
+    - id: 1073
+      rate: 214285
+    - id: 1074
+      rate: 357142
+    - id: 1076
+      rate: 357142
+    - id: 1077
+      rate: 357142
+    - id: 1078
+      rate: 71428
+    - id: 1079
+      rate: 71428
+    - id: 1080
+      rate: 71428
+    - id: 1081
+      rate: 71428
+    - id: 1082
+      rate: 71428
+    - id: 1083
+      rate: 71428
+    - id: 1084
+      rate: 71428
+    - id: 1085
+      rate: 71428
+    - id: 1088
+      rate: 71428
+    - id: 1089
+      rate: 71428
+    - id: 1090
+      rate: 71428
+    - id: 1091
+      rate: 71428
+    - id: 1092
+      rate: 71428
+    - id: 1093
+      rate: 71428
+    - id: 1094
+      rate: 357142
+    - id: 1095
+      rate: 357142
+    - id: 1096
+      rate: 71428
+    - id: 1097
+      rate: 71428
+    - id: 1098
+      rate: 71428
+    - id: 1099
+      rate: 71428
+    - id: 1100
+      rate: 214285
+    - id: 1101
+      rate: 71428
+    - id: 1102
+      rate: 71428
+    - id: 1103
+      rate: 214285
+    - id: 1104
+      rate: 357142
+    - id: 1105
+      rate: 357142
+    - id: 1106
+      rate: 214285
+    - id: 1107
+      rate: 71428
+    - id: 1108
+      rate: 71428
+    - id: 1109
+      rate: 71428
+    - id: 1110
+      rate: 214285
+    - id: 1111
+      rate: 214285
+    - id: 1113
+      rate: 357142
+    - id: 1114
+      rate: 214285
+    - id: 1116
+      rate: 214285
+    - id: 1117
+      rate: 71428
+    - id: 1118
+      rate: 214285
+    - id: 1119
+      rate: 214285
+    - id: 1120
+      rate: 71428
+    - id: 1121
+      rate: 214285
+    - id: 1122
+      rate: 214285
+    - id: 1123
+      rate: 214285
+    - id: 1124
+      rate: 214285
+    - id: 1125
+      rate: 214285
+    - id: 1126
+      rate: 214285
+    - id: 1127
+      rate: 214285
+    - id: 1128
+      rate: 357142
+    - id: 1129
+      rate: 214285
+    - id: 1130
+      rate: 214285
+    - id: 1131
+      rate: 71428
+    - id: 1132
+      rate: 71428
+    - id: 1133
+      rate: 214285
+    - id: 1134
+      rate: 214285
+    - id: 1135
+      rate: 214285
+    - id: 1138
+      rate: 214285
+    - id: 1139
+      rate: 214285
+    - id: 1140
+      rate: 214285
+    - id: 1141
+      rate: 214285
+    - id: 1142
+      rate: 214285
+    - id: 1143
+      rate: 71428
+    - id: 1144
+      rate: 214285
+    - id: 1145
+      rate: 357142
+    - id: 1146
+      rate: 214285
+    - id: 1148
+      rate: 71428
+    - id: 1149
+      rate: 71428
+    - id: 1151
+      rate: 214285
+    - id: 1152
+      rate: 214285
+    - id: 1153
+      rate: 214285
+    - id: 1154
+      rate: 71428
+    - id: 1155
+      rate: 71428
+    - id: 1156
+      rate: 71428
+    - id: 1158
+      rate: 214285
+    - id: 1160
+      rate: 357142
+    - id: 1161
+      rate: 357142
+    - id: 1163
+      rate: 71428
+    - id: 1164
+      rate: 214285
+    - id: 1165
+      rate: 214285
+    - id: 1166
+      rate: 214285
+    - id: 1167
+      rate: 357142
+    - id: 1169
+      rate: 214285
+    - id: 1170
+      rate: 214285
+    - id: 1174
+      rate: 357142
+    - id: 1175
+      rate: 357142
+    - id: 1176
+      rate: 214285
+    - id: 1177
+      rate: 214285
+    - id: 1178
+      rate: 214285
+    - id: 1179
+      rate: 71428
+    - id: 1180
+      rate: 71428
+    - id: 1182
+      rate: 71428
+    - id: 1185
+      rate: 71428
+    - id: 1186
+      rate: 71428
+    - id: 1188
+      rate: 214285
+    - id: 1189
+      rate: 71428
+    - id: 1191
+      rate: 71428
+    - id: 1192
+      rate: 71428
+    - id: 1193
+      rate: 71428
+    - id: 1194
+      rate: 71428
+    - id: 1195
+      rate: 71428
+    - id: 1196
+      rate: 71428
+    - id: 1197
+      rate: 71428
+    - id: 1199
+      rate: 71428
+    - id: 1200
+      rate: 71428
+    - id: 1201
+      rate: 71428
+    - id: 1202
+      rate: 71428
+    - id: 1203
+      rate: 71428
+    - id: 1204
+      rate: 71428
+    - id: 1205
+      rate: 71428
+    - id: 1206
+      rate: 71428
+    - id: 1207
+      rate: 71428
+    - id: 1208
+      rate: 71428
+    - id: 1209
+      rate: 71428
+    - id: 1211
+      rate: 71428
+    - id: 1212
+      rate: 71428
+    - id: 1213
+      rate: 71428
+    - id: 1214
+      rate: 71428
+    - id: 1215
+      rate: 214285
+    - id: 1216
+      rate: 71428
+    - id: 1219
+      rate: 71428
+    - id: 1242
+      rate: 357142
+    - id: 1243
+      rate: 214285
+    - id: 1245
+      rate: 71428
+    - id: 1246
+      rate: 214285
+    - id: 1248
+      rate: 214285
+    - id: 1249
+      rate: 214285
+    - id: 1250
+      rate: 71428
+    - id: 1253
+      rate: 71428
+    - id: 1254
+      rate: 214285
+    - id: 1255
+      rate: 214285
+    - id: 1256
+      rate: 214285
+    - id: 1257
+      rate: 71428
+    - id: 1258
+      rate: 214285
+    - id: 1259
+      rate: 71428
+    - id: 1260
+      rate: 71428
+    - id: 1261
+      rate: 214285
+    - id: 1262
+      rate: 71428
+    - id: 1263
+      rate: 71428
+    - id: 1264
+      rate: 71428
+    - id: 1265
+      rate: 214285
+    - id: 1266
+      rate: 357142
+    - id: 1267
+      rate: 71428
+    - id: 1268
+      rate: 71428
+    - id: 1269
+      rate: 71428
+    - id: 1270
+      rate: 71428
+    - id: 1271
+      rate: 71428
+    - id: 1273
+      rate: 214285
+    - id: 1274
+      rate: 71428
+    - id: 1275
+      rate: 71428
+    - id: 1276
+      rate: 71428
+    - id: 1277
+      rate: 214285
+    - id: 1278
+      rate: 71428
+    - id: 1279
+      rate: 214285
+    - id: 1280
+      rate: 214285
+    - id: 1281
+      rate: 71428
+    - id: 1282
+      rate: 214285
+    - id: 1283
+      rate: 71428
+    - id: 1289
+      rate: 71428
+    - id: 1290
+      rate: 71428
+    - id: 1291
+      rate: 71428
+    - id: 1292
+      rate: 71428
+    - id: 1293
+      rate: 71428
+    - id: 1294
+      rate: 71428
+    - id: 1295
+      rate: 71428
+    - id: 1296
+      rate: 71428
+    - id: 1297
+      rate: 71428
+    - id: 1298
+      rate: 71428
+    - id: 1299
+      rate: 71428
+    - id: 1300
+      rate: 71428
+    - id: 1301
+      rate: 71428
+    - id: 1302
+      rate: 71428
+    - id: 1303
+      rate: 71428
+    - id: 1304
+      rate: 71428
+    - id: 1305
+      rate: 71428
+    - id: 1306
+      rate: 71428
+    - id: 1307
+      rate: 71428
+    - id: 1308
+      rate: 71428
+    - id: 1309
+      rate: 71428
+    - id: 1310
+      rate: 71428
+    - id: 1311
+      rate: 71428
+    - id: 1313
+      rate: 71428
+    - id: 1314
+      rate: 71428
+    - id: 1315
+      rate: 71428
+    - id: 1316
+      rate: 71428
+    - id: 1317
+      rate: 71428
+    - id: 1318
+      rate: 71428
+    - id: 1319
+      rate: 71428
+    - id: 1320
+      rate: 71428
+    - id: 1321
+      rate: 71428
+    - id: 1322
+      rate: 71428
+    - id: 1323
+      rate: 71428
+    - id: 1365
+      rate: 71428
+    - id: 1366
+      rate: 71428
+    - id: 1367
+      rate: 71428
+    - id: 1368
+      rate: 71428
+    - id: 1369
+      rate: 71428
+    - id: 1370
+      rate: 71428
+    - id: 1371
+      rate: 71428
+    - id: 1372
+      rate: 71428
+    - id: 1374
+      rate: 71428
+    - id: 1375
+      rate: 71428
+    - id: 1376
+      rate: 71428
+    - id: 1377
+      rate: 71428
+    - id: 1378
+      rate: 71428
+    - id: 1379
+      rate: 71428
+    - id: 1380
+      rate: 71428
+    - id: 1381
+      rate: 71428
+    - id: 1382
+      rate: 71428
+    - id: 1383
+      rate: 71428
+    - id: 1384
+      rate: 71428
+    - id: 1385
+      rate: 71428
+    - id: 1386
+      rate: 71428
+    - id: 1387
+      rate: 71428
+    - id: 1390
+      rate: 71428
+    - id: 1391
+      rate: 71428
+    - id: 1392
+      rate: 214285
+    - id: 1400
+      rate: 214285
+    - id: 1401
+      rate: 71428
+    - id: 1402
+      rate: 71428
+    - id: 1403
+      rate: 71428
+    - id: 1404
+      rate: 214285
+    - id: 1405
+      rate: 71428
+    - id: 1406
+      rate: 71428
+    - id: 1408
+      rate: 71428
+    - id: 1409
+      rate: 214285
+    - id: 1410
+      rate: 71428
+    - id: 1412
+      rate: 71428
+    - id: 1413
+      rate: 71428
+    - id: 1415
+      rate: 214285
+    - id: 1416
+      rate: 71428
+    - id: 1417
+      rate: 214285
+    - id: 1493
+      rate: 71428
+    - id: 1494
+      rate: 214285
+    - id: 1495
+      rate: 71428
+    - id: 1497
+      rate: 71428
+    - id: 1498
+      rate: 214285
+    - id: 1499
+      rate: 71428
+    - id: 1500
+      rate: 214285
+    - id: 1503
+      rate: 71428
+    - id: 1504
+      rate: 71428
+    - id: 1505
+      rate: 71428
+    - id: 1506
+      rate: 71428
+    - id: 1507
+      rate: 71428
+    - id: 1508
+      rate: 214285
+    - id: 1509
+      rate: 214285
+    - id: 1510
+      rate: 71428
+    - id: 1512
+      rate: 71428
+    - id: 1513
+      rate: 71428
+    - id: 1514
+      rate: 71428
+    - id: 1515
+      rate: 71428
+    - id: 1516
+      rate: 71428
+    - id: 1517
+      rate: 71428
+    - id: 1519
+      rate: 71428
+    - id: 1520
+      rate: 71428
+    - id: 1582
+      rate: 71428
+    - id: 1584
+      rate: 71428
+    - id: 1586
+      rate: 71428
+    - id: 1587
+      rate: 71428
+    - id: 1613
+      rate: 71428
+    - id: 1614
+      rate: 71428
+    - id: 1615
+      rate: 71428
+    - id: 1616
+      rate: 71428
+    - id: 1617
+      rate: 71428
+    - id: 1618
+      rate: 71428
+    - id: 1619
+      rate: 71428
+    - id: 1620
+      rate: 71428
+    - id: 1621
+      rate: 71428
+    - id: 1622
+      rate: 71428
+    - id: 1627
+      rate: 71428
+    - id: 1628
+      rate: 71428
+    - id: 1629
+      rate: 71428
+    - id: 1631
+      rate: 71428
+    - id: 1632
+      rate: 71428
+    - id: 1633
+      rate: 71428
+    - id: 1634
+      rate: 71428
+    - id: 1635
+      rate: 71428
+    - id: 1636
+      rate: 71428
+    - id: 1637
+      rate: 71428
+    - id: 1638
+      rate: 71428
+    - id: 1639
+      rate: 71428
+    - id: 1652
+      rate: 71428
+    - id: 1653
+      rate: 71428
+    - id: 1654
+      rate: 71428
+    - id: 1655
+      rate: 71428
+    - id: 1656
+      rate: 71428
+    - id: 1657
+      rate: 71428
+    - id: 1664
+      rate: 71428
+    - id: 1665
+      rate: 71428
+    - id: 1666
+      rate: 71428
+    - id: 1667
+      rate: 71428
+    - id: 1668
+      rate: 71428
+    - id: 1669
+      rate: 71428
+    - id: 1670
+      rate: 71428
+    - id: 1671
+      rate: 71428
+    - id: 1672
+      rate: 71428
+    - id: 1673
+      rate: 71428
+    - id: 1675
+      rate: 71428
+    - id: 1676
+      rate: 71428
+    - id: 1677
+      rate: 71428
+    - id: 1678
+      rate: 71428
+    - id: 1679
+      rate: 71428
+    - id: 1680
+      rate: 71428
+    - id: 1681
+      rate: 71428
+    - id: 1682
+      rate: 71428
+    - id: 1686
+      rate: 71428
+    - id: 1687
+      rate: 71428
+    - id: 1692
+      rate: 71428
+    - id: 1693
+      rate: 71428
+    - id: 1694
+      rate: 71428
+    - id: 1695
+      rate: 71428
+    - id: 1696
+      rate: 71428
+    - id: 1699
+      rate: 71428
+    - id: 1703
+      rate: 71428
+    - id: 1704
+      rate: 71428
+    - id: 1705
+      rate: 71428
+    - id: 1706
+      rate: 71428
+    - id: 1707
+      rate: 71428
+    - id: 1713
+      rate: 71428
+    - id: 1714
+      rate: 71428
+    - id: 1715
+      rate: 71428
+    - id: 1717
+      rate: 71428
+    - id: 1718
+      rate: 71428
+    - id: 1720
+      rate: 71428
+    - id: 1721
+      rate: 71428
+    - id: 1736
+      rate: 71428
+    - id: 1737
+      rate: 71428
+    - id: 1738
+      rate: 71428
+    - id: 1752
+      rate: 71428
+    - id: 1753
+      rate: 71428
+    - id: 1754
+      rate: 71428
+    - id: 1755
+      rate: 71428
+    - id: 1769
+      rate: 71428
+    - id: 1770
+      rate: 71428
+    - id: 1771
+      rate: 71428
+    - id: 1772
+      rate: 71428
+    - id: 1773
+      rate: 71428
+    - id: 1774
+      rate: 71428
+    - id: 1775
+      rate: 71428
+    - id: 1776
+      rate: 71428
+    - id: 1777
+      rate: 71428
+    - id: 1778
+      rate: 71428
+    - id: 1780
+      rate: 71428
+    - id: 1781
+      rate: 71428
+    - id: 1782
+      rate: 71428
+    - id: 1783
+      rate: 71428
+    - id: 1784
+      rate: 142857
+    - id: 1789
+      rate: 71428
+    - id: 1796
+      rate: 142857
+    - id: 1797
+      rate: 142857
+    - id: 1829
+      rate: 71428
+    - id: 1830
+      rate: 71428
+    - id: 1831
+      rate: 71428
+    - id: 1833
+      rate: 71428
+    - id: 1836
+      rate: 214285
+    - id: 1837
+      rate: 71428
+    - id: 1838
+      rate: 71428
+    - id: 1839
+      rate: 71428
+    - id: 1864
+      rate: 71428
+    - id: 1865
+      rate: 71428
+    - id: 1866
+      rate: 71428
+    - id: 1867
+      rate: 71428
+    - id: 1869
+      rate: 71428
+    - id: 1870
+      rate: 71428
+    - id: 1872
+      rate: 71428
+    - id: 1880
+      rate: 71428
+    - id: 1881
+      rate: 71428
+    - id: 1882
+      rate: 71428
+    - id: 1883
+      rate: 71428
+    - id: 1884
+      rate: 71428
+    - id: 1918
+      rate: 71428
+    - id: 1919
+      rate: 71428
+    - id: 1920
+      rate: 71428
+    - id: 1921
+      rate: 71428
+    - id: 1974
+      rate: 71428
+    - id: 1975
+      rate: 71428
+    - id: 1976
+      rate: 71428
+    - id: 1977
+      rate: 71428
+    - id: 1978
+      rate: 71428
+    - id: 1979
+      rate: 71428
+    - id: 1986
+      rate: 71428
+    - id: 1987
+      rate: 71428
+    - id: 1988
+      rate: 71428
+    - id: 1989
+      rate: 71428
+    - id: 1990
+      rate: 71428
+    - id: 1991
+      rate: 71428
+    - id: 1992
+      rate: 71428
+    - id: 1993
+      rate: 71428
+    - id: 1994
+      rate: 71428
+    - id: 1995
+      rate: 71428
+    - id: 1999
+      rate: 71428
+    - id: 2013
+      rate: 71428
+    - id: 2015
+      rate: 71428
+    - id: 2016
+      rate: 71428
+    - id: 2017
+      rate: 71428
+    - id: 2018
+      rate: 71428
+    - id: 2019
+      rate: 71428
+    - id: 2020
+      rate: 71428
+    - id: 2021
+      rate: 71428
+    - id: 2023
+      rate: 71428
+    - id: 2024
+      rate: 71428
+  group: branch_of_dead_tree
+- default: 1039
+  entries:
+    - id: 1038
+      rate: 1000000
+    - id: 1039
+      rate: 1000000
+    - id: 1046
+      rate: 1000000
+    - id: 1059
+      rate: 1000000
+    - id: 1086
+      rate: 1000000
+    - id: 1087
+      rate: 1000000
+    - id: 1112
+      rate: 1000000
+    - id: 1115
+      rate: 1000000
+    - id: 1147
+      rate: 1000000
+    - id: 1150
+      rate: 1000000
+    - id: 1157
+      rate: 1000000
+    - id: 1159
+      rate: 1000000
+    - id: 1190
+      rate: 1000000
+    - id: 1251
+      rate: 1000000
+    - id: 1252
+      rate: 1000000
+    - id: 1272
+      rate: 1000000
+    - id: 1312
+      rate: 1000000
+    - id: 1373
+      rate: 1000000
+    - id: 1388
+      rate: 1000000
+    - id: 1389
+      rate: 1000000
+    - id: 1418
+      rate: 1000000
+    - id: 1492
+      rate: 1000000
+    - id: 1511
+      rate: 1000000
+    - id: 1583
+      rate: 1000000
+  group: classchange
+- default: 1002
+  entries:
+    - id: 1002
+      rate: 1000000
+    - id: 1031
+      rate: 1000000
+    - id: 1062
+      rate: 200000
+    - id: 1090
+      rate: 400000
+    - id: 1096
+      rate: 200000
+    - id: 1113
+      rate: 1000000
+    - id: 1120
+      rate: 200000
+    - id: 1242
+      rate: 1000000
+    - id: 1388
+      rate: 200000
+    - id: 1582
+      rate: 200000
+    - id: 1613
+      rate: 1000000
+    - id: 1784
+      rate: 1000000
+  group: poring_box
+- default: 1002
+  entries:
+    - id: 1001
+      rate: 214285
+    - id: 1002
+      rate: 1000000
+    - id: 1004
+      rate: 357142
+    - id: 1005
+      rate: 357142
+    - id: 1007
+      rate: 428571
+    - id: 1008
+      rate: 71428
+    - id: 1009
+      rate: 357142
+    - id: 1010
+      rate: 357142
+    - id: 1011
+      rate: 357142
+    - id: 1012
+      rate: 357142
+    - id: 1013
+      rate: 357142
+    - id: 1014
+      rate: 357142
+    - id: 1015
+      rate: 357142
+    - id: 1016
+      rate: 214285
+    - id: 1018
+      rate: 357142
+    - id: 1019
+      rate: 357142
+    - id: 1020
+      rate: 357142
+    - id: 1023
+      rate: 214285
+    - id: 1024
+      rate: 357142
+    - id: 1025
+      rate: 357142
+    - id: 1026
+      rate: 214285
+    - id: 1028
+      rate: 214285
+    - id: 1029
+      rate: 71428
+    - id: 1030
+      rate: 214285
+    - id: 1031
+      rate: 357142
+    - id: 1032
+      rate: 214285
+    - id: 1033
+      rate: 214285
+    - id: 1034
+      rate: 214285
+    - id: 1035
+      rate: 71428
+    - id: 1036
+      rate: 214285
+    - id: 1037
+      rate: 71428
+    - id: 1040
+      rate: 214285
+    - id: 1041
+      rate: 214285
+    - id: 1042
+      rate: 357142
+    - id: 1044
+      rate: 214285
+    - id: 1045
+      rate: 214285
+    - id: 1047
+      rate: 71428
+    - id: 1048
+      rate: 71428
+    - id: 1049
+      rate: 357142
+    - id: 1050
+      rate: 357142
+    - id: 1051
+      rate: 357142
+    - id: 1052
+      rate: 357142
+    - id: 1053
+      rate: 357142
+    - id: 1054
+      rate: 357142
+    - id: 1055
+      rate: 357142
+    - id: 1056
+      rate: 357142
+    - id: 1057
+      rate: 357142
+    - id: 1058
+      rate: 214285
+    - id: 1060
+      rate: 214285
+    - id: 1061
+      rate: 71428
+    - id: 1062
+      rate: 357142
+    - id: 1063
+      rate: 357142
+    - id: 1064
+      rate: 214285
+    - id: 1065
+      rate: 214285
+    - id: 1066
+      rate: 357142
+    - id: 1067
+      rate: 214285
+    - id: 1068
+      rate: 357142
+    - id: 1069
+      rate: 214285
+    - id: 1070
+      rate: 357142
+    - id: 1071
+      rate: 214285
+    - id: 1072
+      rate: 71428
+    - id: 1073
+      rate: 214285
+    - id: 1074
+      rate: 357142
+    - id: 1076
+      rate: 357142
+    - id: 1077
+      rate: 357142
+    - id: 1078
+      rate: 71428
+    - id: 1079
+      rate: 71428
+    - id: 1080
+      rate: 71428
+    - id: 1081
+      rate: 71428
+    - id: 1082
+      rate: 71428
+    - id: 1083
+      rate: 71428
+    - id: 1084
+      rate: 71428
+    - id: 1085
+      rate: 71428
+    - id: 1088
+      rate: 71428
+    - id: 1089
+      rate: 71428
+    - id: 1090
+      rate: 71428
+    - id: 1091
+      rate: 71428
+    - id: 1092
+      rate: 71428
+    - id: 1093
+      rate: 71428
+    - id: 1094
+      rate: 357142
+    - id: 1095
+      rate: 357142
+    - id: 1096
+      rate: 71428
+    - id: 1097
+      rate: 71428
+    - id: 1099
+      rate: 71428
+    - id: 1100
+      rate: 214285
+    - id: 1101
+      rate: 71428
+    - id: 1102
+      rate: 71428
+    - id: 1103
+      rate: 214285
+    - id: 1104
+      rate: 357142
+    - id: 1105
+      rate: 357142
+    - id: 1106
+      rate: 214285
+    - id: 1107
+      rate: 71428
+    - id: 1108
+      rate: 71428
+    - id: 1109
+      rate: 71428
+    - id: 1110
+      rate: 214285
+    - id: 1111
+      rate: 214285
+    - id: 1113
+      rate: 357142
+    - id: 1114
+      rate: 214285
+    - id: 1116
+      rate: 214285
+    - id: 1117
+      rate: 71428
+    - id: 1118
+      rate: 214285
+    - id: 1119
+      rate: 214285
+    - id: 1120
+      rate: 71428
+    - id: 1121
+      rate: 214285
+    - id: 1122
+      rate: 214285
+    - id: 1123
+      rate: 214285
+    - id: 1124
+      rate: 214285
+    - id: 1125
+      rate: 214285
+    - id: 1126
+      rate: 214285
+    - id: 1127
+      rate: 214285
+    - id: 1128
+      rate: 357142
+    - id: 1129
+      rate: 214285
+    - id: 1130
+      rate: 214285
+    - id: 1131
+      rate: 71428
+    - id: 1132
+      rate: 71428
+    - id: 1133
+      rate: 214285
+    - id: 1134
+      rate: 214285
+    - id: 1135
+      rate: 214285
+    - id: 1138
+      rate: 214285
+    - id: 1139
+      rate: 214285
+    - id: 1140
+      rate: 214285
+    - id: 1141
+      rate: 214285
+    - id: 1142
+      rate: 214285
+    - id: 1143
+      rate: 71428
+    - id: 1144
+      rate: 214285
+    - id: 1145
+      rate: 357142
+    - id: 1146
+      rate: 214285
+    - id: 1148
+      rate: 71428
+    - id: 1149
+      rate: 71428
+    - id: 1151
+      rate: 214285
+    - id: 1152
+      rate: 214285
+    - id: 1153
+      rate: 214285
+    - id: 1154
+      rate: 71428
+    - id: 1155
+      rate: 71428
+    - id: 1156
+      rate: 71428
+    - id: 1158
+      rate: 214285
+    - id: 1160
+      rate: 357142
+    - id: 1161
+      rate: 357142
+    - id: 1163
+      rate: 71428
+    - id: 1164
+      rate: 214285
+    - id: 1165
+      rate: 214285
+    - id: 1166
+      rate: 214285
+    - id: 1167
+      rate: 357142
+    - id: 1169
+      rate: 214285
+    - id: 1170
+      rate: 214285
+    - id: 1174
+      rate: 357142
+    - id: 1175
+      rate: 357142
+    - id: 1176
+      rate: 214285
+    - id: 1177
+      rate: 214285
+    - id: 1178
+      rate: 214285
+    - id: 1179
+      rate: 71428
+    - id: 1180
+      rate: 71428
+    - id: 1182
+      rate: 71428
+    - id: 1185
+      rate: 71428
+    - id: 1186
+      rate: 71428
+    - id: 1188
+      rate: 214285
+    - id: 1189
+      rate: 71428
+    - id: 1191
+      rate: 71428
+    - id: 1192
+      rate: 71428
+    - id: 1193
+      rate: 71428
+    - id: 1194
+      rate: 71428
+    - id: 1195
+      rate: 71428
+    - id: 1196
+      rate: 71428
+    - id: 1197
+      rate: 71428
+    - id: 1199
+      rate: 71428
+    - id: 1200
+      rate: 71428
+    - id: 1201
+      rate: 71428
+    - id: 1202
+      rate: 71428
+    - id: 1203
+      rate: 71428
+    - id: 1204
+      rate: 71428
+    - id: 1205
+      rate: 71428
+    - id: 1206
+      rate: 71428
+    - id: 1207
+      rate: 71428
+    - id: 1208
+      rate: 71428
+    - id: 1209
+      rate: 71428
+    - id: 1211
+      rate: 71428
+    - id: 1212
+      rate: 71428
+    - id: 1213
+      rate: 71428
+    - id: 1214
+      rate: 71428
+    - id: 1215
+      rate: 214285
+    - id: 1216
+      rate: 71428
+    - id: 1219
+      rate: 71428
+    - id: 1242
+      rate: 357142
+    - id: 1243
+      rate: 214285
+    - id: 1245
+      rate: 71428
+    - id: 1246
+      rate: 214285
+    - id: 1248
+      rate: 214285
+    - id: 1249
+      rate: 214285
+    - id: 1250
+      rate: 71428
+    - id: 1253
+      rate: 71428
+    - id: 1254
+      rate: 214285
+    - id: 1255
+      rate: 214285
+    - id: 1256
+      rate: 214285
+    - id: 1257
+      rate: 71428
+    - id: 1258
+      rate: 214285
+    - id: 1259
+      rate: 71428
+    - id: 1260
+      rate: 71428
+    - id: 1261
+      rate: 214285
+    - id: 1262
+      rate: 71428
+    - id: 1263
+      rate: 71428
+    - id: 1264
+      rate: 71428
+    - id: 1265
+      rate: 214285
+    - id: 1266
+      rate: 357142
+    - id: 1267
+      rate: 71428
+    - id: 1268
+      rate: 71428
+    - id: 1269
+      rate: 71428
+    - id: 1270
+      rate: 71428
+    - id: 1271
+      rate: 71428
+    - id: 1273
+      rate: 214285
+    - id: 1274
+      rate: 71428
+    - id: 1275
+      rate: 71428
+    - id: 1276
+      rate: 71428
+    - id: 1277
+      rate: 214285
+    - id: 1278
+      rate: 71428
+    - id: 1279
+      rate: 214285
+    - id: 1280
+      rate: 214285
+    - id: 1281
+      rate: 71428
+    - id: 1282
+      rate: 214285
+    - id: 1283
+      rate: 71428
+    - id: 1289
+      rate: 71428
+    - id: 1290
+      rate: 71428
+    - id: 1291
+      rate: 71428
+    - id: 1292
+      rate: 71428
+    - id: 1293
+      rate: 71428
+    - id: 1294
+      rate: 71428
+    - id: 1295
+      rate: 71428
+    - id: 1296
+      rate: 71428
+    - id: 1297
+      rate: 71428
+    - id: 1298
+      rate: 71428
+    - id: 1299
+      rate: 71428
+    - id: 1300
+      rate: 71428
+    - id: 1301
+      rate: 71428
+    - id: 1302
+      rate: 71428
+    - id: 1303
+      rate: 71428
+    - id: 1304
+      rate: 71428
+    - id: 1305
+      rate: 71428
+    - id: 1306
+      rate: 71428
+    - id: 1307
+      rate: 71428
+    - id: 1308
+      rate: 71428
+    - id: 1309
+      rate: 71428
+    - id: 1310
+      rate: 71428
+    - id: 1311
+      rate: 71428
+    - id: 1313
+      rate: 71428
+    - id: 1314
+      rate: 71428
+    - id: 1315
+      rate: 71428
+    - id: 1316
+      rate: 71428
+    - id: 1317
+      rate: 71428
+    - id: 1318
+      rate: 71428
+    - id: 1319
+      rate: 71428
+    - id: 1320
+      rate: 71428
+    - id: 1321
+      rate: 71428
+    - id: 1322
+      rate: 71428
+    - id: 1323
+      rate: 71428
+    - id: 1365
+      rate: 71428
+    - id: 1366
+      rate: 71428
+    - id: 1367
+      rate: 71428
+    - id: 1368
+      rate: 71428
+    - id: 1369
+      rate: 71428
+    - id: 1370
+      rate: 71428
+    - id: 1371
+      rate: 71428
+    - id: 1372
+      rate: 71428
+    - id: 1374
+      rate: 71428
+    - id: 1375
+      rate: 71428
+    - id: 1376
+      rate: 71428
+    - id: 1377
+      rate: 71428
+    - id: 1378
+      rate: 71428
+    - id: 1379
+      rate: 71428
+    - id: 1380
+      rate: 71428
+    - id: 1381
+      rate: 71428
+    - id: 1382
+      rate: 71428
+    - id: 1383
+      rate: 71428
+    - id: 1384
+      rate: 71428
+    - id: 1385
+      rate: 71428
+    - id: 1386
+      rate: 71428
+    - id: 1387
+      rate: 71428
+    - id: 1390
+      rate: 71428
+    - id: 1391
+      rate: 71428
+    - id: 1392
+      rate: 214285
+    - id: 1400
+      rate: 214285
+    - id: 1401
+      rate: 71428
+    - id: 1402
+      rate: 71428
+    - id: 1403
+      rate: 71428
+    - id: 1404
+      rate: 214285
+    - id: 1405
+      rate: 71428
+    - id: 1406
+      rate: 71428
+    - id: 1408
+      rate: 71428
+    - id: 1409
+      rate: 214285
+    - id: 1410
+      rate: 71428
+    - id: 1412
+      rate: 71428
+    - id: 1413
+      rate: 71428
+    - id: 1415
+      rate: 214285
+    - id: 1416
+      rate: 71428
+    - id: 1417
+      rate: 214285
+    - id: 1493
+      rate: 71428
+    - id: 1494
+      rate: 214285
+    - id: 1495
+      rate: 71428
+    - id: 1497
+      rate: 71428
+    - id: 1498
+      rate: 214285
+    - id: 1499
+      rate: 71428
+    - id: 1500
+      rate: 214285
+    - id: 1503
+      rate: 71428
+    - id: 1504
+      rate: 71428
+    - id: 1505
+      rate: 71428
+    - id: 1506
+      rate: 71428
+    - id: 1507
+      rate: 71428
+    - id: 1508
+      rate: 214285
+    - id: 1509
+      rate: 214285
+    - id: 1510
+      rate: 71428
+    - id: 1512
+      rate: 71428
+    - id: 1513
+      rate: 71428
+    - id: 1514
+      rate: 71428
+    - id: 1515
+      rate: 71428
+    - id: 1516
+      rate: 71428
+    - id: 1517
+      rate: 71428
+    - id: 1519
+      rate: 71428
+    - id: 1520
+      rate: 71428
+    - id: 1582
+      rate: 71428
+    - id: 1584
+      rate: 71428
+    - id: 1586
+      rate: 71428
+    - id: 1587
+      rate: 71428
+    - id: 1613
+      rate: 71428
+    - id: 1614
+      rate: 71428
+    - id: 1615
+      rate: 71428
+    - id: 1616
+      rate: 71428
+    - id: 1617
+      rate: 71428
+    - id: 1618
+      rate: 71428
+    - id: 1619
+      rate: 71428
+    - id: 1620
+      rate: 71428
+    - id: 1621
+      rate: 71428
+    - id: 1622
+      rate: 142857
+  group: red_pouch_of_surprise
+- default: 1001
+  entries:
+    - id: 1001
+      rate: 1
+    - id: 1002
+      rate: 1
+    - id: 1004
+      rate: 1
+    - id: 1005
+      rate: 1
+    - id: 1007
+      rate: 1
+    - id: 1008
+      rate: 1
+    - id: 1009
+      rate: 1
+    - id: 1010
+      rate: 1
+    - id: 1011
+      rate: 1
+    - id: 1012
+      rate: 1
+    - id: 1013
+      rate: 1
+    - id: 1014
+      rate: 1
+    - id: 1015
+      rate: 1
+    - id: 1016
+      rate: 1
+    - id: 1018
+      rate: 1
+    - id: 1019
+      rate: 1
+    - id: 1020
+      rate: 1
+    - id: 1023
+      rate: 1
+    - id: 1024
+      rate: 1
+    - id: 1025
+      rate: 1
+    - id: 1026
+      rate: 1
+    - id: 1028
+      rate: 1
+    - id: 1029
+      rate: 1
+    - id: 1030
+      rate: 1
+    - id: 1031
+      rate: 1
+    - id: 1032
+      rate: 1
+    - id: 1033
+      rate: 1
+    - id: 1034
+      rate: 1
+    - id: 1035
+      rate: 1
+    - id: 1036
+      rate: 1
+    - id: 1037
+      rate: 1
+    - id: 1040
+      rate: 1
+    - id: 1041
+      rate: 1
+    - id: 1042
+      rate: 1
+    - id: 1044
+      rate: 1
+    - id: 1045
+      rate: 1
+    - id: 1047
+      rate: 1
+    - id: 1048
+      rate: 1
+    - id: 1049
+      rate: 1
+    - id: 1050
+      rate: 1
+    - id: 1051
+      rate: 1
+    - id: 1052
+      rate: 1
+    - id: 1053
+      rate: 1
+    - id: 1054
+      rate: 1
+    - id: 1055
+      rate: 1
+    - id: 1056
+      rate: 1
+    - id: 1057
+      rate: 1
+    - id: 1058
+      rate: 1
+    - id: 1060
+      rate: 1
+    - id: 1061
+      rate: 1
+    - id: 1062
+      rate: 1
+    - id: 1063
+      rate: 1
+    - id: 1064
+      rate: 1
+    - id: 1065
+      rate: 1
+    - id: 1066
+      rate: 1
+    - id: 1067
+      rate: 1
+    - id: 1068
+      rate: 1
+    - id: 1069
+      rate: 1
+    - id: 1070
+      rate: 1
+    - id: 1071
+      rate: 1
+    - id: 1072
+      rate: 1
+    - id: 1073
+      rate: 1
+    - id: 1074
+      rate: 1
+    - id: 1076
+      rate: 1
+    - id: 1077
+      rate: 1
+    - id: 1088
+      rate: 1
+    - id: 1089
+      rate: 1
+    - id: 1090
+      rate: 1
+    - id: 1091
+      rate: 1
+    - id: 1092
+      rate: 1
+    - id: 1093
+      rate: 1
+    - id: 1094
+      rate: 1
+    - id: 1095
+      rate: 1
+    - id: 1096
+      rate: 1
+    - id: 1097
+      rate: 1
+    - id: 1098
+      rate: 1
+    - id: 1099
+      rate: 1
+    - id: 1100
+      rate: 1
+    - id: 1101
+      rate: 1
+    - id: 1102
+      rate: 1
+    - id: 1103
+      rate: 1
+    - id: 1104
+      rate: 1
+    - id: 1105
+      rate: 1
+    - id: 1106
+      rate: 1
+    - id: 1107
+      rate: 1
+    - id: 1108
+      rate: 1
+    - id: 1109
+      rate: 1
+    - id: 1110
+      rate: 1
+    - id: 1111
+      rate: 1
+    - id: 1113
+      rate: 1
+    - id: 1114
+      rate: 1
+    - id: 1116
+      rate: 1
+    - id: 1117
+      rate: 1
+    - id: 1118
+      rate: 1
+    - id: 1119
+      rate: 1
+    - id: 1120
+      rate: 1
+    - id: 1121
+      rate: 1
+    - id: 1122
+      rate: 1
+    - id: 1123
+      rate: 1
+    - id: 1124
+      rate: 1
+    - id: 1125
+      rate: 1
+    - id: 1126
+      rate: 1
+    - id: 1127
+      rate: 1
+    - id: 1128
+      rate: 1
+    - id: 1129
+      rate: 1
+    - id: 1130
+      rate: 1
+    - id: 1131
+      rate: 1
+    - id: 1132
+      rate: 1
+    - id: 1133
+      rate: 1
+    - id: 1134
+      rate: 1
+    - id: 1135
+      rate: 1
+    - id: 1138
+      rate: 1
+    - id: 1139
+      rate: 1
+    - id: 1140
+      rate: 1
+    - id: 1141
+      rate: 1
+    - id: 1142
+      rate: 1
+    - id: 1143
+      rate: 1
+    - id: 1144
+      rate: 1
+    - id: 1145
+      rate: 1
+    - id: 1146
+      rate: 1
+    - id: 1148
+      rate: 1
+    - id: 1149
+      rate: 1
+    - id: 1151
+      rate: 1
+    - id: 1152
+      rate: 1
+    - id: 1153
+      rate: 1
+    - id: 1154
+      rate: 1
+    - id: 1155
+      rate: 1
+    - id: 1156
+      rate: 1
+    - id: 1158
+      rate: 1
+    - id: 1160
+      rate: 1
+    - id: 1161
+      rate: 1
+    - id: 1162
+      rate: 1
+    - id: 1163
+      rate: 1
+    - id: 1164
+      rate: 1
+    - id: 1165
+      rate: 1
+    - id: 1166
+      rate: 1
+    - id: 1167
+      rate: 1
+    - id: 1169
+      rate: 1
+    - id: 1170
+      rate: 1
+    - id: 1174
+      rate: 1
+    - id: 1175
+      rate: 1
+    - id: 1176
+      rate: 1
+    - id: 1177
+      rate: 1
+    - id: 1178
+      rate: 1
+    - id: 1179
+      rate: 1
+    - id: 1180
+      rate: 1
+    - id: 1183
+      rate: 1
+    - id: 1184
+      rate: 1
+    - id: 1185
+      rate: 1
+    - id: 1186
+      rate: 1
+    - id: 1188
+      rate: 1
+    - id: 1189
+      rate: 1
+    - id: 1191
+      rate: 1
+    - id: 1192
+      rate: 1
+    - id: 1193
+      rate: 1
+    - id: 1194
+      rate: 1
+    - id: 1195
+      rate: 1
+    - id: 1196
+      rate: 1
+    - id: 1197
+      rate: 1
+    - id: 1198
+      rate: 1
+    - id: 1199
+      rate: 1
+    - id: 1201
+      rate: 1
+    - id: 1202
+      rate: 1
+    - id: 1206
+      rate: 1
+    - id: 1207
+      rate: 1
+    - id: 1208
+      rate: 1
+    - id: 1209
+      rate: 1
+    - id: 1211
+      rate: 1
+    - id: 1212
+      rate: 1
+    - id: 1213
+      rate: 1
+    - id: 1214
+      rate: 1
+    - id: 1215
+      rate: 1
+    - id: 1216
+      rate: 1
+    - id: 1219
+      rate: 1
+    - id: 1248
+      rate: 1
+    - id: 1249
+      rate: 1
+    - id: 1250
+      rate: 1
+    - id: 1253
+      rate: 1
+    - id: 1254
+      rate: 1
+    - id: 1255
+      rate: 1
+    - id: 1256
+      rate: 1
+    - id: 1257
+      rate: 1
+    - id: 1258
+      rate: 1
+    - id: 1260
+      rate: 1
+    - id: 1261
+      rate: 1
+    - id: 1263
+      rate: 1
+    - id: 1264
+      rate: 1
+    - id: 1265
+      rate: 1
+    - id: 1266
+      rate: 1
+    - id: 1267
+      rate: 1
+    - id: 1269
+      rate: 1
+    - id: 1270
+      rate: 1
+    - id: 1271
+      rate: 1
+    - id: 1273
+      rate: 1
+    - id: 1274
+      rate: 1
+    - id: 1275
+      rate: 1
+    - id: 1276
+      rate: 1
+    - id: 1277
+      rate: 1
+    - id: 1278
+      rate: 1
+    - id: 1279
+      rate: 1
+    - id: 1280
+      rate: 1
+    - id: 1281
+      rate: 1
+    - id: 1282
+      rate: 1
+    - id: 1283
+      rate: 1
+    - id: 1285
+      rate: 1
+    - id: 1287
+      rate: 1
+    - id: 1290
+      rate: 1
+    - id: 1291
+      rate: 1
+    - id: 1292
+      rate: 1
+    - id: 1293
+      rate: 1
+    - id: 1294
+      rate: 1
+    - id: 1295
+      rate: 1
+    - id: 1296
+      rate: 1
+    - id: 1297
+      rate: 1
+    - id: 1298
+      rate: 1
+    - id: 1299
+      rate: 1
+    - id: 1300
+      rate: 1
+    - id: 1301
+      rate: 1
+    - id: 1302
+      rate: 1
+    - id: 1303
+      rate: 1
+    - id: 1304
+      rate: 1
+    - id: 1305
+      rate: 1
+    - id: 1306
+      rate: 1
+    - id: 1307
+      rate: 1
+    - id: 1308
+      rate: 1
+    - id: 1309
+      rate: 1
+    - id: 1310
+      rate: 1
+    - id: 1311
+      rate: 1
+    - id: 1313
+      rate: 1
+    - id: 1314
+      rate: 1
+    - id: 1315
+      rate: 1
+    - id: 1316
+      rate: 1
+    - id: 1317
+      rate: 1
+    - id: 1318
+      rate: 1
+    - id: 1319
+      rate: 1
+    - id: 1320
+      rate: 1
+    - id: 1321
+      rate: 1
+    - id: 1322
+      rate: 1
+    - id: 1323
+      rate: 1
+    - id: 1365
+      rate: 1
+    - id: 1366
+      rate: 1
+    - id: 1367
+      rate: 1
+    - id: 1368
+      rate: 1
+    - id: 1369
+      rate: 1
+    - id: 1370
+      rate: 1
+    - id: 1371
+      rate: 1
+    - id: 1372
+      rate: 1
+    - id: 1374
+      rate: 1
+    - id: 1375
+      rate: 1
+    - id: 1376
+      rate: 1
+    - id: 1377
+      rate: 1
+    - id: 1378
+      rate: 1
+    - id: 1379
+      rate: 1
+    - id: 1380
+      rate: 1
+    - id: 1381
+      rate: 1
+    - id: 1382
+      rate: 1
+    - id: 1383
+      rate: 1
+    - id: 1384
+      rate: 1
+    - id: 1385
+      rate: 1
+    - id: 1386
+      rate: 1
+    - id: 1387
+      rate: 1
+    - id: 1388
+      rate: 1
+    - id: 1390
+      rate: 1
+    - id: 1391
+      rate: 1
+    - id: 1392
+      rate: 1
+    - id: 1400
+      rate: 1
+    - id: 1401
+      rate: 1
+    - id: 1402
+      rate: 1
+    - id: 1403
+      rate: 1
+    - id: 1404
+      rate: 1
+    - id: 1405
+      rate: 1
+    - id: 1406
+      rate: 1
+    - id: 1408
+      rate: 1
+    - id: 1409
+      rate: 1
+    - id: 1410
+      rate: 1
+    - id: 1412
+      rate: 1
+    - id: 1413
+      rate: 1
+    - id: 1415
+      rate: 1
+    - id: 1416
+      rate: 1
+    - id: 1417
+      rate: 1
+    - id: 1493
+      rate: 1
+    - id: 1494
+      rate: 1
+    - id: 1495
+      rate: 1
+    - id: 1497
+      rate: 1
+    - id: 1498
+      rate: 1
+    - id: 1499
+      rate: 1
+    - id: 1500
+      rate: 1
+    - id: 1503
+      rate: 1
+    - id: 1504
+      rate: 1
+    - id: 1505
+      rate: 1
+    - id: 1506
+      rate: 1
+    - id: 1507
+      rate: 1
+    - id: 1508
+      rate: 1
+    - id: 1509
+      rate: 1
+    - id: 1510
+      rate: 1
+    - id: 1512
+      rate: 1
+    - id: 1513
+      rate: 1
+    - id: 1514
+      rate: 1
+    - id: 1515
+      rate: 1
+    - id: 1516
+      rate: 1
+    - id: 1517
+      rate: 1
+    - id: 1519
+      rate: 1
+    - id: 1520
+      rate: 1
+    - id: 1582
+      rate: 1
+    - id: 1584
+      rate: 1
+    - id: 1585
+      rate: 1
+    - id: 1586
+      rate: 1
+    - id: 1587
+      rate: 1
+    - id: 1588
+      rate: 1
+    - id: 1609
+      rate: 1
+    - id: 1613
+      rate: 1
+    - id: 1614
+      rate: 1
+    - id: 1615
+      rate: 1
+    - id: 1616
+      rate: 1
+    - id: 1617
+      rate: 1
+    - id: 1618
+      rate: 1
+    - id: 1619
+      rate: 1
+    - id: 1620
+      rate: 1
+    - id: 1621
+      rate: 1
+    - id: 1622
+      rate: 1
+    - id: 1625
+      rate: 1
+    - id: 1626
+      rate: 1
+    - id: 1627
+      rate: 1
+    - id: 1628
+      rate: 1
+    - id: 1629
+      rate: 1
+    - id: 1631
+      rate: 1
+    - id: 1632
+      rate: 1
+    - id: 1633
+      rate: 1
+    - id: 1664
+      rate: 1
+    - id: 1665
+      rate: 1
+    - id: 1666
+      rate: 1
+    - id: 1667
+      rate: 1
+    - id: 1668
+      rate: 1
+    - id: 1670
+      rate: 1
+    - id: 1671
+      rate: 1
+    - id: 1672
+      rate: 1
+    - id: 1673
+      rate: 1
+    - id: 1676
+      rate: 1
+    - id: 1677
+      rate: 1
+    - id: 1678
+      rate: 1
+    - id: 1679
+      rate: 1
+    - id: 1680
+      rate: 1
+    - id: 1686
+      rate: 1
+    - id: 1687
+      rate: 1
+  group: taekwon_mission

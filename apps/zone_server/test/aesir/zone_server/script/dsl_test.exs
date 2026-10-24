@@ -146,8 +146,13 @@ defmodule Aesir.ZoneServer.Script.DslTest do
 
       refute_received {:send, _channel, _packet}
 
-      assert {:script_end, %{status: {:error, :not_throwable}}} =
-               catch_throw(Dsl.heal(ctx, hp: 10))
+      # Plain `heal` is not redirected to the target: it heals the thrower.
+      healed = Dsl.heal(ctx, hp: 10)
+
+      assert healed.game_state.stats.current_state.hp ==
+               ctx.game_state.stats.current_state.hp + 10
+
+      assert healed.session_effects == ctx.session_effects
     end
   end
 
@@ -1311,6 +1316,31 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.insert_comma(ctx, 1_000_000) == "1,000,000"
       assert Dsl.insert_comma(ctx, 1_234_567) == "1,234,567"
       assert Dsl.insert_comma(ctx, -1000) == "-1,000"
+    end
+  end
+
+  describe "summon_mob/2 with a negative id (a random group)" do
+    test "draws every instance from the group `-1 - id`" do
+      test_pid = self()
+
+      stub(Coordinator, :summon_mob, fn _map, mob_id, _x, _y, _opts ->
+        send(test_pid, {:summoned, mob_id})
+        {:ok, 1}
+      end)
+
+      ctx = Dsl.summon_mob(build_ctx(), mob_id: -1, amount: 3)
+
+      assert ctx.status == :ok
+      for _ <- 1..3, do: assert_received({:summoned, mob_id} when mob_id > 0)
+      refute_received {:summoned, _}
+    end
+
+    test "an unknown group spawns nothing and the script goes on" do
+      stub(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, _opts ->
+        flunk("an unknown group must not spawn")
+      end)
+
+      assert %{status: :ok} = Dsl.summon_mob(build_ctx(), mob_id: -99)
     end
   end
 

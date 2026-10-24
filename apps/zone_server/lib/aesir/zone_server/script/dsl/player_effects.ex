@@ -62,6 +62,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
 
   A thrown potion's script (`{:potion_pitch, item_id}` source) heals no one: it
   stages the rolled amounts as `{:potion_pitch, :flat, hp, sp}` for the thrower.
+  Its plain `heal`, unlike these two, is not redirected: it heals the thrower.
   """
   @spec item_heal(Ctx.t(), keyword()) :: Ctx.t()
   def item_heal(%Ctx{source: {:potion_pitch, _item_id}} = ctx, opts),
@@ -98,18 +99,26 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
     do: stage_session_effect(ctx, {:potion_pitch, kind, amount(opts, :hp), amount(opts, :sp)})
 
   defp vitals(%Ctx{status: {:error, _}} = ctx, _op), do: ctx
-  defp vitals(%Ctx{source: {:potion_pitch, _}} = ctx, _op), do: Ctx.halt(ctx, :not_throwable)
+
+  # `heal` is not redirected to the target of a thrown potion: it heals the
+  # thrower, whose state the throw commits (no client push here).
+  defp vitals(%Ctx{source: {:potion_pitch, _}} = ctx, op) do
+    {game_state, damage} = ScriptVitals.apply(op.(), ctx.game_state)
+    stage_script_damage(%{ctx | game_state: game_state}, damage)
+  end
+
   defp vitals(%Ctx{game_state: nil} = ctx, _op), do: Ctx.halt(ctx, :no_player)
 
   defp vitals(%Ctx{source: {:item, _}} = ctx, op) do
     {game_state, damage} = ScriptVitals.apply(op.(), ctx.game_state)
     ScriptVitals.sync(ctx.connection_pid, ctx.game_state, game_state)
-    ctx = %{ctx | game_state: game_state}
-
-    if damage, do: stage_session_effect(ctx, {:script_damage, damage}), else: ctx
+    stage_script_damage(%{ctx | game_state: game_state}, damage)
   end
 
   defp vitals(%Ctx{} = ctx, op), do: apply_op(ctx, op.())
+
+  defp stage_script_damage(ctx, nil), do: ctx
+  defp stage_script_damage(ctx, damage), do: stage_session_effect(ctx, {:script_damage, damage})
 
   defp amount(opts, key), do: opts |> Keyword.get(key, 0) |> roll()
 

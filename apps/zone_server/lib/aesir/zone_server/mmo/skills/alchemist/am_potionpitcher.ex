@@ -115,18 +115,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcher do
          :ok <- living_recipient(target),
          index when not is_nil(index) <- ItemContainer.stackable_index(caster.inventory, item_id),
          {:ok, recipient} <- recipient(caster, target),
-         {:ok, potion} <- read_potion(caster, item_id),
+         {:ok, potion, thrower, damages} <- run_script(caster, item_id),
          {:ok, inventory, change} <- ItemContainer.remove(caster.inventory, index, 1) do
       {hp, sp} = PotionRecovery.player_throw(PotionRecovery.thrower(caster), recipient, potion)
 
+      # The script's own `heal` heals the thrower, so the throw commits the
+      # state it left (and settles any HP damage it dealt after the commit).
       updated = %{
-        caster
+        thrower
         | inventory: inventory,
           pending_inventory_persist:
             caster.pending_inventory_persist ++ [{caster.inventory, inventory, change}]
       }
 
-      {:deferred, updated, {:potion_delivery, recipient.ref, {:potion, hp, sp}}}
+      {:deferred, updated, delivery(recipient.ref, {:potion, hp, sp}, damages)}
     else
       :recipient_dead -> {:skipped, caster, :target_dead}
       nil -> {:error, :missing_potion}
@@ -162,6 +164,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcher do
   @spec read_potion(PlayerState.t(), pos_integer()) ::
           {:ok, PotionRecovery.potion()} | {:error, term()}
   def read_potion(%PlayerState{} = caster, item_id) do
+    with {:ok, potion, _thrower, _damages} <- run_script(caster, item_id), do: {:ok, potion}
+  end
+
+  defp delivery(ref, potion, []), do: {:potion_delivery, ref, potion}
+  defp delivery(ref, potion, damages), do: {:potion_delivery, ref, potion, damages}
+
+  defp run_script(%PlayerState{} = caster, item_id) do
     ctx = %Ctx{
       char_id: caster.character_id,
       account_id: caster.account_id,
@@ -174,8 +183,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcher do
       %Ctx{status: {:error, _reason} = error} ->
         error
 
-      %Ctx{session_effects: effects} ->
-        {:ok, Enum.reduce(effects, %{hp: 0, sp: 0, per_hp: 0, per_sp: 0}, &record/2)}
+      %Ctx{session_effects: effects, game_state: thrower} ->
+        potion = Enum.reduce(effects, %{hp: 0, sp: 0, per_hp: 0, per_sp: 0}, &record/2)
+        {:ok, potion, thrower, for({:script_damage, damage} <- effects, do: damage)}
     end
   end
 

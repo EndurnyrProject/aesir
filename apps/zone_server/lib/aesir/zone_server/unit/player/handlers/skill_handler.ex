@@ -1078,22 +1078,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
          } = descriptor,
          locked,
          _expected_id
-       ) do
-    with {:ok, charged} <- Interpreter.settle_deferred(game_state, descriptor),
-         {:ok, settled} <- settle_potion_inventory(charged) do
-      committed = commit_cast(state, settled, descriptor.skill_id, descriptor.level)
-      broadcast_skill_use(settled, descriptor.skill_id, descriptor.level, descriptor.target)
+       ),
+       do:
+         resolve_potion(state, game_state, descriptor, target_ref, potion_descriptor, [], locked)
 
-      committed
-      |> deliver_potion(target_ref, potion_descriptor)
-      |> maybe_resume_lock(locked)
-    else
-      {:error, reason} ->
-        Logger.error("Potion Pitcher settlement failed: #{inspect(reason)}")
-        report_cast_failure(descriptor.skill_id, game_state.character_id, reason)
-        maybe_resume_lock(state, locked)
-    end
-  end
+  defp resolve_deferred(
+         state,
+         game_state,
+         %Interpreter.Deferred{
+           effect: {:potion_delivery, target_ref, potion_descriptor, thrower_damages}
+         } = descriptor,
+         locked,
+         _expected_id
+       ),
+       do:
+         resolve_potion(
+           state,
+           game_state,
+           descriptor,
+           target_ref,
+           potion_descriptor,
+           thrower_damages,
+           locked
+         )
 
   defp resolve_deferred(
          state,
@@ -1318,6 +1325,39 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       updated
     end)
     |> HomunculusCommandHandler.publish_private_state_if_dirty()
+  end
+
+  defp resolve_potion(
+         state,
+         game_state,
+         descriptor,
+         target_ref,
+         potion_descriptor,
+         thrower_damages,
+         locked
+       ) do
+    with {:ok, charged} <- Interpreter.settle_deferred(game_state, descriptor),
+         {:ok, settled} <- settle_potion_inventory(charged) do
+      committed = commit_cast(state, settled, descriptor.skill_id, descriptor.level)
+      broadcast_skill_use(settled, descriptor.skill_id, descriptor.level, descriptor.target)
+
+      committed
+      |> deliver_potion(target_ref, potion_descriptor)
+      |> settle_thrower_damages(thrower_damages)
+      |> maybe_resume_lock(locked)
+    else
+      {:error, reason} ->
+        Logger.error("Potion Pitcher settlement failed: #{inspect(reason)}")
+        report_cast_failure(descriptor.skill_id, game_state.character_id, reason)
+        maybe_resume_lock(state, locked)
+    end
+  end
+
+  defp settle_thrower_damages(state, damages) do
+    Enum.reduce(damages, state, fn damage, acc ->
+      {:noreply, settled} = HealthHandler.settle_script_damage(damage, acc)
+      settled
+    end)
   end
 
   defp deliver_potion(state, {:player, target_id}, descriptor) do

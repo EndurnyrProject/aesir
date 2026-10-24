@@ -3,7 +3,7 @@
 # reproduce. Keyed by item id, merged over the generated on_use at load time.
 # Never touched by `mix aesir.import.items`.
 - id: 604
-  on_use: "summon_random_mob(ctx, aggressive: true)"
+  on_use: "summon_mob(ctx, mob_id: -1, aggressive: true)"
 - id: 618
   on_use: |
     case class(ctx) do

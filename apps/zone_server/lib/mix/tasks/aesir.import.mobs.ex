@@ -2,8 +2,9 @@ defmodule Mix.Tasks.Aesir.Import.Mobs do
   @shortdoc "Imports the selected rAthena mob DB into mode-scoped YAML"
   @moduledoc """
   Converts canonical `db/mob_db.yml` plus its selected mode imports into
-  `apps/zone_server/priv/db/<mode>/mobs/mobs.yml` and the equipment-polymorph
-  pool under `mob_summon/polymorph.yml`.
+  `apps/zone_server/priv/db/<mode>/mobs/mobs.yml` and the random summon groups
+  (`MOBG_*`: Dead Branch, Poring Box, equipment polymorph, ...) under
+  `mob_summon/groups.yml`.
 
       mix aesir.import.mobs [<rathena_root>] [--mode re|pre-re]
 
@@ -27,34 +28,40 @@ defmodule Mix.Tasks.Aesir.Import.Mobs do
     out = Path.join(out_dir, "mobs.yml")
     File.write!(out, yaml)
     Mix.shell().info("mobs: #{length(definitions)} -> #{out}")
-    import_polymorph_pool(rathena, mode, definitions)
+    import_summon_groups(rathena, mode, definitions)
   end
 
-  defp import_polymorph_pool(rathena, mode, definitions) do
+  defp import_summon_groups(rathena, mode, definitions) do
     names = Map.new(definitions, &{&1.aegis_name, &1.id})
 
     groups =
       [rathena, "db", "mob_summon.yml"]
       |> Path.join()
       |> Import.read_mode_filtered!(mode)
-      |> Enum.filter(&(String.downcase(&1["Group"]) == "branch_of_dead_tree"))
+      |> Enum.group_by(&String.downcase(&1["Group"]))
+      |> Enum.sort()
+      |> Enum.map(fn {name, rows} -> summon_group(name, rows, names) end)
 
+    output = Import.path("mob_summon/groups.yml", mode)
+    File.mkdir_p!(Path.dirname(output))
+    File.write!(output, Ymlr.document!(groups))
+    Mix.shell().info("summon groups: #{length(groups)} -> #{output}")
+  end
+
+  defp summon_group(name, rows, names) do
     {default, entries} =
-      Enum.reduce(groups, {nil, %{}}, fn group, {default, entries} ->
-        default = if group["Default"], do: Map.fetch!(names, group["Default"]), else: default
-        entries = Enum.reduce(Map.get(group, "Summon", []), entries, &put_entry(&1, &2, names))
+      Enum.reduce(rows, {nil, %{}}, fn row, {default, entries} ->
+        default = if row["Default"], do: Map.fetch!(names, row["Default"]), else: default
+        entries = Enum.reduce(Map.get(row, "Summon", []), entries, &put_entry(&1, &2, names))
         {default, entries}
       end)
 
-    if default == nil, do: Mix.raise("missing polymorph pool default")
+    if default == nil, do: Mix.raise("missing default for summon group #{name}")
 
     entries =
       entries |> Enum.sort() |> Enum.map(fn {id, rate} -> %{"id" => id, "rate" => rate} end)
 
-    output = Import.path("mob_summon/polymorph.yml", mode)
-    File.mkdir_p!(Path.dirname(output))
-    File.write!(output, Ymlr.document!([%{"default" => default, "entries" => entries}]))
-    Mix.shell().info("polymorph: #{length(entries)} -> #{output}")
+    %{"group" => name, "default" => default, "entries" => entries}
   end
 
   defp put_entry(entry, acc, names) do

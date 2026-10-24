@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.ScriptCells
   alias Aesir.ZoneServer.Mmo.MobManagement
+  alias Aesir.ZoneServer.Mmo.MobManagement.SummonGroups
   alias Aesir.ZoneServer.Mmo.WaitingRoom
   alias Aesir.ZoneServer.Npc.Events, as: NpcEvents
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
@@ -39,7 +40,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   Spawns a monster on the player's current map, registered so it is attackable.
 
   `opts` accepts `:mob_id` or `:mob_name` (one is required; `:mob_name` is the
-  AEGIS name, matching `MobManagement.get_mob_by_name/1`), `:at` as a `{x, y}`
+  AEGIS name, matching `MobManagement.get_mob_by_name/1`; a negative `:mob_id`
+  `-1 - type` draws every instance from random group `type`, the `MOBG_*`
+  index: `-1` the Dead Branch group), `:at` as a `{x, y}`
   tuple or `:random` for a random walkable cell (defaults to the player's
   current position), `:map` to spawn on an explicit map instead of the
   player's (rAthena `monster "map",...`; with `:map`, `:at` defaults to
@@ -1060,6 +1063,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
 
   defp resolve_mob(opts) do
     case {Keyword.get(opts, :mob_id), Keyword.get(opts, :mob_name)} do
+      {id, _} when is_integer(id) and id < 0 -> {:ok, %{id: {:random, -1 - id}}}
       {id, _} when is_integer(id) -> MobManagement.get_mob_by_id(id)
       {_, name} when is_binary(name) -> MobManagement.get_mob_by_name(name)
       _ -> {:error, :mob_not_found}
@@ -1096,7 +1100,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
     amount = Keyword.get(opts, :amount, 1)
 
     Enum.reduce(1..amount//1, ctx, fn _n, acc ->
-      _result = Coordinator.summon_mob(map_name, mob_id, x, y, summon_opts(opts))
+      _result = spawn_instance(mob_id, &Coordinator.summon_mob(map_name, &1, x, y, &2), opts)
       acc
     end)
   end
@@ -1127,10 +1131,20 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
     amount = Keyword.get(opts, :amount, 1)
 
     Enum.reduce(1..amount//1, ctx, fn _n, acc ->
-      _result = Coordinator.summon_mob_area(map_name, mob_id, area, summon_opts(opts))
+      _result = spawn_instance(mob_id, &Coordinator.summon_mob_area(map_name, &1, area, &2), opts)
       acc
     end)
   end
+
+  # A random group draws its monster per instance; an empty draw spawns nothing.
+  defp spawn_instance({:random, type}, spawn, opts) do
+    case SummonGroups.pick(type) do
+      0 -> {:error, :mob_not_found}
+      mob_id -> spawn.(mob_id, summon_opts(opts))
+    end
+  end
+
+  defp spawn_instance(mob_id, spawn, opts), do: spawn.(mob_id, summon_opts(opts))
 
   # The coordinator reads a non-positive coordinate as "random walkable cell"
   # (rAthena mob_once_spawn semantics), so :random encodes as {0, 0}.

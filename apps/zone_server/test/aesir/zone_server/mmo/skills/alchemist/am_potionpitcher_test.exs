@@ -182,6 +182,41 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcherTest do
              )
   end
 
+  describe "a potion script's plain heal" do
+    setup do
+      on_exit(&ScriptCompiler.compile_all!/0)
+    end
+
+    defp throw_with_script(source, definition, hp) do
+      ScriptCompiler.compile_all!([
+        struct(Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition, id: 501, on_use: source)
+      ])
+
+      state = put_in(caster(501, learned: %{231 => 5}).stats.current_state.hp, hp)
+      AmPotionpitcher.cast(state, :self, 1, definition)
+    end
+
+    test "heals the thrower, not the target", %{definition: definition} do
+      source = "ctx |> heal(hp: 20) |> item_heal(hp: 45..45)"
+
+      assert {:deferred, updated, {:potion_delivery, {:player, 10}, {:potion, hp, 0}}} =
+               throw_with_script(source, definition, 50)
+
+      assert updated.stats.current_state.hp == 70
+      assert hp > 0
+    end
+
+    test "carries the HP damage a negative heal dealt to the throw's settlement",
+         %{definition: definition} do
+      source = "ctx |> heal(hp: -10) |> item_heal(hp: 45..45)"
+
+      assert {:deferred, updated, {:potion_delivery, {:player, 10}, {:potion, _, 0}, [{10, 40}]}} =
+               throw_with_script(source, definition, 50)
+
+      assert updated.stats.current_state.hp == 40
+    end
+  end
+
   test "reading a potion's script heals no one" do
     state = caster(501)
 
