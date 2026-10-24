@@ -372,6 +372,34 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
     end_player_session(session)
   end
 
+  # The reference has no cast-begin row for Resurrection, so a companion that
+  # is missing, vaporized or still alive fails inside the effect: the SP and
+  # the cooldown are spent and the owner sees the bare failure.
+  test "Resurrection on a missing, vaporized or living companion fails paid" do
+    for scenario <- [:missing, :rested, :living] do
+      session = resurrection_session(scenario)
+      before = PlayerSession.get_state(session.pid)
+      row_before = Repo.get_by(Homunculus, character_id: before.game_state.character_id)
+      clear_packet_inbox()
+
+      cast(session.pid, @resurrection, 1)
+      casting = eventually_state(session.pid, & &1.game_state.casting)
+      send(session.pid, {:skill, {:cast_complete, casting.game_state.casting.token}})
+
+      after_state = PlayerSession.get_state(session.pid)
+
+      assert_settlement_paid(after_state, before, row_before, @resurrection, 1)
+      refute_packet_sent(SkillEffect)
+
+      assert_packet_sent_with(SkillCastFailed, fn packet ->
+        assert packet.skill_id == @resurrection
+        assert packet.reason == :SKILL_CAST_FAILURE_REASON_UNSPECIFIED
+      end)
+
+      end_player_session(session)
+    end
+  end
+
   @tag integration_pre_re: false
   test "every Resurrection rank settles only its matching timer with ranked HP, SP, and cooldown" do
     costs = [74, 68, 62, 56, 50]
@@ -419,6 +447,14 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
     clear_packet_inbox()
     session
   end
+
+  defp resurrection_session(:missing), do: start_alchemist(nil)
+
+  defp resurrection_session(:rested) do
+    start_alchemist(nil, nil, insert_homunculus: :rested)
+  end
+
+  defp resurrection_session(:living), do: active_session()
 
   defp assert_real_flow_rejected(session, skill_id, level, reply \\ nil) do
     before = PlayerSession.get_state(session.pid)
@@ -490,7 +526,13 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
     character = insert_alchemist()
     if item1, do: seed_inventory(character.id, item1)
     if item2, do: seed_inventory(character.id, item2)
-    if Keyword.get(opts, :insert_homunculus) == :dead, do: insert_dead_homunculus(character.id)
+
+    case Keyword.get(opts, :insert_homunculus) do
+      :dead -> insert_dead_homunculus(character.id)
+      :rested -> insert_rested_homunculus(character.id)
+      nil -> :ok
+    end
+
     character = Repo.preload(character, :homunculus)
     session = start_player_session(character: character, map_name: @map, position: {150, 150})
     on_exit(fn -> if Process.alive?(session.pid), do: end_player_session(session) end)
@@ -547,6 +589,25 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
         name: "Lif",
         lifecycle: "dead",
         hp: 0,
+        max_hp: 1_000,
+        sp: 40,
+        max_sp: 40,
+        active_remaining_ms: 0
+      })
+      |> Repo.insert()
+
+    row
+  end
+
+  defp insert_rested_homunculus(character_id) do
+    {:ok, row} =
+      %Homunculus{}
+      |> Homunculus.changeset(%{
+        character_id: character_id,
+        class_id: 6001,
+        name: "Lif",
+        lifecycle: "rested",
+        hp: 1_000,
         max_hp: 1_000,
         sp: 40,
         max_sp: 40,
