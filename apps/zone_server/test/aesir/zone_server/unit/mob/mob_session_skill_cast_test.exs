@@ -59,7 +59,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     Registry.register_module(AllowedSkill)
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     stub(StatusStorage, :has_status?, fn _unit_type, _unit_id, _status -> false end)
-    stub(StatusInterpreter, :concealed?, fn _unit_type, _unit_id -> false end)
 
     stub(UnitRegistry, :get_unit, fn
       :player, @target_id -> {:ok, {PlayerState, living_player_state(), nil}}

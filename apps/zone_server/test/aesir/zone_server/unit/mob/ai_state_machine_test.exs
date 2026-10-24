@@ -1057,8 +1057,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     end
 
     test "a boss in combat keeps a target that concealed itself" do
-      stub(Interpreter, :concealed?, fn :player, 2 -> true end)
-
       stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
         {:ok, {100, 100, "prontera"}}
       end)

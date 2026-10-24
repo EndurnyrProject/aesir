@@ -33,7 +33,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.Critical
-  alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
@@ -1803,107 +1802,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   defp attacker_level(nil), do: nil
   defp attacker_level(%{progression: %{base_level: base_level}}), do: base_level
-
-  @doc """
-  Applies critical hit calculation to final damage without a target race bonus.
-  """
-  @spec apply_critical_hit(integer(), combatant()) :: {:ok, CriticalHits.critical_result()}
-  def apply_critical_hit(base_damage, attacker),
-    do: apply_critical_hit_with_rate(base_damage, attacker, critical_rate(attacker, nil, 0))
-
-  @doc """
-  Applies critical hit calculation with equipment chance keyed on the defender's race.
-  """
-  @spec apply_critical_hit(integer(), combatant(), combatant()) ::
-          {:ok, CriticalHits.critical_result()}
-  def apply_critical_hit(base_damage, attacker, defender),
-    do: apply_critical_hit(base_damage, attacker, defender, 0)
-
-  @doc "Applies critical hit calculation with an additional flat chance percentage."
-  @spec apply_critical_hit(integer(), combatant(), combatant(), integer()) ::
-          {:ok, CriticalHits.critical_result()}
-  def apply_critical_hit(base_damage, attacker, defender, additional_rate) do
-    apply_critical_hit_with_rate(
-      base_damage,
-      attacker,
-      critical_rate(attacker, defender, additional_rate)
-    )
-  end
-
-  @doc "Rolls the attacker's critical against a defender using the damage calculator's rate."
-  @spec roll_critical?(combatant(), combatant(), integer()) :: boolean()
-  def roll_critical?(attacker, defender, additional_rate \\ 0) do
-    CriticalHits.is_critical_hit?(critical_rate(attacker, defender, additional_rate))
-  end
-
-  defp critical_rate(attacker, defender, additional_rate) do
-    base_rate =
-      computed_critical_rate(attacker) ||
-        CriticalHits.calculate_critical_rate(%{
-          luk: attacker.base_stats.luk,
-          base_level: Map.get(Map.get(attacker, :progression) || %{}, :base_level, 0)
-        })
-
-    race_rate =
-      if is_nil(defender),
-        do: 0,
-        else: EquipmentBonuses.critical_add_race_rate(attacker, defender)
-
-    CriticalHits.calculate_critical_rate(%{
-      critical: base_rate + (race_rate + additional_rate) * 10
-    })
-  end
-
-  defp apply_critical_hit_with_rate(base_damage, attacker, rate) do
-    attacker_for_crit = %{
-      luk: attacker.base_stats.luk,
-      critical: rate,
-      combat_stats: attacker.combat_stats,
-      equip_modifiers: attacker.equip_modifiers
-    }
-
-    critical_result = CriticalHits.calculate_critical_hit(attacker_for_crit, base_damage)
-
-    Logger.debug(
-      "Critical hit check: base_damage=#{base_damage}, final_damage=#{critical_result.damage}#{if critical_result.is_critical, do: " (CRITICAL)", else: ""}"
-    )
-
-    {:ok, critical_result}
-  end
-
-  @doc """
-  Applies the Renewal critical multiplier unconditionally, flagging the hit as a
-  critical without rolling.
-
-  For effects that deal a guaranteed critical regardless of the attacker's crit
-  rate (Auto Counter's counter strike). Reuses `CriticalHits.apply_critical_damage/2`
-  so the CRate and equipment critical-damage channels stay identical to a rolled
-  critical.
-  """
-  @spec apply_forced_critical_hit(integer(), combatant()) :: {:ok, CriticalHits.critical_result()}
-  def apply_forced_critical_hit(base_damage, attacker) do
-    attacker_for_crit = %{
-      combat_stats: attacker.combat_stats,
-      equip_modifiers: attacker.equip_modifiers
-    }
-
-    {:ok,
-     %{
-       damage: CriticalHits.apply_critical_damage(base_damage, attacker_for_crit),
-       is_critical: true,
-       critical_rate: 1_000
-     }}
-  end
-
-  defp computed_critical_rate(%{combat_stats: %{critical_rate: critical_rate}})
-       when is_integer(critical_rate),
-       do: critical_rate
-
-  defp computed_critical_rate(%{combat_stats: %{critical: critical}})
-       when is_integer(critical),
-       do: critical * 10
-
-  defp computed_critical_rate(_attacker), do: nil
 
   # Private helper functions
 

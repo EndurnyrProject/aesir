@@ -16,115 +16,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
-  alias Aesir.ZoneServer.Mmo.WeaponTypes
 
   @typedoc "A percent (or per-mille, depending on family) sum read from equip_modifiers."
   @type rate :: integer()
-
-  @doc """
-  Physical attack-side rate sums keyed on the defender's traits.
-
-  Race, secondary monster groups, and class share one family group per renewal
-  (`race_class`). `bAddEle`
-  keys on the defender's own defense element (`defender.element`), not the
-  attack's element, so `attack_element` is accepted for call-site symmetry
-  with `damage_taken_rates/3` but is not read here. `attacker_modifiers` is
-  the attacker's folded status-effect map; its `{:addele, element}` entries sum
-  into the element family with equipment.
-  """
-  @spec attack_rates(Combatant.t(), Combatant.t(), pos_integer() | nil, atom(), map()) :: %{
-          race_class: rate(),
-          element: rate(),
-          size: rate(),
-          skill: rate()
-        }
-  def attack_rates(
-        %Combatant{} = attacker,
-        %Combatant{} = defender,
-        skill_id,
-        _attack_element,
-        attacker_modifiers \\ %{}
-      ) do
-    defender_element = element_atom(defender.element)
-
-    %{
-      race_class:
-        read(attacker, :addrace, defender.race) + read(attacker, :addclass, defender.class) +
-          add_damage_class_rate(attacker, defender) +
-          read_race2(attacker, :addrace2, defender.race2),
-      element:
-        read(attacker, :addele, defender_element) +
-          status_read(attacker_modifiers, :addele, defender_element),
-      size: read(attacker, :addsize, defender.size),
-      skill: skill_rate(attacker, :skill_atk, skill_id)
-    }
-  end
 
   # Attacker status modifiers keyed like the equipment families (e.g. Basilica's
   # `{:addele, :undead}`), summed with the equipment value into one family.
   defp status_read(modifiers, family, param),
     do: Map.get(modifiers, {family, param}, 0) + Map.get(modifiers, {family, :all}, 0)
-
-  @doc """
-  Damage-taken-side rate sums keyed on the attacker's traits, including
-  secondary monster groups, read off the defender's own equipment.
-
-  `status_modifiers` is the defender's folded status-effect modifier map; its
-  element/race resist keys (`:subele_holy`, `:subrace_demon`) sum into the same
-  families equipment feeds, so a status resist and an equipment resist for the
-  same element/race stack. Faith (`CR_TRUST`) feeds the element family the same
-  way, straight off the defender's precomputed `faith_level` rather than a
-  status modifier — the same precomputed-combatant-field approach as
-  Dragonology's `RaceModifiers.dragonology_resist_rate/2`, though Faith is read
-  here so both damage classes get it from one place. Mobs and callers without
-  statuses pass `%{}` and read equipment only.
-
-  The element resist family has two equipment channels that stack: `:subele`
-  keyed on the incoming attack's element, and `:sub_def_ele` keyed on the
-  attacker's own defensive element (its armor/innate element). Both read off
-  the defender's equipment.
-
-  The `skill` family is the defender's per-skill damage reduction
-  (`{:sub_skill, skill_id}`), read exactly for the incoming `skill_id` (no
-  catch-all): a normal attack (`skill_id == nil`) reduces nothing.
-
-  The sub-resist families additionally carry trigger-condition variants
-  (`bonus3 bSubEle,Ele_Fire,3,BF_MAGIC`), which apply only to attacks matching
-  their flag. `attack_flag` describes the incoming hit for those; the default
-  `0` carries no trigger information, so flagged entries stay inert for callers
-  that cannot classify the attack.
-  """
-  @spec damage_taken_rates(
-          Combatant.t(),
-          Combatant.t(),
-          atom(),
-          map(),
-          pos_integer() | nil,
-          BattleFlags.flag()
-        ) :: %{
-          race_class: rate(),
-          element: rate(),
-          size: rate(),
-          skill: rate()
-        }
-  def damage_taken_rates(
-        %Combatant{} = defender,
-        %Combatant{} = attacker,
-        attack_element,
-        status_modifiers \\ %{},
-        skill_id \\ nil,
-        attack_flag \\ 0
-      ) do
-    rates =
-      defense_rates(defender, attacker, attack_element, status_modifiers, skill_id, attack_flag)
-
-    %{
-      race_class: rates.race + rates.race2 + rates.class,
-      element: rates.element,
-      size: rates.size,
-      skill: rates.skill
-    }
-  end
 
   @doc """
   Reads separate magic defense channels without merging race, class and
@@ -467,23 +366,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   end
 
   @doc """
-  Percent damage bonus the attacker's equipment grants to long-range physical
-  attacks (`bLongAtkRate`).
-
-  The bonus belongs to the long-attack damage class, so it is read only when the
-  attacker swings a ranged weapon; melee attackers — and every mob, which
-  carries no equipment — read zero.
-  """
-  @spec long_atk_rate(Combatant.t()) :: rate()
-  def long_atk_rate(%Combatant{} = attacker) do
-    if attacker.weapon |> Map.get(:type) |> WeaponTypes.is_ranged?() do
-      Map.get(attacker.equip_modifiers, :long_atk_rate, 0)
-    else
-      0
-    end
-  end
-
-  @doc """
   Signed percent bonus the attacker's equipment grants to non-critical physical
   damage (`bNonCritAtkRate`). Each mode's physical recipe decides where, and
   whether, a negative value applies. Mobs carry no equipment and read zero.
@@ -500,24 +382,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   @spec crit_def_rate(Combatant.t()) :: rate()
   def crit_def_rate(%Combatant{} = defender),
     do: Map.get(defender.equip_modifiers, :crit_def_rate, 0)
-
-  @doc """
-  Percent damage bonus the attacker's equipment grants to close-range physical
-  attacks (`bShortAtkRate`).
-
-  The exact counterpart of `long_atk_rate/1`: the bonus belongs to the melee
-  damage class, so it is read only when the attacker swings a non-ranged
-  weapon. Ranged attackers — and every mob, which carries no equipment — read
-  zero.
-  """
-  @spec short_atk_rate(Combatant.t()) :: rate()
-  def short_atk_rate(%Combatant{} = attacker) do
-    if attacker.weapon |> Map.get(:type) |> WeaponTypes.is_ranged?() do
-      0
-    else
-      Map.get(attacker.equip_modifiers, :short_atk_rate, 0)
-    end
-  end
 
   @doc """
   Percent chance the attacker's equipment grants to land a perfect hit, an
@@ -642,16 +506,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
 
   def def_monster_rate(%Combatant{} = defender, %Combatant{monster_id: monster_id}) do
     Map.get(defender.equip_modifiers, {:add_def_monster, monster_id}, 0)
-  end
-
-  # Per-monster physical damage bonus (`add_damage_class`), keyed on the target
-  # monster's database id. Only mob defenders carry a `monster_id`; against any
-  # other target the bonus is zero. Read exactly, with no `:all` fallback.
-  @spec add_damage_class_rate(Combatant.t(), Combatant.t()) :: rate()
-  defp add_damage_class_rate(_attacker, %Combatant{monster_id: nil}), do: 0
-
-  defp add_damage_class_rate(attacker, %Combatant{monster_id: monster_id}) do
-    Map.get(attacker.equip_modifiers, {:add_damage_class, monster_id}, 0)
   end
 
   @spec read_race2(Combatant.t(), atom(), [atom()]) :: rate()

@@ -15,7 +15,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FieldElementRatioTest do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.CombatTestHelper
-  alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
@@ -30,13 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FieldElementRatioTest do
   setup do
     Aesir.TestEtsSetup.setup_ets_tables(%{})
 
-    Mimic.copy(CriticalHits)
     Mimic.copy(ElementModifiers)
     Mimic.copy(UnitRegistry)
-
-    stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-      %{damage: damage, is_critical: false}
-    end)
 
     # Reports each attribute step's field bonus and the table ratio it composes into.
     stub(ElementModifiers, :adjust_damage, fn damage, adjustment ->

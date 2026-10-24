@@ -2,7 +2,12 @@
 
 [![](https://dcbadge.limes.pink/api/server/https://discord.gg/xGq832HYey)](https://discord.gg/xGq832HYey)
 
-Aesir is an Elixir-based implementation of a Ragnarok Online server.
+Aesir is an Elixir-based implementation of a Ragnarok Online server. It serves renewal and
+pre-renewal from one build (chosen at boot with `AESIR_DB_MODE`), and its game mechanics
+follow rAthena exactly in both modes: formulas and their integer rounding, cast timing
+(renewal variable plus fixed time, classic variable time), multi-hit skills as one logical
+attack with divisions, status effects at their damage stages, and equipment procs run by the
+player who wears them.
 
 ## Project Structure
 
@@ -69,7 +74,7 @@ mix test.integration.pre_re  # Pre-renewal integrations
 
 These aliases select the mode before boot and override an inherited `AESIR_DB_MODE`.
 Run each command separately because the game mode is cached for the node's lifetime.
-`mix test` and `mix test.integration` still use `AESIR_DB_MODE`, defaulting to Renewal
+`mix test` and `mix test.integration` still use `AESIR_DB_MODE`, defaulting to pre-renewal
 when it is unset. Unit runs exclude integrations.
 
 All aliases accept normal test arguments, for example:

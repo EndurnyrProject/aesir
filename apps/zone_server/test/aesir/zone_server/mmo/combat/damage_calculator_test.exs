@@ -8,7 +8,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.CombatTestHelper
-  alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
@@ -64,19 +63,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     Mimic.copy(ElementModifiers)
     Mimic.copy(SizeModifiers)
     Mimic.copy(RaceModifiers)
-    Mimic.copy(CriticalHits)
     Mimic.copy(EquipmentBonuses)
     Mimic.copy(ModifierCalculator)
     :ok
-  end
-
-  test "critical pre-roll composes the computed rate with a flat bonus" do
-    attacker = CombatTestHelper.create_player_combatant()
-    attacker = %{attacker | combat_stats: Map.put(attacker.combat_stats, :critical_rate, 0)}
-    defender = CombatTestHelper.create_mob_combatant()
-
-    assert DamageCalculator.roll_critical?(attacker, defender, 100)
-    refute DamageCalculator.roll_critical?(attacker, defender, 0)
   end
 
   test "forced critical can retain normal weapon variance" do
@@ -219,10 +208,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
-      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-        %{damage: damage, is_critical: false}
-      end)
-
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
       {attacker, defender} = CombatTestHelper.create_combat_scenario()
@@ -237,10 +222,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
-
-      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-        %{damage: damage, is_critical: false}
-      end)
 
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
@@ -309,10 +290,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
-      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-        %{damage: damage, is_critical: false}
-      end)
-
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
       # Fire weapon vs Earth element mob
@@ -334,10 +311,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       # All size weapons vs Large
       stub(SizeModifiers, :get_modifier, fn :fist, :large, false -> 125 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
-
-      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-        %{damage: damage, is_critical: false}
-      end)
 
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
@@ -367,10 +340,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
-
-      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-        %{damage: damage, is_critical: false}
-      end)
 
       :ok
     end
@@ -823,151 +792,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
   end
 
-  describe "apply_critical_hit/2" do
-    test "applies critical hit multiplier" do
-      stub(CriticalHits, :calculate_critical_hit, fn %{luk: _}, damage ->
-        %{damage: damage * 2, is_critical: true}
-      end)
-
-      attacker = CombatTestHelper.create_player_combatant(luk: 30)
-
-      assert {:ok, result} = DamageCalculator.apply_critical_hit(100, attacker)
-      assert result.damage == 200
-      assert result.is_critical == true
-    end
-
-    test "handles non-critical hits" do
-      stub(CriticalHits, :calculate_critical_hit, fn %{luk: _}, damage ->
-        %{damage: damage, is_critical: false}
-      end)
-
-      attacker = CombatTestHelper.create_player_combatant(luk: 5)
-
-      assert {:ok, result} = DamageCalculator.apply_critical_hit(100, attacker)
-      assert result.damage == 100
-      assert result.is_critical == false
-    end
-
-    test "converts the display-scale combat critical rate to tenths once" do
-      attacker = CombatTestHelper.create_player_combatant(luk: 0)
-      attacker = %{attacker | combat_stats: Map.put(attacker.combat_stats, :critical, 5)}
-
-      expect(CriticalHits, :calculate_critical_hit, fn %{critical: 50}, 100 ->
-        %{damage: 100, is_critical: false, critical_rate: 50}
-      end)
-
-      assert {:ok, %{critical_rate: 50}} = DamageCalculator.apply_critical_hit(100, attacker)
-    end
-
-    test "legacy display-only critical does not invent a remainder from LUK" do
-      attacker = CombatTestHelper.create_player_combatant(luk: 5)
-      attacker = %{attacker | combat_stats: Map.put(attacker.combat_stats, :critical, 6)}
-
-      expect(CriticalHits, :calculate_critical_hit, fn %{critical: 60}, 100 ->
-        %{damage: 100, is_critical: false, critical_rate: 60}
-      end)
-
-      assert {:ok, %{critical_rate: 60}} = DamageCalculator.apply_critical_hit(100, attacker)
-    end
-
-    test "an exact snapshot takes precedence over legacy display and raw LUK" do
-      attacker = CombatTestHelper.create_player_combatant(luk: 5)
-
-      attacker = %{
-        attacker
-        | combat_stats: Map.merge(attacker.combat_stats, %{critical: 20, critical_rate: 206})
-      }
-
-      expect(CriticalHits, :calculate_critical_hit, fn %{critical: 206}, 100 ->
-        %{damage: 100, is_critical: false, critical_rate: 206}
-      end)
-
-      assert {:ok, %{critical_rate: 206}} = DamageCalculator.apply_critical_hit(100, attacker)
-    end
-
-    test "adds matching defender-race percentage points in tenths exactly once" do
-      attacker =
-        CombatTestHelper.create_player_combatant(luk: 0)
-        |> Map.put(:equip_modifiers, %{
-          {:critical_add_race, :brute} => 7,
-          {:critical_add_race, :all} => 2,
-          {:critical_add_race, :demon} => 40
-        })
-
-      attacker = put_in(attacker.combat_stats[:critical_rate], 0)
-      defender = CombatTestHelper.create_mob_combatant(race: :brute)
-
-      expect(CriticalHits, :calculate_critical_hit, fn %{critical: 90}, 100 ->
-        %{damage: 100, is_critical: false, critical_rate: 90}
-      end)
-
-      assert {:ok, %{critical_rate: 90}} =
-               DamageCalculator.apply_critical_hit(100, attacker, defender)
-    end
-
-    test "raw combatant fallback includes the active natural basis and level" do
-      attacker = CombatTestHelper.create_player_combatant(luk: 20, base_level: 99)
-      expected = if GameMode.mode() == :renewal, do: 79, else: 76
-
-      assert {:ok, %{critical_rate: ^expected}} =
-               DamageCalculator.apply_critical_hit(100, attacker)
-    end
-
-    test "race and additional critical rates are combined before the final clamp" do
-      attacker = CombatTestHelper.create_player_combatant(luk: 400)
-      attacker = put_in(attacker.combat_stats[:critical_rate], 1_200)
-      attacker = %{attacker | equip_modifiers: %{{:critical_add_race, :brute} => -10}}
-      defender = CombatTestHelper.create_mob_combatant(race: :brute)
-
-      assert {:ok, %{critical_rate: 950}} =
-               DamageCalculator.apply_critical_hit(100, attacker, defender, -15)
-    end
-
-    test "uses the defender race and preserves the existing critical chance clamp" do
-      attacker =
-        CombatTestHelper.create_player_combatant(luk: 0)
-        |> Map.put(:equip_modifiers, %{
-          {:critical_add_race, :brute} => 100,
-          {:critical_add_race, :demon} => -100
-        })
-
-      brute = CombatTestHelper.create_mob_combatant(race: :brute)
-      demon = CombatTestHelper.create_mob_combatant(race: :demon)
-
-      assert {:ok, %{is_critical: true, critical_rate: 1_000}} =
-               DamageCalculator.apply_critical_hit(100, attacker, brute)
-
-      assert {:ok, %{is_critical: false, critical_rate: 0}} =
-               DamageCalculator.apply_critical_hit(100, attacker, demon)
-    end
-
-    test "matches both mode-aware player defender races and preserves critical damage bonuses" do
-      attacker =
-        CombatTestHelper.create_player_combatant(luk: 0)
-        |> Map.put(:equip_modifiers, %{
-          {:critical_add_race, :player_human} => 100,
-          {:critical_add_race, :demi_human} => 100,
-          crit_atk_rate: 50
-        })
-
-      for race <- [:player_human, :demi_human] do
-        defender = CombatTestHelper.create_player_combatant(race: race)
-
-        assert {:ok, %{is_critical: true, critical_rate: 1_000, damage: 210}} =
-                 DamageCalculator.apply_critical_hit(100, attacker, defender)
-      end
-    end
-  end
-
   describe "integration scenarios" do
     test "high level vs low level combat" do
       CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
-
-      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-        %{damage: damage, is_critical: false}
-      end)
 
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
@@ -983,10 +812,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
-
-      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-        %{damage: damage, is_critical: false}
-      end)
 
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
@@ -1009,10 +834,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
-      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-        %{damage: damage, is_critical: false}
-      end)
-
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
       {archer, target} = CombatTestHelper.create_ranged_scenario()
@@ -1033,10 +854,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "skill_ratio scales damage above the 100% baseline" do
-      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-        %{damage: damage, is_critical: false}
-      end)
-
       {attacker, defender} = CombatTestHelper.create_combat_scenario()
 
       assert {:ok, %{damage: baseline}} =
@@ -1049,10 +866,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "skip_crit returns a non-critical result without reading race critical bonuses" do
-      stub(CriticalHits, :calculate_critical_hit, fn _, _ ->
-        flunk("critical roll must be skipped when skip_crit is set")
-      end)
-
       stub(EquipmentBonuses, :critical_add_race_rate, fn _, _ ->
         flunk("race critical bonus must be skipped when skip_crit is set")
       end)
@@ -1078,10 +891,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "bonus_atk adds a flat amount of pre-defense damage" do
-      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-        %{damage: damage, is_critical: false}
-      end)
-
       # def 0 defender: defense formula is a no-op, so a flat bonus_atk flows
       # straight through to the final damage.
       {attacker, defender} = CombatTestHelper.create_combat_scenario([], def: 0)
@@ -1103,10 +912,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "fixed_damage returns exactly that value regardless of stats" do
-      stub(CriticalHits, :calculate_critical_hit, fn _, _ ->
-        flunk("fixed_damage must bypass the critical roll")
-      end)
-
       attacker = CombatTestHelper.create_player_combatant()
 
       for def_value <- [0, 50, 500] do
@@ -1128,10 +933,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
-
-      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-        %{damage: damage, is_critical: false}
-      end)
 
       :ok
     end
@@ -1193,10 +994,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
-
-      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-        %{damage: damage, is_critical: false}
-      end)
 
       :ok
     end
@@ -2047,8 +1844,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       attacker = CombatTestHelper.create_mob_combatant()
 
       assert attacker.equip_modifiers == %{}
-      assert EquipmentBonuses.short_atk_rate(attacker) == 0
-      assert EquipmentBonuses.long_atk_rate(attacker) == 0
     end
 
     test "a +20% race family and a +20% size family stack multiplicatively to exactly 1.44" do
@@ -2125,10 +1920,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "{:skill_atk, id} reaches the full calculate_damage path through the :skill_id opt" do
-      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-        %{damage: damage, is_critical: false}
-      end)
-
       skill_id = 1234
 
       attacker = %{
@@ -2630,10 +2421,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
-
-      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-        %{damage: damage, is_critical: false}
-      end)
 
       :ok
     end

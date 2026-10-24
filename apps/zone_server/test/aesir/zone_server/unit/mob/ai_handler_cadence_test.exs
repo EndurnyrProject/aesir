@@ -43,7 +43,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.AiHandlerCadenceTest do
     Mimic.copy(Cell)
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     stub(StatusStorage, :has_status?, fn _unit_type, _unit_id, _status -> false end)
-    stub(StatusInterpreter, :concealed?, fn _unit_type, _unit_id -> false end)
     stub(StatusInterpreter, :targetable?, fn :player, _id -> true end)
     stub(StatusInterpreter, :can_attack?, fn :mob, 1 -> true end)
     stub(StatusInterpreter, :loses_target?, fn :mob, 1 -> false end)

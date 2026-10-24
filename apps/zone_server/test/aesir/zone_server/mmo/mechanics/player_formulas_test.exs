@@ -378,12 +378,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     assert Map.take(result.combat_stats, Map.keys(zero_slots)) === zero_slots
     assert result.combat_stats.hplus === 29
 
-    zero_crate = put_in(result.combat_stats.crate, 0)
-    assert CriticalHits.apply_critical_damage(1_000, zero_crate) === 1_400
-
-    assert CriticalHits.apply_critical_damage(1_000, result) ===
-             CriticalHits.apply_critical_damage(1_000, zero_crate)
-
     attacker = %{
       unit_type: :player,
       unit_id: 1001,
@@ -553,18 +547,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
 
       result = Calculator.calculate_combat_stats(stats)
 
-      attacker = %{
-        base_stats: result.base_stats,
-        combat_stats: result.combat_stats,
-        equip_modifiers: %{}
-      }
-
       assert {result.combat_stats.critical_rate, result.combat_stats.critical} ===
                {expected_rate, expected_display}
 
       assert CriticalHits.calculate_critical_rate(result) === expected_rate
-      assert {:ok, critical} = DamageCalculator.apply_critical_hit(100, attacker)
-      assert critical.critical_rate === expected_rate
     end
   end
 
@@ -600,15 +586,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
 
     result = Calculator.calculate_combat_stats(stats)
 
-    attacker = %{
-      base_stats: result.base_stats,
-      combat_stats: result.combat_stats,
-      equip_modifiers: %{}
-    }
-
     assert result.combat_stats.critical === 8
-    assert {:ok, critical} = DamageCalculator.apply_critical_hit(100, attacker)
-    assert critical.critical_rate === 80
   end
 
   test "Renewal critical keeps effective LUK, level and modifier tenths through rate and Katar stages" do
@@ -629,15 +607,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     result = Calculator.calculate_combat_stats(stats)
     assert {result.combat_stats.critical_rate, result.combat_stats.critical} == {318, 31}
     assert CriticalHits.calculate_critical_rate(result) == 318
-
-    attacker = %{
-      base_stats: result.base_stats,
-      combat_stats: result.combat_stats,
-      equip_modifiers: %{}
-    }
-
-    assert {:ok, critical} = DamageCalculator.apply_critical_hit(100, attacker)
-    assert critical.critical_rate == 318
   end
 
   test "mounted normal, baby, transcendent, and unknown jobs classify without a public normalizer" do

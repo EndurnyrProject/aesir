@@ -9,7 +9,6 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
-  alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.NoEquip
@@ -1299,7 +1298,6 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       result = Calculator.calculate_combat_stats(stats)
 
       assert result.combat_stats.crate == 23
-      assert CriticalHits.apply_critical_damage(1_000, result) == 1_630
     end
   end
 

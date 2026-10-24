@@ -14,7 +14,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WeaponEndowTest do
   use Mimic
 
   alias Aesir.ZoneServer.CombatTestHelper
-  alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
@@ -30,13 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WeaponEndowTest do
   setup do
     Aesir.TestEtsSetup.setup_ets_tables(%{})
 
-    Mimic.copy(CriticalHits)
     Mimic.copy(ElementModifiers)
     Mimic.copy(UnitRegistry)
-
-    stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-      %{damage: damage, is_critical: false}
-    end)
 
     stub(ElementModifiers, :adjust_damage, fn damage, adjustment ->
       send(self(), {:attack_element, adjustment.attack_element})

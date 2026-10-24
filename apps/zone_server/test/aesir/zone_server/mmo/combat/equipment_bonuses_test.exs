@@ -7,7 +7,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.CombatTestHelper
-  alias Aesir.ZoneServer.Mmo.BattleFlag
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
 
@@ -164,63 +163,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
   end
 
   describe "attack_rates/4" do
-    test "sums specific-param and :all within each family" do
-      attacker =
-        CombatTestHelper.create_player_combatant()
-        |> with_equip_modifiers(%{
-          {:addrace, :brute} => 20,
-          {:addrace, :all} => 5,
-          {:addclass, :normal} => 3,
-          {:addclass, :all} => 2,
-          {:addele, :earth} => 10,
-          {:addele, :all} => 1,
-          {:addsize, :medium} => 15,
-          {:addsize, :all} => 5,
-          {:skill_atk, 100} => 30
-        })
-
-      defender =
-        CombatTestHelper.create_mob_combatant(race: :brute, size: :medium)
-        |> Map.put(:element, {:earth, 1})
-
-      assert EquipmentBonuses.attack_rates(attacker, defender, 100, :earth) == %{
-               race_class: 25 + 5,
-               element: 11,
-               size: 20,
-               skill: 30
-             }
-    end
-
-    test "attacker status addele sums with the equipment element rate" do
-      attacker =
-        CombatTestHelper.create_player_combatant()
-        |> with_equip_modifiers(%{{:addele, :undead} => 10})
-
-      defender =
-        CombatTestHelper.create_mob_combatant()
-        |> Map.put(:element, {:undead, 1})
-
-      statuses = %{{:addele, :undead} => 25, {:addele, :dark} => 25}
-
-      assert %{element: 35} =
-               EquipmentBonuses.attack_rates(attacker, defender, nil, :neutral, statuses)
-
-      assert %{element: 10} = EquipmentBonuses.attack_rates(attacker, defender, nil, :neutral)
-    end
-
     test "secondary monster groups add physical and magic attack bonuses" do
       attacker =
         CombatTestHelper.create_player_combatant()
         |> with_equip_modifiers(%{{:addrace2, :goblin} => 20, {:magic_addrace2, :goblin} => 30})
 
       defender = %{CombatTestHelper.create_mob_combatant() | race2: [:goblin]}
-
-      assert EquipmentBonuses.attack_rates(attacker, defender, nil, :neutral) == %{
-               race_class: 20,
-               element: 0,
-               size: 0,
-               skill: 0
-             }
 
       assert EquipmentBonuses.magic_attack_rates(attacker, defender, nil, :neutral) == %{
                race: 0,
@@ -233,38 +181,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
              }
     end
 
-    test "secondary monster group all bonus is counted once" do
-      attacker =
-        CombatTestHelper.create_player_combatant()
-        |> with_equip_modifiers(%{
-          {:addrace2, :goblin} => 10,
-          {:addrace2, :orc} => 15,
-          {:addrace2, :all} => 5
-        })
-
-      defender = %{CombatTestHelper.create_mob_combatant() | race2: [:goblin, :orc]}
-
-      assert EquipmentBonuses.attack_rates(attacker, defender, nil, :neutral) == %{
-               race_class: 30,
-               element: 0,
-               size: 0,
-               skill: 0
-             }
-    end
-
     test "empty secondary monster groups do not match exact bonuses" do
       attacker =
         CombatTestHelper.create_player_combatant()
         |> with_equip_modifiers(%{{:addrace2, :goblin} => 20, {:magic_addrace2, :goblin} => 30})
 
       defender = %{CombatTestHelper.create_mob_combatant() | race2: []}
-
-      assert EquipmentBonuses.attack_rates(attacker, defender, nil, :neutral) == %{
-               race_class: 0,
-               element: 0,
-               size: 0,
-               skill: 0
-             }
 
       assert EquipmentBonuses.magic_attack_rates(attacker, defender, nil, :neutral) == %{
                race: 0,
@@ -275,52 +197,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
                atk_ele: 0,
                skill: 0
              }
-    end
-
-    test "race and class share one family group" do
-      attacker =
-        CombatTestHelper.create_player_combatant()
-        |> with_equip_modifiers(%{{:addrace, :brute} => 20, {:addclass, :boss} => 40})
-
-      defender =
-        CombatTestHelper.create_boss_mob(race: :brute)
-        |> Map.put(:class, :boss)
-
-      assert %{race_class: 60} = EquipmentBonuses.attack_rates(attacker, defender, nil, :neutral)
-    end
-
-    test "boss-class defender picks up {:addclass, :boss}" do
-      attacker =
-        CombatTestHelper.create_player_combatant()
-        |> with_equip_modifiers(%{{:addclass, :boss} => 25})
-
-      defender =
-        CombatTestHelper.create_boss_mob()
-        |> Map.put(:class, :boss)
-
-      assert %{race_class: 25} = EquipmentBonuses.attack_rates(attacker, defender, nil, :neutral)
-    end
-
-    test "add_damage_class adds physical damage against the target monster id" do
-      attacker =
-        CombatTestHelper.create_player_combatant()
-        |> with_equip_modifiers(%{{:add_damage_class, 1002} => 25})
-
-      defender = CombatTestHelper.create_mob_combatant(monster_id: 1002)
-
-      assert %{race_class: 25} = EquipmentBonuses.attack_rates(attacker, defender, nil, :neutral)
-    end
-
-    test "add_damage_class does not apply to a different monster id or to players" do
-      attacker =
-        CombatTestHelper.create_player_combatant()
-        |> with_equip_modifiers(%{{:add_damage_class, 1002} => 25})
-
-      other_mob = CombatTestHelper.create_mob_combatant(monster_id: 1099)
-      player = CombatTestHelper.create_player_combatant()
-
-      assert %{race_class: 0} = EquipmentBonuses.attack_rates(attacker, other_mob, nil, :neutral)
-      assert %{race_class: 0} = EquipmentBonuses.attack_rates(attacker, player, nil, :neutral)
     end
 
     test "def_monster_rate reads only the attacking monster id" do
@@ -335,229 +211,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
       assert EquipmentBonuses.def_monster_rate(defender, matching_mob) == 25
       assert EquipmentBonuses.def_monster_rate(defender, other_mob) == 0
       assert EquipmentBonuses.def_monster_rate(defender, player) == 0
-    end
-
-    test "skill_id nil returns 0 for the skill family" do
-      attacker =
-        CombatTestHelper.create_player_combatant()
-        |> with_equip_modifiers(%{{:skill_atk, 100} => 30})
-
-      defender = CombatTestHelper.create_mob_combatant()
-
-      assert %{skill: 0} = EquipmentBonuses.attack_rates(attacker, defender, nil, :neutral)
-    end
-
-    test "empty equip_modifiers returns all zeros" do
-      attacker = CombatTestHelper.create_player_combatant()
-      defender = CombatTestHelper.create_mob_combatant()
-
-      assert EquipmentBonuses.attack_rates(attacker, defender, nil, :neutral) == %{
-               race_class: 0,
-               element: 0,
-               size: 0,
-               skill: 0
-             }
-    end
-  end
-
-  describe "damage_taken_rates/3" do
-    test "sums subrace/subclass/subele/subsize with :all" do
-      defender =
-        CombatTestHelper.create_mob_combatant()
-        |> with_equip_modifiers(%{
-          {:subrace, :brute} => 10,
-          {:subrace, :all} => 5,
-          {:subclass, :normal} => 3,
-          {:subclass, :all} => 2,
-          {:subele, :fire} => 8,
-          {:subele, :all} => 1,
-          {:subsize, :medium} => 6,
-          {:subsize, :all} => 4
-        })
-
-      attacker = CombatTestHelper.create_player_combatant(race: :brute, size: :medium)
-
-      assert EquipmentBonuses.damage_taken_rates(defender, attacker, :fire) == %{
-               race_class: 15 + 5,
-               element: 9,
-               size: 10,
-               skill: 0
-             }
-    end
-
-    test "a trigger-flagged resist applies only to attacks its flag matches" do
-      magic_only = BattleFlags.fill_battle(BattleFlag.id(:magic))
-      weapon_only = BattleFlags.fill_battle(BattleFlag.id(:weapon))
-
-      defender =
-        CombatTestHelper.create_mob_combatant()
-        |> with_equip_modifiers(%{
-          {:subele, :fire} => 5,
-          {:subele, {:fire, magic_only}} => 30,
-          {:subele, {:fire, weapon_only}} => 7
-        })
-
-      attacker = CombatTestHelper.create_player_combatant()
-
-      magic_hit = BattleFlags.build(:magic, :long, true)
-      melee_hit = BattleFlags.build(:weapon, :short, false)
-
-      # The unflagged entry applies to everything; each flagged entry only to
-      # the attack kind it names.
-      assert %{element: 35} =
-               EquipmentBonuses.damage_taken_rates(defender, attacker, :fire, %{}, nil, magic_hit)
-
-      assert %{element: 12} =
-               EquipmentBonuses.damage_taken_rates(defender, attacker, :fire, %{}, nil, melee_hit)
-    end
-
-    test "a flagged :all entry covers every param of its family" do
-      weapon_only = BattleFlags.fill_battle(BattleFlag.id(:weapon))
-
-      defender =
-        CombatTestHelper.create_mob_combatant()
-        |> with_equip_modifiers(%{{:subele, {:all, weapon_only}} => 15})
-
-      attacker = CombatTestHelper.create_player_combatant()
-      melee_hit = BattleFlags.build(:weapon, :short, false)
-
-      assert %{element: 15} =
-               EquipmentBonuses.damage_taken_rates(defender, attacker, :fire, %{}, nil, melee_hit)
-
-      assert %{element: 15} =
-               EquipmentBonuses.damage_taken_rates(defender, attacker, :holy, %{}, nil, melee_hit)
-    end
-
-    test "flagged resists of the race, class and size families gate the same way" do
-      normal_only = BattleFlags.fill_battle(BattleFlag.id(:normal))
-
-      defender =
-        CombatTestHelper.create_mob_combatant()
-        |> with_equip_modifiers(%{
-          {:subrace, {:brute, normal_only}} => 10,
-          {:subclass, {:normal, normal_only}} => 4,
-          {:subsize, {:medium, normal_only}} => 6
-        })
-
-      attacker = CombatTestHelper.create_player_combatant(race: :brute, size: :medium)
-
-      swing = BattleFlags.build(:weapon, :short, false)
-      skill = BattleFlags.build(:weapon, :short, true)
-
-      assert %{race_class: 14, size: 6} =
-               EquipmentBonuses.damage_taken_rates(defender, attacker, :neutral, %{}, nil, swing)
-
-      assert %{race_class: 0, size: 0} =
-               EquipmentBonuses.damage_taken_rates(defender, attacker, :neutral, %{}, nil, skill)
-    end
-
-    test "flagged entries stay inert for a caller that passes no classification" do
-      weapon_only = BattleFlags.fill_battle(BattleFlag.id(:weapon))
-
-      defender =
-        CombatTestHelper.create_mob_combatant()
-        |> with_equip_modifiers(%{{:subele, {:fire, weapon_only}} => 30})
-
-      attacker = CombatTestHelper.create_player_combatant()
-
-      assert %{element: 0} = EquipmentBonuses.damage_taken_rates(defender, attacker, :fire)
-    end
-
-    test "secondary monster groups sum matching damage-taken bonuses" do
-      defender =
-        CombatTestHelper.create_player_combatant()
-        |> with_equip_modifiers(%{{:subrace2, :goblin} => 10, {:subrace2, :orc} => 15})
-
-      attacker = %{CombatTestHelper.create_mob_combatant() | race2: [:goblin, :orc]}
-
-      assert EquipmentBonuses.damage_taken_rates(defender, attacker, :neutral) == %{
-               race_class: 25,
-               element: 0,
-               size: 0,
-               skill: 0
-             }
-    end
-
-    test "sub_def_ele resists by the attacker's defensive element, not the attack element" do
-      defender =
-        CombatTestHelper.create_player_combatant()
-        |> with_equip_modifiers(%{{:sub_def_ele, :earth} => 12, {:sub_def_ele, :all} => 3})
-
-      # Attacker's own element is :earth while the incoming hit is :fire, so a
-      # match proves the key is read off the attacker's defensive element.
-      attacker = CombatTestHelper.create_mob_combatant(element: :earth)
-
-      assert %{element: 15} = EquipmentBonuses.damage_taken_rates(defender, attacker, :fire)
-    end
-
-    test "empty equip_modifiers returns all zeros" do
-      defender = CombatTestHelper.create_mob_combatant()
-      attacker = CombatTestHelper.create_player_combatant()
-
-      assert EquipmentBonuses.damage_taken_rates(defender, attacker, :neutral) == %{
-               race_class: 0,
-               element: 0,
-               size: 0,
-               skill: 0
-             }
-    end
-
-    test "Skin Temper adds fire and neutral resistance only" do
-      defender = %{CombatTestHelper.create_player_combatant() | skin_temper_level: 5}
-      attacker = CombatTestHelper.create_mob_combatant()
-
-      assert %{element: 25} = EquipmentBonuses.damage_taken_rates(defender, attacker, :fire)
-      assert %{element: 5} = EquipmentBonuses.damage_taken_rates(defender, attacker, :neutral)
-
-      for element <- [:holy, :water, :earth, :wind, :poison, :shadow, :ghost, :undead] do
-        assert %{element: 0} = EquipmentBonuses.damage_taken_rates(defender, attacker, element)
-      end
-    end
-
-    test "sums status subele_holy/subrace_demon into equipment element/race families" do
-      defender =
-        CombatTestHelper.create_mob_combatant()
-        |> with_equip_modifiers(%{{:subele, :holy} => 10, {:subrace, :demon} => 4})
-
-      attacker = CombatTestHelper.create_player_combatant(race: :demon)
-      status = %{subele_holy: 25, subrace_demon: 6}
-
-      assert EquipmentBonuses.damage_taken_rates(defender, attacker, :holy, status) == %{
-               race_class: 4 + 6,
-               element: 10 + 25,
-               size: 0,
-               skill: 0
-             }
-    end
-
-    test "status resist keys are inert against a non-matching element and race" do
-      defender = CombatTestHelper.create_mob_combatant()
-      attacker = CombatTestHelper.create_player_combatant(race: :human)
-      status = %{subele_holy: 25, subrace_demon: 6}
-
-      assert EquipmentBonuses.damage_taken_rates(defender, attacker, :fire, status) == %{
-               race_class: 0,
-               element: 0,
-               size: 0,
-               skill: 0
-             }
-    end
-
-    test "sub_skill reduces only the matching incoming skill id, exactly (no :all)" do
-      defender =
-        CombatTestHelper.create_player_combatant()
-        |> with_equip_modifiers(%{{:sub_skill, 18} => 30, {:sub_skill, :all} => 99})
-
-      attacker = CombatTestHelper.create_mob_combatant()
-
-      assert %{skill: 30} =
-               EquipmentBonuses.damage_taken_rates(defender, attacker, :neutral, %{}, 18)
-
-      assert %{skill: 0} =
-               EquipmentBonuses.damage_taken_rates(defender, attacker, :neutral, %{}, 42)
-
-      assert %{skill: 0} =
-               EquipmentBonuses.damage_taken_rates(defender, attacker, :neutral, %{}, nil)
     end
   end
 
@@ -667,9 +320,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
 
     assert EquipmentBonuses.magic_defense_rates(defender, attacker, :fire, statuses, 14, flag) ==
              %{race: 15, race2: 5, class: 20, element: 34, size: 7, skill: 9, magic_size: 0}
-
-    assert EquipmentBonuses.damage_taken_rates(defender, attacker, :fire, statuses, 14, flag) ==
-             %{race_class: 40, element: 34, size: 7, skill: 9}
   end
 
   test "magic defense reads its own defensive-element and size resists, never bSubDefEle" do
@@ -696,9 +346,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
 
     assert %{element: 15, size: 7, magic_size: 12} =
              EquipmentBonuses.magic_defense_rates(defender, attacker, :neutral, %{}, 14, flag)
-
-    assert %{element: 40, size: 7} =
-             EquipmentBonuses.damage_taken_rates(defender, attacker, :neutral, %{}, nil, 0)
   end
 
   describe "ignore_def_rate/2" do
@@ -799,34 +446,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
     end
   end
 
-  describe "long_atk_rate/1" do
-    test "reads :long_atk_rate when the attacker wields a ranged weapon" do
-      attacker =
-        CombatTestHelper.create_player_combatant(weapon_type: :bow)
-        |> with_equip_modifiers(%{long_atk_rate: 15})
-
-      assert EquipmentBonuses.long_atk_rate(attacker) == 15
-    end
-
-    test "returns 0 for a melee attacker carrying the same bonus" do
-      attacker =
-        CombatTestHelper.create_player_combatant(weapon_type: :sword)
-        |> with_equip_modifiers(%{long_atk_rate: 15})
-
-      assert EquipmentBonuses.long_atk_rate(attacker) == 0
-    end
-
-    test "returns 0 for a ranged attacker without the bonus" do
-      attacker = CombatTestHelper.create_player_combatant(weapon_type: :bow)
-
-      assert EquipmentBonuses.long_atk_rate(attacker) == 0
-    end
-
-    test "returns 0 for mobs, which carry no equipment" do
-      assert EquipmentBonuses.long_atk_rate(CombatTestHelper.create_mob_combatant()) == 0
-    end
-  end
-
   describe "non_crit_atk_rate/1" do
     test "reads the signed equipment rate for any weapon and zero for mobs" do
       for weapon_type <- [:bow, :sword] do
@@ -839,50 +458,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
       end
 
       assert EquipmentBonuses.non_crit_atk_rate(CombatTestHelper.create_mob_combatant()) == 0
-    end
-  end
-
-  describe "short_atk_rate/1" do
-    test "reads :short_atk_rate when the attacker wields a melee weapon" do
-      attacker =
-        CombatTestHelper.create_player_combatant(weapon_type: :sword)
-        |> with_equip_modifiers(%{short_atk_rate: 15})
-
-      assert EquipmentBonuses.short_atk_rate(attacker) == 15
-    end
-
-    test "returns 0 for a ranged attacker carrying the same bonus" do
-      attacker =
-        CombatTestHelper.create_player_combatant(weapon_type: :bow)
-        |> with_equip_modifiers(%{short_atk_rate: 15})
-
-      assert EquipmentBonuses.short_atk_rate(attacker) == 0
-    end
-
-    test "returns 0 for a melee attacker without the bonus" do
-      attacker = CombatTestHelper.create_player_combatant(weapon_type: :sword)
-
-      assert EquipmentBonuses.short_atk_rate(attacker) == 0
-    end
-
-    test "returns 0 for mobs, which carry no equipment" do
-      assert EquipmentBonuses.short_atk_rate(CombatTestHelper.create_mob_combatant()) == 0
-    end
-
-    test "is mutually exclusive with long_atk_rate on the same attacker" do
-      bow =
-        CombatTestHelper.create_player_combatant(weapon_type: :bow)
-        |> with_equip_modifiers(%{short_atk_rate: 15, long_atk_rate: 20})
-
-      sword =
-        CombatTestHelper.create_player_combatant(weapon_type: :sword)
-        |> with_equip_modifiers(%{short_atk_rate: 15, long_atk_rate: 20})
-
-      assert {EquipmentBonuses.short_atk_rate(bow), EquipmentBonuses.long_atk_rate(bow)} ==
-               {0, 20}
-
-      assert {EquipmentBonuses.short_atk_rate(sword), EquipmentBonuses.long_atk_rate(sword)} ==
-               {15, 0}
     end
   end
 

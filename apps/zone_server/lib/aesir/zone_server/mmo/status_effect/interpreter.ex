@@ -1562,17 +1562,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end
   end
 
-  @doc """
-  Returns whether a unit is concealed, i.e. carries a status with the
-  `:conceals` property (Hiding or Cloaking).
-
-  Deliberately separate from `targetable?/2`, which has callers outside mob
-  AI; changing it would silently alter player targeting and skill targeting.
-  """
-  @spec concealed?(unit_type(), integer()) :: boolean()
-  def concealed?(unit_type, unit_id),
-    do: restricted?(unit_type, unit_id, &PropertyChecker.has_property?(&1, :conceals))
-
   defp blocks_player_movement?(%StatusEntry{type: :sc_hiding}, unit_id),
     do: not tunnel_drive?(unit_id)
 

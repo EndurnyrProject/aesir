@@ -31,7 +31,8 @@ Recurring traps, each a past bug:
 - **Cast start.** Statuses that react to a cast starting run through
   `Caster.on_cast_start/2` (instant casts) and `SkillHandler` (timed casts at bar start).
 - **Level modifier and multi-hit.** Use `Combat.LevelModifier.skill_ratio/2` wherever the
-  reference uses `RE_LVL_DMOD`; a positive HitCount multiplies one roll.
+  reference uses `RE_LVL_DMOD`; HitCount is a logical division count on one roll (see
+  "Engine contracts" below).
 - **Targeting.** Match the reference `TargetType` (a ground skill is `:ground`, even if a unit
   version would be easier) and its `Flags` (traps, hidden targets, Emperium).
 - **Mob casting.** If the reference lets monsters cast it, support it; never narrow targets
@@ -75,7 +76,11 @@ Declared in `mmo/skill/`:
 `Mmo.Skill.Interpreter` (`mmo/skill/interpreter.ex`) has these narrow entry points:
 
 - `cast/4` — player-initiated, full `validate_cast` chain (learned, SP, catalysts, cooldown).
-- `auto_cast/4` — status procs; keeps only the SP charge.
+- `auto_cast/4` — status procs: no cast time or ordinary requirement, a fixed 2/3 raw SP charge
+  spent before the effect, the after-cast delay armed either way, no autocast flag set.
+- `proc_cast/5` — equipment autocasts (after `check_proc_usable/3`): the requirement is consumed
+  before the effect with the wearer's runtime autocast flag waiving the SP; no cooldown, no item
+  consumption.
 - `item_cast/4` — `itemskill` from item scripts and the direct item-cast entry; runs the same
   player stages with the source's cast-begin item branch: it bypasses the learned rank and, for a
   plain item cast, every other requirement (weight, SP, zeny, spheres, HP, weapon, equipment,
@@ -86,6 +91,11 @@ Declared in `mmo/skill/`:
   `unitskilluseid` cast: the ordinary begin and cast end, with only the learned-rank check (begin)
   and re-check (end) skipped. `SkillHandler.start_script_cast/3` starts it on the player's own unit
   and the session routes `origin: :script` completions to `complete_script_cast/4`.
+
+**Result shapes.** A refusal before the attempt starts (request validation, preflight) is
+`{:error, reason}` and spends nothing. A failure after the attempt started, once the
+requirement was paid, is `{:error, reason, caster}` (or `{:failed, caster, reason}` from a skill
+effect): the owner commits the returned caster so the spent SP, delay and cooldown stick.
 
 A new restricted cast path = a new narrow entry point with a doc listing exactly what it
 skips. Non-consuming runs share `run_unconditional/5` (not `run_cast/5`, which eats
@@ -98,6 +108,35 @@ complete_cast). The combat layer re-checks distance with the caster's *weapon* r
 casts silently fizzle at range (the fizzle is a debug-level log only). Bow skills with
 `range: -1` are safe. Physical skill attacks roll hit/flee; pass `report_hit: true` and gate
 rider effects on the returned `hit?` when the skill has on-hit riders.
+
+## Engine contracts the skill code relies on
+
+- **Cast timing.** `Skill.CastTime` computes the time from named inputs: `early/3` before
+  validation, `late/4` after it, `compute/3` for both. Renewal has a variable part (DEX/INT
+  scaled, item and status rates) plus a fixed part only gear and statuses shorten; pre-renewal
+  is one variable cast. The formula returns reactions (`:consume_memorize`, `:end_suffragium`)
+  as data; `Caster.apply_cast_reactions/2` applies them at the real attempt boundary.
+- **Invocation identity and the autocast flag.** `Skill.Origin` keeps a stack of the executing
+  skill, caster and invocation kind, and separately the caster's runtime autocast flag. Only an
+  equipment proc sets the flag, for exactly its execution, and it is never restored by
+  unwinding; read it with `Origin.autocast?/1`, never infer it from the invocation kind.
+- **Logical attacks and divisions.** A skill hit is calculated once and carries signed
+  `:hit_divisions` (the DB HitCount after runtime overrides).
+  `DamageShared.normalize_damage_divisions/2` multiplies a positive count and floors an equal
+  split for a negative one, before target settlement; status absorption, procs and charges then
+  see one logical hit. Separate attacks in the reference (Fire Wall strikes, meteors, Water Ball
+  balls, periodic field events) stay separate deliveries, never divisions.
+- **Integer element arithmetic.** Element steps go through
+  `Mechanics.Elements.{Renewal,PreRenewal}.adjust_damage/2` (via `DamageShared.apply_element_step/5`):
+  renewal adds bonuses to the table ratio and subtracts the truncated reduction, classic adds
+  each bonus to the running damage before the table step. `ratio/3` is only a table preview.
+- **Targeting.** `Targeting.validate_skill_use/4` runs the concealment and status checks per
+  phase (`:cast_begin`, `:cast_end`, `:splash`, `:unit_place`); splash, unit and timer
+  deliveries carry the primary target and source kind so only the qualifying paths check.
+- **Procs belong to their owner.** Attack paths attach an `EquipProcDispatch` spec to each
+  logical hit; the target's own damage handler runs its when-hit procs after its HP changed, and
+  the attacker's side runs at the additional-effect stage. Never roll a recipient's proc in the
+  attacker's process.
 
 ## Ground skills (skill units)
 

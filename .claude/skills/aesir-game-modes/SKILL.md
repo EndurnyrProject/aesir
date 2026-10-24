@@ -57,9 +57,14 @@ and always check whether it is mode-gated:
 - **ASPD**: renewal is a float formula (AGI-dominant, sqrt term, shield/dual-wield
   penalties); pre-re is integer weapon-delay amotion (`amotion -= amotion*(4*agi+dex)/1000`,
   dual wield `(a+b)*7/10`).
-- **Element modifiers**: renewal mutates a *ratio* (additive percentage points into the
-  attr table); pre-re multiplies *damage* directly. Skill element bonuses (Volcano, Oratio,
-  endow-adjacent effects) therefore apply differently per mode.
+- **Element modifiers**: each mode has its own four-level integer table and arithmetic
+  (`Mechanics.Elements`). Renewal adds bonus points to the table ratio and subtracts the
+  truncated reduction (`damage - damage * (100 - ratio) / 100`); classic adds each bonus
+  percentage to the running damage, then applies `damage * ratio / 100`. Skill element
+  bonuses (Volcano, Oratio, endow-adjacent effects) therefore apply differently per mode.
+- **Skill map restrictions**: each mode's `skill_nocast` masks differ (renewal keeps several
+  songs and dances to versus ground and Greed out of town zones), and so do the item
+  restriction zones. They are data, read by `Skill.NoCast` and the item-use gates.
 - **EXP/drop level-gap penalty**: renewal-only (data tables). Pre-re has none — in Aesir
   the `level_penalty*` domains are mode-optional and absent means neutral rates.
 - **Stat points**: renewal raise-cost curve vs classic `2 + (value-1)/10`, cap 99.
@@ -83,9 +88,11 @@ and always check whether it is mode-gated:
   `Elements`, `Sizes`; see `@families` in `mmo/mechanics.ex`) to `.Renewal`/`.PreRenewal`
   modules at boot. Orchestration (`stats.ex`, damage calculators, interpreter) stays shared;
   only leaf formulas dispatch. Design: `specs/2026-08-24-pre-renewal-mode/` in the vault.
-- **Phasing**: Phase 1 (seam, core formulas, pre-re data) is done. Phase 2 = per-skill/status
-  behavior divergences (until then, pre-re runs renewal-flavored skill/status behavior, a
-  known, accepted gap). Phase 3 = classic NPC/content corpus.
+- **Phasing**: Phase 1 (seam, core formulas, pre-re data) and the engine-parity pass (integer
+  element arithmetic, cast timing, logical divisions, stage-ordered status effects, owning
+  procs, both modes) are done. A skill or status that still runs renewal behaviour in pre-re
+  is a parity bug, not an accepted gap: fix it when you touch it. Phase 3 = classic NPC/content
+  corpus.
 
 ## Writing rules for mode-aware work
 

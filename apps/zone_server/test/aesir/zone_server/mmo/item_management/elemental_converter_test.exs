@@ -13,7 +13,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ElementalConverterTest do
   use Mimic
 
   alias Aesir.ZoneServer.CombatTestHelper
-  alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
@@ -44,13 +43,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ElementalConverterTest do
   setup do
     Aesir.TestEtsSetup.setup_ets_tables(%{})
 
-    Mimic.copy(CriticalHits)
     Mimic.copy(ElementModifiers)
     Mimic.copy(UnitRegistry)
-
-    stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-      %{damage: damage, is_critical: false}
-    end)
 
     CombatTestHelper.stub_element_coefficient(fn attack_element,
                                                  defense_element,

@@ -16,6 +16,15 @@ MATK/ATK rate applies where `status_calc_matk` applies it (mode order differs). 
 durations (e.g. Blind held while in fog), and what ending the status does to other statuses
 are part of the mechanic.
 
+### Damage stages
+
+`StatusInterpreter.absorb_damage/4` runs once per prepared logical hit (never per division),
+with the held statuses' `absorb_damage` hooks in the reference's stage order, so one hit spends
+one charge (Energy Coat SP, Kyrie, Safety Wall). Reductions, blockers and interceptions (Magic
+Rod, Wink of Charm's removal, `RemoveOnDamaged`) happen in the owning recipient's damage
+notification, not in the attacker's process. `StatusInterpreter.can_deal_skill_damage?/4` is
+the gate for statuses that suppress the holder's other skill damage (classic Gravitation).
+
 ## Where effects live and how they register
 
 - One module per effect:
@@ -138,7 +147,8 @@ able to rebuild them. `source_type` is not persisted either.
 ## Game modes
 
 Several SC_ behaviors diverge between renewal and pre-renewal (element-field skills like
-Volcano/Deluge/Violent Gale, Steel Body, Kyrie, Angelus scaling, endows — renewal applies
-element bonuses as ratio deltas, pre-re multiplies damage). Where pre-re still runs renewal
-behaviour for one of these, that is a parity bug: fix it when you touch the status. The
-both-modes `@moduledoc` rule is in `aesir-game-modes`.
+Volcano/Deluge/Violent Gale, Steel Body, Kyrie, Angelus scaling, endows). Element bonuses are
+named `modifiers` of `Mechanics.Elements.adjust_damage/2`: renewal adds their points to the
+table ratio, classic adds each truncated percentage to the running damage before the table
+step. Where pre-re still runs renewal behaviour for one of these, that is a parity bug: fix it
+when you touch the status. The both-modes `@moduledoc` rule is in `aesir-game-modes`.
