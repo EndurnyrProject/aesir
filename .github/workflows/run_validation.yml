@@ -11,7 +11,7 @@ jobs:
   build:
     if: "github.event.pull_request.draft != true && !contains(github.event.head_commit.message, 'ci skip')"
     name: Build and Test (${{ matrix.mode }})
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-2604-arm64-8x
     strategy:
       fail-fast: false
       matrix:
