@@ -287,7 +287,7 @@ message Envelope {
     NpcShopClose npc_shop_close = 223;  // c2s zone
     // 224: the server cancelled the player's running progress bar
     ProgressBarAbort progress_bar_abort = 224;  // s2c zone world
-    // 225-227: negotiated vending setup and correlated settlement
+    // 225-227: paid vending setup and correlated settlement
     VendingSetupReady vending_setup_ready = 225;  // s2c zone world
     VendingPurchaseResult vending_purchase_result = 226;  // s2c zone world
     VendingCloseResult vending_close_result = 227;  // s2c zone world
@@ -298,7 +298,6 @@ message Envelope {
 enum FeatureCapability {
   FEATURE_CAPABILITY_UNSPECIFIED = 0;
   FEATURE_CAPABILITY_SKILL_TEXT_INPUT = 1;
-  FEATURE_CAPABILITY_VENDING_V2 = 2;
 }
 
 enum CreatorKind {
@@ -1273,7 +1272,7 @@ message MoveFromCartRequest {
 }
 
 // Server -> client, a paid MC_VENDING use granted preparation. Canceling this
-// setup does not refund the skill cost. Requires FEATURE_CAPABILITY_VENDING_V2.
+// setup does not refund the skill cost.
 message VendingSetupReady {
   // Opaque grant token, valid only for this preparation in the owning session.
   string setup_id = 1;
@@ -1296,8 +1295,8 @@ message VendingEntry {
   uint32 price = 3;
 }
 
-// Client -> server, submit listings against a paid preparation grant. Requires
-// FEATURE_CAPABILITY_VENDING_V2; this does not cast or charge for the skill.
+// Client -> server, submit listings against a paid preparation grant.
+// This does not cast or charge for the skill.
 message VendingOpenRequest {
   string title = 1;
   repeated VendingEntry entries = 2;
@@ -1352,7 +1351,7 @@ message VendingOpenResult {
 }
 
 // Client -> server, cancel preparation or close a particular owned shop. An old
-// request must not close a replacement instance. Requires the V2 capability.
+// request must not close a replacement instance.
 message VendingCloseRequest {
   uint64 request_id = 1;
   oneof target {
@@ -1399,8 +1398,8 @@ message VendingBuy {
   uint32 expected_unit_price = 3;
 }
 
-// Client -> server, atomic checkout against one shop instance. Requires V2 and
-// a nonzero session-monotonic request ID; never retry an unconfirmed purchase.
+// Client -> server, atomic checkout against one shop instance. Requires a
+// nonzero session-monotonic request ID; never retry an unconfirmed purchase.
 message VendingPurchaseRequest {
   uint64 vendor_unit_id = 1;
   repeated VendingBuy items = 2;
