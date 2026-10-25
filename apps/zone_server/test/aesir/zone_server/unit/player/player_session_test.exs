@@ -1181,8 +1181,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       expect(SpatialIndex, :remove_player, fn 1 -> :ok end)
       expect(SpatialIndex, :clear_visibility, fn 1 -> :ok end)
 
-      state = %{
-        character: character,
+      state = %SessionState{
         game_state: PlayerState.new(character),
         connection_pid: self(),
         connection_monitor_ref: make_ref()
@@ -1213,8 +1212,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       game_state = %{PlayerState.new(character) | action_state: :dead}
 
-      state = %{
-        character: character,
+      state = %SessionState{
         game_state: game_state,
         connection_pid: self(),
         connection_monitor_ref: make_ref()
@@ -1330,8 +1328,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       expect(SpatialIndex, :remove_player, fn 1 -> :ok end)
       expect(SpatialIndex, :clear_visibility, fn 1 -> :ok end)
 
-      state = %{
-        character: character,
+      state = %SessionState{
         game_state: PlayerState.new(character),
         connection_pid: self(),
         connection_monitor_ref: make_ref()
@@ -1361,8 +1358,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       game_state = %{PlayerState.new(character) | action_state: :dead}
 
-      state = %{
-        character: character,
+      state = %SessionState{
         game_state: game_state,
         connection_pid: self(),
         connection_monitor_ref: make_ref()
@@ -1391,8 +1387,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       expect(SpatialIndex, :remove_player, fn 1 -> :ok end)
       expect(SpatialIndex, :clear_visibility, fn 1 -> :ok end)
 
-      state = %{
-        character: character,
+      state = %SessionState{
         game_state: PlayerState.new(character),
         connection_pid: self(),
         connection_monitor_ref: make_ref()
@@ -1412,8 +1407,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       Process.exit(dead_pid, :kill)
       :timer.sleep(10)
 
-      state = %{
-        character: character,
+      state = %SessionState{
         game_state: PlayerState.new(character),
         connection_pid: dead_pid,
         connection_monitor_ref: make_ref()
@@ -1443,8 +1437,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       expect(SpatialIndex, :remove_player, fn 1 -> :ok end)
       expect(SpatialIndex, :clear_visibility, fn 1 -> :ok end)
 
-      state = %{
-        character: character,
+      state = %SessionState{
         game_state: PlayerState.new(character),
         connection_pid: self(),
         connection_monitor_ref: make_ref()

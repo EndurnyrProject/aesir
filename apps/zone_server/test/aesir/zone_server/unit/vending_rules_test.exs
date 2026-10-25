@@ -111,7 +111,7 @@ defmodule Aesir.ZoneServer.Unit.VendingRulesTest do
     assert {:error, :insufficient_stock} =
              Vending.compute_purchase(cart, shop, [{0, 3}, {0, 3}])
 
-    assert {:ok, %{total_cost: 300, cart_removals: [{0, 3}]}} =
+    assert {:ok, %{total_cost: 300, cart_removals: [{0, 1}, {0, 2}]}} =
              Vending.compute_purchase(cart, shop, [{0, 1}, {0, 2}])
   end
 

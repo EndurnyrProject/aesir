@@ -78,7 +78,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.TradeSetZeny
   alias Aesir.Net.UnequipItem
   alias Aesir.Net.UseItem
-  alias Aesir.Net.VendingBuy
   alias Aesir.Net.VendingCloseRequest
   alias Aesir.Net.VendingListRequest
   alias Aesir.Net.VendingOpenRequest
@@ -431,14 +430,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     VendingHandler.handle_list(state, request)
   end
 
-  # VendingPurchaseRequest - Buyer purchases from a vendor. The buy lines are
-  # flattened to `{index, amount}` tuples; the seller session is the authority.
-  def handle_message(
-        %VendingPurchaseRequest{vendor_unit_id: vendor_unit_id, items: items},
-        state
-      ) do
-    buy_lines = Enum.map(items, fn %VendingBuy{index: i, amount: a} -> {i, a} end)
-    VendingHandler.handle_purchase_request(state, vendor_unit_id, buy_lines)
+  # VendingPurchaseRequest - Buyer checks out a quoted basket from one shop and
+  # always receives a correlated `VendingPurchaseResult`.
+  def handle_message(%VendingPurchaseRequest{} = request, state) do
+    VendingHandler.handle_purchase_request(state, request)
   end
 
   # PickupItemRequest - Player requests to pick up a ground item by its ground id.

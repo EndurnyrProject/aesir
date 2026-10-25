@@ -13,6 +13,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionVendingTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.VendingBoardShown
+  alias Aesir.Net.VendingBuy
+  alias Aesir.Net.VendingPurchaseRequest
+  alias Aesir.Net.VendingPurchaseResult
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
@@ -104,12 +107,26 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionVendingTest do
   end
 
   describe "vending_purchase_request self-purchase guard" do
-    test "a request to buy from one's own shop is a safe no-op" do
+    test "a request to buy from one's own shop is refused without a transfer" do
       buyer = PlayerState.new(character(1, "Merchy"))
-      state = %{game_state: buyer, connection_pid: self()}
+      state = %SessionState{game_state: buyer, connection_pid: self()}
 
-      assert {:noreply, ^state} =
-               VendingHandler.handle_purchase_request(state, 1, [{0, 1}])
+      request = %VendingPurchaseRequest{
+        request_id: 1,
+        vendor_unit_id: 1,
+        shop_id: "own-shop",
+        items: [%VendingBuy{index: 0, amount: 1}]
+      }
+
+      assert {:noreply, %{game_state: ^buyer}} =
+               VendingHandler.handle_purchase_request(state, request)
+
+      assert_received {:send, _ch,
+                       {:vending_purchase_result,
+                        %VendingPurchaseResult{
+                          request_id: 1,
+                          result: :VEND_PURCHASE_SELF_PURCHASE
+                        }}}
 
       refute_received {:send, _ch, _body}
     end

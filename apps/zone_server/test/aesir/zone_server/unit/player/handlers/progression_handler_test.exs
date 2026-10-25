@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -109,21 +110,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
 
   defp state do
     base = PlayerState.new(character())
-    %{connection_pid: self(), game_state: base}
+    %SessionState{connection_pid: self(), game_state: base}
   end
 
   defp state_with(progression_overrides) do
     base = PlayerState.new(character())
     progression = struct(base.stats.progression, progression_overrides)
     game_state = %{base | stats: %{base.stats | progression: progression}}
-    %{connection_pid: self(), game_state: game_state}
+    %SessionState{connection_pid: self(), game_state: game_state}
   end
 
   defp state_with_gs(progression_overrides, gs_overrides) do
     base = PlayerState.new(character())
     progression = struct(base.stats.progression, progression_overrides)
     game_state = struct(%{base | stats: %{base.stats | progression: progression}}, gs_overrides)
-    %{connection_pid: self(), game_state: game_state}
+    %SessionState{connection_pid: self(), game_state: game_state}
   end
 
   defp catalog_id(name) do
@@ -929,7 +930,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
         struct(base.stats.base_stats, pow: 15, sta: 12, wis: 8, spl: 6, con: 4, crt: 3)
 
       stats = %{base.stats | progression: progression, base_stats: base_stats}
-      state = %{connection_pid: self(), game_state: %{base | stats: stats}}
+      state = %SessionState{connection_pid: self(), game_state: %{base | stats: stats}}
 
       assert {:ok, new_state} = ProgressionHandler.apply_job_change(@swordman_id, state)
       result = new_state.game_state.stats

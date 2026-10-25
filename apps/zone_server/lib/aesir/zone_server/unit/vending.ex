@@ -18,7 +18,9 @@ defmodule Aesir.ZoneServer.Unit.Vending do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.Models.ItemOptions
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Unit.Bound
+  alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Rental
   alias Aesir.ZoneServer.Unit.Zeny
@@ -43,6 +45,20 @@ defmodule Aesir.ZoneServer.Unit.Vending do
 
   @typedoc "A client buy line: `{cart_index, amount}`."
   @type buy_line :: {non_neg_integer(), pos_integer()}
+
+  @typedoc "A checkout line with its quoted unit price; a `nil` quote is not checked."
+  @type quoted_line :: {non_neg_integer(), integer(), non_neg_integer() | nil}
+
+  @typedoc """
+  Balances a checkout is validated against. `weight_room: :infinity` skips the
+  weight check and `inventory: nil` skips the slot and stack simulation.
+  """
+  @type purchase_context :: %{
+          buyer_zeny: non_neg_integer(),
+          seller_zeny: non_neg_integer(),
+          weight_room: integer() | :infinity,
+          inventory: Inventory.t() | nil
+        }
 
   defmodule ShopItem do
     @moduledoc "A validated vending shop line, resolved against the cart at open time."
@@ -156,59 +172,153 @@ defmodule Aesir.ZoneServer.Unit.Vending do
   end
 
   @doc """
-  Computes a purchase of `buy_lines` against the shop and the live `cart`.
+  Computes a purchase of unquoted `buy_lines` with no buyer balance limits.
 
-  Each `{cart_index, amount}` must match a shop line and a live cart slot still
-  holding the listed nameid in sufficient quantity. Returns the total cost and
-  the cart-removal / inventory-add deltas (the inventory adds carry the source
-  cart item as a template). Duplicate lines share a cumulative stock allowance.
-  Missing listings return `:bad_line`, excess listed quantities return
-  `:insufficient_stock`, and changed live cart stock returns `:sold_out`.
+  Equivalent to `compute_purchase/4` with unlimited funds, weight and slots;
+  settlement uses `compute_purchase/4` with the participants' live balances.
   """
   @spec compute_purchase(cart(), [ShopItem.t()], [buy_line()]) ::
           {:ok, purchase()} | {:error, atom()}
-  def compute_purchase(_cart, shop_items, buy_lines)
-      when buy_lines == [] or length(buy_lines) > 12 or length(buy_lines) > length(shop_items),
-      do: {:error, :invalid_amount}
+  def compute_purchase(cart, shop_items, buy_lines) when is_list(buy_lines) do
+    lines = Enum.map(buy_lines, fn {index, amount} -> {index, amount, nil} end)
 
-  def compute_purchase(cart, shop_items, buy_lines)
-      when is_map(cart) and is_list(shop_items) and is_list(buy_lines) do
-    with {:ok, collapsed} <- collapse_purchase_lines(buy_lines) do
-      compute_purchase_lines(cart, shop_items, Enum.sort(collapsed))
-    end
+    context = %{
+      buyer_zeny: Zeny.max_zeny(),
+      seller_zeny: 0,
+      weight_room: :infinity,
+      inventory: nil
+    }
+
+    compute_purchase(cart, shop_items, lines, context)
   end
 
-  defp collapse_purchase_lines(lines) do
-    Enum.reduce_while(lines, {:ok, %{}}, fn {index, amount}, {:ok, totals} ->
-      case check_amount(amount) do
-        :ok -> {:cont, {:ok, Map.update(totals, index, amount, &(&1 + amount))}}
+  @doc """
+  Computes a checkout of `lines` against the shop, the live `cart` and the
+  participants' balances, checking each line in request order.
+
+  The basket needs one to twelve lines and no more lines than listings. Each
+  line then checks, and the first failure is returned: a positive amount
+  (`:invalid_amount`), a listed index (`:bad_line`), the quoted unit price
+  (`:price_changed`), the cumulative cost against the buyer's zeny and the
+  zeny cap (`:not_enough_zeny`), the seller's balance plus that pre-tax cost
+  against the cap (`:seller_zeny_limit`), the cumulative weight
+  (`:overweight`), the listing's remaining quantity (`:insufficient_stock`)
+  or the live cart slot (`:sold_out`), and finally whether the item fits the
+  buyer's inventory after the earlier lines (`:no_slots`, `:stack_limit`).
+
+  Lines are never merged: duplicate lines share the listing's remaining
+  quantity, and each produces its own cart removal and inventory add (the add
+  carries the source cart item as a template).
+  """
+  @spec compute_purchase(cart(), [ShopItem.t()], [quoted_line()], purchase_context()) ::
+          {:ok, purchase()} | {:error, atom()}
+  def compute_purchase(_cart, shop_items, lines, _context)
+      when lines == [] or length(lines) > 12 or length(lines) > length(shop_items),
+      do: {:error, :invalid_amount}
+
+  def compute_purchase(cart, shop_items, lines, context)
+      when is_map(cart) and is_list(shop_items) and is_list(lines) do
+    initial = %{
+      total: 0,
+      weight: 0,
+      inventory: context.inventory,
+      left: Map.new(shop_items, &{&1.cart_index, &1.amount}),
+      removals: [],
+      adds: []
+    }
+
+    lines
+    |> Enum.reduce_while({:ok, initial}, fn line, {:ok, acc} ->
+      case purchase_line(cart, shop_items, line, context, acc) do
+        {:ok, acc} -> {:cont, {:ok, acc}}
         error -> {:halt, error}
       end
     end)
-  end
-
-  defp compute_purchase_lines(cart, shop_items, buy_lines) do
-    Enum.reduce_while(buy_lines, {:ok, {0, [], []}}, fn line, {:ok, acc} ->
-      case resolve_buy(cart, shop_items, line) do
-        {:ok, cost, removal, add} ->
-          {total, removals, adds} = acc
-          {:cont, {:ok, {total + cost, [removal | removals], [add | adds]}}}
-
-        {:error, _} = error ->
-          {:halt, error}
-      end
-    end)
     |> case do
-      {:ok, {total, removals, adds}} ->
+      {:ok, acc} ->
         {:ok,
          %{
-           total_cost: total,
-           cart_removals: Enum.reverse(removals),
-           inventory_adds: Enum.reverse(adds)
+           total_cost: acc.total,
+           cart_removals: Enum.reverse(acc.removals),
+           inventory_adds: Enum.reverse(acc.adds)
          }}
 
       error ->
         error
+    end
+  end
+
+  defp purchase_line(cart, shop_items, {index, amount, quote}, context, acc) do
+    with :ok <- check_amount(amount),
+         %ShopItem{} = shop <- find_line(shop_items, index) || {:error, :bad_line},
+         :ok <- check_quote(shop, quote),
+         {:ok, item_def} <- item_definition(shop.nameid),
+         total = acc.total + amount * shop.price,
+         :ok <- check_funds(total, context),
+         {:ok, weight} <- check_weight(acc.weight + item_def.weight * amount, context),
+         {:ok, item, left} <- take_stock(cart, shop, amount, Map.fetch!(acc.left, index)),
+         {:ok, inventory} <- simulate_add(acc.inventory, item_def, item, amount) do
+      {:ok,
+       %{
+         acc
+         | total: total,
+           weight: weight,
+           inventory: inventory,
+           left: Map.put(acc.left, index, left),
+           removals: [{index, amount} | acc.removals],
+           adds: [{item, amount} | acc.adds]
+       }}
+    end
+  end
+
+  defp check_quote(_shop, nil), do: :ok
+  defp check_quote(%ShopItem{price: price}, price), do: :ok
+  defp check_quote(_shop, _quote), do: {:error, :price_changed}
+
+  defp item_definition(nameid) do
+    case ItemManagement.get_item_by_id(nameid) do
+      {:ok, item_def} -> {:ok, item_def}
+      {:error, _reason} -> {:error, :unknown_item}
+    end
+  end
+
+  defp check_funds(total, %{buyer_zeny: buyer_zeny, seller_zeny: seller_zeny}) do
+    cond do
+      total > buyer_zeny or total > Zeny.max_zeny() -> {:error, :not_enough_zeny}
+      total + seller_zeny > Zeny.max_zeny() -> {:error, :seller_zeny_limit}
+      true -> :ok
+    end
+  end
+
+  defp check_weight(weight, %{weight_room: :infinity}), do: {:ok, weight}
+  defp check_weight(weight, %{weight_room: room}) when weight > room, do: {:error, :overweight}
+  defp check_weight(weight, _context), do: {:ok, weight}
+
+  # `left` is the listing's unsold quantity; the live cart caps what remains of
+  # it once the earlier lines' units are taken.
+  defp take_stock(cart, %ShopItem{} = shop, amount, left) do
+    case PlayerState.get_by_index(cart, shop.cart_index) do
+      %InventoryItem{nameid: nameid, bound: bound, amount: held} = item
+      when nameid == shop.nameid and bound == shop.bound ->
+        cond do
+          amount > left -> {:error, :insufficient_stock}
+          amount > held - (shop.amount - left) -> {:error, :sold_out}
+          true -> {:ok, item, left - amount}
+        end
+
+      _changed ->
+        {:error, :sold_out}
+    end
+  end
+
+  defp simulate_add(nil, _item_def, _item, _amount), do: {:ok, nil}
+
+  defp simulate_add(inventory, item_def, item, amount) do
+    case Inventory.add_item(inventory, item_def, item, amount, :infinity) do
+      {:ok, inventory, _change} -> {:ok, inventory}
+      {:error, :inventory_full} -> {:error, :no_slots}
+      {:error, :invalid} -> {:error, :invalid_amount}
+      {:error, _over} -> {:error, :stack_limit}
     end
   end
 
@@ -305,31 +415,6 @@ defmodule Aesir.ZoneServer.Unit.Vending do
       craft: item.craft,
       random_options: item.random_options
     }
-  end
-
-  defp resolve_buy(cart, shop_items, {index, amount}) do
-    with %ShopItem{} = shop <- find_line(shop_items, index),
-         true <- is_integer(amount) and amount > 0 and amount <= shop.amount do
-      check_stock(cart, shop, index, amount)
-    else
-      nil -> {:error, :bad_line}
-      false -> {:error, :insufficient_stock}
-    end
-  end
-
-  defp check_stock(cart, %ShopItem{} = shop, index, amount) do
-    case PlayerState.get_by_index(cart, index) do
-      %InventoryItem{nameid: nameid, amount: held} = item
-      when nameid == shop.nameid and held >= amount ->
-        if item.bound == shop.bound do
-          {:ok, amount * shop.price, {index, amount}, {item, amount}}
-        else
-          {:error, :sold_out}
-        end
-
-      _ ->
-        {:error, :sold_out}
-    end
   end
 
   defp find_line(shop_items, index) do

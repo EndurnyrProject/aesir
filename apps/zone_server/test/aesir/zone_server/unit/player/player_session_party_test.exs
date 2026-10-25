@@ -233,7 +233,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
           }
       }
 
-      state = %{
+      state = %SessionState{
         game_state: %{game_state | map_name: "aldebaran", stats: stats},
         connection_pid: self(),
         connection_monitor_ref: make_ref()

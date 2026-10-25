@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   alias Aesir.Net.ItemVanished
   alias Aesir.Net.SkillUnitDespawn
+  alias Aesir.Net.VendingBuy
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
@@ -25,7 +26,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler, as: HomunculusMovementHandler
-  alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Player.GuildSync
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
@@ -72,12 +72,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SkillCooldownPersistence
   alias Aesir.ZoneServer.Unit.Player.StateCommit
-  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusPersistence
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
-  alias Aesir.ZoneServer.Unit.Vending
   alias Phoenix.PubSub
 
   # rAthena NATURAL_HEAL_INTERVAL
@@ -622,35 +620,42 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @doc """
-  Runs a vending purchase against this seller session: the transactional
-  authority for its own cart, zeny and shop. Called from the buyer's
-  `VendingHandler.handle_purchase_request/3` with the buyer's fresh snapshot,
-  parked as a `call` on the seller.
+  Settles a checkout in this higher-id seller session while the calling buyer
+  stays parked with its `buyer` snapshot; replies with the buyer's delta. A
+  seller session that is gone answers `{:error, :not_open}`.
   """
-  @spec vending_purchase(
-          pid(),
-          integer(),
-          Inventory.t(),
-          non_neg_integer(),
-          Stats.t(),
-          String.t(),
-          [Vending.buy_line()]
-        ) :: {:ok, VendingHandler.buyer_delta()} | {:error, term()}
-  def vending_purchase(
-        pid,
-        buyer_char_id,
-        buyer_inventory,
-        buyer_zeny,
-        buyer_stats,
-        buyer_name,
-        buy_lines
-      ) do
-    GenServer.call(
-      pid,
-      {:vending,
-       {:vending_purchase, buyer_char_id, buyer_inventory, buyer_zeny, buyer_stats, buyer_name,
-        buy_lines}}
-    )
+  @spec vending_purchase(pid(), PlayerState.t(), String.t(), [VendingBuy.t()]) ::
+          {:ok, VendingHandler.buyer_delta()} | {:error, atom()}
+  def vending_purchase(pid, buyer, shop_id, rows) do
+    vending_call(pid, {:vending, {:vending_purchase, buyer, shop_id, rows}})
+  end
+
+  @doc """
+  Invites this lower-id seller session to settle the higher-id buyer's checkout
+  `request_id` by calling back into `buyer_pid` with its own snapshot.
+  """
+  @spec vending_purchase_invite(pid(), pid(), pos_integer()) :: :ok
+  def vending_purchase_invite(pid, buyer_pid, request_id) do
+    GenServer.cast(pid, {:vending, {:purchase_invite, buyer_pid, request_id}})
+  end
+
+  @doc """
+  Settles this higher-id buyer's invited checkout while the calling seller
+  stays parked with its `seller` snapshot; replies with the seller's outcome.
+  """
+  @spec vending_settle(pid(), pos_integer(), PlayerState.t()) ::
+          {:ok, VendingHandler.seller_outcome()} | {:error, atom()}
+  def vending_settle(pid, request_id, seller) do
+    vending_call(pid, {:vending, {:settle_purchase, request_id, seller}})
+  end
+
+  # A vanished peer settles nothing. A timeout still crashes the caller, whose
+  # restart reloads the durable state the peer may yet have committed.
+  defp vending_call(pid, message) do
+    GenServer.call(pid, message)
+  catch
+    :exit, {:timeout, _call} = reason -> exit(reason)
+    :exit, _gone -> {:error, :not_open}
   end
 
   @doc "Starts server-authoritative navigation for this player."
@@ -1079,6 +1084,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     TradeHandler.handle_trade_down(ref, pid, state)
   end
 
+  # The invited seller session ended before settling the in-flight checkout.
+  @impl true
+  def handle_info(
+        {:DOWN, ref, :process, _pid, _reason},
+        %{vending_purchase: %{monitor: ref}} = state
+      ) do
+    VendingHandler.handle_seller_down(state)
+  end
+
   # The active NPC interaction ended (close / idle-timeout / crash). Clearing the
   # lock frees the player to talk to NPCs again, and the next script starts with
   # the default item-use flag; the session always survives
@@ -1389,6 +1403,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_cast({:vending, {:purchase_invite, buyer_pid, request_id}}, state) do
+    VendingHandler.handle_purchase_invite(state, buyer_pid, request_id)
+  end
+
+  @impl true
   def handle_cast({:npc, {:credit_zeny, amount}}, state) do
     ScriptEffectHandler.handle_gm_credit_zeny(amount, state)
   end
@@ -1526,28 +1545,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     StatusManager.handle_has_status(status_id, state)
   end
 
-  # Vending: the seller-authority buy seam. A buyer session (parked in its own
-  # call, via `PlayerSession.vending_purchase/7`) calls this on the seller
-  # session, which runs the whole atomic transaction and replies with the
-  # buyer's delta. Kept as its own domain despite being a single message: it is
-  # the entire cross-session `VendingHandler` seam, not a session-local tag.
+  # Vending checkout seam. The lower-id participant parks in a call on the
+  # higher-id one, which settles the atomic transaction and replies with the
+  # caller's part: a buyer calls a higher-id seller, and a seller invited by a
+  # higher-id buyer calls that buyer back. Calls never run toward a lower id, so
+  # concurrent checkouts cannot wait on each other in a cycle.
   @impl true
-  def handle_call(
-        {:vending,
-         {:vending_purchase, buyer_char_id, buyer_inventory, buyer_zeny, buyer_stats, buyer_name,
-          buy_lines}},
-        _from,
-        seller_state
-      ) do
-    VendingHandler.handle_purchase(
-      seller_state,
-      buyer_char_id,
-      buyer_inventory,
-      buyer_zeny,
-      buyer_stats,
-      buyer_name,
-      buy_lines
-    )
+  def handle_call({:vending, {:vending_purchase, buyer, shop_id, rows}}, _from, state) do
+    VendingHandler.handle_purchase(state, buyer, shop_id, rows)
+  end
+
+  @impl true
+  def handle_call({:vending, {:settle_purchase, request_id, seller}}, _from, state) do
+    VendingHandler.handle_settle(state, request_id, seller)
   end
 
   # Social: pending party/guild invite delivery.

@@ -140,6 +140,7 @@ Mimic.copy(Aesir.ZoneServer.Mmo.Skill.NoCast)
 Mimic.copy(Aesir.ZoneServer.Npc.Proximity)
 Mimic.copy(Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler)
 Mimic.copy(Aesir.ZoneServer.Config)
+Mimic.copy(Aesir.ZoneServer.Mmo.Skill.PortalAccess)
 Mimic.copy(Aesir.Repo)
 
 # Integration tests are excluded from the default run. From the umbrella root:

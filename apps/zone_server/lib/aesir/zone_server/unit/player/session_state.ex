@@ -29,6 +29,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   """
 
   alias Aesir.Commons.GameMode
+  alias Aesir.Net.VendingBuy
+  alias Aesir.Net.VendingPurchaseResult
   alias Aesir.ZoneServer.Navigation.Session, as: NavigationSession
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Runtime
@@ -59,6 +61,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             progress_bar: nil,
             npc_shop: nil,
             vending_setup: nil,
+            vending_purchase: nil,
             pending_skill_text_input: nil,
             pending_skill_menu: nil,
             pending_item_skill: nil,
@@ -90,6 +93,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
           npc_shop: non_neg_integer() | nil,
           vending_setup:
             %{setup_id: String.t(), level: pos_integer(), sp_spent: non_neg_integer()} | nil,
+          vending_purchase: vending_purchase() | nil,
           pending_skill_text_input: PendingSkillTextInput.t() | nil,
           pending_skill_menu: map() | nil,
           pending_item_skill:
@@ -133,6 +137,18 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
           homunculus: HomunculusState.t() | nil,
           homunculus_runtime: Runtime.t(),
           navigation: NavigationSession.t() | nil
+        }
+
+  @typedoc """
+  The buyer's latest vending checkout: its request ID and canonical payload
+  (`{vendor_unit_id, shop_id, items}`), the result once settled (`nil` while in
+  flight), and the monitor on an invited seller session while it settles.
+  """
+  @type vending_purchase :: %{
+          request_id: pos_integer(),
+          payload: {non_neg_integer(), String.t(), [VendingBuy.t()]},
+          result: VendingPurchaseResult.t() | nil,
+          monitor: reference() | nil
         }
 
   @typedoc """

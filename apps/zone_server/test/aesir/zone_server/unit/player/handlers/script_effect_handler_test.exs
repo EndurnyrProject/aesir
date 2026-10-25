@@ -1180,7 +1180,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
       class: 0
     }
 
-    %{connection_pid: self(), game_state: PlayerState.new(character)}
+    %SessionState{connection_pid: self(), game_state: PlayerState.new(character)}
   end
 
   defp base_state(opts \\ []) do
