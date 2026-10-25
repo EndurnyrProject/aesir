@@ -57,7 +57,7 @@ defmodule Commons.MixProject do
       {:postgrex, ">= 0.0.0"},
       {:process_tree, "~> 0.2.1"},
       {:protox, "~> 2.0"},
-      {:quic, "~> 1.6"},
+      {:quic, "~> 2.1"},
       {:ranch, "~> 2.2"},
       {:recode, "~> 0.8.0", only: [:dev], runtime: false},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
