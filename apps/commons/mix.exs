@@ -44,7 +44,7 @@ defmodule Commons.MixProject do
       {:ecto, "~> 3.13"},
       {:ecto_sql, "~> 3.13"},
       {:ex_doc, "~> 0.28", only: :dev, runtime: false},
-      {:hammox, "~> 0.7", only: :test},
+      {:hammox, "~> 1.0", only: :test},
       {:horde, "~> 0.10"},
       {:hush, "~> 1.2"},
       {:libcluster, "~> 3.4"},
