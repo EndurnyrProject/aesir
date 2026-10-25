@@ -49,7 +49,7 @@ defmodule Commons.MixProject do
       {:hush, "~> 1.2"},
       {:libcluster, "~> 3.4"},
       {:local_cluster, "~> 2.0", only: [:test], runtime: false},
-      {:mimic, "~> 1.12", only: :test},
+      {:mimic, "~> 2.4", only: :test},
       {:nimble_options, "~> 1.1"},
       {:nimble_parsec, "~> 1.4"},
       {:phoenix_pubsub, "~> 2.1"},
