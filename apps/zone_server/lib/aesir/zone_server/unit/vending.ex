@@ -212,6 +212,15 @@ defmodule Aesir.ZoneServer.Unit.Vending do
     end
   end
 
+  @doc "Checks intrinsic identification, broken and rental restrictions, without group policy."
+  @spec intrinsic_eligibility(InventoryItem.t()) :: :ok | {:error, atom()}
+  def intrinsic_eligibility(%InventoryItem{} = item) do
+    with :ok <- check_identified(item),
+         :ok <- check_unbroken(item) do
+      check_rental(item)
+    end
+  end
+
   @doc "Normalizes a nonempty, control-free title to at most 79 valid UTF-8 bytes."
   @spec normalize_title(String.t()) :: {:ok, String.t()} | {:error, :invalid_title}
   def normalize_title(title) when is_binary(title) do
@@ -237,9 +246,7 @@ defmodule Aesir.ZoneServer.Unit.Vending do
     with :ok <- check_amount(amount),
          {:ok, price} <- normalize_price(price, context.rules.max_price),
          {:ok, item} <- fetch_slot(cart, cart_index, amount),
-         :ok <- check_identified(item),
-         :ok <- check_unbroken(item),
-         :ok <- check_rental(item),
+         :ok <- intrinsic_eligibility(item),
          :ok <- Map.get(context.eligibility, cart_index, {:error, :item_untradeable}) do
       {:ok,
        %ShopItem{

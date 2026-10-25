@@ -192,13 +192,35 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
         "Id" => 1201,
         "AegisName" => "Knife",
         "Name" => "Knife",
-        "Trade" => %{"NoTrade" => true}
+        "Trade" => %{"NoTrade" => true, "Override" => 55}
       }
 
       assert {:ok, definition = %ItemDefinition{no_trade: true}} =
                Importer.to_definition(entry, :renewal)
 
-      assert %{"no_trade" => true} = Importer.to_yaml_map(definition, :renewal)
+      assert Map.get(definition, :trade_override) == 55
+
+      assert %{"no_trade" => true, "trade_override" => 55} =
+               Importer.to_yaml_map(definition, :renewal)
+    end
+
+    test "normalizes unsigned trade override levels and refuses invalid values" do
+      entry = %{"Id" => 1201, "AegisName" => "Knife", "Name" => "Knife"}
+
+      for {value, expected} <- [{0, 0}, {101, 100}, {65_535, 100}] do
+        assert {:ok, definition} =
+                 Importer.to_definition(Map.put(entry, "Trade", %{"Override" => value}), :renewal)
+
+        assert definition.trade_override == expected
+      end
+
+      for invalid <- [-1, 65_536, "55", false] do
+        assert {:error, {:invalid_trade_override, 1201, ^invalid}} =
+                 Importer.to_definition(
+                   Map.put(entry, "Trade", %{"Override" => invalid}),
+                   :renewal
+                 )
+      end
     end
 
     test "defaults missing Trade restriction to false and omits it from YAML" do

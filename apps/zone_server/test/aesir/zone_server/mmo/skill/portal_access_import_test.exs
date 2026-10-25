@@ -37,17 +37,43 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PortalAccessImportTest do
         Name: Parent
         Permissions:
           any_warp: true
+          can_trade: true
       - Id: 4
         Name: Child
         Level: 1
         Inherit:
           Parent: true
+        Permissions:
+          can_trade: false
+          can_trade_bounded: true
       - Id: 5
         Name: Refused
         Inherit:
           Parent: true
         Permissions:
           any_warp: false
+      - Id: 6
+        Name: Unconditional
+        Permissions:
+          trade_unconditional: true
+      - Id: 7
+        Name: All
+        Permissions:
+          all_permission: true
+      - Id: 8
+        Name: DeniedAfterAll
+        Permissions:
+          all_permission: true
+          can_trade: false
+          can_trade_bounded: false
+          trade_unconditional: false
+      - Id: 9
+        Name: GrantedAfterDenial
+        Permissions:
+          can_trade: false
+          can_trade_bounded: false
+          trade_unconditional: false
+          all_permission: true
     """)
 
     renewal = PortalAccess.build(root, :renewal)
@@ -57,7 +83,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PortalAccessImportTest do
     assert classic["maps"] == %{"prontera" => %{"nomemo" => true}}
     assert classic["jobs"] == %{}
     assert renewal["jobs"]["4054"] == %{"zone" => 4112, "group_level" => 100}
-    assert renewal["groups"]["4"] == %{"any_warp" => true, "level" => 1}
+
+    assert renewal["groups"]["4"] == %{
+             "any_warp" => true,
+             "level" => 1,
+             "can_trade" => true,
+             "can_trade_bounded" => true,
+             "trade_unconditional" => false
+           }
+
     assert renewal["groups"]["5"]["any_warp"] == true
+    assert renewal["groups"]["6"]["trade_unconditional"] == true
+    assert renewal["groups"]["6"]["can_trade"] == false
+    assert renewal["groups"]["7"]["any_warp"] == true
+    assert renewal["groups"]["7"]["can_trade"] == true
+    assert renewal["groups"]["7"]["can_trade_bounded"] == true
+    assert renewal["groups"]["7"]["trade_unconditional"] == true
+
+    for permission <- ["can_trade", "can_trade_bounded", "trade_unconditional"] do
+      assert renewal["groups"]["8"][permission] == false
+      assert renewal["groups"]["9"][permission] == true
+    end
   end
 end

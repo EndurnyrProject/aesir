@@ -1,28 +1,52 @@
 groups:
   '0':
     any_warp: false
+    can_trade: true
+    can_trade_bounded: false
     level: 0
+    trade_unconditional: false
   '1':
     any_warp: false
+    can_trade: true
+    can_trade_bounded: false
     level: 0
+    trade_unconditional: false
   '10':
     any_warp: true
+    can_trade: true
+    can_trade_bounded: false
     level: 2
+    trade_unconditional: false
   '2':
     any_warp: false
+    can_trade: true
+    can_trade_bounded: false
     level: 1
+    trade_unconditional: false
   '3':
     any_warp: true
+    can_trade: true
+    can_trade_bounded: false
     level: 1
+    trade_unconditional: false
   '4':
     any_warp: true
+    can_trade: true
+    can_trade_bounded: false
     level: 1
+    trade_unconditional: false
   '5':
     any_warp: false
+    can_trade: true
+    can_trade_bounded: false
     level: 0
+    trade_unconditional: false
   '99':
     any_warp: true
+    can_trade: true
+    can_trade_bounded: true
     level: 99
+    trade_unconditional: true
 jobs: {}
 maps:
   prt_sewb1:

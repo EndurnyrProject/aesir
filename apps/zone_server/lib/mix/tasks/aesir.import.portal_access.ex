@@ -1,6 +1,6 @@
 defmodule Mix.Tasks.Aesir.Import.PortalAccess do
   @moduledoc """
-  Imports the selected mode's memo-map flags, job-entry restrictions and warp permissions.
+  Imports the selected mode's memo-map flags, job-entry restrictions and account permissions.
 
       mix aesir.import.portal_access <rathena_root> [--mode re|pre-re]
 
@@ -14,6 +14,8 @@ defmodule Mix.Tasks.Aesir.Import.PortalAccess do
 
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Mix.Tasks.Aesir.Import
+
+  @permission_flags ~w(any_warp can_trade can_trade_bounded trade_unconditional)
 
   @impl Mix.Task
   def run(args) do
@@ -41,7 +43,10 @@ defmodule Mix.Tasks.Aesir.Import.PortalAccess do
           {to_string(id),
            %{
              "level" => Map.get(group, "Level", 0),
-             "any_warp" => any_warp?(id, groups, [])
+             "any_warp" => permission?(id, groups, "any_warp", []),
+             "can_trade" => permission?(id, groups, "can_trade", []),
+             "can_trade_bounded" => permission?(id, groups, "can_trade_bounded", []),
+             "trade_unconditional" => permission?(id, groups, "trade_unconditional", [])
            }}
         end)
     }
@@ -141,26 +146,72 @@ defmodule Mix.Tasks.Aesir.Import.PortalAccess do
   defp job_id!(number), do: String.to_integer(number)
 
   defp groups(root, path, previous) do
-    data = YamlElixir.read_from_file!(Path.join(root, path))
-    merged = Enum.reduce(data["Body"] || [], previous, &Map.put(&2, &1["Id"], &1))
+    data = YamlElixir.read_from_file!(Path.join(root, path), maps_as_keywords: true)
+    merged = Enum.reduce(ordered_value(data, "Body", []), previous, &merge_group/2)
+    imports = data |> ordered_value("Footer", []) |> ordered_value("Imports", [])
 
-    Enum.reduce(get_in(data, ["Footer", "Imports"]) || [], merged, fn row, acc ->
-      if File.regular?(Path.join(root, row["Path"])),
-        do: groups(root, row["Path"], acc),
+    Enum.reduce(imports, merged, fn row, acc ->
+      imported = ordered_value(row, "Path", nil)
+
+      if File.regular?(Path.join(root, imported)),
+        do: groups(root, imported, acc),
         else: acc
     end)
   end
 
-  defp any_warp?(id, groups, seen) do
+  defp merge_group(row, groups) do
+    attrs = Map.new(row)
+    id = Map.fetch!(attrs, "Id")
+    previous = Map.get(groups, id, %{})
+    inherited = Map.new(Map.get(attrs, "Inherit", []))
+    inheritance = Map.merge(Map.get(previous, "Inherit", %{}), inherited)
+    permissions = apply_permissions(Map.get(attrs, "Permissions", []), previous)
+
+    group =
+      previous
+      |> Map.merge(attrs)
+      |> Map.put("Inherit", inheritance)
+      |> Map.put("Permissions", permissions)
+
+    Map.put(groups, id, group)
+  end
+
+  defp apply_permissions(ordered, previous) do
+    ordered
+    |> Enum.reverse()
+    |> Enum.reduce(Map.get(previous, "Permissions", %{}), fn
+      {"all_permission", allowed}, _flags when is_boolean(allowed) ->
+        Map.new(@permission_flags, &{&1, allowed})
+
+      {permission, allowed}, flags when permission in @permission_flags and is_boolean(allowed) ->
+        Map.put(flags, permission, allowed)
+
+      {permission, _value}, _flags
+      when permission == "all_permission" or permission in @permission_flags ->
+        raise ArgumentError, "group permission #{permission} must be boolean"
+
+      _other, flags ->
+        flags
+    end)
+  end
+
+  defp ordered_value(fields, key, default) do
+    case List.keyfind(fields, key, 0) do
+      {^key, value} -> value
+      nil -> default
+    end
+  end
+
+  defp permission?(id, groups, permission, seen) do
     if id in seen, do: raise(ArgumentError, "group inheritance cycle")
     group = Map.fetch!(groups, id)
     permissions = Map.get(group, "Permissions", %{})
 
-    Map.get(permissions, "any_warp", false) or
-      inherited_warp?(group, groups, [id | seen])
+    Map.get(permissions, permission, false) or
+      inherited_permission?(group, groups, permission, [id | seen])
   end
 
-  defp inherited_warp?(group, groups, seen) do
+  defp inherited_permission?(group, groups, permission, seen) do
     group
     |> Map.get("Inherit", %{})
     |> Enum.filter(fn {_name, enabled} -> enabled end)
@@ -170,7 +221,7 @@ defmodule Mix.Tasks.Aesir.Import.PortalAccess do
           String.downcase(parent["Name"]) == String.downcase(name)
         end)
 
-      any_warp?(parent_id, groups, seen)
+      permission?(parent_id, groups, permission, seen)
     end)
   end
 end

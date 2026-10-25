@@ -303,7 +303,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
          {:ok, subtype} <- parse_subtype(Map.get(entry, "SubType")),
          {:ok, jobs} <- parse_jobs(Map.fetch(entry, "Jobs"), item_id),
          {:ok, classes} <- parse_classes(Map.fetch(entry, "Classes"), item_id, mode),
-         {:ok, gender} <- parse_gender(Map.fetch(entry, "Gender"), item_id) do
+         {:ok, gender} <- parse_gender(Map.fetch(entry, "Gender"), item_id),
+         {:ok, trade_override} <-
+           parse_trade_override(get_in(entry, ["Trade", "Override"]), item_id) do
       definition = %ItemDefinition{
         id: item_id,
         aegis_name: Map.fetch!(entry, "AegisName"),
@@ -331,6 +333,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
         bind_on_equip: get_in(entry, ["Flags", "BindOnEquip"]) || false,
         no_consume: get_in(entry, ["Flags", "NoConsume"]) || false,
         no_trade: get_in(entry, ["Trade", "NoTrade"]) || false,
+        trade_override: trade_override,
         no_cart: get_in(entry, ["Trade", "NoCart"]) || false,
         no_storage: get_in(entry, ["Trade", "NoStorage"]) || false,
         no_guild_storage: get_in(entry, ["Trade", "NoGuildStorage"]) || false,
@@ -341,6 +344,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
       {:ok, ItemDefinition.normalize_gender(definition)}
     end
   end
+
+  defp parse_trade_override(nil, _item_id), do: {:ok, 100}
+
+  defp parse_trade_override(value, _item_id) when is_integer(value) and value in 0..65_535,
+    do: {:ok, min(value, 100)}
+
+  defp parse_trade_override(value, item_id),
+    do: {:error, {:invalid_trade_override, item_id, value}}
 
   # Every container flag defaults to false; a missing Amount, or any Amount on
   # a non-stackable type, caps at 0.

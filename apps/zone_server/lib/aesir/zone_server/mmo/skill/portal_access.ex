@@ -1,5 +1,5 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.PortalAccess do
-  @moduledoc "Mode-scoped memo flags, account warp permissions and job-entry restrictions."
+  @moduledoc "Mode-scoped map access, imported account-group permissions and job restrictions."
 
   import Bitwise
 
@@ -40,6 +40,30 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PortalAccess do
     group_id = if account_id, do: Auth.get_account!(account_id).group_id, else: 0
     group = Map.get(index()["groups"], to_string(group_id), %{})
     %{any_warp: Map.get(group, "any_warp", false), level: Map.get(group, "level", 0)}
+  end
+
+  @doc "Returns effective item-transfer permissions; absent identity or group grants none."
+  @spec trade_permissions(PlayerState.t()) :: %{
+          level: non_neg_integer(),
+          can_trade: boolean(),
+          can_trade_bounded: boolean(),
+          trade_unconditional: boolean()
+        }
+  def trade_permissions(%PlayerState{account_id: account_id}) do
+    group =
+      if account_id do
+        group_id = Auth.get_account!(account_id).group_id
+        Map.get(index()["groups"], to_string(group_id), %{})
+      else
+        %{}
+      end
+
+    %{
+      level: Map.get(group, "level", 0),
+      can_trade: Map.get(group, "can_trade", false),
+      can_trade_bounded: Map.get(group, "can_trade_bounded", false),
+      trade_unconditional: Map.get(group, "trade_unconditional", false)
+    }
   end
 
   @doc "Checks the destination's map data and the entering player's job restriction."
