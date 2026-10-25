@@ -58,6 +58,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.Invincibility
@@ -1846,6 +1847,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   defp prepare_cast_commit(%{connection_pid: connection_pid} = state, new_game_state) do
+    new_game_state = stamp_vending_cost(state.game_state, new_game_state)
     previous_spheres = state.game_state.spirit_spheres
     equipped = Map.values(Inventory.equipped_items(new_game_state.inventory))
 
@@ -1896,6 +1898,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     |> drain_warp()
     |> drain_interaction()
     |> drain_menu_offer()
+    |> drain_vending_setup()
   end
 
   @doc false
@@ -1933,6 +1936,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
           end
 
         %{state | game_state: %{moved_state | skill_cooldowns: blocked_cooldowns}}
+    end
+  end
+
+  defp stamp_vending_cost(previous, %{pending_vending_setup: offer} = current)
+       when is_map(offer) do
+    spent = max(previous.stats.current_state.sp - current.stats.current_state.sp, 0)
+    %{current | pending_vending_setup: Map.put(offer, :sp_spent, spent)}
+  end
+
+  defp stamp_vending_cost(_previous, current), do: current
+
+  defp drain_vending_setup(%{game_state: %{pending_vending_setup: nil}} = state), do: state
+
+  defp drain_vending_setup(%{game_state: game_state} = state) do
+    offer = game_state.pending_vending_setup
+    state = %{state | game_state: %{game_state | pending_vending_setup: nil}}
+
+    case VendingHandler.prepare_setup(state, offer) do
+      {:ok, prepared} ->
+        prepared
+
+      {:error, reason} ->
+        report_cast_failure(41, game_state.character_id, reason)
+        state
     end
   end
 
@@ -2265,6 +2292,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   defp broadcast_skill_effect(_game_state, _skill_id, _level, {:ground, _x, _y}), do: :ok
+
+  # Vending opens its preparation UI without a no-damage spell animation.
+  defp broadcast_skill_effect(_game_state, 41, _level, _target), do: :ok
 
   # Brandish Spear is a no-damage cast whose only visuals are its hits.
   defp broadcast_skill_effect(_game_state, @brandish_spear, _level, _target), do: :ok

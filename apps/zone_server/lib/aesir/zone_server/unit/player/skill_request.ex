@@ -80,6 +80,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequest do
     with :ok <- check(inf in [:self, :target], :silent),
          :ok <- check_dialog(state, inf),
          :ok <- check(act_allowed?(state, inf), :silent),
+         :ok <- check(is_nil(Map.get(state, :vending_setup)), busy_notice()),
          :ok <- check(state.game_state.action_state != :sitting, :silent),
          :ok <- not_ok(state, skill_id, now),
          :ok <- check_ready(state, skill_id, now, [@cast_cancel]),

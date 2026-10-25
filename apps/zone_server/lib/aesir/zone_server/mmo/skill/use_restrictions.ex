@@ -82,6 +82,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UseRestrictions do
   def delay_reply(%PlayerState{show_delay: true}), do: {:fail, :skill_interval}
   def delay_reply(_game_state), do: :silent
 
+  @doc "Checks only Vending's map and cell bans, including at listing submission."
+  @spec vending_location(PlayerState.t()) :: :ok | {:error, :map_restricted | :cell_restricted}
+  def vending_location(%PlayerState{map_name: map_name, x: x, y: y}) do
+    cond do
+      MapFlags.get(map_name, :novending) -> {:error, :map_restricted}
+      novending_cell?(map_name, x, y) -> {:error, :cell_restricted}
+      true -> :ok
+    end
+  end
+
   defp matching_item(%{skill_id: skill_id} = item, skill_id), do: item
   defp matching_item(_pending_item, _skill_id), do: nil
 
@@ -101,15 +111,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UseRestrictions do
         {:notice, :SYSTEM_NOTICE_ID_MAP_CANT_TELEPORT}
       )
 
-  defp skill_rule(%PlayerState{map_name: map_name, x: x, y: y}, @vending) do
-    cond do
-      MapFlags.get(map_name, :novending) ->
+  defp skill_rule(%PlayerState{map_name: map_name, x: x, y: y} = player, @vending) do
+    case vending_location(player) do
+      {:error, :map_restricted} ->
         {:refuse, {:message, "You can't open a shop on this map", {:fail, :failed}}}
 
-      novending_cell?(map_name, x, y) ->
+      {:error, :cell_restricted} ->
         {:refuse, {:message, "You can't open a shop on this cell.", {:fail, :failed}}}
 
-      true ->
+      :ok ->
         check(not Proximity.npc_near?(map_name, x, y), {:fail, :npc_nearby})
     end
   end

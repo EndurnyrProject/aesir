@@ -58,6 +58,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             work_in_progress: false,
             progress_bar: nil,
             npc_shop: nil,
+            vending_setup: nil,
             pending_skill_text_input: nil,
             pending_skill_menu: nil,
             pending_item_skill: nil,
@@ -87,6 +88,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
           work_in_progress: boolean(),
           progress_bar: progress_bar() | nil,
           npc_shop: non_neg_integer() | nil,
+          vending_setup:
+            %{setup_id: String.t(), level: pos_integer(), sp_spent: non_neg_integer()} | nil,
           pending_skill_text_input: PendingSkillTextInput.t() | nil,
           pending_skill_menu: map() | nil,
           pending_item_skill:

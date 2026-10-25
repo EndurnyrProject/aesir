@@ -1,51 +1,31 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   @moduledoc """
-  Opens and closes a merchant's vending shop (design "Open-shop flow" /
-  "Close-shop flow").
+  Public session entry points and seller-authoritative vending purchase settlement.
 
-  `PlayerSession` is the single writer; both functions take and return the
-  session `state` map and run inside a session cast. Opening gates on a mounted
-  cart (`SC_PUSHCART` active) and a learned `MC_VENDING`, validates the listing
-  through the pure `Vending` core, enters the frozen `:vending` action state with
-  the shop carried in `state_context`, mirrors the shop into the `Vending.Registry`
-  for out-of-session browse/board reads, and area-broadcasts the title board.
-  Closing tears the shop down and returns to `:idle`; unsold stock simply stays
-  in the cart (no item move).
+  `VendingShopHandler` owns paid setup, opening, browsing and closure; these
+  entry points retain the established session API. Checkout runs in the seller's
+  `PlayerSession`, validates live stock and commits both participants' durable
+  item and zeny changes in one database transaction. Unsold stock stays in the cart.
   """
 
   require Logger
 
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
-  alias Aesir.Net.VendingBoardRemoved
-  alias Aesir.Net.VendingBoardShown
   alias Aesir.Net.VendingList
-  alias Aesir.Net.VendingOpenResult
   alias Aesir.Net.VendingSaleReport
-  alias Aesir.Net.VendingShopItem
   alias Aesir.Repo
   alias Aesir.ZoneServer.CharacterPersistence
-  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.ItemManagement
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ClientItemType
-  alias Aesir.ZoneServer.Mmo.ItemManagement.CreatorNames
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skills.Merchant.McVending
-  alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
-  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Network.MessageRouter
-  alias Aesir.ZoneServer.Npc.Proximity
-  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Cart
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight, as: InventoryWeight
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartOps
-  alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
-  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.VendingShopHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -58,11 +38,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   alias Aesir.ZoneServer.Unit.Vending.ShopItem
   alias Aesir.ZoneServer.Unit.Zeny
 
-  @push_cart_status :sc_push_cart
-  @burning 7
+  @doc "Publishes a preparation grant after the normal skill has paid its cost."
+  @spec prepare_setup(state(), map()) :: {:ok, state()} | {:error, atom()}
+  defdelegate prepare_setup(state, offer), to: VendingShopHandler
+
+  @doc "Submits listings against the client's exact paid setup grant."
+  @spec handle_open(state(), Aesir.Net.VendingOpenRequest.t()) :: {:noreply, state()}
+  defdelegate handle_open(state, request), to: VendingShopHandler
+
+  @doc "Cancels the owned preparation without restoring its paid skill cost."
+  @spec cancel_setup(state(), atom()) :: state()
+  defdelegate cancel_setup(state, reason), to: VendingShopHandler
+
+  @doc "Closes only the setup or shop identified by the client's request."
+  @spec handle_close(state(), Aesir.Net.VendingCloseRequest.t()) :: {:noreply, state()}
+  defdelegate handle_close(state, request), to: VendingShopHandler
 
   @typedoc "The live shop carried in `:vending` `state_context` and the registry."
-  @type shop :: %{title: String.t(), owner_char_id: integer(), items: [ShopItem.t()]}
+  @type shop :: %{
+          shop_id: String.t(),
+          title: String.t(),
+          owner_char_id: integer(),
+          items: [ShopItem.t()],
+          total_earned: non_neg_integer(),
+          sale_sequence: non_neg_integer()
+        }
 
   @typedoc """
   What the buyer session needs to reconcile after the seller-authoritative buy:
@@ -82,153 +82,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
           optional(atom()) => term()
         }
 
-  @doc """
-  Opens a vending shop selling `entries` (`{cart_index, amount, price}` lines)
-  from the mounted cart under `title`.
+  @doc "Opens listings from a server-held paid preparation grant."
+  @spec open_shop(state(), String.t(), [Vending.entry()]) :: {:ok, state()} | {:error, atom()}
+  defdelegate open_shop(state, title, entries), to: VendingShopHandler
 
-  Refused first when an NPC stands within 3 cells (`Npc.Proximity.npc_near?/3`),
-  before any other check or cost, unless the player is already busy (vending,
-  trading, sitting, in a chat room or dialog, or held by a body state). Requires the cart mounted (`SC_PUSHCART` active)
-  and `MC_VENDING` learned; the
-  learned level caps the line count via `McVending.max_slots/1`. On success it
-  validates through `Vending.validate_open/3`, transitions to `:vending` with the
-  shop in `state_context`, registers the shop, broadcasts `VendingBoardShown` to
-  in-range players, and returns `{:ok, state}`. On any failure it returns a typed
-  error and leaves the session, registry and clients untouched.
-  """
-  @spec open_shop(state(), String.t(), [Vending.entry()]) ::
-          {:ok, state()}
-          | {:error,
-             :npc_nearby
-             | :no_cart
-             | :skill_not_learned
-             | :too_many_slots
-             | :invalid_amount
-             | :invalid_price
-             | :item_not_in_cart
-             | :insufficient_stock
-             | :item_unidentified
-             | :item_bound
-             | :invalid_transition}
-  def open_shop(%{game_state: gs} = state, title, entries) do
-    char_id = gs.character_id
-
-    with :ok <- ensure_no_npc_near(state),
-         :ok <- ensure_cart_mounted(char_id),
-         {:ok, level} <- ensure_vending_learned(gs),
-         {:ok, shop_items} <- Vending.validate_open(gs.cart, entries, McVending.max_slots(level)),
-         shop = %{title: title, owner_char_id: char_id, items: shop_items},
-         {:ok, new_gs} <- PlayerState.transition_to(gs, :vending, shop),
-         {:reply, :ok, state} <-
-           HealthHandler.try_consume_sp(sp_cost(level), %{state | game_state: new_gs}) do
-      Registry.put(char_id, self(), shop)
-      broadcast_board(new_gs, %VendingBoardShown{unit_id: char_id, title: title})
-      {:ok, state}
-    else
-      {:reply, error, _state} -> error
-      error -> error
-    end
-  end
-
-  @doc """
-  Closes the shop for `reason`.
-
-  Removes the registry entry, broadcasts `VendingBoardRemoved` to in-range
-  players, and returns to `:idle`. Unsold stock stays in the cart — no item is
-  moved. Returns `{:ok, state}`.
-
-  A safe no-op when the session is not currently in `:vending` (e.g. the
-  defensive `terminate/2` teardown of a non-vending session), so it never
-  `MatchError`s on the `:idle` transition.
-  """
+  @doc "Closes the owned shop or releases preparation during lifecycle teardown."
   @spec close_shop(state(), atom()) :: {:ok, state()}
-  def close_shop(%{game_state: %{action_state: :vending} = gs} = state, reason) do
-    char_id = gs.character_id
-    Logger.debug("Closing vending shop for #{char_id}: #{inspect(reason)}")
+  defdelegate close_shop(state, reason), to: VendingShopHandler
 
-    Registry.remove(char_id)
-    broadcast_board(gs, %VendingBoardRemoved{unit_id: char_id})
+  @doc "Replies to a browse request with explicit snapshot or refusal."
+  @spec handle_list(state(), Aesir.Net.VendingListRequest.t()) :: {:noreply, state()}
+  defdelegate handle_list(state, request), to: VendingShopHandler
 
-    {:ok, new_gs} = PlayerState.transition_to(gs, :idle)
-    {:ok, %{state | game_state: new_gs}}
-  end
-
-  def close_shop(state, _reason), do: {:ok, state}
-
-  @doc """
-  Session-facing wrapper for `open_shop/3`: commits the new game state to the
-  unit registry and confirms with `VendingOpenResult{ok: true}` on success, or
-  logs the failure and tells the client with `VendingOpenResult{ok: false}`
-  carrying the rejection code.
-  """
-  @spec handle_open(state(), String.t(), [Vending.entry()]) :: {:noreply, state()}
-  def handle_open(state, title, entries) do
-    case open_shop(state, title, entries) do
-      {:ok, new_state} ->
-        MessageRouter.send_to(state.connection_pid, %VendingOpenResult{result: :VEND_OK})
-        {:noreply, sync_game_state(new_state)}
-
-      {:error, :npc_nearby} ->
-        SkillHandler.report_cast_failure(
-          McVending.definition().id,
-          state.game_state.character_id,
-          :npc_nearby
-        )
-
-        MessageRouter.send_to(state.connection_pid, %VendingOpenResult{
-          result: open_code(:npc_nearby)
-        })
-
-        {:noreply, state}
-
-      {:error, reason} ->
-        Logger.debug(
-          "Vending open failed for #{state.game_state.character_id}: #{inspect(reason)}"
-        )
-
-        MessageRouter.send_to(state.connection_pid, %VendingOpenResult{result: open_code(reason)})
-
-        {:noreply, state}
-    end
-  end
-
-  @open_codes %{
-    no_cart: :VEND_NO_CART,
-    insufficient_sp: :VEND_INSUFFICIENT_SP,
-    skill_not_learned: :VEND_SKILL_NOT_LEARNED,
-    too_many_slots: :VEND_TOO_MANY_SLOTS,
-    invalid_amount: :VEND_INVALID_AMOUNT,
-    invalid_price: :VEND_INVALID_PRICE,
-    item_not_in_cart: :VEND_ITEM_NOT_IN_CART,
-    insufficient_stock: :VEND_INSUFFICIENT_STOCK,
-    item_bound: :VEND_INVALID_STATE
-  }
-
-  @spec open_code(atom()) :: atom()
-  defp open_code(reason), do: Map.get(@open_codes, reason, :VEND_INVALID_STATE)
-
-  @doc """
-  Session-facing wrapper for `close_shop/2` with the `:user_closed` reason.
-  """
-  @spec handle_close(state()) :: {:noreply, state()}
-  def handle_close(state) do
-    {:ok, new_state} = close_shop(state, :user_closed)
-    {:noreply, sync_game_state(new_state)}
-  end
-
-  @doc """
-  Session-facing wrapper for `build_list/1`: replies with the `VendingList`
-  when the vendor's shop is live, silently drops otherwise.
-  """
-  @spec handle_list(state(), integer()) :: {:noreply, state()}
-  def handle_list(state, vendor_unit_id) do
-    case build_list(vendor_unit_id) do
-      {:ok, packet} -> MessageRouter.send_to(state.connection_pid, packet)
-      :error -> :ok
-    end
-
-    {:noreply, state}
-  end
+  @doc "Publishes current owned-shop state without a client request."
+  @spec publish_owner_snapshot(state()) :: state()
+  defdelegate publish_owner_snapshot(state), to: VendingShopHandler
 
   @doc """
   Runs a purchase from the buyer session: parks a `call` on the seller session
@@ -397,67 +265,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
     {:ok, %{state | game_state: new_gs}}
   end
 
-  @doc """
-  Builds the `VendingList` browse reply for `vendor_unit_id`.
-
-  Reads the vendor's live `PlayerState` (for the current cart) and the open shop
-  from the `Vending.Registry`, then merges them into the display snapshot via the
-  pure `Vending.build_snapshot/2`. Returns `:error` when the vendor is gone or has
-  no shop open. Pure read — it never mutates the vendor session.
-  """
+  @doc "Reads a live vending snapshot without calling its owning session."
   @spec build_list(integer()) :: {:ok, VendingList.t()} | :error
-  def build_list(vendor_unit_id) do
-    with {:ok, {_module, %PlayerState{cart: cart}, _pid}} <-
-           UnitRegistry.get_unit(:player, vendor_unit_id),
-         {:ok, %{title: title, items: items}} <- Registry.get(vendor_unit_id) do
-      rows = Vending.build_snapshot(cart, items)
-      names = rows |> Enum.map(&%InventoryItem{craft: &1.craft}) |> CreatorNames.names_for()
-      shop_items = Enum.map(rows, &to_shop_item(&1, names))
-      {:ok, %VendingList{vendor_unit_id: vendor_unit_id, title: title, items: shop_items}}
-    else
-      _ -> :error
-    end
-  end
-
-  @spec to_shop_item(Vending.snapshot_item(), %{non_neg_integer() => String.t()}) ::
-          VendingShopItem.t()
-  defp to_shop_item(row, names) do
-    {creator_kind, creator_id, signer_name} =
-      case ItemCraft.from_map(row.craft) do
-        {:ok, %ItemCraft{kind: :signed, creator_char_id: id}} ->
-          {:CREATOR_SIGNED, id, Map.get(names, id, "")}
-
-        {:ok, %ItemCraft{kind: :forged, creator_char_id: id}} ->
-          {:CREATOR_FORGED, id, Map.get(names, id, "")}
-
-        :error ->
-          {:CREATOR_NONE, 0, ""}
-      end
-
-    %VendingShopItem{
-      index: row.index,
-      nameid: row.nameid,
-      type: client_type(row.nameid),
-      amount: row.amount,
-      identified: row.identify == 1,
-      attribute: row.attribute,
-      refine: row.refine,
-      cards: row.cards,
-      price: row.price,
-      signer_name: signer_name,
-      creator_id: creator_id,
-      creator_kind: creator_kind,
-      options: InventoryView.item_options(row.random_options)
-    }
-  end
-
-  @spec client_type(integer()) :: non_neg_integer()
-  defp client_type(nameid) do
-    case ItemManagement.get_item_by_id(nameid) do
-      {:ok, %ItemDefinition{type: type}} -> ClientItemType.to_client_type(type)
-      {:error, _} -> ClientItemType.to_client_type(:etc)
-    end
-  end
+  defdelegate build_list(vendor_unit_id), to: VendingShopHandler
 
   @spec collapse_lines([Vending.buy_line()]) :: [Vending.buy_line()]
   defp collapse_lines(buy_lines) do
@@ -656,47 +466,5 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
         MessageRouter.send_to(connection_pid, InventoryView.item_added(item, index))
       end)
     end)
-  end
-
-  # A player who is vending, trading, sitting, in a chat room or a dialog, or
-  # held by a body state other than Burning has the skill request dropped before
-  # the NPC check; an open storage window does not stop it.
-  @spec ensure_no_npc_near(state()) :: :ok | {:error, :npc_nearby}
-  defp ensure_no_npc_near(%{game_state: %PlayerState{} = gs} = state) do
-    if not busy?(state) and Proximity.npc_near?(gs.map_name, gs.x, gs.y),
-      do: {:error, :npc_nearby},
-      else: :ok
-  end
-
-  defp busy?(%{game_state: gs} = state) do
-    gs.action_state in [:vending, :trading, :sitting] or gs.waiting_room != nil or
-      Map.get(state, :trade) != nil or Map.get(state, :interaction_lock) != nil or
-      StatusDisplay.spawn_state(:player, gs.character_id).body_state not in [0, @burning]
-  end
-
-  @spec ensure_cart_mounted(integer()) :: :ok | {:error, :no_cart}
-  defp ensure_cart_mounted(char_id) do
-    if StatusStorage.has_status?(:player, char_id, @push_cart_status) do
-      :ok
-    else
-      {:error, :no_cart}
-    end
-  end
-
-  @spec sp_cost(pos_integer()) :: non_neg_integer()
-  defp sp_cost(level), do: Catalog.sp_cost_at(McVending.definition().sp_cost, level)
-
-  @spec ensure_vending_learned(PlayerState.t()) ::
-          {:ok, pos_integer()} | {:error, :skill_not_learned}
-  defp ensure_vending_learned(%{stats: stats}) do
-    case Stats.skill_level(stats, McVending.definition().id) do
-      level when level > 0 -> {:ok, level}
-      _ -> {:error, :skill_not_learned}
-    end
-  end
-
-  @spec broadcast_board(PlayerState.t(), struct()) :: :ok
-  defp broadcast_board(%{map_name: map_name, x: x, y: y}, packet) do
-    Broadcast.to_in_range(map_name, x, y, Config.view_range(), packet, [])
   end
 end

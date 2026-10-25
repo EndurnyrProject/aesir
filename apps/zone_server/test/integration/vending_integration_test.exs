@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
   alias Aesir.Net.LearnSkill
   alias Aesir.Net.MoveToCartRequest
   alias Aesir.Net.ParamChange
+  alias Aesir.Net.SkillCast
   alias Aesir.Net.SkillInfo
   alias Aesir.Net.SkillList
   alias Aesir.Net.VendingBoardRemoved
@@ -48,6 +49,7 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
   alias Aesir.Net.VendingOpenResult
   alias Aesir.Net.VendingPurchaseRequest
   alias Aesir.Net.VendingSaleReport
+  alias Aesir.Net.VendingSetupReady
   alias Aesir.Repo
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -74,12 +76,18 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
 
       # 1. Open the shop: listing all 10 potions at 100z.
       simulate_incoming_message(seller.pid, %VendingOpenRequest{
+        request_id: 1,
+        setup_id: seller.setup_id,
         title: "Cheap Pots",
         entries: [%VendingEntry{cart_index: cart_index, amount: 10, price: @price}]
       })
 
-      assert_receive {:packet_sent, %VendingBoardShown{unit_id: ^seller_id, title: "Cheap Pots"},
-                      _},
+      assert_receive {:packet_sent,
+                      %VendingBoardShown{
+                        unit_id: ^seller_id,
+                        title: "Cheap Pots",
+                        shop_id: shop_id
+                      }, _},
                      1_000
 
       assert {:ok, %{title: "Cheap Pots"}} = VendingRegistry.get(seller_id)
@@ -87,7 +95,11 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
       flush_packets()
 
       # 2. Buyer browses the live shop.
-      simulate_incoming_message(buyer.pid, %VendingListRequest{vendor_unit_id: seller_id})
+      simulate_incoming_message(buyer.pid, %VendingListRequest{
+        request_id: 1,
+        vendor_unit_id: seller_id,
+        expected_shop_id: shop_id
+      })
 
       assert_receive {:packet_sent,
                       %VendingList{
@@ -102,7 +114,9 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
       # 3. Buyer buys 4 -> zeny + items transfer both ways.
       simulate_incoming_message(buyer.pid, %VendingPurchaseRequest{
         vendor_unit_id: seller_id,
-        items: [%VendingBuy{index: buy_index, amount: 4}]
+        request_id: 2,
+        shop_id: shop_id,
+        items: [%VendingBuy{index: buy_index, amount: 4, expected_unit_price: @price}]
       })
 
       # Seller-side client deltas: cart removed, zeny credited, sale report.
@@ -142,7 +156,12 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
 
       # 4. Re-browse: the listing now reflects the reduced amount.
       flush_packets()
-      simulate_incoming_message(buyer.pid, %VendingListRequest{vendor_unit_id: seller_id})
+
+      simulate_incoming_message(buyer.pid, %VendingListRequest{
+        request_id: 3,
+        vendor_unit_id: seller_id,
+        expected_shop_id: shop_id
+      })
 
       assert_receive {:packet_sent, %VendingList{items: [%{nameid: @potion, amount: 6}]}, _},
                      1_000
@@ -152,7 +171,9 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
 
       simulate_incoming_message(buyer.pid, %VendingPurchaseRequest{
         vendor_unit_id: seller_id,
-        items: [%VendingBuy{index: buy_index, amount: 6}]
+        request_id: 4,
+        shop_id: shop_id,
+        items: [%VendingBuy{index: buy_index, amount: 6, expected_unit_price: @price}]
       })
 
       assert_receive {:packet_sent, %VendingBoardRemoved{unit_id: ^seller_id}, _}, 1_000
@@ -176,11 +197,13 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
       assert [%CartItem{identify: 0}] = CartPersistence.load_cart(seller_id)
 
       simulate_incoming_message(seller.pid, %VendingOpenRequest{
+        request_id: 1,
+        setup_id: seller.setup_id,
         title: "Unknown Item",
         entries: [%VendingEntry{cart_index: cart_index, amount: 1, price: @price}]
       })
 
-      assert_receive {:packet_sent, %VendingOpenResult{result: :VEND_INVALID_STATE}, _}, 1_000
+      assert_receive {:packet_sent, %VendingOpenResult{result: :VEND_ITEM_UNIDENTIFIED}, _}, 1_000
       assert :error = VendingRegistry.get(seller_id)
       assert get_player_state(seller.pid).action_state == :idle
     end
@@ -191,6 +214,8 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
       cart_index = only_cart_index(seller.pid)
 
       simulate_incoming_message(seller.pid, %VendingOpenRequest{
+        request_id: 1,
+        setup_id: seller.setup_id,
         title: "Closing Soon",
         entries: [%VendingEntry{cart_index: cart_index, amount: 10, price: @price}]
       })
@@ -214,14 +239,21 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
       cart_index = only_cart_index(seller.pid)
 
       simulate_incoming_message(seller.pid, %VendingOpenRequest{
+        request_id: 1,
+        setup_id: seller.setup_id,
         title: "Bye",
         entries: [%VendingEntry{cart_index: cart_index, amount: 10, price: @price}]
       })
 
-      assert_receive {:packet_sent, %VendingBoardShown{unit_id: ^seller_id}, _}, 1_000
+      assert_receive {:packet_sent, %VendingBoardShown{unit_id: ^seller_id, shop_id: shop_id}, _},
+                     1_000
+
       flush_packets()
 
-      simulate_incoming_message(seller.pid, %VendingCloseRequest{})
+      simulate_incoming_message(seller.pid, %VendingCloseRequest{
+        request_id: 2,
+        target: {:shop_id, shop_id}
+      })
 
       assert_receive {:packet_sent, %VendingBoardRemoved{unit_id: ^seller_id}, _}, 1_000
 
@@ -279,7 +311,17 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
     assert_receive {:packet_sent, %CartItemAdded{nameid: @potion}, _}, 1_000
     flush_packets()
 
-    Map.put(session, :character, character)
+    simulate_incoming_message(session.pid, %SkillCast{
+      skill_id: 41,
+      level: 1,
+      target_id: character.id
+    })
+
+    assert_receive {:packet_sent, %VendingSetupReady{setup_id: setup_id, sp_spent: 30}, _}, 1_000
+    assert get_player_state(session.pid).stats.current_state.sp == 70
+    flush_packets()
+
+    session |> Map.put(:character, character) |> Map.put(:setup_id, setup_id)
   end
 
   defp start_buyer(opts) do

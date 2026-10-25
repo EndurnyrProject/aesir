@@ -327,7 +327,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingBuyTest do
         %ShopItem{cart_index: index, nameid: nameid, amount: amount, price: price}
       end)
 
-    shop = %{title: "Shop", owner_char_id: character.id, items: items}
+    shop = %{
+      shop_id: "purchase-fixture",
+      title: "Shop",
+      owner_char_id: character.id,
+      items: items,
+      total_earned: 0,
+      sale_sequence: 0
+    }
+
     Registry.put(character.id, self(), shop)
 
     base = PlayerState.new(character)

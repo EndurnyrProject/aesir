@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionVendingTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SkillCooldownPersistence
   alias Aesir.ZoneServer.Unit.Player.StatusPersistence
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -50,7 +51,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionVendingTest do
   end
 
   defp shop(title) do
-    %{title: title, owner_char_id: 2, items: []}
+    %{
+      shop_id: "session-fixture",
+      title: title,
+      owner_char_id: 2,
+      items: [],
+      total_earned: 0,
+      sale_sequence: 0
+    }
   end
 
   describe "player_entered_view shop board" do
@@ -142,7 +150,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionVendingTest do
 
       VendingRegistry.put(2, self(), shop("Cheap Pots"))
 
-      state = %{
+      state = %SessionState{
         game_state: vending_gs,
         connection_pid: self(),
         connection_monitor_ref: make_ref()
@@ -153,7 +161,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionVendingTest do
     end
 
     test "is a no-op for a non-vending session" do
-      state = %{
+      state = %SessionState{
         game_state: PlayerState.new(character(3, "Idle")),
         connection_pid: self(),
         connection_monitor_ref: make_ref()

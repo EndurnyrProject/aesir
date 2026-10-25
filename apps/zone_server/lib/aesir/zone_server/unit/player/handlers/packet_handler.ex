@@ -80,7 +80,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.UseItem
   alias Aesir.Net.VendingBuy
   alias Aesir.Net.VendingCloseRequest
-  alias Aesir.Net.VendingEntry
   alias Aesir.Net.VendingListRequest
   alias Aesir.Net.VendingOpenRequest
   alias Aesir.Net.VendingPurchaseRequest
@@ -415,28 +414,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     GuildStorageHandler.close(state)
   end
 
-  # VendingOpenRequest - Merchant opens a vending shop selling cart items. The
-  # wire `VendingEntry` lines are flattened to `{cart_index, amount, price}`
-  # tuples the pure `Vending` core consumes. The request is also the use of
-  # MC_VENDING, so it may end the invincibility.
-  def handle_message(%VendingOpenRequest{title: title, entries: entries}, state) do
-    lines =
-      Enum.map(entries, fn %VendingEntry{cart_index: i, amount: a, price: p} -> {i, a, p} end)
-
-    state
-    |> Invincibility.end_on_request({:skill, 41})
-    |> VendingHandler.handle_open(title, lines)
+  # Submission consumes the paid setup grant; the skill use already handled
+  # its cost and invincibility before the editor was offered.
+  def handle_message(%VendingOpenRequest{} = request, state) do
+    VendingHandler.handle_open(state, request)
   end
 
   # VendingCloseRequest - Merchant closes its own vending shop.
-  def handle_message(%VendingCloseRequest{}, state) do
-    VendingHandler.handle_close(state)
+  def handle_message(%VendingCloseRequest{} = request, state) do
+    VendingHandler.handle_close(state, request)
   end
 
   # VendingListRequest - Player browses a nearby vendor's shop; the session reads
   # the live shop from the registry and replies with a `VendingList`.
-  def handle_message(%VendingListRequest{vendor_unit_id: vendor_unit_id}, state) do
-    VendingHandler.handle_list(state, vendor_unit_id)
+  def handle_message(%VendingListRequest{} = request, state) do
+    VendingHandler.handle_list(state, request)
   end
 
   # VendingPurchaseRequest - Buyer purchases from a vendor. The buy lines are

@@ -4,13 +4,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.Auth
+  alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.ItemOption
   alias Aesir.Net.SkillCastFailed
   alias Aesir.Net.VendingBoardRemoved
   alias Aesir.Net.VendingBoardShown
+  alias Aesir.Net.VendingEntry
   alias Aesir.Net.VendingList
+  alias Aesir.Net.VendingOpenRequest
   alias Aesir.Net.VendingShopItem
   alias Aesir.Repo
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
@@ -21,8 +25,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
   alias Aesir.ZoneServer.Npc.Shops
   alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Aesir.ZoneServer.Unit.Vending.Registry
@@ -44,6 +50,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
 
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet, _opts ->
       send(test_pid, {:board, packet})
+      :ok
+    end)
+
+    stub(Auth, :get_account!, fn 2000 -> %Account{id: 2000, group_id: 0} end)
+
+    stub(Broadcast, :to_player, fn @char_id, packet ->
+      send(test_pid, {:to_player, packet})
       :ok
     end)
 
@@ -98,8 +111,40 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
 
   defp state(opts) do
     base = PlayerState.new(character(opts))
-    game_state = %{base | cart: Keyword.get(opts, :cart_map, %{0 => item(501, 10)})}
-    %{connection_pid: self(), game_state: game_state}
+    mounted = StatusStorage.has_status?(:player, @char_id, :sc_push_cart)
+
+    game_state = %{
+      base
+      | cart: Keyword.get(opts, :cart_map, %{0 => item(501, 10)}),
+        cart_type: if(mounted, do: 1, else: 0)
+    }
+
+    :ok = UnitRegistry.register_player(game_state, self())
+    prepared = Keyword.get(opts, :prepared, true)
+
+    grant =
+      if prepared, do: %{setup_id: "paid-fixture", level: @vending_level, sp_spent: 30}, else: nil
+
+    %SessionState{
+      connection_pid: self(),
+      game_state: game_state,
+      vending_setup: grant,
+      work_in_progress: prepared
+    }
+  end
+
+  defp submit(state, title, entries) do
+    request = %VendingOpenRequest{
+      request_id: 1,
+      setup_id: state.vending_setup.setup_id,
+      title: title,
+      entries:
+        Enum.map(entries, fn {index, amount, price} ->
+          %VendingEntry{cart_index: index, amount: amount, price: price}
+        end)
+    }
+
+    VendingHandler.handle_open(state, request)
   end
 
   defp learned(level), do: %{Integer.to_string(vending_id()) => level}
@@ -109,13 +154,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
   end
 
   describe "open_shop/3" do
-    test "opening the shop costs the skill's 30 SP" do
+    test "opening consumes an already-paid grant without charging SP again" do
       mount_cart()
       base = state(learned_skills: learned(@vending_level))
 
       assert {:ok, new_state} = VendingHandler.open_shop(base, "Cheap Pots", [{0, 5, 100}])
 
-      assert new_state.game_state.stats.current_state.sp == 270
+      assert new_state.game_state.stats.current_state.sp == base.game_state.stats.current_state.sp
     end
 
     test "an invalid state transition leaves SP untouched" do
@@ -129,12 +174,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
       assert vending.game_state.stats.current_state.sp == 300
     end
 
-    test "with less than 30 SP the shop does not open" do
+    test "a paid grant can open with less than the skill cost remaining" do
       mount_cart()
       base = state(learned_skills: learned(@vending_level), sp: 29)
 
-      assert {:error, :insufficient_sp} = VendingHandler.open_shop(base, "Shop", [{0, 5, 100}])
-      assert :error = Registry.get(@char_id)
+      assert {:ok, opened} = VendingHandler.open_shop(base, "Shop", [{0, 5, 100}])
+      assert opened.game_state.stats.current_state.sp == 29
+      assert {:ok, _shop} = Registry.get(@char_id)
     end
 
     test "with a mounted cart and MC_VENDING learned enters :vending, registers, broadcasts" do
@@ -160,9 +206,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
       assert :error = Registry.get(@char_id)
       refute_received {:board, _}
 
-      vending = %{base | game_state: %{base.game_state | action_state: :vending}}
+      vending = %{
+        base
+        | game_state: %{base.game_state | action_state: :vending},
+          vending_setup: nil,
+          work_in_progress: false
+      }
 
-      assert {:noreply, ^vending} = VendingHandler.handle_open(vending, "Shop", [{0, 5, 100}])
+      assert {:noreply, ^vending} =
+               SkillHandler.handle_use_skill(vending, 41, @vending_level, @char_id)
+
       refute_received {:to_player, %SkillCastFailed{}}
     end
 
@@ -192,21 +245,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
     end
   end
 
-  describe "handle_open/3" do
-    test "an NPC within three cells refuses an idle merchant's shop, nothing spent" do
+  describe "activation and handle_open/2" do
+    test "an NPC within three cells refuses activation before anything is spent" do
       mount_cart()
-      test_pid = self()
       npc = %Placement{map: "prontera", x: 153, y: 147, sprite: 1, name: "n", unique_name: "n"}
       stub(NpcRegistry, :entries, fn -> [{__MODULE__, npc}] end)
+      base = state(learned_skills: learned(@vending_level), prepared: false)
 
-      stub(Broadcast, :to_player, fn @char_id, packet ->
-        send(test_pid, {:to_player, packet})
-        :ok
-      end)
-
-      base = state(learned_skills: learned(@vending_level))
-
-      assert {:noreply, ^base} = VendingHandler.handle_open(base, "Shop", [{0, 5, 100}])
+      assert {:noreply, ^base} = SkillHandler.handle_use_skill(base, 41, @vending_level, @char_id)
 
       assert_received {:to_player,
                        %SkillCastFailed{
@@ -214,57 +260,63 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
                          reason: :SKILL_CAST_FAILURE_REASON_NPC_NEARBY
                        }}
 
-      assert_received {:send, :world,
-                       {:vending_open_result,
-                        %Aesir.Net.VendingOpenResult{result: :VEND_INVALID_STATE}}}
-
       assert :error = Registry.get(@char_id)
       refute_received {:board, _}
+      refute_received {:send, :world, {:vending_setup_ready, _}}
     end
 
-    test "reports VEND_INSUFFICIENT_SP when the caster cannot pay the skill" do
+    test "activation reports insufficient SP without offering preparation" do
       mount_cart()
-      base = state(learned_skills: learned(@vending_level), sp: 10)
+      base = state(learned_skills: learned(@vending_level), sp: 10, prepared: false)
+      assert {:noreply, ^base} = SkillHandler.handle_use_skill(base, 41, @vending_level, @char_id)
 
-      assert {:noreply, ^base} = VendingHandler.handle_open(base, "Shop", [{0, 5, 100}])
+      assert_received {:to_player,
+                       %SkillCastFailed{
+                         skill_id: 41,
+                         reason: :SKILL_CAST_FAILURE_REASON_INSUFFICIENT_SP
+                       }}
+
+      refute_received {:send, :world, {:vending_setup_ready, _}}
+    end
+
+    test "confirms a successful paid-grant submission" do
+      mount_cart()
+      base = state(learned_skills: learned(@vending_level))
+      assert {:noreply, opened} = submit(base, "Cheap Pots", [{0, 5, 100}])
+      assert opened.vending_setup == nil
 
       assert_received {:send, :world,
                        {:vending_open_result,
-                        %Aesir.Net.VendingOpenResult{result: :VEND_INSUFFICIENT_SP}}}
+                        %Aesir.Net.VendingOpenResult{request_id: 1, result: :VEND_OK}}}
     end
 
-    test "confirms a successful open with VendingOpenResult{ok: true}" do
-      mount_cart()
-      stub(UnitRegistry, :update_unit_state, fn :player, @char_id, _gs -> :ok end)
-      base = state(learned_skills: learned(@vending_level))
-
-      assert {:noreply, _} = VendingHandler.handle_open(base, "Cheap Pots", [{0, 5, 100}])
-
-      assert_received {:send, :world,
-                       {:vending_open_result, %Aesir.Net.VendingOpenResult{result: :VEND_OK}}}
-    end
-
-    test "tells the client the rejection code when the skill is missing" do
+    test "reports missing skill and ends the rejected setup" do
       mount_cart()
       base = state(learned_skills: %{})
-
-      assert {:noreply, ^base} = VendingHandler.handle_open(base, "Shop", [{0, 5, 100}])
+      assert {:noreply, refused} = submit(base, "Shop", [{0, 5, 100}])
+      assert refused.vending_setup == nil
+      assert refused.game_state == base.game_state
 
       assert_received {:send, :world,
                        {:vending_open_result,
-                        %Aesir.Net.VendingOpenResult{result: :VEND_SKILL_NOT_LEARNED}}}
+                        %Aesir.Net.VendingOpenResult{
+                          result: :VEND_SKILL_NOT_LEARNED,
+                          setup_active: false
+                        }}}
     end
 
-    test "tells the client VEND_NO_CART when no cart is mounted" do
+    test "reports a lost cart and ends the rejected setup" do
       base = state(learned_skills: learned(@vending_level))
-
-      assert {:noreply, ^base} = VendingHandler.handle_open(base, "Shop", [{0, 5, 100}])
+      assert {:noreply, refused} = submit(base, "Shop", [{0, 5, 100}])
+      assert refused.vending_setup == nil
+      assert refused.game_state == base.game_state
 
       assert_received {:send, :world,
-                       {:vending_open_result, %Aesir.Net.VendingOpenResult{result: :VEND_NO_CART}}}
+                       {:vending_open_result,
+                        %Aesir.Net.VendingOpenResult{result: :VEND_NO_CART, setup_active: false}}}
     end
 
-    test "tells the vendor when an unidentified cart item is selected" do
+    test "reports an unidentified selected item without opening or refunding" do
       mount_cart()
 
       base =
@@ -273,38 +325,41 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
           cart_map: %{0 => item(1101, 1, identify: 0)}
         )
 
-      assert {:noreply, ^base} = VendingHandler.handle_open(base, "Shop", [{0, 1, 100}])
+      assert {:noreply, refused} = submit(base, "Shop", [{0, 1, 100}])
+      assert refused.vending_setup == nil
+      assert refused.game_state == base.game_state
 
       assert_received {:send, :world,
                        {:vending_open_result,
-                        %Aesir.Net.VendingOpenResult{result: :VEND_INVALID_STATE}}}
+                        %Aesir.Net.VendingOpenResult{
+                          result: :VEND_ITEM_UNIDENTIFIED,
+                          setup_active: false
+                        }}}
     end
 
-    test "tells the vendor when a bound cart item is selected" do
+    test "reports a bound selected item without opening or refunding" do
       mount_cart()
 
       base =
-        state(
-          learned_skills: learned(@vending_level),
-          cart_map: %{0 => item(1101, 1, bound: 1)}
-        )
+        state(learned_skills: learned(@vending_level), cart_map: %{0 => item(1101, 1, bound: 1)})
 
-      assert {:noreply, ^base} = VendingHandler.handle_open(base, "Shop", [{0, 1, 100}])
+      assert {:noreply, refused} = submit(base, "Shop", [{0, 1, 100}])
+      assert refused.vending_setup == nil
+      assert refused.game_state == base.game_state
 
       assert_received {:send, :world,
                        {:vending_open_result,
-                        %Aesir.Net.VendingOpenResult{result: :VEND_INVALID_STATE}}}
+                        %Aesir.Net.VendingOpenResult{
+                          result: :VEND_ITEM_BOUND,
+                          setup_active: false
+                        }}}
     end
 
     test "rejects opening more lines than max_slots for the learned level" do
       mount_cart()
-
-      cart =
-        Map.new(0..(@vending_level + 2), fn i -> {i, item(501 + i, 5)} end)
-
+      cart = Map.new(0..(@vending_level + 2), fn i -> {i, item(501 + i, 5)} end)
       base = state(learned_skills: learned(1), cart_map: cart)
       entries = Enum.map(0..3, fn i -> {i, 1, 100} end)
-
       assert {:error, :too_many_slots} = VendingHandler.open_shop(base, "Shop", entries)
       assert :error = Registry.get(@char_id)
     end
@@ -325,7 +380,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
     end
 
     test "is a safe no-op when the session is not vending" do
-      base = state(learned_skills: %{})
+      base = state(learned_skills: %{}, prepared: false)
 
       assert {:ok, ^base} = VendingHandler.close_shop(base, :disconnected)
       refute_received {:board, _}
