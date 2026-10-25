@@ -10,6 +10,14 @@ config :zone_server, :server_info,
 # which a client may acquire an attack/skill target.
 config :zone_server, view_range: 20
 
+config :zone_server, :vending_rules, %{
+  max_price: 1_000_000_000,
+  allow_over_max: true,
+  tax: 500,
+  tax_min: 100_000_000,
+  show_buyer_name: true
+}
+
 # Party tunables
 config :zone_server, max_party: 12
 config :zone_server, party_share_level: 15

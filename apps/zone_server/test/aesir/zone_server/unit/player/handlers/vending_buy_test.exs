@@ -222,7 +222,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingBuyTest do
 
       # 6 + 6 = 12 against a 10-stock listing: without accumulation each 6-line
       # would pass the per-line check independently and over-sell 12 from 10.
-      assert {:error, :bad_line} =
+      assert {:error, :insufficient_stock} =
                VendingHandler.purchase(
                  seller_state,
                  buyer.id,

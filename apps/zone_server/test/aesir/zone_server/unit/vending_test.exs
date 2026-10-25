@@ -57,16 +57,18 @@ defmodule Aesir.ZoneServer.Unit.VendingTest do
                Vending.validate_open(c, [{0, 1, 100}, {0, 1, 100}], 1)
     end
 
-    test "rejects a price of 0" do
+    test "accepts a zero-price listing" do
       c = cart([item(nameid: @red_potion, amount: 10)])
 
-      assert {:error, :invalid_price} = Vending.validate_open(c, [{0, 1, 0}], 12)
+      assert {:ok, [%ShopItem{price: 0, amount: 1}]} =
+               Vending.validate_open(c, [{0, 1, 0}], 12)
     end
 
-    test "rejects a price over the cap" do
+    test "caps the unit price at the configured maximum" do
       c = cart([item(nameid: @red_potion, amount: 10)])
 
-      assert {:error, :invalid_price} = Vending.validate_open(c, [{0, 1, 100_000_000}], 12)
+      assert {:ok, [%ShopItem{price: 1_000_000_000}]} =
+               Vending.validate_open(c, [{0, 1, 1_500_000_000}], 12)
     end
 
     test "rejects a line whose cart slot lacks the amount" do
@@ -167,10 +169,10 @@ defmodule Aesir.ZoneServer.Unit.VendingTest do
       assert {:error, :bad_line} = Vending.compute_purchase(c, shop, [{5, 1}])
     end
 
-    test "returns :bad_line when buying over the listed amount", %{cart: c} do
+    test "returns :insufficient_stock when buying over the listed amount", %{cart: c} do
       {:ok, shop} = Vending.validate_open(c, [{0, 4, 1_000}], 12)
 
-      assert {:error, :bad_line} = Vending.compute_purchase(c, shop, [{0, 5}])
+      assert {:error, :insufficient_stock} = Vending.compute_purchase(c, shop, [{0, 5}])
     end
   end
 end

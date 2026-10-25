@@ -6,7 +6,16 @@ defmodule Aesir.ZoneServer.Config do
   there is a single source of truth in `config/zone_server/main.exs`.
   """
 
+  alias Aesir.ZoneServer.Unit.Vending
+
   @default_view_range 20
+  @default_vending_rules %{
+    max_price: 1_000_000_000,
+    allow_over_max: true,
+    tax: 500,
+    tax_min: 100_000_000,
+    show_buyer_name: true
+  }
   @default_frost_joker_area_size 14
   @default_max_party 12
   @default_party_share_level 15
@@ -44,6 +53,12 @@ defmodule Aesir.ZoneServer.Config do
   """
   @spec view_range() :: pos_integer()
   def view_range, do: Application.get_env(:zone_server, :view_range, @default_view_range)
+
+  @doc "Runtime vending price, listing balance, tax and buyer-name policy."
+  @spec vending_rules() :: Vending.rules()
+  def vending_rules do
+    Map.merge(@default_vending_rules, Application.get_env(:zone_server, :vending_rules, %{}))
+  end
 
   @doc "The half-width of Frost Joker's global square around its captured cast origin."
   @spec frost_joker_area_size() :: pos_integer()
