@@ -155,6 +155,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SpiderWebTest do
       false
     end)
 
+    # The retry after the lost claim stores over the entry it reads again.
+    stub(StatusStorage, :replace_status_if_current, fn type, id, status, read, replacement ->
+      call_original(StatusStorage, :replace_status_if_current, [
+        type,
+        id,
+        status,
+        read,
+        replacement
+      ])
+    end)
+
     assert SpiderWeb.consume(:mob, 9_701)
     assert_received {:destroyed, 53}
     refute_received {:destroyed, 52}

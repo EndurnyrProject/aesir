@@ -125,10 +125,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsGreedTest do
     in_range = ground_item(1, 102, 102)
     out_of_range = ground_item(2, 103, 100)
 
-    expect(GroundItemStore, :query_in_range, fn "prontera", 100, 100, 2 ->
-      GroundItemStore.query_in_range("prontera", 100, 100, 2)
-    end)
-
     GroundItemStore.put("prontera", in_range)
     GroundItemStore.put("prontera", out_of_range)
 

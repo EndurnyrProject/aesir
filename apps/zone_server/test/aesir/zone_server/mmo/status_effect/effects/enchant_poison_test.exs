@@ -63,6 +63,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoisonTest do
   end
 
   test "a normal hit's additional effect forwards the source chance and injected roll" do
+    stub(Interpreter, :apply_status, fn type, id, status, params ->
+      call_original(Interpreter, :apply_status, [type, id, status, params])
+    end)
+
     for {level, chance} <- [{1, 3.0}, {10, 7.5}], result <- [true, false] do
       arm_enchant(level)
       roll = fn _rate -> result end

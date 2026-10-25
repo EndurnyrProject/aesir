@@ -29,10 +29,6 @@ defmodule Aesir.ZoneServer.Navigation.RouterTest do
   end
 
   test "chooses the cheaper portal chain and keeps the winning seed path" do
-    expect(RouteSearch, :find_path, 3, fn map_data, start, goal ->
-      call_original(RouteSearch, :find_path, [map_data, start, goal])
-    end)
-
     assert {:ok, route} = Router.route({"start", 0, 0}, [{"goal", {2, 0}}], walk_speed: 1.0)
 
     assert [

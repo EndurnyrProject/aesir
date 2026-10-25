@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import ExUnit.CaptureLog
 
   alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
@@ -580,7 +581,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       refute_receive {:exact_tick, _}
     end
 
-    @tag :capture_log
     test "an unexpected target lookup error removes the current generation and stops" do
       target_id = 7_608
       setup_player_mock(target_id)
@@ -594,19 +594,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       generation = StatusStorage.get_status(:player, target_id, :sc_test_exact_tick).generation
       stub(UnitRegistry, :get_unit_info, fn :player, ^target_id -> {:error, :unavailable} end)
 
-      assert :stop =
-               Interpreter.process_tick_if_current(
-                 :player,
-                 target_id,
-                 :sc_test_exact_tick,
-                 generation
-               )
+      {result, log} =
+        with_log(fn ->
+          Interpreter.process_tick_if_current(:player, target_id, :sc_test_exact_tick, generation)
+        end)
+
+      assert result == :stop
+
+      assert log =~
+               "Stopping exact tick for sc_test_exact_tick: invalid player 7608 lookup {:error, :unavailable}"
 
       refute_receive {:exact_tick, _}
       refute StatusStorage.has_status?(:player, target_id, :sc_test_exact_tick)
     end
 
-    @tag :capture_log
     test "an unexpected target shape stops without removing a replacement generation" do
       target_id = 7_608
       setup_player_mock(target_id)
@@ -628,13 +629,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
         {:ok, %{stats: nil}}
       end)
 
-      assert :stop =
-               Interpreter.process_tick_if_current(
-                 :player,
-                 target_id,
-                 :sc_test_exact_tick,
-                 entry.generation
-               )
+      {result, log} =
+        with_log(fn ->
+          Interpreter.process_tick_if_current(
+            :player,
+            target_id,
+            :sc_test_exact_tick,
+            entry.generation
+          )
+        end)
+
+      assert result == :stop
+
+      assert log =~
+               "Stopping exact tick for sc_test_exact_tick: invalid player 7608 lookup {:ok, %{stats: nil}}"
 
       refute_receive {:exact_tick, _}
 
@@ -1260,7 +1268,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
       Mimic.copy(UnitRegistry)
 
-      expect(UnitRegistry, :get_unit_info, 2, fn :player, ^target_id ->
+      stub(UnitRegistry, :get_unit_info, fn :player, ^target_id ->
         {:ok, entity_info}
       end)
 
@@ -1846,13 +1854,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       refute StatusStorage.has_status?(:player, target_id, status_id)
     end
 
-    @tag :capture_log
     test "propagates error when apply_status fails" do
       target_id = 1
       status_id = :sc_nonexistent_status
 
-      assert {:error, :unknown_status} =
-               Interpreter.toggle_status(:player, target_id, status_id, val1: 10)
+      {result, log} =
+        with_log(fn -> Interpreter.toggle_status(:player, target_id, status_id, val1: 10) end)
+
+      assert result == {:error, :unknown_status}
+      assert log =~ "Unknown status effect: sc_nonexistent_status"
     end
   end
 

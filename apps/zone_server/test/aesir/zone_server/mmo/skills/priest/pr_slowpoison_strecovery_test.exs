@@ -72,7 +72,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSlowpoisonStrecoveryTest do
       {:ok, %{unit_type: :player, race: :player_human}}
     end)
 
-    for status <- [:sc_stone, :sc_freeze, :sc_stun, :sc_sleep] do
+    for status <- [:sc_stone, :sc_freeze, :sc_stun, :sc_sleep, :sc_stonewait] do
       expect(StatusInterpreter, :remove_status, fn :player, ^target_id, ^status -> :ok end)
     end
 
@@ -134,7 +134,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSlowpoisonStrecoveryTest do
       {:ok, %{unit_type: :mob, race: :demon, element: {:fire, 1}}}
     end)
 
-    for status <- [:sc_stone, :sc_freeze, :sc_stun, :sc_sleep] do
+    for status <- [:sc_stone, :sc_freeze, :sc_stun, :sc_sleep, :sc_stonewait] do
       expect(StatusInterpreter, :remove_status, fn :mob, ^target_id, ^status -> :ok end)
     end
 

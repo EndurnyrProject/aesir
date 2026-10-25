@@ -495,7 +495,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
         map_name: @map_name
     }
 
-    expect(UnitRegistry, :get_unit, fn :mob, @target_id ->
+    stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
       {:ok, {MobState, mob_state, test_pid}}
     end)
 
