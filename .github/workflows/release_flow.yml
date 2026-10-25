@@ -10,6 +10,10 @@ permissions:
 
 name: Release Flow
 
+concurrency:
+  group: release-flow-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release-please:
     runs-on: ubuntu-latest
