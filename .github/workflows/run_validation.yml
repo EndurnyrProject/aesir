@@ -7,17 +7,63 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  build:
-    if: "github.event.pull_request.draft != true && !contains(github.event.head_commit.message, 'ci skip')"
-    name: Build and Test (${{ matrix.mode }})
+  lint:
+    if: "github.event.pull_request.draft != true && !startsWith(github.head_ref, 'release-please--') && !contains(github.event.head_commit.message, 'ci skip')"
+    name: Compile, Format, Credo, Dialyzer
     runs-on: warp-ubuntu-2604-arm64-8x
+    timeout-minutes: 30
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Elixir and Erlang
+      uses: jdx/mise-action@v2
+
+    - name: Install Hex and Rebar
+      run: mix local.hex --force && mix local.rebar --force
+
+    - name: Restore deps and _build
+      id: cache
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          deps
+          _build
+        key: mix-lint-${{ runner.os }}-${{ hashFiles('.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
+        restore-keys: mix-lint-${{ runner.os }}-${{ hashFiles('.mise.toml') }}-
+
+    - name: Fetch Dependencies
+      run: mix deps.get
+
+    - name: Run Checks
+      run: mix check --except ex_unit
+
+    - name: Save deps and _build
+      if: always() && steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          deps
+          _build
+        key: ${{ steps.cache.outputs.cache-primary-key }}
+
+  test:
+    if: "github.event.pull_request.draft != true && !startsWith(github.head_ref, 'release-please--') && !contains(github.event.head_commit.message, 'ci skip')"
+    name: Test (${{ matrix.mode }})
+    runs-on: warp-ubuntu-2604-arm64-8x
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
         mode: [renewal, pre_renewal]
     env:
       AESIR_DB_MODE: ${{ matrix.mode }}
+      MIX_ENV: test
 
     services:
       postgres:
@@ -34,31 +80,33 @@ jobs:
     - name: Setup Elixir and Erlang
       uses: jdx/mise-action@v2
 
-    - name: Install HEX and Rebar
-      run: |
-        mix local.hex --force
-        mix local.rebar --force
-        mix hex.info
+    - name: Install Hex and Rebar
+      run: mix local.hex --force && mix local.rebar --force
 
-    - name: Restore deps and _build cache
-      id: mix-deps
-      uses: actions/cache@v4
+    - name: Restore deps and _build
+      id: cache
+      uses: actions/cache/restore@v4
       with:
         path: |
           deps
           _build
-        key: ${{ runner.os }}-${{ matrix.mode }}-mix-${{ hashFiles('**/mix.lock') }}
-        restore-keys: ${{ runner.os }}-${{ matrix.mode }}-mix-
+        key: mix-test-${{ matrix.mode }}-${{ runner.os }}-${{ hashFiles('.mise.toml') }}-${{ hashFiles('**/mix.lock') }}
+        restore-keys: mix-test-${{ matrix.mode }}-${{ runner.os }}-${{ hashFiles('.mise.toml') }}-
 
-    - name: Fetch and Compile Dependencies
-      if: steps.mix-deps.outputs.cache-hit != 'true'
-      run: |
-        mix deps.get
-        mix deps.compile
+    - name: Fetch and Compile
+      run: mix deps.get && mix compile
 
-    - name: Run Checks
-      run: mix check
+    - name: Save deps and _build
+      if: always() && steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          deps
+          _build
+        key: ${{ steps.cache.outputs.cache-primary-key }}
+
+    - name: Run Unit Tests
+      run: mix test
 
     - name: Run Integration Tests
       run: mix test.integration
-
