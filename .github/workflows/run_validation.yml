@@ -19,17 +19,17 @@ jobs:
     timeout-minutes: 30
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Setup Elixir and Erlang
-      uses: jdx/mise-action@v2
+      uses: jdx/mise-action@v4
 
     - name: Install Hex and Rebar
       run: mix local.hex --force && mix local.rebar --force
 
     - name: Restore deps and _build
       id: cache
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v6
       with:
         path: |
           deps
@@ -45,7 +45,7 @@ jobs:
 
     - name: Save deps and _build
       if: always() && steps.cache.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v6
       with:
         path: |
           deps
@@ -75,17 +75,17 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Setup Elixir and Erlang
-      uses: jdx/mise-action@v2
+      uses: jdx/mise-action@v4
 
     - name: Install Hex and Rebar
       run: mix local.hex --force && mix local.rebar --force
 
     - name: Restore deps and _build
       id: cache
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v6
       with:
         path: |
           deps
@@ -98,7 +98,7 @@ jobs:
 
     - name: Save deps and _build
       if: always() && steps.cache.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v6
       with:
         path: |
           deps
