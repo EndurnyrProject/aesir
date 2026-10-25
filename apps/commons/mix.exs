@@ -55,11 +55,11 @@ defmodule Commons.MixProject do
       {:phoenix_pubsub, "~> 2.1"},
       {:plug_crypto, "~> 2.1"},
       {:postgrex, ">= 0.0.0"},
-      {:process_tree, "~> 0.2.1"},
+      {:process_tree, "~> 0.3.0"},
       {:protox, "~> 2.0"},
       {:quic, "~> 1.6"},
       {:ranch, "~> 2.2"},
-      {:recode, "~> 0.8.0", only: [:dev], runtime: false},
+      {:recode, "~> 0.9.0", only: [:dev], runtime: false},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       {:tidewave, "~> 0.4", only: :dev}
     ]
