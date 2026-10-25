@@ -411,6 +411,50 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
              UnitRegistry.get_unit(:homunculus, gid)
   end
 
+  test "an owner-session Homunculus skill hit takes its Reflect Shield return", %{
+    session: session
+  } do
+    Mimic.copy(HitCalculations)
+    stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :hit end)
+    Mimic.allow(HitCalculations, self(), session.pid)
+
+    homunculus = PlayerSession.get_state(session.pid).homunculus
+
+    mob =
+      start_mob_session(
+        unit_id: 1_800_011,
+        map_name: homunculus.map_name,
+        position: {homunculus.x + 1, homunculus.y},
+        hp: 5_000,
+        max_hp: 5_000,
+        awake: false
+      )
+
+    on_exit(fn -> end_mob_session(mob) end)
+
+    assert :ok =
+             StatusInterpreter.apply_status(:mob, mob.unit_id, :sc_reflectshield, val1: 10)
+
+    mob_hp_before = get_mob_state(mob.pid).hp
+    hom_hp_before = homunculus.hp
+
+    :sys.replace_state(session.pid, fn state ->
+      SkillAttack.execute_skill_attack(state.homunculus, {:mob, mob.unit_id},
+        skill_id: 8_009,
+        skill_level: 1
+      )
+
+      state
+    end)
+
+    assert_eventually(fn -> get_mob_state(mob.pid).hp < mob_hp_before end)
+    reflected = div((mob_hp_before - get_mob_state(mob.pid).hp) * 40, 100)
+
+    assert_eventually(fn ->
+      PlayerSession.get_state(session.pid).homunculus.hp == hom_hp_before - reflected
+    end)
+  end
+
   test "Homunculus attack, skill, and magic paths retain typed source and target identity", %{
     session: session,
     gid: gid

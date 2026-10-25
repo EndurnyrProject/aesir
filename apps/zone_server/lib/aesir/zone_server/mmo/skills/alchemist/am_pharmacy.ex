@@ -66,7 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPharmacy do
           PlayerState.t(),
           %{id: non_neg_integer(), extras: [non_neg_integer()]},
           pos_integer(),
-          %{required(:homunculus) => HomunculusState.t() | nil}
+          %{required(:homunculus) => HomunculusState.t() | nil, optional(atom()) => term()}
         ) :: {:ok, PlayerState.t()} | {:error, atom()}
   @impl Aesir.ZoneServer.Mmo.Skill.Menu
   def on_menu_reply(

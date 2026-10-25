@@ -56,6 +56,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
             }
 
   @typedoc """
+  A normal attacker checked by `attack_visible?/2`: a concealment unit, or just
+  its boss `:class` and `:detector` mode.
+  """
+  @type viewer ::
+          concealment_unit()
+          | %{optional(:class) => MobMode.class(), optional(:detector) => boolean()}
+
+  @typedoc """
   How a skill hit reached its recipient, deciding whether the hit re-checks the
   recipient's skill use (`validate_delivery/4`):
 
@@ -196,7 +204,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   defp validate_trap_status(%Definition{is_trap: true}, target) do
     case StatusStorage.get_status(unit_type(target), unit_id(target), :sc_sightblaster) do
       %{state: state} ->
-        if Map.get(state || %{}, :trap_immunity, true),
+        if Map.get(state, :trap_immunity, true),
           do: {:error, :target_trap_immune},
           else: :ok
 
@@ -577,7 +585,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   Chase Walk conceal it from anything but a boss or detector, and a GM-invisible
   player from everything.
   """
-  @spec attack_visible?(concealment_unit(), concealment_unit()) :: boolean()
+  @spec attack_visible?(viewer(), concealment_unit()) :: boolean()
   def attack_visible?(attacker, target),
     do: not concealed?(attacker, target, target_option(target), Concealment.conceal_mask())
 

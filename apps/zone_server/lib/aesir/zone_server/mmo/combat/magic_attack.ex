@@ -905,16 +905,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   defp apply_magic_damage(target_type, target_pid, target_id, damage, hit_info, attacker) do
     attacker_ref = if attacker, do: damage_source(attacker, target_type)
 
-    DamageApplication.apply_unit_damage(
-      target_type,
-      target_pid,
-      target_id,
-      damage,
-      hit_info,
-      attacker_ref
-    )
-
-    :ok
+    target_type
+    |> DamageApplication.apply_unit_damage(target_pid, target_id, damage, hit_info, attacker_ref)
+    |> DamageApplication.forward_local_effects()
   end
 
   defp magic_result(target_state, damages, coma_decision, prior_damage \\ 0) do
@@ -1299,14 +1292,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
 
     delivery =
-      DamageApplication.apply_unit_damage(
-        target_type,
-        target_pid,
-        target_id,
-        damage,
-        hit_info,
-        source
-      )
+      target_type
+      |> DamageApplication.apply_unit_damage(target_pid, target_id, damage, hit_info, source)
+      |> DamageApplication.forward_local_effects()
 
     if delivery == :ok or match?({:local_effects, _effects}, delivery) do
       OnHitEffects.attack_stage(hit_info, damage)
@@ -1356,6 +1344,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   end
 
   defp magic_delivery_result(:ok, target_ref), do: {:ok, target_ref}
+  defp magic_delivery_result({:local_effects, _effects}, target_ref), do: {:ok, target_ref}
   defp magic_delivery_result(delivery, _target_ref), do: delivery
 
   defp delivered_attack_result({:ok, ref}, report, opts),
@@ -1508,14 +1497,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
 
         hit_info = Map.put(hit_info, :proc, proc)
 
-        DamageApplication.apply_unit_damage(
-          unit_type,
-          owner_pid,
-          unit_id,
-          damage,
-          hit_info,
-          source
-        )
+        unit_type
+        |> DamageApplication.apply_unit_damage(owner_pid, unit_id, damage, hit_info, source)
+        |> DamageApplication.forward_local_effects()
 
         hit_info
 
@@ -1648,8 +1632,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   defp decide_coma_once(:unchecked, attacker, target, damage),
     do: decide_coma(attacker, target, [damage])
 
-  defp decide_coma_once(decision, _attacker, _target, _damage), do: decision
-
   # A spell the target's defense turned into a miss still rolls the caster's
   # coma once.
   defp missed_coma_once(:unchecked, attacker, target, target_pid, target_type),
@@ -1660,8 +1642,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         target_pid,
         damage_source(attacker, target_type)
       )
-
-  defp missed_coma_once(decision, _attacker, _target, _target_pid, _target_type), do: decision
 
   defp damage_source(%{unit_type: unit_type, unit_id: unit_id}, :player),
     do: {unit_type, unit_id}

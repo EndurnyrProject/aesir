@@ -11,12 +11,6 @@
   {"lib/aesir/zone_server/guild/manager.ex", :call_without_opaque},
   {"lib/aesir/zone_server/unit/homunculus/persistence.ex", :call_without_opaque},
 
-  # MapSet is an opaque type; the A* closed-set is threaded through MapSet.put/2 and
-  # the recursive loop, which dialyzer reports as opaque-term violations even though
-  # the value is always a proper MapSet.
-  {"lib/aesir/zone_server/pathfinding.ex", :call_without_opaque},
-  {"lib/aesir/zone_server/pathfinding.ex", :call_with_opaque},
-
   # The NPC interaction task intentionally never returns: it runs the script and
   # ends with `exit(:normal)` so the session's monitor clears the dialog lock. The
   # spawned fun is correctly no_return by design.
@@ -27,6 +21,7 @@
   # @compile {:no_warn_undefined, CompiledItemScripts}, which dialyzer does not honor.
   {"lib/aesir/zone_server/unit/player/handlers/item_handler.ex", :unknown_function},
   {"lib/aesir/zone_server/script/dsl/items.ex", :unknown_function},
+  {"lib/aesir/zone_server/mmo/skills/alchemist/am_potionpitcher.ex", :unknown_function},
 
   # Generated scripts retain defensive fallbacks for source-language values
   # even when Dialyzer can prove the current DSL return type is exhaustive.

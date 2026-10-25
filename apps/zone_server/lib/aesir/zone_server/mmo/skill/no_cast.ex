@@ -63,7 +63,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.NoCast do
   defp load do
     DataLoader.load("skill_nocast.yml", "skill_nocast_v1.etf", fn sources ->
       sources
-      |> Enum.flat_map(&(DataLoader.parse_file(&1) || []))
+      |> Enum.flat_map(&DataLoader.parse_file/1)
       |> Enum.reduce(%{}, fn %{"id" => id, "flags" => flags}, masks ->
         Map.update(masks, id, flags, &bor(&1, flags))
       end)

@@ -98,7 +98,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Valkyrie.Teleporter do
   defp travel_to_choice(ctx, 7), do: travel(ctx, "aldebaran", 91, 105)
   defp travel_to_choice(ctx, 8), do: travel(ctx, "comodo", 209, 143)
   defp travel_to_choice(ctx, 9), do: travel(ctx, "yuno", 328, 101)
-  defp travel_to_choice(ctx, _choice), do: travel(ctx, 0, 0, 0)
+  defp travel_to_choice(ctx, _choice), do: ctx
 
   defp travel(ctx, map, x, y) do
     ctx

@@ -31,9 +31,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Option
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
+  alias Aesir.ZoneServer.Script.Rathena
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
+
+  @typedoc "Inputs merged into every equipment program's `EquipScript.inputs/0`."
+  @type extra_inputs :: %{
+          optional(:character_info) => Rathena.character_info() | nil,
+          optional(:map_name) => String.t() | nil,
+          optional(:local_time) => NaiveDateTime.t()
+        }
 
   @doc """
   Applies equipment modifiers to stats from the equipped inventory items.
@@ -61,7 +69,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   @spec apply_equipment_modifiers(
           Stats.t(),
           [InventoryItem.t()] | %{optional(any()) => InventoryItem.t()} | nil,
-          EquipScript.inputs() | %{}
+          extra_inputs()
         ) :: Stats.t()
   def apply_equipment_modifiers(stats, equipped_items \\ nil, extra_inputs \\ %{})
 

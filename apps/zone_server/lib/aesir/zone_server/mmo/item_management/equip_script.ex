@@ -115,8 +115,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   @typedoc """
   The evaluation inputs: the item's refine and the wearer's levels, plus
   optional wearer learned skills, base stats, job, equipped-item multiset,
-  fixed local timestamp, and attached-character information. `:lr_flag` names
-  the slot whose script runs (`BonusKeys.slot_destination/2` routes its bonuses).
+  fixed local timestamp, attached-character information, and the map whose
+  `NoEquip` restrictions apply. `:lr_flag` names the slot whose script runs
+  (`BonusKeys.slot_destination/2` routes its bonuses).
   """
   @type inputs :: %{
           :refine => integer(),
@@ -128,6 +129,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           optional(:equipped_item_counts) => %{pos_integer() => pos_integer()},
           optional(:local_time) => NaiveDateTime.t(),
           optional(:character_info) => Rathena.character_info() | nil,
+          optional(:map_name) => String.t() | nil,
           optional(:lr_flag) => BonusKeys.lr_flag(),
           optional(:random_option) => %{id: integer(), value: integer(), param: integer()}
         }

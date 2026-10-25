@@ -1416,8 +1416,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   to skip it entirely. Every attack calculation entry calls it right after the
   delivery check.
   """
-  @spec authorize_skill_damage(%{unit_type: unit_type(), unit_id: integer()}, integer()) ::
-          :ok | :suppressed
+  @spec authorize_skill_damage(
+          %{:unit_type => unit_type(), :unit_id => integer(), optional(atom()) => any()},
+          integer()
+        ) :: :ok | :suppressed
   def authorize_skill_damage(%{unit_type: type, unit_id: id}, skill_id) do
     if can_deal_skill_damage?(type, id, skill_id, Origin.autocast?({type, id})),
       do: :ok,

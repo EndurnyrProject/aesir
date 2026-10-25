@@ -453,6 +453,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     merge_local_effects(delivery, post_delivery)
   end
 
+  @doc """
+  Hands a delivery's same-session effects to the owning session as the ordinary
+  messages a different owner would have received, for attack paths that cannot
+  return them to their caller. Returns `delivery` unchanged.
+  """
+  @spec forward_local_effects(delivery_result()) :: delivery_result()
+  def forward_local_effects({:local_effects, effects} = delivery) do
+    Enum.each(effects, &GenServer.cast(self(), &1))
+    delivery
+  end
+
+  def forward_local_effects(delivery), do: delivery
+
   # The settled hit's equipment-proc event rides to the recipient's own handler
   # as `:proc_event`; the attack path dispatches the attacker's side itself.
   defp attach_proc_event(%{settlement_error: _} = hit_info, _damage),

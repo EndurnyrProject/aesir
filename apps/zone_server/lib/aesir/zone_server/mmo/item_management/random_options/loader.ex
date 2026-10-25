@@ -35,7 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Loader do
     domain
     |> DataLoader.load(cache_file, fn sources ->
       sources
-      |> Enum.flat_map(&(DataLoader.parse_file(&1) || []))
+      |> Enum.flat_map(&DataLoader.parse_file/1)
       |> Enum.map(convert)
       |> DataLoader.merge_by_key(& &1.id)
     end)

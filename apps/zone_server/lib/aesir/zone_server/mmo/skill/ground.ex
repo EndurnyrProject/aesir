@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
       Pneuma, Land Protector.
   """
 
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Unit.Ref
@@ -142,12 +143,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
               %{skill_id: pos_integer(), interval: pos_integer(), no_overlap: boolean()} | :none
 
   @doc "Describes the source-owned status granted while a mover occupies the field."
-  @callback field_support(Group.t()) :: %{
-              optional(:linger_ms) => non_neg_integer(),
-              status_type: atom() | nil,
-              params: keyword() | map() | (atom(), integer() -> keyword() | map()),
-              target?: ({atom(), integer()} -> boolean())
-            }
+  @callback field_support(Group.t()) :: FieldSupport.spec()
 
   @optional_callbacks schedule: 2,
                       on_natural_expiry: 1,

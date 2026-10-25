@@ -7,22 +7,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Lifecycle do
   """
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.CastTime
   alias Aesir.ZoneServer.Mmo.Skill.Definition
 
   @type state :: any()
   @type phase :: :begin | :completion
   @type prepared :: map()
-  @type cast_stats :: %{
-          :dex => integer(),
-          :int => integer(),
-          :varcast_reductions => [non_neg_integer()],
-          :varcast_rate => integer(),
-          :fixed_cast => integer(),
-          :classic_early_rate => integer(),
-          :classic_skill_rate => integer(),
-          :classic_late_reductions => [non_neg_integer()],
-          optional(:fixcast_rate) => integer()
-        }
+  @type cast_stats :: CastTime.inputs()
 
   @callback knows?(state(), Definition.t(), pos_integer(), phase()) ::
               :ok | {:error, atom()}

@@ -92,10 +92,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   @typedoc """
   Scheduling info for a timed cast, returned by `begin_cast/4` when the skill
   has a non-zero cast time. `fixed` is the uninterruptible leading window and
-  `total` the full duration, both in milliseconds.
+  `total` the full duration, both in milliseconds. `origin` tags who started
+  the cast; an item cast carries `keep_requirement?` and an Encore replay its
+  `memory`.
   """
   @type cast_info :: %{
           optional(:reactions_consumed?) => boolean(),
+          optional(:origin) => atom(),
+          optional(:keep_requirement?) => boolean(),
+          optional(:memory) => map(),
           skill_id: integer(),
           level: pos_integer(),
           target: Active.target(),
@@ -1088,13 +1093,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   Completes an item skill against the current target without learned or resource checks.
   """
   @spec complete_item_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
-          {:ok, PlayerState.t()} | {:failed, PlayerState.t(), atom()} | {:error, atom()}
+          {:ok, PlayerState.t()}
+          | {:local_effects, PlayerState.t(), [Active.effect()]}
+          | {:deferred, PlayerState.t(), term()}
+          | {:failed, PlayerState.t(), atom()}
+          | {:failed, PlayerState.t(), atom(), :type1_only | :requirements_only}
+          | {:skipped, PlayerState.t(), atom()}
+          | {:castend_failed, PlayerState.t(), atom()}
+          | {:error, atom()}
   def complete_item_cast(caster, skill_id, level, target),
     do: complete_item_cast(caster, skill_id, level, target, false)
 
   @doc "Completes an item cast, charging the skill's own requirements when retained."
   @spec complete_item_cast(PlayerState.t(), integer(), pos_integer(), Active.target(), boolean()) ::
-          {:ok, PlayerState.t()} | {:failed, PlayerState.t(), atom()} | {:error, atom()}
+          {:ok, PlayerState.t()}
+          | {:local_effects, PlayerState.t(), [Active.effect()]}
+          | {:deferred, PlayerState.t(), term()}
+          | {:failed, PlayerState.t(), atom()}
+          | {:failed, PlayerState.t(), atom(), :type1_only | :requirements_only}
+          | {:skipped, PlayerState.t(), atom()}
+          | {:castend_failed, PlayerState.t(), atom()}
+          | {:error, atom()}
   def complete_item_cast(%PlayerState{} = caster, skill_id, level, target, true) do
     now = System.monotonic_time(:millisecond)
 
@@ -2211,7 +2230,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:instant, Active.caster(), [Active.effect()]}
           | {:deferred, Active.caster(), term()}
           | {:casting, Active.caster(), cast_info()}
+          | {:failed, Active.caster(), atom()}
+          | {:failed, Active.caster(), atom(), :type1_only | :requirements_only}
+          | {:skipped, Active.caster(), atom()}
+          | {:castend_failed, Active.caster(), atom()}
           | {:error, atom()}
+          | {:error, atom(), Active.caster()}
   defp schedule(%{total: 0}, game_state, skill_id, level, target, prepared, _opts) do
     notify_cast_targeted(game_state, prepared.definition, target, false)
     now = System.monotonic_time(:millisecond)

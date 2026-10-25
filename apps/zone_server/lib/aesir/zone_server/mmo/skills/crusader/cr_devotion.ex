@@ -97,16 +97,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion do
   @impl Active
   @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
           :ok | {:error, atom()}
-  def validate(
-        %PlayerState{character_id: crusader_id} = caster,
-        {:unit, {:homunculus, gid}},
-        _level,
-        _def
-      ) do
-    with :ok <- reject_self(crusader_id, {:homunculus, gid}) do
-      same_party_homunculus(caster, gid)
-    end
-  end
+  def validate(%PlayerState{} = caster, {:unit, {:homunculus, gid}}, _level, _def),
+    do: same_party_homunculus(caster, gid)
 
   def validate(
         %PlayerState{character_id: crusader_id} = caster,

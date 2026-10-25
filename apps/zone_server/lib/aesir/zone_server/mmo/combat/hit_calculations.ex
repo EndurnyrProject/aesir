@@ -42,7 +42,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
           optional(:critical) => (-> boolean()),
           optional(:perfect_hit) => non_neg_integer(),
           optional(:skill_hit_rate_bonus_pct) => integer(),
-          optional(:hit_rate_bonus_pct) => integer()
+          optional(:hit_rate_bonus_pct) => integer(),
+          optional(:hit_rate_bonus_flat) => integer()
         }
 
   @typedoc """

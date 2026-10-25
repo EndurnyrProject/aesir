@@ -480,7 +480,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
               looted_items: state.looted_items,
               mob_level: mob_data.level,
               mob_race: mob_data.race,
-              fixed_item_drop?: :fixed_item_drop in (mob_data.modes || []),
+              fixed_item_drop?: :fixed_item_drop in mob_data.modes,
               map: state.map_name,
               x: state.x,
               y: state.y,

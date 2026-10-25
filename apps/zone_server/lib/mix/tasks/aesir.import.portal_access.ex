@@ -41,7 +41,7 @@ defmodule Mix.Tasks.Aesir.Import.PortalAccess do
           {to_string(id),
            %{
              "level" => Map.get(group, "Level", 0),
-             "any_warp" => any_warp?(id, groups, MapSet.new())
+             "any_warp" => any_warp?(id, groups, [])
            }}
         end)
     }
@@ -152,12 +152,12 @@ defmodule Mix.Tasks.Aesir.Import.PortalAccess do
   end
 
   defp any_warp?(id, groups, seen) do
-    if MapSet.member?(seen, id), do: raise(ArgumentError, "group inheritance cycle")
+    if id in seen, do: raise(ArgumentError, "group inheritance cycle")
     group = Map.fetch!(groups, id)
     permissions = Map.get(group, "Permissions", %{})
 
     Map.get(permissions, "any_warp", false) or
-      inherited_warp?(group, groups, MapSet.put(seen, id))
+      inherited_warp?(group, groups, [id | seen])
   end
 
   defp inherited_warp?(group, groups, seen) do

@@ -39,12 +39,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
 
+  @typedoc "A `SkillMenu.Kind` enum value."
+  @type kind :: :SKILLS | :ITEMS | :INVENTORY_SLOTS | :OPTIONS
+
   @typedoc "The offer parked on the session while the client is deciding."
   @type pending :: %{
           optional(:context) => map(),
           optional(:work_in_progress?) => boolean(),
           skill_id: non_neg_integer(),
-          kind: SkillMenu.Kind.t(),
+          kind: kind(),
           entry_ids: [non_neg_integer()],
           level: non_neg_integer()
         }
@@ -60,7 +63,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   @spec open(
           map(),
           non_neg_integer(),
-          SkillMenu.Kind.t(),
+          kind(),
           [non_neg_integer()],
           non_neg_integer()
         ) :: map()
@@ -71,7 +74,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   @spec open(
           map(),
           non_neg_integer(),
-          SkillMenu.Kind.t(),
+          kind(),
           [non_neg_integer()],
           non_neg_integer(),
           keyword()

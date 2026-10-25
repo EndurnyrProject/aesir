@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutocast do
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
+  alias Aesir.ZoneServer.Mmo.Skill.UseRestrictions
 
   @roll_ceiling 1_000
   @rate_cap 1_000
@@ -72,7 +73,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutocast do
   @type identity :: {trigger(), non_neg_integer(), entry()}
 
   @typedoc "How `resolve/2` ended: cast at a level, dropped, or refused by usability."
-  @type resolution :: {:cast, pos_integer()} | :skip | {:unusable, atom()}
+  @type resolution ::
+          {:cast, pos_integer()}
+          | :skip
+          | {:unusable, atom() | {:not_ok, UseRestrictions.reply()}}
 
   @doc """
   Registers one evaluated autocast into the equipment `modifiers`, at the end
@@ -233,7 +237,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutocast do
   level. A failed usability check returns its reason and stops before the roll.
 
   ## Options
-    - `:usable` - `(skill_id -> :ok | {:error, atom()})`, the usability check (required).
+    - `:usable` - `(skill_id -> :ok | {:error, reason})`, the usability check (required).
     - `:roll` - a per-mille chance predicate (default `:rand`).
     - `:level_roll` - picks a level from 1 up to the armed one (default `:rand`).
   """

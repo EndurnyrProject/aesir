@@ -88,13 +88,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   @doc "Atomically reclaims one eligible trap owned by `owner` at a map cell."
   @spec reclaim_trap(mover(), String.t(), integer(), integer()) ::
-          {:ok, %{group_id: non_neg_integer(), item_id: pos_integer()}} | {:error, atom()}
+          {:ok, %{group_id: non_neg_integer(), item_id: pos_integer() | nil}} | {:error, atom()}
   def reclaim_trap(owner, map_name, x, y),
     do: reclaim_trap(default_server(), owner, map_name, x, y)
 
   @doc false
   @spec reclaim_trap(server(), mover(), String.t(), integer(), integer()) ::
-          {:ok, %{group_id: non_neg_integer(), item_id: pos_integer()}} | {:error, atom()}
+          {:ok, %{group_id: non_neg_integer(), item_id: pos_integer() | nil}} | {:error, atom()}
   def reclaim_trap(server, {owner_type, owner_id} = owner, map_name, x, y)
       when is_atom(owner_type) and is_integer(owner_id) and is_binary(map_name) and is_integer(x) and
              is_integer(y) do
@@ -1040,8 +1040,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       _acts -> false
     end
   end
-
-  defp suppressed_touch?(_group, _mover, _callback), do: false
 
   defp invoke_trigger(group, mover, callback, module) do
     case invoke(module, callback, [group, mover]) do

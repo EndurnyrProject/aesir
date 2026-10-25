@@ -1314,14 +1314,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       DamageApplication.broadcast_nearby(target, packet)
 
       delivery =
-        DamageApplication.apply_unit_damage(
-          target_type,
-          target_pid,
-          target_id,
-          damage,
-          hit_info,
-          source
-        )
+        target_type
+        |> DamageApplication.apply_unit_damage(target_pid, target_id, damage, hit_info, source)
+        |> DamageApplication.forward_local_effects()
 
       if delivered?(delivery), do: OnHitEffects.after_hit(hit_info, damage)
 
@@ -1916,14 +1911,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     DamageApplication.broadcast_nearby(target, packet)
 
     delivery =
-      DamageApplication.apply_unit_damage(
-        target_type,
-        target_pid,
-        target.unit_id,
-        damage,
-        hit_info,
-        source
-      )
+      target_type
+      |> DamageApplication.apply_unit_damage(target_pid, target.unit_id, damage, hit_info, source)
+      |> DamageApplication.forward_local_effects()
 
     if delivered?(delivery) do
       event = EquipProcDispatch.hit_event(hit_info, damage)

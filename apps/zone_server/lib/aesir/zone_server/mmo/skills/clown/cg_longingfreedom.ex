@@ -59,7 +59,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgLongingfreedom do
            StatusStorage.get_status(:player, id, :sc_dancing),
          root =
            Map.get(state, :root) ||
-             if(is_integer(partner) and partner > 0, do: :ensemble, else: :none),
+             if(partner > 0, do: :ensemble, else: :none),
          true <- root != :none do
       if StatusStorage.has_status?(:player, id, :sc_longing),
         do: {:error, :already_active},

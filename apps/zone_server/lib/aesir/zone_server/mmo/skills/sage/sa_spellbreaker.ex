@@ -112,7 +112,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreaker do
 
   defp break_cast(caster, :mob, _snapshot, pid, level, rng) do
     state = MobSession.get_state(pid)
-    immune? = status_immune?(state)
+    immune? = MobState.status_immune?(state)
 
     with :ok <- ensure_casting(state),
          :ok <- roll_against_immunity(immune?, rng),
@@ -133,9 +133,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreaker do
   defp ensure_casting(%MobState{casting: nil}), do: {:error, :not_casting}
   defp ensure_casting(%MobState{is_dead: true}), do: {:error, :not_casting}
   defp ensure_casting(%MobState{}), do: :ok
-
-  defp status_immune?(%MobState{} = state), do: MobState.status_immune?(state)
-  defp status_immune?(_state), do: false
 
   @spec roll_against_immunity(boolean(), (pos_integer() -> pos_integer())) ::
           :ok | {:error, :failed}

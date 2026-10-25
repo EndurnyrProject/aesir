@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterball do
   alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout

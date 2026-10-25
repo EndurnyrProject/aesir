@@ -175,7 +175,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.StaffOfTheAcademy do
         |> complete_application(0)
 
       true ->
-        collect_discounted_fee(ctx, discount_requirements(get_char_var(ctx, :SAGE_Q, 0)))
+        collect_discounted_fee(ctx, quest, discount_requirements(quest))
     end
   end
 
@@ -576,39 +576,42 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.StaffOfTheAcademy do
   defp discount_requirements(2), do: [{705, 50}, {949, 50}, {1024, 25}]
   defp discount_requirements(3), do: [{916, 50}, {914, 50}, {705, 50}, {949, 50}]
 
-  defp collect_discounted_fee(ctx, requirements) do
+  defp collect_discounted_fee(ctx, quest, requirements) do
     checked = Enum.take(requirements, length(requirements) - 1)
 
-    if Enum.all?(checked, fn {item, amount} -> count_item(ctx, item) >= amount end) do
-      ctx =
-        if zeny(ctx) > 29_999 do
-          checked
-          |> Enum.reduce(ctx, fn {item, amount}, ctx -> delitem(ctx, item, amount) end)
-          |> pay_zeny(30_000)
-          |> mes("[Metheus Sylphe]")
-          |> mes("Well done. Let me proceed with your application request.")
-          |> set_char_var(:SAGE_Q, 4)
-          |> next()
-        else
-          ctx
-        end
+    cond do
+      not Enum.all?(checked, fn {item, amount} -> count_item(ctx, item) >= amount end) ->
+        remind_discount_items(ctx, requirements)
 
-      ctx
-      |> mes("[Metheus Sylphe]")
-      |> mes("I am sorry to say that you are not ready yet.")
-      |> mes(
-        "Although you brought all of the items, the money you have now is less than 30,000 zeny."
-      )
-      |> next()
-      |> mes("[Metheus Sylphe]")
-      |> mes(
-        "As I told you before, you must bring all of those items, as well as the 30,000 zeny together."
-      )
-      |> mes("Please make sure that you have the required items and money.")
-      |> close()
-    else
-      remind_discount_items(ctx, requirements)
+      zeny(ctx) > 29_999 ->
+        checked
+        |> Enum.reduce(ctx, fn {item, amount}, ctx -> delitem(ctx, item, amount) end)
+        |> pay_zeny(30_000)
+        |> mes("[Metheus Sylphe]")
+        |> mes("Well done. Let me proceed with your application request.")
+        |> set_char_var(:SAGE_Q, 4)
+        |> next()
+        |> complete_application(quest)
+
+      true ->
+        missing_discount_zeny(ctx)
     end
+  end
+
+  defp missing_discount_zeny(ctx) do
+    ctx
+    |> mes("[Metheus Sylphe]")
+    |> mes("I am sorry to say that you are not ready yet.")
+    |> mes(
+      "Although you brought all of the items, the money you have now is less than 30,000 zeny."
+    )
+    |> next()
+    |> mes("[Metheus Sylphe]")
+    |> mes(
+      "As I told you before, you must bring all of those items, as well as the 30,000 zeny together."
+    )
+    |> mes("Please make sure that you have the required items and money.")
+    |> close()
   end
 
   defp remind_discount_items(ctx, requirements) do

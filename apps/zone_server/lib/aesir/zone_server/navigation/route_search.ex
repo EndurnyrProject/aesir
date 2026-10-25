@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Navigation.RouteSearch do
         h = heuristic(start_x, start_y, goal_x, goal_y)
         node = %{x: start_x, y: start_y, g: 0, f: h, parent: nil}
         open_set = :gb_sets.singleton({h, start, node})
-        a_star_loop(map_data, open_set, MapSet.new(), %{start => 0}, goal)
+        a_star_loop(map_data, open_set, %{}, %{start => 0}, goal)
     end
   end
 
@@ -51,7 +51,7 @@ defmodule Aesir.ZoneServer.Navigation.RouteSearch do
       if current.x == goal_x and current.y == goal_y do
         {:ok, reconstruct_path(current)}
       else
-        closed_set = MapSet.put(closed_set, pos)
+        closed_set = Map.put(closed_set, pos, true)
         {open_set, g_scores} = expand(map_data, open_set, g_scores, closed_set, current, goal)
         a_star_loop(map_data, open_set, closed_set, g_scores, goal)
       end
@@ -71,7 +71,7 @@ defmodule Aesir.ZoneServer.Navigation.RouteSearch do
     tentative_g = current.g + cost
 
     cond do
-      MapSet.member?(closed_set, pos) or not valid_position?(map_data, nx, ny) ->
+      Map.has_key?(closed_set, pos) or not valid_position?(map_data, nx, ny) ->
         {open_set, g_scores}
 
       not Cell.step_traversable?(map_data.name, {current.x, current.y}, pos) ->

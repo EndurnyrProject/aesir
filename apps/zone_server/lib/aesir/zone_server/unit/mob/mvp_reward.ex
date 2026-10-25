@@ -152,7 +152,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
          y,
          ownership
        ) do
-    fixed_item_drop? = :fixed_item_drop in (modes || [])
+    fixed_item_drop? = :fixed_item_drop in modes
 
     if MapFlags.get(map_name, :nomvploot) do
       :ok

@@ -322,10 +322,8 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
 
   # Meditatio's percent on the base SP amount, precomputed into
   # `modifiers.passive` at stat calculation.
-  defp passive_sp_regen_rate(%PlayerStats{modifiers: %{passive: passive}}) when is_map(passive),
+  defp passive_sp_regen_rate(%PlayerStats{modifiers: %{passive: passive}}),
     do: Map.get(passive, :sp_regen_rate, 0)
-
-  defp passive_sp_regen_rate(_stats), do: 0
 
   @spec rate(regen_modifiers(), atom()) :: integer()
   defp rate(regen_modifiers, key), do: 100 + Map.get(regen_modifiers, key, 0)
