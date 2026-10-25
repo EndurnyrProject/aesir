@@ -93,7 +93,7 @@ defmodule Aesir.ZoneServer do
         account_id: account_id,
         x: character.last_x,
         y: character.last_y,
-        dir: 4,
+        dir: 0,
         start_time: System.system_time(:millisecond),
         font: 0
       }

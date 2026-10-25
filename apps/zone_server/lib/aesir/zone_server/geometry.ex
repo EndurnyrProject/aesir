@@ -6,18 +6,19 @@ defmodule Aesir.ZoneServer.Geometry do
 
   @doc """
   Calculates direction from one point to another.
-  Returns a direction value from 0-7 representing 8 compass directions.
-
-  Uses the RO sprite-frame convention expected by the Lifthrasir client
-  (matching its `Direction::from_movement_vector`):
-  - 0: South
-  - 1: Southwest
+  Returns a direction value from 0-7 representing the RO network direction
+  convention (`enum directions` in rAthena's `path.hpp`):
+  - 0: North
+  - 1: Northwest
   - 2: West
-  - 3: Northwest
-  - 4: North
-  - 5: Northeast
+  - 3: Southwest
+  - 4: South
+  - 5: Southeast
   - 6: East
-  - 7: Southeast
+  - 7: Northeast
+
+  This is the value carried by the wire `dir` field, so it matches NPC facing
+  (raw rAthena script values) without conversion.
   """
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def calculate_direction(from_x, from_y, to_x, to_y) do
@@ -25,27 +26,27 @@ defmodule Aesir.ZoneServer.Geometry do
     dy = to_y - from_y
 
     cond do
-      dx == 0 and dy < 0 -> 0
-      dx > 0 and dy < 0 -> 7
+      dx == 0 and dy < 0 -> 4
+      dx > 0 and dy < 0 -> 5
       dx > 0 and dy == 0 -> 6
-      dx > 0 and dy > 0 -> 5
-      dx == 0 and dy > 0 -> 4
-      dx < 0 and dy > 0 -> 3
+      dx > 0 and dy > 0 -> 7
+      dx == 0 and dy > 0 -> 0
+      dx < 0 and dy > 0 -> 1
       dx < 0 and dy == 0 -> 2
-      dx < 0 and dy < 0 -> 1
+      dx < 0 and dy < 0 -> 3
       true -> 0
     end
   end
 
   @facing_delta %{
-    0 => {0, -1},
-    1 => {-1, -1},
+    0 => {0, 1},
+    1 => {-1, 1},
     2 => {-1, 0},
-    3 => {-1, 1},
-    4 => {0, 1},
-    5 => {1, 1},
+    3 => {-1, -1},
+    4 => {0, -1},
+    5 => {1, -1},
     6 => {1, 0},
-    7 => {1, -1}
+    7 => {1, 1}
   }
 
   @doc """
@@ -100,7 +101,7 @@ defmodule Aesir.ZoneServer.Geometry do
   @doc """
   Circular distance, in 45-degree dir-steps, between two 8-way directions.
 
-  Both directions use the 0-7 sprite-frame convention from
+  Both directions use the 0-7 RO network convention from
   `calculate_direction/4`. The result is `0..4`: `0` when the two face the same
   way, `4` when they are diametrically opposite. Wrapping across the 0/7 seam is
   handled, so directions `0` and `7` differ by one step, not seven.

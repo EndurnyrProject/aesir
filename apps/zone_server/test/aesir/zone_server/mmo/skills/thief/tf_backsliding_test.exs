@@ -19,14 +19,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfBackslidingTest do
   # dir -> the cell one step ahead of {150, 150} in that facing direction,
   # inverse of Geometry.calculate_direction/4.
   @facing_cells %{
-    0 => {150, 149},
-    1 => {149, 149},
+    0 => {150, 151},
+    1 => {149, 151},
     2 => {149, 150},
-    3 => {149, 151},
-    4 => {150, 151},
-    5 => {151, 151},
+    3 => {149, 149},
+    4 => {150, 149},
+    5 => {151, 149},
     6 => {151, 150},
-    7 => {151, 149}
+    7 => {151, 151}
   }
 
   describe "endure" do

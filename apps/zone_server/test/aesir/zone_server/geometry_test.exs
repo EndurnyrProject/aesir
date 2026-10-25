@@ -108,14 +108,14 @@ defmodule Aesir.ZoneServer.GeometryTest do
       target = fn dir -> %{x: 10, y: 10, dir: dir} end
 
       for {dir, rear, front, left_side, right_side} <- [
-            {0, {10, 11}, {10, 9}, {9, 10}, {11, 10}},
-            {1, {11, 11}, {9, 9}, {9, 11}, {11, 9}},
-            {2, {11, 10}, {9, 10}, {10, 11}, {10, 9}},
-            {3, {11, 9}, {9, 11}, {11, 11}, {9, 9}},
-            {4, {10, 9}, {10, 11}, {11, 10}, {9, 10}},
-            {5, {9, 9}, {11, 11}, {11, 9}, {9, 11}},
-            {6, {9, 10}, {11, 10}, {10, 9}, {10, 11}},
-            {7, {9, 11}, {11, 9}, {9, 9}, {11, 11}}
+            {0, {10, 9}, {10, 11}, {9, 10}, {11, 10}},
+            {1, {11, 9}, {9, 11}, {9, 9}, {11, 11}},
+            {2, {11, 10}, {9, 10}, {10, 9}, {10, 11}},
+            {3, {11, 11}, {9, 9}, {9, 11}, {11, 9}},
+            {4, {10, 11}, {10, 9}, {9, 10}, {11, 10}},
+            {5, {9, 11}, {11, 9}, {11, 11}, {9, 9}},
+            {6, {9, 10}, {11, 10}, {10, 11}, {10, 9}},
+            {7, {9, 9}, {11, 11}, {11, 9}, {9, 11}}
           ] do
         assert Geometry.behind?(position(rear), target.(dir))
         refute Geometry.behind?(position(front), target.(dir))
@@ -127,9 +127,9 @@ defmodule Aesir.ZoneServer.GeometryTest do
     test "includes the diagonals adjacent to directly behind" do
       target = %{x: 10, y: 10, dir: 4}
 
-      assert Geometry.behind?(position({10, 9}), target)
-      assert Geometry.behind?(position({9, 9}), target)
-      assert Geometry.behind?(position({11, 9}), target)
+      assert Geometry.behind?(position({10, 11}), target)
+      assert Geometry.behind?(position({9, 11}), target)
+      assert Geometry.behind?(position({11, 11}), target)
     end
 
     defp position({x, y}), do: %{x: x, y: y}

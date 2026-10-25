@@ -536,6 +536,7 @@ message EnterAck {
   uint32 account_id = 1;
   uint32 x = 2;
   uint32 y = 3;
+  // RO network direction order: 0=N, 1=NW, 2=W, 3=SW, 4=S, 5=SE, 6=E, 7=NE.
   uint32 dir = 4;
   uint64 start_time = 5;
   uint32 font = 6;
@@ -589,6 +590,7 @@ message UnitSpawn {
   uint32 job = 4;
   uint32 x = 5;
   uint32 y = 6;
+  // RO network direction order: 0=N, 1=NW, 2=W, 3=SW, 4=S, 5=SE, 6=E, 7=NE.
   uint32 dir = 7;
   uint32 speed = 8;
   uint32 hp = 9;
@@ -849,6 +851,7 @@ message SnapshotEntity {
   uint32 id = 1;
   uint32 x = 2;
   uint32 y = 3;
+  // RO network direction order: 0=N, 1=NW, 2=W, 3=SW, 4=S, 5=SE, 6=E, 7=NE.
   uint32 dir = 4;
   uint32 move_state = 5;
   uint32 hp_pct = 6;

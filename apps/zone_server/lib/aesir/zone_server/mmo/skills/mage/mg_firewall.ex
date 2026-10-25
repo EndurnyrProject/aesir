@@ -68,8 +68,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
 
   @endure_ms 2000
 
-  # Aesir's sprite-frame direction for north (`Geometry.calculate_direction/4`).
-  @north 4
+  # The RO network direction for north (`Geometry.calculate_direction/4`).
+  @north 0
 
   @behaviour Ground
 

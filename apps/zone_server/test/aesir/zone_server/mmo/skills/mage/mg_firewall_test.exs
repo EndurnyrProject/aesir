@@ -44,7 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
 
   defp burning(budget), do: group(3, %{cell_budget: %{@cell => budget}})
 
-  # The target stands on @cell facing north (Aesir dir 4).
+  # The target stands on @cell facing north (RO dir 0).
   defp stub_world(element \\ :neutral, race \\ :formless) do
     stub(Combat, :resolve_combatant, fn
       :player, @caster_id -> {:ok, %{unit_type: :player, unit_id: @caster_id}}
@@ -52,7 +52,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
     end)
 
     stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {149, 150, @map_name}} end)
-    stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {nil, %{dir: 4}, self()}} end)
+    stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {nil, %{dir: 0}, self()}} end)
   end
 
   # Every strike reports the given outcome and records its options.
