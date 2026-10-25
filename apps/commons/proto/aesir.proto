@@ -118,8 +118,8 @@ message Envelope {
     VendingPurchaseRequest vending_purchase_request = 92;  // c2s zone
     VendingBoardShown vending_board_shown = 93;  // s2c zone world
     VendingBoardRemoved vending_board_removed = 94;  // s2c zone world
-    VendingList vending_list = 95;  // s2c zone bulk
-    VendingSaleReport vending_sale_report = 96;  // s2c zone gameplay
+    VendingList vending_list = 95;  // s2c zone world
+    VendingSaleReport vending_sale_report = 96;  // s2c zone world
     // 97-101: npc shop (server->client window/result + client buy/sell intents)
     NpcShopOpen npc_shop_open = 97;  // s2c zone gameplay
     NpcBuyRequest npc_buy_request = 98;  // c2s zone
@@ -155,7 +155,7 @@ message Envelope {
     Announcement announcement = 124;  // s2c zone world
     // 125-126: cart/vending results (server->client outcome of a gated intent)
     CartMountResult cart_mount_result = 125;  // s2c zone gameplay
-    VendingOpenResult vending_open_result = 126;  // s2c zone gameplay
+    VendingOpenResult vending_open_result = 126;  // s2c zone world
     // 127-128: emotes (client intent + server->client display)
     EmoteRequest emote_request = 127;  // c2s zone
     Emotion emotion = 128;  // s2c zone world
@@ -287,6 +287,10 @@ message Envelope {
     NpcShopClose npc_shop_close = 223;  // c2s zone
     // 224: the server cancelled the player's running progress bar
     ProgressBarAbort progress_bar_abort = 224;  // s2c zone world
+    // 225-227: negotiated vending setup and correlated settlement
+    VendingSetupReady vending_setup_ready = 225;  // s2c zone world
+    VendingPurchaseResult vending_purchase_result = 226;  // s2c zone world
+    VendingCloseResult vending_close_result = 227;  // s2c zone world
   }
 }
 
@@ -294,6 +298,7 @@ message Envelope {
 enum FeatureCapability {
   FEATURE_CAPABILITY_UNSPECIFIED = 0;
   FEATURE_CAPABILITY_SKILL_TEXT_INPUT = 1;
+  FEATURE_CAPABILITY_VENDING_V2 = 2;
 }
 
 enum CreatorKind {
@@ -1267,22 +1272,42 @@ message MoveFromCartRequest {
   uint32 amount = 2;
 }
 
-// One line of a vending shop the merchant wants to open: a cart slot, how many
-// to sell, and the per-unit price.
+// Server -> client, a paid MC_VENDING use granted preparation. Canceling this
+// setup does not refund the skill cost. Requires FEATURE_CAPABILITY_VENDING_V2.
+message VendingSetupReady {
+  // Opaque grant token, valid only for this preparation in the owning session.
+  string setup_id = 1;
+  uint32 max_slots = 2;
+  uint32 min_unit_price = 3;
+  uint32 max_unit_price = 4;
+  // UTF-8 bytes, excluding any legacy string terminator.
+  uint32 max_title_bytes = 5;
+  // Raw server cart slots, without the +2 used by ordinary cart packets.
+  repeated uint32 sellable_cart_indices = 6;
+  // Actual SP already consumed by the normal skill requirement stage.
+  uint32 sp_spent = 7;
+}
+
+// One listing: a raw server cart slot (not an ordinary cart-packet index),
+// quantity, and per-unit price. Zero-price listings are permitted by policy.
 message VendingEntry {
   uint32 cart_index = 1;
   uint32 amount = 2;
   uint32 price = 3;
 }
 
-// Client -> server, open a vending shop selling the given cart items under a title.
+// Client -> server, submit listings against a paid preparation grant. Requires
+// FEATURE_CAPABILITY_VENDING_V2; this does not cast or charge for the skill.
 message VendingOpenRequest {
   string title = 1;
   repeated VendingEntry entries = 2;
+  // Nonzero, monotonically allocated within the client zone session.
+  uint64 request_id = 3;
+  string setup_id = 4;
 }
 
-// Outcome of a vending open attempt. Values are prefixed because proto3 enum
-// constants share the package namespace.
+// Outcome of a vending open attempt. Existing values retain their numbering;
+// VEND_OK is authoritative only with matching identity and an accepted snapshot.
 enum VendingOpenResultCode {
   VEND_OK = 0;
   VEND_NO_CART = 1;
@@ -1294,46 +1319,159 @@ enum VendingOpenResultCode {
   VEND_INSUFFICIENT_STOCK = 7;
   VEND_INVALID_STATE = 8;
   VEND_INSUFFICIENT_SP = 9;
+  VEND_NPC_NEARBY = 10;
+  VEND_MAP_RESTRICTED = 11;
+  VEND_CELL_RESTRICTED = 12;
+  VEND_INVALID_TITLE = 13;
+  VEND_NO_ITEMS = 14;
+  VEND_DUPLICATE_SLOT = 15;
+  VEND_ITEM_UNIDENTIFIED = 16;
+  VEND_ITEM_BROKEN = 17;
+  VEND_ITEM_RENTAL = 18;
+  VEND_ITEM_BOUND = 19;
+  VEND_ITEM_UNTRADEABLE = 20;
+  VEND_SETUP_EXPIRED = 21;
+  VEND_FORBIDDEN = 22;
+  VEND_ZENY_LIMIT = 23;
+  VEND_PERSISTENCE_FAILED = 24;
+  VEND_INVALID_REQUEST = 25;
 }
 
-// Server -> client, outcome of a vending open attempt.
+// Server -> client, correlated open outcome and accepted listing snapshot.
 message VendingOpenResult {
   VendingOpenResultCode result = 1;
+  uint64 request_id = 2;
+  string setup_id = 3;
+  // Whether a rejected submission may be edited and resubmitted without recast.
+  bool setup_active = 4;
+  // Success-only fields; the server normalizes the title and unit prices.
+  string shop_id = 5;
+  string title = 6;
+  repeated VendingShopItem items = 7;
+  uint64 vendor_unit_id = 8;
 }
 
-// Client -> server, close the player's own vending shop.
+// Client -> server, cancel preparation or close a particular owned shop. An old
+// request must not close a replacement instance. Requires the V2 capability.
 message VendingCloseRequest {
+  uint64 request_id = 1;
+  oneof target {
+    string setup_id = 2;
+    string shop_id = 3;
+  }
 }
 
-// Client -> server, request the item list of a nearby vendor's shop.
+enum VendingCloseResultCode {
+  VEND_CLOSE_UNSPECIFIED = 0;
+  VEND_CLOSE_SHOP_CLOSED = 1;
+  VEND_CLOSE_SETUP_CANCELED = 2;
+  VEND_CLOSE_ALREADY_CLOSED = 3;
+  VEND_CLOSE_INVALID_TARGET = 4;
+  VEND_CLOSE_FORBIDDEN = 5;
+  VEND_CLOSE_INVALID_REQUEST = 6;
+  VEND_CLOSE_INTERNAL_ERROR = 7;
+}
+
+// Server -> client, explicit close/cancel outcome. Echoes the attempted target,
+// even when that instance no longer exists; never substitutes a current token.
+message VendingCloseResult {
+  uint64 request_id = 1;
+  oneof target {
+    string setup_id = 2;
+    string shop_id = 3;
+  }
+  VendingCloseResultCode result = 4;
+}
+
+// Client -> server, request a shop snapshot. Empty expected_shop_id is allowed
+// only for the owner's reconciliation query, not to browse a replacement shop.
 message VendingListRequest {
   uint64 vendor_unit_id = 1;
+  uint64 request_id = 2;
+  string expected_shop_id = 3;
 }
 
-// One line of a buy request: which shop entry and how many units to buy.
+// One checkout line. Echo the opaque index and unit price from the snapshot;
+// a changed quote rejects the whole purchase rather than silently repricing it.
 message VendingBuy {
   uint32 index = 1;
   uint32 amount = 2;
+  uint32 expected_unit_price = 3;
 }
 
-// Client -> server, buy items from a vendor's shop.
+// Client -> server, atomic checkout against one shop instance. Requires V2 and
+// a nonzero session-monotonic request ID; never retry an unconfirmed purchase.
 message VendingPurchaseRequest {
   uint64 vendor_unit_id = 1;
   repeated VendingBuy items = 2;
+  uint64 request_id = 3;
+  string shop_id = 4;
 }
 
-// Server -> client, a vending shop board appeared over a merchant (area broadcast / on view enter).
+enum VendingPurchaseResultCode {
+  VEND_PURCHASE_UNSPECIFIED = 0;
+  VEND_PURCHASE_OK = 1;
+  VEND_PURCHASE_NOT_OPEN = 2;
+  VEND_PURCHASE_SHOP_CHANGED = 3;
+  VEND_PURCHASE_PRICE_CHANGED = 4;
+  VEND_PURCHASE_INSUFFICIENT_STOCK = 5;
+  VEND_PURCHASE_INVALID_LINE = 6;
+  VEND_PURCHASE_INVALID_AMOUNT = 7;
+  VEND_PURCHASE_NOT_ENOUGH_ZENY = 8;
+  VEND_PURCHASE_OVERWEIGHT = 9;
+  VEND_PURCHASE_NO_SLOTS = 10;
+  VEND_PURCHASE_STACK_LIMIT = 11;
+  VEND_PURCHASE_SELLER_ZENY_LIMIT = 12;
+  VEND_PURCHASE_FORBIDDEN = 13;
+  VEND_PURCHASE_OUT_OF_RANGE = 14;
+  VEND_PURCHASE_WRONG_MAP = 15;
+  VEND_PURCHASE_SELF_PURCHASE = 16;
+  VEND_PURCHASE_INVALID_REQUEST = 17;
+  VEND_PURCHASE_PERSISTENCE_FAILED = 18;
+  VEND_PURCHASE_INTERNAL_ERROR = 19;
+  VEND_PURCHASE_STALE_REQUEST = 20;
+  VEND_PURCHASE_INVALID_STATE = 21;
+}
+
+// Server -> client, definitive checkout outcome. Existing item and zeny deltas
+// alone change possessions; this result only settles the matching request.
+message VendingPurchaseResult {
+  uint64 request_id = 1;
+  uint64 vendor_unit_id = 2;
+  string shop_id = 3;
+  VendingPurchaseResultCode result = 4;
+  // Actual buyer debit on success, before any seller-side tax.
+  uint64 total_charged = 5;
+}
+
+// Server -> client, a shop board appeared (area broadcast / view entry).
 message VendingBoardShown {
   uint64 unit_id = 1;
   string title = 2;
+  // Opaque, never reused for a later shop owned by the same vendor.
+  string shop_id = 3;
 }
 
-// Server -> client, a vending shop board was removed (close / sold out / out of view).
+enum VendingCloseReason {
+  VEND_CLOSURE_UNSPECIFIED = 0;
+  VEND_CLOSURE_USER_CLOSED = 1;
+  VEND_CLOSURE_SOLD_OUT = 2;
+  VEND_CLOSURE_DISCONNECTED = 3;
+  VEND_CLOSURE_JOB_CHANGED = 4;
+  VEND_CLOSURE_RELOCATED = 5;
+  VEND_CLOSURE_INVALIDATED = 6;
+}
+
+// Server -> client, a particular shop closed. A unit despawn independently
+// removes an out-of-view board without implying an owner's successful close.
 message VendingBoardRemoved {
   uint64 unit_id = 1;
+  string shop_id = 2;
+  VendingCloseReason reason = 3;
 }
 
-// One item on display in a vending shop. Mirrors InventoryItem's display fields plus a price.
+// One item instance on display. Its index is an opaque listing identity, not an
+// ordinary cart-packet index; buyers echo it unchanged in VendingBuy.
 message VendingShopItem {
   uint32 index = 1;
   uint32 nameid = 2;
@@ -1350,22 +1488,46 @@ message VendingShopItem {
   // The item's random option slots in order; a slot with id 0 is empty and the
   // slots after the last one listed are empty.
   repeated ItemOption options = 13;
+  uint32 enchant_grade = 14;
 }
 
-// Server -> client, the full item list of a vendor's shop (reply to VendingListRequest).
+enum VendingListResultCode {
+  VEND_LIST_UNSPECIFIED = 0;
+  VEND_LIST_OK = 1;
+  VEND_LIST_NOT_OPEN = 2;
+  VEND_LIST_SHOP_CHANGED = 3;
+  VEND_LIST_FORBIDDEN = 4;
+  VEND_LIST_INVALID_REQUEST = 5;
+  VEND_LIST_INTERNAL_ERROR = 6;
+}
+
+// Server -> client, explicit browse outcome. Request ID zero is reserved for an
+// unsolicited own-shop reconciliation snapshot after loading a map.
 message VendingList {
   uint64 vendor_unit_id = 1;
   string title = 2;
   repeated VendingShopItem items = 3;
+  uint64 request_id = 4;
+  string shop_id = 5;
+  VendingListResultCode result = 6;
+  // Private owner counter, zero in other players' browse replies.
+  uint64 total_earned = 7;
 }
 
-// Server -> client (seller), a unit of the shop was sold.
+// Server -> client (seller), one sold listing line. Reports and closure share
+// the shop identity; a final report may describe the most recently closed shop.
 message VendingSaleReport {
   uint32 index = 1;
   uint32 nameid = 2;
   uint32 amount = 3;
+  // Established per-line report value; do not sum it to reconstruct net credit.
   uint32 zeny_gained = 4;
   string buyer_name = 5;
+  string shop_id = 6;
+  // Per-shop monotonically increasing sale ID, shared by this purchase's lines.
+  uint64 sale_sequence = 7;
+  // Actual cumulative seller net credit, authoritative even across tax stages.
+  uint64 total_earned = 8;
 }
 
 // Client -> server, request a trade with the nearby unit identified by target_gid.

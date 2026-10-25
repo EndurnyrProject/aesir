@@ -82,8 +82,8 @@
     {"field": 92, "tag": "vending_purchase_request", "message": "VendingPurchaseRequest", "direction": "c2s", "servers": ["zone"]},
     {"field": 93, "tag": "vending_board_shown", "message": "VendingBoardShown", "direction": "s2c", "servers": ["zone"], "channel": "world"},
     {"field": 94, "tag": "vending_board_removed", "message": "VendingBoardRemoved", "direction": "s2c", "servers": ["zone"], "channel": "world"},
-    {"field": 95, "tag": "vending_list", "message": "VendingList", "direction": "s2c", "servers": ["zone"], "channel": "bulk"},
-    {"field": 96, "tag": "vending_sale_report", "message": "VendingSaleReport", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
+    {"field": 95, "tag": "vending_list", "message": "VendingList", "direction": "s2c", "servers": ["zone"], "channel": "world"},
+    {"field": 96, "tag": "vending_sale_report", "message": "VendingSaleReport", "direction": "s2c", "servers": ["zone"], "channel": "world"},
     {"field": 97, "tag": "npc_shop_open", "message": "NpcShopOpen", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
     {"field": 98, "tag": "npc_buy_request", "message": "NpcBuyRequest", "direction": "c2s", "servers": ["zone"]},
     {"field": 99, "tag": "npc_sell_request", "message": "NpcSellRequest", "direction": "c2s", "servers": ["zone"]},
@@ -113,7 +113,7 @@
     {"field": 123, "tag": "storage_result", "message": "StorageResult", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
     {"field": 124, "tag": "announcement", "message": "Announcement", "direction": "s2c", "servers": ["zone"], "channel": "world"},
     {"field": 125, "tag": "cart_mount_result", "message": "CartMountResult", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
-    {"field": 126, "tag": "vending_open_result", "message": "VendingOpenResult", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
+    {"field": 126, "tag": "vending_open_result", "message": "VendingOpenResult", "direction": "s2c", "servers": ["zone"], "channel": "world"},
     {"field": 127, "tag": "emote_request", "message": "EmoteRequest", "direction": "c2s", "servers": ["zone"]},
     {"field": 128, "tag": "emotion", "message": "Emotion", "direction": "s2c", "servers": ["zone"], "channel": "world"},
     {"field": 129, "tag": "quest_list", "message": "QuestList", "direction": "s2c", "servers": ["zone"], "channel": "bulk"},
@@ -211,6 +211,9 @@
     {"field": 221, "tag": "item_add_failed", "message": "ItemAddFailed", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
     {"field": 222, "tag": "system_notice", "message": "SystemNotice", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
     {"field": 223, "tag": "npc_shop_close", "message": "NpcShopClose", "direction": "c2s", "servers": ["zone"]},
-    {"field": 224, "tag": "progress_bar_abort", "message": "ProgressBarAbort", "direction": "s2c", "servers": ["zone"], "channel": "world"}
+    {"field": 224, "tag": "progress_bar_abort", "message": "ProgressBarAbort", "direction": "s2c", "servers": ["zone"], "channel": "world"},
+    {"field": 225, "tag": "vending_setup_ready", "message": "VendingSetupReady", "direction": "s2c", "servers": ["zone"], "channel": "world"},
+    {"field": 226, "tag": "vending_purchase_result", "message": "VendingPurchaseResult", "direction": "s2c", "servers": ["zone"], "channel": "world"},
+    {"field": 227, "tag": "vending_close_result", "message": "VendingCloseResult", "direction": "s2c", "servers": ["zone"], "channel": "world"}
   ]
 }

@@ -214,7 +214,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
                          reason: :SKILL_CAST_FAILURE_REASON_NPC_NEARBY
                        }}
 
-      assert_received {:send, :gameplay,
+      assert_received {:send, :world,
                        {:vending_open_result,
                         %Aesir.Net.VendingOpenResult{result: :VEND_INVALID_STATE}}}
 
@@ -228,7 +228,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
 
       assert {:noreply, ^base} = VendingHandler.handle_open(base, "Shop", [{0, 5, 100}])
 
-      assert_received {:send, :gameplay,
+      assert_received {:send, :world,
                        {:vending_open_result,
                         %Aesir.Net.VendingOpenResult{result: :VEND_INSUFFICIENT_SP}}}
     end
@@ -240,7 +240,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
 
       assert {:noreply, _} = VendingHandler.handle_open(base, "Cheap Pots", [{0, 5, 100}])
 
-      assert_received {:send, :gameplay,
+      assert_received {:send, :world,
                        {:vending_open_result, %Aesir.Net.VendingOpenResult{result: :VEND_OK}}}
     end
 
@@ -250,7 +250,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
 
       assert {:noreply, ^base} = VendingHandler.handle_open(base, "Shop", [{0, 5, 100}])
 
-      assert_received {:send, :gameplay,
+      assert_received {:send, :world,
                        {:vending_open_result,
                         %Aesir.Net.VendingOpenResult{result: :VEND_SKILL_NOT_LEARNED}}}
     end
@@ -260,7 +260,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
 
       assert {:noreply, ^base} = VendingHandler.handle_open(base, "Shop", [{0, 5, 100}])
 
-      assert_received {:send, :gameplay,
+      assert_received {:send, :world,
                        {:vending_open_result, %Aesir.Net.VendingOpenResult{result: :VEND_NO_CART}}}
     end
 
@@ -275,7 +275,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
 
       assert {:noreply, ^base} = VendingHandler.handle_open(base, "Shop", [{0, 1, 100}])
 
-      assert_received {:send, :gameplay,
+      assert_received {:send, :world,
                        {:vending_open_result,
                         %Aesir.Net.VendingOpenResult{result: :VEND_INVALID_STATE}}}
     end
@@ -291,7 +291,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
 
       assert {:noreply, ^base} = VendingHandler.handle_open(base, "Shop", [{0, 1, 100}])
 
-      assert_received {:send, :gameplay,
+      assert_received {:send, :world,
                        {:vending_open_result,
                         %Aesir.Net.VendingOpenResult{result: :VEND_INVALID_STATE}}}
     end
