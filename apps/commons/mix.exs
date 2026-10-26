@@ -38,6 +38,7 @@ defmodule Commons.MixProject do
       {:bcrypt_elixir, "~> 3.0"},
       {:benchee, "~> 1.4", only: [:dev, :test]},
       {:bunt, "~> 1.0"},
+      {:ex_crap, "~> 0.1", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_check, "~> 0.16", only: [:dev, :test], runtime: false},
