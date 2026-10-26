@@ -157,7 +157,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
   end
 
   defp can_move?(%PlayerState{character_id: caster_id, action_state: action_state} = caster, now) do
-    action_state not in [:sitting, :vending] and StatusInterpreter.can_move?(:player, caster_id) and
+    action_state != :sitting and not PlayerState.vending?(caster) and
+      StatusInterpreter.can_move?(:player, caster_id) and
       not PlayerState.walk_delayed?(caster, now)
   end
 

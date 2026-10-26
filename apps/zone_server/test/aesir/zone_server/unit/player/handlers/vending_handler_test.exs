@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Net.ChatMessage
   alias Aesir.Net.ItemOption
   alias Aesir.Net.SkillCastFailed
   alias Aesir.Net.VendingBoardRemoved
@@ -17,6 +18,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
   alias Aesir.Net.VendingOpenRequest
   alias Aesir.Net.VendingShopItem
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -166,7 +169,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
     test "an invalid state transition leaves SP untouched" do
       mount_cart()
       base = state(learned_skills: learned(@vending_level))
-      vending = %{base | game_state: %{base.game_state | action_state: :moving}}
+      vending = %{base | game_state: %{base.game_state | action_state: :dead}}
 
       assert {:error, :invalid_transition} =
                VendingHandler.open_shop(vending, "Shop", [{0, 5, 100}])
@@ -183,13 +186,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
       assert {:ok, _shop} = Registry.get(@char_id)
     end
 
-    test "with a mounted cart and MC_VENDING learned enters :vending, registers, broadcasts" do
+    test "with a mounted cart and MC_VENDING learned opens the shop, registers, broadcasts" do
       mount_cart()
       base = state(learned_skills: learned(@vending_level))
 
       assert {:ok, new_state} = VendingHandler.open_shop(base, "Cheap Pots", [{0, 5, 100}])
 
-      assert new_state.game_state.action_state == :vending
+      assert %{title: "Cheap Pots"} = new_state.game_state.vending_shop
 
       assert {:ok, shop} = Registry.get(@char_id)
       assert shop.title == "Cheap Pots"
@@ -208,7 +211,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
 
       vending = %{
         base
-        | game_state: %{base.game_state | action_state: :vending},
+        | game_state: %{base.game_state | vending_shop: %{shop_id: "open-fixture"}},
           vending_setup: nil,
           work_in_progress: false
       }
@@ -384,6 +387,58 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
 
       assert {:ok, ^base} = VendingHandler.close_shop(base, :disconnected)
       refute_received {:board, _}
+    end
+  end
+
+  describe "reconcile_relocation/4" do
+    setup do
+      mount_cart()
+      base = state(learned_skills: learned(@vending_level))
+      {:ok, opened} = VendingHandler.open_shop(base, "Pots", [{0, 5, 100}])
+      assert_received {:board, %VendingBoardShown{}}
+      %{opened: opened}
+    end
+
+    test "a shop follows its vendor to a map and cell that allow vending", %{opened: opened} do
+      stub(MapFlags, :get, fn _map, _flag -> false end)
+
+      assert ^opened = VendingHandler.reconcile_relocation(opened, "geffen", 120, 60)
+      assert {:ok, _shop} = Registry.get(@char_id)
+      refute_received {:board, _}
+    end
+
+    test "another novending map closes the shop with the map notice", %{opened: opened} do
+      stub(MapFlags, :get, fn map, flag -> map == "prt_in" and flag == :novending end)
+
+      closed = VendingHandler.reconcile_relocation(opened, "prt_in", 10, 10)
+
+      assert closed.game_state.vending_shop == nil
+      assert :error = Registry.get(@char_id)
+      assert_received {:board, %VendingBoardRemoved{reason: :VEND_CLOSURE_RELOCATED}}
+
+      assert_received {:send, _channel,
+                       {_tag, %ChatMessage{message: "You can't open a shop on this map"}}}
+    end
+
+    test "the vendor's own map flag does not close a same-map relocation", %{opened: opened} do
+      stub(MapFlags, :get, fn map, flag -> map == "prontera" and flag == :novending end)
+
+      assert ^opened = VendingHandler.reconcile_relocation(opened, "prontera", 152, 152)
+    end
+
+    test "a novending cell closes the shop with the cell notice", %{opened: opened} do
+      stub(MapFlags, :get, fn _map, _flag -> false end)
+
+      stub(MapData, :check_cell, fn _map_data, x, y, flag ->
+        {x, y, flag} == {152, 152, :chk_novending}
+      end)
+
+      closed = VendingHandler.reconcile_relocation(opened, "prontera", 152, 152)
+
+      assert closed.game_state.vending_shop == nil
+
+      assert_received {:send, _channel,
+                       {_tag, %ChatMessage{message: "You can't open a shop on this cell."}}}
     end
   end
 

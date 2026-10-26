@@ -157,7 +157,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingBuyTest do
                  {index, 4}
                ])
 
-      assert new_state.game_state.action_state == :idle
+      assert new_state.game_state.vending_shop == nil
       assert :error = Registry.get(seller.id)
       assert [] = CartPersistence.load_cart(seller.id)
     end
@@ -254,7 +254,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingBuyTest do
       assert reload_zeny(buyer.id) == 100
       assert reload_zeny(seller.id) == 1_000_000 + 855
       assert new_state.game_state.zeny == 1_000_000 + 855
-      assert %{total_earned: 855, sale_sequence: 1} = new_state.game_state.state_context
+      assert %{total_earned: 855, sale_sequence: 1} = new_state.game_state.vending_shop
 
       assert [
                %VendingSaleReport{index: ^potion, zeny_gained: 400},
@@ -304,7 +304,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingBuyTest do
   # the seller's shop as the buyer's live snapshot, returning the seller state,
   # the buyer delta and the sale reports sent to the seller's client.
   defp purchase(seller_state, buyer, inventory, zeny, stats, name, lines) do
-    shop = seller_state.game_state.state_context
+    shop = seller_state.game_state.vending_shop
 
     buyer_gs = buyer_gs(buyer, inventory, zeny, stats, name)
 
@@ -380,7 +380,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingBuyTest do
     character
   end
 
-  # Builds a seller in `:vending` whose live cart holds `cart_specs` and whose
+  # Builds a seller with an open shop whose live cart holds `cart_specs` and whose
   # shop lists `shop_specs` (`{cart_slot, listed_amount, price}`), registered.
   defp vending_state(character, cart_specs, shop_specs) do
     Enum.each(cart_specs, fn {nameid, amount} ->
@@ -414,8 +414,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingBuyTest do
       base
       | cart: cart,
         zeny: character.zeny,
-        action_state: :vending,
-        state_context: shop,
+        vending_shop: shop,
         map_name: "prontera",
         x: 150,
         y: 150

@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -68,7 +69,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   leaves it untouched.
 
   A corpse remains dead when relocated; warp itself never performs resurrection
-  or death-penalty work.
+  or death-penalty work. An open vending shop moves with the player, unless the
+  destination is another `novending` map or a `novending` cell, which closes it
+  (`VendingHandler.reconcile_relocation/4`).
 
   Item scripts supply only partial session state, so that path releases a guild
   claim using the current `guild_id` and `self()`. If a guild change overtakes
@@ -90,6 +93,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
       state = %{state | game_state: game_state}
       state = HomunculusCommandHandler.detach_for_warp(state, same_map?)
       state = close_storage_on_cross_map(state, same_map?)
+      state = reconcile_vending(state, dest_map, fx, fy)
       game_state = state.game_state
       leave_current_map(game_state, DespawnReason.teleport())
       Broadcast.unsubscribe_mob_despawns(game_state.map_name)
@@ -133,6 +137,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
 
       {:ok, state}
     end
+  end
+
+  # An open shop follows its vendor unless the destination forbids vending.
+  defp reconcile_vending(%{game_state: game_state} = state, dest_map, x, y) do
+    if PlayerState.vending?(game_state),
+      do: VendingHandler.reconcile_relocation(state, dest_map, x, y),
+      else: state
   end
 
   @doc """

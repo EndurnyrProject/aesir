@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Invincibility
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
 
@@ -294,7 +295,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
 
     can_act? =
       Map.get(state, :interaction_lock) == nil and player.waiting_room == nil and
-        player.action_state != :vending and Map.get(state, :trade) == nil and free_body?
+        not PlayerState.vending?(player) and Map.get(state, :trade) == nil and free_body?
 
     (storage? or can_act?) and StatusInterpreter.can_use_skill?(:player, player.character_id)
   end

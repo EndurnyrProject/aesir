@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingShopHandler do
   import Bitwise, only: [band: 2]
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Net.ChatMessage
   alias Aesir.Net.VendingBoardRemoved
   alias Aesir.Net.VendingBoardShown
   alias Aesir.Net.VendingCloseRequest
@@ -112,7 +113,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingShopHandler do
 
     case result do
       {:ok, opened} ->
-        shop = opened.game_state.state_context
+        shop = opened.game_state.vending_shop
 
         packet = %VendingOpenResult{
           request_id: request.request_id,
@@ -161,6 +162,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingShopHandler do
     with true <- state.vending_setup != nil,
          :ok <- check_room_permission(game_state),
          :ok <- UseRestrictions.vending_location(game_state),
+         :ok <- check_can_open(state),
          :ok <- check_cart(game_state),
          {:ok, level} <- learned_level(game_state),
          {:ok, title} <- Vending.normalize_title(title),
@@ -172,16 +174,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingShopHandler do
            eligibility: Permissions.eligibility(game_state.cart, access)
          },
          {:ok, items} <-
-           Vending.validate_open(game_state.cart, entries, McVending.max_slots(level), context),
-         shop = %{
-           shop_id: new_token(),
-           title: title,
-           owner_char_id: game_state.character_id,
-           items: items,
-           total_earned: 0,
-           sale_sequence: 0
-         },
-         {:ok, opened} <- PlayerState.transition_to(game_state, :vending, shop) do
+           Vending.validate_open(game_state.cart, entries, McVending.max_slots(level), context) do
+      shop = %{
+        shop_id: new_token(),
+        title: title,
+        owner_char_id: game_state.character_id,
+        items: items,
+        total_earned: 0,
+        sale_sequence: 0
+      }
+
+      opened = %{game_state | vending_shop: shop}
       state = cancel_setup(state, :opened)
       state = StateCommit.commit(state, opened)
       Registry.put(opened.character_id, self(), shop)
@@ -200,6 +203,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingShopHandler do
       false -> {:error, if(state.vending_setup == nil, do: :setup_expired, else: :forbidden)}
       error -> error
     end
+  end
+
+  # A corpse, a trade, an NPC dialog or an already open shop refuses opening.
+  defp check_can_open(%SessionState{game_state: game_state} = state) do
+    if PlayerState.living?(game_state) and state.trade == nil and
+         not SessionState.npc_dialog?(state) and not PlayerState.vending?(game_state),
+       do: :ok,
+       else: {:error, :invalid_transition}
   end
 
   defp check_open_identity(state, request) do
@@ -274,9 +285,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingShopHandler do
   @doc "Reads the live shop snapshot without calling its owning session."
   @spec build_list(non_neg_integer()) :: {:ok, VendingList.t()} | :error
   def build_list(vendor_id) do
-    with {:ok,
-          {_module,
-           %{action_state: :vending, cart: cart, state_context: %{shop_id: shop_id} = shop}, _pid}} <-
+    with {:ok, {_module, %{cart: cart, vending_shop: %{shop_id: shop_id} = shop}, _pid}} <-
            UnitRegistry.get_unit(:player, vendor_id),
          {:ok, %{shop_id: ^shop_id}} <- Registry.get(vendor_id) do
       {:ok, snapshot(cart, shop, vendor_id)}
@@ -310,13 +319,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingShopHandler do
     {:noreply, state}
   end
 
-  @doc "Publishes authoritative owner state after loading or lifecycle invalidation."
+  @doc """
+  Publishes the owner's own vending state with request ID zero: its open shop
+  snapshot and board, or an explicit no-open-shop list.
+  """
   @spec publish_owner_snapshot(SessionState.t()) :: SessionState.t()
-  def publish_owner_snapshot(%{game_state: %{action_state: :vending} = gs} = state) do
-    MessageRouter.send_to(
-      state.connection_pid,
-      snapshot(gs.cart, gs.state_context, gs.character_id)
-    )
+  def publish_owner_snapshot(%{game_state: %{vending_shop: %{} = shop} = gs} = state) do
+    MessageRouter.send_to(state.connection_pid, snapshot(gs.cart, shop, gs.character_id))
+
+    MessageRouter.send_to(state.connection_pid, %VendingBoardShown{
+      unit_id: gs.character_id,
+      title: shop.title,
+      shop_id: shop.shop_id
+    })
 
     state
   end
@@ -380,10 +395,53 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingShopHandler do
     %{state | vending_setup: nil, work_in_progress: state.progress_bar != nil}
   end
 
+  @doc """
+  Whether preparation or an open shop holds the player. Either refuses walking,
+  attacking, ground skills, item pickup, starting a trade and cart transfers.
+  """
+  @spec locked?(SessionState.t()) :: boolean()
+  def locked?(%SessionState{vending_setup: setup, game_state: game_state}),
+    do: setup != nil or PlayerState.vending?(game_state)
+
+  @doc """
+  Applies a relocation to `(map_name, x, y)` to the open shop before the player
+  leaves its current cell. A shop moving to another map with the `novending`
+  flag, or onto a `novending` cell, closes with a notice to its owner; any
+  other relocation keeps it open, and the board follows the vendor.
+  """
+  @spec reconcile_relocation(SessionState.t(), String.t(), non_neg_integer(), non_neg_integer()) ::
+          SessionState.t()
+  def reconcile_relocation(%SessionState{game_state: %{vending_shop: nil}} = state, _map, _x, _y),
+    do: state
+
+  def reconcile_relocation(%SessionState{game_state: game_state} = state, map_name, x, y) do
+    destination = %{game_state | map_name: map_name, x: x, y: y}
+
+    case UseRestrictions.vending_location(destination) do
+      {:error, :map_restricted} when map_name != game_state.map_name ->
+        close_relocated(state, "You can't open a shop on this map")
+
+      {:error, :cell_restricted} ->
+        close_relocated(state, "You can't open a shop on this cell.")
+
+      _kept ->
+        state
+    end
+  end
+
+  defp close_relocated(state, notice) do
+    MessageRouter.send_to(state.connection_pid, %ChatMessage{
+      gid: state.game_state.character_id,
+      message: notice
+    })
+
+    {:ok, closed} = close_shop(state, :relocated)
+    closed
+  end
+
   @doc "Closes the owned shop on user or lifecycle teardown, leaving unsold stock in the cart."
   @spec close_shop(SessionState.t(), atom()) :: {:ok, SessionState.t()}
-  def close_shop(%{game_state: %{action_state: :vending} = game_state} = state, reason) do
-    shop_id = Map.fetch!(game_state.state_context, :shop_id)
+  def close_shop(%{game_state: %{vending_shop: %{shop_id: shop_id}} = game_state} = state, reason) do
     Registry.remove(game_state.character_id)
 
     Broadcast.to_in_range(
@@ -399,8 +457,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingShopHandler do
       []
     )
 
-    {:ok, idle} = PlayerState.transition_to(game_state, :idle)
-    {:ok, %{state | game_state: idle}}
+    {:ok, %{state | game_state: %{game_state | vending_shop: nil}}}
   end
 
   def close_shop(%SessionState{} = state, reason), do: {:ok, cancel_setup(state, reason)}
@@ -436,16 +493,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingShopHandler do
   defp valid_target?(_target), do: false
 
   defp close_target(state, target) do
-    case {target, state.vending_setup, state.game_state.action_state,
-          state.game_state.state_context} do
-      {{:setup_id, token}, %{setup_id: token}, _action, _context} ->
+    case {target, state.vending_setup, state.game_state.vending_shop} do
+      {{:setup_id, token}, %{setup_id: token}, _shop} ->
         {cancel_setup(state, :user_canceled), :VEND_CLOSE_SETUP_CANCELED}
 
-      {{:shop_id, token}, nil, :vending, %{shop_id: token}} ->
+      {{:shop_id, token}, nil, %{shop_id: token}} ->
         {:ok, closed} = close_shop(state, :user_closed)
         {StateCommit.commit(closed, closed.game_state), :VEND_CLOSE_SHOP_CLOSED}
 
-      {_target, nil, action, _context} when action != :vending ->
+      {_target, nil, nil} ->
         {state, :VEND_CLOSE_ALREADY_CLOSED}
 
       _other_instance ->

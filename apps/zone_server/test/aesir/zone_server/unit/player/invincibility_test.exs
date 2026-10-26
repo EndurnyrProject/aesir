@@ -192,7 +192,7 @@ defmodule Aesir.ZoneServer.Unit.Player.InvincibilityTest do
       storage = put_in(started.game_state.storage, %{})
 
       refute ended?(Invincibility.end_on_request(storage, {:skill, @fire_bolt}))
-      assert ended?(Invincibility.end_on_request(storage, {:ground_skill, @thunderstorm}))
+      refute ended?(Invincibility.end_on_request(storage, {:ground_skill, @thunderstorm}))
       assert ended?(Invincibility.end_on_request(storage, {:skill, @first_aid}))
     end
   end

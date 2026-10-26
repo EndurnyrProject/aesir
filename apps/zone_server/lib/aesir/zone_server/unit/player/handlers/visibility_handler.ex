@@ -182,8 +182,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
 
   defp maybe_send_vending_board(connection_pid, char_id) do
     case VendingRegistry.get(char_id) do
-      {:ok, %{title: title}} ->
-        MessageRouter.send_to(connection_pid, %VendingBoardShown{unit_id: char_id, title: title})
+      {:ok, %{title: title, shop_id: shop_id}} ->
+        MessageRouter.send_to(connection_pid, %VendingBoardShown{
+          unit_id: char_id,
+          title: title,
+          shop_id: shop_id
+        })
 
       :error ->
         :ok

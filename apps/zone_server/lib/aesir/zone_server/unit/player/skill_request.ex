@@ -18,12 +18,14 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequest do
   Every refusal but `not_ok/3`'s and the act delay's is silent. A skill that
   targets the user is then aimed at the user whatever the client named.
 
-  A request aimed at the ground (`ground/5`) is refused only for a skill that
-  is not a ground skill, while a work flag is held (renewal shows the busy
-  notice), by `not_ok/3`, for a skill that asks for text while the player sits
-  (a generic failure), while casting, while the act delay runs (unless the
-  skill comes from an item), by Basilica and by an open menu. Dialogs,
-  trades, vending stalls, storage windows and body states do not refuse it.
+  A request aimed at the ground (`ground/5`) is refused, in order: while the
+  player cannot act (an NPC dialog, chat room, trade, vending stall or its
+  preparation, storage window, NPC shop, or a body state other than Burning)
+  or sits; for a skill that is not a ground skill; while a work flag is held
+  (renewal shows the busy notice); by `not_ok/3`; while casting; while the act
+  delay runs (unless the skill comes from an item); by Basilica; and by an open
+  menu. Every refusal but the work flag's, `not_ok/3`'s and the act delay's is
+  silent.
 
   A request that passes ends the player's invincibility, except a targeted
   item skill aimed at the user. An item skill then runs at the item's level;
@@ -43,7 +45,6 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequest do
   alias Aesir.ZoneServer.Mmo.Skill.UseRestrictions
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
 
@@ -94,10 +95,11 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequest do
   @doc "Decides a request to use `skill_id` on the cell `{x, y}` at `requested`."
   @spec ground(SessionState.t(), integer(), non_neg_integer(), term(), integer()) :: decision()
   def ground(state, skill_id, requested, cell, now) do
-    with :ok <- check(inf(skill_id) == :ground, :silent),
+    with :ok <- check(can_act?(state), :silent),
+         :ok <- check(state.game_state.action_state != :sitting, :silent),
+         :ok <- check(inf(skill_id) == :ground, :silent),
          :ok <- check(not SessionState.work_in_progress?(state), busy_notice()),
          :ok <- not_ok(state, skill_id, now),
-         :ok <- check(not seated_input?(state, skill_id), {:fail, :failed}),
          :ok <- check_ready(state, skill_id, now, []),
          :ok <- check(not basilica_locked?(state, skill_id), :silent),
          :ok <- check(not menu_open?(state), :silent) do
@@ -152,7 +154,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequest do
 
     busy =
       Map.get(state, :trade) != nil or game_state.waiting_room != nil or
-        game_state.action_state == :vending or storage_open?(state) or
+        PlayerState.vending?(game_state) or storage_open?(state) or
         body_state(game_state) not in [0, @burning]
 
     not busy or (storage_open?(state) and inf == :self)
@@ -164,10 +166,17 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequest do
   defp body_state(%PlayerState{character_id: id}),
     do: StatusDisplay.spawn_state(:player, id).body_state
 
-  defp seated_input?(state, skill_id),
-    do:
-      state.game_state.action_state == :sitting and
-        SkillTextInputHandler.input_required?(skill_id)
+  # An NPC dialog, chat room, trade, vending stall or its preparation, storage
+  # window, NPC shop or a body state other than Burning keeps the player from
+  # acting on a ground request.
+  defp can_act?(state) do
+    game_state = state.game_state
+
+    not (SessionState.npc_dialog?(state) or game_state.waiting_room != nil or
+           Map.get(state, :trade) != nil or PlayerState.vending?(game_state) or
+           Map.get(state, :vending_setup) != nil or storage_open?(state) or
+           SessionState.npc_shop_open?(state) or body_state(game_state) not in [0, @burning])
+  end
 
   # A cast in flight lets through only the listed skills, and skips the act
   # delay for them; otherwise an item skill skips the act delay.

@@ -20,8 +20,7 @@ defmodule Aesir.ZoneServer.UnitTest do
     :attacking,
     :casting,
     :sitting,
-    :trading,
-    :vending
+    :trading
   ]
 
   describe "living?/1" do

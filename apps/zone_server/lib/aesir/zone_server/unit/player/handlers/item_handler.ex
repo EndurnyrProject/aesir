@@ -78,7 +78,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   end
 
   defp not_busy(%{game_state: game_state} = state) do
-    trading? = Map.get(state, :trade) != nil or game_state.action_state == :vending
+    trading? = Map.get(state, :trade) != nil or PlayerState.vending?(game_state)
 
     if (trading? and not SessionState.npc_dialog?(state)) or game_state.waiting_room != nil,
       do: :busy,

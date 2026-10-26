@@ -161,8 +161,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionVendingTest do
     test "closes an open vending shop so the registry entry does not leak" do
       vending_gs = %{
         PlayerState.new(character(2, "Merchy"))
-        | action_state: :vending,
-          state_context: shop("Cheap Pots")
+        | vending_shop: shop("Cheap Pots")
       }
 
       VendingRegistry.put(2, self(), shop("Cheap Pots"))

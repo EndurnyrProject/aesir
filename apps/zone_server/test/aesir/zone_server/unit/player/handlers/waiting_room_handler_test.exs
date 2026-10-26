@@ -197,6 +197,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandlerTest do
         action_state: Keyword.get(opts, :action_state, :idle),
         movement_state: Keyword.get(opts, :movement_state, :standing),
         waiting_room: Keyword.get(opts, :waiting_room),
+        vending_shop: Keyword.get(opts, :vending_shop),
         stats: %{
           progression: %{
             base_level: 50,
@@ -253,7 +254,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandlerTest do
       for state <- [
             player(waiting_room: 5),
             player(trade: %{partner_char_id: 2}),
-            player(action_state: :vending),
+            player(vending_shop: %{shop_id: "room-fixture"}),
             player(learned: %{1 => 3})
           ] do
         assert {:noreply, ^state} = WaitingRoomHandler.create(state, "T", "", 5, true)

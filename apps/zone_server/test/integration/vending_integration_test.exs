@@ -91,7 +91,7 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
                      1_000
 
       assert {:ok, %{title: "Cheap Pots"}} = VendingRegistry.get(seller_id)
-      assert get_player_state(seller.pid).action_state == :vending
+      assert get_player_state(seller.pid).vending_shop != nil
       flush_packets()
 
       # 2. Buyer browses the live shop.
@@ -179,7 +179,7 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
       assert_receive {:packet_sent, %VendingBoardRemoved{unit_id: ^seller_id}, _}, 1_000
 
       assert :error = VendingRegistry.get(seller_id)
-      assert get_player_state(seller.pid).action_state == :idle
+      assert get_player_state(seller.pid).vending_shop == nil
       assert [] = CartPersistence.load_cart(seller_id)
 
       # Both buys of the identified potion stack into a single buyer slot (4 + 6).
@@ -205,7 +205,7 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
 
       assert_receive {:packet_sent, %VendingOpenResult{result: :VEND_ITEM_UNIDENTIFIED}, _}, 1_000
       assert :error = VendingRegistry.get(seller_id)
-      assert get_player_state(seller.pid).action_state == :idle
+      assert get_player_state(seller.pid).vending_shop == nil
     end
 
     test "disconnecting a vendor closes the shop and leaves the unsold stock in the cart" do
@@ -259,7 +259,7 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
 
       assert :error = VendingRegistry.get(seller_id)
       closed = get_player_state(seller.pid)
-      assert closed.action_state == :idle
+      assert closed.vending_shop == nil
       assert held(closed.cart, @potion) == 10
 
       assert [%CartItem{nameid: @potion, amount: 10}] =

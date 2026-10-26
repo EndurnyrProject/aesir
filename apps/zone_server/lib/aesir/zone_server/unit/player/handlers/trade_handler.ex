@@ -337,6 +337,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler do
   defp eligible?(%{trade: trade, pending_trade_invite: pending, game_state: game_state} = state) do
     with :ok <- ensure_living(game_state),
          :ok <- ensure_idle(game_state),
+         :ok <- ensure_not_vending(game_state),
          :ok <- ensure_no_dialog(state),
          :ok <- ensure_empty(trade, pending) do
       nv_basic(game_state)
@@ -353,6 +354,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler do
 
   defp ensure_idle(%PlayerState{action_state: :idle}), do: :ok
   defp ensure_idle(%PlayerState{}), do: {:error, :busy}
+
+  defp ensure_not_vending(%PlayerState{} = game_state),
+    do: if(PlayerState.vending?(game_state), do: {:error, :busy}, else: :ok)
 
   defp ensure_empty(nil, nil), do: :ok
   defp ensure_empty(_trade, _pending), do: {:error, :busy}

@@ -190,7 +190,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingSetupTest do
     assert {:noreply, opened} = VendingHandler.handle_open(prepared, request)
     assert opened.game_state.stats.current_state.sp == 10
     assert opened.game_state.cart[0].amount == 5
-    assert opened.game_state.action_state == :vending
+    assert %{title: _} = opened.game_state.vending_shop
     assert opened.vending_setup == nil
     refute opened.work_in_progress
 
@@ -208,7 +208,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingSetupTest do
 
     assert shop_id != ""
     assert item.index == 0 and item.amount == 3 and item.price == 120
-    assert opened.game_state.state_context.shop_id == shop_id
+    assert opened.game_state.vending_shop.shop_id == shop_id
   end
 
   test "a missing shop returns a correlated list refusal instead of silence" do
@@ -315,8 +315,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingSetupTest do
     }
 
     assert {:noreply, opened} = VendingHandler.handle_open(prepared, request)
-    shop = %{opened.game_state.state_context | total_earned: 200}
-    opened = put_in(opened.game_state.state_context, shop)
+    shop = %{opened.game_state.vending_shop | total_earned: 200}
+    opened = put_in(opened.game_state.vending_shop, shop)
     Registry.put(7001, self(), shop)
     assert ^opened = VendingHandler.publish_owner_snapshot(opened)
 
@@ -338,7 +338,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingSetupTest do
           | character_id: 7003,
             account_id: 3000,
             action_state: :idle,
-            state_context: %{},
+            vending_shop: nil,
             cart: %{}
         }
     }
@@ -395,7 +395,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingSetupTest do
     }
 
     assert {:noreply, opened} = VendingHandler.handle_open(prepared, request)
-    replacement = %{opened.game_state.state_context | shop_id: "replacement", title: "New"}
+    replacement = %{opened.game_state.vending_shop | shop_id: "replacement", title: "New"}
     Registry.put(7001, self(), replacement)
 
     assert :error = VendingHandler.build_list(7001)

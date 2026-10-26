@@ -94,7 +94,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
       storage_open?(state) or body_state(state) != 0 ->
         :ok
 
-      Map.get(state, :trade) != nil or state.game_state.action_state == :vending or
+      Map.get(state, :trade) != nil or PlayerState.vending?(state.game_state) or
           SessionState.npc_shop_open?(state) ->
         {:noreply, state}
 

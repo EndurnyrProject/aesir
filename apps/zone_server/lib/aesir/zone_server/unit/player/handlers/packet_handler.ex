@@ -133,6 +133,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
             when is_struct(state.game_state, PlayerState) and
                    state.game_state.waiting_room != nil
 
+  defguardp vending_locked?(state)
+            when state.vending_setup != nil or state.game_state.vending_shop != nil
+
+  # A vending stall or its preparation drops walking, attacking, item pickup and
+  # trade requests (the attack clause is separate below). Cart transfers are
+  # refused by `CartHandler` and ground skills by `SkillRequest`.
+  @vending_frozen [MoveRequest, NavigationRequest, PickupItemRequest, TradeRequest]
+
   # Chat-room members cannot walk, pick up items, or attack (the move and
   # attack clauses are separate below); sitting, trading, and room operations
   # still work. Skill, item use and equip requests settle the chat
@@ -162,6 +170,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
   def handle_message(message, state)
       when is_struct(message) and message.__struct__ in @trade_frozen and trading?(state) do
+    {:noreply, state}
+  end
+
+  def handle_message(message, state)
+      when is_struct(message) and message.__struct__ in @vending_frozen and vending_locked?(state) do
+    {:noreply, state}
+  end
+
+  def handle_message(%ActionRequest{action: action}, state)
+      when action in [0, 7] and vending_locked?(state) do
     {:noreply, state}
   end
 

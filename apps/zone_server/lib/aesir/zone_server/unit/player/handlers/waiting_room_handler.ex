@@ -101,7 +101,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler do
   end
 
   defp can_create?(%{game_state: game_state, trade: trade}) do
-    game_state.waiting_room == nil and trade == nil and game_state.action_state != :vending and
+    game_state.waiting_room == nil and trade == nil and not PlayerState.vending?(game_state) and
       basic_skill_allows?(game_state) and not MapFlags.get(game_state.map_name, :nochat)
   end
 
@@ -120,7 +120,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler do
       do: {:noreply, state}
 
   def join(%{game_state: game_state, trade: trade} = state, room_id, pass) do
-    if trade != nil or game_state.action_state == :vending do
+    if trade != nil or PlayerState.vending?(game_state) do
       {:noreply, state}
     else
       do_join(state, room_id, pass)

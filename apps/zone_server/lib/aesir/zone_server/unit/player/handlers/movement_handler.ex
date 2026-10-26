@@ -504,6 +504,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
        else: {:noreply, state}
   end
 
+  # A vendor never walks.
+  defp do_request_move(state, %PlayerState{vending_shop: shop}, _dest_x, _dest_y, _opts)
+       when shop != nil,
+       do: {:noreply, state}
+
   # A request with a path to its own destination stops the player's attack and
   # is walked, toward a random cell instead while the player is confused
   # (`ConfusedWalk`). A random cell the player cannot path to, like the player's

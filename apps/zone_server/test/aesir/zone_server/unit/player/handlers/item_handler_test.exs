@@ -675,7 +675,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   describe "handle_use_item/2 while busy" do
     for {label, busy} <- [
           {"trading", %{trade: %{pid: nil}}},
-          {"vending", %{action_state: :vending}},
+          {"vending", %{vending_shop: %{shop_id: "item-fixture"}}},
           {"in a chat room", %{waiting_room: 7}}
         ] do
       @busy busy

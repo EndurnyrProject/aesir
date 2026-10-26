@@ -97,7 +97,7 @@ defmodule Aesir.ZoneServer.Integration.ItemEligibilityProgressionTest do
 
         game_state = %{
           state.game_state
-          | action_state: :vending,
+          | vending_shop: %{shop_id: "eligibility-fixture"},
             option: Option.id(:riding) ||| Option.id(:falcon),
             stats: %{state.game_state.stats | progression: progression}
         }

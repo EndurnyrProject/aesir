@@ -97,7 +97,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   @spec handle_close(state(), Aesir.Net.VendingCloseRequest.t()) :: {:noreply, state()}
   defdelegate handle_close(state, request), to: VendingShopHandler
 
-  @typedoc "The live shop carried in `:vending` `state_context` and the registry."
+  @typedoc "The live shop carried in `PlayerState.vending_shop` and the registry."
   @type shop :: %{
           shop_id: String.t(),
           title: String.t(),
@@ -150,6 +150,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   @doc "Publishes current owned-shop state without a client request."
   @spec publish_owner_snapshot(state()) :: state()
   defdelegate publish_owner_snapshot(state), to: VendingShopHandler
+
+  @doc "Whether preparation or an open shop holds the player against other actions."
+  @spec locked?(state()) :: boolean()
+  defdelegate locked?(state), to: VendingShopHandler
+
+  @doc "Whether cart transfers are refused: in preparation and while vending."
+  @spec cart_locked?(state()) :: boolean()
+  defdelegate cart_locked?(state), to: VendingShopHandler, as: :locked?
+
+  @doc "Closes or keeps the open shop for a relocation, before the player leaves."
+  @spec reconcile_relocation(state(), String.t(), non_neg_integer(), non_neg_integer()) ::
+          state()
+  defdelegate reconcile_relocation(state, map_name, x, y), to: VendingShopHandler
 
   @doc "Reads a live vending snapshot without calling its owning session."
   @spec build_list(integer()) :: {:ok, VendingList.t()} | :error
@@ -397,8 +410,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
     end
   end
 
-  defp fetch_shop(%{action_state: :vending, state_context: %{shop_id: _, items: _} = shop}),
-    do: {:ok, shop}
+  defp fetch_shop(%{vending_shop: %{shop_id: _, items: _} = shop}), do: {:ok, shop}
 
   defp fetch_shop(_seller_gs), do: {:error, :not_open}
 
@@ -521,7 +533,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
 
     state = %{
       state
-      | game_state: %{gs | cart: outcome.cart, zeny: outcome.zeny, state_context: outcome.shop}
+      | game_state: %{gs | cart: outcome.cart, zeny: outcome.zeny, vending_shop: outcome.shop}
     }
 
     state = refresh_or_close(state, outcome.shop)

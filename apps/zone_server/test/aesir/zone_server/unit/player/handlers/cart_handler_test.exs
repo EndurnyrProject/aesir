@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -93,7 +94,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
         inventory: Keyword.get(opts, :inventory, %{})
     }
 
-    %{connection_pid: self(), game_state: game_state, interaction_lock: nil}
+    %SessionState{connection_pid: self(), game_state: game_state, interaction_lock: nil}
   end
 
   defp item(nameid, amount) do
@@ -391,7 +392,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
       learned = %{Integer.to_string(catalog_pushcart_id()) => @pushcart_level}
       character = character(cart: 1, learned_skills: learned)
 
-      base = %{
+      base = %SessionState{
         connection_pid: self(),
         game_state: %{PlayerState.new(character) | cart: %{}, cart_type: 0},
         interaction_lock: nil
@@ -437,7 +438,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
       learned = %{Integer.to_string(catalog_pushcart_id()) => @pushcart_level}
       character = character(cart: 1, learned_skills: learned)
 
-      base = %{
+      base = %SessionState{
         connection_pid: self(),
         game_state: %{PlayerState.new(character) | cart: %{}, cart_type: 0},
         interaction_lock: nil

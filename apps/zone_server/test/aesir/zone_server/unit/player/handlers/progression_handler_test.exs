@@ -596,7 +596,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
     end
 
     test "propagates cleanup errors before vending or progression side effects" do
-      state = state_with_gs([job_id: @novice_id], action_state: :vending)
+      state = state_with_gs([job_id: @novice_id], vending_shop: %{shop_id: "job-change-fixture"})
       reject(&VendingHandler.close_shop/2)
       reject(&CharacterPersistence.update_character/3)
       reject(&Broadcast.to_player/2)

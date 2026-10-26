@@ -152,7 +152,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
   describe "an equip request while the player cannot act" do
     for {label, busy} <- [
           {"trading", {:session, :trade, %{pid: nil}}},
-          {"vending", {:game, :action_state, :vending}},
+          {"vending", {:game, :vending_shop, %{shop_id: "equip-fixture"}}},
           {"with an NPC shop window open", {:session, :npc_shop, 0x5800_0001}}
         ] do
       @busy busy

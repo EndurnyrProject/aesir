@@ -157,7 +157,7 @@ defmodule Aesir.ZoneServer.Integration.VendingSettlementIntegrationTest do
                     }, _},
                    1_000
 
-    assert get_player_state(seller.pid).action_state == :idle
+    assert get_player_state(seller.pid).vending_shop == nil
   end
 
   test "buying from one's own shop is refused and the session stays responsive" do
@@ -167,7 +167,7 @@ defmodule Aesir.ZoneServer.Integration.VendingSettlementIntegrationTest do
     simulate_incoming_message(seller.pid, purchase(seller, shop_id, 2, [{index, 1}]))
 
     assert_result(2, :VEND_PURCHASE_SELF_PURCHASE)
-    assert get_player_state(seller.pid).action_state == :vending
+    assert get_player_state(seller.pid).vending_shop != nil
   end
 
   test "two vending merchants can buy from each other without blocking their sessions" do

@@ -190,7 +190,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Invincibility do
 
   defp busy?(state, free_body_states) do
     state.trade != nil or state.game_state.waiting_room != nil or
-      state.game_state.action_state == :vending or storage_open?(state) or
+      PlayerState.vending?(state.game_state) or storage_open?(state) or
       body_state(state) not in free_body_states
   end
 

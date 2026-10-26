@@ -98,7 +98,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequestTest do
       held = [
         %{state | trade: %{pid: self(), monitor: make_ref(), partner_char_id: 1}},
         put_in(state.game_state.waiting_room, 1),
-        put_action(state, :vending),
+        put_in(state.game_state.vending_shop, %{shop_id: "skill-fixture"}),
         put_in(state.game_state.storage, %{})
       ]
 
@@ -347,28 +347,25 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequestTest do
       assert ground(working, @thunderstorm) == {:refuse, :silent}
     end
 
-    test "a dialog, trade, storage window, sitting or stun does not refuse it", %{state: state} do
-      stub_body_state(3)
+    test "a player who cannot act or sits is refused silently", %{state: state} do
+      state = learn(state, @thunderstorm, 1)
 
       held = [
         in_dialog(state),
         %{state | trade: %{pid: self(), monitor: make_ref(), partner_char_id: 1}},
+        put_in(state.game_state.waiting_room, 1),
         put_in(state.game_state.storage, %{}),
-        put_action(state, :sitting),
-        put_action(state, :vending)
+        put_in(state.game_state.vending_shop, %{shop_id: "ground-fixture"}),
+        %{state | vending_setup: %{setup_id: "setup", level: 1, sp_spent: 30}},
+        %{state | npc_shop: 0x5800_0001},
+        put_action(state, :sitting)
       ]
 
-      for held_state <- held,
-          do: assert({:use, _} = ground(learn(held_state, @thunderstorm, 1), @thunderstorm))
-    end
-
-    test "a skill asking for text fails generically while sitting", %{state: state} do
-      stub(Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler, :input_required?, fn
-        @thunderstorm -> true
-      end)
-
-      assert ground(put_action(state, :sitting), @thunderstorm) == {:refuse, {:fail, :failed}}
       assert {:use, _} = ground(state, @thunderstorm)
+      for held_state <- held, do: assert(ground(held_state, @thunderstorm) == {:refuse, :silent})
+
+      stub_body_state(3)
+      assert ground(state, @thunderstorm) == {:refuse, :silent}
     end
 
     test "casting refuses silently and the act delay with the delay reply", %{state: state} do

@@ -7,8 +7,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
   the map: `:spawn_player` indexes the player and runs the first visibility
   pass, so nothing can see or pick the player before its invincibility runs.
   After a warp the client already holds that data, so only the respawn on the
-  destination map fires. Both branches clear the warp cooldown and run the
-  on-spawn warp check. An ack from a player already on its map is ignored:
+  destination map fires. Both branches clear the warp cooldown, run the
+  on-spawn warp check and publish the player's own vending state (its open
+  shop, or none) with request ID zero. An ack from a player already on its map is ignored:
   nothing restarts, nothing is sent and the player is not spawned again.
   """
 
@@ -25,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -63,7 +65,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
         }
     }
 
-    state = Invincibility.start_on_map_load(state)
+    state = state |> VendingHandler.publish_owner_snapshot() |> Invincibility.start_on_map_load()
 
     {:noreply, NavigationHandler.on_map_loaded(state)}
   end
@@ -126,6 +128,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
         }
     }
 
+    state = VendingHandler.publish_owner_snapshot(state)
     {:noreply, Invincibility.start_on_map_load(state)}
   end
 

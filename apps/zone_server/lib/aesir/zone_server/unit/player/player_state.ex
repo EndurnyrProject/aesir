@@ -46,7 +46,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           | :sitting
           | :dead
           | :trading
-          | :vending
 
   @typedoc """
   The owner's homunculus as the skill checks of a player's cast read it: its
@@ -161,6 +160,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           pending_menu_offer: map() | nil,
           pending_vending_setup:
             %{required(:level) => pos_integer(), optional(:sp_spent) => non_neg_integer()} | nil,
+          vending_shop: map() | nil,
           pending_production_result: %{success: boolean(), item_id: non_neg_integer()} | nil
         }
 
@@ -333,6 +333,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     pending_menu_offer: nil,
     # Preparation staged by the paid skill; connection-bound grants live on the session.
     pending_vending_setup: nil,
+    # The open vending shop (`VendingHandler.shop()`), independent of the action
+    # state: the shop stays open through death, respawn and permitted warps and
+    # is closed only by the vending lifecycle.
+    vending_shop: nil,
     # Production outcome staged by a menu skill for SkillMenuHandler to send.
     pending_production_result: nil,
     # In-flight timed-cast descriptor (mirrors MobState.casting). Written by
@@ -604,6 +608,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       %{state | walk_path: path, movement_state: :standing}
     end
   end
+
+  @doc "Whether this player has an open vending shop."
+  @spec vending?(t()) :: boolean()
+  def vending?(%__MODULE__{vending_shop: shop}), do: shop != nil
 
   @doc """
   Stops walking and clears the path.
@@ -914,7 +922,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   defp valid_state_transition?(:casting, to), do: valid_from_casting?(to)
   defp valid_state_transition?(:sitting, to), do: valid_from_sitting?(to)
   defp valid_state_transition?(:trading, to), do: valid_from_trading?(to)
-  defp valid_state_transition?(:vending, to), do: valid_from_vending?(to)
   defp valid_state_transition?(_, _), do: false
 
   defp valid_from_idle?(to),
@@ -927,8 +934,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         :attacking,
         :casting,
         :sitting,
-        :trading,
-        :vending
+        :trading
       ]
 
   defp valid_from_moving?(to), do: to in [:idle, :combat_moving, :moving_to_item, :attacking]
@@ -943,7 +949,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   defp valid_from_casting?(to), do: to in [:idle, :moving, :attacking]
   defp valid_from_sitting?(to), do: to == :idle
   defp valid_from_trading?(to), do: to == :idle
-  defp valid_from_vending?(to), do: to == :idle
 
   # Private helper to handle state entry logic
   defp handle_state_entry(state, :idle), do: clear_combat_intent(state)
@@ -1031,8 +1036,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :attacking,
     :casting,
     :sitting,
-    :trading,
-    :vending
+    :trading
   ]
 
   @impl Aesir.ZoneServer.Unit

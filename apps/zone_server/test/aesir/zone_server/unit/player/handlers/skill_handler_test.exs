@@ -2192,29 +2192,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert state.pending_item_skill == nil
     end
 
-    test "a timed ground cast starts over a sitting player and leaves it seated" do
-      expect(Interpreter, :begin_cast, fn gs, 89, 1, {:ground, 12, 12} ->
-        {:casting, gs,
-         %{
-           skill_id: 89,
-           level: 1,
-           target: {:ground, 12, 12},
-           element: :water,
-           total: 5000,
-           fixed: 0
-         }}
-      end)
+    test "a sitting player's ground request is dropped" do
+      reject(&Interpreter.begin_cast/4)
 
       sitting = knowing(casting_state(45, :sitting), 89, 1)
-      assert {:noreply, state} = SkillHandler.handle_use_skill_ground(sitting, 89, 1, 12, 12)
-
-      assert state.game_state.action_state == :sitting
-      assert %{skill_id: 89, timer_ref: timer_ref} = state.game_state.casting
-      Process.cancel_timer(timer_ref)
+      assert {:noreply, ^sitting} = SkillHandler.handle_use_skill_ground(sitting, 89, 1, 12, 12)
+      refute_received {:to_player, _packet}
     end
 
-    test "a chat-room member's ground request ends the invincibility and casts nothing" do
-      expect(Invincibility, :stop, fn state -> state end)
+    test "a chat-room member's ground request is dropped without ending the invincibility" do
+      reject(&Invincibility.stop/1)
       reject(&Interpreter.begin_cast/4)
 
       s = knowing(casting_state(45), 89, 1)

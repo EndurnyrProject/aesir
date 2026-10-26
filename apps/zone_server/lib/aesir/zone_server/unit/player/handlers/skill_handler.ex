@@ -81,7 +81,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   @encore_id 305
   @brandish_spear 57
   @auto_counter 61
-  @overlaid_states [:sitting, :trading, :vending]
+  @overlaid_states [:sitting, :trading]
   @arrow_vulcan_id 394
 
   @doc """
@@ -202,9 +202,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   @doc """
   Handles a player's request to use a ground skill on the cell `(x, y)`.
-  `SkillRequest.ground/5` decides it as `handle_use_skill/4` does. A ground
-  cast also starts while the player sits, trades or vends, overlaid on that
-  state, which it leaves untouched.
+  `SkillRequest.ground/5` decides it as `handle_use_skill/4` does; it refuses
+  the request while the player sits, trades or otherwise cannot act.
   """
   @spec handle_use_skill_ground(
           SessionState.t(),
@@ -223,16 +222,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
-  # The cast-begin check refuses a chat-room member silently, after the request
-  # has already ended the invincibility.
   defp run_ground(state, _skill_id, %{level: 0}), do: {:noreply, state}
 
-  defp run_ground(%{game_state: %{waiting_room: room}} = state, _skill_id, _request)
-       when room != nil,
-       do: {:noreply, state}
-
   defp run_ground(state, skill_id, %{origin: :item, level: level, target: {x, y}}),
-    do: drive_item_cast(state, skill_id, level, {:ground, x, y}, overlay?: true)
+    do: drive_item_cast(state, skill_id, level, {:ground, x, y})
 
   defp run_ground(%{game_state: game_state} = state, skill_id, %{level: level, target: {x, y}}) do
     locked = game_state.combat_target_id
@@ -250,7 +243,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     if SkillTextInputHandler.input_required?(skill_id) do
       SkillTextInputHandler.stage(ready_state, skill_id, level, target)
     else
-      drive_cast_after_gate(ready_state, skill_id, level, target, locked, overlay?: true)
+      drive_cast_after_gate(ready_state, skill_id, level, target, locked)
     end
   end
 
@@ -729,8 +722,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         step.level,
         step.target,
         step.combat_target_id,
-        approach?: false,
-        overlay?: match?({:ground, _x, _y}, step.target)
+        approach?: false
       )
     else
       _dropped -> {:noreply, state}
@@ -1671,8 +1663,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp ensure_idle_for_cast(%{game_state: %{action_state: :attacking}} = state, opts),
     do: transition_to_cast_idle(state, opts)
 
-  # A ground request starts its cast over a sitting, trading or vending player
-  # and leaves that state as it is.
+  # A script cast starts over a sitting or trading player and leaves that state
+  # as it is.
   defp ensure_idle_for_cast(%{game_state: %{action_state: held}} = state, opts)
        when held in @overlaid_states do
     if Keyword.get(opts, :overlay?, false), do: {:ok, state}, else: :busy

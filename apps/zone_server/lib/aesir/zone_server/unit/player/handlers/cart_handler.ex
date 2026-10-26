@@ -45,6 +45,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.RentalExpiry
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
@@ -112,8 +113,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   @doc """
   Moves `amount` of the inventory item at the client `index` into the cart.
 
-  Rejected (no state change, no client delta) when the cart is not mounted or the
-  source item is equipped: the server is authoritative and must not trust a
+  Rejected (no state change, no client delta) during vending preparation or an
+  open shop, when the cart is not mounted, or when the source item is equipped: the server is authoritative and must not trust a
   client requesting an illegal move. Favourite and rental items may be moved. An unmounted move would otherwise
   commit a `cart_inventory` row that orphans against `character.cart = 0` and is
   lost on relog (`load_on_spawn/2` short-circuits when the character has no cart).
@@ -128,7 +129,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
     server_index = PlayerState.server_index(index)
     char_id = game_state.character_id
 
-    with :ok <- ensure_mounted(game_state),
+    with :ok <- ensure_unlocked(state),
+         :ok <- ensure_mounted(game_state),
          :ok <- ensure_movable_to_cart(game_state.inventory, server_index),
          {:ok, inventory, cart, inv_change, cart_change} <-
            CartOps.move_to_cart(
@@ -156,7 +158,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   @doc """
   Moves `amount` of the cart item at the client `index` back into the inventory.
 
-  Rejected (no state change, no client delta) when the cart is not mounted.
+  Rejected (no state change, no client delta) during vending preparation or an
+  open shop, or when the cart is not mounted.
   Otherwise it delegates the atomic cross-container move to `CartOps`, commits
   both container maps, and emits the paired client deltas (cart `CartItemRemoved`
   + inventory `ItemAdded`). A weight/availability error from `CartOps` is handled
@@ -169,7 +172,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
     server_index = PlayerState.server_index(index)
     char_id = game_state.character_id
 
-    with :ok <- ensure_mounted(game_state),
+    with :ok <- ensure_unlocked(state),
+         :ok <- ensure_mounted(game_state),
          {:ok, inventory, cart, inv_change, cart_change} <-
            CartOps.move_to_inventory(
              char_id,
@@ -193,6 +197,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   end
 
   def move_to_inventory(_index, _amount, state), do: {:noreply, state}
+
+  # Preparation and an open shop keep the cart closed to transfers either way.
+  defp ensure_unlocked(state),
+    do: if(VendingHandler.cart_locked?(state), do: {:error, :vending}, else: :ok)
 
   @doc """
   Restores a mounted cart on spawn.
