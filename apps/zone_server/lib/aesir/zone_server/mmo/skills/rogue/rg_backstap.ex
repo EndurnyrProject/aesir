@@ -9,7 +9,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstap do
   dagger repeats the one calculated damage over two hits, a 5 plus 2 per level
   percent 4.5 s stun lands on hit, and a
   0.5 s cooldown applies. Pre-renewal: the caster must already stand behind the
-  target, the hit never misses, and there is no stun or cooldown. Turning the
+  target, the hit never misses, and there is no stun or cooldown. In both
+  modes a caster on the target's own cell, and in pre-renewal one not behind
+  it, is refused silently before the cost is paid (`validate/4`). Turning the
   target and the renewal flat HIT bonus are not modelled.
   """
 
@@ -45,6 +47,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstap do
   alias Aesir.ZoneServer.Unit.Player.Stats
 
   @behaviour Active
+
+  @doc """
+  Refuses silently, before anything is paid, a caster standing on the target's
+  cell and, in pre-renewal, one not standing behind the target.
+  """
+  @impl Active
+  def validate(caster, {:unit, target_ref}, _level, _definition) do
+    case TargetResolver.resolve(target_ref) do
+      {:ok, _pid, target, _target_type} -> check_position(caster, target)
+      {:error, _reason} -> :ok
+    end
+  end
+
+  def validate(_caster, _target, _level, _definition), do: :ok
+
+  defp check_position(%{x: x, y: y}, %{x: x, y: y}), do: {:error, :target_restricted}
+
+  defp check_position(caster, target) do
+    if GameMode.mode() == :pre_renewal and not Geometry.behind?(caster, target),
+      do: {:error, :target_restricted},
+      else: :ok
+  end
 
   @impl Active
   def cast(caster, {:unit, target_ref}, level, definition) do

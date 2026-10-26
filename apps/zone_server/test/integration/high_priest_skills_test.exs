@@ -267,9 +267,10 @@ defmodule Aesir.ZoneServer.Integration.HighPriestSkillsTest do
       manager = ProcessTree.get({SkillUnitManager, :server})
       :ok = SkillUnitManager.tick(manager, SkillUnitStorage.get(group_id).next_tick_at)
 
+      # Facing south (-y), the mob is pushed two cells north, out of the field.
       assert eventually(fn ->
                {:ok, {151, y, @map}} = SpatialIndex.get_unit_position(:mob, mob.unit_id)
-               y == 149
+               y == 153
              end)
     end
 

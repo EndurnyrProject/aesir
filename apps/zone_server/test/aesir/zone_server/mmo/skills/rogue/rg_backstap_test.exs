@@ -111,7 +111,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
 
   @tag game_mode: :pre_renewal
   test "a front attack is rejected before combat" do
-    caster = player(@katar_id, 10, 9)
+    caster = player(@katar_id, 10, 11)
     target = mob(@target_id, 10, 10, 0)
     stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), target, :mob} end)
 
@@ -245,7 +245,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
 
   @tag game_mode: :pre_renewal
   test "classic rear attack ignores flee and never stuns" do
-    caster = player(@katar_id, 10, 11)
+    caster = player(@katar_id, 10, 9)
     target = mob(@target_id, 10, 10, 0)
     stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), target, :mob} end)
     reject(&StatusInterpreter.apply_status/4)
@@ -262,7 +262,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
 
   @tag game_mode: :pre_renewal
   test "classic mob casters use the rear attack path without a stun" do
-    caster = mob(@caster_id, 10, 11, 0)
+    caster = mob(@caster_id, 10, 9, 0)
     target = mob(@target_id, 10, 10, 0)
     stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), target, :mob} end)
     reject(&StatusInterpreter.apply_status/4)
@@ -273,6 +273,29 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
     end)
 
     assert {:ok, ^caster} = RgBackstap.cast(caster, {:unit, @target_id}, 10, definition())
+  end
+
+  test "a caster on the target's own cell is refused before anything is paid" do
+    stub(TargetResolver, :resolve, fn @target_id ->
+      {:ok, self(), mob(@target_id, 10, 10, 0), :mob}
+    end)
+
+    assert {:error, :target_restricted} =
+             RgBackstap.validate(player(@katar_id, 10, 10), {:unit, @target_id}, 1, definition())
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic refuses a caster in front of the target before anything is paid" do
+    # The target faces north (+y): the caster south of it stands behind.
+    stub(TargetResolver, :resolve, fn @target_id ->
+      {:ok, self(), mob(@target_id, 10, 10, 0), :mob}
+    end)
+
+    assert {:error, :target_restricted} =
+             RgBackstap.validate(player(@katar_id, 10, 11), {:unit, @target_id}, 1, definition())
+
+    assert :ok =
+             RgBackstap.validate(player(@katar_id, 10, 9), {:unit, @target_id}, 1, definition())
   end
 
   @tag game_mode: :renewal

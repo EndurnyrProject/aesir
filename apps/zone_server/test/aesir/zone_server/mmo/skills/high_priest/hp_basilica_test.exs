@@ -332,7 +332,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilicaTest do
 
       :ok = Manager.tick(manager, group.next_tick_at)
 
-      assert_received {:"$gen_cast", {:movement, {:knockback, 21, 21, "prontera", 21, 23}}}
+      assert_received {:"$gen_cast", {:movement, {:knockback, 21, 21, "prontera", 21, 19}}}
       refute_received {:"$gen_cast", {:movement, {:knockback, _, _, _, _, _}}}
       refute StatusStorage.has_status?(:mob, @mob_id, :sc_basilica)
       assert StatusStorage.has_status?(:player, @ally_id, :sc_basilica)
