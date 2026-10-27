@@ -307,6 +307,7 @@
     map: ba_in01
     x: 295
     'y': 101
+  trigger_on_hidden: true
   x: 357
   xs: 1
   'y': 303
@@ -319,6 +320,7 @@
     map: ba_in01
     x: 357
     'y': 300
+  trigger_on_hidden: true
   x: 295
   xs: 1
   'y': 98
@@ -331,6 +333,7 @@
     map: ba_in01
     x: 360
     'y': 194
+  trigger_on_hidden: true
   x: 367
   xs: 1
   'y': 290
@@ -343,6 +346,7 @@
     map: ba_in01
     x: 364
     'y': 290
+  trigger_on_hidden: true
   x: 356
   xs: 1
   'y': 194

@@ -297,7 +297,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         :error -> []
       end
 
-    case Warp.Registry.hit?(warps_for_map, x, y) do
+    case triggered_warp(warps_for_map, x, y, game_state.character_id) do
       %Warp{} = warp ->
         if PlayerState.within_warp_cooldown?(game_state) do
           :no_warp
@@ -316,6 +316,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
       nil ->
         :no_warp
+    end
+  end
+
+  # A concealed player only triggers the warps that fire for hidden players;
+  # concealment is read only when an ordinary warp is underfoot.
+  defp triggered_warp(warps, x, y, character_id) do
+    case Warp.Registry.hit?(warps, x, y) do
+      %Warp{trigger_on_hidden: false} = warp ->
+        if Concealment.unit_concealed?(:player, character_id),
+          do: warps |> Enum.filter(& &1.trigger_on_hidden) |> Warp.Registry.hit?(x, y),
+          else: warp
+
+      other ->
+        other
     end
   end
 

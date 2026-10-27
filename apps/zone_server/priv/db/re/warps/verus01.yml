@@ -7,6 +7,7 @@
     map: verus03
     x: 55
     'y': 251
+  trigger_on_hidden: true
   x: 247
   xs: 1
   'y': 58

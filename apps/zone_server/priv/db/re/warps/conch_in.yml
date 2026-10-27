@@ -7,6 +7,7 @@
     map: lasagna
     x: 206
     'y': 323
+  trigger_on_hidden: true
   x: 60
   xs: 1
   'y': 61
@@ -19,6 +20,7 @@
     map: conch_in
     x: 31
     'y': 60
+  trigger_on_hidden: true
   x: 51
   xs: 1
   'y': 60
@@ -31,6 +33,7 @@
     map: conch_in
     x: 53
     'y': 59
+  trigger_on_hidden: true
   x: 34
   xs: 1
   'y': 60
@@ -43,6 +46,7 @@
     map: conch_in
     x: 63
     'y': 33
+  trigger_on_hidden: true
   x: 63
   xs: 1
   'y': 53
@@ -55,6 +59,7 @@
     map: conch_in
     x: 64
     'y': 55
+  trigger_on_hidden: true
   x: 63
   xs: 1
   'y': 35
@@ -67,6 +72,7 @@
     map: conch_in
     x: 63
     'y': 89
+  trigger_on_hidden: true
   x: 64
   xs: 1
   'y': 66
@@ -79,6 +85,7 @@
     map: conch_in
     x: 63
     'y': 64
+  trigger_on_hidden: true
   x: 63
   xs: 1
   'y': 87
@@ -91,6 +98,7 @@
     map: conch_in
     x: 101
     'y': 33
+  trigger_on_hidden: true
   x: 101
   xs: 1
   'y': 53
@@ -103,6 +111,7 @@
     map: conch_in
     x: 102
     'y': 55
+  trigger_on_hidden: true
   x: 101
   xs: 1
   'y': 35
@@ -115,6 +124,7 @@
     map: conch_in
     x: 101
     'y': 89
+  trigger_on_hidden: true
   x: 101
   xs: 1
   'y': 66
@@ -127,6 +137,7 @@
     map: conch_in
     x: 101
     'y': 64
+  trigger_on_hidden: true
   x: 102
   xs: 1
   'y': 87
@@ -139,6 +150,7 @@
     map: conch_in
     x: 139
     'y': 33
+  trigger_on_hidden: true
   x: 137
   xs: 1
   'y': 53
@@ -151,6 +163,7 @@
     map: conch_in
     x: 138
     'y': 55
+  trigger_on_hidden: true
   x: 139
   xs: 1
   'y': 35
@@ -163,6 +176,7 @@
     map: conch_in
     x: 139
     'y': 89
+  trigger_on_hidden: true
   x: 137
   xs: 1
   'y': 66
@@ -175,6 +189,7 @@
     map: conch_in
     x: 137
     'y': 64
+  trigger_on_hidden: true
   x: 140
   xs: 1
   'y': 87
@@ -187,6 +202,7 @@
     map: conch_in
     x: 162
     'y': 61
+  trigger_on_hidden: true
   x: 142
   xs: 1
   'y': 60
@@ -199,6 +215,7 @@
     map: conch_in
     x: 140
     'y': 59
+  trigger_on_hidden: true
   x: 159
   xs: 1
   'y': 61

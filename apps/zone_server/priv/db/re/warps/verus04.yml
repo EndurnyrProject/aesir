@@ -7,6 +7,7 @@
     map: ver_tunn
     x: 13
     'y': 35
+  trigger_on_hidden: true
   x: 204
   xs: 1
   'y': 163
@@ -19,6 +20,7 @@
     map: verus03
     x: 121
     'y': 20
+  trigger_on_hidden: true
   x: 121
   xs: 1
   'y': 267
@@ -31,6 +33,7 @@
     map: verus03
     x: 44
     'y': 20
+  trigger_on_hidden: true
   x: 44
   xs: 1
   'y': 267

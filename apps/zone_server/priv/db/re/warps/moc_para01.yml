@@ -7,6 +7,7 @@
     map: moc_para01
     x: 162
     'y': 26
+  trigger_on_hidden: true
   x: 57
   xs: 1
   'y': 27
@@ -19,6 +20,7 @@
     map: moc_para01
     x: 55
     'y': 27
+  trigger_on_hidden: true
   x: 158
   xs: 1
   'y': 26
@@ -31,6 +33,7 @@
     map: moc_para01
     x: 48
     'y': 164
+  trigger_on_hidden: true
   x: 48
   xs: 1
   'y': 16
@@ -43,6 +46,7 @@
     map: moc_para01
     x: 47
     'y': 18
+  trigger_on_hidden: true
   x: 47
   xs: 1
   'y': 161
@@ -55,6 +59,7 @@
     map: moc_para01
     x: 47
     'y': 37
+  trigger_on_hidden: true
   x: 107
   xs: 1
   'y': 12
@@ -67,6 +72,7 @@
     map: moc_para01
     x: 47
     'y': 85
+  trigger_on_hidden: true
   x: 100
   xs: 1
   'y': 27
@@ -79,6 +85,7 @@
     map: moc_para01
     x: 103
     'y': 27
+  trigger_on_hidden: true
   x: 49
   xs: 1
   'y': 86
@@ -91,6 +98,7 @@
     map: moc_para01
     x: 105
     'y': 92
+  trigger_on_hidden: true
   x: 113
   xs: 1
   'y': 32
@@ -103,6 +111,7 @@
     map: moc_para01
     x: 109
     'y': 33
+  trigger_on_hidden: true
   x: 102
   xs: 1
   'y': 92
@@ -115,6 +124,7 @@
     map: moc_para01
     x: 179
     'y': 93
+  trigger_on_hidden: true
   x: 41
   xs: 1
   'y': 187
@@ -127,6 +137,7 @@
     map: moc_para01
     x: 41
     'y': 185
+  trigger_on_hidden: true
   x: 179
   xs: 1
   'y': 90
@@ -139,6 +150,7 @@
     map: moc_para01
     x: 132
     'y': 159
+  trigger_on_hidden: true
   x: 17
   xs: 1
   'y': 187
@@ -151,6 +163,7 @@
     map: moc_para01
     x: 17
     'y': 185
+  trigger_on_hidden: true
   x: 132
   xs: 1
   'y': 156
@@ -163,6 +176,7 @@
     map: moc_para01
     x: 180
     'y': 159
+  trigger_on_hidden: true
   x: 29
   xs: 1
   'y': 187
@@ -175,6 +189,7 @@
     map: moc_para01
     x: 29
     'y': 185
+  trigger_on_hidden: true
   x: 180
   xs: 1
   'y': 156

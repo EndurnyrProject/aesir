@@ -21,11 +21,25 @@ defmodule Aesir.ZoneServer.Npc.Warps.ImporterTest do
               }} = Importer.parse_line(line)
     end
 
-    test "treats warp2 as a normal warp" do
+    test "places warp2 like a normal warp" do
       line = "mosk_in,215,36,0\twarp2\tbabayagaout\t1,1,mosk_dun02,53,217"
 
       assert {:ok, %{"id" => "babayagaout", "to" => %{"map" => "mosk_dun02"}}} =
                Importer.parse_line(line)
+    end
+
+    test "marks warp2 portals, and only them, as firing for hidden players" do
+      for type <- ["warp2", "warp2(HIDDEN)"] do
+        line = "mosk_in,215,36,0\t#{type}\tbabayagaout\t1,1,mosk_dun02,53,217"
+        assert {:ok, %{"trigger_on_hidden" => true}} = Importer.parse_line(line)
+      end
+
+      for type <- ["warp", "warp(HIDDEN)"] do
+        {:ok, warp} =
+          Importer.parse_line("prontera,107,215,0\t#{type}\tprt01\t2,2,prt_in,240,139")
+
+        refute Map.has_key?(warp, "trigger_on_hidden")
+      end
     end
 
     test "accepts the warp(<STATE>) variant" do

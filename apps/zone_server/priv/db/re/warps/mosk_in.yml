@@ -187,6 +187,7 @@
     map: mosk_dun02
     x: 53
     'y': 217
+  trigger_on_hidden: true
   x: 215
   xs: 1
   'y': 36

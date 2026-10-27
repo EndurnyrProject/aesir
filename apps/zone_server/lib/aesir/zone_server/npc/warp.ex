@@ -6,6 +6,9 @@ defmodule Aesir.ZoneServer.Npc.Warp do
   into (or spawns onto) its `xs`/`ys` trigger area — a `(2*xs+1) x (2*ys+1)`
   square centred on `(x, y)`. `xs`/`ys` are half-width/half-height radii,
   matching the rAthena convention also used by `Mmo.MobManagement.MobSpawn`.
+
+  A concealed player (Hiding, Cloaking, Chase Walk) only triggers a warp whose
+  `trigger_on_hidden` is set (a `warp2` portal).
   """
 
   @enforce_keys [:id, :map, :to_map, :x, :y, :to_x, :to_y]
@@ -19,7 +22,8 @@ defmodule Aesir.ZoneServer.Npc.Warp do
             to_x: nil,
             to_y: nil,
             sprite: 0,
-            name: ""
+            name: "",
+            trigger_on_hidden: false
 
   @type t() :: %__MODULE__{
           id: String.t(),
@@ -32,7 +36,8 @@ defmodule Aesir.ZoneServer.Npc.Warp do
           to_x: non_neg_integer(),
           to_y: non_neg_integer(),
           sprite: non_neg_integer(),
-          name: String.t()
+          name: String.t(),
+          trigger_on_hidden: boolean()
         }
 end
 

@@ -19,6 +19,7 @@
     map: ver_eju
     x: 13
     'y': 148
+  trigger_on_hidden: true
   x: 245
   xs: 1
   'y': 87

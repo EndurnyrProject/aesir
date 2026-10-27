@@ -7,6 +7,7 @@
     map: mag_dun02
     x: 243
     'y': 68
+  trigger_on_hidden: true
   x: 124
   xs: 1
   'y': 120

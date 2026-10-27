@@ -18,7 +18,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
-  alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Concealment
   alias Aesir.ZoneServer.Unit.Player.NaturalHeal
@@ -141,7 +140,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
   # every natural and skill regeneration.
   defp recovery_blocked?(%{character_id: id}) do
     StatusStorage.has_status?(:player, id, :sc_norecover_state) or
-      Concealment.concealed?(StatusDisplay.spawn_state(:player, id).effect_state)
+      Concealment.unit_concealed?(:player, id)
   end
 
   defp full?(stats) do

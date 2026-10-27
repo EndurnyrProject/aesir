@@ -7,6 +7,7 @@
     map: rebel_in
     x: 21
     'y': 41
+  trigger_on_hidden: true
   x: 34
   xs: 5
   'y': 43
@@ -19,6 +20,7 @@
     map: einbech
     x: 215
     'y': 80
+  trigger_on_hidden: true
   x: 18
   xs: 1
   'y': 43
@@ -31,6 +33,7 @@
     map: rebel_in
     x: 209
     'y': 82
+  trigger_on_hidden: true
   x: 88
   xs: 1
   'y': 80
@@ -43,6 +46,7 @@
     map: rebel_in
     x: 87
     'y': 75
+  trigger_on_hidden: true
   x: 209
   xs: 1
   'y': 77
@@ -55,6 +59,7 @@
     map: rebel_in
     x: 119
     'y': 41
+  trigger_on_hidden: true
   x: 155
   xs: 1
   'y': 84

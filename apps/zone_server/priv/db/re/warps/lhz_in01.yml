@@ -247,6 +247,7 @@
     map: lhz_in01
     x: 276
     'y': 230
+  trigger_on_hidden: true
   x: 276
   xs: 1
   'y': 238

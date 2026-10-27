@@ -7,6 +7,7 @@
     map: ein_dun02
     x: 24
     'y': 250
+  trigger_on_hidden: true
   x: 268
   xs: 1
   'y': 283

@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Concealment do
   import Bitwise
 
   alias Aesir.ZoneServer.Mmo.Option
+  alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -27,6 +28,11 @@ defmodule Aesir.ZoneServer.Unit.Concealment do
   @doc "Whether an `effect_state` bitmask carries any concealment bit."
   @spec concealed?(integer()) :: boolean()
   def concealed?(effect_state), do: (effect_state &&& conceal_mask()) != 0
+
+  @doc "Whether the unit currently holds a concealing status (Hiding, Cloaking, Chase Walk)."
+  @spec unit_concealed?(atom(), integer()) :: boolean()
+  def unit_concealed?(unit_type, unit_id),
+    do: concealed?(StatusDisplay.spawn_state(unit_type, unit_id).effect_state)
 
   @doc "Clears the concealment bits from an `effect_state` bitmask."
   @spec reveal_effect_state(integer()) :: integer()

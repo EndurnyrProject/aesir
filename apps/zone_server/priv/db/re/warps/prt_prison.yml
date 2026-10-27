@@ -7,6 +7,7 @@
     map: prt_pri00
     x: 50
     'y': 120
+  trigger_on_hidden: true
   x: 155
   xs: 2
   'y': 290

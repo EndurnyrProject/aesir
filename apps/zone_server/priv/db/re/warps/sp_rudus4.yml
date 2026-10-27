@@ -7,6 +7,7 @@
     map: sp_rudus3
     x: 375
     'y': 45
+  trigger_on_hidden: true
   x: 380
   xs: 2
   'y': 156

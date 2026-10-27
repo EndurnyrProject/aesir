@@ -7,6 +7,7 @@
     map: nif_dun01
     x: 146
     'y': 39
+  trigger_on_hidden: true
   x: 162
   xs: 1
   'y': 15
@@ -19,6 +20,7 @@
     map: nif_dun01
     x: 146
     'y': 39
+  trigger_on_hidden: true
   x: 137
   xs: 1
   'y': 15

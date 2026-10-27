@@ -12,7 +12,7 @@ defmodule Aesir.ZoneServer.Npc.Warps.Loader do
 
   @type index :: %{by_map: %{String.t() => [Warp.t()]}}
 
-  @cache_file "warps.etf"
+  @cache_file "warps_v2.etf"
 
   @spec load() :: index()
   def load, do: "warps" |> DataLoader.load(@cache_file, &build/1) |> index()
@@ -41,6 +41,7 @@ defmodule Aesir.ZoneServer.Npc.Warps.Loader do
       ys: Map.get(entry, "ys", 0),
       sprite: Map.fetch!(entry, "sprite"),
       name: Map.get(entry, "name", ""),
+      trigger_on_hidden: Map.get(entry, "trigger_on_hidden", false),
       to_map: Map.fetch!(to, "map"),
       to_x: Map.fetch!(to, "x"),
       to_y: Map.fetch!(to, "y")

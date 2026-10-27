@@ -7,6 +7,7 @@
     map: ein_fild08
     x: 152
     'y': 95
+  trigger_on_hidden: true
   x: 248
   xs: 2
   'y': 244

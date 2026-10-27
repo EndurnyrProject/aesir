@@ -7,6 +7,7 @@
     map: harboro1
     x: 358
     'y': 206
+  trigger_on_hidden: true
   x: 33
   xs: 1
   'y': 246
@@ -19,6 +20,7 @@
     map: rockrdg2
     x: 31
     'y': 207
+  trigger_on_hidden: true
   x: 371
   xs: 1
   'y': 206

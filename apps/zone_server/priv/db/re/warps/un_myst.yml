@@ -7,6 +7,7 @@
     map: un_myst
     x: 171
     'y': 197
+  trigger_on_hidden: true
   x: 124
   xs: 1
   'y': 189
@@ -19,6 +20,7 @@
     map: un_myst
     x: 259
     'y': 200
+  trigger_on_hidden: true
   x: 171
   xs: 1
   'y': 183
@@ -31,6 +33,7 @@
     map: un_myst
     x: 209
     'y': 33
+  trigger_on_hidden: true
   x: 108
   xs: 1
   'y': 38

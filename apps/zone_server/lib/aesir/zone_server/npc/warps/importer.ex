@@ -6,8 +6,8 @@ defmodule Aesir.ZoneServer.Npc.Warps.Importer do
 
       <map>,<x>,<y>,<facing>	warp	<name>	<spanx>,<spany>,<to_map>,<to_x>,<to_y>
 
-  `warp2` (also fires for hidden players) and the `warp(<STATE>)` /
-  `warp2(<STATE>)` state variants all map to the same placement; `facing` is
+  `warp2` and `warp2(<STATE>)` also fire for hidden players and carry
+  `trigger_on_hidden: true`; `warp(<STATE>)` maps like `warp`. `facing` is
   ignored (irrelevant in rAthena, always `0`). `spanx`/`spany` are
   half-width/half-height radii, matching our `xs`/`ys`. `sprite` is the warp
   portal class `45`; `name` is left blank, faithful to the invisible portal.
@@ -50,15 +50,18 @@ defmodule Aesir.ZoneServer.Npc.Warps.Importer do
   @spec parse_warp(String.t(), String.t(), String.t(), String.t()) ::
           {:ok, warp_map()} | :skip | {:error, term()}
   defp parse_warp(type, position, name, params) do
-    if warp_type?(type) do
-      build(position, name, params)
-    else
-      :skip
+    case Regex.run(~r/^warp(2?)(\([A-Za-z]+\))?$/, type) do
+      [_type, "2" | _state] ->
+        with {:ok, warp} <- build(position, name, params),
+             do: {:ok, Map.put(warp, "trigger_on_hidden", true)}
+
+      [_type, "" | _state] ->
+        build(position, name, params)
+
+      nil ->
+        :skip
     end
   end
-
-  @spec warp_type?(String.t()) :: boolean()
-  defp warp_type?(type), do: Regex.match?(~r/^warp2?(\([A-Za-z]+\))?$/, type)
 
   @spec build(String.t(), String.t(), String.t()) :: {:ok, warp_map()} | :skip | {:error, term()}
   defp build(position, name, params) do

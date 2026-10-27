@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerWarpOntouchTest d
 
   alias Aesir.Commons.Models.Character
 
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Unit.Movement
@@ -75,6 +76,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerWarpOntouchTest d
       assert new_state.game_state.movement_state == :moving
       assert new_state.game_state.walk_path == [{52, 50}]
       assert new_state.game_state.last_warp_at == nil
+    end
+
+    test "a concealed player walks through an ordinary warp but not a warp2 portal" do
+      game_state =
+        player_state()
+        |> Map.put(:walk_path, [{51, 50}, {52, 50}])
+        |> Map.put(:movement_state, :moving)
+
+      register_player(game_state)
+      :ok = StatusStorage.apply_status(:player, game_state.character_id, :sc_cloaking, val1: 3)
+
+      stub(Warps, :for_map, fn "prontera" -> {:ok, [warp_at(51, 50, xs: 1, ys: 1)]} end)
+      {:noreply, walked} = MovementHandler.handle_movement_tick(%{game_state: game_state})
+
+      refute_received {:"$gen_cast", {:movement, {:warp, _, _, _}}}
+      assert walked.game_state.walk_path == [{52, 50}]
+
+      warp2 = %{warp_at(51, 50, xs: 1, ys: 1) | trigger_on_hidden: true}
+      stub(Warps, :for_map, fn "prontera" -> {:ok, [warp2]} end)
+      {:noreply, _warped} = MovementHandler.handle_movement_tick(%{game_state: game_state})
+
+      assert_received {:"$gen_cast", {:movement, {:warp, "izlude", 150, 190}}}
+
+      :ok = StatusStorage.remove_status(:player, game_state.character_id, :sc_cloaking)
+      {:noreply, _warped} = MovementHandler.handle_movement_tick(%{game_state: game_state})
+      assert_received {:"$gen_cast", {:movement, {:warp, "izlude", 150, 190}}}
     end
 
     @tag :skip

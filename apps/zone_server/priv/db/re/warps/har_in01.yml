@@ -7,6 +7,7 @@
     map: harboro1
     x: 241
     'y': 215
+  trigger_on_hidden: true
   x: 18
   xs: 1
   'y': 15
@@ -19,6 +20,7 @@
     map: har_in01
     x: 34
     'y': 31
+  trigger_on_hidden: true
   x: 99
   xs: 1
   'y': 30
@@ -31,6 +33,7 @@
     map: harboro1
     x: 312
     'y': 196
+  trigger_on_hidden: true
   x: 26
   xs: 1
   'y': 90

@@ -7,6 +7,7 @@
     map: ver_eju
     x: 113
     'y': 38
+  trigger_on_hidden: true
   x: 84
   xs: 1
   'y': 86
@@ -19,6 +20,7 @@
     map: verus04
     x: 202
     'y': 165
+  trigger_on_hidden: true
   x: 10
   xs: 1
   'y': 36

@@ -91,6 +91,7 @@
     map: ra_temin
     x: 131
     'y': 131
+  trigger_on_hidden: true
   x: 275
   xs: 1
   'y': 243

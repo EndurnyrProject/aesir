@@ -7,6 +7,7 @@
     map: un_bunker
     x: 300
     'y': 166
+  trigger_on_hidden: true
   x: 387
   xs: 1
   'y': 79
@@ -19,6 +20,7 @@
     map: verus01
     x: 115
     'y': 190
+  trigger_on_hidden: true
   x: 98
   xs: 1
   'y': 85
@@ -31,6 +33,7 @@
     map: un_bunker
     x: 21
     'y': 276
+  trigger_on_hidden: true
   x: 41
   xs: 1
   'y': 275
@@ -43,6 +46,7 @@
     map: un_bunker
     x: 45
     'y': 275
+  trigger_on_hidden: true
   x: 24
   xs: 1
   'y': 276
@@ -55,6 +59,7 @@
     map: un_bunker
     x: 26
     'y': 190
+  trigger_on_hidden: true
   x: 24
   xs: 1
   'y': 256
@@ -67,6 +72,7 @@
     map: un_bunker
     x: 21
     'y': 256
+  trigger_on_hidden: true
   x: 23
   xs: 1
   'y': 190
@@ -79,6 +85,7 @@
     map: un_bunker
     x: 22
     'y': 378
+  trigger_on_hidden: true
   x: 31
   xs: 1
   'y': 196
@@ -91,6 +98,7 @@
     map: un_bunker
     x: 32
     'y': 193
+  trigger_on_hidden: true
   x: 21
   xs: 1
   'y': 375
@@ -103,6 +111,7 @@
     map: un_bunker
     x: 68
     'y': 378
+  trigger_on_hidden: true
   x: 51
   xs: 1
   'y': 196
@@ -115,6 +124,7 @@
     map: un_bunker
     x: 52
     'y': 193
+  trigger_on_hidden: true
   x: 67
   xs: 1
   'y': 375
@@ -127,6 +137,7 @@
     map: un_bunker
     x: 75
     'y': 235
+  trigger_on_hidden: true
   x: 60
   xs: 1
   'y': 183
@@ -139,6 +150,7 @@
     map: un_bunker
     x: 57
     'y': 182
+  trigger_on_hidden: true
   x: 71
   xs: 1
   'y': 236
@@ -151,6 +163,7 @@
     map: un_bunker
     x: 37
     'y': 134
+  trigger_on_hidden: true
   x: 47
   xs: 1
   'y': 135
@@ -163,6 +176,7 @@
     map: un_bunker
     x: 50
     'y': 134
+  trigger_on_hidden: true
   x: 40
   xs: 1
   'y': 135
@@ -175,6 +189,7 @@
     map: un_bunker
     x: 72
     'y': 117
+  trigger_on_hidden: true
   x: 57
   xs: 1
   'y': 118
@@ -187,6 +202,7 @@
     map: un_bunker
     x: 53
     'y': 117
+  trigger_on_hidden: true
   x: 69
   xs: 1
   'y': 118
@@ -199,6 +215,7 @@
     map: un_bunker
     x: 144
     'y': 117
+  trigger_on_hidden: true
   x: 128
   xs: 1
   'y': 118
@@ -211,6 +228,7 @@
     map: un_bunker
     x: 125
     'y': 117
+  trigger_on_hidden: true
   x: 140
   xs: 1
   'y': 118
@@ -223,6 +241,7 @@
     map: un_bunker
     x: 120
     'y': 235
+  trigger_on_hidden: true
   x: 137
   xs: 1
   'y': 185
@@ -235,6 +254,7 @@
     map: un_bunker
     x: 140
     'y': 184
+  trigger_on_hidden: true
   x: 124
   xs: 1
   'y': 236
@@ -247,6 +267,7 @@
     map: un_bunker
     x: 106
     'y': 378
+  trigger_on_hidden: true
   x: 147
   xs: 1
   'y': 196
@@ -259,6 +280,7 @@
     map: un_bunker
     x: 148
     'y': 193
+  trigger_on_hidden: true
   x: 105
   xs: 1
   'y': 375
@@ -271,6 +293,7 @@
     map: un_bunker
     x: 152
     'y': 378
+  trigger_on_hidden: true
   x: 167
   xs: 1
   'y': 196
@@ -283,6 +306,7 @@
     map: un_bunker
     x: 168
     'y': 193
+  trigger_on_hidden: true
   x: 151
   xs: 1
   'y': 375
@@ -295,6 +319,7 @@
     map: un_bunker
     x: 172
     'y': 229
+  trigger_on_hidden: true
   x: 174
   xs: 1
   'y': 190
@@ -307,6 +332,7 @@
     map: un_bunker
     x: 171
     'y': 189
+  trigger_on_hidden: true
   x: 169
   xs: 1
   'y': 230
@@ -319,6 +345,7 @@
     map: un_bunker
     x: 213
     'y': 299
+  trigger_on_hidden: true
   x: 213
   xs: 1
   'y': 346
@@ -331,6 +358,7 @@
     map: un_bunker
     x: 216
     'y': 345
+  trigger_on_hidden: true
   x: 216
   xs: 1
   'y': 300
@@ -343,6 +371,7 @@
     map: un_bunker
     x: 220
     'y': 261
+  trigger_on_hidden: true
   x: 216
   xs: 1
   'y': 280
@@ -355,6 +384,7 @@
     map: un_bunker
     x: 213
     'y': 279
+  trigger_on_hidden: true
   x: 217
   xs: 1
   'y': 262
@@ -367,6 +397,7 @@
     map: un_bunker
     x: 390
     'y': 380
+  trigger_on_hidden: true
   x: 249
   xs: 1
   'y': 268
@@ -379,6 +410,7 @@
     map: un_bunker
     x: 250
     'y': 265
+  trigger_on_hidden: true
   x: 389
   xs: 1
   'y': 377
@@ -391,6 +423,7 @@
     map: un_bunker
     x: 274
     'y': 289
+  trigger_on_hidden: true
   x: 258
   xs: 1
   'y': 262
@@ -403,6 +436,7 @@
     map: un_bunker
     x: 255
     'y': 261
+  trigger_on_hidden: true
   x: 271
   xs: 1
   'y': 290
@@ -415,6 +449,7 @@
     map: un_bunker
     x: 272
     'y': 235
+  trigger_on_hidden: true
   x: 258
   xs: 1
   'y': 236
@@ -427,6 +462,7 @@
     map: un_bunker
     x: 255
     'y': 235
+  trigger_on_hidden: true
   x: 269
   xs: 1
   'y': 236
@@ -439,6 +475,7 @@
     map: un_bunker
     x: 226
     'y': 213
+  trigger_on_hidden: true
   x: 245
   xs: 1
   'y': 214
@@ -451,6 +488,7 @@
     map: un_bunker
     x: 248
     'y': 213
+  trigger_on_hidden: true
   x: 230
   xs: 1
   'y': 214
@@ -463,6 +501,7 @@
     map: un_bunker
     x: 274
     'y': 199
+  trigger_on_hidden: true
   x: 262
   xs: 1
   'y': 200
@@ -475,6 +514,7 @@
     map: un_bunker
     x: 258
     'y': 199
+  trigger_on_hidden: true
   x: 271
   xs: 1
   'y': 200
@@ -487,6 +527,7 @@
     map: un_bunker
     x: 276
     'y': 196
+  trigger_on_hidden: true
   x: 75
   xs: 1
   'y': 128
@@ -499,6 +540,7 @@
     map: un_bunker
     x: 76
     'y': 121
+  trigger_on_hidden: true
   x: 275
   xs: 1
   'y': 191
@@ -511,6 +553,7 @@
     map: un_bunker
     x: 319
     'y': 196
+  trigger_on_hidden: true
   x: 119
   xs: 1
   'y': 128
@@ -523,6 +566,7 @@
     map: un_bunker
     x: 120
     'y': 121
+  trigger_on_hidden: true
   x: 320
   xs: 1
   'y': 191
@@ -535,6 +579,7 @@
     map: un_bunker
     x: 298
     'y': 224
+  trigger_on_hidden: true
   x: 297
   xs: 1
   'y': 206
@@ -547,6 +592,7 @@
     map: un_bunker
     x: 298
     'y': 203
+  trigger_on_hidden: true
   x: 297
   xs: 1
   'y': 221
@@ -559,6 +605,7 @@
     map: un_bunker
     x: 344
     'y': 199
+  trigger_on_hidden: true
   x: 324
   xs: 1
   'y': 200
@@ -571,6 +618,7 @@
     map: un_bunker
     x: 321
     'y': 199
+  trigger_on_hidden: true
   x: 339
   xs: 1
   'y': 200
@@ -583,6 +631,7 @@
     map: un_bunker
     x: 368
     'y': 213
+  trigger_on_hidden: true
   x: 350
   xs: 1
   'y': 214
@@ -595,6 +644,7 @@
     map: un_bunker
     x: 347
     'y': 213
+  trigger_on_hidden: true
   x: 365
   xs: 1
   'y': 214
@@ -607,6 +657,7 @@
     map: un_bunker
     x: 323
     'y': 235
+  trigger_on_hidden: true
   x: 337
   xs: 1
   'y': 236
@@ -619,6 +670,7 @@
     map: un_bunker
     x: 340
     'y': 235
+  trigger_on_hidden: true
   x: 326
   xs: 1
   'y': 236
@@ -631,6 +683,7 @@
     map: un_bunker
     x: 282
     'y': 282
+  trigger_on_hidden: true
   x: 281
   xs: 1
   'y': 266
@@ -643,6 +696,7 @@
     map: un_bunker
     x: 282
     'y': 263
+  trigger_on_hidden: true
   x: 281
   xs: 1
   'y': 279
@@ -655,6 +709,7 @@
     map: un_bunker
     x: 314
     'y': 282
+  trigger_on_hidden: true
   x: 313
   xs: 1
   'y': 266
@@ -667,6 +722,7 @@
     map: un_bunker
     x: 314
     'y': 262
+  trigger_on_hidden: true
   x: 313
   xs: 1
   'y': 279
@@ -679,6 +735,7 @@
     map: un_bunker
     x: 340
     'y': 261
+  trigger_on_hidden: true
   x: 324
   xs: 1
   'y': 290
@@ -691,6 +748,7 @@
     map: un_bunker
     x: 321
     'y': 289
+  trigger_on_hidden: true
   x: 337
   xs: 1
   'y': 262
@@ -703,6 +761,7 @@
     map: un_bunker
     x: 382
     'y': 328
+  trigger_on_hidden: true
   x: 343
   xs: 1
   'y': 270
@@ -715,6 +774,7 @@
     map: un_bunker
     x: 344
     'y': 267
+  trigger_on_hidden: true
   x: 381
   xs: 1
   'y': 325
@@ -727,6 +787,7 @@
     map: un_bunker
     x: 388
     'y': 263
+  trigger_on_hidden: true
   x: 370
   xs: 1
   'y': 264
@@ -739,6 +800,7 @@
     map: un_bunker
     x: 367
     'y': 263
+  trigger_on_hidden: true
   x: 385
   xs: 1
   'y': 264
@@ -751,6 +813,7 @@
     map: un_bunker
     x: 298
     'y': 181
+  trigger_on_hidden: true
   x: 297
   xs: 1
   'y': 192
@@ -763,6 +826,7 @@
     map: un_bunker
     x: 298
     'y': 196
+  trigger_on_hidden: true
   x: 297
   xs: 1
   'y': 186
@@ -775,6 +839,7 @@
     map: un_bunker
     x: 159
     'y': 52
+  trigger_on_hidden: true
   x: 229
   xs: 1
   'y': 163
@@ -787,6 +852,7 @@
     map: un_bunker
     x: 233
     'y': 164
+  trigger_on_hidden: true
   x: 164
   xs: 1
   'y': 51
@@ -799,6 +865,7 @@
     map: un_bunker
     x: 31
     'y': 51
+  trigger_on_hidden: true
   x: 366
   xs: 1
   'y': 164
@@ -811,6 +878,7 @@
     map: un_bunker
     x: 361
     'y': 163
+  trigger_on_hidden: true
   x: 27
   xs: 1
   'y': 52

@@ -7,6 +7,7 @@
     map: rockmi1
     x: 247
     'y': 19
+  trigger_on_hidden: true
   x: 304
   xs: 1
   'y': 350
@@ -19,6 +20,7 @@
     map: rockrdg1
     x: 367
     'y': 206
+  trigger_on_hidden: true
   x: 27
   xs: 1
   'y': 207
