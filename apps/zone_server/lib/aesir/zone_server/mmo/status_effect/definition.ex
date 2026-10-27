@@ -40,6 +40,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:prevented_by` - statuses that prevent this one from being applied
     - `:conflicts_with` - statuses that cannot coexist with this one
     - `:end_on_start` - statuses removed when this one is applied
+    - `:end_on_end` - statuses ended when this one ends, on every end path,
+      after its own end logic (an infinite Endure stays)
     - `:end_return` - statuses that end the application instead: when any of them is
       active, they are all removed and the application reports success without
       storing this status (re-applying Confusion cures it)
@@ -108,7 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       held one, whatever its level (mirrors the `OverlapIgnoreLevel` flag of
       `status.yml`); otherwise `c:overlap/3` decides
 
-  `:end_on_start`, `:end_return`, `:prevented_by`, `:no_save`, `:duration`,
+  `:end_on_start`, `:end_on_end`, `:end_return`, `:prevented_by`, `:no_save`, `:duration`,
   `:no_dispel`, `:no_clear_buff`, `:clear_buff_flags` and `:immunity` also accept `[renewal: value, pre_renewal: value]` for mode-specific values.
   """
 
@@ -409,6 +411,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     prevented_by: [],
     conflicts_with: [],
     end_on_start: [],
+    end_on_end: [],
     end_return: [],
     allow_skills: [],
     blocked_skills: [],
@@ -449,6 +452,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     prevented_by: {:list, :atom},
     conflicts_with: {:list, :atom},
     end_on_start: {:list, :atom},
+    end_on_end: {:list, :atom},
     end_return: {:list, :atom},
     allow_skills: {:list, :integer},
     blocked_skills: {:list, {:integer, {:gt, 0}}},
@@ -746,6 +750,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     :calc_flags,
     :allow_skills,
     :end_on_start,
+    :end_on_end,
     :end_return,
     :prevented_by,
     :no_save,

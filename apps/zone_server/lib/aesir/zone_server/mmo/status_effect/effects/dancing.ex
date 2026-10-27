@@ -3,7 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
   Performing lock for pre-renewal fields and renewal Moonlit Water Mill.
 
   The performer cannot attack and may use only the listed skills unless Longing
-  relaxes an ensemble lock. Ending the lock ends its field. The state carries
+  relaxes an ensemble lock. Ending the lock ends its field, then Longing in
+  pre-renewal or Ensemble Fatigue in renewal. The state carries
   `upkeep` in seconds and `upkeep_sp` (default one), tripled under Longing.
   Every `upkeep` seconds a player pays it or stops performing, and stops too
   once the payment leaves no SP. A monster performer pays nothing but stops on
@@ -26,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
     no_save: true,
     bypass_resistance: true,
     remove_on_map_change: true,
+    end_on_end: [renewal: [:sc_ensemblefatigue], pre_renewal: [:sc_longing]],
     target_types: [:player, :mob],
     properties: [:prevents_attack, :prevents_skills],
     allow_skills: [316, 324, 304, 487],

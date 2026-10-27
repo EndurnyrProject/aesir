@@ -23,7 +23,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion do
       the world does not end it.
 
   Ending this record also ends the devotee's Guard, Defending Aura, Reflect
-  Shield and Endure, whoever started them (`DevotionMirror.end_inherited/1`).
+  Shield and Endure, whoever started them (`end_on_end`), except an infinite
+  Endure.
   The status is not persisted (`no_save`) and ends on a cross-map warp
   (`remove_on_map_change`): the pairing is tied to two live units on one map.
   """
@@ -35,13 +36,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion do
     clear_buff_flags: [:remove_on_hermode],
     no_save: true,
     remove_on_map_change: true,
+    end_on_end: [:sc_autoguard, :sc_defender, :sc_reflectshield, :sc_endure],
     properties: [:buff],
     target_types: [:player],
     tick_interval: 1_000,
     icon: :devotion
 
   alias Aesir.ZoneServer.Geometry
-  alias Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirror
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.DevotedBy
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
@@ -110,9 +111,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion do
   end
 
   @impl true
-  def on_expire({_type, devotee_id}, %StatusEntry{state: state} = instance, _context) do
+  def on_expire({_type, devotee_id}, %StatusEntry{state: state}, _context) do
     detach(devotee_id, state)
-    if is_integer(instance.generation), do: DevotionMirror.end_inherited(devotee_id)
     :ok
   end
 

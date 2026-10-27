@@ -50,6 +50,19 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.MapRemovalTest do
     assert StatusStorage.has_status?(:mob, @mob_id, :sc_provoke)
   end
 
+  test "a map change ends only the caster's own Gospel, not the Gospel slow on an enemy" do
+    stub(Unit, :destroy_async, fn _group_id -> :ok end)
+    caster_id = @mob_id + 1
+    :ok = StatusStorage.apply_status(:mob, caster_id, :sc_gospel, val1: 1, val2: 77)
+    :ok = StatusStorage.apply_status(:mob, @mob_id, :sc_gospel_slow, val1: 1, duration: 20_000)
+
+    :ok = Interpreter.remove_on_map_change(:mob, caster_id)
+    :ok = Interpreter.remove_on_map_change(:mob, @mob_id)
+
+    refute StatusStorage.has_status?(:mob, caster_id, :sc_gospel)
+    assert StatusStorage.has_status?(:mob, @mob_id, :sc_gospel_slow)
+  end
+
   test "the flag is the reference's RemoveOnChangeMap set" do
     flagged =
       [

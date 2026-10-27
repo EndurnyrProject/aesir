@@ -16,8 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirror do
       its level for their full skill duration, without the values the status
       computes when it starts on its own (an inherited Guard never blocks, an
       inherited Defending Aura neither reduces damage nor slows attacks).
-    * `end_inherited/1`: a devotee's link ending ends all four statuses on it,
-      whoever started them, except an infinite Endure.
+    * a devotee's link ending ends all four statuses on it, whoever started
+      them, except an infinite Endure (Devotion's `end_on_end`).
 
   A copy carries `mirrored_from: crusader_id` in its state and never copies
   itself further. Copies of Guard, Reflect Shield and Endure show no icon; an
@@ -88,10 +88,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirror do
       end
     end)
   end
-
-  @doc "Ends every mirrored status on a devotee whose link ended."
-  @spec end_inherited(non_neg_integer()) :: :ok
-  def end_inherited(devotee_id), do: Enum.each(@mirrored_statuses, &end_status(devotee_id, &1))
 
   # Ending a status this way never ends an infinite Endure.
   defp end_status(player_id, status_id) do

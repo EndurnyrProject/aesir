@@ -987,6 +987,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     with_active_status(unit_type, unit_id, status_id, fn module, instance, context ->
       module.on_expire({unit_type, unit_id}, instance, context)
       StatusStorage.remove_status(unit_type, unit_id, status_id)
+      end_on_end(unit_type, unit_id, status_id, &remove_status_without_refresh/3)
       StatusDisplay.on_removed(unit_type, unit_id, status_id, instance)
       notify_unit_status_removed(unit_type, unit_id, status_id)
       recheck_touch_on_end(unit_type, unit_id, status_id)
@@ -1035,6 +1036,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   defp finish_requested_end(module, unit_type, unit_id, instance, context, {:end, after_end}) do
     module.on_expire({unit_type, unit_id}, instance, context)
+    end_on_end(unit_type, unit_id, instance.type, &remove_status_without_refresh/3)
     StatusDisplay.on_removed(unit_type, unit_id, instance.type, instance)
     notify_unit_status_removed(unit_type, unit_id, instance.type)
     recheck_touch_on_end(unit_type, unit_id, instance.type)
@@ -1069,7 +1071,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   Those are the statuses flagged `remove_on_map_change`, Cloaking (every
   warp ends it, whatever the unit), the Battle Chant caster lock and an
-  infinite Provoke (`val4` 1, the Auto Berserk one).
+  infinite Provoke (`val4` 1, the Auto Berserk one). `sc_gospel` is only ever
+  the caster's own chant; the Battle Chant slow on an enemy
+  (`sc_gospel_slow`) survives the map change.
   """
   @spec remove_on_map_change(unit_type(), integer()) :: :ok
   def remove_on_map_change(unit_type, unit_id) do
@@ -1198,7 +1202,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   defp infinite_endure?(%StatusEntry{type: :sc_endure, val4: val4}), do: val4 != 0
-  defp infinite_endure?(%StatusEntry{}), do: false
+  defp infinite_endure?(_entry), do: false
+
+  # A status's `end_on_end` statuses end right after its own end logic, through
+  # `ender`. The ended status is already out of storage, so statuses naming
+  # each other end once each. Ending this way never ends an infinite Endure.
+  defp end_on_end(unit_type, unit_id, status_id, ender) do
+    %{end_on_end: chained} = Registry.get_definition(status_id)
+
+    chained
+    |> Enum.reject(&infinite_endure?(StatusStorage.get_status(unit_type, unit_id, &1)))
+    |> Enum.each(&ender.(unit_type, unit_id, &1))
+  end
 
   defp end_on_removal(unit_type, unit_id, status_id) do
     case {Registry.get_definition(status_id),
@@ -1244,6 +1259,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   defp finish_removal({:ended, after_end}, module, unit_type, unit_id, instance, context) do
     module.on_expire({unit_type, unit_id}, instance, context)
+    end_on_end(unit_type, unit_id, instance.type, &end_on_removal/3)
     StatusDisplay.on_removed(unit_type, unit_id, instance.type, instance)
     notify_unit_status_removed(unit_type, unit_id, instance.type)
     recheck_touch_on_end(unit_type, unit_id, instance.type)
@@ -2238,7 +2254,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   defp rollback_application(unit_type, unit_id, status_id, stored_instance) do
     if StatusStorage.remove_status_if_current(unit_type, unit_id, status_id, stored_instance) do
-      expire_status_entry(unit_type, unit_id, status_id, stored_instance)
+      undo_status_entry(unit_type, unit_id, status_id, stored_instance)
     end
 
     :ok
@@ -2246,7 +2262,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   defp discard_application(unit_type, unit_id, status_id, stored_instance) do
     if StatusStorage.remove_status_if_current(unit_type, unit_id, status_id, stored_instance) do
-      expire_status_entry(unit_type, unit_id, status_id, stored_instance)
+      undo_status_entry(unit_type, unit_id, status_id, stored_instance)
     end
 
     :ok
@@ -2293,11 +2309,24 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end
   end
 
+  # An application that never started (rolled back or superseded) is undone
+  # without ending its end-on-end statuses: a failed start never ended anything.
+  defp undo_status_entry(unit_type, unit_id, status_id, instance) do
+    %{module: module} = Registry.get_definition(status_id)
+    context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
+
+    module.on_expire({unit_type, unit_id}, instance, context)
+
+    if is_nil(StatusStorage.get_status(unit_type, unit_id, status_id)),
+      do: StatusDisplay.on_removed(unit_type, unit_id, status_id, instance)
+  end
+
   defp expire_status_entry(unit_type, unit_id, status_id, instance) do
     %{module: module} = Registry.get_definition(status_id)
     context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
 
     module.on_expire({unit_type, unit_id}, instance, context)
+    end_on_end(unit_type, unit_id, status_id, &remove_status_without_refresh/3)
 
     if is_nil(StatusStorage.get_status(unit_type, unit_id, status_id)) do
       StatusDisplay.on_removed(unit_type, unit_id, status_id, instance)
@@ -2741,6 +2770,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       claimed ->
         {definition, context} = hooks
         definition.module.on_expire({unit_type, unit_id}, claimed, context)
+        end_on_end(unit_type, unit_id, :sc_aeterna, &remove_status_without_refresh/3)
         StatusDisplay.on_removed(unit_type, unit_id, :sc_aeterna, claimed)
         notify_mob_status_write(unit_type, unit_id, :sc_aeterna, :removed)
         new_damage
