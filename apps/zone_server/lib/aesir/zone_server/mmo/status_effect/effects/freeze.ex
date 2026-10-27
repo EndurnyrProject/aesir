@@ -12,7 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Freeze do
     no_clear_buff: false,
     properties: [:debuff, :prevents_movement, :prevents_skills, :prevents_attack],
     calc_flags: [:def_ele, :def_rate, :mdef_rate],
-    flags: [:no_move, :no_attack, :no_skill, :remove_on_damaged],
+    flags: [:no_move, :no_attack, :no_skill, :remove_on_damaged, :stop_attacking],
     end_on_start: [:sc_aeterna],
     prevented_by: [
       renewal: [

@@ -49,6 +49,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.StatsHandlerTest do
                StatsHandler.handle_status_changed(:sc_increase_agi, :apply, state)
     end
 
+    test "a stop-attacking status drops the standing attack order when applied" do
+      state =
+        register(%{mob_state() | attack_target: {:player, 7}, attack_timer_at: 1_000})
+
+      :ok = StatusStorage.apply_status(:mob, state.instance_id, :sc_stun, duration: 5_000)
+
+      assert {:noreply, %{attack_target: nil, attack_timer_at: nil}} =
+               StatsHandler.handle_status_changed(:sc_stun, :apply, state)
+
+      assert {:noreply, %{attack_target: {:player, 7}}} =
+               StatsHandler.handle_status_changed(:sc_stun, :removed, state)
+    end
+
     test "a dead monster drops the event" do
       dead = %{register(mob_state()) | is_dead: true}
 

@@ -13,7 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.TrickDead do
     no_clear_buff: false,
     clear_buff_flags: [:remove_on_hermode],
     properties: [:prevents_movement, :prevents_skills, :prevents_attack, :untargetable],
-    flags: [:no_move, :no_attack, :no_skill, :remove_on_damaged],
+    flags: [:no_move, :no_attack, :no_skill, :remove_on_damaged, :stop_attacking],
     permanent: true,
     no_save: true,
     remove_on_map_change: true,

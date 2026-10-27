@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StoneWait do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_stonewait,
+    flags: [:stop_attacking],
     no_dispel: false,
     no_clear_buff: false,
     properties: [:debuff, :prevents_skills, :prevents_attack],

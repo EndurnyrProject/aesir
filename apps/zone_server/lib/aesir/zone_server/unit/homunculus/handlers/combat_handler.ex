@@ -145,8 +145,12 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
 
   def handle({:status_changed, gid, status_id, event}, session) do
     case active_homunculus(session, gid) do
-      {:ok, homunculus} -> refresh_status(session, homunculus, status_id, event)
-      {:error, :stale_target} -> {:noreply, session}
+      {:ok, homunculus} ->
+        homunculus = stop_attacking(homunculus, status_id, event)
+        refresh_status(session, homunculus, status_id, event)
+
+      {:error, :stale_target} ->
+        {:noreply, session}
     end
   end
 
@@ -241,6 +245,15 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
         {:noreply, session}
     end
   end
+
+  # A stop-attacking status drops the attack target when it starts.
+  defp stop_attacking(homunculus, status_id, :applied) do
+    if StatusInterpreter.stops_attacking?(status_id),
+      do: %{homunculus | target: nil},
+      else: homunculus
+  end
+
+  defp stop_attacking(homunculus, _status_id, _event), do: homunculus
 
   defp refresh_status(session, homunculus, :sc_change, :expired) do
     if lif?(homunculus) do

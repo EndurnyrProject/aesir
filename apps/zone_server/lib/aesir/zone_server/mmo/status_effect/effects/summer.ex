@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Summer do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_summer,
+    flags: [:stop_attacking],
     target_types: [:player],
     permanent: true,
     no_save: true,

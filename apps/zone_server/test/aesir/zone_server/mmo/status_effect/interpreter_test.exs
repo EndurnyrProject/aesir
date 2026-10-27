@@ -688,6 +688,37 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
   end
 
+  describe "stop-attacking statuses" do
+    test "applying one to a player tells its session to stop attacking" do
+      register_player_with_magic_reduction(8_811, 0)
+
+      assert :ok =
+               Interpreter.apply_status(:player, 8_811, :sc_poison,
+                 duration: 10_000,
+                 bypass_resistance: true
+               )
+
+      assert_receive {:"$gen_cast", {:combat, :stop_attack}}
+
+      assert :ok =
+               Interpreter.apply_status(:player, 8_811, :sc_blessing, val1: 1, duration: 10_000)
+
+      refute_receive {:"$gen_cast", {:combat, :stop_attack}}
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic Dancing stops attacking" do
+      assert Interpreter.stops_attacking?(:sc_dancing)
+      assert Interpreter.stops_attacking?(:sc_poison)
+    end
+
+    @tag game_mode: :renewal
+    test "renewal Dancing does not stop attacking" do
+      refute Interpreter.stops_attacking?(:sc_dancing)
+      assert Interpreter.stops_attacking?(:sc_poison)
+    end
+  end
+
   describe "before_weapon_hit/3" do
     test "intercepts a weapon hit and atomically consumes the single-use status" do
       target_id = 7_701

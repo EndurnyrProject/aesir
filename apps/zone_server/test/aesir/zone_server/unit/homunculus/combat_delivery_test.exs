@@ -750,6 +750,23 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
     end
   end
 
+  test "a stop-attacking status drops the Homunculus's attack target", %{
+    session: session,
+    gid: gid
+  } do
+    :sys.replace_state(session.pid, fn current ->
+      StateCommit.commit(current, %{current.homunculus | target: {:mob, 2_001}})
+    end)
+
+    assert :ok =
+             StatusInterpreter.apply_status(:homunculus, gid, :sc_poison,
+               no_avoid: true,
+               duration: 60_000
+             )
+
+    assert_eventually(fn -> PlayerSession.get_state(session.pid).homunculus.target == nil end)
+  end
+
   defp hold_sleep(gid) do
     assert :ok =
              StatusInterpreter.apply_status(:homunculus, gid, :sc_sleep,

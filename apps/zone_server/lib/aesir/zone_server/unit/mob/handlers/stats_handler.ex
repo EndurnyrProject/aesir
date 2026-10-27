@@ -39,11 +39,21 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.StatsHandler do
 
   def handle_status_changed(status_id, event, %MobState{} = state) do
     if MobState.living?(state) do
-      reconcile(status_id, event, state)
+      reconcile(status_id, event, stop_attacking(status_id, event, state))
     else
       {:noreply, state}
     end
   end
+
+  # A stop-attacking status drops the standing attack order when it starts.
+  defp stop_attacking(status_id, :apply, %MobState{attack_target: target} = state)
+       when not is_nil(target) do
+    if Interpreter.stops_attacking?(status_id),
+      do: state |> MobState.stop_attack() |> StateCommit.commit(),
+      else: state
+  end
+
+  defp stop_attacking(_status_id, _event, state), do: state
 
   defp reconcile(status_id, event, %MobState{} = state) do
     case CalcFlags.for_event(status_id, event) do

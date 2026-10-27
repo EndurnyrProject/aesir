@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sleep do
     no_dispel: false,
     no_clear_buff: false,
     properties: [:debuff, :prevents_movement, :prevents_skills, :prevents_attack],
-    flags: [:no_move, :no_attack, :no_skill, :no_magic, :remove_on_damaged],
+    flags: [:no_move, :no_attack, :no_skill, :no_magic, :remove_on_damaged, :stop_attacking],
     prevented_by: [
       renewal: [:sc_refresh, :sc_inspiration, :sc_gvg_sleep, :sc_sleep, :sc_protection],
       pre_renewal: [:sc_refresh, :sc_inspiration, :sc_gvg_sleep, :sc_sleep]

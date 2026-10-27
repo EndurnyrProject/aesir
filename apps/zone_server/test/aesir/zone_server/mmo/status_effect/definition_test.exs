@@ -92,6 +92,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
       assert ModeStatus.metadata().no_save == false
     end
 
+    test "mode-keyed behavior flags resolve per mode" do
+      defmodule ModeFlagged do
+        use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+          id: :sc_test_mode_flags,
+          no_dispel: false,
+          no_clear_buff: false,
+          flags: [renewal: [], pre_renewal: [:stop_attacking]]
+      end
+
+      Mimic.set_mimic_private()
+      Mimic.stub(GameMode, :mode, fn -> :pre_renewal end)
+      assert ModeFlagged.metadata().flags == [:stop_attacking]
+
+      Mimic.stub(GameMode, :mode, fn -> :renewal end)
+      assert ModeFlagged.metadata().flags == []
+    end
+
     test "action restriction properties compile and are queryable" do
       defmodule ActionRestricted do
         use Aesir.ZoneServer.Mmo.StatusEffect.Definition,

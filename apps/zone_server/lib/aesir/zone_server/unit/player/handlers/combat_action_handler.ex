@@ -254,6 +254,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   end
 
   @doc """
+  Stops the player's attack because a stop-attacking status started: the
+  attack target and any pending swing (including one a cast's attack lock
+  resumed) are dropped, and an attacking player goes idle. A chase toward a
+  target to attack, and any walk toward a skill or item, are left alone.
+  """
+  @spec handle_stop_attack(map()) :: {:noreply, map()}
+  def handle_stop_attack(%{game_state: %{action_state: :combat_moving}} = state),
+    do: {:noreply, state}
+
+  def handle_stop_attack(%{game_state: game_state} = state) do
+    stopped = PlayerState.stop_attack(game_state)
+
+    stopped =
+      if stopped.action_state == :attacking,
+        do: elem(PlayerState.transition_to(stopped, :idle), 1),
+        else: stopped
+
+    {:noreply, StateCommit.commit(state, stopped)}
+  end
+
+  @doc """
   Cancels any active combat intent and transitions to idle.
   """
   @spec cancel_combat_intent(map()) :: map()

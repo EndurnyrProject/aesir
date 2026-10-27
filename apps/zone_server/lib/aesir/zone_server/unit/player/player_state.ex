@@ -806,6 +806,23 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     })
   end
 
+  @doc """
+  Drops the attack target and its pending swing only, leaving the movement
+  intent and every other order as they are (a stop-attacking status).
+  """
+  @spec stop_attack(t()) :: t()
+  def stop_attack(%__MODULE__{} = state) do
+    cancel_continuous_timer(state.continuous_attack_timer)
+
+    %{
+      state
+      | combat_target_id: nil,
+        combat_action_type: nil,
+        last_target_position: nil,
+        continuous_attack_timer: nil
+    }
+  end
+
   # Walking continues as a plain walk; standing has no intent left.
   defp reset_movement_intent(%__MODULE__{movement_state: :moving} = state),
     do: %{state | movement_intent: :normal}

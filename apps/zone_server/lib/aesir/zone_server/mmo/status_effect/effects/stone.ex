@@ -51,7 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Stone do
     end_on_start: [:sc_aeterna],
     immunity: [:boss, :undead],
     bypass_resistance: true,
-    flags: [:remove_on_damaged],
+    flags: [:remove_on_damaged, :stop_attacking],
     tick_interval: 5_000,
     opt1: :stone
 

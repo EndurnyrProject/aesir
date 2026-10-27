@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
 
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_dancing,
+    flags: [renewal: [], pre_renewal: [:stop_attacking]],
     no_dispel: true,
     no_clear_buff: true,
     overlap_ignore_level: true,

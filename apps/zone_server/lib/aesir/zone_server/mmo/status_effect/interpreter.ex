@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   alias Aesir.ZoneServer.Mmo.StatusTickManager
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
@@ -681,6 +682,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       end
     end)
   end
+
+  @doc "Whether `status_id` stops its holder's attack when it starts (StopAttacking)."
+  @spec stops_attacking?(atom()) :: boolean()
+  def stops_attacking?(status_id),
+    do: status_id in Registry.statuses_with_flag(:stop_attacking)
 
   @doc "Returns whether the unit has an active status indexed for `flag`."
   @spec has_active_flag?(unit_type(), integer(), atom()) :: boolean()
@@ -2275,6 +2281,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   defp notify_unit_status_applied(:homunculus, unit_id, status_id) do
     notify_homunculus_owner(unit_id, status_id, :applied)
+  end
+
+  defp notify_unit_status_applied(:player, unit_id, status_id) do
+    with true <- stops_attacking?(status_id),
+         {:ok, pid} <- UnitRegistry.get_player_pid(unit_id),
+         do: PlayerSession.stop_attack(pid)
+
+    :ok
   end
 
   defp notify_unit_status_applied(_unit_type, _unit_id, _status_id), do: :ok

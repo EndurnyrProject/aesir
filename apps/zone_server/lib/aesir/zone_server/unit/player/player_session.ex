@@ -594,6 +594,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:equipment, {:strip, slots, opts}})
   end
 
+  @doc "Stops this player's attack: a stop-attacking status started on it."
+  @spec stop_attack(pid()) :: :ok
+  def stop_attack(pid), do: GenServer.cast(pid, {:combat, :stop_attack})
+
   @doc "Force-unequips `slot` without applying a status (a failed Sage endow)."
   @spec unequip_slot(pid(), atom()) :: :ok
   def unequip_slot(pid, slot) do
@@ -1256,6 +1260,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:inventory, :repair_all}, state) do
     InventoryManager.handle_repair_all(state)
+  end
+
+  @impl true
+  def handle_cast({:combat, :stop_attack}, state) do
+    CombatActionHandler.handle_stop_attack(state)
   end
 
   @impl true

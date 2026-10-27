@@ -114,6 +114,78 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
     }
   end
 
+  describe "handle_stop_attack/1" do
+    test "an attacking player drops its target and pending swing and goes idle" do
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      timer = Process.send_after(self(), :swing, 60_000)
+
+      state = %{
+        game_state: %PlayerState{
+          character_id: 1000,
+          action_state: :attacking,
+          combat_target_id: 5,
+          continuous_attack_timer: timer
+        }
+      }
+
+      assert {:noreply, %{game_state: stopped}} = CombatActionHandler.handle_stop_attack(state)
+      assert stopped.combat_target_id == nil
+      assert stopped.continuous_attack_timer == nil
+      assert stopped.action_state == :idle
+      assert Process.read_timer(timer) == false
+    end
+
+    test "an idle player's resumed swing is dropped too" do
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      timer = Process.send_after(self(), :swing, 60_000)
+
+      state = %{
+        game_state: %PlayerState{
+          character_id: 1000,
+          action_state: :idle,
+          combat_target_id: 5,
+          continuous_attack_timer: timer
+        }
+      }
+
+      assert {:noreply, %{game_state: stopped}} = CombatActionHandler.handle_stop_attack(state)
+      assert stopped.combat_target_id == nil
+      assert Process.read_timer(timer) == false
+    end
+
+    test "a walk into skill range keeps its pending skill" do
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+
+      state = %{
+        game_state: %PlayerState{
+          character_id: 1000,
+          action_state: :skill_moving,
+          movement_state: :moving,
+          movement_intent: :skill,
+          state_context: %{skill_id: 13}
+        }
+      }
+
+      assert {:noreply, %{game_state: walking}} = CombatActionHandler.handle_stop_attack(state)
+      assert walking.action_state == :skill_moving
+      assert walking.movement_intent == :skill
+      assert walking.state_context == %{skill_id: 13}
+    end
+
+    test "a chase toward a target to attack is left alone" do
+      state = %{
+        game_state: %PlayerState{
+          character_id: 1000,
+          action_state: :combat_moving,
+          movement_state: :moving,
+          combat_target_id: 5
+        }
+      }
+
+      assert {:noreply, ^state} = CombatActionHandler.handle_stop_attack(state)
+    end
+  end
+
   describe "after-cast act delay gate" do
     defp attack_ready_state(act_delay_until) do
       game_state = %PlayerState{
