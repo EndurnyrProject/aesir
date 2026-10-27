@@ -15,7 +15,6 @@ defmodule Aesir.ZoneServer.Integration.SkillTextInputIntegrationTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
 
   @skill_id 9_001
-  @capability :FEATURE_CAPABILITY_SKILL_TEXT_INPUT
 
   defmodule InputFixtureSkill do
     def __skill_capabilities__, do: [:active, :ground]
@@ -38,8 +37,7 @@ defmodule Aesir.ZoneServer.Integration.SkillTextInputIntegrationTest do
     {:ok, session_pid} =
       PlayerSession.start_link(%{
         character: character,
-        connection_pid: self(),
-        client_capabilities: [@capability]
+        connection_pid: self()
       })
 
     session = %{pid: session_pid, character: character}
@@ -66,7 +64,6 @@ defmodule Aesir.ZoneServer.Integration.SkillTextInputIntegrationTest do
 
     flush_packets()
     session_state = PlayerSession.get_state(session.pid)
-    assert session_state.client_capabilities == [@capability]
     initial_state = session_state.game_state
     initial_sp = initial_state.stats.current_state.sp
 

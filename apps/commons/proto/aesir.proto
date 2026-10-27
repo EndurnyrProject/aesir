@@ -294,12 +294,6 @@ message Envelope {
   }
 }
 
-// Optional features advertised in Hello; HelloAck returns the negotiated intersection.
-enum FeatureCapability {
-  FEATURE_CAPABILITY_UNSPECIFIED = 0;
-  FEATURE_CAPABILITY_SKILL_TEXT_INPUT = 1;
-}
-
 enum CreatorKind {
   CREATOR_NONE = 0;
   CREATOR_SIGNED = 1;
@@ -319,11 +313,11 @@ enum BoundType {
 }
 
 // Client -> server, first message on the Control channel after connect.
-// Capabilities are optional and do not change the protocol-version baseline.
 message Hello {
+  reserved 3; // was the removed FeatureCapability advertisement
+
   uint32 protocol_version = 1;
   string build = 2;
-  repeated FeatureCapability capabilities = 3;
 }
 
 enum GameMode {
@@ -331,11 +325,12 @@ enum GameMode {
   GAME_MODE_PRE_RENEWAL = 1;
 }
 
-// Server -> client, response to Hello with the negotiated capability intersection.
+// Server -> client, response to Hello.
 message HelloAck {
+  reserved 3; // was the removed negotiated FeatureCapability list
+
   uint32 protocol_version = 1;
   bool accepted = 2;
-  repeated FeatureCapability capabilities = 3;
   GameMode mode = 4; // Active ruleset; omitted values default to renewal for compatibility.
 }
 

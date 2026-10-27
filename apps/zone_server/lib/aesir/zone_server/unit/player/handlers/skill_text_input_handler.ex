@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler do
   @moduledoc """
-  Owns the capability-gated, single-prompt lifecycle for skill text input.
+  Owns the single-prompt lifecycle for skill text input.
   """
 
   alias Aesir.Net.SkillTextInputReply
@@ -12,7 +12,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler do
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SessionState.PendingSkillTextInput
 
-  @capability :FEATURE_CAPABILITY_SKILL_TEXT_INPUT
   @max_utf8_bytes 79
   @timeout 60_000
   @max_request_id 18_446_744_073_709_551_615
@@ -39,9 +38,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler do
 
   defp stage_gated(state, skill_id, level, target) do
     cond do
-      @capability not in state.client_capabilities ->
-        reject(state, skill_id, :unsupported_feature)
-
       SessionState.interaction_blocked?(state) ->
         reject(state, skill_id, :busy)
 

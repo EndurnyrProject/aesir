@@ -684,7 +684,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   defp continue_init(args, character, updated_game_state) do
     connection_pid = args[:connection_pid]
-    client_capabilities = get_client_capabilities(args)
     final_game_state = PlayerState.set_process_pid(updated_game_state, self())
 
     # Monitor the connection process to detect crashes
@@ -693,8 +692,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     state = %SessionState{
       game_state: final_game_state,
       connection_pid: connection_pid,
-      connection_monitor_ref: connection_monitor_ref,
-      client_capabilities: client_capabilities
+      connection_monitor_ref: connection_monitor_ref
     }
 
     {:ok, state} = HomunculusCommandHandler.restore(state, loaded_homunculus(character))
@@ -1472,11 +1470,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   # get_state stays bare: a ubiquitous utility call, not a domain message.
-  defp get_client_capabilities(args) when is_list(args),
-    do: Keyword.get(args, :client_capabilities, [])
-
-  defp get_client_capabilities(args), do: Map.get(args, :client_capabilities, [])
-
   defp loaded_homunculus(%{homunculus: %Ecto.Association.NotLoaded{}}), do: nil
   defp loaded_homunculus(%{homunculus: homunculus}), do: homunculus
 

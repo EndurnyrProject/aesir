@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
   @moduledoc """
   Real-PlayerSession coverage for HT_TALKIEBOX: the staged text-input lifecycle,
   non-owner movement activation ordering, timed cleanup, and every rejected path
-  (capability, preflight, cancel, timeout, forged/stale replies, NPC lock, warp,
+  (preflight, cancel, timeout, forged/stale replies, NPC lock, warp,
   disconnect, status block, and the direct/item/auto/mob bypass entry points).
   """
   use Aesir.ZoneServer.IntegrationCase
@@ -31,7 +31,6 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
 
   @skill_id 125
   @item_id 1065
-  @capability :FEATURE_CAPABILITY_SKILL_TEXT_INPUT
   @map "prontera"
 
   describe "successful staging, placement, activation, and cleanup" do
@@ -143,34 +142,6 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
   end
 
   describe "rejected paths spend nothing and place no group" do
-    test "capability absence rejects before preflight" do
-      caster =
-        start_player_session(
-          id: 98_530,
-          name: "NoCap",
-          position: {150, 150},
-          learned_skills: %{Integer.to_string(@skill_id) => 1}
-        )
-
-      flush_packets()
-
-      simulate_incoming_message(caster.pid, %GroundSkillCast{
-        skill_id: @skill_id,
-        level: 1,
-        x: 151,
-        y: 150
-      })
-
-      assert_receive {:packet_sent,
-                      %SkillCastFailed{
-                        skill_id: @skill_id,
-                        reason: :SKILL_CAST_FAILURE_REASON_UNSPECIFIED
-                      }, _}
-
-      refute_received {:packet_sent, %SkillTextInputRequest{}, _}
-      assert Storage.all() == []
-    end
-
     test "missing catalyst stages the prompt and fails at completion without placing" do
       caster = start_caster(id: 98_531, position: {150, 150}, item_amount: 0)
       request_id = stage(caster, {151, 150})
@@ -362,8 +333,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
 
       %{
         state
-        | client_capabilities: [@capability],
-          game_state: %{state.game_state | inventory: inventory}
+        | game_state: %{state.game_state | inventory: inventory}
       }
     end)
 

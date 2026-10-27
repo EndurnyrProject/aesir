@@ -100,23 +100,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandlerTest do
     assert completed.pending_skill_text_input == nil
   end
 
-  test "an old client is rejected with only the known cast-failure message before preflight" do
-    expect(Broadcast, :to_player, fn 1000,
-                                     %SkillCastFailed{
-                                       skill_id: 9_001,
-                                       reason: :SKILL_CAST_FAILURE_REASON_UNSPECIFIED
-                                     } ->
-      :ok
-    end)
-
-    old_client = %{state() | client_capabilities: []}
-
-    assert {:noreply, ^old_client} =
-             SkillTextInputHandler.stage(old_client, 9_001, 1, {:ground, 151, 150})
-
-    refute_received {:send, _, {:skill_text_input_request, _}}
-  end
-
   test "SkillHandler diverts an input-capable ground fixture into staging" do
     expect(Interpreter, :preflight_cast, fn _game_state, 9_001, 1, {:ground, 151, 150} -> :ok end)
 
@@ -336,8 +319,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandlerTest do
   defp state do
     %SessionState{
       game_state: %PlayerState{character_id: 1000, action_state: :idle},
-      connection_pid: self(),
-      client_capabilities: [:FEATURE_CAPABILITY_SKILL_TEXT_INPUT]
+      connection_pid: self()
     }
   end
 

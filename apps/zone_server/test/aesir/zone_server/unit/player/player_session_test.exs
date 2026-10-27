@@ -26,7 +26,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.PlayerSupervisor
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SessionState.PendingSkillTextInput
@@ -256,38 +255,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       assert state.applied_equip_statuses == %{sc_summer: {:infinite, 1}}
       assert StatusStorage.get_status(:player, 1, :sc_summer).val1 == 9
-    end
-
-    test "stores the negotiated client capabilities", %{character: character} do
-      {:ok, state} =
-        PlayerSession.init(%{
-          character: character,
-          connection_pid: self(),
-          client_capabilities: [:FEATURE_CAPABILITY_SKILL_TEXT_INPUT]
-        })
-
-      assert state.client_capabilities == [:FEATURE_CAPABILITY_SKILL_TEXT_INPUT]
-    end
-
-    test "passes capabilities through PlayerSupervisor keyword child args", %{
-      character: character
-    } do
-      Mimic.copy(CharacterPersistence)
-      stub(CharacterPersistence, :update_position, fn _, _, _, _ -> {:ok, %Character{}} end)
-
-      capabilities = [:FEATURE_CAPABILITY_SKILL_TEXT_INPUT]
-
-      assert {:ok, player_pid} =
-               PlayerSupervisor.start_player(
-                 character: character,
-                 connection_pid: self(),
-                 client_capabilities: capabilities
-               )
-
-      assert %SessionState{client_capabilities: ^capabilities} =
-               PlayerSession.get_state(player_pid)
-
-      assert :ok = GenServer.stop(player_pid)
     end
 
     test "starts with no pending skill menu", %{character: character} do

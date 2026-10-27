@@ -1,10 +1,6 @@
 defmodule Aesir.Commons.Network.ProtoTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.LegacyNet.Hello, as: LegacyHello
-  alias Aesir.LegacyNet.HelloAck, as: LegacyHelloAck
-  alias Aesir.LegacyNet.SkillUnitCellState, as: LegacySkillUnitCellState
-  alias Aesir.LegacyNet.SkillUnitGroupState, as: LegacySkillUnitGroupState
   alias Aesir.Net.ActionRequest
   alias Aesir.Net.Announcement
   alias Aesir.Net.CardComposeRequest
@@ -58,8 +54,6 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.GuildPositionEditRequest
   alias Aesir.Net.GuildSkillEntry
   alias Aesir.Net.GuildSkillUpRequest
-  alias Aesir.Net.Hello
-  alias Aesir.Net.HelloAck
   alias Aesir.Net.HomunculusAiConfig
   alias Aesir.Net.HomunculusAiSkillConfig
   alias Aesir.Net.HomunculusAttackCommand
@@ -396,16 +390,6 @@ defmodule Aesir.Commons.Network.ProtoTest do
     assert_round_trip(:homunculus_private_state, state)
   end
 
-  test "Hello and HelloAck omit capabilities without changing the protocol version" do
-    for message <- [%Hello{protocol_version: 1, build: "legacy"}, %HelloAck{protocol_version: 1}] do
-      {:ok, iodata, _size} = message.__struct__.encode(message)
-
-      assert {:ok, decoded} = message.__struct__.decode(IO.iodata_to_binary(iodata))
-      assert decoded.protocol_version == 1
-      assert decoded.capabilities == []
-    end
-  end
-
   test "skill text input messages round-trip through their reserved envelope fields" do
     request = %SkillTextInputRequest{request_id: 4_294_967_296, skill_id: 125, max_utf8_bytes: 79}
 
@@ -439,54 +423,6 @@ defmodule Aesir.Commons.Network.ProtoTest do
         group: %SkillUnitGroupState{phase: phase}
       })
     end
-  end
-
-  test "old-schema decoders ignore capabilities and phases while retaining known fields" do
-    for {message, legacy_module, expected} <- [
-          {%Hello{
-             protocol_version: 1,
-             build: "capable",
-             capabilities: [:FEATURE_CAPABILITY_SKILL_TEXT_INPUT]
-           }, LegacyHello, %LegacyHello{protocol_version: 1, build: "capable"}},
-          {%HelloAck{
-             protocol_version: 1,
-             accepted: true,
-             capabilities: [:FEATURE_CAPABILITY_SKILL_TEXT_INPUT]
-           }, LegacyHelloAck, %LegacyHelloAck{protocol_version: 1, accepted: true}}
-        ] do
-      assert {:ok, decoded} = legacy_module.decode(encode(message))
-      assert Map.delete(decoded, :__uf__) == Map.delete(expected, :__uf__)
-    end
-
-    group = %SkillUnitGroupState{
-      group_id: 1,
-      skill_id: 125,
-      skill_level: 1,
-      owner_type: :SKILL_UNIT_OWNER_TYPE_PLAYER,
-      owner_id: 2,
-      center_x: 3,
-      center_y: 4,
-      created_tick: 5,
-      expires_tick: 6,
-      cells: [%SkillUnitCellState{cell_id: 7, x: 8, y: 9, hp: 10, max_hp: 11, flags: 12}],
-      phase: :SKILL_UNIT_PHASE_CAPTURED
-    }
-
-    expected = %LegacySkillUnitGroupState{
-      group_id: 1,
-      skill_id: 125,
-      skill_level: 1,
-      owner_type: :SKILL_UNIT_OWNER_TYPE_PLAYER,
-      owner_id: 2,
-      center_x: 3,
-      center_y: 4,
-      created_tick: 5,
-      expires_tick: 6,
-      cells: [%LegacySkillUnitCellState{cell_id: 7, x: 8, y: 9, hp: 10, max_hp: 11, flags: 12}]
-    }
-
-    assert {:ok, decoded} = LegacySkillUnitGroupState.decode(encode(group))
-    assert Map.delete(decoded, :__uf__) == Map.delete(expected, :__uf__)
   end
 
   test "envelope round-trips a login_request through the oneof body" do

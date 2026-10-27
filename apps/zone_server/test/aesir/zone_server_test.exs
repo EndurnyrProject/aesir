@@ -31,11 +31,8 @@ defmodule Aesir.ZoneServerTest do
     test "reports renewal mode" do
       stub(GameMode, :mode, fn -> :renewal end)
 
-      assert {:ok, %{client_capabilities: []},
-              [
-                {:hello_ack,
-                 hello_ack = %HelloAck{accepted: true, protocol_version: 1, capabilities: []}}
-              ]} =
+      assert {:ok, %{},
+              [{:hello_ack, hello_ack = %HelloAck{accepted: true, protocol_version: 1}}]} =
                ZoneServer.handle_message(
                  %Hello{protocol_version: 1, build: "dev"},
                  :control,
@@ -49,11 +46,8 @@ defmodule Aesir.ZoneServerTest do
     test "reports pre-renewal mode" do
       stub(GameMode, :mode, fn -> :pre_renewal end)
 
-      assert {:ok, %{client_capabilities: []},
-              [
-                {:hello_ack,
-                 hello_ack = %HelloAck{accepted: true, protocol_version: 1, capabilities: []}}
-              ]} =
+      assert {:ok, %{},
+              [{:hello_ack, hello_ack = %HelloAck{accepted: true, protocol_version: 1}}]} =
                ZoneServer.handle_message(
                  %Hello{protocol_version: 1, build: "dev"},
                  :control,
@@ -64,38 +58,8 @@ defmodule Aesir.ZoneServerTest do
       assert Aesir.Net.GameMode.encode(hello_ack.mode) == 1
     end
 
-    test "ignores unknown capabilities" do
-      assert {:ok, %{client_capabilities: []}, [{:hello_ack, %HelloAck{capabilities: []}}]} =
-               ZoneServer.handle_message(
-                 %Hello{protocol_version: 1, capabilities: [:FEATURE_CAPABILITY_FUTURE]},
-                 :control,
-                 %{}
-               )
-    end
-
-    test "negotiates supported capabilities into connection session data" do
-      hello = %Hello{
-        protocol_version: 1,
-        capabilities: [
-          :FEATURE_CAPABILITY_SKILL_TEXT_INPUT,
-          :FEATURE_CAPABILITY_FUTURE
-        ]
-      }
-
-      assert {:ok, %{client_capabilities: [:FEATURE_CAPABILITY_SKILL_TEXT_INPUT]},
-              [
-                {:hello_ack,
-                 %HelloAck{
-                   accepted: true,
-                   protocol_version: 1,
-                   capabilities: [:FEATURE_CAPABILITY_SKILL_TEXT_INPUT]
-                 }}
-              ]} = ZoneServer.handle_message(hello, :control, %{})
-    end
-
     test "rejects a Hello with an unsupported protocol version" do
-      assert {:ok, %{client_capabilities: []},
-              [{:hello_ack, %HelloAck{accepted: false, protocol_version: 1, capabilities: []}}]} =
+      assert {:ok, %{}, [{:hello_ack, %HelloAck{accepted: false, protocol_version: 1}}]} =
                ZoneServer.handle_message(
                  %Hello{protocol_version: 99, build: "dev"},
                  :control,
@@ -127,10 +91,7 @@ defmodule Aesir.ZoneServerTest do
       stub(SessionManager, :set_user_online, fn 100, :zone_server, 50, "prontera" -> :ok end)
       player_pid = spawn(fn -> Process.sleep(:infinity) end)
 
-      stub(PlayerSupervisor, :start_player, fn args ->
-        assert args.client_capabilities == []
-        {:ok, player_pid}
-      end)
+      stub(PlayerSupervisor, :start_player, fn _args -> {:ok, player_pid} end)
 
       auth = %SessionAuth{
         account_id: 100,
@@ -145,42 +106,6 @@ defmodule Aesir.ZoneServerTest do
                ZoneServer.handle_message(auth, :control, %{})
 
       assert session.player_session_pid == player_pid
-    end
-
-    test "passes only negotiated capabilities to the player session" do
-      Mimic.copy(SessionManager)
-      Mimic.copy(CharacterLoader)
-      Mimic.copy(PlayerSupervisor)
-
-      character = %Character{id: 50, account_id: 100, last_map: "prontera"}
-      stub(SessionManager, :validate_session, fn 100, 1234, 5678 -> {:ok, %{}} end)
-      stub(SessionManager, :consume_zone_token, fn 100, 50, _token -> :ok end)
-      stub(CharacterLoader, :load_character, fn 50, 100 -> {:ok, character} end)
-      stub(SessionManager, :set_user_online, fn 100, :zone_server, 50, "prontera" -> :ok end)
-      player_pid = spawn(fn -> Process.sleep(:infinity) end)
-
-      expect(PlayerSupervisor, :start_player, fn args ->
-        assert args.client_capabilities == [:FEATURE_CAPABILITY_SKILL_TEXT_INPUT]
-        {:ok, player_pid}
-      end)
-
-      {:ok, hello_session, _responses} =
-        ZoneServer.handle_message(
-          %Hello{protocol_version: 1, capabilities: [:FEATURE_CAPABILITY_SKILL_TEXT_INPUT]},
-          :control,
-          %{}
-        )
-
-      auth = %SessionAuth{
-        account_id: 100,
-        login_id1: 1234,
-        login_id2: 5678,
-        char_id: 50,
-        zone_auth_token: <<9, 9, 9>>
-      }
-
-      assert {:ok, %{player_session_pid: ^player_pid}, [_]} =
-               ZoneServer.handle_message(auth, :control, hello_session)
     end
 
     test "invalid credentials return an error" do
