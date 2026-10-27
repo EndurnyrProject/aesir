@@ -160,11 +160,40 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CloakingTest do
   test "keeps Cloaking's lifecycle and pickup metadata" do
     metadata = Cloaking.metadata()
 
-    assert metadata.no_save
+    refute metadata.no_save
     assert metadata.no_dispel
     refute metadata.remove_on_map_change
     assert :conceals in metadata.properties
     assert :no_pick_item in metadata.flags
+  end
+
+  test "a restored cloak needs a wall below learned level 3 and rebuilds its wall state" do
+    cache(MapData.new("cloaking", 5, 5))
+    learned(register_player(21), 2)
+
+    assert {:error, _reason} =
+             Interpreter.apply_status(:player, 21, :sc_cloaking, val1: 2, loaded: true)
+
+    refute StatusStorage.has_status?(:player, 21, :sc_cloaking)
+
+    learned(register_player(22), 5)
+    assert :ok = Interpreter.apply_status(:player, 22, :sc_cloaking, val1: 2, loaded: true)
+
+    assert %{state: %{adjacent_impassable?: false}} =
+             StatusStorage.get_status(:player, 22, :sc_cloaking)
+
+    cache(MapData.new("cloaking", 5, 5) |> MapData.set_cell(2, 1, GatType.wall()))
+    learned(register_player(23), 2)
+    assert :ok = Interpreter.apply_status(:player, 23, :sc_cloaking, val1: 2, loaded: true)
+
+    assert %{state: %{adjacent_impassable?: true}} =
+             StatusStorage.get_status(:player, 23, :sc_cloaking)
+  end
+
+  defp learned(player, level) do
+    player = put_in(player.stats.progression.learned_skills[135], level)
+    :ok = UnitRegistry.register_player(player, self())
+    player
   end
 
   defp apply_cloaking(player, level, adjacent?) do

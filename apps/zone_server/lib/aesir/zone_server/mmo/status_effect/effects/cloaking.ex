@@ -5,7 +5,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking do
   In renewal and pre-renewal, conceals its holder, doubles CRIT, and applies
   wall-sensitive movement speed. Wall-adjacent haste keeps only the strongest
   haste buff; open-ground slows remain additive. Player movement commands
-  refresh the stored adjacency branch. Active damage breaks it.
+  refresh the stored adjacency branch. Active damage breaks it. A logout saves
+  it; restoring it at login fails, as starting it does, for a player whose
+  learned Cloaking is below level 3 with no impassable neighbouring cell.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_cloaking,
@@ -15,7 +17,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking do
     calc_flags: [:cri, :speed],
     flags: [:cloak, :no_pick_item, :stop_attacking, :remove_on_damaged, :on_touch],
     prevented_by: [:sc_refresh, :sc_inspiration],
-    no_save: true,
     icon: :cloaking,
     option: :cloak
 
@@ -23,7 +24,31 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  @cloaking 135
+
+  @impl true
+  @spec on_apply(Definition.target(), StatusEntry.t(), Definition.context()) ::
+          {:ok, StatusEntry.t()} | {:error, :impassable_neighbor_required}
+  def on_apply({:player, unit_id}, instance, %{loaded: true}) do
+    case UnitRegistry.get_unit(:player, unit_id) do
+      {:ok, {_module, %PlayerState{} = player, _pid}} -> restore(player, instance)
+      _ -> {:ok, instance}
+    end
+  end
+
+  def on_apply(_target, instance, _context), do: {:ok, instance}
+
+  defp restore(player, instance) do
+    adjacent? = MapCache.adjacent_impassable?(player.map_name, player.x, player.y)
+
+    if PlayerStats.skill_level(player.stats, @cloaking) < 3 and not adjacent?,
+      do: {:error, :impassable_neighbor_required},
+      else: {:ok, %{instance | state: Map.put(instance.state, :adjacent_impassable?, adjacent?)}}
+  end
 
   @impl true
   @spec modifiers(StatusEntry.t(), map()) :: %{
@@ -77,7 +102,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking do
           Definition.committed_action(),
           Definition.context()
         ) :: {:ok, StatusEntry.t()} | :remove
-  def on_committed_action({:player, _unit_id}, instance, {:skill, 135}, _context),
+  def on_committed_action({:player, _unit_id}, instance, {:skill, @cloaking}, _context),
     do: {:ok, instance}
 
   def on_committed_action({:player, _unit_id}, _instance, :normal_attack, _context), do: :remove

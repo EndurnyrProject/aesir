@@ -7,10 +7,15 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistenceTest do
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.CharacterStatus
+  alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
+  alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StatusPersistence
+  alias Aesir.ZoneServer.Unit.Player.StatusSync
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
 
@@ -84,15 +89,15 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistenceTest do
       assert Repo.all(CharacterStatus) == []
     end
 
-    test "skips and warns about non-permanent statuses without an expiry", %{
+    test "persists an infinite non-permanent status with a nil remaining duration", %{
       character: character
     } do
-      :ok = StatusStorage.apply_status(:player, character.id, :sc_blessing, val1: 10)
+      :ok = StatusStorage.apply_status(:player, character.id, :sc_cloaking, val1: 5)
 
-      log = capture_log(fn -> assert :ok = StatusPersistence.save_statuses(character.id) end)
+      :ok = StatusPersistence.save_statuses(character.id)
 
-      assert Repo.all(CharacterStatus) == []
-      assert log =~ "Dropping non-permanent status sc_blessing without a finite expiry"
+      assert [%CharacterStatus{status_type: "sc_cloaking", val1: 5, remaining_ms: nil}] =
+               Repo.all(CharacterStatus)
     end
 
     test "persists a permanent status with a nil remaining duration", %{character: character} do
@@ -160,9 +165,37 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistenceTest do
       assert Repo.all(CharacterStatus) == []
     end
 
+    test "restores a saved infinite Cloaking with its Cloak option", %{character: character} do
+      player = PlayerState.new(character)
+      player = put_in(player.stats.progression.learned_skills[135], 5)
+      :ok = UnitRegistry.register_player(player, self())
+
+      %CharacterStatus{}
+      |> CharacterStatus.changeset(%{
+        char_id: character.id,
+        status_type: "sc_cloaking",
+        val1: 5,
+        tick: 4_000,
+        remaining_ms: nil
+      })
+      |> Repo.insert!()
+
+      stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+      stub(StatusSync, :send_param, fn _connection, _param, _value -> :ok end)
+
+      StatusPersistence.restore_on_spawn(%{game_state: player, connection_pid: self()})
+
+      assert %{val1: 5, expires_at: nil} =
+               StatusStorage.get_status(:player, character.id, :sc_cloaking)
+
+      assert Bitwise.band(
+               StatusDisplay.spawn_state(:player, character.id).effect_state,
+               Option.id(:cloak)
+             ) != 0
+    end
+
     test "drops malformed and stale finite rows without applying them", %{character: character} do
       for {status_type, remaining_ms} <- [
-            {"sc_blessing", nil},
             {"sc_angelus", 0},
             {"sc_increaseagi", -1}
           ] do
@@ -181,7 +214,6 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistenceTest do
       log = capture_log(fn -> assert ^state = StatusPersistence.restore_on_spawn(state) end)
 
       assert Repo.all(CharacterStatus) == []
-      assert log =~ "Dropping persisted finite status sc_blessing with invalid remaining duration"
       assert log =~ "Dropping persisted finite status sc_angelus with invalid remaining duration"
 
       assert log =~

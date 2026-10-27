@@ -5,8 +5,9 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistence do
 
   Only statuses whose definition does not set `no_save` are written. The
   in-memory `expires_at` is a monotonic timestamp that cannot survive the VM,
-  so what persists is the remaining duration in milliseconds (`nil` for
-  permanent statuses); entries that already expired are skipped. Rows are
+  so what persists is the remaining duration in milliseconds (`nil` for a
+  permanent or otherwise infinite status, restored as infinite); entries that
+  already expired are skipped. Rows are
   consumed on restore (loaded then deleted, as rAthena does with `sc_data`)
   and re-applied through `StatusManager` with the `loaded` flag so the
   immunity/conflict/resistance gates are not re-rolled. Runtime `state` and
@@ -113,6 +114,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistence do
 
   defp valid_restore_duration?(%{permanent: true}, _remaining_ms), do: true
 
+  defp valid_restore_duration?(_definition, nil), do: true
+
   defp valid_restore_duration?(_definition, remaining_ms),
     do: is_integer(remaining_ms) and remaining_ms > 0
 
@@ -146,10 +149,9 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistence do
        when is_integer(remaining_ms) and remaining_ms > 0,
        do: :ok
 
-  defp validate_saved_duration(_definition, %StatusEntry{type: type}, nil) do
-    Logger.warning("Dropping non-permanent status #{type} without a finite expiry")
-    :invalid_duration
-  end
+  # An infinite status is saved as infinite (nil remaining), as the reference
+  # saves any status its definition does not mark unsaved.
+  defp validate_saved_duration(_definition, _entry, nil), do: :ok
 
   defp validate_saved_duration(_definition, _entry, _remaining_ms), do: :invalid_duration
 

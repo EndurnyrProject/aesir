@@ -287,6 +287,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   defp loaded_duration(_definition, status_params) do
     case Keyword.get(status_params, :duration) do
+      nil -> {:ok, nil}
       duration when is_integer(duration) and duration > 0 -> {:ok, duration}
       _invalid -> {:error, :invalid_duration}
     end
@@ -1162,8 +1163,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   @doc """
   Ends, through their end logic and with no owner refresh, the unit's statuses
-  a logout does not save: those whose definition sets `no_save`, and those
-  setting `no_save_infinite` while infinite (`val4` set or no expiry). An
+  a logout does not save: those whose definition sets `no_save`, those setting
+  `no_save_infinite` while infinite (`val4` set or no expiry), and those leaving
+  the map ends (see `remove_on_map_change/2`), a player's Cloaking excepted. An
   infinite Endure refuses to end this way and stays. A logout runs it before
   saving the rest.
   """
@@ -1171,11 +1173,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   def end_unsaved_statuses(unit_type, unit_id) do
     unit_type
     |> StatusStorage.get_unit_statuses(unit_id)
-    |> Enum.filter(&unsaved?/1)
+    |> Enum.filter(&(unsaved?(&1) or ends_with_map?(unit_type, &1)))
     |> Enum.reject(&infinite_endure?/1)
     |> Enum.map(& &1.type)
     |> then(&remove_statuses(unit_type, unit_id, &1, owner_refresh: :defer))
   end
+
+  # Leaving the map at logout ends the map-change statuses before the save; a
+  # player's Cloaking ends only on a warp.
+  defp ends_with_map?(:player, %StatusEntry{type: :sc_cloaking}), do: false
+  defp ends_with_map?(_unit_type, entry), do: remove_on_map_change?(entry)
 
   defp unsaved?(%StatusEntry{type: type} = entry) do
     case Registry.get_definition(type) do

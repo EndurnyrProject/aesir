@@ -719,6 +719,19 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
   end
 
+  describe "end_unsaved_statuses/2" do
+    test "a logout also ends what leaving the map ends, except a player's Cloaking" do
+      register_player_with_magic_reduction(8_813, 0)
+      :ok = StatusStorage.apply_status(:player, 8_813, :sc_hiding, val1: 1)
+      :ok = StatusStorage.apply_status(:player, 8_813, :sc_cloaking, val1: 3)
+
+      assert :ok = Interpreter.end_unsaved_statuses(:player, 8_813)
+
+      refute StatusStorage.has_status?(:player, 8_813, :sc_hiding)
+      assert StatusStorage.has_status?(:player, 8_813, :sc_cloaking)
+    end
+  end
+
   describe "on-touch statuses" do
     test "ending one on a player asks its session to re-check the cell it stands on" do
       register_player_with_magic_reduction(8_812, 0)
@@ -1371,7 +1384,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       target_id = 21
       setup_player_mock(target_id)
 
-      for duration <- [nil, 0, -1, "12 seconds"] do
+      for duration <- [0, -1, "12 seconds"] do
         assert {:error, :invalid_duration} =
                  Interpreter.apply_status(:player, target_id, :sc_provoke,
                    duration: duration,
