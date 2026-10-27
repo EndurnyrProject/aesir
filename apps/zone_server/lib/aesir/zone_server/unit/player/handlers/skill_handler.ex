@@ -2316,15 +2316,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
           result: 1
         }
 
-        Broadcast.to_in_range(
-          game_state.map_name,
-          game_state.x,
-          game_state.y,
-          Config.view_range(),
-          packet
-        )
+        {map_name, x, y} = effect_origin(game_state, target)
+        Broadcast.to_in_range(map_name, x, y, Config.view_range(), packet)
     end
   end
+
+  # The effect reaches the area around its target.
+  defp effect_origin(game_state, {:unit, ref}) do
+    case TargetResolver.resolve_target_position(ref) do
+      {:ok, _type, {x, y, map_name}} -> {map_name, x, y}
+      {:error, _reason} -> {game_state.map_name, game_state.x, game_state.y}
+    end
+  end
+
+  defp effect_origin(game_state, _target), do: {game_state.map_name, game_state.x, game_state.y}
 
   defp skill_use_target_id(%{character_id: caster_id}, :self), do: caster_id
   defp skill_use_target_id(_game_state, {:unit, {_type, id}}), do: id

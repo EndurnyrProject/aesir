@@ -1067,6 +1067,39 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
                        %SkillEffect{skill_id: 29, level: 1, src_id: 1000, target_id: 1000}}
     end
 
+    test "a no-damage cast on another unit shows its effect around that unit" do
+      base = knowing(instant_state(30), 31, 1)
+
+      stub(Interpreter, :begin_cast, fn gs, 31, 1, {:unit, _target} -> {:instant, gs} end)
+      stub(Catalog, :by_id, fn 31 -> {:ok, definition(id: 31, cooldown: [])} end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+
+      stub(TargetResolver, :resolve_target_position, fn
+        2000 -> {:ok, :player, {160, 155, "prontera"}}
+        {:player, 2000} -> {:ok, :player, {160, 155, "prontera"}}
+      end)
+
+      test_pid = self()
+
+      stub(Broadcast, :to_in_range, fn map, x, y, _range, packet ->
+        send(test_pid, {:broadcast, {map, x, y}, packet})
+        :ok
+      end)
+
+      assert {:noreply, _} = SkillHandler.handle_use_skill(base, 31, 1, 2000)
+
+      assert_received {:broadcast, {"prontera", 160, 155},
+                       %SkillEffect{skill_id: 31, src_id: 1000, target_id: 2000}}
+
+      stub(TargetResolver, :resolve_target_position, fn _gone -> {:error, :target_not_found} end)
+
+      assert {:noreply, _} = SkillHandler.handle_use_skill(base, 31, 1, 2000)
+      assert_received {:broadcast, {"prontera", 150, 150}, %SkillEffect{target_id: 2000}}
+    end
+
     test "failed cast leaves state unchanged and does not persist" do
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
       reject(&CharacterPersistence.update_character/3)

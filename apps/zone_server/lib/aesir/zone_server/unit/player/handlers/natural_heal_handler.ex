@@ -9,8 +9,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
   the updated accumulators back onto the player state, and (only when a delta is
   non-zero) pushes `SP_HP`/`SP_SP` to the client and persists asynchronously.
 
-  Ticks are skipped entirely when the player is dead or already at full HP and
-  full SP, so an idle full-health player produces no packets or DB writes.
+  Ticks are skipped entirely when the player is dead, under no-recover,
+  concealed (Hiding, Cloaking, Chase Walk), or already at full HP and full SP;
+  an idle full-health player produces no packets or DB writes.
   """
 
   alias Aesir.Commons.StatusParams
@@ -29,7 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
 
   `elapsed_ms` is the time since the previous tick (the session's tick interval).
   Returns `{:noreply, state}`. A no-op (returning the state unchanged) when the
-  player is dead or already at full HP and SP.
+  player is dead, at full HP and SP, under no-recover, or concealed.
   """
   @spec handle_tick(map(), non_neg_integer()) :: {:noreply, map()}
   def handle_tick(%{game_state: %{action_state: :dead}} = state, _elapsed_ms),
