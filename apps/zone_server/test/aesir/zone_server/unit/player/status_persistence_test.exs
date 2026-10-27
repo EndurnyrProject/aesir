@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistenceTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.CharacterStatus
   alias Aesir.ZoneServer.Mmo.Option
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -106,6 +107,42 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistenceTest do
       :ok = StatusPersistence.save_statuses(character.id)
 
       assert [%CharacterStatus{status_type: "sc_autoberserk", remaining_ms: nil}] =
+               Repo.all(CharacterStatus)
+    end
+
+    test "saves an item's timed Summer with its remaining time", %{character: character} do
+      :ok = UnitRegistry.register_player(PlayerState.new(character), self())
+
+      :ok =
+        Interpreter.apply_status(:player, character.id, :sc_summer,
+          caster_id: character.id,
+          val1: 1,
+          duration: 600_000
+        )
+
+      :ok = StatusPersistence.save_statuses(character.id)
+
+      assert [%CharacterStatus{status_type: "sc_summer", remaining_ms: remaining_ms}] =
+               Repo.all(CharacterStatus)
+
+      assert is_integer(remaining_ms)
+      assert remaining_ms > 0
+      assert remaining_ms <= 600_000
+    end
+
+    test "saves a worn costume's Summer as infinite", %{character: character} do
+      :ok = UnitRegistry.register_player(PlayerState.new(character), self())
+
+      :ok =
+        Interpreter.apply_status(:player, character.id, :sc_summer,
+          caster_id: character.id,
+          val1: 1,
+          duration: :infinite
+        )
+
+      :ok = StatusPersistence.save_statuses(character.id)
+
+      assert [%CharacterStatus{status_type: "sc_summer", remaining_ms: nil}] =
                Repo.all(CharacterStatus)
     end
 
@@ -216,6 +253,42 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistenceTest do
                StatusDisplay.spawn_state(:player, character.id).effect_state,
                Option.id(:cloak)
              ) != 0
+    end
+
+    test "restores a saved Summer with its remaining time or as infinite", %{
+      character: character
+    } do
+      player = PlayerState.new(character)
+      :ok = UnitRegistry.register_player(player, self())
+      stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+      stub(StatusSync, :send_param, fn _connection, _param, _value -> :ok end)
+
+      for remaining_ms <- [300_000, nil] do
+        %CharacterStatus{}
+        |> CharacterStatus.changeset(%{
+          char_id: character.id,
+          status_type: "sc_summer",
+          val1: 1,
+          remaining_ms: remaining_ms
+        })
+        |> Repo.insert!()
+
+        before = System.monotonic_time(:millisecond)
+        StatusPersistence.restore_on_spawn(%{game_state: player, connection_pid: self()})
+        after_restore = System.monotonic_time(:millisecond)
+
+        %{expires_at: expires_at} = StatusStorage.get_status(:player, character.id, :sc_summer)
+
+        if remaining_ms do
+          assert is_integer(expires_at)
+          assert expires_at >= before + remaining_ms
+          assert expires_at <= after_restore + remaining_ms
+        else
+          assert expires_at == nil
+        end
+
+        :ok = StatusStorage.clear_unit_statuses(:player, character.id)
+      end
     end
 
     test "a restored poison takes its next tick after the time that was left", %{

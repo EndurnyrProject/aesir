@@ -128,8 +128,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
 
   defp apply_cleanup_status(status, duration, value, character_id) do
     params =
-      [caster_id: character_id, val1: value, owner_refresh: :defer, no_tick_def: true]
-      |> maybe_put_duration(duration)
+      [
+        caster_id: character_id,
+        val1: value,
+        duration: duration,
+        owner_refresh: :defer,
+        no_tick_def: true
+      ]
 
     case Interpreter.apply_status(:player, character_id, status, params) do
       :ok ->
@@ -148,8 +153,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
 
   defp apply_equip_status(status, duration, value, character_id) do
     params =
-      [caster_id: character_id, val1: value, owner_refresh: :defer, no_tick_def: true]
-      |> maybe_put_duration(duration)
+      [
+        caster_id: character_id,
+        val1: value,
+        duration: duration,
+        owner_refresh: :defer,
+        no_tick_def: true
+      ]
 
     case Interpreter.apply_status(:player, character_id, status, params) do
       :ok ->
@@ -168,8 +178,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
         character_id = state.game_state.character_id
 
         params =
-          [caster_id: character_id, val1: value, owner_refresh: :defer, no_tick_def: true]
-          |> maybe_put_duration(duration)
+          [
+            caster_id: character_id,
+            val1: value,
+            duration: duration,
+            owner_refresh: :defer,
+            no_tick_def: true
+          ]
 
         case Interpreter.apply_status(:player, character_id, status, params) do
           :ok ->
@@ -199,10 +214,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
         state
     end)
   end
-
-  # Equipment scripts start statuses as the item use does (`SCSTART_NOTICKDEF`).
-  defp maybe_put_duration(params, :infinite), do: params
-  defp maybe_put_duration(params, duration), do: Keyword.put(params, :duration, duration)
 
   defp recalculate_and_sync_skills(state, previous_granted_skills) do
     state = StatusManager.recalculate_after_status_change(state)

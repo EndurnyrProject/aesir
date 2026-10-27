@@ -52,7 +52,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
           tick: integer(),
           flag: integer(),
           caster_id: integer() | nil,
-          duration: integer() | nil,
+          duration: integer() | :infinite | nil,
           source_id: integer() | nil,
           source_type: atom(),
           state: map(),

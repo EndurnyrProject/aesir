@@ -120,8 +120,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Resistance do
   Rolls an undefended status: `{:ok, tick}` when its rate lands, otherwise
   `:resisted`.
   """
-  @spec roll_chance(integer(), integer(), (integer() -> boolean())) ::
-          {:ok, integer()} | :resisted
+  @spec roll_chance(integer(), integer() | nil, (integer() -> boolean())) ::
+          {:ok, integer() | nil} | :resisted
   def roll_chance(rate, tick, roll),
     do: if(lands?(rate, roll), do: {:ok, tick}, else: :resisted)
 

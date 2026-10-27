@@ -110,6 +110,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   given duration. `bypass_resistance: true` skips the roll and all
   chance/stat/duration resistance while retaining immunity, prevention, and
   conflict gates.
+  `duration: :infinite` starts the status with no expiry (an equipment
+  script's endless status); a status with a defense recipe cannot start that
+  way and returns `{:error, :infinite_defended_status}`.
   `no_avoid: true` additionally skips the immunity gates (race, element, boss and
   magic immunity): the application cannot be avoided, only prevented.
 
@@ -1720,13 +1723,24 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
          duration_override,
          status_params
        ) do
-    tick = duration_override || definition.duration || 10_000
+    tick = base_tick(duration_override, definition)
 
-    if Keyword.get(status_params, :bypass_resistance, false) or
-         Keyword.get(status_params, :no_avoid, false),
-       do: {:ok, tick},
-       else: defend(unit_type, unit_id, status_id, definition, entity_info, tick, status_params)
+    cond do
+      Keyword.get(status_params, :bypass_resistance, false) or
+          Keyword.get(status_params, :no_avoid, false) ->
+        {:ok, tick}
+
+      is_nil(tick) and not definition.bypass_resistance and Resistance.defended?(status_id) ->
+        {:error, :infinite_defended_status}
+
+      true ->
+        defend(unit_type, unit_id, status_id, definition, entity_info, tick, status_params)
+    end
   end
+
+  # An infinite start (an equipment script's endless status) keeps no expiry.
+  defp base_tick(:infinite, _definition), do: nil
+  defp base_tick(duration, definition), do: duration || definition.duration || 10_000
 
   defp defend(unit_type, unit_id, status_id, definition, entity_info, tick, status_params) do
     status = if definition.bypass_resistance, do: nil, else: status_id

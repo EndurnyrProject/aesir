@@ -134,7 +134,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
     assert_receive {:effect, :start_lights, lights_params}
     assert lights_params[:caster_id] == 1
     assert lights_params[:val1] == 9
-    refute Keyword.has_key?(lights_params, :duration)
+    assert lights_params[:duration] == :infinite
   end
 
   test "activation applies signed heal effects in source order" do
@@ -230,6 +230,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
     assert reconciled.applied_equip_statuses == %{}
     refute StatusStorage.has_status?(:player, 1, :sc_summer)
     assert mailbox_count(:status_recalculated) == 3
+  end
+
+  test "a worn item's infinite status starts with no expiry" do
+    state = state_with_equip_statuses(%{sc_summer: {:infinite, 1}})
+    :ok = UnitRegistry.register_player(state.game_state, self())
+
+    stub(Calculator, :calculate_stats, fn stats, 1 -> stats end)
+    stub(StatusSync, :send_stat_updates, fn _connection_pid, _stats -> :ok end)
+
+    assert {:noreply, _applied} = EquipProcHandler.reconcile_statuses(state)
+    assert %{val1: 1, expires_at: nil} = StatusStorage.get_status(:player, 1, :sc_summer)
   end
 
   test "unchanged desired statuses are removed and rebuilt from scratch" do
