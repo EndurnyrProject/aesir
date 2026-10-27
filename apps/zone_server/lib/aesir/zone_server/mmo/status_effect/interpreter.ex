@@ -544,6 +544,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   Each capable status may atomically consume a single-use entry of the target
   and return `{:intercept, result}`; the first interception wins and ends the
   swing. A target holding no such status stays on a constant-time no-op path.
+
+  An ordinary swing is checked in two stages through `attack_info.stage`:
+  `:swing` dispatches only the reactions to the swing itself (Blade Stop, Auto
+  Counter, Poison React), before a replacement strike is chosen; `:hit`
+  dispatches the remaining interceptions (Guard, Parrying) for a swing that
+  stayed ordinary. Without a stage every interception-capable status runs.
   """
   @spec before_weapon_hit(unit_type(), integer(), map()) :: :continue | {:intercept, term()}
   def before_weapon_hit(unit_type, unit_id, attack_info) do
@@ -2429,10 +2435,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     :sc_autoguard
   ]
 
+  @weapon_swing_reactions [:sc_bladestop_wait, :sc_auto_counter, :sc_poisonreact]
+
   defp find_weapon_hit_interception(unit_type, unit_id, implementing, attack_info) do
     unit_type
     |> StatusStorage.get_unit_statuses(unit_id)
-    |> Enum.filter(&MapSet.member?(implementing, &1.type))
+    |> Enum.filter(
+      &(MapSet.member?(implementing, &1.type) and interception_stage?(&1.type, attack_info))
+    )
     |> Enum.sort_by(&weapon_hit_interception_priority(&1.type))
     |> Enum.find_value(:continue, fn instance ->
       case dispatch_before_weapon_hit(unit_type, unit_id, instance, attack_info) do
@@ -2441,6 +2451,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       end
     end)
   end
+
+  defp interception_stage?(status_id, %{stage: :swing}),
+    do: status_id in @weapon_swing_reactions
+
+  defp interception_stage?(status_id, %{stage: :hit}),
+    do: status_id not in @weapon_swing_reactions
+
+  defp interception_stage?(_status_id, _attack_info), do: true
 
   defp weapon_hit_interception_priority(status_id) do
     Enum.find_index(@weapon_hit_interception_order, &(&1 == status_id)) ||

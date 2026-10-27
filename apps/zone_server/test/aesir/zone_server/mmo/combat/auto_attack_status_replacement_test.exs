@@ -15,6 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Skill.Passives
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoguard
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -202,6 +204,87 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
       assert_received {:intercept_check, true}
       refute_received {:intercept_check, false}
     end
+  end
+
+  describe "execute_attack/3 with Sacrifice" do
+    setup do
+      Mimic.copy(Helpers)
+      Mimic.copy(Autoguard)
+      stub(Helpers, :deal_damage, fn {:player, @attacker_id}, _amount -> :ok end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet, _opts -> :ok end)
+
+      stub(DamageCalculator, :calculate_damage_ignoring_defense, fn _a, _d, _opts ->
+        {:ok, %{damage: 75, is_critical: false}}
+      end)
+
+      stub(UnitRegistry, :get_unit_info, fn
+        :player, @attacker_id -> {:ok, %{stats: %{max_hp: 10_000}}}
+        :mob, @target_id -> {:ok, %{stats: %{}}}
+      end)
+
+      :ok =
+        StatusStorage.apply_status(:player, @attacker_id, :sc_sacrifice,
+          val1: 5,
+          val2: 5,
+          state: %{remaining: 5}
+        )
+
+      :ok
+    end
+
+    test "the strike can be perfect-dodged and still spends the swing",
+         %{attacker: attacker, player_state: player_state} do
+      dodging = put_in(combatant(@target_id, :mob).combat_stats.perfect_dodge, 1_000)
+      stub(MobState, :to_combatant, fn _target_state -> dodging end)
+      reject(&MobSession.apply_damage/4)
+
+      assert :ok = Combat.execute_attack(attacker, player_state, @target_id)
+
+      assert %{val2: 4} = StatusStorage.get_status(:player, @attacker_id, :sc_sacrifice)
+    end
+
+    @tag game_mode: :renewal
+    test "renewal: Guard never blocks the strike",
+         %{attacker: attacker, player_state: player_state} do
+      hold_guard(100)
+      expect(MobSession, :apply_damage, fn _pid, 75, _attacker_id, _metadata -> :ok end)
+
+      assert :ok = Combat.execute_attack(attacker, player_state, @target_id)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic: Guard blocks the strike",
+         %{attacker: attacker, player_state: player_state} do
+      hold_guard(100)
+      reject(&MobSession.apply_damage/4)
+
+      assert :ok = Combat.execute_attack(attacker, player_state, @target_id)
+
+      assert %{val2: 4} = StatusStorage.get_status(:player, @attacker_id, :sc_sacrifice)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic: Guard rolls once for the strike",
+         %{attacker: attacker, player_state: player_state} do
+      hold_guard(0)
+
+      expect(Autoguard, :before_weapon_hit, 1, fn _target, _entry, _info, _context ->
+        :continue
+      end)
+
+      expect(MobSession, :apply_damage, fn _pid, 75, _attacker_id, _metadata -> :ok end)
+
+      assert :ok = Combat.execute_attack(attacker, player_state, @target_id)
+    end
+  end
+
+  defp hold_guard(block_chance) do
+    :ok =
+      StatusStorage.apply_status(:mob, @target_id, :sc_autoguard,
+        val1: 10,
+        duration: 60_000,
+        state: %{block_chance: block_chance}
+      )
   end
 
   defp stub_passive_replacement do

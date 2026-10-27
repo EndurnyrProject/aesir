@@ -5,14 +5,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaSacrifice do
   FLEE and cost 9% max HP each (see `StatusEffect.Effects.Sacrifice`). The
   status has no timer; it ends when the fifth swing is spent.
 
-  Renewal: no after-cast delay. Pre-renewal: a 2 s after-cast delay. The
-  strike formula is shared. Player-only: the mechanic converts the holder's
+  Renewal: no after-cast delay, and the strike ignores Guard, the attacker's
+  ATK cards and the non-critical damage bonus. Pre-renewal: a 2 s after-cast
+  delay, and Guard, ATK cards and the bonus apply. The strike formula is
+  shared. Player-only: the mechanic converts the holder's
   basic attacks, which mobs do not route through the replacement seam.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 368,
     name: :pa_sacrifice,
     ignore_atk_card: [renewal: true, pre_renewal: false],
+    ignore_auto_guard: [renewal: true, pre_renewal: false],
     ignore_flee: true,
     requires: [],
     status: :sc_sacrifice,

@@ -377,7 +377,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}),
          :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id) do
       Origin.mark_skill_attack()
-      interception = weapon_hit_intercepted?(attacker, target_type, target, %{})
+      interception = weapon_hit_intercepted?(attacker, target_type, target, skill_id, %{})
 
       if interception == :blocked,
         do: missed_coma(attacker, {target_type, target_pid, target})
@@ -1526,7 +1526,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          calc_context,
          hit_opts
        ) do
-    case weapon_interception(attacker, target_type, target, hit_opts) do
+    case weapon_interception(attacker, target_type, target, skill_id, hit_opts) do
       :blocked ->
         {missed_hit(hit_opts), missed_coma(attacker, target_context)}
 
@@ -1545,13 +1545,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     end
   end
 
-  defp weapon_interception(attacker, target_type, target, hit_opts) do
+  defp weapon_interception(attacker, target_type, target, skill_id, hit_opts) do
     if Map.get(hit_opts, :dmg_type, :physical) == :physical,
       do:
         weapon_hit_intercepted?(
           attacker,
           target_type,
           target,
+          skill_id,
           Map.fetch!(hit_opts, :weapon_hit_metadata)
         ),
       else: :continue
@@ -1594,14 +1595,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   # other interceptions own their own feedback effect, stay silent and return
   # `:intercepted`.
   # Magic and misc skills never call this path, nor does a weapon-calculated hit
-  # delivered as misc, so they can never be blocked.
+  # delivered as misc, so they can never be blocked. A skill whose definition
+  # sets `ignore_auto_guard` is exempt from Guard alone.
   @spec weapon_hit_intercepted?(
           struct(),
           :player | :mob | :homunculus | :skill_unit,
           struct(),
+          integer(),
           map()
         ) :: :blocked | :intercepted | :continue
-  defp weapon_hit_intercepted?(attacker, target_type, target, metadata) do
+  defp weapon_hit_intercepted?(attacker, target_type, target, skill_id, metadata) do
     attack_info =
       Map.merge(
         %{
@@ -1614,7 +1617,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           distance: cell_distance(attacker, target),
           basic_attack?: false
         },
-        metadata
+        Map.merge(auto_guard_exemption(skill_id), metadata)
       )
 
     case StatusInterpreter.before_weapon_hit(target_type, target.unit_id, attack_info) do
@@ -1631,6 +1634,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
       :continue ->
         :continue
+    end
+  end
+
+  defp auto_guard_exemption(skill_id) do
+    case Catalog.by_id(skill_id) do
+      {:ok, %{ignore_auto_guard: true}} -> %{ignores_auto_guard: true}
+      _other -> %{}
     end
   end
 

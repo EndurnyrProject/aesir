@@ -40,6 +40,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   the skill's physical hits never receive the equipment non-critical damage
   rate. It is mode-keyable.
 
+  `ignore_auto_guard` mirrors the source's IgnoreAutoGuard flag: the skill's
+  weapon hits are never blocked by Guard. It is mode-keyable.
+
   `cast_cancel` mirrors the source's CastCancel flag (default true): damage to
   the caster cancels the skill's cast. It is mode-keyable.
 
@@ -183,6 +186,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             ignore_item_cast: false,
             ignore_noncrit_atk_bonus: false,
             ignore_atk_card: false,
+            ignore_auto_guard: false,
             ignore_def_card: false,
             ignore_element: false,
             ignore_flee: false,
@@ -248,6 +252,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           ignore_item_cast: boolean(),
           ignore_noncrit_atk_bonus: boolean(),
           ignore_atk_card: boolean(),
+          ignore_auto_guard: boolean(),
           ignore_def_card: boolean(),
           ignore_element: boolean(),
           ignore_flee: boolean(),
@@ -321,6 +326,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     ignore_item_cast: :boolean,
     ignore_noncrit_atk_bonus: :boolean,
     ignore_atk_card: :boolean,
+    ignore_auto_guard: :boolean,
     ignore_def_card: :boolean,
     ignore_element: :boolean,
     ignore_flee: :boolean,
@@ -378,6 +384,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     ignore_item_cast: false,
     ignore_noncrit_atk_bonus: false,
     ignore_atk_card: false,
+    ignore_auto_guard: false,
     ignore_def_card: false,
     ignore_element: false,
     ignore_flee: false,
@@ -434,6 +441,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     :ignore_item_cast,
     :ignore_noncrit_atk_bonus,
     :ignore_atk_card,
+    :ignore_auto_guard,
     :ignore_def_card,
     :ignore_element,
     :ignore_flee,

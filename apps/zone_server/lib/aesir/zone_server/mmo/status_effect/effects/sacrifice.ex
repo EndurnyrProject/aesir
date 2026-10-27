@@ -10,12 +10,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sacrifice do
   swing can kill the holder. The status ends when the fifth swing is spent,
   never by timer. The remaining swings are kept in `val2` (the status starts it
   at five) alongside `state.remaining`, so the status is kept across a logout
-  and a restore resumes from `val2`. Identical in both game modes; pre-renewal
-  only adds an after-cast delay on the skill itself.
+  and a restore resumes from `val2`.
 
-  Accepted deviations from the reference mechanics: the strike cannot be
-  perfect-dodged (the replacement path does not roll it), and renewal's Auto Guard
-  bypass is not modelled.
+  The strike is the only skill hit the target can perfect-dodge; a dodged
+  strike still spends the swing and its HP. Swing reactions (Blade Stop, Auto
+  Counter, Poison React) stop the swing before it is spent. Guard and Parrying
+  roll once, on the strike itself. Renewal: Guard never blocks the strike.
+  Pre-renewal: Guard blocks it like any weapon hit. The skill's own mode
+  differences are in `PaSacrifice`.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_sacrifice,

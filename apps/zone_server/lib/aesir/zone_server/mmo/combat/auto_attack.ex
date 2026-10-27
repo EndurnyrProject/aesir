@@ -153,24 +153,35 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          target_type,
          target_id
        ) do
+    with :continue <-
+           player_interception(:swing, player_state, attacker, target, target_pid, target_type) do
+      resolve_player_attack_or_replacement(
+        player_state,
+        target_state,
+        attacker,
+        target,
+        target_pid,
+        target_type,
+        target_id
+      )
+    end
+  end
+
+  # The swing stage (Blade Stop, Auto Counter, Poison React) reacts before a
+  # replacement is chosen; the hit stage (Guard, Parrying) intercepts the
+  # ordinary swing here and a replacement inside its own skill attack, once.
+  defp player_interception(stage, player_state, attacker, target, target_pid, target_type) do
     case before_weapon_hit(
            :player,
            attacker,
            target,
            target_type,
-           target_id,
-           attacker_root_level(player_state)
+           target.unit_id,
+           attacker_root_level(player_state),
+           %{stage: stage}
          ) do
       :continue ->
-        resolve_player_attack_or_replacement(
-          player_state,
-          target_state,
-          attacker,
-          target,
-          target_pid,
-          target_type,
-          target_id
-        )
+        :continue
 
       {:intercept, result} ->
         broadcast_guard_feedback(result, attacker, target)
@@ -208,18 +219,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
        ) do
     case attack_replacement(player_state, attacker) do
       :normal ->
-        modifier = normal_attack_modifier(:player, attacker, target_type, target_id)
+        with :continue <-
+               player_interception(:hit, player_state, attacker, target, target_pid, target_type) do
+          modifier = normal_attack_modifier(:player, attacker, target_type, target_id)
 
-        calculate_player_normal_attack(
-          player_state,
-          target_state,
-          attacker,
-          target,
-          target_pid,
-          target_type,
-          target_id,
-          modifier
-        )
+          calculate_player_normal_attack(
+            player_state,
+            target_state,
+            attacker,
+            target,
+            target_pid,
+            target_type,
+            target_id,
+            modifier
+          )
+        end
 
       {:skill_attack, opts} ->
         resolve_attack_replacement(player_state, attacker, target, target_id, opts)
@@ -541,7 +555,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   end
 
   defp resolve_mob_attack_or_intercept(attacker, target, target_pid, target_type, target_id) do
-    case before_weapon_hit(:mob, attacker, target, target_type, target_id, @mob_root_level) do
+    case before_weapon_hit(:mob, attacker, target, target_type, target_id, @mob_root_level, %{}) do
       {:intercept, result} ->
         broadcast_guard_feedback(result, attacker, target)
         :intercepted
@@ -627,7 +641,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          _target,
          :skill_unit,
          _target_id,
-         _root_level
+         _root_level,
+         _stage_info
        ),
        do: :continue
 
@@ -637,19 +652,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          target,
          target_type,
          target_id,
-         attacker_root_level
+         attacker_root_level,
+         stage_info
        ) do
-    StatusInterpreter.before_weapon_hit(target_type, target_id, %{
-      attacker: {attacker_type, attacker.unit_id},
-      target: {target_type, target.unit_id},
-      attacker_boss?: attacker.class == :boss,
-      attacker_root_level: attacker_root_level,
-      attacker_position: attacker.position,
-      attacker_short?: attacker.attack_range <= 3,
-      distance: cell_distance(attacker, target),
-      basic_attack?: true,
-      element: primary_attack_element(attacker_type, attacker)
-    })
+    StatusInterpreter.before_weapon_hit(
+      target_type,
+      target_id,
+      Map.merge(stage_info, %{
+        attacker: {attacker_type, attacker.unit_id},
+        target: {target_type, target.unit_id},
+        attacker_boss?: attacker.class == :boss,
+        attacker_root_level: attacker_root_level,
+        attacker_position: attacker.position,
+        attacker_short?: attacker.attack_range <= 3,
+        distance: cell_distance(attacker, target),
+        basic_attack?: true,
+        element: primary_attack_element(attacker_type, attacker)
+      })
+    )
   end
 
   # A caught player attacker's own Blade Stop level (learned or granted, 0 when it
