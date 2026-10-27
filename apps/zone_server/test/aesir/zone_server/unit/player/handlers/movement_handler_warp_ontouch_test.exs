@@ -104,6 +104,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerWarpOntouchTest d
       assert_received {:"$gen_cast", {:movement, {:warp, "izlude", 150, 190}}}
     end
 
+    test "concealment ending re-checks the warp under the player" do
+      game_state = %{player_state() | pending_map_load: nil}
+      register_player(game_state)
+      stub(Warps, :for_map, fn "prontera" -> {:ok, [warp_at(50, 50, xs: 1, ys: 1)]} end)
+      here = {"prontera", game_state.x, game_state.y}
+
+      {:noreply, _state} = MovementHandler.recheck_touch(%{game_state: game_state}, here)
+      assert_received {:"$gen_cast", {:movement, {:warp, "izlude", 150, 190}}}
+
+      {:noreply, _state} =
+        MovementHandler.recheck_touch(%{game_state: game_state}, {"prontera", 1, 1})
+
+      refute_received {:"$gen_cast", {:movement, {:warp, _, _, _}}}
+
+      warping = %{game_state | pending_map_load: :warp}
+      {:noreply, _state} = MovementHandler.recheck_touch(%{game_state: warping}, here)
+      refute_received {:"$gen_cast", {:movement, {:warp, _, _, _}}}
+
+      dead = %{game_state | action_state: :dead}
+      {:noreply, _state} = MovementHandler.recheck_touch(%{game_state: dead}, here)
+      refute_received {:"$gen_cast", {:movement, {:warp, _, _, _}}}
+    end
+
     @tag :skip
     test "stepping into a warp area within the cooldown casts nothing (no re-fire)" do
       warp = warp_at(51, 50, xs: 1, ys: 1)

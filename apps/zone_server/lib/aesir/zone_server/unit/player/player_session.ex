@@ -594,6 +594,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:equipment, {:strip, slots, opts}})
   end
 
+  @doc """
+  Re-runs the touch check of the cell this player stood on (`{map, x, y}`) when
+  an OnTouch status ended there; skipped while a warp is pending, once it has
+  moved on, or when it is dead.
+  """
+  @spec recheck_touch(pid(), {String.t(), integer(), integer()}) :: :ok
+  def recheck_touch(pid, position),
+    do: GenServer.cast(pid, {:movement, {:recheck_touch, position}})
+
   @doc "Stops this player's attack: a stop-attacking status started on it."
   @spec stop_attack(pid()) :: :ok
   def stop_attack(pid), do: GenServer.cast(pid, {:combat, :stop_attack})
@@ -1205,6 +1214,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   def handle_cast({:movement, {:displace, expected_x, expected_y, map_name, x, y}}, state) do
     MovementHandler.handle_displacement(state, expected_x, expected_y, map_name, x, y)
+  end
+
+  @impl true
+  def handle_cast({:movement, {:recheck_touch, position}}, state) do
+    MovementHandler.recheck_touch(state, position)
   end
 
   @impl true

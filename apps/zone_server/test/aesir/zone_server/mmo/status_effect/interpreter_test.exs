@@ -719,6 +719,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
   end
 
+  describe "on-touch statuses" do
+    test "ending one on a player asks its session to re-check the cell it stands on" do
+      register_player_with_magic_reduction(8_812, 0)
+      :ok = StatusStorage.apply_status(:player, 8_812, :sc_cloaking, val1: 3)
+
+      assert :ok = Interpreter.remove_status(:player, 8_812, :sc_cloaking)
+      assert_receive {:"$gen_cast", {:movement, {:recheck_touch, {_map, _x, _y}}}}
+
+      :ok = StatusStorage.apply_status(:player, 8_812, :sc_blessing, val1: 1)
+      assert :ok = Interpreter.remove_status(:player, 8_812, :sc_blessing)
+      refute_receive {:"$gen_cast", {:movement, {:recheck_touch, _}}}
+    end
+  end
+
   describe "before_weapon_hit/3" do
     test "intercepts a weapon hit and atomically consumes the single-use status" do
       target_id = 7_701

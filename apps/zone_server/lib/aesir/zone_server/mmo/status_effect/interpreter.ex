@@ -983,6 +983,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       StatusStorage.remove_status(unit_type, unit_id, status_id)
       StatusDisplay.on_removed(unit_type, unit_id, status_id, instance)
       notify_unit_status_removed(unit_type, unit_id, status_id)
+      recheck_touch_on_end(unit_type, unit_id, status_id)
       :ok
     end)
 
@@ -1030,6 +1031,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     module.on_expire({unit_type, unit_id}, instance, context)
     StatusDisplay.on_removed(unit_type, unit_id, instance.type, instance)
     notify_unit_status_removed(unit_type, unit_id, instance.type)
+    recheck_touch_on_end(unit_type, unit_id, instance.type)
     after_end.()
     true
   end
@@ -1232,6 +1234,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     module.on_expire({unit_type, unit_id}, instance, context)
     StatusDisplay.on_removed(unit_type, unit_id, instance.type, instance)
     notify_unit_status_removed(unit_type, unit_id, instance.type)
+    recheck_touch_on_end(unit_type, unit_id, instance.type)
     after_end.()
   end
 
@@ -2266,8 +2269,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
     if is_nil(StatusStorage.get_status(unit_type, unit_id, status_id)) do
       StatusDisplay.on_removed(unit_type, unit_id, status_id, instance)
+      recheck_touch_on_end(unit_type, unit_id, status_id)
     end
   end
+
+  # An OnTouch status (Hiding, Cloaking, Chase Walk) ending on a player re-runs
+  # the touch check of the cell it stands on now; the session skips it while a
+  # warp is pending or once the player has moved on.
+  defp recheck_touch_on_end(:player, unit_id, status_id) do
+    with true <- status_id in Registry.statuses_with_flag(:on_touch),
+         {:ok, {_module, %{map_name: map_name, x: x, y: y}, pid}} when is_pid(pid) <-
+           UnitRegistry.get_unit(:player, unit_id),
+         do: PlayerSession.recheck_touch(pid, {map_name, x, y})
+
+    :ok
+  end
+
+  defp recheck_touch_on_end(_unit_type, _unit_id, _status_id), do: :ok
 
   defp expire_replaced_status_entry(unit_type, unit_id, status_id, instance) do
     %{module: module} = Registry.get_definition(status_id)

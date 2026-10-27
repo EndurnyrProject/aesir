@@ -13,7 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking do
     no_clear_buff: false,
     properties: [:buff, :conceals],
     calc_flags: [:cri, :speed],
-    flags: [:cloak, :no_pick_item, :stop_attacking, :remove_on_damaged],
+    flags: [:cloak, :no_pick_item, :stop_attacking, :remove_on_damaged, :on_touch],
     prevented_by: [:sc_refresh, :sc_inspiration],
     no_save: true,
     icon: :cloaking,

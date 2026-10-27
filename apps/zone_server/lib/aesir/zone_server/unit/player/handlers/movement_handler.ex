@@ -283,6 +283,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
   # On-touch warp trigger hook (cell-enter).
   #
+  @doc """
+  Re-checks the warp under the player after an OnTouch status (Hiding,
+  Cloaking, Chase Walk) ended at `{map, x, y}`. Skipped while a warp or map
+  load is pending, when the player has moved on since, or when it is dead.
+  """
+  @spec recheck_touch(map(), {String.t(), integer(), integer()}) :: {:noreply, map()}
+  def recheck_touch(%{game_state: %{map_name: map, x: x, y: y} = game_state} = state, {map, x, y})
+      when game_state.action_state != :dead and is_nil(game_state.pending_map_load) do
+    case maybe_trigger_warp(game_state, x, y) do
+      {:warp_fired, marked_state} -> {:noreply, %{state | game_state: marked_state}}
+      :no_warp -> {:noreply, state}
+    end
+  end
+
+  def recheck_touch(state, _position), do: {:noreply, state}
+
   # Fires after the player has stepped onto `(x, y)`: if that cell sits inside a
   # warp's `xs/ys` area, cancel the remaining walk and call `PlayerSession.warp/4`
   # on the session — reusing the existing map-warp cast (zero new plumbing). The

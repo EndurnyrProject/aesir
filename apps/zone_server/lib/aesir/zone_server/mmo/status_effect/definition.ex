@@ -34,7 +34,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       `:prevents_items`, `:prevents_chat`, and `:prevents_equip_change` block
       the corresponding player actions while the status is active
     - `:calc_flags` - stat recalculation flags
-    - `:flags` - behavior flags (`:no_move`, `:no_attack`, ...)
+    - `:flags` - behavior flags (`:no_move`, `:no_attack`, ...); `:stop_attacking`
+      stops the holder's attack when the status starts, and `:on_touch` re-runs
+      the touch check of a player's cell when the status ends
     - `:prevented_by` - statuses that prevent this one from being applied
     - `:conflicts_with` - statuses that cannot coexist with this one
     - `:end_on_start` - statuses removed when this one is applied

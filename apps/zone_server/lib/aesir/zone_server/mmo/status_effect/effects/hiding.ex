@@ -11,7 +11,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Hiding do
     no_clear_buff: false,
     properties: [:buff, :conceals, :prevents_movement],
     calc_flags: [:speed],
-    flags: [:hide, :no_move, :no_pick_item, :no_consume_item, :stop_attacking, :remove_on_damaged],
+    flags: [
+      :hide,
+      :no_move,
+      :no_pick_item,
+      :no_consume_item,
+      :stop_attacking,
+      :remove_on_damaged,
+      :on_touch
+    ],
     end_on_start: [:sc_closeconfine, :sc_closeconfine2],
     prevented_by: [:sc_refresh, :sc_inspiration],
     no_save: true,
