@@ -17,7 +17,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Concealment
   alias Aesir.ZoneServer.Unit.Player.NaturalHeal
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.StatusSync
@@ -36,7 +38,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
   def handle_tick(%{game_state: game_state} = state, elapsed_ms) do
     stats = game_state.stats
 
-    if recovery_blocked?(game_state) or full?(stats) do
+    if full?(stats) or recovery_blocked?(game_state) do
       {:noreply, state}
     else
       regen_modifiers = regen_modifiers(game_state)
@@ -134,8 +136,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
   defp put_when(map, true, key, value), do: Map.put(map, key, value)
   defp put_when(map, false, _key, _value), do: map
 
-  defp recovery_blocked?(game_state),
-    do: StatusStorage.has_status?(:player, game_state.character_id, :sc_norecover_state)
+  # No-recover, and a concealing option (Hiding, Cloaking, Chase Walk), stop
+  # every natural and skill regeneration.
+  defp recovery_blocked?(%{character_id: id}) do
+    StatusStorage.has_status?(:player, id, :sc_norecover_state) or
+      Concealment.concealed?(StatusDisplay.spawn_state(:player, id).effect_state)
+  end
 
   defp full?(stats) do
     stats.current_state.hp >= stats.derived_stats.max_hp and

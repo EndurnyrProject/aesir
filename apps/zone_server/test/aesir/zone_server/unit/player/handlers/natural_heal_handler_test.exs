@@ -311,6 +311,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
       assert {:noreply, ^state} = NaturalHealHandler.handle_tick(state, 10_000)
     end
 
+    test "a hidden or cloaked player does not regenerate, sitting included" do
+      reject(CharacterPersistence, :update_stats, 3)
+      state = build_state(hp: 100, sp: 50, action: :sitting, movement: :standing)
+      state = put_in(state.game_state.character_id, 88_002)
+
+      for status <- [:sc_hiding, :sc_cloaking] do
+        :ok = StatusStorage.apply_status(:player, 88_002, status, val1: 3)
+        assert {:noreply, ^state} = NaturalHealHandler.handle_tick(state, 10_000)
+        :ok = StatusStorage.remove_status(:player, 88_002, status)
+      end
+    end
+
     test "no packet push and no persist on a zero-delta tick (full HP and SP)" do
       reject(CharacterPersistence, :update_stats, 3)
 
