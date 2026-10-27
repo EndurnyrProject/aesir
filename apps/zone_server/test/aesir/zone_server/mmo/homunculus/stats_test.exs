@@ -23,6 +23,28 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.StatsTest do
     assert Stats.recompute(derived) == derived
   end
 
+  test "Divest percent cuts apply after the additive status bonuses" do
+    cut =
+      Stats.recompute(state(6_001, %{}), %{
+        vit: 2,
+        vit_cut_rate: 40,
+        int_cut_rate: 40,
+        def_cut_rate: 15
+      })
+
+    assert cut.vit == 12
+    assert cut.int == 15
+  end
+
+  test "Divest Shield cuts status DEF before the VIT share is added" do
+    full_strip =
+      Stats.recompute(state(6_001, %{}), %{vit: 60, def: 30, vit_cut_rate: 40, def_cut_rate: 15})
+
+    # VIT 78 cut to 47, VIT share 9 - 3 = 6. Renewal: 68 cut to 58; classic: 37 cut to 32.
+    # Cutting after the VIT share would give 63 and 37.
+    assert full_strip.combat_stats.def == %{renewal: 64, pre_renewal: 38}[GameMode.mode()]
+  end
+
   test "Brain Surgery applies only to Lif forms without compounding" do
     state = state(6_001, %{8_003 => 5})
     effective = Stats.recompute(state)

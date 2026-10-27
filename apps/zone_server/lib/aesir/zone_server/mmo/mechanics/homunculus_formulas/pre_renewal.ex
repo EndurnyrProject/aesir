@@ -25,8 +25,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas.PreRenewal do
       atk_min: min(stats.dex + status_watk, weapon_max),
       atk_max: weapon_max,
       def:
-        hard_def + 4 * input.skin_rank + div(stats.vit, 5) - div(base.vit, 5) +
-          Map.get(mods, :def, 0),
+        HomunculusFormulas.status_def(hard_def + 4 * input.skin_rank, mods) +
+          div(stats.vit, 5) - div(base.vit, 5),
       soft_def: max(stats.vit, 1),
       mdef: hard_mdef + div(stats.int, 5) - div(base.int, 5) + Map.get(mods, :mdef, 0),
       soft_mdef:

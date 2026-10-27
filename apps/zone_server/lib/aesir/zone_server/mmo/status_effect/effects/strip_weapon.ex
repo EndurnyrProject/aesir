@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripWeapon do
     immunity: [:boss],
     metadata: %{strip_slot: :right_hand},
     no_dispel: true,
+    no_save: true,
     no_clear_buff: false,
     clear_buff_flags: [:debuff, :remove_on_hermode],
     properties: [:debuff],

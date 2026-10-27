@@ -19,7 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas do
 
   @typedoc "Already aggregated stat-derivation modifiers, not damage-stage rates."
   @type modifiers :: %{
-          optional(:def | :mdef | :hit | :flee | :hom_aspd_rate) => integer()
+          optional(:def | :def_cut_rate | :mdef | :hit | :flee | :hom_aspd_rate) => integer()
         }
 
   @typedoc "Captured numeric inputs with species eligibility resolved by the caller."
@@ -57,6 +57,16 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas do
 
   @doc "Derives the mode's combat snapshot from captured stat stages."
   @callback derive(input()) :: result()
+
+  @doc """
+  Status DEF before the VIT share: the base DEF plus the flat status DEF, less
+  Divest Shield's percent cut. The VIT share is added after it.
+  """
+  @spec status_def(integer(), modifiers()) :: integer()
+  def status_def(base_def, modifiers) do
+    value = base_def + Map.get(modifiers, :def, 0)
+    value - div(value * Map.get(modifiers, :def_cut_rate, 0), 100)
+  end
 
   @doc false
   @spec finish(map(), input(), integer()) :: result()

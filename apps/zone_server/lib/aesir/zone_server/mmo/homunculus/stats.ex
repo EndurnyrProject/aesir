@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Stats do
 
   @instruction_str [1, 1, 3, 4, 4]
   @instruction_int [1, 2, 2, 4, 5]
+  @cut_keys %{vit: :vit_cut_rate, int: :int_cut_rate}
 
   @typedoc "Status modifier values already aggregated for this Homunculus."
   @type modifiers :: %{optional(atom()) => number()}
@@ -48,7 +49,10 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Stats do
       effective: effective,
       skin_rank: skin,
       modifiers:
-        Map.new([:def, :mdef, :hit, :flee, :hom_aspd_rate], &{&1, modifier(modifiers, &1)})
+        Map.new(
+          [:def, :def_cut_rate, :mdef, :hit, :flee, :hom_aspd_rate],
+          &{&1, modifier(modifiers, &1)}
+        )
     }
 
     %{combat_stats: combat, attack_delay_ms: delay} =
@@ -157,9 +161,15 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Stats do
     }
   end
 
+  # A percent cut (Divest Armor, Divest Helm) applies after the additive bonuses.
   defp effective_stats(base, modifiers) do
-    Map.new(base, fn {stat, value} -> {stat, value + modifier(modifiers, stat)} end)
+    Map.new(base, fn {stat, value} ->
+      {stat,
+       cut(value + modifier(modifiers, stat), modifier(modifiers, Map.get(@cut_keys, stat)))}
+    end)
   end
+
+  defp cut(value, rate), do: value - div(value * rate, 100)
 
   defp ranked(_values, 0), do: 0
   defp ranked(values, rank), do: Enum.at(values, rank - 1, 0)

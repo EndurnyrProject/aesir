@@ -31,6 +31,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                :spl,
                :con,
                :crt,
+               # Homunculus.Stats.recompute/2 percent cuts (Divest Shield, Armor, Helm)
+               :def_cut_rate,
+               :vit_cut_rate,
+               :int_cut_rate,
                # Stats.get_status_modifier/2 call sites + MobState.to_combatant
                :hit,
                :hit_rate,

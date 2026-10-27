@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripStatusesTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripArmor
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripHelm
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripShield
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripWeapon
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
@@ -46,9 +47,29 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripStatusesTest do
     assert StripWeapon.modifiers(entry, %{unit_type: :player}) == %{}
   end
 
-  test "Divest Armor and Helm reduce VIT and INT by val2 percent" do
-    assert StripArmor.modifiers(entry(:sc_striparmor, 25), %{}) == %{vit: -25}
-    assert StripHelm.modifiers(entry(:sc_striphelm, 40), %{}) == %{int: -40}
+  test "Divest Shield, Armor and Helm cut a homunculus's DEF, VIT and INT and change no player stat" do
+    assert StripShield.modifiers(entry(:sc_stripshield, 0), %{unit_type: :homunculus}) ==
+             %{def_cut_rate: 15}
+
+    assert StripArmor.modifiers(entry(:sc_striparmor, 0), %{unit_type: :homunculus}) ==
+             %{vit_cut_rate: 40}
+
+    assert StripHelm.modifiers(entry(:sc_striphelm, 0), %{unit_type: :homunculus}) ==
+             %{int_cut_rate: 40}
+
+    for {module, type} <- [
+          {StripShield, :sc_stripshield},
+          {StripArmor, :sc_striparmor},
+          {StripHelm, :sc_striphelm}
+        ] do
+      assert module.modifiers(entry(type, 40), %{unit_type: :player}) == %{}
+    end
+  end
+
+  test "Divest statuses end at logout" do
+    Enum.each(@strip_statuses, fn {status_id, _strip_slot, _icon} ->
+      assert %{no_save: true} = Registry.get_definition(status_id)
+    end)
   end
 
   test "Divest statuses expire after their supplied duration" do
