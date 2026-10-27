@@ -293,22 +293,16 @@ defmodule Aesir.ZoneServer.Integration.AssassinStatusLifecycleIntegrationTest do
 
     cast_and_complete(caster.pid, @splasher, 10, target.unit_id)
 
-    assert %{state: %{remaining_ms: 2_000, poison_react_level: 7}} =
+    assert %{val1: 10, val4: 2_000, source_type: :player, expires_at: nil} =
              armed = StatusStorage.get_status(:mob, target.unit_id, :sc_splasher)
+
+    assert armed.next_tick_at == armed.started_at + 1_000
 
     move_mob_now(target, {25, 10})
     hp_before = get_mob_state(target.pid).hp
-    backdated_start = System.monotonic_time(:millisecond) - 20_000
 
-    :ok =
-      StatusStorage.update_status(:mob, target.unit_id, :sc_splasher, fn status ->
-        %{status | started_at: backdated_start}
-      end)
-
-    first_due = backdated_start + 1_000
-
-    assert drive_exact_ticks(:mob, target.unit_id, armed.generation, first_due) ==
-             backdated_start + 2_500
+    # The per-test tick manager runs the real 500 ms countdown steps.
+    assert eventually(fn -> not StatusStorage.has_status?(:mob, target.unit_id, :sc_splasher) end)
 
     refute StatusStorage.has_status?(:mob, target.unit_id, :sc_splasher)
     assert eventually(fn -> get_mob_state(target.pid).hp < hp_before end)
@@ -426,39 +420,6 @@ defmodule Aesir.ZoneServer.Integration.AssassinStatusLifecycleIntegrationTest do
     Enum.reduce(1..count, nil, fn _, _result ->
       StatusInterpreter.process_tick_if_current(type, id, :sc_splasher, generation)
     end)
-  end
-
-  defp drive_exact_ticks(type, id, generation, due_at) do
-    state = %StatusTickManager.State{}
-
-    assert {:noreply, ^state} =
-             StatusTickManager.handle_cast(
-               {:schedule_exact_tick, type, id, :sc_splasher, generation, due_at},
-               state
-             )
-
-    assert_receive {:exact_status_tick, ^type, ^id, :sc_splasher, ^generation, ^due_at} =
-                     message
-
-    drive_exact_tick_messages(message, state)
-  end
-
-  defp drive_exact_tick_messages(
-         {:exact_status_tick, type, id, :sc_splasher, generation, due_at} = message,
-         state
-       ) do
-    assert {:noreply, ^state} = StatusTickManager.handle_info(message, state)
-
-    if StatusStorage.has_status?(type, id, :sc_splasher) do
-      next_due = due_at + 500
-
-      assert_receive {:exact_status_tick, ^type, ^id, :sc_splasher, ^generation, ^next_due} =
-                       next_message
-
-      drive_exact_tick_messages(next_message, state)
-    else
-      due_at
-    end
   end
 
   defp tick_until_stopped(type, id, generation) do

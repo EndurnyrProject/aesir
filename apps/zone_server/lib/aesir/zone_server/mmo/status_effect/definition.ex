@@ -179,10 +179,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @callback modifiers(StatusEntry.t(), context()) :: map()
 
   @doc """
-  Invoked when the status is applied, before it is stored; only its `state`
-  and `phase` are kept. The context carries the resolved `:duration` (nil for
-  a permanent status) and `:loaded` (true when restoring a saved status). May
-  veto the application by returning :remove.
+  Invoked when the status is applied, before it is stored; the returned
+  `val1`-`val4`, `state` and `phase` are kept, so the values the status sets
+  when it starts are stored and persisted with it. The context carries the
+  resolved `:duration` (nil for a permanent status) and `:loaded` (true when
+  restoring a saved status). May veto the application by returning :remove.
   """
   @callback on_apply(target(), StatusEntry.t(), context()) :: hook_result()
 
@@ -192,7 +193,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   """
   @callback on_expire(target(), StatusEntry.t(), context()) :: :ok
 
-  @doc "Invoked on every tick while the status is active."
+  @doc """
+  Invoked on every tick while the status is active; the returned `val1`-`val4`,
+  `state` and `phase` are kept, so a value the tick changes is persisted.
+  """
   @callback on_tick(target(), StatusEntry.t(), context()) :: hook_result()
 
   @typedoc """

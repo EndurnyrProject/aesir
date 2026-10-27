@@ -24,9 +24,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
   - `phase`: Current phase for multi-phase status effects (defaults to nil)
   - `loaded`: Marks the restore of a persisted status, skipping the apply
     gates (defaults to false)
-  - `first_tick`: Milliseconds until a restored ticking status's first tick,
-    the time that was left until its next tick when saved (defaults to one
-    interval)
+  - `first_tick`: Milliseconds until a ticking status's first tick; a restore
+    passes the time that was left until its next tick when saved (defaults to
+    one interval)
   - `success_rate`: Base application chance as a percentage before resistance
     (defaults to 100)
   - `resistance_roll`: Injectable roll given the final per-10000 rate by the

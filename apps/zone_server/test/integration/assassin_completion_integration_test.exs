@@ -325,7 +325,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
                  AsSplasher.definition()
                )
 
-      assert %{val1: ^level, state: %{remaining_ms: remaining, poison_react_level: 10}} =
+      assert %{val1: ^level, val4: remaining, source_type: :player, expires_at: nil} =
                StatusStorage.get_status(:mob, target.unit_id, :sc_splasher)
 
       assert remaining == (12 - level) * 1_000

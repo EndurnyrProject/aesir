@@ -91,11 +91,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
 
     assert :ok = Executor.execute(caster, row)
 
-    assert %{
-             source_id: 3_100,
-             source_type: :mob,
-             state: %{remaining_ms: 7_000, poison_react_level: 0}
-           } = entry = StatusStorage.get_status(:player, target.character_id, :sc_splasher)
+    assert %{source_id: 3_100, source_type: :mob, val4: 7_000} =
+             entry = StatusStorage.get_status(:player, target.character_id, :sc_splasher)
 
     assert caster.sp == 0
     assert :stop == run_exact_ticks(:player, target.character_id, entry.generation)
@@ -128,7 +125,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
     assert :stop == run_exact_ticks(:player, target.character_id, entry.generation)
   end
 
-  test "a player arms target-owned tickless state with a Poison React snapshot" do
+  test "a player arms a countdown whose first step is a second away and later ones half a second" do
     caster = player_caster(%{139 => 7})
     target = %{mob_target(2_000) | hp: 75}
     register_mob(target)
@@ -138,19 +135,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
 
     assert %{
              val1: 3,
-             tick: 0,
-             next_tick_at: nil,
+             val4: 9_000,
+             tick: 500,
              source_id: 1_000,
-             source_type: :player,
-             state: %{remaining_ms: 9_000, poison_react_level: 7}
+             source_type: :player
            } = entry = StatusStorage.get_status(:mob, target.instance_id, :sc_splasher)
 
+    assert entry.next_tick_at == entry.started_at + 1_000
     assert is_integer(entry.generation)
-    assert entry.expires_at == entry.started_at + 10_500
+    assert entry.expires_at == nil
   end
 
   @tag game_mode: :renewal
-  test "the real manager chain keeps absolute Splasher deadlines through terminal explosion" do
+  test "the countdown steps on absolute deadlines and explodes half a second after it ends" do
     source = player_caster(%{})
     register_player(source)
 
@@ -164,46 +161,39 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
       :ok
     end)
 
-    for {level, target_id} <- [{1, 2_010}, {10, 2_019}] do
-      target = mob_target(target_id)
-      register_mob(target)
-      countdown_ms = (12 - level) * 1_000
+    slow = mob_target(2_010)
+    register_mob(slow)
+    assert {:ok, _caster} = AsSplasher.cast(source, {:unit, 2_010}, 1, AsSplasher.definition())
+    slow_entry = StatusStorage.get_status(:mob, 2_010, :sc_splasher)
 
-      :ok =
-        StatusInterpreter.apply_status(:mob, target_id, :sc_splasher,
-          val1: level,
-          duration: countdown_ms + 1_500,
-          caster_id: source.character_id,
-          source_type: :player,
-          state: %{remaining_ms: countdown_ms, poison_react_level: 0}
-        )
+    # 11 s at level 1: a step at 1 s, then one every 0.5 s, the 22nd exploding at 11.5 s.
+    assert count_steps(:mob, 2_010, slow_entry.generation, 1) == 22
+    refute StatusStorage.has_status?(:mob, 2_010, :sc_splasher)
 
-      backdated_start = System.monotonic_time(:millisecond) - 20_000
+    fast = mob_target(2_019)
+    register_mob(fast)
+    assert {:ok, _caster} = AsSplasher.cast(source, {:unit, 2_019}, 10, AsSplasher.definition())
 
-      :ok =
-        StatusStorage.update_status(:mob, target_id, :sc_splasher, fn entry ->
-          %{entry | started_at: backdated_start}
-        end)
+    :ok =
+      StatusStorage.update_status(:mob, 2_019, :sc_splasher, fn entry ->
+        %{
+          entry
+          | started_at: entry.started_at - 1_900,
+            next_tick_at: entry.next_tick_at - 1_900
+        }
+      end)
 
-      entry = StatusStorage.get_status(:mob, target_id, :sc_splasher)
-      first_due = entry.started_at + 1_000
-      state = %StatusTickManager.State{}
+    entry = StatusStorage.get_status(:mob, 2_019, :sc_splasher)
+    key = {:mob, 2_019, :sc_splasher}
 
-      assert {:noreply, ^state} =
-               StatusTickManager.handle_cast(
-                 {:schedule_exact_tick, :mob, target_id, :sc_splasher, entry.generation,
-                  first_due},
-                 state
-               )
+    state = %StatusTickManager.State{
+      timers: %{key => {make_ref(), entry.generation, entry.next_tick_at}}
+    }
 
-      assert_receive {:exact_status_tick, :mob, ^target_id, :sc_splasher, _, ^first_due} = message
+    assert drive_manager_deadlines(state, key, entry.generation, entry.next_tick_at) ==
+             entry.started_at + 2_500
 
-      assert drive_manager_ticks(message, state, first_due) ==
-               entry.started_at + countdown_ms + 500
-
-      refute StatusStorage.has_status?(:mob, target_id, :sc_splasher)
-      refute_receive {:exact_status_tick, :mob, ^target_id, :sc_splasher, _, _}
-    end
+    refute StatusStorage.has_status?(:mob, 2_019, :sc_splasher)
   end
 
   @tag game_mode: :renewal
@@ -220,7 +210,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
     assert updated.inventory == caster.inventory
     assert updated.skill_cooldowns[141] in (now + 8_500)..(now + 9_500)
 
-    assert %{state: %{poison_react_level: 6}} =
+    assert %{val1: 3, val4: 9_000, source_type: :player} =
              StatusStorage.get_status(:mob, target.instance_id, :sc_splasher)
   end
 
@@ -239,11 +229,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
     assert updated.inventory[1].amount == 1
     assert updated.skill_cooldowns[141] in (now + 8_000)..(now + 9_000)
 
-    assert %{state: %{poison_react_level: 6}} =
+    assert %{val1: 3, val4: 9_000, source_type: :player} =
              StatusStorage.get_status(:mob, target.instance_id, :sc_splasher)
   end
 
-  test "a mob arm stores no player passive contribution or resource obligation" do
+  test "a mob arm is attributed to the monster and costs it nothing" do
     target = player_target(4_000)
     register_player(target)
 
@@ -265,11 +255,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
     assert {:ok, ^caster} =
              AsSplasher.cast(caster, {:unit, target.character_id}, 5, AsSplasher.definition())
 
-    assert %{
-             source_id: 3_000,
-             source_type: :mob,
-             state: %{remaining_ms: 7_000, poison_react_level: 0}
-           } = StatusStorage.get_status(:player, target.character_id, :sc_splasher)
+    assert %{source_id: 3_000, source_type: :mob, val4: 7_000} =
+             StatusStorage.get_status(:player, target.character_id, :sc_splasher)
   end
 
   test "replacement and every ordinary cleanup path leave exact timers stale" do
@@ -322,22 +309,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
   end
 
   @tag game_mode: :renewal
-  test "only one natural current-generation terminal tick explodes" do
-    caster = player_caster(%{139 => 10})
+  test "only one natural current-generation terminal tick explodes, with the source's Poison React at that moment" do
+    caster = player_caster(%{139 => 1})
+    trained = player_caster(%{139 => 10})
     target = mob_target(2_060)
-    register_player(caster)
+    register_player(trained)
     register_mob(target)
 
     assert {:ok, ^caster} =
              AsSplasher.cast(caster, {:unit, target.instance_id}, 10, AsSplasher.definition())
 
     StatusStorage.update_status(:mob, target.instance_id, :sc_splasher, fn entry ->
-      %{entry | state: %{entry.state | remaining_ms: 500}}
+      %{entry | val4: 500}
     end)
 
     entry = StatusStorage.get_status(:mob, target.instance_id, :sc_splasher)
 
-    expect(Combat, :execute_forced_no_card_splash, fn ^caster, {100, 100}, 2, opts ->
+    expect(Combat, :execute_forced_no_card_splash, fn ^trained, {100, 100}, 2, opts ->
       assert opts[:skill_ratio] == 1_600
       []
     end)
@@ -445,23 +433,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
              AsSplasher.cast(player_caster(%{}), {:unit, 2_201}, 1, AsSplasher.definition())
   end
 
-  defp drive_manager_ticks(message, state, due_at) do
-    assert {:noreply, ^state} = StatusTickManager.handle_info(message, state)
+  defp drive_manager_deadlines(state, key, generation, due_at) do
+    assert {:noreply, state} =
+             StatusTickManager.handle_info({:status_timer, key, generation, due_at}, state)
 
-    case message do
-      {:exact_status_tick, unit_type, unit_id, status_id, generation, ^due_at} ->
-        case StatusStorage.get_status(unit_type, unit_id, status_id) do
-          nil ->
-            due_at
+    case state.timers do
+      %{^key => {_ref, ^generation, next_due}} ->
+        assert next_due == due_at + 500
+        assert_receive {:status_timer, ^key, ^generation, ^next_due}, 1_000
+        drive_manager_deadlines(state, key, generation, next_due)
 
-          _entry ->
-            next_due = due_at + 500
+      _ended ->
+        due_at
+    end
+  end
 
-            assert_receive {:exact_status_tick, ^unit_type, ^unit_id, ^status_id, ^generation,
-                            ^next_due} = next_message
-
-            drive_manager_ticks(next_message, state, next_due)
-        end
+  defp count_steps(unit_type, unit_id, generation, steps) do
+    case StatusInterpreter.process_tick_if_current(unit_type, unit_id, :sc_splasher, generation) do
+      :continue -> count_steps(unit_type, unit_id, generation, steps + 1)
+      :stop -> steps
     end
   end
 

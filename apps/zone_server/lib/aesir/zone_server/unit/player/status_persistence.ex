@@ -11,7 +11,9 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistence do
   its first tick before resuming its interval; entries that already expired
   are skipped. Rows are consumed on restore (loaded then deleted) and
   re-applied through `StatusManager` with the `loaded` flag so the
-  immunity/conflict/resistance gates are not re-rolled. Runtime `state` and
+  immunity/conflict/resistance gates are not re-rolled. The source's unit
+  type is saved with its id, so a status a monster applied restores with that
+  monster as its source. Runtime `state` and
   `phase` are not persisted; the effect's `on_apply` rebuilds them.
   """
 
@@ -97,6 +99,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistence do
         loaded: true
       ]
 
+      params = params ++ source_type_param(row.source_type)
+
       case StatusManager.handle_apply_status(definition.id, params, state) do
         {:reply, :ok, applied} ->
           applied
@@ -113,6 +117,11 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistence do
       state
     end
   end
+
+  # A row saved before the source type was persisted resolves it as any
+  # other application without one.
+  defp source_type_param(nil), do: []
+  defp source_type_param(source_type), do: [source_type: String.to_existing_atom(source_type)]
 
   defp valid_restore_duration?(%{permanent: true}, _remaining_ms), do: true
 
@@ -137,6 +146,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistence do
           tick: entry.tick,
           flag: entry.flag,
           source_id: entry.source_id,
+          source_type: Atom.to_string(entry.source_type),
           remaining_ms: remaining_ms,
           next_tick_ms: next_tick_ms(entry, now_ms)
         }

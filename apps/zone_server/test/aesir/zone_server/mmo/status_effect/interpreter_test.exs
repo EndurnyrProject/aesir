@@ -88,6 +88,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     def on_expire(_target, _instance, _context), do: :ok
   end
 
+  defmodule BlockingValsStatus do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_blocking_vals,
+      no_dispel: false,
+      no_clear_buff: false
+
+    @impl true
+    def on_apply(_target, instance, _context) do
+      send(instance.state.observer, {:on_apply, self()})
+
+      receive do
+        :go -> {:ok, %{instance | val2: 99}}
+      end
+    end
+  end
+
   defmodule GenerationStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_generation,
@@ -1547,6 +1563,37 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       refute_receive {:generation_expired, _generation}
       refute_receive {:status_display, _event, _generation}
       refute_receive {:stats, :status_changed}
+    end
+
+    test "an application meeting a newer instance at the store keeps the values on_apply set" do
+      target_id = 9_400_031
+      test_pid = self()
+      setup_player_mock(target_id)
+      Registry.register_module(BlockingValsStatus)
+
+      task =
+        Task.async(fn ->
+          Interpreter.apply_status(:player, target_id, :sc_test_blocking_vals,
+            val1: 1,
+            duration: 30_000,
+            state: %{observer: test_pid}
+          )
+        end)
+
+      allow_application_mocks(task.pid)
+      assert_receive {:on_apply, applier}
+
+      {:stored, _newer, _prior} =
+        StatusStorage.apply_status_with_entry(:player, target_id, :sc_test_blocking_vals,
+          val1: 1,
+          duration: 30_000
+        )
+
+      send(applier, :go)
+      Task.await(task)
+
+      assert %StatusEntry{val2: 99} =
+               StatusStorage.get_status(:player, target_id, :sc_test_blocking_vals)
     end
 
     test "a superseded application is not displayed or refreshed as current" do

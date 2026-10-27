@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasher do
   @moduledoc """
-  Venom Splasher (AS_SPLASHER). Arms a countdown on an enemy that explodes after
-  12 minus level seconds into a poison weapon splash over 2 cells, poisoning
-  everything hit, for 12 to 30 SP at 1 cell.
+  Venom Splasher (AS_SPLASHER). Arms a 12 minus level seconds countdown on an
+  enemy; half a second after it runs out it explodes into a poison weapon splash
+  over 2 cells, poisoning everything hit, for 12 to 30 SP at 1 cell.
 
   Renewal: 400% plus 100% per level (plus 20% per Poison React level), poison for
   18 s, a 0.5 s cast plus 0.5 s fixed, an 11 down to 2 s cooldown, no catalyst, any
@@ -38,12 +38,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasher do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Splasher
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker
-  alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Mmo.StatusTickManager
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
@@ -97,45 +94,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasher do
     end
   end
 
+  # The countdown's first step is a second away; the rest follow every half second.
   defp arm(caster, target_type, target_id, level) do
     countdown_ms = (12 - level) * 1_000
-    arm_ref = make_ref()
     {source_type, source_id} = source_ref(caster)
 
-    params = [
+    StatusInterpreter.apply_status(target_type, target_id, :sc_splasher,
       val1: level,
-      duration: countdown_ms + 1_500,
+      val4: countdown_ms,
+      duration: :infinite,
+      first_tick: 1_000,
       caster_id: source_id,
-      source_type: source_type,
-      state: %{
-        arm_ref: arm_ref,
-        remaining_ms: countdown_ms,
-        poison_react_level: poison_react_level(caster)
-      }
-    ]
-
-    case StatusInterpreter.apply_status(target_type, target_id, :sc_splasher, params) do
-      :ok -> schedule_current(target_type, target_id, arm_ref)
-      {:error, _reason} = error -> error
-    end
-  end
-
-  defp schedule_current(target_type, target_id, arm_ref) do
-    case StatusStorage.get_status(target_type, target_id, :sc_splasher) do
-      %{generation: generation, started_at: started_at, state: %{arm_ref: ^arm_ref}} ->
-        StatusTickManager.schedule_exact_tick(
-          target_type,
-          target_id,
-          :sc_splasher,
-          generation,
-          started_at + 1_000
-        )
-
-        :ok
-
-      _replaced ->
-        :ok
-    end
+      source_type: source_type
+    )
   end
 
   # Pre-renewal refuses targets above three quarters of their HP; renewal dropped the gate.
@@ -148,11 +119,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasher do
     do: {hp, max_hp}
 
   defp hp_pair(%MobState{hp: hp, calculated: calculated}), do: {hp, calculated.max_hp}
-
-  defp poison_react_level(%PlayerState{stats: stats}) when is_map(stats),
-    do: PlayerStats.skill_level(stats, 139)
-
-  defp poison_react_level(_caster), do: 0
 
   defp source_ref(%PlayerState{character_id: source_id}), do: {:player, source_id}
   defp source_ref(%{instance_id: source_id}), do: {:mob, source_id}

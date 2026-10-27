@@ -7,15 +7,19 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistenceTest do
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.CharacterStatus
+  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StatusPersistence
   alias Aesir.ZoneServer.Unit.Player.StatusSync
+  alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.SpecialEffect
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
@@ -289,6 +293,133 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistenceTest do
 
         :ok = StatusStorage.clear_unit_statuses(:player, character.id)
       end
+    end
+
+    test "a status applied by a monster restores with that monster as its source", %{
+      character: character
+    } do
+      player = PlayerState.new(character)
+      :ok = UnitRegistry.register_player(player, self())
+      stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+      stub(StatusSync, :send_param, fn _connection, _param, _value -> :ok end)
+
+      :ok =
+        Interpreter.apply_status(:player, character.id, :sc_poison,
+          val1: 1,
+          duration: 10_000,
+          caster_id: 4_242,
+          source_type: :mob,
+          loaded: true
+        )
+
+      :ok = StatusPersistence.save_statuses(character.id)
+      :ok = StatusStorage.clear_unit_statuses(:player, character.id)
+
+      StatusPersistence.restore_on_spawn(%{game_state: player, connection_pid: self()})
+
+      assert %{source_id: 4_242, source_type: :mob} =
+               StatusStorage.get_status(:player, character.id, :sc_poison)
+    end
+
+    test "a value the status sets when it starts is stored and survives a relog", %{
+      character: character
+    } do
+      player = PlayerState.new(character)
+      :ok = UnitRegistry.register_player(player, self())
+      stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+      stub(StatusSync, :send_param, fn _connection, _param, _value -> :ok end)
+
+      :ok = Interpreter.apply_status(:player, character.id, :sc_sacrifice, val1: 3)
+
+      assert %{val2: 5} = StatusStorage.get_status(:player, character.id, :sc_sacrifice)
+
+      :ok = StatusPersistence.save_statuses(character.id)
+      assert [%CharacterStatus{status_type: "sc_sacrifice", val2: 5}] = Repo.all(CharacterStatus)
+      :ok = StatusStorage.clear_unit_statuses(:player, character.id)
+
+      StatusPersistence.restore_on_spawn(%{game_state: player, connection_pid: self()})
+
+      assert %{val2: 5, state: %{remaining: 5}} =
+               StatusStorage.get_status(:player, character.id, :sc_sacrifice)
+    end
+
+    @tag game_mode: :renewal
+    test "a Splasher saved with 3 s left explodes 3 s after the restore, from its monster source",
+         %{character: character} do
+      player = PlayerState.new(character)
+      :ok = UnitRegistry.register_player(player, self())
+      stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+      stub(StatusSync, :send_param, fn _connection, _param, _value -> :ok end)
+
+      source =
+        %MobState{
+          instance_id: 3_000,
+          mob_id: 1,
+          mob_data: Aesir.TestMob.definition(),
+          spawn_ref: nil,
+          map_name: player.map_name,
+          x: player.x + 1,
+          y: player.y,
+          hp: 100,
+          sp: 0,
+          spawned_at: 0
+        }
+        |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
+
+      :ok = UnitRegistry.register_unit(:mob, 3_000, MobState, source, self())
+      :ok = SpatialIndex.add_unit(:player, character.id, player.x, player.y, player.map_name)
+      applied_at = System.monotonic_time(:millisecond)
+
+      :ok =
+        Interpreter.apply_status(:player, character.id, :sc_splasher,
+          val1: 5,
+          val4: 3_000,
+          duration: :infinite,
+          first_tick: 500,
+          caster_id: 3_000,
+          source_type: :mob
+        )
+
+      :ok = StatusPersistence.save_statuses(character.id)
+      :ok = StatusStorage.clear_unit_statuses(:player, character.id)
+
+      StatusPersistence.restore_on_spawn(%{game_state: player, connection_pid: self()})
+      after_restore = System.monotonic_time(:millisecond)
+
+      assert %{
+               val1: 5,
+               val4: 3_000,
+               tick: 500,
+               source_id: 3_000,
+               source_type: :mob,
+               expires_at: nil
+             } = restored = StatusStorage.get_status(:player, character.id, :sc_splasher)
+
+      assert restored.next_tick_at in (applied_at + 500)..(after_restore + 500)
+
+      expect(Combat, :execute_forced_no_card_splash, fn ^source, _cell, 2, opts ->
+        assert opts[:skill_ratio] == 900
+        []
+      end)
+
+      expect(SpecialEffect, :play, fn {:player, _id}, :splasher -> :ok end)
+
+      # The first step is due when the time left until it runs out; then one
+      # every half second, the sixth exploding: 0.5 s + 5 x 0.5 s = 3 s.
+      steps =
+        Stream.repeatedly(fn ->
+          Interpreter.process_tick_if_current(
+            :player,
+            character.id,
+            :sc_splasher,
+            restored.generation
+          )
+        end)
+        |> Enum.take_while(&(&1 == :continue))
+        |> length()
+
+      assert steps == 5
+      refute StatusStorage.has_status?(:player, character.id, :sc_splasher)
     end
 
     test "a restored poison takes its next tick after the time that was left", %{

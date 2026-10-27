@@ -110,7 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PriestSupportStatusesTest do
 
       refreshed = StatusStorage.get_status(:player, @player_id, status_id)
       assert refreshed.val1 == 3
-      assert refreshed.val2 == 30
+      assert refreshed.val2 == expected_val2(status_id)
       assert refreshed.expires_at > first.expires_at
     end)
 
@@ -318,4 +318,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PriestSupportStatusesTest do
     Caster.apply_cast_reactions(player, [:end_suffragium])
     refute StatusStorage.has_status?(:player, @player_id, :sc_suffragium)
   end
+
+  defp expected_val2(:sc_suffragium), do: Suffragium.reduction(3)
+  defp expected_val2(_status_id), do: 30
 end

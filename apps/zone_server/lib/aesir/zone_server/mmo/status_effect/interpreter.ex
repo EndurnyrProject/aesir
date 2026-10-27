@@ -89,9 +89,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   the restore of a persisted status: it already passed every gate when first
   applied, so immunity, prevention, conflict and resistance checks are
   skipped and the given `duration` is used as-is. A loaded finite definition
-  requires a positive integer duration. A loaded ticking status takes its first
-  tick `first_tick` milliseconds after the restore (the time that was left
-  until its next tick when saved), then every interval.
+  requires a positive integer duration. A ticking status takes its first tick
+  `first_tick` milliseconds after it starts when given (a restore passes the
+  time that was left until its next tick when saved), then every interval.
 
   `owner_refresh: :notify` publishes an asynchronous player stat refresh only
   after the status is stored. Applications default to `:auto`: the owning
@@ -1956,7 +1956,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       state: state,
       phase: phase || definition.initial_phase,
       started_at: now_ms,
-      next_tick_at: StatusEntry.first_tick_at(tick, loaded_first_tick(status_params), now_ms),
+      next_tick_at: StatusEntry.first_tick_at(tick, status_params, now_ms),
       tick_count: 0,
       expires_at: nil
     }
@@ -2082,17 +2082,26 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   # Inside the store's compare-and-swap the application meets what is current
   # again when it is no longer `held`: an instance stored, or the held one removed,
-  # in between. `incoming` is the application before `overlap/3` adjusted it.
-  defp store_decision(definition, target, held, incoming) do
+  # in between. `incoming` is the application before `overlap/3` adjusted it; an
+  # unadjusted replacement keeps the values `on_apply` set (`applied`).
+  defp store_decision(definition, target, held, incoming, applied) do
     if incoming.type in definition.end_on_start do
       fn _current -> :store end
     else
       fn
-        current when current === held -> :store
-        current -> stored_decision(overlap(definition, target, current, incoming))
+        current when current === held ->
+          :store
+
+        current ->
+          definition |> overlap(target, current, incoming) |> race_decision(incoming, applied)
       end
     end
   end
+
+  defp race_decision({:replace, incoming}, incoming, applied),
+    do: stored_decision({:replace, applied})
+
+  defp race_decision(decision, _incoming, _applied), do: stored_decision(decision)
 
   defp stored_decision({:replace, adjusted}),
     do:
@@ -2137,10 +2146,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
            unit_id,
            status_id,
            [
-             val1: instance.val1,
-             val2: instance.val2,
-             val3: instance.val3,
-             val4: instance.val4,
+             val1: new_instance.val1,
+             val2: new_instance.val2,
+             val3: new_instance.val3,
+             val4: new_instance.val4,
              tick: instance.tick,
              flag: instance.flag,
              duration: duration,
@@ -2148,8 +2157,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
              source_type: instance.source_type,
              state: new_instance.state || %{},
              phase: new_instance.phase
-           ] ++ loaded_first_tick(status_params),
-           store_decision(definition, {unit_type, unit_id}, held, incoming)
+           ] ++ Keyword.take(status_params, [:first_tick]),
+           store_decision(definition, {unit_type, unit_id}, held, incoming, new_instance)
          ) do
       {:stored, stored_instance, prior_instance} ->
         StatusTickManager.arm(unit_type, unit_id, stored_instance)
@@ -2368,13 +2377,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       _ ->
         :ok
     end
-  end
-
-  # Only a restore resumes a saved tick phase.
-  defp loaded_first_tick(status_params) do
-    if Keyword.get(status_params, :loaded, false),
-      do: Keyword.take(status_params, [:first_tick]),
-      else: []
   end
 
   defp resolve_tick(tick, _definition) when tick > 0, do: tick
@@ -2767,7 +2769,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
        ) do
     StatusStorage.update_status(unit_type, unit_id, status_id, fn
       %StatusEntry{generation: ^expected_generation} = entry ->
-        %{entry | state: new_instance.state || %{}, phase: new_instance.phase}
+        %{
+          entry
+          | val1: new_instance.val1,
+            val2: new_instance.val2,
+            val3: new_instance.val3,
+            val4: new_instance.val4,
+            state: new_instance.state || %{},
+            phase: new_instance.phase
+        }
 
       current ->
         current

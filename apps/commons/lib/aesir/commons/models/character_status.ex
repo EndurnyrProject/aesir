@@ -8,8 +8,11 @@ defmodule Aesir.Commons.Models.CharacterStatus do
   `remaining_ms` stores how much of the status' duration was left at save
   time; `nil` means the status is permanent or otherwise infinite.
   `next_tick_ms` stores how much was left until a ticking status's next tick
-  (`nil` for a tickless status), so a restore keeps the tick phase. Runtime-only fields of a status
-  instance (`state`, `phase`) are not persisted — the effect's `on_apply`
+  (`nil` for a tickless status), so a restore keeps the tick phase.
+  `source_type` stores the unit type of the status source (`"player"`,
+  `"mob"`, ...), so a restored status resolves its source as the right kind of
+  unit; it is `nil` only for rows saved before it existed. Runtime-only fields
+  of a status instance (`state`, `phase`) are not persisted — the effect's `on_apply`
   rebuilds them on restore.
   """
 
@@ -29,6 +32,7 @@ defmodule Aesir.Commons.Models.CharacterStatus do
           tick: integer(),
           flag: integer(),
           source_id: integer() | nil,
+          source_type: String.t() | nil,
           remaining_ms: integer() | nil,
           next_tick_ms: integer() | nil,
           character: Character.t() | Ecto.Association.NotLoaded.t(),
@@ -47,6 +51,7 @@ defmodule Aesir.Commons.Models.CharacterStatus do
     field :tick, :integer, default: 0
     field :flag, :integer, default: 0
     field :source_id, :integer
+    field :source_type, :string
     field :remaining_ms, :integer
     field :next_tick_ms, :integer
 
@@ -69,6 +74,7 @@ defmodule Aesir.Commons.Models.CharacterStatus do
       :tick,
       :flag,
       :source_id,
+      :source_type,
       :remaining_ms,
       :next_tick_ms
     ])

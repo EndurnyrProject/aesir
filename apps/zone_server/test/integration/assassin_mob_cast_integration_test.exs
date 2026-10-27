@@ -193,8 +193,12 @@ defmodule Aesir.ZoneServer.Integration.AssassinMobCastIntegrationTest do
              val1: 5,
              source_id: ^caster_id,
              source_type: :mob,
-             state: %{remaining_ms: 7_000, poison_react_level: 0}
-           } = StatusStorage.get_status(:player, target_id, :sc_splasher)
+             val4: 7_000,
+             tick: 500,
+             expires_at: nil
+           } = armed = StatusStorage.get_status(:player, target_id, :sc_splasher)
+
+    assert armed.next_tick_at == armed.started_at + 1_000
 
     assert current_sp(target.pid) == sp_before
   end

@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sacrifice do
   size penalty, and the holder's status ATK bonuses. Every swing costs the
   holder 9% of maximum HP, charged after the strike resolves, so the fifth
   swing can kill the holder. The status ends when the fifth swing is spent,
-  never by timer. The remaining swings are kept in `val2` (the skill starts it
+  never by timer. The remaining swings are kept in `val2` (the status starts it
   at five) alongside `state.remaining`, so the status is kept across a logout
   and a restore resumes from `val2`. Identical in both game modes; pre-renewal
   only adds an after-cast delay on the skill itself.
@@ -44,7 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sacrifice do
     do: {:ok, Helpers.put_state(instance, :remaining, instance.val2)}
 
   def on_apply(_target, instance, _context),
-    do: {:ok, Helpers.put_state(instance, :remaining, @swings)}
+    do: {:ok, Helpers.put_state(%{instance | val2: @swings}, :remaining, @swings)}
 
   @impl true
   @spec attack_replacement(Definition.target(), StatusEntry.t(), Definition.context()) ::

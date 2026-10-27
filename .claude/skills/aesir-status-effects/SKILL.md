@@ -128,8 +128,12 @@ compares it.
 
 `PlayerSession.terminate/2` saves persistable statuses to `character_statuses` (consumed on
 login by `StatusPersistence.restore_on_spawn/1` — loaded then deleted). Durations persist
-as `remaining_ms` (nil = permanent); `state`/`phase` are NOT persisted — `on_apply` must be
-able to rebuild them. `source_type` is not persisted either.
+as `remaining_ms` (nil = permanent or infinite), and a ticking status persists the time
+left until its next tick as `next_tick_ms`, restored as its `first_tick`. `source_type` is
+persisted with `source_id`, so a status a monster applied restores with that monster as its
+source. `val1`-`val4` are persisted, including the values `on_apply` and `on_tick` return
+(both are stored), so a value the status sets or counts down belongs in a val, not in
+`state`. `state`/`phase` are NOT persisted — `on_apply` must be able to rebuild them.
 
 ## Testing
 

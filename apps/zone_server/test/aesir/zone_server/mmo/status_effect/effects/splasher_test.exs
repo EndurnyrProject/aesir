@@ -13,34 +13,26 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SplasherTest do
 
   setup :verify_on_exit!
 
-  test "is tickless to the global poll and decrements only exact callbacks" do
+  test "is saved and counts its countdown down in val4 every half second" do
     metadata = Splasher.metadata()
-    assert metadata.no_save
+    refute metadata.no_save
     refute metadata.remove_on_map_change
     refute metadata.no_dispel
     assert metadata.remove_on_death
     assert metadata.icon == :splasher
     assert metadata.immunity == [:status_immune]
-    assert metadata.tick_interval == nil
+    assert metadata.tick_interval == 500
 
-    instance = entry(remaining_ms: 1_000)
-
-    assert {:ok, %{state: %{remaining_ms: 500}}} =
-             Splasher.on_tick({:mob, 2_000}, instance, %{})
+    assert {:ok, %{val4: 500}} = Splasher.on_tick({:mob, 2_000}, entry(countdown: 1_000), %{})
   end
 
   @tag game_mode: :renewal
-  test "a player terminal tick uses the current target cell and snapshotted passive ratio" do
+  test "a player terminal tick uses the current target cell and the source's current Poison React" do
     expect(StatusInterpreter, :expire_status_if_current, fn
       :mob, 2_000, :sc_splasher, _instance -> true
     end)
 
-    source = %PlayerState{
-      character_id: 1_000,
-      map_name: "prontera",
-      action_state: :idle,
-      stats: %{current_state: %{hp: 100}}
-    }
+    source = player_source(10)
 
     expect(TargetResolver, :resolve, fn :player, 1_000 -> {:ok, self(), source, :player} end)
 
@@ -69,11 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SplasherTest do
     expect(SpecialEffect, :play, fn {:mob, 2_000}, :splasher -> :ok end)
 
     assert :remove =
-             Splasher.on_tick(
-               {:mob, 2_000},
-               entry(remaining_ms: 500, level: 10, poison_react_level: 10),
-               %{}
-             )
+             Splasher.on_tick({:mob, 2_000}, entry(countdown: 500, level: 10), %{})
   end
 
   @tag game_mode: :renewal
@@ -98,7 +86,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SplasherTest do
       |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
 
     instance = %{
-      entry(remaining_ms: 500, level: 1, poison_react_level: 99)
+      entry(countdown: 500, level: 1)
       | source_id: 3_000,
         source_type: :mob
     }
@@ -129,12 +117,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SplasherTest do
       :mob, 2_000, :sc_splasher, _instance -> true
     end)
 
-    source = %PlayerState{
-      character_id: 1_000,
-      map_name: "prontera",
-      action_state: :idle,
-      stats: %{current_state: %{hp: 100}}
-    }
+    source = player_source(10)
 
     expect(TargetResolver, :resolve, fn :player, 1_000 -> {:ok, self(), source, :player} end)
 
@@ -155,11 +138,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SplasherTest do
     expect(SpecialEffect, :play, fn {:mob, 2_000}, :splasher -> :ok end)
 
     assert :remove =
-             Splasher.on_tick(
-               {:mob, 2_000},
-               entry(remaining_ms: 500, level: 10, poison_react_level: 10),
-               %{}
-             )
+             Splasher.on_tick({:mob, 2_000}, entry(countdown: 500, level: 10), %{})
   end
 
   test "source or target loss cleans the terminal status without exploding" do
@@ -167,7 +146,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SplasherTest do
       :mob, 2_000, :sc_splasher, _instance -> true
     end)
 
-    instance = entry(remaining_ms: 500)
+    instance = entry(countdown: 500)
 
     expect(TargetResolver, :resolve, fn :player, 1_000 -> {:error, :target_not_found} end)
     assert :remove = Splasher.on_tick({:mob, 2_000}, instance, %{})
@@ -188,28 +167,68 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SplasherTest do
     assert :remove = Splasher.on_tick({:mob, 2_000}, instance, %{})
   end
 
+  @tag game_mode: :renewal
+  test "a dead source still explodes, and one on another map does not" do
+    expect(StatusInterpreter, :expire_status_if_current, 2, fn
+      :mob, 2_000, :sc_splasher, _instance -> true
+    end)
+
+    dead = put_in(%{player_source(0) | action_state: :dead}.stats.current_state.hp, 0)
+    elsewhere = %{player_source(0) | map_name: "geffen"}
+
+    expect(TargetResolver, :resolve, 2, fn :player, 1_000 ->
+      {:ok, self(), Process.get(:splasher_source), :player}
+    end)
+
+    expect(TargetResolver, :resolve_target_position, 2, fn {:mob, 2_000} ->
+      {:ok, :mob, {120, 121, "prontera"}}
+    end)
+
+    expect(Combat, :execute_forced_no_card_splash, fn ^dead, {120, 121}, 2, opts ->
+      assert opts[:skill_ratio] == 700
+      []
+    end)
+
+    expect(SpecialEffect, :play, fn {:mob, 2_000}, :splasher -> :ok end)
+
+    Process.put(:splasher_source, dead)
+    assert :remove = Splasher.on_tick({:mob, 2_000}, entry(countdown: 500), %{})
+
+    Process.put(:splasher_source, elsewhere)
+    assert :remove = Splasher.on_tick({:mob, 2_000}, entry(countdown: 500), %{})
+  end
+
   test "a terminal callback that loses the generation claim never explodes" do
     expect(StatusInterpreter, :expire_status_if_current, fn
       :mob, 2_000, :sc_splasher, _instance -> false
     end)
 
-    assert :remove = Splasher.on_tick({:mob, 2_000}, entry(remaining_ms: 500), %{})
+    assert :remove = Splasher.on_tick({:mob, 2_000}, entry(countdown: 500), %{})
   end
 
   test "ordinary expiration is inert" do
-    assert :ok = Splasher.on_expire({:mob, 2_000}, entry(remaining_ms: 500), %{})
+    assert :ok = Splasher.on_expire({:mob, 2_000}, entry(countdown: 500), %{})
   end
 
   defp entry(opts) do
     %StatusEntry{
       type: :sc_splasher,
       val1: Keyword.get(opts, :level, 3),
-      tick: 0,
+      val4: Keyword.fetch!(opts, :countdown),
+      tick: 500,
       source_id: 1_000,
-      source_type: :player,
-      state: %{
-        remaining_ms: Keyword.fetch!(opts, :remaining_ms),
-        poison_react_level: Keyword.get(opts, :poison_react_level, 7)
+      source_type: :player
+    }
+  end
+
+  defp player_source(poison_react_level) do
+    %PlayerState{
+      character_id: 1_000,
+      map_name: "prontera",
+      action_state: :idle,
+      stats: %{
+        current_state: %{hp: 100},
+        progression: %{learned_skills: %{139 => poison_react_level}}
       }
     }
   end
