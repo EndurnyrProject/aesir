@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EquipDisplayStatusesTest do
       assert module.id() == status_id
       assert metadata.target_types == [:player]
       assert metadata.permanent
-      assert metadata.no_save
+      assert metadata.no_save == (status_id != :sc_summer)
       assert metadata.no_dispel
       refute metadata.remove_on_death
       assert metadata.calc_flags == []

@@ -125,6 +125,30 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistenceTest do
       assert Repo.all(CharacterStatus) == []
     end
 
+    test "persists the time left until a ticking status's next tick", %{character: character} do
+      :ok =
+        StatusStorage.apply_status(:player, character.id, :sc_poison,
+          tick: 1_000,
+          duration: 10_000
+        )
+
+      :ok =
+        StatusStorage.update_status(
+          :player,
+          character.id,
+          :sc_poison,
+          &%{&1 | next_tick_at: System.monotonic_time(:millisecond) + 300}
+        )
+
+      :ok = StatusStorage.apply_status(:player, character.id, :sc_blessing, duration: 60_000)
+
+      :ok = StatusPersistence.save_statuses(character.id)
+
+      rows = Map.new(Repo.all(CharacterStatus), &{&1.status_type, &1})
+      assert rows["sc_poison"].next_tick_ms in 0..300
+      assert rows["sc_blessing"].next_tick_ms == nil
+    end
+
     test "replaces previously saved rows", %{character: character} do
       :ok = StatusStorage.apply_status(:player, character.id, :sc_blessing, duration: 60_000)
       :ok = StatusPersistence.save_statuses(character.id)
@@ -192,6 +216,69 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistenceTest do
                StatusDisplay.spawn_state(:player, character.id).effect_state,
                Option.id(:cloak)
              ) != 0
+    end
+
+    test "a restored poison takes its next tick after the time that was left", %{
+      character: character
+    } do
+      player = PlayerState.new(character)
+      :ok = UnitRegistry.register_player(player, self())
+
+      %CharacterStatus{}
+      |> CharacterStatus.changeset(%{
+        char_id: character.id,
+        status_type: "sc_poison",
+        val1: 1,
+        tick: 1_000,
+        remaining_ms: 10_000,
+        next_tick_ms: 300
+      })
+      |> Repo.insert!()
+
+      stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+      stub(StatusSync, :send_param, fn _connection, _param, _value -> :ok end)
+
+      before = System.monotonic_time(:millisecond)
+      StatusPersistence.restore_on_spawn(%{game_state: player, connection_pid: self()})
+      after_restore = System.monotonic_time(:millisecond)
+
+      %{next_tick_at: next_tick_at, tick: 1_000} =
+        StatusStorage.get_status(:player, character.id, :sc_poison)
+
+      assert next_tick_at >= before + 300
+      assert next_tick_at <= after_restore + 300
+    end
+
+    test "a restored Cloaking drains its first SP after the time that was left", %{
+      character: character
+    } do
+      player = PlayerState.new(character)
+      player = put_in(player.stats.progression.learned_skills[135], 5)
+      :ok = UnitRegistry.register_player(player, self())
+
+      %CharacterStatus{}
+      |> CharacterStatus.changeset(%{
+        char_id: character.id,
+        status_type: "sc_cloaking",
+        val1: 5,
+        tick: 4_000,
+        remaining_ms: nil,
+        next_tick_ms: 700
+      })
+      |> Repo.insert!()
+
+      stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+      stub(StatusSync, :send_param, fn _connection, _param, _value -> :ok end)
+
+      before = System.monotonic_time(:millisecond)
+      StatusPersistence.restore_on_spawn(%{game_state: player, connection_pid: self()})
+      after_restore = System.monotonic_time(:millisecond)
+
+      %{next_tick_at: next_tick_at} =
+        StatusStorage.get_status(:player, character.id, :sc_cloaking)
+
+      assert next_tick_at >= before + 700
+      assert next_tick_at <= after_restore + 700
     end
 
     test "drops malformed and stale finite rows without applying them", %{character: character} do

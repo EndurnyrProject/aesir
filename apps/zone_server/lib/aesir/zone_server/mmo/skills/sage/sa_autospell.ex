@@ -174,6 +174,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospell do
 
     case StatusInterpreter.apply_status(:player, character_id, :sc_autospell,
            val1: level,
+           val2: bolt_id,
+           val3: armed_level,
+           val4: state.chance,
            duration: duration(level),
            caster_id: character_id,
            state: state

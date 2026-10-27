@@ -23,11 +23,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SacrificeTest do
     :ok
   end
 
-  test "is a permanent, non-persisted player buff with the attack replacement capability" do
+  test "is a permanent, persisted player buff with the attack replacement capability" do
     definition = Registry.get_definition(:sc_sacrifice)
 
     assert definition.permanent
-    assert definition.no_save
+    refute definition.no_save
     assert :buff in definition.properties
     assert MapSet.member?(Registry.statuses_implementing(:attack_replacement), :sc_sacrifice)
   end
@@ -35,6 +35,25 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SacrificeTest do
   test "on apply seeds five remaining swings" do
     assert {:ok, %StatusEntry{state: %{remaining: 5}}} =
              Sacrifice.on_apply({:player, @holder_id}, %StatusEntry{}, %{})
+  end
+
+  test "a restore keeps the remaining swings, and a swing spends one" do
+    assert {:ok, %StatusEntry{val2: 3, state: %{remaining: 3}} = restored} =
+             Sacrifice.on_apply({:player, @holder_id}, %StatusEntry{val2: 3, state: %{}}, %{
+               loaded: true
+             })
+
+    :ok =
+      StatusStorage.apply_status(:player, @holder_id, :sc_sacrifice,
+        val1: 3,
+        val2: restored.val2,
+        state: restored.state
+      )
+
+    stub(Helpers, :deal_damage, fn _target, _amount -> :ok end)
+    Sacrifice.attack_replacement({:player, @holder_id}, entry(), @context)
+
+    assert %StatusEntry{val2: 2, state: %{remaining: 2}} = entry()
   end
 
   test "each swing becomes a max-HP strike that ignores DEF, FLEE, size and status ATK" do

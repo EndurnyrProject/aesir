@@ -28,7 +28,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
 
   A status with no tick interval (`tick <= 0`) gets a `nil` next_tick_at and is
   never picked up by `get_due_statuses/1`; only statuses with periodic behavior
-  enter the tick loop.
+  enter the tick loop. A ticking status takes its first tick `first_tick`
+  milliseconds after the apply when given, otherwise one interval after it.
 
   ## Parameters
   - unit_type: Type of unit (:player, :mob, :npc, etc.)
@@ -189,7 +190,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
       phase: phase,
       started_at: now_ms,
       expires_at: if(duration && duration > 0, do: now_ms + duration, else: nil),
-      next_tick_at: if(tick > 0, do: now_ms + tick, else: nil),
+      next_tick_at: StatusEntry.first_tick_at(tick, status_params, now_ms),
       tick_count: 0,
       generation: System.unique_integer([:monotonic, :positive])
     }

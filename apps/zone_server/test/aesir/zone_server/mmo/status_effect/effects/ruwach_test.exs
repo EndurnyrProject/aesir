@@ -69,6 +69,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.RuwachTest do
     end
   end
 
+  test "a restored Ruwach waits for its next tick to pulse" do
+    reject(&SpatialIndex.get_unit_position/2)
+
+    assert {:ok, %StatusEntry{}} =
+             Ruwach.on_apply(@caster, entry(), %{target_id: 1000, loaded: true})
+  end
+
   describe "on_tick/3 - recurring pulse" do
     test "reveals concealed units and deals a holy splash on each tick" do
       stub(SpatialIndex, :get_unit_position, fn :player, 1000 -> @caster_pos end)

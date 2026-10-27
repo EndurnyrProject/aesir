@@ -41,6 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaSacrificeTest do
 
     expect(Interpreter, :apply_status, fn :player, 5_301, :sc_sacrifice, params ->
       assert params[:val1] == 4
+      assert params[:val2] == 5
       assert params[:caster_id] == 5_301
       refute Keyword.has_key?(params, :duration)
       :ok

@@ -65,6 +65,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.HermodeTest do
   end
 
   @tag game_mode: :renewal
+  test "a restored renewal Hermode keeps the allies' buffs" do
+    assert :ok = Interpreter.apply_status(:player, 18, :sc_blessing, caster_id: 18, val1: 10)
+
+    assert :ok =
+             Interpreter.apply_status(:player, 18, :sc_hermode,
+               caster_id: 17,
+               val1: 1,
+               duration: 10_000,
+               loaded: true
+             )
+
+    assert StatusStorage.has_status?(:player, 18, :sc_blessing)
+    assert StatusStorage.has_status?(:player, 18, :sc_hermode)
+  end
+
+  @tag game_mode: :renewal
   test "the caster keeps Blessing" do
     assert :ok = Interpreter.apply_status(:player, 17, :sc_blessing, caster_id: 17, val1: 10)
 

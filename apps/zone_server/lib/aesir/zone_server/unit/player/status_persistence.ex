@@ -1,15 +1,16 @@
 defmodule Aesir.ZoneServer.Unit.Player.StatusPersistence do
   @moduledoc """
-  Saves a player's active statuses at logout and restores them at login,
-  mirroring rAthena's `sc_data` table.
+  Saves a player's active statuses at logout and restores them at login.
 
   Only statuses whose definition does not set `no_save` are written. The
-  in-memory `expires_at` is a monotonic timestamp that cannot survive the VM,
-  so what persists is the remaining duration in milliseconds (`nil` for a
-  permanent or otherwise infinite status, restored as infinite); entries that
-  already expired are skipped. Rows are
-  consumed on restore (loaded then deleted, as rAthena does with `sc_data`)
-  and re-applied through `StatusManager` with the `loaded` flag so the
+  in-memory `expires_at` and `next_tick_at` are monotonic timestamps that
+  cannot survive the VM, so what persists is the remaining duration in
+  milliseconds (`nil` for a permanent or otherwise infinite status, restored
+  as infinite) and, for a ticking status, the time left until its next tick
+  (zero when the tick is already due), from which the restored status takes
+  its first tick before resuming its interval; entries that already expired
+  are skipped. Rows are consumed on restore (loaded then deleted) and
+  re-applied through `StatusManager` with the `loaded` flag so the
   immunity/conflict/resistance gates are not re-rolled. Runtime `state` and
   `phase` are not persisted; the effect's `on_apply` rebuilds them.
   """
@@ -92,6 +93,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistence do
         flag: row.flag,
         caster_id: row.source_id,
         duration: row.remaining_ms,
+        first_tick: row.next_tick_ms,
         loaded: true
       ]
 
@@ -135,7 +137,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistence do
           tick: entry.tick,
           flag: entry.flag,
           source_id: entry.source_id,
-          remaining_ms: remaining_ms
+          remaining_ms: remaining_ms,
+          next_tick_ms: next_tick_ms(entry, now_ms)
         }
       ]
     else
@@ -162,6 +165,11 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistence do
        do: {:ok, expires_at - now_ms}
 
   defp remaining_ms(%StatusEntry{}, _now_ms), do: :expired
+
+  defp next_tick_ms(%StatusEntry{next_tick_at: nil}, _now_ms), do: nil
+
+  defp next_tick_ms(%StatusEntry{next_tick_at: next_tick_at}, now_ms),
+    do: max(next_tick_at - now_ms, 0)
 
   defp saved_statuses_query(char_id) do
     from(cs in CharacterStatus, where: cs.char_id == ^char_id)

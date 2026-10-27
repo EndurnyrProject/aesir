@@ -70,6 +70,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StoneTest do
       assert {:ok, _} = Stone.on_tick({:mob, 1}, step(3_000, 5_000), @healthy)
     end
 
+    test "a restored petrification counts its steps from the original start" do
+      reject(&Helpers.apply_passive_hp_loss/2)
+      restored = %{step(3_000, 5_000) | started_at: System.monotonic_time(:millisecond) - 2_000}
+
+      assert {:ok, _} = Stone.on_tick({:mob, 1}, restored, @healthy)
+    end
+
     test "no drain at a quarter of Max HP or below" do
       reject(&Helpers.apply_passive_hp_loss/2)
 

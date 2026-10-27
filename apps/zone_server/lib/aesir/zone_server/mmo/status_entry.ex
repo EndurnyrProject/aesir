@@ -24,6 +24,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
   - `phase`: Current phase for multi-phase status effects (defaults to nil)
   - `loaded`: Marks the restore of a persisted status, skipping the apply
     gates (defaults to false)
+  - `first_tick`: Milliseconds until a restored ticking status's first tick,
+    the time that was left until its next tick when saved (defaults to one
+    interval)
   - `success_rate`: Base application chance as a percentage before resistance
     (defaults to 100)
   - `resistance_roll`: Injectable roll given the final per-10000 rate by the
@@ -55,6 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
           state: map(),
           phase: atom() | nil,
           loaded: boolean(),
+          first_tick: non_neg_integer() | nil,
           success_rate: number(),
           resistance_roll: (integer() -> boolean()),
           no_rate_def: boolean(),
@@ -180,6 +184,21 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
   @spec from_map(map()) :: t()
   def from_map(map) do
     struct(__MODULE__, map)
+  end
+
+  @doc """
+  The first tick deadline of a status applied at `now_ms` with interval `tick`:
+  `first_tick` milliseconds later when the params give it, one interval later
+  otherwise, and `nil` for a tickless status.
+  """
+  @spec first_tick_at(integer(), status_params(), integer()) :: integer() | nil
+  def first_tick_at(tick, _status_params, _now_ms) when tick <= 0, do: nil
+
+  def first_tick_at(tick, status_params, now_ms) do
+    case Keyword.get(status_params, :first_tick) do
+      nil -> now_ms + tick
+      first_tick when is_integer(first_tick) and first_tick >= 0 -> now_ms + first_tick
+    end
   end
 
   @doc """

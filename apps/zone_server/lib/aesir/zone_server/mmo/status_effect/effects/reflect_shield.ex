@@ -13,7 +13,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ReflectShield do
 
   The shield requirement is checked at cast time; the `:remove_on_unequip_shield`
   flag drops the stance if the shield is later removed without a replacement.
-  It starts and ends its devotees' copies (`DevotionMirror`).
+  It starts and ends its devotees' copies (`DevotionMirror`). It is kept across
+  a logout; a restored status is the holder's own, as a logout ends every
+  Devotion link and the copies with it.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_reflectshield,
@@ -21,7 +23,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ReflectShield do
     no_clear_buff: false,
     clear_buff_flags: [:remove_on_hermode],
     duration: 300_000,
-    no_save: true,
     properties: [:buff],
     flags: [:remove_on_unequip_shield],
     icon: :reflectshield

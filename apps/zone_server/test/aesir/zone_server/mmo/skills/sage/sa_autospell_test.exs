@@ -231,6 +231,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellTest do
       expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_autospell, params ->
         assert params[:duration] == 210_000
         assert params[:state] == %{skill: :mg_firebolt, max_level: 2, chance: 8}
+        assert {params[:val2], params[:val3], params[:val4]} == {@firebolt, 2, 8}
         :ok
       end)
 

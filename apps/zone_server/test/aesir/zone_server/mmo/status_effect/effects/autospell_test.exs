@@ -96,10 +96,26 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AutospellTest do
     end
   end
 
+  describe "on_apply/3" do
+    test "a restore rebuilds the armed bolt from its values" do
+      instance = %Aesir.ZoneServer.Mmo.StatusEntry{
+        type: :sc_autospell,
+        val1: 4,
+        val2: 19,
+        val3: 2,
+        val4: 8,
+        state: %{}
+      }
+
+      assert {:ok, %{state: %{skill: :mg_firebolt, max_level: 2, chance: 8}}} =
+               Autospell.on_apply({:player, 1}, instance, %{loaded: true})
+    end
+  end
+
   describe "metadata" do
-    test "survives dispel and is not persisted across logout" do
+    test "survives dispel and is persisted across logout" do
       assert Autospell.metadata().no_dispel == true
-      assert Autospell.metadata().no_save == true
+      assert Autospell.metadata().no_save == false
     end
 
     test "publishes the on_dealt_damage capability so the registry indexes it" do

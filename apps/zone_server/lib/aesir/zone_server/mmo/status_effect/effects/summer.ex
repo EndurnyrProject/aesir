@@ -4,7 +4,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Summer do
     flags: [:stop_attacking],
     target_types: [:player],
     permanent: true,
-    no_save: true,
     no_dispel: true,
     no_clear_buff: true,
     remove_on_death: false,

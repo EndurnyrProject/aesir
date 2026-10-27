@@ -16,8 +16,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoguard do
   The block chance is fixed when the status starts on its own (5 to 30 percent
   by level, kept in `state.block_chance`); a Devotion copy carries its
   Crusader's chance, or none when inherited at link time. It lasts 300 seconds
-  unless re-cast off, is not persisted across logout (`no_save: true`), and
-  starts and ends its devotees' copies (`DevotionMirror`). The shield
+  unless re-cast off, is kept across a logout (a restored status is the
+  holder's own, as a logout ends every Devotion link and the copies with it,
+  so its chance is fixed again from `val1`), and starts and ends its devotees'
+  copies (`DevotionMirror`). The shield
   requirement is checked by the skill at cast time, and the
   `:remove_on_unequip_shield` flag drops the stance if the shield is later
   unequipped or displaced without another shield taking its place.
@@ -27,7 +29,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoguard do
     no_dispel: false,
     no_clear_buff: false,
     clear_buff_flags: [:remove_on_hermode],
-    no_save: true,
     duration: 300_000,
     properties: [:buff],
     flags: [:remove_on_unequip_shield],

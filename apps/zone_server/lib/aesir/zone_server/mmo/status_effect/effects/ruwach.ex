@@ -8,7 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Ruwach do
   caster's current cell and deals a single holy magic splash hit to offensive
   targets in the same radius. The first pulse fires on apply. The caster is
   never revealed or hit. If the caster's position cannot be resolved (logged
-  out/dead) the pulse is a safe no-op and the status expires normally.
+  out/dead) the pulse is a safe no-op and the status expires normally. It is
+  kept across a logout; the restore does not pulse and resumes at the next tick.
 
   rAthena (`skill_db` id 24): `SplashArea: 2`, `Element: Holy`, `Duration1: 10000`,
   status option `Ruwach`; the holy hit's skill ratio is `base (100) + 45`
@@ -21,7 +22,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Ruwach do
     properties: [:buff],
     duration: 10_000,
     tick_interval: 500,
-    no_save: true,
     option: :ruwach
 
   alias Aesir.ZoneServer.Mmo.Combat
@@ -38,6 +38,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Ruwach do
   @hidden_statuses [:sc_hiding, :sc_cloaking]
 
   @impl true
+  def on_apply(_target, instance, %{loaded: true}), do: {:ok, instance}
+
   def on_apply({unit_type, _unit_id}, instance, %{target_id: caster_id}) do
     pulse(unit_type, caster_id)
     {:ok, instance}

@@ -89,7 +89,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   the restore of a persisted status: it already passed every gate when first
   applied, so immunity, prevention, conflict and resistance checks are
   skipped and the given `duration` is used as-is. A loaded finite definition
-  requires a positive integer duration.
+  requires a positive integer duration. A loaded ticking status takes its first
+  tick `first_tick` milliseconds after the restore (the time that was left
+  until its next tick when saved), then every interval.
 
   `owner_refresh: :notify` publishes an asynchronous player stat refresh only
   after the status is stored. Applications default to `:auto`: the owning
@@ -1940,7 +1942,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       state: state,
       phase: phase || definition.initial_phase,
       started_at: now_ms,
-      next_tick_at: if(tick > 0, do: now_ms + tick, else: nil),
+      next_tick_at: StatusEntry.first_tick_at(tick, loaded_first_tick(status_params), now_ms),
       tick_count: 0,
       expires_at: nil
     }
@@ -2132,7 +2134,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
              source_type: instance.source_type,
              state: new_instance.state || %{},
              phase: new_instance.phase
-           ],
+           ] ++ loaded_first_tick(status_params),
            store_decision(definition, {unit_type, unit_id}, held, incoming)
          ) do
       {:stored, stored_instance, prior_instance} ->
@@ -2352,6 +2354,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       _ ->
         :ok
     end
+  end
+
+  # Only a restore resumes a saved tick phase.
+  defp loaded_first_tick(status_params) do
+    if Keyword.get(status_params, :loaded, false),
+      do: Keyword.take(status_params, [:first_tick]),
+      else: []
   end
 
   defp resolve_tick(tick, _definition) when tick > 0, do: tick

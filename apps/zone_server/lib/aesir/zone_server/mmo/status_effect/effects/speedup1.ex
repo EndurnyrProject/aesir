@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Speedup1 do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_speedup1,
+    no_save: true,
     no_dispel: false,
     no_clear_buff: false,
     clear_buff_flags: [:remove_on_hermode],

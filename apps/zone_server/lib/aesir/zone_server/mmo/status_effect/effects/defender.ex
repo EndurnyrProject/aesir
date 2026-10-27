@@ -11,7 +11,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Defender do
   truncated). The walk delay is floored at 200 ms per cell in both modes.
   Renewal loses a tenth of the penalty as flat attack speed; pre-renewal loses
   the same figure as a percentage rate. It starts and ends its devotees' copies
-  (`DevotionMirror`).
+  (`DevotionMirror`). It is kept across a logout; a restored status is the
+  holder's own (a logout ends every Devotion link and the copies with it), so
+  its figures are fixed again from `val1`.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_defender,
@@ -22,8 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Defender do
     calc_flags: [:aspd, :aspd_rate, :speed],
     flags: [:remove_on_unequip_shield],
     icon: :defender,
-    duration: 180_000,
-    no_save: true
+    duration: 180_000
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirror

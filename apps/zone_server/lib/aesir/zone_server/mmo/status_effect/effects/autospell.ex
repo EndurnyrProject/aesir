@@ -10,6 +10,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autospell do
       renewal Hindsight 1 arms 0, and a proc rolled at level 0 casts nothing
     * `:chance` - the per-hit proc chance (`SaAutospell.proc_chance/1`)
 
+  The values mirror it (`val2` the bolt's skill id, `val3` the max level, `val4`
+  the chance), so the status is kept across a logout and a restore rebuilds the
+  state from them.
+
   Recursion is structurally impossible and needs no guard: `on_dealt_damage/4`
   fires only from the weapon-attack path (`Combat.dispatch_dealt_damage/4`) and
   every bolt it casts is magic, which never re-enters that path.
@@ -18,11 +22,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autospell do
     id: :sc_autospell,
     properties: [:buff],
     icon: :autospell,
-    no_save: true,
     no_dispel: true,
     no_clear_buff: false
 
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
+
+  @impl true
+  def on_apply(_target, instance, %{loaded: true}) do
+    {:ok, %{name: skill}} = Catalog.by_id(instance.val2)
+
+    {:ok, %{instance | state: %{skill: skill, max_level: instance.val3, chance: instance.val4}}}
+  end
+
+  def on_apply(_target, instance, _context), do: {:ok, instance}
 
   @impl true
   def on_dealt_damage(target, instance, hit_info, context),

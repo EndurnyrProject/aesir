@@ -1,12 +1,14 @@
 defmodule Aesir.Commons.Models.CharacterStatus do
   @moduledoc """
   CharacterStatus model persisting a character's active status effects across
-  logouts, mirroring rAthena's `sc_data` table.
+  logouts.
 
   Rows are written on logout and consumed (loaded then deleted) on login, so
   the table only holds statuses of characters that are currently offline.
   `remaining_ms` stores how much of the status' duration was left at save
-  time; `nil` means the status is permanent. Runtime-only fields of a status
+  time; `nil` means the status is permanent or otherwise infinite.
+  `next_tick_ms` stores how much was left until a ticking status's next tick
+  (`nil` for a tickless status), so a restore keeps the tick phase. Runtime-only fields of a status
   instance (`state`, `phase`) are not persisted — the effect's `on_apply`
   rebuilds them on restore.
   """
@@ -28,6 +30,7 @@ defmodule Aesir.Commons.Models.CharacterStatus do
           flag: integer(),
           source_id: integer() | nil,
           remaining_ms: integer() | nil,
+          next_tick_ms: integer() | nil,
           character: Character.t() | Ecto.Association.NotLoaded.t(),
           inserted_at: NaiveDateTime.t() | nil,
           updated_at: NaiveDateTime.t() | nil
@@ -45,6 +48,7 @@ defmodule Aesir.Commons.Models.CharacterStatus do
     field :flag, :integer, default: 0
     field :source_id, :integer
     field :remaining_ms, :integer
+    field :next_tick_ms, :integer
 
     timestamps()
   end
@@ -65,7 +69,8 @@ defmodule Aesir.Commons.Models.CharacterStatus do
       :tick,
       :flag,
       :source_id,
-      :remaining_ms
+      :remaining_ms,
+      :next_tick_ms
     ])
     |> validate_required([:char_id, :status_type])
     |> unique_constraint([:char_id, :status_type])

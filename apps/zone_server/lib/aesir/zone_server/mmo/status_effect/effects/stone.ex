@@ -11,7 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Stone do
   Petrification runs on a 5 second timer: at every step that lands within the petrification
   duration (`val3`), while the holder has more than a quarter of its Max HP, it loses 1% of
   Max HP (at least 1) without dying. The last step of the timer ends it, so it lasts at least
-  5 seconds, and a final remainder shorter than 100 ms is dropped.
+  5 seconds, and a final remainder shorter than 100 ms is dropped. A step's time is counted
+  back from the end, so a petrification restored at login keeps its original steps.
 
   It stops movement through the `:prevents_movement` property, not through a speed
   penalty: the speed calculation never consults this status.
@@ -70,9 +71,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Stone do
 
   @impl true
   def on_tick(target, instance, context) do
-    if instance.next_tick_at - instance.started_at <= instance.val3, do: drain_hp(target, context)
+    if step_at(instance) <= instance.val3, do: drain_hp(target, context)
     {:ok, instance}
   end
+
+  # A step's time from the petrification's start, counted back from its end so a
+  # restored status keeps counting from the original start.
+  defp step_at(%{val3: petrify_ms, next_tick_at: next_tick_at, expires_at: expires_at}),
+    do: lifetime(petrify_ms) - (expires_at - next_tick_at)
 
   @doc """
   Returns the timer steps of a petrification lasting `petrify_ms`.

@@ -8,19 +8,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sacrifice do
   size penalty, and the holder's status ATK bonuses. Every swing costs the
   holder 9% of maximum HP, charged after the strike resolves, so the fifth
   swing can kill the holder. The status ends when the fifth swing is spent,
-  never by timer. Identical in both game modes; pre-renewal only adds an
-  after-cast delay on the skill itself.
+  never by timer. The remaining swings are kept in `val2` (the skill starts it
+  at five) alongside `state.remaining`, so the status is kept across a logout
+  and a restore resumes from `val2`. Identical in both game modes; pre-renewal
+  only adds an after-cast delay on the skill itself.
 
   Accepted deviations from the reference mechanics: the strike cannot be
-  perfect-dodged (the replacement path does not roll it), renewal's Auto Guard
-  bypass is not modelled, and the status is not kept across relog.
+  perfect-dodged (the replacement path does not roll it), and renewal's Auto Guard
+  bypass is not modelled.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_sacrifice,
     no_dispel: false,
     no_clear_buff: false,
     clear_buff_flags: [:remove_on_hermode],
-    no_save: true,
     permanent: true,
     properties: [:buff],
     target_types: [:player],
@@ -39,6 +40,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sacrifice do
   @impl true
   @spec on_apply(Definition.target(), StatusEntry.t(), Definition.context()) ::
           {:ok, StatusEntry.t()}
+  def on_apply(_target, instance, %{loaded: true}),
+    do: {:ok, Helpers.put_state(instance, :remaining, instance.val2)}
+
   def on_apply(_target, instance, _context),
     do: {:ok, Helpers.put_state(instance, :remaining, @swings)}
 
@@ -75,7 +79,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sacrifice do
 
   defp spend_swing(id, _remaining) do
     StatusStorage.update_status(:player, id, :sc_sacrifice, fn entry ->
-      Helpers.put_state(entry, :remaining, entry.state.remaining - 1)
+      remaining = entry.state.remaining - 1
+      Helpers.put_state(%{entry | val2: remaining}, :remaining, remaining)
     end)
   end
 end

@@ -11,7 +11,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SpearQuicken do
     no_dispel: false,
     no_clear_buff: false,
     clear_buff_flags: [:remove_on_hermode],
-    no_save: true,
     properties: [:buff],
     calc_flags: [:aspd, :aspd_rate, :flee, :cri],
     require_weapon: [:one_handed_spear, :two_handed_spear],

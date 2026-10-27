@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Concentration do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_concentration,
+    no_save: true,
     no_dispel: false,
     no_clear_buff: false,
     clear_buff_flags: [:remove_on_hermode],

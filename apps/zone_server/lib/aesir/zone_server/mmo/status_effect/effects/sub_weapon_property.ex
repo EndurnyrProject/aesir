@@ -22,8 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SubWeaponProperty do
     no_dispel: true,
     no_clear_buff: true,
     properties: [:buff],
-    icon: :sub_weaponproperty,
-    no_save: true
+    icon: :sub_weaponproperty
 
   alias Aesir.ZoneServer.Mmo.Element
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
