@@ -281,7 +281,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     schedule_step(game_state, step_delay(game_state, {game_state.x, game_state.y}, hd(path)))
   end
 
-  # On-touch warp trigger hook (rAthena `OnTouch`, cell-enter).
+  # On-touch warp trigger hook (cell-enter).
   #
   # Fires after the player has stepped onto `(x, y)`: if that cell sits inside a
   # warp's `xs/ys` area, cancel the remaining walk and call `PlayerSession.warp/4`
@@ -319,7 +319,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     end
   end
 
-  # On-touch NPC trigger-area hook (rAthena `OnTouch`, cell-enter).
+  # On-touch NPC trigger-area hook (cell-enter).
   #
   # Called only when the warp check above did not fire (a warp makes any
   # touch area on the map being left moot). Computes the set of touch rects
@@ -329,7 +329,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   # re-entering fires again, and standing still (this only runs on an actual
   # step) never re-fires. Every gid newly present (not in the old set) fires:
   # a busy player (an active `interaction_lock`) skips the fire but still
-  # counts the area as entered, matching rAthena's no-spam-while-busy rule.
+  # counts the area as entered (no re-fire while busy).
   @spec maybe_trigger_touch(map()) :: map()
   defp maybe_trigger_touch(%{game_state: game_state} = state) do
     containing =
@@ -360,7 +360,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
   # Starts the module's `OnTouch` handler as an attached interaction; when the
   # module declares no `OnTouch` label, falls back to the click path's
-  # `on_talk/1` start (rAthena warper behavior).
+  # `on_talk/1` start.
   @spec attach_or_fallback(non_neg_integer(), module(), map()) :: map()
   defp attach_or_fallback(gid, module, state) do
     base_ctx =
@@ -508,6 +508,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   defp do_request_move(state, %PlayerState{vending_shop: shop}, _dest_x, _dest_y, _opts)
        when shop != nil,
        do: {:noreply, state}
+
+  # A seated player never walks.
+  defp do_request_move(state, %PlayerState{action_state: :sitting}, _dest_x, _dest_y, _opts),
+    do: {:noreply, state}
 
   # A request with a path to its own destination stops the player's attack and
   # is walked, toward a random cell instead while the player is confused

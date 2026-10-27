@@ -1,10 +1,24 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.SitHandler do
+  @moduledoc """
+  Sit and stand requests. A committed posture change is broadcast to the area,
+  actor included, as a `DamageDealt` sit/stand action; clients only change
+  posture on that broadcast.
+  """
+
+  alias Aesir.Commons.Utils.ServerTick
+  alias Aesir.Net.DamageDealt
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  # e_damage_type DMG_SIT_DOWN / DMG_STAND_UP.
+  @dmg_sit_down 2
+  @dmg_stand_up 3
 
   @skill_id 223
   @status_id :sc_gangsterparadise
@@ -26,12 +40,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SitHandler do
     case PlayerState.transition_to(game_state, action_state) do
       {:ok, updated_game_state} ->
         state = StateCommit.commit(state, updated_game_state)
+        broadcast_posture(updated_game_state)
         synchronize_gangster_paradise(updated_game_state)
         {:noreply, state}
 
       {:error, :invalid_transition} ->
         {:noreply, state}
     end
+  end
+
+  defp broadcast_posture(%{character_id: id, map_name: map_name, x: x, y: y} = game_state) do
+    type = if game_state.action_state == :sitting, do: @dmg_sit_down, else: @dmg_stand_up
+
+    packet = %DamageDealt{
+      src_id: id,
+      target_id: 0,
+      server_tick: ServerTick.now(),
+      div: 0,
+      type: type
+    }
+
+    Broadcast.to_in_range(map_name, x, y, Config.view_range(), packet)
   end
 
   defp synchronize_gangster_paradise(%{map_name: map_name, x: x, y: y}) do

@@ -197,6 +197,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
       refute_received {:send, :gameplay, {:self_move, %SelfMove{}}}
     end
 
+    test "a sitting player does not walk" do
+      state = put_in(idle_state().game_state.action_state, :sitting)
+
+      {:noreply, new_state} = MovementHandler.handle_walk_request(state, 51, 50)
+
+      assert new_state.game_state.movement_state == :standing
+      assert new_state.game_state.action_state == :sitting
+      refute_received {:send, :gameplay, {:self_move, %SelfMove{}}}
+    end
+
     test "an unafflicted player moves exactly as before" do
       {:noreply, new_state} = MovementHandler.handle_request_move(idle_state(), 51, 50)
 
