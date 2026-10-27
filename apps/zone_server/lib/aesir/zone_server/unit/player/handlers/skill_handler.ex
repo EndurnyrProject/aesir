@@ -81,6 +81,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   @encore_id 305
   @brandish_spear 57
   @auto_counter 61
+  @divest_skills [215, 216, 217, 218]
   @overlaid_states [:sitting, :trading]
   @arrow_vulcan_id 394
 
@@ -2290,6 +2291,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   # Brandish Spear is a no-damage cast whose only visuals are its hits.
   defp broadcast_skill_effect(_game_state, @brandish_spear, _level, _target), do: :ok
+
+  # A Divest skill shows its effect with the strip's result once it is known.
+  defp broadcast_skill_effect(_game_state, skill_id, _level, _target)
+       when skill_id in @divest_skills,
+       do: :ok
 
   # Auto Counter's cast starts no visual of its own: its stance effect reaches
   # onlookers 100 ms later, sent by the skill module itself.

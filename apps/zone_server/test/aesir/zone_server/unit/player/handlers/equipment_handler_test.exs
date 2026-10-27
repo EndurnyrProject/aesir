@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.EquipResult
   alias Aesir.Net.ItemBound
+  alias Aesir.Net.SkillEffect
   alias Aesir.Net.SystemNotice
   alias Aesir.Net.UnequipResult
   alias Aesir.StatusActionFixture
@@ -19,8 +20,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
@@ -247,6 +251,127 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
              EquipmentHandler.handle_equip(0, 2, state)
 
     assert_receive {:send, :gameplay, {:equip_result, %EquipResult{index: 2, result: 0}}}
+  end
+
+  describe "a Divest request" do
+    setup do
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+      stub(StatusSync, :send_params, fn _connection, _params -> :ok end)
+      stub(StatusSync, :send_param, fn _connection, _param, _value -> :ok end)
+      stub(Calculator, :calculate_stats, fn stats, 1000 -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      :ok
+    end
+
+    test "strips each worn, unprotected piece and both hands' weapons" do
+      :ok = StatusStorage.apply_status(:player, 1000, :sc_cp_armor, duration: 30_000)
+
+      state =
+        strip_target(%{
+          0 => %InventoryItem{nameid: 1201, amount: 1, identify: 1, equip: 2},
+          1 => %InventoryItem{nameid: 1201, amount: 1, identify: 1, equip: 32},
+          2 => %InventoryItem{nameid: 2301, amount: 1, identify: 1, equip: 16},
+          3 => %InventoryItem{nameid: 2220, amount: 1, identify: 1, equip: 256}
+        })
+
+      stub(InventoryOps, :apply_change, fn 1000, _old, new, {:unequipped, index} ->
+        send(self(), {:unequipped, index})
+        {:ok, new}
+      end)
+
+      reject(&SkillHandler.report_cast_failure/3)
+
+      assert {:noreply, stripped} =
+               EquipmentHandler.handle_strip(
+                 [:right_hand, :left_hand, :armor, :head_top],
+                 strip_opts(report_to: 1234),
+                 state
+               )
+
+      assert_received {:unequipped, 0}
+      assert_received {:unequipped, 1}
+      assert_received {:unequipped, 3}
+      refute_received {:unequipped, 2}
+      assert %InventoryItem{equip: 16} = stripped.game_state.inventory[2]
+
+      assert StatusStorage.has_status?(:player, 1000, :sc_stripweapon)
+      refute StatusStorage.has_status?(:player, 1000, :sc_stripshield)
+      refute StatusStorage.has_status?(:player, 1000, :sc_striparmor)
+      assert StatusStorage.has_status?(:player, 1000, :sc_striphelm)
+    end
+
+    test "a two-handed weapon goes once and leaves no shield to strip" do
+      state =
+        strip_target(%{0 => %InventoryItem{nameid: 1116, amount: 1, identify: 1, equip: 34}})
+
+      expect(InventoryOps, :apply_change, fn 1000, _old, new, {:unequipped, 0} -> {:ok, new} end)
+
+      assert {:noreply, _state} =
+               EquipmentHandler.handle_strip([:right_hand, :left_hand], strip_opts([]), state)
+
+      assert StatusStorage.has_status?(:player, 1000, :sc_stripweapon)
+      refute StatusStorage.has_status?(:player, 1000, :sc_stripshield)
+    end
+
+    test "stripping nothing reports the failure only to a player caster" do
+      state = strip_target(%{})
+      reject(&InventoryOps.apply_change/4)
+      expect(SkillHandler, :report_cast_failure, fn 217, 1234, :skill_failed -> :ok end)
+
+      expect(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, packet ->
+        assert %SkillEffect{skill_id: 217, target_id: 1000, result: 0} = packet
+        :ok
+      end)
+
+      assert {:noreply, ^state} =
+               EquipmentHandler.handle_strip(
+                 [:armor],
+                 strip_opts(report_to: 1234, origin: {"elsewhere", 1, 1}),
+                 state
+               )
+
+      refute StatusStorage.has_status?(:player, 1000, :sc_striparmor)
+
+      reject(&SkillHandler.report_cast_failure/3)
+
+      assert {:noreply, ^state} =
+               EquipmentHandler.handle_strip([:armor], strip_opts(report_to: nil), state)
+    end
+
+    test "a request to a session that is gone is dropped" do
+      pid = spawn(fn -> :ok end)
+      ref = Process.monitor(pid)
+      assert_receive {:DOWN, ^ref, :process, ^pid, _reason}
+
+      assert :ok = PlayerSession.strip_equip(pid, [:armor], strip_opts([]))
+    end
+  end
+
+  defp strip_target(inventory) do
+    game_state = PlayerState.new(%{character() | class: 12, base_level: 99})
+    game_state = %{game_state | inventory: inventory}
+    :ok = UnitRegistry.register_player(game_state, self())
+    %{connection_pid: self(), game_state: game_state}
+  end
+
+  defp strip_opts(overrides) do
+    Keyword.merge(
+      [
+        skill_id: 217,
+        level: 5,
+        kind: :divest,
+        duration: 30_000,
+        caster_id: 1234,
+        source_type: :player,
+        src_id: 1234,
+        target_id: 1000,
+        origin: {"prontera", 150, 150},
+        report_to: nil
+      ],
+      overrides
+    )
   end
 
   test "active status refuses equip and unequip without changing inventory" do

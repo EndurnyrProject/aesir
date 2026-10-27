@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStripweapon do
   @moduledoc """
   Both modes roll 5 times level plus one percent plus twice the DEX difference and
   hold the piece for the level's base time plus the DEX bonus (15 s longer on a
-  monster), with a 1 s delay. Renewal: a 0.56 to 1.2 s cast plus 0.14 to 0.3 s
+  monster or homunculus), with a 1 s delay. Renewal: a 0.56 to 1.2 s cast plus 0.14 to 0.3 s
   fixed. Pre-renewal: a 1 s cast.
   """
 
@@ -28,6 +28,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStripweapon do
 
   @impl Active
   def cast(caster, target, level, definition) do
-    StripCommon.cast(caster, target, level, definition, :right_hand, :sc_stripweapon, 0)
+    StripCommon.cast(caster, target, level, definition, [:right_hand], :divest)
   end
 end

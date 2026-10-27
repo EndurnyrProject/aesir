@@ -583,10 +583,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:inventory, {:break_equip, slot}})
   end
 
-  @doc "Force-unequips `slot` and applies its matching Divest status."
-  @spec strip_equip(pid(), atom(), keyword()) :: :ok
-  def strip_equip(pid, slot, status_opts) do
-    GenServer.cast(pid, {:equipment, {:strip, slot, status_opts}})
+  @doc """
+  Asks this player to undergo a landed Divest roll over `slots`: each worn,
+  unprotected piece is force-unequipped and its Divest status applied. `opts`
+  carries the status options and the outcome report (see
+  `StripCommon.report_outcome/2`).
+  """
+  @spec strip_equip(pid(), [atom()], keyword()) :: :ok
+  def strip_equip(pid, slots, opts) do
+    GenServer.cast(pid, {:equipment, {:strip, slots, opts}})
   end
 
   @doc "Force-unequips `slot` without applying a status (a failed Sage endow)."
@@ -1254,8 +1259,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
-  def handle_cast({:equipment, {:strip, slot, status_opts}}, state) do
-    EquipmentHandler.handle_strip(slot, status_opts, state)
+  def handle_cast({:equipment, {:strip, slots, opts}}, state) do
+    EquipmentHandler.handle_strip(slots, opts, state)
   end
 
   @impl true

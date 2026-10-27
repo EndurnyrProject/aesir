@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   alias Aesir.ZoneServer.Mmo.ItemManagement.Eligibility
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.Skills.Rogue.StripCommon
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry, as: StatusRegistry
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
@@ -53,13 +54,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
 
   @unequip_result_success 0
   @unequip_result_failure 1
-
-  @strip_statuses %{
-    right_hand: :sc_stripweapon,
-    left_hand: :sc_stripshield,
-    armor: :sc_striparmor,
-    head_top: :sc_striphelm
-  }
 
   @doc """
   Handles an equip request for the item at `server_index` into `position`.
@@ -205,34 +199,67 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   end
 
   @doc """
-  Force-unequips the item in `slot`, then applies the matching Divest status.
+  Undergoes a landed Divest roll over `slots`.
+
+  In the reference order (weapon, shield, armor, helm), a slot whose Chemical
+  Protection is held is skipped; otherwise a worn piece is force-unequipped and
+  its Divest status applied. A weapon strip takes a weapon from either hand; a
+  shield strip needs a non-weapon in the left hand. The outcome is then shown
+  and reported (`StripCommon.report_outcome/2`), `opts` carrying the status
+  options and the outcome fields.
   """
-  @spec handle_strip(atom(), keyword(), map()) :: {:noreply, map()}
-  def handle_strip(slot, status_opts, %{game_state: game_state} = state) do
-    status_id = Map.fetch!(@strip_statuses, slot)
+  @spec handle_strip([atom()], keyword(), map()) :: {:noreply, map()}
+  def handle_strip(slots, opts, %{game_state: game_state} = state) do
+    id = game_state.character_id
+    status_opts = Keyword.take(opts, [:duration, :caster_id, :source_type])
 
-    state =
-      case equipped_item_in_slot(game_state.inventory, slot) do
-        {server_index, _item} ->
-          {:noreply, state} = handle_unequip(server_index, state)
-          state
+    {state, stripped?} =
+      Enum.reduce(StripCommon.pieces(), {state, false}, fn {slot, status, protection},
+                                                           {state, stripped?} ->
+        with true <- slot in slots,
+             false <- StatusStorage.has_status?(:player, id, protection),
+             [_ | _] = indices <- worn_indices(state.game_state.inventory, slot) do
+          state = Enum.reduce(indices, state, &(&1 |> force_unequip(&2) |> elem(1)))
+          {state, StripCommon.apply_status(:player, id, status, status_opts) == :ok or stripped?}
+        else
+          _ -> {state, stripped?}
+        end
+      end)
 
-        nil ->
-          state
-      end
+    origin = {state.game_state.map_name, state.game_state.x, state.game_state.y}
+    StripCommon.report_outcome(stripped?, Keyword.put(opts, :origin, origin))
 
-    # The Divest skill already rolled its own success; the status apply must not
-    # double-dip the generic debuff resistance roll.
-    :ok =
-      StatusInterpreter.apply_status(
-        :player,
-        game_state.character_id,
-        status_id,
-        Keyword.put(status_opts, :bypass_resistance, true)
-      )
-
-    {:noreply, StatusManager.recalculate_after_status_change(state)}
+    if stripped?,
+      do: {:noreply, StatusManager.recalculate_after_status_change(state)},
+      else: {:noreply, state}
   end
+
+  # A weapon strip takes the left-hand weapon, then the right-hand one (a
+  # two-handed weapon is one row); a shield strip needs a non-weapon there.
+  defp worn_indices(inventory, :right_hand) do
+    [:left_hand, :right_hand]
+    |> Enum.flat_map(&List.wrap(equipped_item_in_slot(inventory, &1)))
+    |> Enum.filter(fn {_index, item} -> weapon?(item) end)
+    |> Enum.map(&elem(&1, 0))
+    |> Enum.uniq()
+  end
+
+  defp worn_indices(inventory, :left_hand) do
+    case equipped_item_in_slot(inventory, :left_hand) do
+      {index, item} -> if weapon?(item), do: [], else: [index]
+      nil -> []
+    end
+  end
+
+  defp worn_indices(inventory, slot) do
+    case equipped_item_in_slot(inventory, slot) do
+      {index, _item} -> [index]
+      nil -> []
+    end
+  end
+
+  defp weapon?(item),
+    do: match?({:ok, %{type: :weapon}}, ItemManagement.get_item_by_id(item.nameid))
 
   @doc """
   Unequips whatever is worn in `slot`, without a status.

@@ -125,9 +125,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionBreakTest do
 
       {:noreply, new_state} =
         PlayerSession.handle_cast(
-          {:equipment,
-           {:strip, :right_hand,
-            [duration: 30_000, val2: 10, caster_id: character.id, source_type: :player]}},
+          {:equipment, {:strip, [:right_hand], strip_opts(character.id)}},
           state
         )
 
@@ -136,20 +134,33 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionBreakTest do
       assert StatusStorage.has_status?(:player, character.id, :sc_stripweapon)
     end
 
-    test "applies Divest Armor when the armor slot is empty", %{character: character} do
+    test "applies no Divest Armor when the armor slot is empty", %{character: character} do
       {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
 
       {:noreply, new_state} =
         PlayerSession.handle_cast(
-          {:equipment,
-           {:strip, :armor,
-            [duration: 30_000, val2: 10, caster_id: character.id, source_type: :player]}},
+          {:equipment, {:strip, [:armor], strip_opts(character.id)}},
           state
         )
 
       assert new_state.game_state.inventory == state.game_state.inventory
-      assert StatusStorage.has_status?(:player, character.id, :sc_striparmor)
+      refute StatusStorage.has_status?(:player, character.id, :sc_striparmor)
     end
+  end
+
+  defp strip_opts(character_id) do
+    [
+      duration: 30_000,
+      caster_id: character_id,
+      source_type: :player,
+      skill_id: 215,
+      level: 1,
+      kind: :divest,
+      src_id: character_id,
+      target_id: character_id,
+      origin: {"prontera", 150, 150},
+      report_to: nil
+    ]
   end
 
   describe "repair_all cast" do
