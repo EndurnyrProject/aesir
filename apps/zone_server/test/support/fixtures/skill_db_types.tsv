@@ -328,6 +328,7 @@
 404	PF_FOGWALL	Magic	true	Magic	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 405	PF_SPIDERWEB	Magic	true	Magic	true	none	none	none	0	none	0
 459	BS_ADRENALINE2	Weapon	true	Weapon	true	none	none	none	0	none	0
+475	ST_PRESERVE	None	true	None	true	none	none	none	0	none	0
 476	ST_FULLSTRIP	Weapon	true	Weapon	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 480	PA_SHIELDCHAIN	Weapon	false	Weapon	false	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 481	HP_MANARECHARGE	None	false	None	false	none	none	none	0,0,0,0,0	none	0,0,0,0,0
