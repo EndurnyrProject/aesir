@@ -976,6 +976,54 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
     end
   end
 
+  describe "logout window" do
+    setup do
+      stub(Stats, :weapon_type, fn _equipment -> :dagger end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {10, 11, "prontera"}}
+      end)
+
+      :ok
+    end
+
+    test "a swing and an in-range wait for the attack delay open it" do
+      stub(Combat, :execute_attack, fn _stats, game_state, 2000, _recalculate ->
+        {:ok, game_state}
+      end)
+
+      {:noreply, swung} = CombatActionHandler.handle_attack_request(loop_state(), 2000, 7)
+
+      assert is_integer(swung.canlog_at)
+
+      waiting =
+        locked_state(%{
+          combat_target_id: 2000,
+          action_state: :attacking,
+          last_attack_timestamp: System.monotonic_time(:millisecond)
+        })
+
+      {:noreply, waited} = CombatActionHandler.handle_auto_attack(waiting, 2000)
+
+      assert is_integer(waited.canlog_at)
+    end
+
+    test "a swing that never reached its target leaves it closed" do
+      stub(Combat, :execute_attack, fn _stats, game_state, 2000, _recalculate ->
+        {{:error, :target_not_found}, game_state}
+      end)
+
+      capture_log(fn ->
+        {:noreply, returned} = CombatActionHandler.handle_attack_request(loop_state(), 2000, 7)
+        send(self(), {:returned, returned})
+      end)
+
+      assert_received {:returned, returned}
+      assert Map.get(returned, :canlog_at) == nil
+    end
+  end
+
   describe "move-to-attack adjacency without cell reservations" do
     alias Aesir.ZoneServer.Map.Cell
     alias Aesir.ZoneServer.Map.MapCache

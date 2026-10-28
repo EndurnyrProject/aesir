@@ -62,6 +62,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.Invincibility
+  alias Aesir.ZoneServer.Unit.Player.Logout
   alias Aesir.ZoneServer.Unit.Player.PlayerEvents
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -163,6 +164,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp cast_cancel(%{game_state: game_state} = state, level) do
     case Interpreter.begin_cast(game_state, @cast_cancel_id, level, :self) do
       {:instant, charged_game_state} ->
+        state = Logout.stamp(state)
         sync_cast_start_stats(state, game_state, charged_game_state)
         penalty = cast_cancel_penalty(game_state.casting, level)
 
@@ -268,7 +270,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   defp complete_input_cast(state, skill_id, level, target, input) do
-    case Interpreter.complete_cast_with_input(state.game_state, skill_id, level, target, input) do
+    result =
+      Interpreter.complete_cast_with_input(state.game_state, skill_id, level, target, input)
+
+    state = stamp_if_begun(state, result)
+
+    case result do
       {:ok, new_game_state} ->
         new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
         new_state = commit_cast(state, new_game_state, skill_id, level)
@@ -841,7 +848,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
+  # Every use that passed its cast-begin checks opens the logout window, whatever
+  # its cast end does; a refused or approaching use does not.
+  defp stamp_if_begun(state, {:error, _reason}), do: state
+  defp stamp_if_begun(state, {:error, _reason, _refreshed}), do: state
+  defp stamp_if_begun(state, _begun), do: Logout.stamp(state)
+
   defp handle_begin_result(state, game_state, skill_id, level, target, locked, result) do
+    state = stamp_if_begun(state, result)
+
     case result do
       {:instant, new_game_state} ->
         sync_cast_start_stats(state, game_state, new_game_state)

@@ -536,6 +536,45 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     end
   end
 
+  describe "logout window" do
+    test "HP damage from a source opens it" do
+      assert {:noreply, hit} =
+               HealthHandler.apply_damage(30, {:mob, 2}, %{}, build_state(100, :idle))
+
+      assert is_integer(hit.canlog_at)
+    end
+
+    test "no HP damage or no source leaves it closed" do
+      stub(Broadcast, :to_in_range, fn _, _, _, _, _, _ -> :ok end)
+
+      assert {:noreply, %{canlog_at: nil}} =
+               HealthHandler.apply_damage(0, {:mob, 2}, %{}, build_state(100, :idle))
+
+      assert {:noreply, %{canlog_at: nil}} =
+               HealthHandler.apply_damage(30, nil, %{status_tick?: true}, build_state(100, :idle))
+    end
+
+    test "a coma opens it only when the hit dealt damage" do
+      assert {:noreply, missed} =
+               HealthHandler.apply_coma({:mob, 2}, %{hit_damage: 0}, build_state(100, :idle))
+
+      assert missed.canlog_at == nil
+
+      assert {:noreply, hit} =
+               HealthHandler.apply_coma({:mob, 2}, %{hit_damage: 40}, build_state(1, :idle))
+
+      assert is_integer(hit.canlog_at)
+    end
+
+    test "death leaves it open for the same millisecond only" do
+      assert {:noreply, dead} =
+               HealthHandler.apply_damage(150, {:mob, 2}, %{}, build_state(100, :idle))
+
+      assert dead.game_state.action_state == :dead
+      assert dead.canlog_at <= System.monotonic_time(:millisecond) - 10_000
+    end
+  end
+
   describe "apply_coma/2" do
     test "leaves a living player at 1 HP and 1 SP through damage and sync paths" do
       test_pid = self()

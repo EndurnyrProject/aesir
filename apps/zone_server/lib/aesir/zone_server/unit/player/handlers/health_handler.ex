@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.Invincibility
+  alias Aesir.ZoneServer.Unit.Player.Logout
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.ScriptVitals
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -75,6 +76,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
   Updates current HP, pushes an SP_HP update to the client, persists the new
   HP and triggers death handling when HP reaches 0. Dead players ignore damage.
+  HP damage from a source opens the logout window; death moves it into the past.
   Active zero-damage notifications reach statuses without changing HP. A hit
   carrying a `:proc_event` runs this player's when-hit equipment procs once its
   HP changed, unless the hit killed them.
@@ -105,7 +107,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
     updated_stats = %{stats | current_state: %{stats.current_state | hp: new_hp}}
     game_state = %{state.game_state | stats: updated_stats}
-    state = StateCommit.commit(state, game_state)
+    state = state |> StateCommit.commit(game_state) |> stamp_if_sourced(attacker_id, metadata)
 
     StatusSync.send_param(state.connection_pid, StatusParams.hp(), new_hp)
     CharacterPersistence.update_stats(char_id, %{hp: new_hp}, async: true)
@@ -151,6 +153,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   end
 
   def apply_damage(_damage, _attacker_id, _metadata, state), do: {:noreply, state}
+
+  # A coma stamps for the damage of the hit that caused it (`apply_coma/3`), not
+  # for the HP it takes.
+  defp stamp_if_sourced(state, nil, _metadata), do: state
+  defp stamp_if_sourced(state, _attacker_id, %{coma?: true}), do: state
+  defp stamp_if_sourced(state, _attacker_id, _metadata), do: Logout.stamp(state)
 
   defp dispatch_when_hit(%{game_state: game_state}, attacker, %{proc_event: event}) do
     wearer = %{
@@ -220,6 +228,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   Applies a coma hit with its prepared metadata: 1 HP and 1 SP, then the hit's
   when-hit equipment procs, which a coma never prevents. The hit is active
   damage for the player's statuses even when the player is already at 1 HP.
+  A coma from a source opens the logout window when the hit itself dealt
+  damage (`:hit_damage`), even at 1 HP; a coma on a miss does not.
   """
   @spec apply_coma(Ref.t() | integer() | nil, map(), SessionState.t()) ::
           {:noreply, SessionState.t()}
@@ -237,6 +247,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
       metadata |> Map.take([:damage_broken, :walk_delay?, :passive?]) |> Map.put(:coma?, true)
 
     {:noreply, state} = apply_damage(hp_damage, source, coma, state)
+
+    state =
+      if source != nil and Map.get(metadata, :hit_damage, 0) > 0,
+        do: Logout.stamp(state),
+        else: state
 
     state = if current_sp(state) == 1, do: state, else: put_sp(state, 1)
     dispatch_when_hit(state, source, metadata)
@@ -707,7 +722,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   defp handle_death(attacker_id, %{game_state: game_state} = state) do
     Logger.info("Player #{game_state.character_id} died (killed by #{inspect(attacker_id)})")
 
-    state = TradeHandler.cancel_if_trading(state, :dead)
+    state = state |> Logout.reset_on_death() |> TradeHandler.cancel_if_trading(:dead)
     state = SkillHandler.cancel_deferred(state)
     state = SkillTextInputHandler.clear(state)
     state = SpiritSphereHandler.clear(state)

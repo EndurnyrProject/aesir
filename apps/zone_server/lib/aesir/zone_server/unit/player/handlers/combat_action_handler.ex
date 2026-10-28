@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.InventoryView
+  alias Aesir.ZoneServer.Unit.Player.Logout
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -239,7 +240,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
 
   # Honour the ASPD gate on the loop the same way `acquire_and_attack/3` does: a
   # duplicate or early auto-attack tick must not swing before the cooldown
-  # elapses. When it is too soon, re-arm for the remaining delay instead.
+  # elapses. When it is too soon, re-arm for the remaining delay instead. Waiting
+  # on a target in range is an attack step and opens the logout window.
   defp swing_or_wait(%{game_state: game_state} = state, target_id) do
     attack_delay = compute_attack_delay(game_state)
 
@@ -253,7 +255,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
         Process.send_after(self(), {:combat, {:auto_attack, target_id}}, max(remaining, 0))
 
       {:noreply,
-       StateCommit.commit(state, PlayerState.set_continuous_timer(game_state, timer_ref))}
+       state
+       |> StateCommit.commit(PlayerState.set_continuous_timer(game_state, timer_ref))
+       |> Logout.stamp()}
     end
   end
 
@@ -468,7 +472,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   end
 
   # A target status caught this swing before Trifecta and damage: no damage, no
-  # combo, no ammo consumed. The attacker's normal cadence continues.
+  # combo, no ammo consumed. The attacker's normal cadence continues, and the
+  # swing opens the logout window like any other.
   defp handle_intercepted_attack(state, target_id, transitioned_state) do
     game_state =
       determine_post_attack_state(
@@ -478,7 +483,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
         AttackSpeed.current_timestamp()
       )
 
-    {:noreply, %{state | game_state: game_state}}
+    {:noreply, Logout.stamp(%{state | game_state: game_state})}
   end
 
   defp handle_successful_attack(
@@ -495,7 +500,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
     game_state =
       determine_post_attack_state(state, target_id, transitioned_state, current_timestamp)
 
-    {:noreply, StateCommit.commit(state, game_state)}
+    {:noreply, state |> StateCommit.commit(game_state) |> Logout.stamp()}
   end
 
   defp maybe_open_combo(game_state, nil, _now), do: game_state

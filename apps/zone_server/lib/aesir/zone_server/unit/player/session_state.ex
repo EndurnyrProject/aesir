@@ -26,6 +26,10 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   to `nil`; equip-status ownership starts empty and `homunculus_runtime` starts as
   a fresh `Runtime`.
   Handlers set and clear optional slots with struct updates rather than dynamic map keys.
+
+  `canlog_at` is the monotonic ms of the player's last combat action (see
+  `Aesir.ZoneServer.Unit.Player.Logout`), `nil` before any. `lingering` is the
+  token of the pending disconnect linger, `nil` while connected.
   """
 
   alias Aesir.Commons.GameMode
@@ -76,7 +80,9 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             quest_info_display: %{map: nil, shown: %{}},
             homunculus: nil,
             homunculus_runtime: %Runtime{private_dirty: false},
-            navigation: nil
+            navigation: nil,
+            canlog_at: nil,
+            lingering: nil
 
   @type t() :: %__MODULE__{
           game_state: PlayerState.t(),
@@ -134,7 +140,9 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
           },
           homunculus: HomunculusState.t() | nil,
           homunculus_runtime: Runtime.t(),
-          navigation: NavigationSession.t() | nil
+          navigation: NavigationSession.t() | nil,
+          canlog_at: integer() | nil,
+          lingering: reference() | nil
         }
 
   @typedoc """

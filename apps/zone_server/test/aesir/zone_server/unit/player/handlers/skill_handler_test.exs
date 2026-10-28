@@ -3026,6 +3026,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     )
   end
 
+  describe "logout window" do
+    test "a cast that begins opens it" do
+      stub(Broadcast, :to_player, fn 1000, %SkillCasting{} -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+
+      assert {:noreply, new_state} = SkillHandler.handle_use_skill(casting_state(45), 29, 1, 1000)
+
+      assert new_state.game_state.action_state == :casting
+      assert is_integer(new_state.canlog_at)
+    end
+
+    test "a refused ground cast leaves it closed" do
+      stub(Interpreter, :begin_cast, fn _game_state, 264, 1, {:ground, 152, 150} ->
+        {:error, :invalid_target}
+      end)
+
+      assert {:noreply, returned} =
+               SkillHandler.handle_use_skill_ground(snap_state(), 264, 1, 152, 150)
+
+      assert returned.canlog_at == nil
+    end
+  end
+
   describe "report_cast_failure/3 with a text line" do
     test "sends the line to the caster, then the failure" do
       test_pid = self()
