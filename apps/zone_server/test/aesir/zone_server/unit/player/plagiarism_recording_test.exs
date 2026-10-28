@@ -85,6 +85,21 @@ defmodule Aesir.ZoneServer.Unit.Player.PlagiarismRecordingTest do
     refute_received {:send, :bulk, {:skill_list, _}}
   end
 
+  test "keeps the previous copy while preserve is active" do
+    stub(StatusStorage, :has_status?, fn :player, _character_id, :sc_preserve -> true end)
+    state = state_with_skills(%{@plagiarism_id => 5})
+    previous = %{skill_id: 19, level: 5}
+    state = put_in(state.game_state.plagiarized, previous)
+
+    assert {:noreply, new_state} =
+             PlayerSession.handle_cast(
+               {:unit, {:record_skill_hit, @copyable_skill_id, 5}},
+               state
+             )
+
+    assert new_state.game_state.plagiarized == previous
+  end
+
   defp state_with_skills(learned_skills) do
     player = PlayerState.new(character())
     progression = %{player.stats.progression | learned_skills: learned_skills}
