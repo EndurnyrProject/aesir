@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.CastCancel
   alias Aesir.Net.ParamChange
+  alias Aesir.Net.RespawnResult
   alias Aesir.Net.Resurrect
   alias Aesir.Net.UnitDespawn
   alias Aesir.ZoneServer.CharacterPersistence
@@ -1651,6 +1652,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       state = build_state(100, :idle)
 
       assert {:stop, :normal, ^state} = HealthHandler.handle_restart(1, state)
+    end
+
+    test "refuses char-select while cloaked and keeps the session" do
+      on_exit(fn -> StatusStorage.remove_status(:player, 1, :sc_cloaking) end)
+      :ok = StatusStorage.apply_status(:player, 1, :sc_cloaking, val1: 3)
+      state = build_state(100, :idle)
+
+      assert {:noreply, ^state} = HealthHandler.handle_restart(1, state)
+      assert_received {:send, _channel, {_tag, %RespawnResult{type: 1, ok: false}}}
+    end
+
+    test "refuses char-select within 10 s of a combat action" do
+      state = %{build_state(100, :idle) | canlog_at: System.monotonic_time(:millisecond)}
+
+      assert {:noreply, ^state} = HealthHandler.handle_restart(1, state)
+      assert_received {:send, _channel, {_tag, %RespawnResult{type: 1, ok: false}}}
+    end
+
+    test "allows char-select once the combat window has passed" do
+      state = %{build_state(100, :idle) | canlog_at: System.monotonic_time(:millisecond) - 10_001}
+
+      assert {:stop, :normal, ^state} = HealthHandler.handle_restart(1, state)
+      refute_received {:send, _channel, {_tag, %RespawnResult{}}}
     end
   end
 

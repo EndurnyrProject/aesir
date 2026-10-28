@@ -291,6 +291,9 @@ message Envelope {
     VendingSetupReady vending_setup_ready = 225;  // s2c zone world
     VendingPurchaseResult vending_purchase_result = 226;  // s2c zone world
     VendingCloseResult vending_close_result = 227;  // s2c zone world
+
+    // 228: refused return to character select
+    RespawnResult respawn_result = 228;  // s2c zone gameplay
   }
 }
 
@@ -1703,6 +1706,15 @@ message Resurrect {
 // Client -> server, respawn or return to char select after death (replaces RO CZ_RESTART 0x00B2).
 message Respawn {
   uint32 type = 1;
+}
+
+// Server -> client, the answer to a Respawn the server refused (replaces RO ZC_ACK_REQ_DISCONNECT
+// 0x018B with result 1). `type` echoes the request (1 = return to character select); `ok` is
+// false while the player is hidden, cloaked or chase walking, or within 10 s of their last
+// attack, skill use or damage taken. An allowed request is not answered: the session ends.
+message RespawnResult {
+  uint32 type = 1;
+  bool ok = 2;
 }
 
 // Client -> server, use a consumable item by inventory slot index (replaces RO CZ_USE_ITEM 0x00A7).

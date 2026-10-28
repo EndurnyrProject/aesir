@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   require Logger
 
   alias Aesir.Commons.StatusParams
+  alias Aesir.Net.RespawnResult
   alias Aesir.Net.Resurrect
   alias Aesir.Net.UnitDespawn
   alias Aesir.ZoneServer.CharacterPersistence
@@ -707,7 +708,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   Handles a CZ_RESTART request.
 
   Type 0 respawns a dead player; type 1 (return to character select) disconnects
-  the session.
+  the session, unless the player is concealed or within 10 s of a combat action
+  (`Logout.refuse_char_select?/1`), when it answers `RespawnResult{ok: false}`
+  and keeps the session.
   """
   @spec handle_restart(non_neg_integer(), SessionState.t()) ::
           {:noreply, SessionState.t()} | {:stop, :normal, SessionState.t()}
@@ -716,7 +719,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
   # char-select returns to the char server; we have no such flow yet,
   # so just drop the session. Add the char-server handoff when it exists.
-  def handle_restart(1, state), do: {:stop, :normal, state}
+  def handle_restart(1, state) do
+    if Logout.refuse_char_select?(state) do
+      MessageRouter.send_to(state.connection_pid, %RespawnResult{type: 1, ok: false})
+      {:noreply, state}
+    else
+      {:stop, :normal, state}
+    end
+  end
+
   def handle_restart(_type, state), do: {:noreply, state}
 
   defp handle_death(attacker_id, %{game_state: game_state} = state) do

@@ -214,6 +214,7 @@
     {"field": 224, "tag": "progress_bar_abort", "message": "ProgressBarAbort", "direction": "s2c", "servers": ["zone"], "channel": "world"},
     {"field": 225, "tag": "vending_setup_ready", "message": "VendingSetupReady", "direction": "s2c", "servers": ["zone"], "channel": "world"},
     {"field": 226, "tag": "vending_purchase_result", "message": "VendingPurchaseResult", "direction": "s2c", "servers": ["zone"], "channel": "world"},
-    {"field": 227, "tag": "vending_close_result", "message": "VendingCloseResult", "direction": "s2c", "servers": ["zone"], "channel": "world"}
+    {"field": 227, "tag": "vending_close_result", "message": "VendingCloseResult", "direction": "s2c", "servers": ["zone"], "channel": "world"},
+    {"field": 228, "tag": "respawn_result", "message": "RespawnResult", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"}
   ]
 }
