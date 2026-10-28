@@ -33,7 +33,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
 
   `regen_timing` is the natural regeneration timing (`NaturalHeal.Timing`), and
   `castle_regen?` whether the player stands on a guild castle map their guild
-  owns, as evaluated on the last landing or warp.
+  owns, as evaluated on the last landing or warp. `equip_regen_generation` is the
+  `Stats.generation` the equipment regen intervals were last advanced under.
   """
 
   alias Aesir.Commons.GameMode
@@ -90,7 +91,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             lingering: nil,
             npc_event_queue: [],
             regen_timing: %Timing{},
-            castle_regen?: false
+            castle_regen?: false,
+            equip_regen_generation: nil
 
   @type t() :: %__MODULE__{
           game_state: PlayerState.t(),
@@ -153,7 +155,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
           lingering: reference() | nil,
           npc_event_queue: [{non_neg_integer(), String.t()}],
           regen_timing: Timing.t(),
-          castle_regen?: boolean()
+          castle_regen?: boolean(),
+          equip_regen_generation: non_neg_integer() | nil
         }
 
   @typedoc """

@@ -8,71 +8,85 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipRegenHandler do
   item must still bleed the wearer, and it applies loss before regen: HP loss
   cannot kill (the wearer is floored at 1 HP), SP loss floors at 0, and regen
   cannot exceed the maxima, matching the tick order of the natural-heal loop.
-  When the wearer carries no such gear the tick is a no-op producing no state
-  commit, packet, or DB write.
+  No-Recover does not stop it; Berserk stops the HP gain only.
 
-  A dead player is skipped entirely.
+  Every stat recalculation (a new `Stats.generation`) restarts the intervals.
+  While dead the regen intervals keep running with their gains discarded and
+  the loss intervals hold. When the wearer carries no such gear the tick
+  produces no state commit, packet, or DB write.
   """
 
   alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.EquipRegen
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
+  @loss_families [:hp_loss_bonus, :sp_loss_bonus]
+
   @doc """
-  Computes and applies one periodic equipment HP/SP regen/loss tick.
-
-  `elapsed_ms` is the time since the previous tick. Returns `{:noreply, state}`,
-  unchanged when the player is dead or wears no periodic regen/loss gear.
+  Computes and applies one periodic equipment HP/SP regen/loss tick of
+  `elapsed_ms`.
   """
-  @spec handle_tick(map(), non_neg_integer()) :: {:noreply, map()}
-  def handle_tick(%{game_state: %{action_state: :dead}} = state, _elapsed_ms),
-    do: {:noreply, state}
-
-  def handle_tick(%{game_state: game_state} = state, elapsed_ms) do
+  @spec handle_tick(SessionState.t(), non_neg_integer()) :: {:noreply, SessionState.t()}
+  def handle_tick(%SessionState{game_state: game_state} = state, elapsed_ms) do
     stats = game_state.stats
 
+    carried =
+      if state.equip_regen_generation == stats.generation,
+        do: game_state.equip_regen_accumulators,
+        else: %{}
+
+    state = %{state | equip_regen_generation: stats.generation}
+
     {deltas, accumulators} =
-      EquipRegen.compute(
-        stats.modifiers.equipment,
-        game_state.equip_regen_accumulators,
-        elapsed_ms
-      )
+      EquipRegen.compute(stats.modifiers.equipment, carried, elapsed_ms)
 
-    deltas = block_recovery(deltas, game_state)
+    cond do
+      accumulators == %{} ->
+        {:noreply, state}
 
-    if accumulators == %{} do
-      {:noreply, state}
-    else
-      current = stats.current_state
-      derived = stats.derived_stats
-      new_hp = min(derived.max_hp, max(current.hp - deltas.hp_loss, 1) + deltas.hp_gain)
-      new_sp = min(derived.max_sp, max(current.sp - deltas.sp_loss, 0) + deltas.sp_gain)
+      game_state.action_state == :dead ->
+        accumulators = hold_losses(accumulators, carried)
 
-      updated_stats = %{stats | current_state: %{current | hp: new_hp, sp: new_sp}}
+        if accumulators == game_state.equip_regen_accumulators,
+          do: {:noreply, state},
+          else: {:noreply, commit(state, game_state.stats, accumulators)}
 
-      game_state = %{
-        game_state
-        | stats: updated_stats,
-          equip_regen_accumulators: accumulators
-      }
+      true ->
+        current = stats.current_state
+        derived = stats.derived_stats
+        hp_gain = if berserk?(game_state), do: 0, else: deltas.hp_gain
+        new_hp = min(derived.max_hp, max(current.hp - deltas.hp_loss, 1) + hp_gain)
+        new_sp = min(derived.max_sp, max(current.sp - deltas.sp_loss, 0) + deltas.sp_gain)
 
-      state = StateCommit.commit(state, game_state)
-      apply_changes(state, current.hp, new_hp, current.sp, new_sp)
+        updated_stats = %{stats | current_state: %{current | hp: new_hp, sp: new_sp}}
+        state = commit(state, updated_stats, accumulators)
+        apply_changes(state, current.hp, new_hp, current.sp, new_sp)
 
-      {:noreply, state}
+        {:noreply, state}
     end
   end
 
-  defp block_recovery(deltas, game_state) do
-    if StatusStorage.has_status?(:player, game_state.character_id, :sc_norecover_state) do
-      %{deltas | hp_gain: 0, sp_gain: 0}
-    else
-      deltas
-    end
+  defp commit(state, stats, accumulators) do
+    game_state = %{state.game_state | stats: stats, equip_regen_accumulators: accumulators}
+    StateCommit.commit(state, game_state)
   end
+
+  defp hold_losses(accumulators, carried) do
+    Map.new(accumulators, fn
+      {{family, _interval} = key, _acc} when family in @loss_families ->
+        {key, Map.get(carried, key, 0)}
+
+      entry ->
+        entry
+    end)
+  end
+
+  defp berserk?(game_state),
+    do: StatusStorage.has_status?(:player, game_state.character_id, :sc_berserk)
 
   defp apply_changes(state, old_hp, new_hp, old_sp, new_sp) do
     changed =
