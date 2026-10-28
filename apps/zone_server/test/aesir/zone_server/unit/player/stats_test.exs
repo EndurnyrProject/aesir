@@ -14,12 +14,14 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement.NoEquip
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Option
+  alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Unit.Player.Appearance
+  alias Aesir.ZoneServer.Unit.Player.DieCounter
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
@@ -27,6 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   alias Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   defmodule AspdIntPassive do
     @moduledoc false
@@ -416,6 +419,41 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     end
   end
 
+  defp super_novice_stats(job_id, job_level) do
+    %Stats{
+      base_stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
+      progression: %{
+        base_level: 99,
+        job_level: job_level,
+        base_exp: 0,
+        job_exp: 0,
+        job_id: job_id,
+        learned_skills: %{}
+      },
+      current_state: %{hp: 1, sp: 1},
+      equipment: %Equipment{},
+      modifiers: %Modifiers{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
+    }
+  end
+
+  # The effective STR..LUK of a player who never died minus one who died once.
+  defp never_died_bonus(job_id, job_level) do
+    player_id = 92_001
+    stub(Interpreter, :get_all_modifiers, fn :player, ^player_id -> %{} end)
+
+    for deaths <- [0, 1] do
+      player = %PlayerState{character_id: player_id, vars: %{DieCounter.var() => deaths}}
+
+      stub(UnitRegistry, :get_unit, fn :player, ^player_id ->
+        {:ok, {PlayerState, player, self()}}
+      end)
+
+      stats = Calculator.calculate_stats(super_novice_stats(job_id, job_level), player_id, [])
+      Enum.map([:str, :agi, :vit, :int, :dex, :luk], &Stats.get_effective_stat(stats, &1))
+    end
+    |> then(fn [never, once] -> Enum.zip_with(never, once, &(&1 - &2)) end)
+  end
+
   describe "calculate_stats/1" do
     test "recalculates all derived stats from base values" do
       stats = %Stats{
@@ -524,6 +562,33 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       assert Enum.map([base, blessed, berserk, ticked, ended], & &1.generation) ==
                [1, 1, 2, 2, 3]
+    end
+
+    test "learning an active skill is no full recalculation, learning a passive one is" do
+      {:ok, bash} = Catalog.by_name(:sm_bash)
+      {:ok, sword} = Catalog.by_name(:sm_sword)
+      base = Calculator.calculate_stats(super_novice_stats(0, 1))
+
+      active =
+        Calculator.calculate_stats(put_in(base.progression.learned_skills, %{bash.id => 1}))
+
+      passive =
+        Calculator.calculate_stats(put_in(base.progression.learned_skills, %{sword.id => 1}))
+
+      assert {active.generation, passive.generation} == {base.generation, base.generation + 1}
+    end
+
+    test "a Super Novice who never died gets +10 to every base stat from job level 70" do
+      assert never_died_bonus(23, 70) == List.duplicate(10, 6)
+      assert never_died_bonus(23, 69) == List.duplicate(0, 6)
+      assert never_died_bonus(0, 70) == List.duplicate(0, 6)
+    end
+
+    @tag game_mode: :renewal
+    test "an expanded Super Novice who never died gets the bonus at any job level" do
+      {:ok, expanded} = AvailableJobs.job_name_to_id(:super_novice_e)
+
+      assert never_died_bonus(expanded, 1) == List.duplicate(10, 6)
     end
 
     test "changed?/2 ignores the generation" do

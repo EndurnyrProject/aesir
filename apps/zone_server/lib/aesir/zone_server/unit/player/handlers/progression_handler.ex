@@ -480,12 +480,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
 
     stats =
       %{game_state.stats | progression: new_progression}
+      |> force_on_refund(new_progression.skill_point > progression.skill_point)
       |> Calculator.calculate_stats(game_state.character_id)
 
     %{dismissed_state | game_state: %{game_state | stats: stats}}
     |> cleanup_dropped_skills(dropped_ids)
     |> finish_reset_skills(previous_game_state)
   end
+
+  # A reset that refunds points is a full recalculation, even when only active
+  # skills were learned.
+  defp force_on_refund(stats, true), do: Stats.force_full_recalculation(stats)
+  defp force_on_refund(stats, false), do: stats
 
   defp do_apply_job_change(job_id, state, game_state) do
     progression = game_state.stats.progression

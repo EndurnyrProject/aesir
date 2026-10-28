@@ -21,17 +21,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
   alias Aesir.ZoneServer.Mmo.JobManagement.TraitJobs
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.Mechanics.StatusAttack
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHiltbinding
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsWeaponresearch
   alias Aesir.ZoneServer.Mmo.StatusEffect.CalcFlags
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Player.DieCounter
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
   alias Aesir.ZoneServer.Unit.Stats, as: UnitStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  @super_novice_stats [:str, :agi, :vit, :int, :dex, :luk]
 
   @ranged_weapons [:bow, :musical, :whip, :revolver, :rifle, :gatling, :shotgun, :grenade]
 
@@ -76,6 +80,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
   defp calculate_stats(stats, player_id, equipped_items, map_name, character_info) do
     stats
     |> apply_job_bonuses()
+    |> apply_super_novice_bonus(character_info)
     |> EquipmentFold.apply_equipment_modifiers(equipped_items, %{
       character_info: character_info,
       map_name: map_name
@@ -89,7 +94,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
 
   # The player's full recalculation (the one that restarts the equipment
   # regeneration intervals) happens when its inputs change: allocated stats,
-  # job and levels, learned skills, worn items, riding, the map, or the start,
+  # job and levels, learned passive skills, worn items, riding, the map, or the start,
   # refresh or end of a status that forces it. Status ticks and other status
   # changes only refresh the derived values.
   defp advance_generation(%Stats{} = stats, player_id, map_name) do
@@ -99,7 +104,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
       :erlang.phash2({
         stats.base_stats,
         progression && {progression.job_id, progression.base_level, progression.job_level},
-        progression && progression.learned_skills,
+        progression && passive_skills(progression.learned_skills),
         stats.worn_items,
         stats.riding,
         map_name,
@@ -109,6 +114,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
     if basis == stats.recalculation_basis,
       do: stats,
       else: %{stats | generation: stats.generation + 1, recalculation_basis: basis}
+  end
+
+  # Learning or losing an active skill is no full recalculation.
+  defp passive_skills(learned_skills) do
+    learned_skills
+    |> Enum.filter(fn {skill_id, _level} ->
+      match?({:ok, %{target_type: :passive}}, Catalog.by_id(skill_id))
+    end)
+    |> Enum.sort()
   end
 
   defp full_recalculation_statuses(player_id) when is_integer(player_id) do
@@ -188,6 +202,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
       end
 
     %{stats | modifiers: %{stats.modifiers | job_bonuses: job_bonuses}}
+  end
+
+  # A Super Novice-classed player who has never died gets +10 to every base
+  # stat from job level 70, or at any level in the expanded Super Novice line.
+  defp apply_super_novice_bonus(
+         %Stats{progression: %{job_id: job_id, job_level: job_level}} = stats,
+         character_info
+       ) do
+    if character_info != nil and JobLineage.super_novice_classed?(job_id) and
+         DieCounter.count(character_info) == 0 and
+         (job_level >= 70 or expanded_super_novice?(job_id)) do
+      bonuses =
+        Enum.reduce(@super_novice_stats, stats.modifiers.job_bonuses, fn stat, acc ->
+          Map.update(acc, stat, 10, &(&1 + 10))
+        end)
+
+      %{stats | modifiers: %{stats.modifiers | job_bonuses: bonuses}}
+    else
+      stats
+    end
+  end
+
+  defp apply_super_novice_bonus(stats, _character_info), do: stats
+
+  defp expanded_super_novice?(job_id) do
+    {:ok, expanded} = AvailableJobs.job_name_to_id(:super_novice_e)
+    JobLineage.descendant_or_self?(job_id, expanded)
   end
 
   # NOTE: the wearer's map/party/guild come from its last committed registry

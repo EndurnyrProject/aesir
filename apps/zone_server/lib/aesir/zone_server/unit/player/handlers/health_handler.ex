@@ -41,6 +41,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
   alias Aesir.ZoneServer.Unit.Lifecycle
+  alias Aesir.ZoneServer.Unit.Player.DieCounter
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
@@ -759,6 +760,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
     state =
       if had_statuses?, do: StatusManager.recalculate_after_status_change(state), else: state
+
+    state = DieCounter.increment(state)
 
     vanish = %UnitDespawn{gid: game_state.character_id, reason: DespawnReason.died()}
 

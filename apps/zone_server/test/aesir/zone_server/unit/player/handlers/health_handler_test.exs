@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Lifecycle.Event
+  alias Aesir.ZoneServer.Unit.Player.DieCounter
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
@@ -171,6 +172,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       {:noreply, %{game_state: game_state} = dead} = HealthHandler.apply_damage(150, 2001, state)
 
       assert dead.regen_timing == Timing.initial()
+      assert DieCounter.count(game_state) == 1
       assert game_state.stats.current_state.hp == 0
       assert game_state.action_state == :dead
       assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_hp, value: 0}}}
@@ -1318,7 +1320,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       stub(Config, :death_penalty_base, fn -> 0 end)
       stub(Config, :death_penalty_job, fn -> 0 end)
       reject(&Leveling.death_penalty/3)
-      reject(&CharacterPersistence.update_character/3)
+      refute_exp_persisted()
 
       {:noreply, %{game_state: game_state}} =
         HealthHandler.apply_damage(
@@ -1343,7 +1345,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       end)
 
       reject(&Leveling.death_penalty/3)
-      reject(&CharacterPersistence.update_character/3)
+      refute_exp_persisted()
 
       {:noreply, %{game_state: game_state}} =
         HealthHandler.apply_damage(
@@ -1359,7 +1361,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
 
     test "does not persist when the computed loss is zero" do
       stub(Leveling, :death_penalty, fn _prog, _b, _j -> {0, 0} end)
-      reject(&CharacterPersistence.update_character/3)
+      refute_exp_persisted()
 
       {:noreply, %{game_state: game_state}} =
         HealthHandler.apply_damage(
@@ -1378,7 +1380,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       :ok = MapFlags.set_runtime("prontera", :gvg, true)
       :ok = MapFlags.set_runtime("prontera", :pvp, true)
       reject(&Leveling.death_penalty/3)
-      reject(&CharacterPersistence.update_character/3)
+      refute_exp_persisted()
 
       {:noreply, %{game_state: game_state}} =
         HealthHandler.apply_damage(
@@ -1713,6 +1715,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
 
     {:ok, casting} = PlayerState.transition_to(state.game_state, :casting, context)
     %{state | game_state: casting}
+  end
+
+  # A death still persists its death counter; only the EXP must stay unsaved.
+  defp refute_exp_persisted do
+    stub(CharacterPersistence, :update_character, fn _id, fields, _opts ->
+      refute Map.has_key?(fields, :base_exp) or Map.has_key?(fields, :job_exp)
+      {:ok, %Character{}}
+    end)
   end
 
   defp build_state(hp, action_state, progression_attrs \\ %{}) do

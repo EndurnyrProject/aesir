@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -97,6 +98,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
     %SessionState{connection_pid: self(), game_state: game_state, interaction_lock: nil}
   end
 
+  defp pushcart(level), do: %{Integer.to_string(catalog_pushcart_id()) => level}
+
+  # Settles the recalculation basis so only the cart event can bump the generation.
+  defp primed(%{game_state: game_state} = state) do
+    stats = Calculator.calculate_stats(game_state.stats, @char_id)
+    %{state | game_state: %{game_state | stats: stats}}
+  end
+
   defp item(nameid, amount) do
     %InventoryItem{
       id: 11,
@@ -147,7 +156,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
         :ok
       end)
 
-      expect(CharacterPersistence, :update_character, fn @char_id, %{cart: 1}, async: true ->
+      expect(CharacterPersistence, :update_character, fn @char_id, %{cart: 1}, [async: true] ->
         :ok
       end)
 
@@ -192,6 +201,40 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
       assert_received {:send, :gameplay,
                        {:cart_mount_result,
                         %Aesir.Net.CartMountResult{result: :CART_ALREADY_MOUNTED}}}
+    end
+  end
+
+  describe "mount and unmount as full recalculations" do
+    setup do
+      stub(UnitRegistry, :update_unit_state, fn :player, @char_id, _gs -> :ok end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, @char_id ->
+        {:ok, {150, 150, "prontera"}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet, _opts -> :ok end)
+
+      stub(CharacterPersistence, :update_character, fn @char_id, _fields, [async: true] -> :ok end)
+
+      :ok
+    end
+
+    test "mounting a cart of the requested tier below Pushcart 10 restarts the regen intervals" do
+      state = primed(state(learned_skills: pushcart(5)))
+
+      assert {:noreply, mounted} = CartHandler.mount(state, 2)
+      assert mounted.game_state.cart_type == 2
+      assert mounted.game_state.stats.generation == state.game_state.stats.generation + 1
+
+      assert {:noreply, unmounted} = CartHandler.unmount(mounted)
+      assert unmounted.game_state.stats.generation == mounted.game_state.stats.generation + 1
+    end
+
+    test "at Pushcart 10 mounting is no full recalculation" do
+      state = primed(state(learned_skills: pushcart(10)))
+
+      assert {:noreply, mounted} = CartHandler.mount(state)
+      assert mounted.game_state.stats.generation == state.game_state.stats.generation
     end
   end
 
@@ -479,7 +522,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
     end
 
     test "at the tier-2 base level sets cart_type 2, persists, RMWs val2, broadcasts cart2" do
-      expect(CharacterPersistence, :update_character, fn @char_id, %{cart: 2}, async: true ->
+      expect(CharacterPersistence, :update_character, fn @char_id, %{cart: 2}, [async: true] ->
         :ok
       end)
 
@@ -496,8 +539,46 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
       assert (effect_state &&& @cart2_bit) == @cart2_bit
     end
 
+    test "below Pushcart 10 is a full recalculation, at 10 it is not" do
+      stub(CharacterPersistence, :update_character, fn @char_id, %{cart: 2}, [async: true] ->
+        :ok
+      end)
+
+      slow = state(cart_type: 1, learned_skills: pushcart(5)).game_state
+      fast = state(cart_type: 1, learned_skills: pushcart(10)).game_state
+
+      assert {:ok, slow_updated} = CartHandler.change_cart_tier(slow, 50)
+      assert {:ok, fast_updated} = CartHandler.change_cart_tier(fast, 50)
+
+      assert slow_updated.stats.generation == slow.stats.generation + 1
+      assert fast_updated.stats.generation == fast.stats.generation
+    end
+
+    test "change_type/2 sets the requested tier as a full recalculation below Pushcart 10" do
+      stub(UnitRegistry, :update_unit_state, fn :player, @char_id, _gs -> :ok end)
+
+      expect(CharacterPersistence, :update_character, fn @char_id, %{cart: 3}, [async: true] ->
+        :ok
+      end)
+
+      state = state(cart_type: 1, learned_skills: pushcart(5))
+
+      assert {:noreply, updated} = CartHandler.change_type(state, 3)
+
+      assert updated.game_state.cart_type == 3
+      assert StatusStorage.get_status(:player, @char_id, :sc_push_cart).val2 == 3
+      assert updated.game_state.stats.generation == state.game_state.stats.generation + 1
+    end
+
+    test "change_type/2 changes nothing without Pushcart learned" do
+      reject(&CharacterPersistence.update_character/3)
+      state = state(cart_type: 1)
+
+      assert {:noreply, ^state} = CartHandler.change_type(state, 3)
+    end
+
     test "jumps straight to tier 3 above the tier-3 base level" do
-      expect(CharacterPersistence, :update_character, fn @char_id, %{cart: 3}, async: true ->
+      expect(CharacterPersistence, :update_character, fn @char_id, %{cart: 3}, [async: true] ->
         :ok
       end)
 

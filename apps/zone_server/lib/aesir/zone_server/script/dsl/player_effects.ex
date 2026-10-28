@@ -278,12 +278,12 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   def guildopenstorage(%Ctx{} = ctx), do: apply_op(ctx, {:guildopenstorage})
 
   @doc """
-  Gives the player a cart (rAthena `setcart`): mounts the pushcart through the
-  session seam, or removes it when `type` is `0`. Mounting requires
-  `MC_PUSHCART` learned; a rejected mount reports to the client as a
-  `CartMountResult` and the script goes on. Cart sprite tiers are not modelled — any non-zero `type` mounts the
-  first tier, and mounting while already mounted is a no-op. Removal with a
-  non-empty cart is also a no-op (Aesir never discards cart items). Halts
+  Gives the player a cart (`setcart`) through the session seam: `type` 0
+  removes it, any other type from 1 to 13 mounts a cart of that type or, with a
+  cart mounted, changes it to that type. A type outside 0..13 does nothing.
+  Mounting or changing requires `MC_PUSHCART` learned; a rejected mount reports
+  to the client as a `CartMountResult` and the script goes on. Removal with a
+  non-empty cart is a no-op (Aesir never discards cart items). Halts
   `:no_player` on a detached ctx.
   """
   @spec setcart(Ctx.t(), non_neg_integer()) :: Ctx.t()

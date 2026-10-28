@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Inventory.ItemSearch
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
   alias Aesir.ZoneServer.Unit.ItemContainer
+  alias Aesir.ZoneServer.Unit.Player.DieCounter
   alias Aesir.ZoneServer.Unit.Player.Handlers.BreakOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
@@ -65,6 +66,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.Rental
   alias Aesir.ZoneServer.Unit.Zeny
+
+  @max_cart_type 13
 
   @type op ::
           {:pay_zeny, non_neg_integer()}
@@ -439,6 +442,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     {{:ok, new_state.game_state}, new_state}
   end
 
+  def apply_op({:set_char_var, key, value}, state)
+      when key in [:PC_DIE_COUNTER, "PC_DIE_COUNTER"] do
+    new_state = DieCounter.put(state, to_number(value))
+    {{:ok, new_state.game_state}, new_state}
+  end
+
   def apply_op({:set_char_var, key, value}, %{game_state: gs} = state) do
     vars = Map.put(gs.vars, to_string(key), value)
 
@@ -549,23 +558,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     {{:ok, new_state.game_state}, new_state}
   end
 
-  # rAthena `setcart`: type 0 removes the cart, any other type mounts it.
-  # Both delegate to `CartHandler`, which enforces the mount gates
-  # (MC_PUSHCART learned, empty cart on removal) and reports rejections to
-  # the client; a rejection leaves the state untouched but still replies
-  # `{:ok, gs}` so the script continues, matching rAthena's silent failure.
+  # `setcart`: a type outside 0..13 is ignored, type 0 removes the cart, any
+  # other type mounts it in that type
+  # or, with a cart already mounted, changes it to that type. All delegate to
+  # `CartHandler`, which enforces the mount gates (MC_PUSHCART learned, empty
+  # cart on removal) and reports rejections to the client; a rejection leaves
+  # the state untouched but still replies `{:ok, gs}` so the script continues.
+  def apply_op({:setcart, type}, %{game_state: gs} = state)
+      when not is_integer(type) or type < 0 or type > @max_cart_type,
+      do: {{:ok, gs}, state}
+
   def apply_op({:setcart, 0}, state) do
     {:noreply, new_state} = CartHandler.unmount(state)
     {{:ok, new_state.game_state}, new_state}
   end
 
-  def apply_op({:setcart, _type}, %{game_state: gs} = state) do
-    if gs.cart_type > 0 do
-      {{:ok, gs}, state}
-    else
-      {:noreply, new_state} = CartHandler.mount(state)
-      {{:ok, new_state.game_state}, new_state}
-    end
+  def apply_op({:setcart, type}, %{game_state: gs} = state) do
+    {:noreply, new_state} =
+      if gs.cart_type > 0,
+        do: CartHandler.change_type(state, type),
+        else: CartHandler.mount(state, type)
+
+    {{:ok, new_state.game_state}, new_state}
   end
 
   # ponytail: only the owner's inventory view is re-sent here (design step 5).
@@ -786,6 +800,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   @spec commit(state(), PlayerState.t()) :: {reply(), state()}
   defp commit(state, new_gs), do: {{:ok, new_gs}, %{state | game_state: new_gs}}
+
+  # A numeric char variable reads a string by its leading digits, 0 without any.
+  defp to_number(value) when is_integer(value), do: value
+
+  defp to_number(value) when is_binary(value) do
+    case Integer.parse(String.trim_leading(value)) do
+      {number, _rest} -> number
+      :error -> 0
+    end
+  end
+
+  defp to_number(_value), do: 0
 
   defp put_item_flag(state, flag), do: Map.put(state, :npc_item_flag, flag)
 

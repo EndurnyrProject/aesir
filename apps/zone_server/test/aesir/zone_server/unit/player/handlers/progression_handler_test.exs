@@ -127,6 +127,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
     %SessionState{connection_pid: self(), game_state: game_state}
   end
 
+  # Settles the recalculation basis so only the reset can bump the generation.
+  defp primed(%{game_state: game_state} = state) do
+    stats = Calculator.calculate_stats(game_state.stats, game_state.character_id)
+    %{state | game_state: %{game_state | stats: stats}}
+  end
+
   defp catalog_id(name) do
     {:ok, definition} = Catalog.by_name(name)
     definition.id
@@ -675,6 +681,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
 
       assert progression.learned_skills == %{}
       assert progression.skill_point == 5
+    end
+
+    test "a reset that refunds points is a full recalculation, one that refunds nothing is not" do
+      stub_quest_definition()
+
+      refund =
+        primed(state_with(job_id: @swordman_id, learned_skills: %{catalog_id(:sm_bash) => 4}))
+
+      nothing = primed(state_with(job_id: @swordman_id, learned_skills: %{@quest_skill_id => 1}))
+
+      assert {:ok, refunded} = ProgressionHandler.reset_skills(refund)
+      assert {:ok, unchanged} = ProgressionHandler.reset_skills(nothing)
+
+      assert refunded.game_state.stats.generation == refund.game_state.stats.generation + 1
+      assert unchanged.game_state.stats.generation == nothing.game_state.stats.generation
     end
 
     test "retains permanent quest skills without refunding them" do

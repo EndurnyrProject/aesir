@@ -230,8 +230,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
             # Bumped by a recalculation whose full-recalculation inputs changed
             # (`recalculation_basis`, a hash of them): allocated stats, job and
-            # levels, learned skills, worn items, riding, the map, and the held
-            # statuses that force a full recalculation.
+            # levels, learned passive skills, worn items, riding, the map, and the
+            # held statuses that force a full recalculation; and by
+            # `force_full_recalculation/1` for events that are one regardless.
             generation: 0,
             recalculation_basis: nil
 
@@ -332,6 +333,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     do: unversioned(left) != unversioned(right)
 
   defp unversioned(stats), do: %{stats | generation: 0, recalculation_basis: nil}
+
+  @doc """
+  Marks a full recalculation for an event that is one whatever it changes
+  (setting or removing the cart below Pushcart 10, a skill reset that refunds
+  points, a Super Novice's first death): bumps `generation`, which restarts the
+  equipment regeneration intervals.
+  """
+  @spec force_full_recalculation(t()) :: t()
+  def force_full_recalculation(%__MODULE__{} = stats),
+    do: %{stats | generation: stats.generation + 1}
 
   @doc """
   Converts player stats to formula map format for status effect calculations.

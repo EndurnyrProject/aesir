@@ -60,18 +60,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   @tier3_min_level 65
 
   @doc """
-  Mounts the cart.
+  Mounts the cart, in sprite tier `tier` (the first tier from the mount request;
+  a script `setcart` passes its type).
 
   Requires `MC_PUSHCART` learned; without it the mount is rejected and the client
   is told with `CartMountResult{ok: false, reason: 1}`. When the player has no
-  cart yet it sets `cart_type` to the first tier, applies the permanent
+  cart yet it sets `cart_type` to `tier`, applies the permanent
   `SC_PUSHCART` (`val1` = learned Pushcart level, `val2` = tier), persists
   `character.cart`, broadcasts the cart sprite, sends the owner the current
   `CartInfo`, and confirms with `CartMountResult{ok: true}`. A second mount while
   already mounted is rejected with `reason: 2`.
+
+  Below Pushcart level 10, setting, changing or removing the cart is a full stat
+  recalculation (the speed penalty), which restarts the equipment regeneration
+  intervals.
   """
-  @spec mount(map()) :: {:noreply, map()}
-  def mount(%{game_state: game_state} = state) do
+  @spec mount(map(), pos_integer()) :: {:noreply, map()}
+  def mount(%{game_state: game_state} = state, tier \\ @first_tier) do
     cond do
       pushcart_level(game_state) == 0 ->
         Logger.debug(
@@ -84,8 +89,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
         reject_mount(state, :CART_ALREADY_MOUNTED)
 
       true ->
-        do_mount(state)
+        do_mount(state, tier)
     end
+  end
+
+  @doc """
+  Changes the mounted cart's sprite tier to `tier` (a script `setcart` while a
+  cart is mounted), as a full recalculation like a mount. Nothing changes
+  without `MC_PUSHCART` learned.
+  """
+  @spec change_type(map(), pos_integer()) :: {:noreply, map()}
+  def change_type(%{game_state: game_state} = state, tier) do
+    if pushcart_level(game_state) == 0,
+      do: {:noreply, state},
+      else: {:noreply, StateCommit.commit(state, set_tier(game_state, tier))}
   end
 
   @doc """
@@ -235,21 +252,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   """
   @spec change_cart_tier(PlayerState.t(), non_neg_integer()) ::
           {:ok, PlayerState.t()} | {:error, :no_cart_upgrade}
-  def change_cart_tier(%{character_id: char_id, cart_type: current} = game_state, base_level) do
+  def change_cart_tier(%{cart_type: current} = game_state, base_level) do
     case tier_for_base_level(base_level) do
       tier when tier > current ->
-        persist_cart_type(char_id, tier)
-
-        StatusStorage.update_status(:player, char_id, @status_id, fn entry ->
-          %{entry | val2: tier}
-        end)
-
-        StatusDisplay.broadcast_state(:player, char_id)
-        {:ok, %{game_state | cart_type: tier}}
+        {:ok, set_tier(game_state, tier)}
 
       _tier ->
         {:error, :no_cart_upgrade}
     end
+  end
+
+  defp set_tier(%{character_id: char_id} = game_state, tier) do
+    persist_cart_type(char_id, tier)
+
+    StatusStorage.update_status(:player, char_id, @status_id, fn entry ->
+      %{entry | val2: tier}
+    end)
+
+    StatusDisplay.broadcast_state(:player, char_id)
+    force_slow_cart_recalculation(%{game_state | cart_type: tier})
+  end
+
+  # Below Pushcart 10 a cart change is a full recalculation (speed penalty).
+  defp force_slow_cart_recalculation(%{stats: stats} = game_state) do
+    if pushcart_level(game_state) < 10,
+      do: %{game_state | stats: PlayerStats.force_full_recalculation(stats)},
+      else: game_state
   end
 
   @spec tier_for_base_level(non_neg_integer()) :: 1..3
@@ -257,17 +285,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   defp tier_for_base_level(base_level) when base_level > @tier2_min_level, do: 2
   defp tier_for_base_level(_base_level), do: 1
 
-  @spec do_mount(map()) :: {:noreply, map()}
-  defp do_mount(%{game_state: game_state} = state) do
+  @spec do_mount(map(), pos_integer()) :: {:noreply, map()}
+  defp do_mount(%{game_state: game_state} = state, tier) do
     char_id = game_state.character_id
-    params = [val1: pushcart_level(game_state), val2: @first_tier]
+    params = [val1: pushcart_level(game_state), val2: tier]
+    forced = %{state | game_state: force_slow_cart_recalculation(game_state)}
 
-    case StatusManager.handle_apply_status(@status_id, params, state) do
+    case StatusManager.handle_apply_status(@status_id, params, forced) do
       {:reply, :ok, applied} ->
-        persist_cart_type(char_id, @first_tier)
+        persist_cart_type(char_id, tier)
 
         committed =
-          StateCommit.commit(applied, %{applied.game_state | cart_type: @first_tier})
+          StateCommit.commit(applied, %{applied.game_state | cart_type: tier})
 
         StatusDisplay.broadcast_state(:player, char_id)
 
@@ -280,9 +309,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
 
         {:noreply, committed}
 
-      {:reply, {:error, reason}, unchanged} ->
+      {:reply, {:error, reason}, _forced} ->
         Logger.warning("Cart mount: SC_PUSHCART apply failed for #{char_id}: #{inspect(reason)}")
-        {:noreply, unchanged}
+        {:noreply, state}
     end
   end
 
@@ -290,7 +319,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   defp do_unmount(%{game_state: game_state} = state) do
     char_id = game_state.character_id
 
-    {:reply, :ok, removed} = StatusManager.handle_remove_status(@status_id, state)
+    forced = %{state | game_state: force_slow_cart_recalculation(game_state)}
+    {:reply, :ok, removed} = StatusManager.handle_remove_status(@status_id, forced)
     persist_cart_type(char_id, 0)
 
     committed = StateCommit.commit(removed, %{removed.game_state | cart_type: 0})

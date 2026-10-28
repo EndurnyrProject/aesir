@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
+  alias Aesir.ZoneServer.Unit.Player.DieCounter
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler
@@ -965,6 +966,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     end
   end
 
+  describe "{:set_char_var, :PC_DIE_COUNTER, value}" do
+    test "goes through the death counter" do
+      state = base_state()
+      counted = put_in(state.game_state.vars, %{"PC_DIE_COUNTER" => 1})
+
+      Mimic.copy(DieCounter)
+      expect(DieCounter, :put, fn ^state, 1 -> counted end)
+
+      assert {{:ok, game_state}, ^counted} =
+               ScriptEffectHandler.apply_op({:set_char_var, :PC_DIE_COUNTER, 1}, state)
+
+      assert game_state == counted.game_state
+    end
+
+    test "reads a string value by its leading digits" do
+      state = base_state()
+
+      Mimic.copy(DieCounter)
+      expect(DieCounter, :put, fn ^state, 2 -> state end)
+      expect(DieCounter, :put, fn ^state, 0 -> state end)
+
+      ScriptEffectHandler.apply_op({:set_char_var, :PC_DIE_COUNTER, "2x"}, state)
+      ScriptEffectHandler.apply_op({:set_char_var, :PC_DIE_COUNTER, "x"}, state)
+    end
+  end
+
   describe "{:setcart, type}" do
     test "type 0 delegates to CartHandler.unmount/1" do
       state = base_state()
@@ -978,23 +1005,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
       assert new_state == state
     end
 
-    test "a non-zero type delegates to CartHandler.mount/1 when no cart is on" do
+    test "a non-zero type mounts a cart of that type when no cart is on" do
       state = base_state()
 
       Mimic.copy(CartHandler)
-      expect(CartHandler, :mount, fn ^state -> {:noreply, state} end)
+      expect(CartHandler, :mount, fn ^state, 3 -> {:noreply, state} end)
 
-      {reply, _new_state} = ScriptEffectHandler.apply_op({:setcart, 1}, state)
+      {reply, _new_state} = ScriptEffectHandler.apply_op({:setcart, 3}, state)
 
       assert reply == {:ok, state.game_state}
     end
 
-    test "a non-zero type is a no-op success when already mounted" do
+    test "a type outside 0..13 does nothing" do
+      state = base_state()
+
+      Mimic.copy(CartHandler)
+      reject(&CartHandler.mount/2)
+      reject(&CartHandler.unmount/1)
+
+      for type <- [-1, 14] do
+        assert {{:ok, game_state}, ^state} = ScriptEffectHandler.apply_op({:setcart, type}, state)
+        assert game_state == state.game_state
+      end
+    end
+
+    test "a non-zero type changes the mounted cart to that type" do
       state = base_state()
       state = %{state | game_state: %{state.game_state | cart_type: 2}}
 
       Mimic.copy(CartHandler)
-      reject(&CartHandler.mount/1)
+      reject(&CartHandler.mount/2)
+      expect(CartHandler, :change_type, fn ^state, 1 -> {:noreply, state} end)
 
       {reply, new_state} = ScriptEffectHandler.apply_op({:setcart, 1}, state)
 

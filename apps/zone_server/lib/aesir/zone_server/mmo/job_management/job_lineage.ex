@@ -331,6 +331,21 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobLineage do
     end
   end
 
+  @doc """
+  Whether `job_id` is Super Novice-classed: a Super Novice or Super Baby, or a
+  job descending from one (the expanded Super Novice line). Unknown ids and
+  `nil` are not.
+  """
+  @spec super_novice_classed?(integer() | nil) :: boolean()
+  def super_novice_classed?(nil), do: false
+
+  def super_novice_classed?(job_id) do
+    case AvailableJobs.job_id_to_name(job_id) do
+      {:ok, job} -> base_job(job) == :super_novice
+      {:error, _unknown_job} -> false
+    end
+  end
+
   @doc "Returns true when `job_id` is the owner job or one of its descendants."
   @spec descendant_or_self?(integer(), integer()) :: boolean()
   def descendant_or_self?(job_id, owner_job_id) do
