@@ -178,9 +178,16 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
 
   @spec interaction_blocked?(map()) :: boolean()
   def interaction_blocked?(state) do
-    not is_nil(Map.get(state, :interaction_lock)) or
-      not is_nil(Map.get(state, :pending_skill_text_input))
+    in_script?(state) or not is_nil(Map.get(state, :pending_skill_text_input))
   end
+
+  @doc """
+  Whether a script holds the player (the interaction lock, a skill-staged
+  dialog included). This, and not a pending skill text input, is what makes
+  the player busy for NPC events and the touch click fallback.
+  """
+  @spec in_script?(map()) :: boolean()
+  def in_script?(state), do: not is_nil(Map.get(state, :interaction_lock))
 
   @doc """
   The NPC gid of a skill-staged dialog (Arrow Crafting's list). Such a dialog

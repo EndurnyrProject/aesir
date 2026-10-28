@@ -57,16 +57,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   @doc """
   Resolves `gid` to its bespoke NPC module and starts a supervised, monitored
   interaction process, storing the lock. A gid that resolves to no NPC
-  module, or one that is currently disabled/hidden, is a no-op.
+  module, one that is currently disabled/hidden, or a player already held by
+  a script is a no-op.
 
-  Public so `MovementHandler`'s `OnTouch` fallback (a trigger area whose
-  module declares no `OnTouch` label — rAthena warper behavior) can start the
-  same `on_talk/1` interaction the click path does, without duplicating this
+  Public so `TouchHandler`'s click fallback (a trigger area whose module
+  declares no touch label, the reference warper behaviour) can start the same
+  `on_talk/1` interaction the click path does, without duplicating this
   resolution/visibility/lock logic.
   """
   @spec talk_to_npc(non_neg_integer(), map(), SessionState.t()) :: {:noreply, SessionState.t()}
   def talk_to_npc(gid, game_state, state) do
-    with false <- SessionState.interaction_blocked?(state),
+    with false <- SessionState.in_script?(state),
          {:ok, {module, _placement}} <- NpcRegistry.module_for_unit(gid),
          true <- NpcSession.visible?(gid) do
       base_ctx =

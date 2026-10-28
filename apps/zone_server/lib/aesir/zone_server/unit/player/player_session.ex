@@ -609,6 +609,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     do: GenServer.cast(pid, {:movement, {:recheck_touch, position}})
 
   @doc """
+  Runs `label` on `gid` as an attached NPC event for this player, or queues
+  it behind the script holding the player (`doevent`).
+  """
+  @spec queue_npc_event(pid(), non_neg_integer(), String.t()) :: :ok
+  def queue_npc_event(pid, gid, label),
+    do: GenServer.cast(pid, {:npc, {:queue_event, gid, label}})
+
+  @doc """
   Offers this player the `OnTouch_` of `gid`, whose previous toucher left its
   area. `excluded` holds the players already ruled out for this handoff.
   """
@@ -1271,6 +1279,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:npc, {:touch_handoff, gid, excluded}}, state) do
     {:noreply, TouchHandler.handle_handoff(state, gid, excluded)}
+  end
+
+  @impl true
+  def handle_cast({:npc, {:queue_event, gid, label}}, state) do
+    {:noreply, NpcEventQueue.dispatch(state, gid, label)}
   end
 
   @impl true

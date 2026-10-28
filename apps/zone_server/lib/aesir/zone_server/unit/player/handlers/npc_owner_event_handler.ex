@@ -5,9 +5,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcOwnerEventHandler do
   dispatch (rAthena `mobkillevent`), fired when a mob tagged with `event:`
   dies to this player.
 
-  The event goes through `NpcEventQueue.dispatch/3`: it starts at once for a
-  free player and is queued behind the open dialog or pending skill text of a
-  busy one.
+  The event goes through `NpcEventQueue.dispatch/4`: it starts at once for a
+  free player and is queued behind the open dialog of a busy one.
   """
 
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcEventQueue

@@ -1,8 +1,9 @@
 defmodule Aesir.ZoneServer.Script.DslEventsTest do
   @moduledoc """
   Covers the Task 6 event-dispatch and timer DSL ops: `donpcevent/2`
-  (detached, fire-and-forget), `doevent/2` (attached-only, starts a new
-  Interaction for the current player against a target NPC), and the
+  (detached, fire-and-forget), `doevent/2` (attached-only, queues a new
+  Interaction for the current player against a target NPC behind the
+  calling script), and the
   self/named `initnpctimer`, `stopnpctimer`, `getnpctimer` pairs backed by
   `Npc.Session`.
   """
@@ -17,7 +18,9 @@ defmodule Aesir.ZoneServer.Script.DslEventsTest do
   alias Aesir.ZoneServer.Npc.Session, as: NpcSession
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
 
   defmodule TargetNpc do
     use Aesir.ZoneServer.Npc,
@@ -127,7 +130,7 @@ defmodule Aesir.ZoneServer.Script.DslEventsTest do
   end
 
   describe "doevent/2" do
-    test "starts an attached interaction for the target npc with the player's char_id and gid" do
+    test "queues the event on the player's session, which runs it once the calling script ends" do
       NpcRegistry.reload([DoeventTargetNpc])
       {DoeventTargetNpc, placement} = hd(NpcRegistry.entries())
       target_gid = NpcRegistry.entity_id(placement)
@@ -135,7 +138,41 @@ defmodule Aesir.ZoneServer.Script.DslEventsTest do
       ctx = attached_ctx(char_id: 42)
 
       assert Dsl.doevent(ctx, "DoeventTarget::OnHit") == ctx
+      assert_receive {:"$gen_cast", {:npc, {:queue_event, ^target_gid, "OnHit"}} = cast}
+      refute_received {:doevent_ran, _char_id, _gid}
+
+      # The calling script holds the lock: the event waits in the queue until
+      # the script's process ends, then runs after the dequeue delay.
+      script = spawn(fn -> Process.sleep(:infinity) end)
+      ref = Process.monitor(script)
+
+      state = %SessionState{
+        game_state: ctx.game_state,
+        connection_pid: self(),
+        interaction_lock: {script, ref, 500}
+      }
+
+      {:noreply, state} = PlayerSession.handle_cast(cast, state)
+      assert state.npc_event_queue == [{target_gid, "OnHit"}]
+
+      Process.exit(script, :kill)
+      assert_receive {:DOWN, ^ref, :process, ^script, reason}
+      {:noreply, state} = PlayerSession.handle_info({:DOWN, ref, :process, script, reason}, state)
+      assert_receive {:npc, {:run_queued_event, ^target_gid, "OnHit"}} = run, 500
+      {:noreply, state} = PlayerSession.handle_info(run, state)
+
       assert_receive {:doevent_ran, 42, ^target_gid}
+      assert {_pid, _ref, ^target_gid} = state.interaction_lock
+    end
+
+    test "a label the target does not declare logs a warning and no-ops" do
+      NpcRegistry.reload([DoeventTargetNpc])
+      ctx = attached_ctx()
+
+      log = capture_log(fn -> assert Dsl.doevent(ctx, "DoeventTarget::OnMiss") == ctx end)
+
+      assert log =~ "no handler"
+      refute_received {:"$gen_cast", _}
     end
 
     test "ends the script with {:error, :no_player} on a detached ctx" do

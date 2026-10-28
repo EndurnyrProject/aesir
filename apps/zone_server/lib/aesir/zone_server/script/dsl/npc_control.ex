@@ -231,27 +231,23 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   end
 
   @doc """
-  Runs `"Name::OnLabel"` as a brand-new attached `Script.Interaction` for the
-  *current* player (rAthena `doevent`). Resolves `name` through
-  `Npc.Registry.by_name/1`; rAthena `doevent` targets exactly one NPC, so the
-  first placement registered under `name` is used, logging a warning if the
-  name maps to several. The new interaction's ctx is built fresh (own
-  page/vars, `npc_gid` set to the target) but shares the current player's
-  identity — char/account/connection/session — the same way a click builds
-  one (see `NpcInteractionHandler.handle_talk/2`).
+  Queues `"Name::OnLabel"` as an attached event for the *current* player
+  (rAthena `doevent`). Resolves `name` through `Npc.Registry.by_name/1`;
+  rAthena `doevent` targets exactly one NPC, so the first placement registered
+  under `name` is used, logging a warning if the name maps to several. A
+  label the target does not declare logs a warning and no-ops.
+
+  The event is handed to the player's session (`PlayerSession.queue_npc_event/3`),
+  where `NpcEventQueue.dispatch/3` queues it behind the calling script, since
+  that script holds the player, and starts it as its own `Script.Interaction`
+  once the script ends, exactly as the reference's `npc_event_sub` enqueues
+  an event fired while `sd->npc_id` is set.
 
   Halts `{:error, :no_player}` on a detached ctx: there is no live player
   session for the new interaction to attach to. When `ctx.session_pid` is `nil`
   even with `game_state` present, the command fails and the script goes on
-  — an item-script ctx's shape (`Ctx.from_session/2` runs inline on the
-  session, never through a cross-process call) — since the new interaction
-  needs a real session pid to monitor; starting one against `nil` would
-  monitor nothing, never register as an interaction lock, and kill the
-  interaction on its first blocking dialog primitive.
-
-  The spawned interaction is an independent coroutine from the one calling
-  `doevent`, not a subroutine: content should call `doevent` as its final
-  act, since interleaving dialog between the two would race the client.
+  (an item-script ctx's shape, which runs inline on the session with no pid
+  to queue on).
   """
   @spec doevent(Ctx.t(), String.t()) :: Ctx.t()
   def doevent(%Ctx{status: {:error, _}} = ctx, _ref), do: ctx
@@ -919,38 +915,22 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
     case NpcRegistry.by_name(name) do
       [] ->
         Logger.warning("npc doevent: unknown name #{inspect(name)}")
-        ctx
 
       [{module, placement} | _rest] = entries ->
         warn_if_ambiguous(entries, name, "doevent/2")
-        gid = NpcRegistry.entity_id(placement)
-        start_attached_event(ctx, module, gid, label, name)
-        ctx
+
+        if label in module.events(),
+          do:
+            PlayerSession.queue_npc_event(
+              ctx.session_pid,
+              NpcRegistry.entity_id(placement),
+              label
+            ),
+          else:
+            Logger.warning("npc doevent: #{inspect(name)} has no handler for #{inspect(label)}")
     end
-  end
 
-  @spec start_attached_event(Ctx.t(), module(), non_neg_integer(), String.t(), String.t()) :: :ok
-  defp start_attached_event(ctx, module, gid, label, name) do
-    target_ctx = build_event_ctx(ctx, module, gid)
-
-    case NpcEvents.trigger_attached(gid, label, target_ctx, ctx.session_pid) do
-      {:ok, _pid} ->
-        :ok
-
-      {:error, reason} ->
-        Logger.warning("npc doevent: #{inspect(name)} #{inspect(reason)} for #{inspect(label)}")
-    end
-  end
-
-  @spec build_event_ctx(Ctx.t(), module(), non_neg_integer()) :: Ctx.t()
-  defp build_event_ctx(%Ctx{} = ctx, module, gid) do
-    base_ctx =
-      Ctx.from_session(
-        %{game_state: ctx.game_state, connection_pid: ctx.connection_pid},
-        {:npc, module.npc_id()}
-      )
-
-    %{base_ctx | npc_gid: gid}
+    ctx
   end
 
   @spec split_ref(String.t()) :: {:ok, String.t(), String.t()} | :error

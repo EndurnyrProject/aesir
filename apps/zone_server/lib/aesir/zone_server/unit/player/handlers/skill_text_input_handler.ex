@@ -8,7 +8,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Network.MessageRouter
-  alias Aesir.ZoneServer.Unit.Player.Handlers.NpcEventQueue
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SessionState.PendingSkillTextInput
@@ -134,10 +133,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler do
 
   def handle_timeout(state, _request_id), do: {:noreply, state}
 
-  @doc """
-  Drops the pending text input, cancelling its timeout. Clearing a pending
-  input ends what made the player busy, so a queued NPC event is released.
-  """
+  @doc "Drops the pending text input, cancelling its timeout."
   @spec clear(SessionState.t()) :: SessionState.t()
   def clear(state) do
     case Map.get(state, :pending_skill_text_input) do
@@ -147,9 +143,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler do
       pending ->
         Process.cancel_timer(pending.timer_ref)
 
-        state
-        |> Map.put(:pending_skill_text_input, nil)
-        |> NpcEventQueue.release()
+        Map.put(state, :pending_skill_text_input, nil)
     end
   end
 

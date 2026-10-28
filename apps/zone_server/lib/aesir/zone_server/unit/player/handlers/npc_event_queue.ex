@@ -4,8 +4,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcEventQueue do
   the queue they wait in while the player is busy.
 
   `dispatch/3` is the entry point: a free player starts the event's attached
-  `Script.Interaction` at once; a busy one (interaction lock or pending skill
-  text input) queues it. The queue holds two events; a third is logged and
+  `Script.Interaction` at once; a busy one (a script holds its interaction
+  lock) queues it. The queue holds two events; a third is logged and
   dropped. The session drains it one event at a time: when the lock releases
   (`release/1`), the head is popped and run 100 ms later (`run_queued/3`),
   where it is re-queued at the back if the player is busy again, dropped
@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcEventQueue do
   @spec dispatch(SessionState.t(), non_neg_integer(), String.t(), module() | nil) ::
           SessionState.t()
   def dispatch(state, gid, label, module \\ nil) do
-    if SessionState.interaction_blocked?(state) do
+    if SessionState.in_script?(state) do
       enqueue(state, gid, label)
     else
       case start_attached(state, gid, label, module) do
@@ -84,7 +84,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcEventQueue do
   @spec run_queued(SessionState.t(), non_neg_integer(), String.t()) :: SessionState.t()
   def run_queued(state, gid, label) do
     cond do
-      SessionState.interaction_blocked?(state) ->
+      SessionState.in_script?(state) ->
         enqueue(state, gid, label)
 
       not runnable?(state.game_state, gid, label) ->

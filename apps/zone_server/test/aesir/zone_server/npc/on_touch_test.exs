@@ -238,7 +238,7 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
       assert state.interaction_lock == fake_lock
     end
 
-    test "pending skill text allows movement but suppresses OnTouch and remains pending" do
+    test "pending skill text does not make the player busy: OnTouch fires and the input stays" do
       gid = gid_for(TouchNpc)
       timer_ref = Process.send_after(self(), :unused_timeout, 60_000)
 
@@ -273,8 +273,9 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
       assert state.pending_skill_text_input == pending
       assert is_integer(Process.read_timer(timer_ref))
       assert MapSet.member?(state.game_state.inside_npc_areas, gid)
-      assert state.interaction_lock == nil
-      refute_receive {:touched, TouchNpc}, 100
+      assert_receive {:touched, TouchNpc}
+      assert {_pid, _ref, ^gid} = state.interaction_lock
+      assert state.npc_event_queue == []
     end
   end
 

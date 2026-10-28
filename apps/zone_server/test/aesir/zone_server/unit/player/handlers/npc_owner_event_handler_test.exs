@@ -33,8 +33,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcOwnerEventHandlerTest do
     Process.exit(interaction_pid, :kill)
   end
 
-  test "pending skill text queues an owner event and remains active" do
+  test "an open dialog queues an owner event" do
     reject(&Events.trigger_attached/4)
+    script = spawn(fn -> Process.sleep(:infinity) end)
+    initial = %{state() | interaction_lock: {script, Process.monitor(script), 500}}
+
+    assert {:noreply, queued} =
+             PlayerSession.handle_cast(
+               {:npc, {:run_attached_event, EventNpc, 77, "OnMyMobDead"}},
+               initial
+             )
+
+    assert queued.npc_event_queue == [{77, "OnMyMobDead"}]
+    assert %{queued | npc_event_queue: []} == initial
+    Process.exit(script, :kill)
+  end
+
+  test "pending skill text does not block an owner event and remains active" do
+    interaction_pid = spawn(fn -> Process.sleep(:infinity) end)
+
+    expect(Events, :trigger_attached, fn 77, "OnMyMobDead", _ctx, _pid ->
+      {:ok, interaction_pid}
+    end)
+
     timer_ref = Process.send_after(self(), :unused_timeout, 60_000)
 
     pending = %SessionState.PendingSkillTextInput{
@@ -47,15 +68,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcOwnerEventHandlerTest do
 
     initial = %{state() | pending_skill_text_input: pending}
 
-    assert {:noreply, queued} =
+    assert {:noreply, started} =
              PlayerSession.handle_cast(
                {:npc, {:run_attached_event, EventNpc, 77, "OnMyMobDead"}},
                initial
              )
 
-    assert queued.npc_event_queue == [{77, "OnMyMobDead"}]
-    assert %{queued | npc_event_queue: []} == initial
+    assert {^interaction_pid, _ref, 77} = started.interaction_lock
+    assert started.pending_skill_text_input == pending
     assert is_integer(Process.read_timer(timer_ref))
+    Process.exit(interaction_pid, :kill)
   end
 
   defp state do

@@ -152,7 +152,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.TouchHandler do
   end
 
   defp click_fallback(state, gid, game_state) do
-    if SessionState.interaction_blocked?(state) do
+    if SessionState.in_script?(state) do
       state
     else
       {:noreply, state} = NpcInteractionHandler.talk_to_npc(gid, game_state, state)
