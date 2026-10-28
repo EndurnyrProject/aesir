@@ -3,16 +3,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   Handles player HP changes from combat: damage application, death, and respawn.
 
   When a player takes damage their own HP bar is updated via a `ParamChange`
-  (SP_HP), matching rAthena's `clif_updatestatus(sd, SP_HP)`. `UnitHp` is
-  reserved for monster HP bars and is not used here.
+  (SP_HP). `UnitHp` is reserved for monster HP bars and is not used here.
 
   On death the player is marked `:dead` and nearby players receive a
   `UnitDespawn` with the died reason, while the corpse remains spatially present
-  for observer delivery and corpse-targeted skills. Respawn revives the player
-  and warps them to their save point — or, on a gvg-active castle map, to the
-  castle's same-map respawn point; if that warp fails (e.g. the save map is
-  unknown) it falls back to resurrecting in place and standing the sprite back
-  up via a `Resurrect`.
+  for observer delivery and corpse-targeted skills; the natural regeneration
+  timing restarts from scratch. Respawn revives the player and warps them to
+  their save point — or, on a gvg-active castle map, to the castle's same-map
+  respawn point; if that warp fails (e.g. the save map is unknown) it falls back
+  to resurrecting in place and standing the sprite back up via a `Resurrect`.
   """
 
   require Logger
@@ -52,6 +51,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.Logout
+  alias Aesir.ZoneServer.Unit.Player.NaturalHeal.Timing
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.ScriptVitals
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -766,6 +766,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     Lifecycle.publish_death(:player, game_state.character_id, game_state.map_name)
 
     state = HomunculusCommandHandler.owner_died(state)
+    state = Map.put(state, :regen_timing, Timing.initial())
     {:noreply, SkillMenuHandler.clear(state)}
   end
 

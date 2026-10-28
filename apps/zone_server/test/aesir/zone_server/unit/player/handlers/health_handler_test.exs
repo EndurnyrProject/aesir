@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
+  alias Aesir.ZoneServer.Unit.Player.NaturalHeal.Timing
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
@@ -156,9 +157,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     test "kills the player and marks them dead when HP reaches 0" do
       :ok = Lifecycle.subscribe()
 
-      {:noreply, %{game_state: game_state}} =
-        HealthHandler.apply_damage(150, 2001, build_state(100, :idle))
+      timing = %Timing{
+        clock_ms: 6_000,
+        hp_last_ms: 4_000,
+        skill_hp_acc: 5_000,
+        skill_sp_acc: 5_000,
+        sitting_hp_acc: 5_000,
+        sitting_sp_acc: 5_000
+      }
 
+      state = %{build_state(100, :idle) | regen_timing: timing}
+
+      {:noreply, %{game_state: game_state} = dead} = HealthHandler.apply_damage(150, 2001, state)
+
+      assert dead.regen_timing == Timing.initial()
       assert game_state.stats.current_state.hp == 0
       assert game_state.action_state == :dead
       assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_hp, value: 0}}}
