@@ -11,7 +11,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcDancinglessonTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.Player.NaturalHeal
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
@@ -59,7 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcDancinglessonTest do
   end
 
   @tag game_mode: :renewal
-  test "grants critical and SP regeneration with every weapon" do
+  test "grants critical and 1% max SP per level with every weapon, and no regeneration" do
     whip_base = calculate(%{}, equipped(@whip_id))
     whip_lesson = calculate(%{@lesson_id => 10}, equipped(@whip_id))
     musical_base = calculate(%{}, equipped(@musical_id))
@@ -69,10 +68,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcDancinglessonTest do
     assert musical_lesson.combat_stats.critical == musical_base.combat_stats.critical + 1
     assert Passives.critical_bonus(whip_lesson) == 10
     assert Passives.critical_bonus(musical_lesson) == 10
-    assert Passives.regen(whip_lesson).skill_sp_regen == 10
-    assert Passives.regen(musical_lesson).skill_sp_regen == 10
-    assert sp_regen(whip_lesson) == sp_regen(whip_base) + 10
-    assert sp_regen(musical_lesson) == sp_regen(musical_base) + 10
+    assert whip_lesson.derived_stats.max_sp == div(whip_base.derived_stats.max_sp * 110, 100)
+
+    assert musical_lesson.derived_stats.max_sp ==
+             div(musical_base.derived_stats.max_sp * 110, 100)
+
+    assert Passives.regen(whip_lesson) == Passives.regen(whip_base)
   end
 
   test "does not contribute ASPD with an active status" do
@@ -107,21 +108,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcDancinglessonTest do
     |> Calculator.calculate_stats(@player_id, [weapon])
   end
 
-  defp sp_regen(stats) do
-    {_hp, sp, _accumulators} =
-      NaturalHeal.compute(
-        stats,
-        :idle,
-        :idle,
-        %{},
-        Passives.regen(stats),
-        %{sitting_hp_regen: 0, sitting_sp_regen: 0},
-        %{elapsed_ms: 10_000, hp_acc: 0, sp_acc: 0, skill_hp_acc: 0, skill_sp_acc: 0}
-      )
-
-    sp
-  end
-
   defp weapon(id, subtype) do
     %ItemDefinition{
       id: id,
@@ -138,18 +124,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcDancinglessonTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic grants SP regeneration but no critical" do
+  test "classic grants neither critical nor max SP" do
     whip_base = calculate(%{}, equipped(@whip_id))
     whip_lesson = calculate(%{@lesson_id => 10}, equipped(@whip_id))
 
-    musical_base = calculate(%{}, equipped(@musical_id))
-    musical_lesson = calculate(%{@lesson_id => 10}, equipped(@musical_id))
-
     assert whip_lesson.combat_stats.critical == whip_base.combat_stats.critical
-    assert musical_lesson.combat_stats.critical == musical_base.combat_stats.critical
     assert Passives.critical_bonus(whip_lesson) == 0
-    assert Passives.critical_bonus(musical_lesson) == 0
-    assert sp_regen(whip_lesson) == sp_regen(whip_base) + 10
-    assert sp_regen(musical_lesson) == sp_regen(musical_base) + 10
+    assert whip_lesson.derived_stats.max_sp == whip_base.derived_stats.max_sp
+    assert Passives.regen(whip_lesson) == Passives.regen(whip_base)
   end
 end
