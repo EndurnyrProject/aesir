@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Stalker.StChasewalk do
     max_level: 5,
     target_type: :self,
     damage_type: :no_damage,
+    damage_kind: :none,
     sp_cost: List.duplicate(10, 5),
     cast_time: [renewal: List.duplicate(500, 5), pre_renewal: List.duplicate(1_200, 5)],
     fixed_cast_time: [renewal: List.duplicate(500, 5), pre_renewal: []]
