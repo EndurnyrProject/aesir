@@ -112,6 +112,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
   end
 
   @doc """
+  Builds the display of damage a unit deals straight back to its attacker
+  (Counter Instinct): no motion delays and no division count.
+  """
+  @spec build_counter_damage_packet(integer(), integer(), non_neg_integer()) :: DamageDealt.t()
+  def build_counter_damage_packet(src_id, target_id, damage) do
+    %DamageDealt{
+      src_id: src_id,
+      target_id: target_id,
+      server_tick: ServerTick.now(),
+      src_speed: 0,
+      dmg_speed: 0,
+      damage: damage,
+      div: 0,
+      type: @dmg_normal,
+      damage2: 0,
+      is_sp_damage: false
+    }
+  end
+
+  @doc """
   Builds one authoritative packet for a settled ordinary weapon swing. `:div`
   overrides the shown division count (the packet type keeps the swing's own);
   `:is_sp_damage` marks SP damage.

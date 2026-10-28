@@ -60,6 +60,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     :sc_steelbody
   ]
   @block_stage [:sc_kyrie, :sc_safetywall, :sc_pneuma, :sc_basilica, :sc_basilica_caster]
+  # After the siege map rate, before delivery (see final_weapon_hit/4).
+  @final_weapon_stage [:sc_rejectsword]
 
   @defense_stats [:str, :agi, :vit, :int, :dex, :luk]
 
@@ -811,6 +813,36 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   @doc "Every status id with a damage stage, in stage order."
   @spec absorb_stages() :: [atom()]
   def absorb_stages, do: @common_stage ++ @block_stage
+
+  @doc """
+  Runs the holder's final weapon stage (Counter Instinct) over one weapon hit's
+  positive damage, after its damage statuses and the siege map rate. Returns the
+  damage left and the damage owed back to the attacker.
+  """
+  @spec final_weapon_hit(unit_type(), integer(), non_neg_integer(), map()) ::
+          {non_neg_integer(), non_neg_integer()}
+  def final_weapon_hit(unit_type, unit_id, damage, hit_info) do
+    Enum.reduce(@final_weapon_stage, {damage, 0}, fn status_id, acc ->
+      final_weapon_step(unit_type, unit_id, status_id, acc, hit_info)
+    end)
+  end
+
+  @doc "Every status id in the final weapon stage, in stage order."
+  @spec final_weapon_stages() :: [atom()]
+  def final_weapon_stages, do: @final_weapon_stage
+
+  defp final_weapon_step(_unit_type, _unit_id, _status_id, {0, _owed} = acc, _hit_info), do: acc
+
+  defp final_weapon_step(unit_type, unit_id, status_id, {damage, owed} = acc, hit_info) do
+    with %{} = instance <- StatusStorage.get_status(unit_type, unit_id, status_id),
+         %{module: module} <- Registry.get_definition(status_id),
+         {:counter, damage, counter} <-
+           module.final_weapon_hit({unit_type, unit_id}, instance, damage, hit_info) do
+      {damage, owed + counter}
+    else
+      _continue -> acc
+    end
+  end
 
   defp attack_stages(damage, true, _run, _hit_info), do: {damage, :hit}
 

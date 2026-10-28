@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Net.DamageDealt
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.Endure
@@ -14,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.PlayerStateFixture
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -63,6 +65,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     def after_damage_taken(_target, instance, hit_info, _context) do
       send(instance.state.test_pid, {:after_damage_taken, hit_info})
       :ok
+    end
+  end
+
+  # Takes the final weapon stage's place and halves the hit back to the attacker.
+  defmodule HalfCounter do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_rejectsword,
+      no_dispel: false,
+      no_clear_buff: false,
+      properties: [:buff]
+
+    @impl true
+    def final_weapon_hit(_target, instance, damage, hit_info) do
+      send(instance.state.test_pid, {:final_weapon_hit, damage, hit_info})
+      {:counter, div(damage, 2), div(damage, 2)}
     end
   end
 
@@ -291,6 +308,97 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
                        dmg_type: :magic,
                        is_short: false
                      }}
+  end
+
+  describe "final weapon stage" do
+    setup do
+      target_id = 40
+      attacker_id = 41
+      attacker_pid = spawn(fn -> Process.sleep(:infinity) end)
+      stub_unit_info(target_id)
+      register_attacker(attacker_id, attacker_pid, %{reduce_damage_return: 50})
+      Registry.register_module(HalfCounter)
+
+      :ok =
+        Interpreter.apply_status(:player, target_id, :sc_rejectsword, state: %{test_pid: self()})
+
+      test_pid = self()
+
+      stub(PlayerSession, :apply_damage, fn pid, damage, source, metadata ->
+        send(test_pid, {:damage, pid, damage, source, metadata})
+        :ok
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+        send(test_pid, {:broadcast, packet})
+        :ok
+      end)
+
+      %{target_id: target_id, attacker_id: attacker_id, attacker_pid: attacker_pid}
+    end
+
+    test "a physical hit is cut and the owed part lands on the attacker in full", ctx do
+      %{target_id: target_id, attacker_id: attacker_id, attacker_pid: attacker_pid} = ctx
+
+      assert {50, _hit_info} =
+               DamageApplication.prepare_unit_damage(
+                 :player,
+                 target_id,
+                 100,
+                 Map.put(melee_hit(), :div, 2),
+                 attacker_id
+               )
+
+      assert_received {:final_weapon_hit, 100, %{attacker: {:player, ^attacker_id}}}
+
+      assert_received {:damage, ^attacker_pid, 50, {:player, ^target_id},
+                       %{reflected: true, skill_id: 390, dmg_type: :misc, div: 2}}
+
+      assert_received {:broadcast,
+                       %DamageDealt{
+                         src_id: ^target_id,
+                         target_id: ^attacker_id,
+                         damage: 50,
+                         div: 0
+                       }}
+    end
+
+    test "a dual-wield swing gives the stage only its right-hand part", ctx do
+      %{target_id: target_id, attacker_id: attacker_id, attacker_pid: attacker_pid} = ctx
+      target_pid = spawn(fn -> Process.sleep(:infinity) end)
+
+      {settled, :ok} =
+        DamageApplication.apply_weapon_swing(
+          :player,
+          target_pid,
+          target_id,
+          swing(100, 50),
+          melee_hit(),
+          attacker_id
+        )
+
+      assert_received {:final_weapon_hit, 100, _hit_info}
+      assert settled.primary.damage == 50
+      assert settled.secondary.damage == 50
+      assert_received {:damage, ^target_pid, 100, {:player, ^attacker_id}, _metadata}
+      assert_received {:damage, ^attacker_pid, 50, {:player, ^target_id}, %{reflected: true}}
+    end
+
+    test "magic, misc, reflected and bypassing hits skip the stage", ctx do
+      %{target_id: target_id, attacker_id: attacker_id} = ctx
+
+      for hit <- [
+            %{dmg_type: :magic, is_short: false, skill_id: 19, skill_level: 1},
+            %{dmg_type: :misc, is_short: true, skill_id: 152, skill_level: 1},
+            Map.put(melee_hit(), :reflected, true),
+            Map.put(melee_hit(), :bypass_reductions, true)
+          ] do
+        assert {100, _hit_info} =
+                 DamageApplication.prepare_unit_damage(:player, target_id, 100, hit, attacker_id)
+      end
+
+      refute_received {:final_weapon_hit, _damage, _hit_info}
+    end
   end
 
   test "a hit is marked to stop its walking target unless the target's endure time runs" do
@@ -835,6 +943,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
       })
 
     UnitRegistry.register_player(player, self())
+  end
+
+  defp register_attacker(attacker_id, pid, equipment) do
+    player =
+      PlayerStateFixture.build(%{
+        character_id: attacker_id,
+        account_id: attacker_id,
+        stats: %{combat_stats: %CombatStats{}, modifiers: %{equipment: equipment}}
+      })
+
+    UnitRegistry.register_player(player, pid)
   end
 
   defp stub_unit_info(target_id) do

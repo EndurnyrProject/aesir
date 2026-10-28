@@ -344,6 +344,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
               :ok | :remove | {:reflect, non_neg_integer()}
 
   @doc """
+  Final step of a weapon hit on the holder, after its damage statuses and the
+  siege map rate, before the hit is delivered.
+
+  Runs inside the attacker's process, only for statuses the interpreter places
+  in its final weapon stage (see `Interpreter.final_weapon_hit/4`). Receives the
+  positive running damage (the right hand's part of a dual-wield swing) and the
+  hit's `hit_info` with its typed `:attacker`. Returns `:continue`, or
+  `{:counter, damage, owed}` to set the damage and deal `owed` back to the
+  attacker at once. Status writes must be `StatusStorage` claims.
+  """
+  @callback final_weapon_hit(target(), StatusEntry.t(), non_neg_integer(), map()) ::
+              :continue | {:counter, non_neg_integer(), non_neg_integer()}
+
+  @doc """
   Pre-damage hook that may reduce or block an incoming hit before HP is applied.
 
   Only statuses the interpreter places at a fixed damage stage are dispatched, in
@@ -496,6 +510,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
           | :on_dealt_damage
           | :on_damage
           | :after_damage_taken
+          | :final_weapon_hit
           | :on_movement_intent
           | :on_committed_action
           | :on_timeout
@@ -597,6 +612,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     before_normal_attack? = Module.defines?(env.module, {:before_normal_attack, 4})
     attack_replacement? = Module.defines?(env.module, {:attack_replacement, 3})
     after_damage_taken? = Module.defines?(env.module, {:after_damage_taken, 4})
+    final_weapon_hit? = Module.defines?(env.module, {:final_weapon_hit, 4})
     movement_intent? = Module.defines?(env.module, {:on_movement_intent, 4})
     committed_action? = Module.defines?(env.module, {:on_committed_action, 4})
     timeout? = Module.defines?(env.module, {:on_timeout, 3})
@@ -632,6 +648,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
         end
       end
 
+    final_weapon_hit_default = final_weapon_hit_default(final_weapon_hit?)
     movement_intent_default = movement_intent_default(movement_intent?)
     committed_action_default = committed_action_default(committed_action?)
 
@@ -647,6 +664,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       |> maybe_add_capability(dealt_damage?, :on_dealt_damage)
       |> maybe_add_capability(damage?, :on_damage)
       |> maybe_add_capability(after_damage_taken?, :after_damage_taken)
+      |> maybe_add_capability(final_weapon_hit?, :final_weapon_hit)
       |> maybe_add_capability(movement_intent?, :on_movement_intent)
       |> maybe_add_capability(committed_action?, :on_committed_action)
       |> maybe_add_capability(timeout?, :on_timeout)
@@ -660,6 +678,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       unquote(before_normal_attack_default)
       unquote(attack_replacement_default)
       unquote(after_damage_taken_default)
+      unquote(final_weapon_hit_default)
       unquote(movement_intent_default)
       unquote(committed_action_default)
       unquote(timeout_default)
@@ -707,6 +726,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     quote do
       @impl true
       def on_movement_intent(_target, instance, _position, _context), do: {:ok, instance}
+    end
+  end
+
+  defp final_weapon_hit_default(true), do: nil
+
+  defp final_weapon_hit_default(false) do
+    quote do
+      @impl true
+      def final_weapon_hit(_target, _instance, _damage, _hit_info), do: :continue
     end
   end
 

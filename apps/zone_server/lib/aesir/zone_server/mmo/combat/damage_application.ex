@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
+  alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
@@ -33,6 +34,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
+
+  # Counter Instinct, the skill a final weapon stage counter is dealt as.
+  @counter_skill_id 390
 
   @doc """
   Resolves pre-delivery equipment and status damage modifiers for one hit.
@@ -109,6 +113,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
       |> absorb_unit_damage(target_type, target_id, hit_info, attacker_id)
 
     {settled, hit_info} = intercept_magic(target_type, target_id, settled, hit_info)
+    settled = final_weapon_hit(settled, target_type, target_id, hit_info, attacker_id)
 
     case reroute_to_crusader(target_type, target_id, settled, hit_info, attacker_id) do
       {:rerouted, _delivery} -> {0, rerouted(hit_info, settled)}
@@ -153,7 +158,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
         do: {absorbed, prepared_hit},
         else: intercept_magic(target_type, target_id, absorbed, prepared_hit)
 
-    settled = apply_ground_rate(absorbed, Rules.damage_rate(hit_info))
+    settled =
+      absorbed
+      |> apply_ground_rate(Rules.damage_rate(hit_info))
+      |> final_weapon_hit(target_type, target_id, prepared_hit, attacker)
+
     finish_ground_hit(target_type, target_id, settled, prepared_hit, attacker)
   end
 
@@ -355,6 +364,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
           swing
           |> settle_components(absorbed)
           |> rate_components(Rules.damage_rate(hit_info))
+          |> final_weapon_swing(target_type, target_id, prepared_hit, attacker)
 
         {damage, prepared_hit} =
           finish_ground_hit(
@@ -378,8 +388,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   end
 
   defp apply_ordinary_swing(target_type, target_pid, target_id, swing, hit_info, attacker) do
-    {final_damage, hit_info} =
+    {absorbed, hit_info} =
       absorb_unit_damage(swing.raw_total, target_type, target_id, hit_info, attacker)
+
+    settled =
+      swing
+      |> settle_components(absorbed)
+      |> final_weapon_swing(target_type, target_id, hit_info, attacker)
+
+    final_damage = component_total(settled)
 
     case reroute_to_crusader(target_type, target_id, final_damage, hit_info, attacker) do
       {:rerouted, delivery} ->
@@ -388,7 +405,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
         {with_stages(settle_components(swing, 0), rerouted_hit, 0), delivery}
 
       :not_rerouted ->
-        settled = settle_components(swing, final_damage)
         prepared_hit = Map.put(hit_info, :pre_delivery_prepared?, true)
 
         delivery =
@@ -787,6 +803,77 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   defp absorb_unit_damage(damage, _target_type, _target_id, hit_info, _attacker),
     do: {damage, hit_info}
 
+  # The holder's final weapon stage (Counter Instinct) over a weapon hit's
+  # settled damage, after the siege map rate and before Devotion. A cut hit's
+  # owed part is dealt back to the attacker at once.
+  defp final_weapon_hit(damage, target_type, target_id, hit_info, attacker)
+       when damage > 0 and target_type in [:player, :mob, :homunculus] do
+    with {_type, _id} = attacker_ref <- absorb_attacker(attacker),
+         true <- weapon_attack?(hit_info) do
+      stage_hit = Map.put(hit_info, :attacker, attacker_ref)
+
+      {settled, owed} =
+        StatusInterpreter.final_weapon_hit(target_type, target_id, damage, stage_hit)
+
+      counter_attacker(owed, attacker_ref, {target_type, target_id}, hit_info)
+      settled
+    else
+      _not_staged -> damage
+    end
+  end
+
+  defp final_weapon_hit(damage, _target_type, _target_id, _hit_info, _attacker), do: damage
+
+  # A dual-wield swing's stage sees only its right-hand part.
+  defp final_weapon_swing(swing, target_type, target_id, hit_info, attacker) do
+    primary =
+      final_weapon_hit(swing.primary.damage, target_type, target_id, hit_info, attacker)
+
+    %{swing | primary: %{swing.primary | damage: primary}}
+  end
+
+  defp weapon_attack?(hit_info) do
+    Map.get(hit_info, :dmg_type) == :physical and
+      not Map.get(hit_info, :reflected, false) and
+      not Map.get(hit_info, :redirected, false) and
+      not Map.get(hit_info, :bypass_reductions, false) and
+      not Map.get(hit_info, :status_tick?, false) and
+      not Map.has_key?(hit_info, :infinite_defense)
+  end
+
+  # The counter is a fixed hit the holder deals its attacker as the weapon hit
+  # is calculated: shown on the attacker, then dealt without the attacker's
+  # damage statuses, map rate or returned-damage reduction, with the holder's
+  # own coma roll.
+  defp counter_attacker(0, _attacker, _holder, _hit_info), do: :ok
+
+  defp counter_attacker(owed, {_type, attacker_id} = attacker, {_, holder_id} = holder, hit_info) do
+    case TargetResolver.resolve(attacker) do
+      {:ok, pid, state, type} ->
+        state
+        |> state.__struct__.to_combatant()
+        |> broadcast_nearby(
+          PacketFactory.build_counter_damage_packet(holder_id, attacker_id, owed)
+        )
+
+        counter_hit = %{
+          reflected: true,
+          skill_id: @counter_skill_id,
+          dmg_type: :misc,
+          div: Map.get(hit_info, :div, 1),
+          pre_delivery_prepared?: true,
+          coma?: reflected_coma?(holder, type, state)
+        }
+
+        type
+        |> apply_unit_damage(pid, attacker_id, owed, counter_hit, holder)
+        |> forward_local_effects()
+
+      {:error, _reason} ->
+        :ok
+    end
+  end
+
   defp absorb_attacker(attacker_id) when is_integer(attacker_id), do: {:player, attacker_id}
 
   defp absorb_attacker({_unit_type, _unit_id} = ref),
@@ -1117,7 +1204,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
         {absorbed, hit_info} =
           absorb_unit_damage(damage, target_type, target_id, hit_info, attacker)
 
-        {absorbed, Map.put(hit_info, :pre_delivery_prepared?, true)}
+        settled = final_weapon_hit(absorbed, target_type, target_id, hit_info, attacker)
+        {settled, Map.put(hit_info, :pre_delivery_prepared?, true)}
     end
   end
 

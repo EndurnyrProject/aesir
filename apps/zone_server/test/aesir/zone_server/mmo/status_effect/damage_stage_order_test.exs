@@ -35,6 +35,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DamageStageOrderTest do
       refute :sc_magicrod in staged
     end
 
+    test "every status implementing final_weapon_hit is in the final weapon stage" do
+      staged = MapSet.new(Interpreter.final_weapon_stages())
+
+      unstaged =
+        for module <- Effects.all(),
+            :final_weapon_hit in module.__status_capabilities__(),
+            module.id() not in staged,
+            do: module.id()
+
+      assert unstaged == []
+    end
+
     test "direct magic is missed after common reductions, while unit-origin magic passes" do
       pid = player(sp: 10, max_sp: 100)
       apply!(:sc_magicrod, val1: 5, val2: 100)

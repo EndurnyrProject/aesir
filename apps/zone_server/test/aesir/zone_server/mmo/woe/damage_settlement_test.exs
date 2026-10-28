@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
@@ -21,6 +22,20 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @castle_map "aldeg_cas01"
+
+  defmodule HalfCounter do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_rejectsword,
+      no_dispel: false,
+      no_clear_buff: false,
+      properties: [:buff]
+
+    @impl true
+    def final_weapon_hit(_target, instance, damage, _hit_info) do
+      send(instance.state.test_pid, {:final_weapon_hit, damage})
+      {:counter, div(damage, 2), div(damage, 2)}
+    end
+  end
 
   setup :set_mimic_private
   setup :verify_on_exit!
@@ -82,6 +97,17 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
     assert settled.primary.damage == 1
     assert settled.secondary.damage == 1
     assert settled.primary.damage + settled.secondary.damage == 2
+  end
+
+  test "the final weapon stage sees the castle-ground rated damage" do
+    attacker = register_player(15, @castle_map)
+    _target = register_player(26, @castle_map)
+    Registry.register_module(HalfCounter)
+    :ok = StatusInterpreter.apply_status(:player, 26, :sc_rejectsword, state: %{test_pid: self()})
+    expect_damage(attacker.pid, 40, {:player, 26})
+
+    assert {40, _hit_info} = prepare(26, 100, ordinary_hit(), {:player, 15})
+    assert_received {:final_weapon_hit, 80}
   end
 
   test "unprepared attack delivery uses the same shield then rate settlement" do
