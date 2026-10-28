@@ -446,6 +446,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     :sc_hiding,
     :sc_cloaking,
     :sc_trickdead,
+    :sc_chasewalk,
     :sc_winkcharm
   ]
 

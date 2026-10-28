@@ -63,6 +63,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DisplayMetadataTest do
 
   defp assert_resolves(_module, _field, _resolver, nil), do: :ok
 
+  defp assert_resolves(module, field, resolver, atoms) when is_list(atoms),
+    do: Enum.each(atoms, &assert_resolves(module, field, resolver, &1))
+
   defp assert_resolves(module, field, resolver, atom) do
     assert resolver.id(atom) != nil,
            "#{inspect(module)} declares #{field}: #{inspect(atom)} which does not resolve via #{inspect(resolver)}"

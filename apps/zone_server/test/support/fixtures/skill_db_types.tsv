@@ -313,6 +313,7 @@
 381	SN_FALCONASSAULT	Misc	false	Misc	false	IgnoreDefCard,IgnoreFlee	IgnoreFlee	none	0,0,0,0,0	none	0,0,0,0,0
 382	SN_SHARPSHOOTING	Weapon	false	Weapon	false	none	none	Arrow	1,1,1,1,1	Arrow	1,1,1,1,1
 383	SN_WINDWALK	Weapon	true	Weapon	true	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
+389	ST_CHASEWALK	Weapon	true	Weapon	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 394	CG_ARROWVULCAN	Weapon	false	Weapon	false	none	none	Arrow	1,1,1,1,1,1,1,1,1,1	Arrow	1,1,1,1,1,1,1,1,1,1
 395	CG_MOONLIT	Misc	true	Misc	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 396	CG_MARIONETTE	None	true	None	true	none	none	none	0	none	0
