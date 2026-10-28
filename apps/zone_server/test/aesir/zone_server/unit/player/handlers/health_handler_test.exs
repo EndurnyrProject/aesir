@@ -1302,7 +1302,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
 
       assert game_state.stats.progression.base_exp == 100
       assert game_state.stats.progression.job_exp == 40
-      refute StatusStorage.has_status?(:player, 1, :sc_lifeinsurance)
+      assert StatusStorage.has_status?(:player, 1, :sc_lifeinsurance)
     end
 
     test "does not persist when the computed loss is zero" do

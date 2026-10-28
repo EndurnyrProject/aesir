@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autospell do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_autospell,
+    remove_on_death: false,
     properties: [:buff],
     icon: :autospell,
     no_dispel: true,

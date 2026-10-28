@@ -63,6 +63,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsCloakingTest do
     refute StatusStorage.has_status?(:player, 2, :sc_cloaking)
   end
 
+  test "a player's cloak has no expiry" do
+    cache(MapData.new("open", 5, 5))
+    player = player_state(30)
+    :ok = UnitRegistry.register_player(player, self())
+
+    assert {:ok, _activated} = AsCloaking.cast(player, :self, 5, AsCloaking.definition())
+    assert %{expires_at: nil} = StatusStorage.get_status(:player, 30, :sc_cloaking)
+  end
+
   test "stores the exact per-level SP drain cadence" do
     cache(MapData.new("open", 5, 5) |> MapData.set_cell(2, 1, GatType.wall()))
     intervals = [500 | Enum.to_list(1_000..9_000//1_000)]

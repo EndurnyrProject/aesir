@@ -24,7 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EternalChaos do
       pre_renewal: []
     ],
     duration: 60_000,
-    remove_on_death: false,
+    remove_on_death: true,
     remove_on_map_change: false,
     icon: :eternalchaos
 

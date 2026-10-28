@@ -3,7 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsCloaking do
   Cloaking (AS_CLOAKING). A self toggle for 15 SP that hides the caster, doubles
   CRIT, drains 1 SP every 0.5 to 9 s by level, and below level 3 needs an impassable
   neighbouring cell; movement is heavily slowed below level 3 and mildly slowed
-  (30% minus 3% per level) from level 3 up.
+  (30% minus 3% per level) from level 3 up. A player's cloak lasts until a drain
+  fails or something ends it; a monster's lasts 10 s.
 
   Renewal and pre-renewal agree.
   """
@@ -65,6 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsCloaking do
     case StatusInterpreter.toggle_status(:player, caster_id, :sc_cloaking,
            val1: level,
            tick: Enum.at(@drain_intervals, level - 1),
+           duration: :infinite,
            caster_id: caster_id,
            source_type: :player,
            state: %{adjacent_impassable?: adjacent?}

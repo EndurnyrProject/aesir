@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FoodVitCash do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_food_vit_cash,
+    remove_on_death: false,
     no_dispel: true,
     no_clear_buff: true,
     properties: [:buff],

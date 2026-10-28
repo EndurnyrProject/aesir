@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncFleeRate do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_incfleerate,
+    remove_on_death: false,
     no_dispel: false,
     no_clear_buff: true,
     properties: [:buff],

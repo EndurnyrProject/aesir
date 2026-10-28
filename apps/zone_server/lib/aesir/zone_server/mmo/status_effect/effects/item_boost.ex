@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ItemBoost do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_itemboost,
+    remove_on_death: false,
     no_dispel: true,
     no_clear_buff: true,
     properties: [:buff],

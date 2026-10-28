@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AtkPotion do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_atkpotion,
+    remove_on_death: false,
     no_dispel: false,
     no_clear_buff: false,
     overlap_ignore_level: true,

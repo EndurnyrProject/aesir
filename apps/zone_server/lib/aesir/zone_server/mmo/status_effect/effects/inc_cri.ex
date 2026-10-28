@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncCri do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_inccri,
+    remove_on_death: false,
     no_dispel: true,
     no_clear_buff: true,
     properties: [:buff],

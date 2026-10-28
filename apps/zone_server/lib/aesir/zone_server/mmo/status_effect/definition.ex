@@ -231,7 +231,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @doc "Target-aware duration and value initialization, used instead of resolve_duration/2 when present."
   @callback resolve_duration(target(), StatusEntry.t(), pos_integer()) ::
               {pos_integer(), StatusEntry.t()}
-  @optional_callbacks resolve_duration: 3
+  @doc """
+  For a status that survives death (`remove_on_death: false`), whether this
+  instance still ends with its holder, decided from its values (Elemental
+  Change survives only while Holy or Dark). Optional.
+  """
+  @callback ends_on_death?(StatusEntry.t()) :: boolean()
+
+  @optional_callbacks resolve_duration: 3, ends_on_death?: 1
 
   @doc """
   Invoked only when the status runs out its duration naturally, after it was removed.
@@ -789,7 +796,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     :no_clear_buff,
     :clear_buff_flags,
     :immunity,
-    :remove_on_map_change
+    :remove_on_map_change,
+    :remove_on_death
   ]
 
   @doc "Resolves the mode-keyable metadata options for the selected mode."

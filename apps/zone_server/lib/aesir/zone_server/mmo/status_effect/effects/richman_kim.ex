@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.RichmanKim do
       pre_renewal: []
     ],
     duration: [renewal: 180_000, pre_renewal: 60_000],
-    remove_on_death: false,
+    remove_on_death: true,
     remove_on_map_change: false,
     icon: :richmankim
 

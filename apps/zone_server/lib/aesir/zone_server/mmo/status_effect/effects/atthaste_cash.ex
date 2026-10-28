@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AtthasteCash do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_atthaste_cash,
+    remove_on_death: false,
     no_dispel: true,
     no_clear_buff: true,
     overlap_ignore_level: true,

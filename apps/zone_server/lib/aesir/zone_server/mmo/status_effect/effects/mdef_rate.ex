@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MdefRate do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_mdef_rate,
+    remove_on_death: false,
     no_dispel: true,
     no_clear_buff: true,
     properties: [:buff],

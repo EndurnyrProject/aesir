@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncHealRate do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_inchealrate,
+    remove_on_death: [renewal: true, pre_renewal: false],
     no_dispel: true,
     no_clear_buff: true,
     properties: [:buff],

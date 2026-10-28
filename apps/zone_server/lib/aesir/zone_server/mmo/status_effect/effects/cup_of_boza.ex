@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CupOfBoza do
   #   element-resist modifier key exists.
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_cup_of_boza,
+    remove_on_death: false,
     no_dispel: true,
     no_clear_buff: true,
     properties: [:buff],

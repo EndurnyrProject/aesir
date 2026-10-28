@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SignumCrucis do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_signumcrucis,
+    remove_on_death: true,
     no_dispel: false,
     no_clear_buff: false,
     clear_buff_flags: [:debuff],

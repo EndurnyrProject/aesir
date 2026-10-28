@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SubWeaponProperty do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_sub_weaponproperty,
+    remove_on_death: false,
     no_dispel: true,
     no_clear_buff: true,
     properties: [:buff],

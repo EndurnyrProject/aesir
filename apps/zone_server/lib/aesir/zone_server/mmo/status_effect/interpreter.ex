@@ -1085,7 +1085,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   @doc """
   Removes statuses whose definitions set `remove_on_death: true` through
-  the normal removal lifecycle, including infinite statuses with that flag.
+  the normal removal lifecycle, including infinite statuses with that flag,
+  and those a surviving status's `ends_on_death?/1` still ends.
 
   Permanent definitions default to surviving death unless explicitly opted in.
   The selected owner-refresh policy is applied once after the filtered batch.
@@ -1099,8 +1100,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     |> then(&remove_statuses(unit_type, unit_id, &1, opts))
   end
 
-  defp remove_on_death?(%StatusEntry{type: type}) do
-    match?(%{remove_on_death: true}, Registry.get_definition(type))
+  defp remove_on_death?(%StatusEntry{type: type} = entry) do
+    case Registry.get_definition(type) do
+      %{remove_on_death: true} ->
+        true
+
+      %{module: module} ->
+        function_exported?(module, :ends_on_death?, 1) and module.ends_on_death?(entry)
+
+      _unknown ->
+        false
+    end
   end
 
   @doc """

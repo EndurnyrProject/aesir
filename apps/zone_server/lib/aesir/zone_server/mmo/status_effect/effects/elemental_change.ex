@@ -14,6 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ElementalChange do
   mirroring `sc_start2`'s `(skill_lv, skill_get_ele(...))` argument order in
   `elementalchangewater.cpp:22-24`.
 
+  Death ends it unless its element is Holy or Dark.
+
   `StatusStorage.apply_status/4` replaces the existing entry when a status of
   the same type is re-applied to a unit (single ETS row keyed by
   `{unit_type, unit_id, status_type}`), so a second converter skill landing on
@@ -23,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ElementalChange do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_elementalchange,
+    remove_on_death: false,
     no_dispel: true,
     no_clear_buff: false,
     properties: [:buff],
@@ -36,6 +39,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ElementalChange do
     element = Element.from_id!(instance.val2)
     %{element_override: {element, cap_level(instance.val1)}}
   end
+
+  @doc "Death ends it unless its element is Holy or Dark."
+  @impl true
+  @spec ends_on_death?(Aesir.ZoneServer.Mmo.StatusEntry.t()) :: boolean()
+  def ends_on_death?(instance), do: Element.from_id!(instance.val2) not in [:holy, :shadow]
 
   @spec cap_level(integer()) :: 1..4
   defp cap_level(level), do: level |> max(1) |> min(4)

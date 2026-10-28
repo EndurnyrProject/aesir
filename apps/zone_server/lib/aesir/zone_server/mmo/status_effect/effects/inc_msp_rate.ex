@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncMspRate do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_incmsprate,
+    remove_on_death: false,
     no_dispel: true,
     no_clear_buff: true,
     properties: [:buff],

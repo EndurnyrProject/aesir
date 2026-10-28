@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncLuk do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_incluk,
+    remove_on_death: false,
     no_dispel: true,
     no_clear_buff: true,
     properties: [:buff],

@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Memorize do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_memorize,
+    remove_on_death: true,
     no_dispel: false,
     no_clear_buff: false,
     clear_buff_flags: [:remove_on_hermode],
