@@ -12,6 +12,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
   Only a tick that restores HP or SP commits the game state, pushes the changed
   `SP_HP`/`SP_SP` to the client and persists asynchronously; any other tick
   touches nothing but the session's `regen_timing`.
+
+  The `:zone_server, :natural_regen` application flag (default `true`) turns the
+  tick off entirely; integration tests use it to keep HP and SP still.
   """
 
   alias Aesir.Commons.StatusParams
@@ -31,7 +34,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
   Runs one natural-heal tick of `elapsed_ms` for the player session.
   """
   @spec handle_tick(SessionState.t(), non_neg_integer()) :: {:noreply, SessionState.t()}
-  def handle_tick(%SessionState{game_state: game_state} = state, elapsed_ms) do
+  def handle_tick(%SessionState{} = state, elapsed_ms) do
+    if Application.get_env(:zone_server, :natural_regen, true),
+      do: run_tick(state, elapsed_ms),
+      else: {:noreply, state}
+  end
+
+  defp run_tick(%SessionState{game_state: game_state} = state, elapsed_ms) do
     %{stats: stats, character_id: id} = game_state
     castle_regen_map = castle_regen_map(state)
 

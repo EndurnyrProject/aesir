@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Integration.LordKnightSkillsTest do
   alias Aesir.ZoneServer.Mmo.StatusTickManager
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
 
   @map "prontera"
 
@@ -245,7 +246,8 @@ defmodule Aesir.ZoneServer.Integration.LordKnightSkillsTest do
     assert get_mob_state(boss.pid).hp == 100_000
   end
 
-  test "Tension Relax sits, triples live natural healing and ends on standing" do
+  @tag natural_regen: true
+  test "Tension Relax sits, triples the natural HP cadence and ends on standing" do
     relaxed = knight(hp: 1_000, learned_skills: Map.put(learned_skills(), "1", 9))
     baseline = knight(hp: 1_000, learned_skills: Map.put(learned_skills(), "1", 9))
     simulate_incoming_message(baseline.pid, %ActionRequest{action: 2})
@@ -270,9 +272,17 @@ defmodule Aesir.ZoneServer.Integration.LordKnightSkillsTest do
              get_player_state(baseline.pid).stats.current_state.hp > baseline_hp
            end)
 
-    normal_gain = get_player_state(baseline.pid).stats.current_state.hp - baseline_hp
+    stats = get_player_state(baseline.pid).stats
+    normal_gain = stats.current_state.hp - baseline_hp
     relaxed_gain = get_player_state(relaxed.pid).stats.current_state.hp - relaxed_hp
-    assert relaxed_gain >= 3 * normal_gain
+
+    # Sitting heals every 2_750 ms (6 ticks), Tension Relax every 750 ms (2 ticks);
+    # one background tick may land in the window.
+    amount =
+      div(Stats.get_effective_stat(stats, :vit), 5) + max(1, div(stats.derived_stats.max_hp, 200))
+
+    assert div(normal_gain, amount) in 4..5
+    assert div(relaxed_gain, amount) in 12..13
 
     simulate_incoming_message(relaxed.pid, %ActionRequest{action: 3})
     assert eventually(fn -> get_player_state(relaxed.pid).action_state == :idle end)

@@ -64,7 +64,7 @@ defmodule Aesir.ZoneServer.IntegrationCase do
     end
   end
 
-  setup _tags do
+  setup tags do
     Mimic.set_mimic_private()
 
     :ok = Sandbox.checkout(Aesir.Repo)
@@ -73,6 +73,13 @@ defmodule Aesir.ZoneServer.IntegrationCase do
     prev_inline = Application.get_env(:zone_server, :inline_persistence)
     Application.put_env(:zone_server, :inline_persistence, true)
     on_exit(fn -> restore_inline_persistence(prev_inline) end)
+
+    # Natural regeneration heals on a session's first tick and every few seconds
+    # after, which would move the HP/SP most tests assert exactly. It is off
+    # unless a test opts in with `@tag natural_regen: true`.
+    prev_regen = Application.get_env(:zone_server, :natural_regen)
+    Application.put_env(:zone_server, :natural_regen, Map.get(tags, :natural_regen, false))
+    on_exit(fn -> restore_env(:natural_regen, prev_regen) end)
 
     # Per-test seeded EtsTable + process-dict seed (mirrors TestEtsSetup). Every
     # hand-spawned unit inherits this seed via ProcessTree, giving true isolation.
@@ -231,6 +238,9 @@ defmodule Aesir.ZoneServer.IntegrationCase do
 
   defp restore_inline_persistence(value),
     do: Application.put_env(:zone_server, :inline_persistence, value)
+
+  defp restore_env(key, nil), do: Application.delete_env(:zone_server, key)
+  defp restore_env(key, value), do: Application.put_env(:zone_server, key, value)
 
   # A per-test seeded world starts clean; no shared-table wipe is needed.
 
