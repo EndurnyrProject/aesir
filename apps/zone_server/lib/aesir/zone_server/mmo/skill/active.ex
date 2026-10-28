@@ -199,13 +199,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   overriding the definition's per-level table.
 
   Returns the base and fixed cast times in milliseconds the interpreter should
-  use for this cast (e.g. `0`/`0` for an instant combo follow-up); the
-  interpreter substitutes them for the cast level before computing the renewal
-  cast time. A skill without it keeps its declared table verbatim, so every
-  non-implementing skill stays on the constant-time default path.
+  use for this cast; the interpreter substitutes them for the cast level before
+  the late (status) cast-time stage. A `cast_time` of `-1` means the attempt has
+  no cast at all (an instant combo follow-up, ending a toggle): it is instant and
+  the late stage earns no reaction, so Suffragium and renewal Foresight are kept,
+  while `0` is an ordinary zero-time cast that still spends them. The early stage
+  always runs on the declared table. A skill without it keeps its declared table
+  verbatim, so every non-implementing skill stays on the constant-time default
+  path.
   """
   @callback dynamic_cast_time(caster(), target(), pos_integer(), Definition.t()) ::
-              %{cast_time: non_neg_integer(), fixed_cast_time: non_neg_integer()}
+              %{cast_time: -1 | non_neg_integer(), fixed_cast_time: non_neg_integer()}
 
   @doc """
   Optionally resolves this cast's base after-cast delay from the caster's state

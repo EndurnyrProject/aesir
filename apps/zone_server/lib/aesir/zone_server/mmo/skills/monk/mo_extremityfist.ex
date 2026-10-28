@@ -23,6 +23,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
     * a Champion follow-up off Chain Crush Combo's window casts instantly and
       spends every held sphere (at least one) in both modes.
 
+  A combo follow-up has no cast at all, so it keeps Suffragium and, in renewal,
+  its Foresight charge.
+
   The three-cell relocation is a rider on the strike, not a precondition: an
   unwalkable destination lands the blow and simply stages no movement.
 
@@ -188,10 +191,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
 
   @impl Active
   @spec dynamic_cast_time(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          %{cast_time: non_neg_integer(), fixed_cast_time: non_neg_integer()}
+          %{cast_time: -1 | non_neg_integer(), fixed_cast_time: non_neg_integer()}
   def dynamic_cast_time(caster, {:unit, _target_id}, level, definition) do
     if Combo.open?(caster.combo, [:extremity, :chain_crush], now()) do
-      %{cast_time: 0, fixed_cast_time: 0}
+      %{cast_time: -1, fixed_cast_time: 0}
     else
       %{
         cast_time: Enum.at(definition.cast_time, level - 1, 0),

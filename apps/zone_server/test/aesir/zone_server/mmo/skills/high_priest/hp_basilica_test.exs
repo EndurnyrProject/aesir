@@ -216,7 +216,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilicaTest do
       assert HpBasilica.dynamic_after_cast_delay(caster, :self, 3, definition) == 4_000
 
       assert HpBasilica.dynamic_cast_time(caster, :self, 3, definition) ==
-               %{cast_time: 0, fixed_cast_time: 0}
+               %{cast_time: -1, fixed_cast_time: 0}
 
       register_mob(@mob_id, [], {21, 20})
       assert {:ok, ^caster} = HpBasilica.begin_attempt(caster, :self, 3, definition)

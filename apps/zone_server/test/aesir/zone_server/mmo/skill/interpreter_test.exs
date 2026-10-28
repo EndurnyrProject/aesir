@@ -279,6 +279,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     @impl true
     def dynamic_cast_time(_game_state, _target, _level, definition) do
+      if Process.get(:interpreter_test_no_cast?, false) do
+        %{cast_time: -1, fixed_cast_time: 0}
+      else
+        table_or_instant(definition)
+      end
+    end
+
+    defp table_or_instant(definition) do
       if Process.get(:interpreter_test_instant_cast?, false) do
         %{cast_time: 0, fixed_cast_time: 0}
       else
@@ -345,6 +353,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
         equipment: %Equipment{}
       }
     }
+  end
+
+  defp no_cast_skill(gs) do
+    stub(Catalog, :by_id, fn 29 ->
+      {:ok,
+       %Definition{
+         id: 29,
+         name: :cost_skill,
+         display_name: "Cost Skill",
+         max_level: 1,
+         target_type: :self,
+         sp_cost: [0],
+         cast_time: [1_000],
+         fixed_cast_time: [400]
+       }}
+    end)
+
+    stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, DynamicCastTimeSkill} end)
+    stub(UnitRegistry, :get_unit_info, fn :player, 1000 -> {:ok, %{stats: gs.stats}} end)
+    gs
   end
 
   defp cast_ready_state(sp, learned) do
@@ -1850,6 +1878,55 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       assert info.fixed == mode_value(400, 0)
       assert info.total > info.fixed
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic: a skill without a cast keeps Suffragium, which a zero cast time ends" do
+      gs = no_cast_skill(cast_ready_state(50, %{29 => 1}))
+
+      :ok =
+        StatusStorage.apply_status(:player, 1000, :sc_suffragium,
+          duration: 30_000,
+          val1: 3,
+          state: %{cast_time_reduction: 45}
+        )
+
+      Process.put(:interpreter_test_no_cast?, true)
+      assert {:instant, _gs} = Interpreter.begin_cast(gs, 29, 1, :self)
+      assert StatusStorage.has_status?(:player, 1000, :sc_suffragium)
+
+      Process.put(:interpreter_test_no_cast?, false)
+      Process.put(:interpreter_test_instant_cast?, true)
+      assert {:instant, _gs} = Interpreter.begin_cast(gs, 29, 1, :self)
+      refute StatusStorage.has_status?(:player, 1000, :sc_suffragium)
+    after
+      Process.delete(:interpreter_test_no_cast?)
+      Process.delete(:interpreter_test_instant_cast?)
+    end
+
+    @tag game_mode: :renewal
+    test "renewal: a skill without a cast keeps its Foresight charge, which a zero cast time spends" do
+      gs = no_cast_skill(cast_ready_state(50, %{29 => 1}))
+
+      :ok =
+        StatusStorage.apply_status(:player, 1000, :sc_memorize,
+          duration: 300_000,
+          val1: 5,
+          val2: 5,
+          state: %{charges: 5}
+        )
+
+      Process.put(:interpreter_test_no_cast?, true)
+      assert {:instant, _gs} = Interpreter.begin_cast(gs, 29, 1, :self)
+      assert %{val2: 5} = StatusStorage.get_status(:player, 1000, :sc_memorize)
+
+      Process.put(:interpreter_test_no_cast?, false)
+      Process.put(:interpreter_test_instant_cast?, true)
+      assert {:instant, _gs} = Interpreter.begin_cast(gs, 29, 1, :self)
+      assert %{val2: 4} = StatusStorage.get_status(:player, 1000, :sc_memorize)
+    after
+      Process.delete(:interpreter_test_no_cast?)
+      Process.delete(:interpreter_test_instant_cast?)
     end
 
     test "a non-implementing skill keeps its declared cast time byte-identical" do

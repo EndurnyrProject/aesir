@@ -135,13 +135,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilica do
     end
   end
 
-  @doc "Recasting to end the sanctuary is instant."
+  @doc "Pre-renewal: recasting to end the sanctuary has no cast at all, so it keeps Suffragium."
   @impl Active
   @spec dynamic_cast_time(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
-          %{cast_time: non_neg_integer(), fixed_cast_time: non_neg_integer()}
+          %{cast_time: -1 | non_neg_integer(), fixed_cast_time: non_neg_integer()}
   def dynamic_cast_time(caster, _target, level, definition) do
     if pre_renewal_anchored?(caster) do
-      %{cast_time: 0, fixed_cast_time: 0}
+      %{cast_time: -1, fixed_cast_time: 0}
     else
       %{
         cast_time: Enum.at(definition.cast_time, level - 1, 0),

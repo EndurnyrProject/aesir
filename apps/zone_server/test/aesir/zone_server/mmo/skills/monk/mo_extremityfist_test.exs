@@ -156,7 +156,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
         {:ok, :mob, {12, 10, "prontera"}}
       end)
 
-      assert %{cast_time: 0, fixed_cast_time: 0} =
+      assert %{cast_time: -1, fixed_cast_time: 0} =
                MoExtremityfist.dynamic_cast_time(
                  combo_caster(sp: 250, spheres: 5),
                  {:unit, @target_id},
@@ -201,7 +201,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
       assert %Cost{spheres: 3} =
                MoExtremityfist.dynamic_cost(held, {:unit, @target_id}, 5, definition())
 
-      assert %{cast_time: 0, fixed_cast_time: 0} =
+      assert %{cast_time: -1, fixed_cast_time: 0} =
                MoExtremityfist.dynamic_cast_time(held, {:unit, @target_id}, 5, definition())
 
       empty = window_caster(:chain_crush, sp: 250, spheres: 0)
@@ -217,7 +217,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
                MoExtremityfist.dynamic_cost(caster, {:unit, @target_id}, 5, definition())
 
       refute MoExtremityfist.dynamic_cast_time(caster, {:unit, @target_id}, 5, definition()) ==
-               %{cast_time: 0, fixed_cast_time: 0}
+               %{cast_time: -1, fixed_cast_time: 0}
     end
   end
 
