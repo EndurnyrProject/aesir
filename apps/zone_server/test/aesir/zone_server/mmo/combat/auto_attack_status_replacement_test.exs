@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
   @moduledoc """
   Coverage for the status-driven basic-attack replacement seam: a status
   implementing `attack_replacement/3` turns the holder's ordinary swing into a
-  skill attack, wins over a learned passive replacement, returns a plain `:ok`
+  skill attack when no learned passive replacement procs first, returns a plain `:ok`
   (no combo stage), and may skip the hit/flee roll with `ignore_flee`.
   """
   use ExUnit.Case, async: false
@@ -133,12 +133,27 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
     test "runs the skill attack and returns :ok without a combo stage",
          %{attacker: attacker, player_state: player_state} do
       hold_replacement(1)
-      reject(&Passives.attack_replacement/1)
+      stub(Passives, :attack_replacement, fn _player -> :normal end)
       expect(MobSession, :apply_damage, fn _pid, 75, _attacker_id, _metadata -> :ok end)
 
       capture_log(fn ->
         assert :ok = Combat.execute_attack(attacker, player_state, @target_id)
       end)
+    end
+
+    test "a learned passive replacement that procs is rolled before the status one",
+         %{attacker: attacker, player_state: player_state} do
+      hold_replacement(1)
+
+      stub(Passives, :attack_replacement, fn _player ->
+        {:skill_attack, [skill_id: 263, skill_level: 5, skill_ratio: 200, skip_crit: true],
+         :quadruple}
+      end)
+
+      stub(HitCalculations, :calculate_hit_result, fn _a, _t -> :hit end)
+
+      assert {:ok, {:combo, :quadruple, _delay}} =
+               Combat.execute_attack(attacker, player_state, @target_id)
     end
 
     test "ignore_flee skips the hit roll", %{attacker: attacker, player_state: player_state} do

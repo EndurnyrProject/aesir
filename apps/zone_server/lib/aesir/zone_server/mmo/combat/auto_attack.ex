@@ -252,11 +252,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     end
   end
 
-  # A status replacement (Sacrifice) wins over a learned passive one (Triple
-  # Attack) and settles as a plain swing; the passive form carries a combo stage.
+  # A learned passive replacement (Triple Attack) is rolled before a status one
+  # (Sacrifice); only the passive form carries a combo stage, the status one
+  # settles as a plain swing.
   defp attack_replacement(player_state, attacker) do
-    case StatusInterpreter.attack_replacement(:player, attacker.unit_id) do
-      :normal -> Passives.attack_replacement(player_state)
+    case Passives.attack_replacement(player_state) do
+      :normal -> StatusInterpreter.attack_replacement(:player, attacker.unit_id)
       replacement -> replacement
     end
   end

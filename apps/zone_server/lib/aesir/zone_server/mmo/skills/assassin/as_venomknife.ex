@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknife do
   @moduledoc """
   Throw Venom Knife (AS_VENOMKNIFE). The Assassin platinum skill: throws one
   equipped dagger-class ammunition at 9 cells as a forced ranged hit that
-  always poisons, its attack added to the hit.
+  always poisons, its attack added to the hit. Guard never blocks it.
 
   The cast end requires one ammunition unit whose subtype is a dagger.
 
@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknife do
     id: 1004,
     name: :as_venomknife,
     ignore_atk_card: true,
+    ignore_auto_guard: true,
     display_name: "Throw Venom Knife",
     max_level: 1,
     target_type: :target_enemy,

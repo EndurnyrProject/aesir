@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterror do
   @moduledoc """
   Acid Terror (AM_ACIDTERROR). A neutral acid strike thrown from 9 cells that
   never misses, rolls 3 per level percent bleeding, and may break the armor.
+  Guard never blocks it.
 
   Renewal: 200 per level percent (plus 100 with Learning Potion), only the status
   DEF is ignored, a 0.5 s cast plus 0.5 s fixed, a 0.5 s delay, 108 s bleeding,
@@ -17,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterror do
     id: 230,
     name: :am_acidterror,
     ignore_atk_card: true,
+    ignore_auto_guard: true,
     requires: [],
     display_name: "Acid Terror",
     max_level: 5,

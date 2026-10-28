@@ -324,4 +324,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
       end
     end
   end
+
+  test "ignore_auto_guard is set on exactly the skills the skill DB marks IgnoreAutoGuard" do
+    flagged = fn mode ->
+      for %{name: name} <- Catalog.all(),
+          {:ok, module} = Catalog.module_for(name),
+          module.definition(mode).ignore_auto_guard,
+          into: MapSet.new(),
+          do: name
+    end
+
+    assert flagged.(:renewal) ==
+             MapSet.new([:am_acidterror, :am_demonstration, :as_venomknife, :pa_sacrifice])
+
+    assert flagged.(:pre_renewal) ==
+             MapSet.new([:am_acidterror, :am_demonstration, :as_venomknife])
+  end
 end

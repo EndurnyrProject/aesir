@@ -212,7 +212,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           | {:ok, hit_report()}
           | {:error, atom()}
   def execute_skill_attack(caster_state, target_id, opts) do
-    execute_single_target_attack(caster_state, target_id, opts, calculator(opts), %{})
+    execute_single_target_attack(caster_state, target_id, opts, calculator(opts))
   end
 
   defp calculator(opts) do
@@ -250,7 +250,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         target_ref,
         Keyword.put_new(opts, :delivery, :unit),
         calculator,
-        %{},
         &Targeting.validate_field_target(group, &1, &2)
       )
     end
@@ -279,7 +278,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         do: &calculate_accelerated_damage(&1, &2, &3, rates.damage_rate),
         else: &DamageCalculator.calculate_damage/3
 
-    execute_single_target_attack(caster_state, target_id, opts, calculator, %{})
+    execute_single_target_attack(caster_state, target_id, opts, calculator)
   end
 
   @doc """
@@ -305,7 +304,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       )
     end
 
-    execute_single_target_attack(caster_state, target_id, opts, calculator, %{})
+    execute_single_target_attack(caster_state, target_id, opts, calculator)
   end
 
   defp calculate_accelerated_damage(attacker, defender, calc_opts, damage_rate) do
@@ -325,9 +324,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   @doc """
   Executes the forced-hit, no-attacker-card physical path used by Venom Knife.
 
-  This narrow entry forces neutral damage and marks only Auto Guard
-  as exempt. Every other weapon interception and ordinary damage-delivery hook
-  remains active.
+  This narrow entry forces neutral damage. Every weapon interception and
+  ordinary damage-delivery hook stays active; a skill whose definition sets
+  `ignore_auto_guard` is exempt from Guard alone.
   """
   @spec execute_forced_no_card_attack(struct(), integer() | Ref.t(), keyword()) ::
           :ok
@@ -340,8 +339,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       caster_state,
       target_id,
       opts,
-      &DamageCalculator.calculate_damage_ignoring_attacker_cards/3,
-      %{ignores_auto_guard: true}
+      &DamageCalculator.calculate_damage_ignoring_attacker_cards/3
     )
   end
 
@@ -377,7 +375,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}),
          :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id) do
       Origin.mark_skill_attack()
-      interception = weapon_hit_intercepted?(attacker, target_type, target, skill_id, %{})
+      interception = weapon_hit_intercepted?(attacker, target_type, target, skill_id)
 
       if interception == :blocked,
         do: missed_coma(attacker, {target_type, target_pid, target})
@@ -474,7 +472,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           | {:ok, hit_report()}
           | {:error, atom()}
   def execute_acid_terror_attack(caster_state, target_id, opts) do
-    execute_single_target_attack(caster_state, target_id, opts, acid_terror_calculator(), %{})
+    execute_single_target_attack(caster_state, target_id, opts, acid_terror_calculator())
   end
 
   defp acid_terror_calculator do
@@ -488,15 +486,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          caster_state,
          target_id,
          opts,
-         damage_calculator,
-         weapon_hit_metadata
+         damage_calculator
        ) do
     execute_single_target_attack(
       caster_state,
       target_id,
       opts,
       damage_calculator,
-      weapon_hit_metadata,
       &validate_physical_skill_target(&1, &2, Keyword.fetch!(opts, :skill_id))
     )
   end
@@ -511,7 +507,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          target_id,
          opts,
          damage_calculator,
-         weapon_hit_metadata,
          authorize_target
        ) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
@@ -545,7 +540,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         hit_rate_bonus_flat: Keyword.get(opts, :hit_rate_bonus_flat, 0),
         ignore_flee: Keyword.get(opts, :ignore_flee, false),
         fled: Keyword.get(opts, :fled, false),
-        weapon_hit_metadata: weapon_hit_metadata,
         target_state: target_state,
         delivery: Keyword.get(opts, :delivery, :direct),
         dmg_type: Keyword.get(opts, :dmg_type, :physical)
@@ -932,7 +926,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         hit_rate_bonus_pct: hit_rate_bonus_pct,
         hit_rate_bonus_flat: Map.get(result_opts, :hit_rate_bonus_flat, 0),
         ignore_flee: ignore_flee?,
-        weapon_hit_metadata: %{},
         target_state: target_state,
         delivery: Map.get(result_opts, :delivery, :direct)
       }
@@ -1552,8 +1545,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           attacker,
           target_type,
           target,
-          skill_id,
-          Map.fetch!(hit_opts, :weapon_hit_metadata)
+          skill_id
         ),
       else: :continue
   end
@@ -1601,10 +1593,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           struct(),
           :player | :mob | :homunculus | :skill_unit,
           struct(),
-          integer(),
-          map()
+          integer()
         ) :: :blocked | :intercepted | :continue
-  defp weapon_hit_intercepted?(attacker, target_type, target, skill_id, metadata) do
+  defp weapon_hit_intercepted?(attacker, target_type, target, skill_id) do
     attack_info =
       Map.merge(
         %{
@@ -1617,7 +1608,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           distance: cell_distance(attacker, target),
           basic_attack?: false
         },
-        Map.merge(auto_guard_exemption(skill_id), metadata)
+        auto_guard_exemption(skill_id)
       )
 
     case StatusInterpreter.before_weapon_hit(target_type, target.unit_id, attack_info) do

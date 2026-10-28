@@ -580,7 +580,8 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
          ammo_qty: [1],
          quest_skill: true,
          quest_owner_job: :assassin,
-         ignore_atk_card: true
+         ignore_atk_card: true,
+         ignore_auto_guard: true
        ), :active}
     ]
   end
