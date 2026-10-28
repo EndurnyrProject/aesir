@@ -81,7 +81,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   @encore_id 305
   @brandish_spear 57
   @auto_counter 61
-  @divest_skills [215, 216, 217, 218]
+  @divest_skills [215, 216, 217, 218, 476]
   @overlaid_states [:sitting, :trading]
   @arrow_vulcan_id 394
 
@@ -2203,6 +2203,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp failure_reason(:cart), do: :SKILL_CAST_FAILURE_REASON_CART
   defp failure_reason(:need_equipment), do: :SKILL_CAST_FAILURE_REASON_NEED_EQUIPMENT
   defp failure_reason(:skill_failed), do: :SKILL_CAST_FAILURE_REASON_FAILED
+  defp failure_reason(:fullstrip_coated), do: :SKILL_CAST_FAILURE_REASON_FULLSTRIP_COATED
   defp failure_reason(_reason), do: :SKILL_CAST_FAILURE_REASON_UNSPECIFIED
 
   # A combo skill's use is aimed at the unit the player was attacking when the

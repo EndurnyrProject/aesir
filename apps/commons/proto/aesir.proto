@@ -2594,6 +2594,9 @@ enum SkillCastFailureReason {
   SKILL_CAST_FAILURE_REASON_NEED_EQUIPMENT = 18;
   // A plain failure the skill reports instead of UNSPECIFIED's generic one.
   SKILL_CAST_FAILURE_REASON_FAILED = 19;
+  // Divest All: the target holds all four Chemical Protections, so nothing
+  // can be stripped (the SP is still spent).
+  SKILL_CAST_FAILURE_REASON_FULLSTRIP_COATED = 20;
 }
 
 // Server -> client, caster-only feedback when an attempted skill cast is rejected.
