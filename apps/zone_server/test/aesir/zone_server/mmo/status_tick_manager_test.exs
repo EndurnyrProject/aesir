@@ -280,55 +280,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
   end
 
   describe "exact status ticks" do
-    test "schedules the first deadline at started_at plus 1,000 ms" do
-      started_at = System.monotonic_time(:millisecond) - 1_000
-      due_at = started_at + 1_000
-      state = %StatusTickManager.State{}
-
-      assert {:noreply, ^state} =
-               StatusTickManager.handle_cast(
-                 {:schedule_exact_tick, :player, @player_id, @status, 41, due_at},
-                 state
-               )
-
-      assert_receive {:exact_status_tick, :player, @player_id, @status, 41, ^due_at}, 50
-    end
-
-    test "continuation advances from the prior deadline without handler drift" do
-      due_at = System.monotonic_time(:millisecond) - 5_000
-      next_due_at = due_at + 500
-      state = %StatusTickManager.State{}
-
-      expect(Interpreter, :process_tick_if_current, fn
-        :player, @player_id, @status, 42 -> :continue
-      end)
-
-      assert {:noreply, ^state} =
-               StatusTickManager.handle_info(
-                 {:exact_status_tick, :player, @player_id, @status, 42, due_at},
-                 state
-               )
-
-      assert_receive {:exact_status_tick, :player, @player_id, @status, 42, ^next_due_at}
-    end
-
-    test "a stale exact tick stops without scheduling another deadline" do
-      due_at = System.monotonic_time(:millisecond) - 5_000
-      state = %StatusTickManager.State{}
-
-      expect(Interpreter, :process_tick_if_current, fn
-        :player, @player_id, @status, 43 -> :stop
-      end)
-
-      assert {:noreply, ^state} =
-               StatusTickManager.handle_info(
-                 {:exact_status_tick, :player, @player_id, @status, 43, due_at},
-                 state
-               )
-
-      refute_receive {:exact_status_tick, :player, @player_id, @status, 43, _}
-    end
-
     test "the global poll does not process a tickless exact status" do
       reject(&Interpreter.process_tick/3)
       :ok = StatusStorage.apply_status(:player, @player_id, @status, tick: 0)

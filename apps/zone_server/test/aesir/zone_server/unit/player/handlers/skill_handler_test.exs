@@ -1360,8 +1360,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert moving_gs.state_context == %{
                skill_id: 29,
                skill_level: 1,
-               target: {:unit, 2000},
-               combat_target_id: nil
+               target: {:unit, 2000}
              }
     end
 

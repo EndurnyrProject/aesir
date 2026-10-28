@@ -1479,7 +1479,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
          {x, y},
          locked
        ) do
-    context = %{skill_id: skill_id, skill_level: level, target: target, combat_target_id: locked}
+    context = %{skill_id: skill_id, skill_level: level, target: target}
 
     case PlayerState.transition_to(stop_attack_for_walk(game_state), :skill_moving, context) do
       {:ok, moving_state} ->

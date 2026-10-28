@@ -13,10 +13,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   armed from storage. A writer that shortens a stored deadline through
   `StatusStorage.update_status/4` must call `arm/3` afterwards.
 
-  `schedule_exact_tick/5` is the loop of statuses that drive their own
-  countdown (Venom Splasher): a generation-tagged deadline that continues from
-  the prior deadline while the callback keeps the status.
-
   `force_tick/0` sweeps storage for everything already due (tests and
   diagnostics); `init/1` arms whatever storage holds, so a restarted manager
   loses no deadline.
@@ -31,7 +27,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
-  @exact_tick_interval_ms 500
   @late_deadline_ms 1_000
 
   defmodule State do
@@ -71,15 +66,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
     GenServer.cast(server(), {:arm, unit_type, unit_id, entry})
   end
 
-  @doc "Schedules a generation-tagged status tick for an absolute monotonic deadline."
-  @spec schedule_exact_tick(atom(), integer(), atom(), pos_integer(), integer()) :: :ok
-  def schedule_exact_tick(unit_type, unit_id, status_id, generation, due_at) do
-    GenServer.cast(
-      server(),
-      {:schedule_exact_tick, unit_type, unit_id, status_id, generation, due_at}
-    )
-  end
-
   defp server do
     ProcessTree.get({__MODULE__, :server}) || __MODULE__
   end
@@ -107,23 +93,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
     end
   end
 
-  def handle_info(
-        {:exact_status_tick, unit_type, unit_id, status_id, generation, due_at},
-        state
-      ) do
-    if Interpreter.process_tick_if_current(unit_type, unit_id, status_id, generation) == :continue do
-      schedule_exact_message(
-        unit_type,
-        unit_id,
-        status_id,
-        generation,
-        due_at + @exact_tick_interval_ms
-      )
-    end
-
-    {:noreply, state}
-  end
-
   def handle_info(:tick, state) do
     now_ms = System.monotonic_time(:millisecond)
 
@@ -144,27 +113,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
     {:noreply, arm_entry(state, unit_type, unit_id, entry)}
   end
 
-  def handle_cast(
-        {:schedule_exact_tick, unit_type, unit_id, status_id, generation, due_at},
-        state
-      ) do
-    schedule_exact_message(unit_type, unit_id, status_id, generation, due_at)
-    {:noreply, state}
-  end
-
   def handle_cast(:force_tick, state) do
     send(self(), :tick)
     {:noreply, state}
-  end
-
-  defp schedule_exact_message(unit_type, unit_id, status_id, generation, due_at) do
-    delay = max(due_at - System.monotonic_time(:millisecond), 0)
-
-    Process.send_after(
-      self(),
-      {:exact_status_tick, unit_type, unit_id, status_id, generation, due_at},
-      delay
-    )
   end
 
   # Timer bookkeeping
