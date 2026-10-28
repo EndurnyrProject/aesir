@@ -405,6 +405,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplayTest do
       assert %{effect_state: 32, body_state: 0, health_state: 0, virtue: 0} =
                StatusDisplay.spawn_state(:player, 3)
     end
+
+    test "a list option ORs every bit into effect_state" do
+      chase = timed_instance(:sc_chasewalk, val1: 1)
+
+      stub(StatusStorage, :get_unit_statuses, fn :player, 3 -> [chase] end)
+
+      stub(Registry, :get_definition, fn
+        :sc_chasewalk -> definition(option: [:cloak, :chasewalk])
+      end)
+
+      assert %{effect_state: 16_388} = StatusDisplay.spawn_state(:player, 3)
+    end
   end
 
   describe "active_icons/2" do

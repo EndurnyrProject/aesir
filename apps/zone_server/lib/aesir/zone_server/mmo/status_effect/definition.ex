@@ -103,7 +103,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:icon` - `:efst` id atom for the buff/debuff icon bar (resolved via `Mmo.Efst`)
     - `:opt1` - sprite body state, e.g. `:stone | :freeze` (`Mmo.Opt1`, single-valued)
     - `:opt2` - sprite health state, e.g. `:poison | :curse` (`Mmo.Opt2`, bitmask)
-    - `:option` - sprite effect state, e.g. `:hide | :cloak` (`Mmo.Option`, bitmask)
+    - `:option` - sprite effect state, e.g. `:hide | :cloak` (`Mmo.Option`, bitmask);
+      a list sets every bit in it, e.g. `[:cloak, :chasewalk]`
     - `:opt3` - sprite virtue state (`Mmo.Opt3`, bitmask)
     - `:on_apply_effect` - `:ef_*` one-shot effect fired on apply (`Mmo.EffectId`)
     - `:overlap_ignore_level` - when true, a new application always replaces the
@@ -379,11 +380,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   Derives an `Option` sprite bit from this status' live instance.
 
   Unlike the static `:option` metadata (fixed per definition), this lets a
-  status pick its sprite bit from the instance's stored values, so the same
-  status can light up different sprites (e.g. the cart tier). Defaults to `nil`,
-  meaning the status contributes nothing beyond its static opt metadata.
+  status pick its sprite bits from the instance's stored values, so the same
+  status can light up different sprites (e.g. the cart tier). A list sets every
+  bit in it. Defaults to `nil`, meaning the status contributes nothing beyond
+  its static opt metadata.
   """
-  @callback dynamic_option(StatusEntry.t()) :: atom() | nil
+  @callback dynamic_option(StatusEntry.t()) :: atom() | [atom()] | nil
 
   @known_target_types [:player, :mob, :homunculus]
 
@@ -476,7 +478,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     icon: :atom,
     opt1: :atom,
     opt2: :atom,
-    option: :atom,
+    option: {:either, {:atom, {:list, :atom}}},
     opt3: :atom,
     on_apply_effect: :atom,
     overlap_ignore_level: :boolean

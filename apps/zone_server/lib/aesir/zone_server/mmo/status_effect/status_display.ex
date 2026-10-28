@@ -282,6 +282,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay do
 
   defp or_opt(acc, _key, _module, nil), do: acc
 
+  defp or_opt(acc, key, module, atoms) when is_list(atoms),
+    do: Enum.reduce(atoms, acc, &or_opt(&2, key, module, &1))
+
   defp or_opt(acc, key, module, atom) do
     case module.id(atom) do
       nil ->
