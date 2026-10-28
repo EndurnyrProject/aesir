@@ -66,6 +66,33 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStoreTest do
     end
   end
 
+  describe "owned_by_guild?/2" do
+    setup do
+      {:ok, castle} = CastleDb.by_map("aldeg_cas01")
+      %{castle: castle}
+    end
+
+    test "is true only for the owning guild on its gvg_castle map", %{castle: castle} do
+      :ok = CastleStore.hydrate(%{castle.id => row(10)})
+
+      assert CastleStore.owned_by_guild?("aldeg_cas01", 10)
+      refute CastleStore.owned_by_guild?("aldeg_cas01", 20)
+    end
+
+    test "is false for guild 0 and a non-castle map", %{castle: castle} do
+      :ok = CastleStore.hydrate(%{castle.id => row(0)})
+
+      refute CastleStore.owned_by_guild?("aldeg_cas01", 0)
+      refute CastleStore.owned_by_guild?("prontera", 10)
+    end
+
+    test "is false for a castle with no owner", %{castle: castle} do
+      :ok = CastleStore.hydrate(%{castle.id => row(nil)})
+
+      refute CastleStore.owned_by_guild?("aldeg_cas01", 10)
+    end
+  end
+
   describe "hydrate/1" do
     test "sets owner and all four economy fields from a full-row map" do
       [castle_a, castle_b | _] = CastleDb.all()

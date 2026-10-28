@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
   """
 
   alias Aesir.ZoneServer.Unit.Player.StateCommit
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
@@ -58,16 +59,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
         game_state.map_name
       )
 
-    # Only update and send changes if stats actually changed
-    if updated_stats != state.game_state.stats do
-      updated_game_state = %{state.game_state | stats: updated_stats}
-      StatusSync.send_stat_updates(state.connection_pid, updated_stats)
+    if Stats.changed?(updated_stats, game_state.stats),
+      do: StatusSync.send_stat_updates(state.connection_pid, updated_stats)
 
-      {:noreply, StateCommit.commit(state, updated_game_state)}
-    else
-      # No changes, skip update
-      {:noreply, state}
-    end
+    {:noreply, StateCommit.commit(state, %{game_state | stats: updated_stats})}
   end
 
   @doc """

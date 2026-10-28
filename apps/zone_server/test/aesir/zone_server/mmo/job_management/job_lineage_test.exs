@@ -53,6 +53,20 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobLineageTest do
     end
   end
 
+  describe "monk_classed?/1" do
+    test "is true for Monk, Champion, Baby Monk and the Sura line" do
+      for job_id <- [15, 4016, 4038, 4070, 4077, 4106] do
+        assert JobLineage.monk_classed?(job_id), "expected #{job_id} to be Monk-classed"
+      end
+    end
+
+    test "is false for Priest, Novice, unknown ids and nil" do
+      for job_id <- [8, 0, 999_999, nil] do
+        refute JobLineage.monk_classed?(job_id), "expected #{inspect(job_id)} not Monk-classed"
+      end
+    end
+  end
+
   describe "transcendent?/1" do
     test "is true for Novice High and every job descending from it" do
       for job_id <- [4001, 4002, 4008, 4014, 4015, 4060] do

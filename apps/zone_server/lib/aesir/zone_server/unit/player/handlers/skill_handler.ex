@@ -952,8 +952,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # An instant cast's start effects ran inside the Interpreter; push any stat
   # change they made (Mystical Amplification arming, Cloaking ending) to the client.
   defp sync_cast_start_stats(state, before, after_cast) do
-    if Map.delete(before.stats, :current_state) != Map.delete(after_cast.stats, :current_state),
-      do: StatusSync.send_stat_updates(state.connection_pid, after_cast.stats)
+    if Stats.changed?(%{before.stats | current_state: nil}, %{
+         after_cast.stats
+         | current_state: nil
+       }),
+       do: StatusSync.send_stat_updates(state.connection_pid, after_cast.stats)
 
     if before.walk_speed != after_cast.walk_speed,
       do: StatusSync.send_param(state.connection_pid, StatusParams.speed(), after_cast.walk_speed)

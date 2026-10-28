@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory.Weight do
   data via `JobManagement`; no DB or socket access.
   """
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.JobManagement
@@ -57,6 +58,28 @@ defmodule Aesir.ZoneServer.Unit.Inventory.Weight do
   @spec would_exceed?(inventory(), Stats.t(), integer()) :: boolean()
   def would_exceed?(inventory, %Stats{} = stats, added_weight) do
     current_weight(inventory) + added_weight > max_weight(stats)
+  end
+
+  @doc """
+  Whether the player carries at least the natural-heal weight rate of their
+  maximum, the threshold at which natural regeneration stops. A player with
+  no maximum weight is never overweight.
+  """
+  @spec regen_overweight?(inventory(), Stats.t()) :: boolean()
+  def regen_overweight?(inventory, %Stats{} = stats) do
+    maximum = max_weight(stats)
+    maximum > 0 and current_weight(inventory) * 100 >= maximum * natural_heal_weight_rate()
+  end
+
+  @doc """
+  The natural-heal weight rate in percent: 70 in renewal, 50 in pre-renewal.
+  """
+  @spec natural_heal_weight_rate() :: 70 | 50
+  def natural_heal_weight_rate do
+    case GameMode.mode() do
+      :pre_renewal -> 50
+      _renewal -> 70
+    end
   end
 
   @spec item_weight(integer()) :: non_neg_integer()

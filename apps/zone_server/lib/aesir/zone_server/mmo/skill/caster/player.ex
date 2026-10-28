@@ -687,21 +687,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
         %Definition{require_recovered_weight: true}
       )
       when is_map(inventory) do
-    maximum = Weight.max_weight(stats)
-
-    if maximum > 0 and Weight.current_weight(inventory) * 100 >= maximum * recover_weight_rate(),
+    if Weight.regen_overweight?(inventory, stats),
       do: {:error, :overweight_rate},
       else: :ok
   end
 
   def check_recovered_weight(_caster, _definition), do: :ok
-
-  defp recover_weight_rate do
-    case GameMode.mode() do
-      :pre_renewal -> 50
-      _renewal -> 70
-    end
-  end
 
   defp check_catalysts(caster, definition) do
     if Enum.all?(effective_item_cost(caster, definition), fn %{id: id, amount: amount} ->

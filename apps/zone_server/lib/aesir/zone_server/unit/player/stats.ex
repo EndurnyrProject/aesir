@@ -226,7 +226,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
             # (which only ever sees a `Stats` struct, never `PlayerState`) can gate
             # mounted passive bonuses (e.g. `KnSpearmastery`) without threading the
             # option bit through every `calculate_stats/3` call site.
-            riding: false
+            riding: false,
+
+            # Bumped on every full recalculation.
+            generation: 0
 
   @typedoc """
   Player-specific stats structure extending the base unit stats.
@@ -252,7 +255,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           right_hand: WeaponHand.t() | nil,
           left_hand: WeaponHand.t() | nil,
           granted_skills: %{integer() => non_neg_integer()},
-          riding: boolean()
+          riding: boolean(),
+          generation: non_neg_integer()
         }
 
   @doc """
@@ -314,6 +318,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   defp riding?(_option), do: false
 
   @doc """
+  Whether two snapshots differ in anything other than the recalculation
+  `generation`, the test for "this recalculation changed something the client
+  sees".
+  """
+  @spec changed?(t(), t()) :: boolean()
+  def changed?(%__MODULE__{} = left, %__MODULE__{} = right),
+    do: %{left | generation: 0} != %{right | generation: 0}
+
+  @doc """
   Converts player stats to formula map format for status effect calculations.
   """
   @spec to_formula_map(t()) :: map()
@@ -351,6 +364,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       level: stats.progression.base_level,
       base_level: stats.progression.base_level,
       job_level: stats.progression.job_level,
+      job_id: stats.progression.job_id,
       # Combat stats
       atk: stats.combat_stats.atk,
       matk: stats.combat_stats.matk,

@@ -467,6 +467,35 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert updated_stats.derived_stats.max_hp >= 1
       assert updated_stats.derived_stats.max_sp >= 1
     end
+
+    test "bumps the generation on every recalculation" do
+      stats = %Stats{
+        base_stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
+        progression: %{
+          base_level: 1,
+          job_level: 1,
+          base_exp: 0,
+          job_exp: 0,
+          job_id: 0,
+          learned_skills: %{}
+        },
+        current_state: %{hp: 1, sp: 1},
+        equipment: %Equipment{},
+        modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
+      }
+
+      once = Calculator.calculate_stats(stats)
+      twice = Calculator.calculate_stats(once)
+
+      assert {once.generation, twice.generation} == {1, 2}
+    end
+
+    test "changed?/2 ignores the generation" do
+      stats = %Stats{generation: 1, riding: false}
+
+      refute Stats.changed?(stats, %{stats | generation: 2})
+      assert Stats.changed?(stats, %{stats | riding: true})
+    end
   end
 
   describe "get_effective_stat/2" do

@@ -52,6 +52,10 @@ defmodule Aesir.ZoneServer.Unit.Inventory.WeightTest do
 
   defp inventory(items), do: PlayerState.from_list(items)
 
+  defp one_more_max(stats) do
+    %{stats | modifiers: %{stats.modifiers | passive: %{max_weight_bonus: 1}}}
+  end
+
   defp stats(job_id, str) do
     %Stats{
       base_stats: %BaseStats{str: str, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
@@ -121,6 +125,33 @@ defmodule Aesir.ZoneServer.Unit.Inventory.WeightTest do
       headroom = Weight.max_weight(stats) - Weight.current_weight(inv)
 
       assert Weight.would_exceed?(inv, stats, headroom + 1)
+    end
+  end
+
+  describe "regen_overweight?/2" do
+    # Novice with STR 1: max 20_300. 70% is 14_210 (203 Red Potions); 50% is 10_150 (145).
+    # `one_more_max/1` raises the max by one unit, putting the same load just under the rate.
+    @tag game_mode: :renewal
+    test "renewal is overweight at exactly 70% of max weight" do
+      inv = inventory([item(amount: 203)])
+
+      assert Weight.regen_overweight?(inv, stats(@novice, 1))
+      refute Weight.regen_overweight?(inv, one_more_max(stats(@novice, 1)))
+    end
+
+    @tag game_mode: :pre_renewal
+    test "pre-renewal is overweight at exactly 50% of max weight" do
+      inv = inventory([item(amount: 145)])
+
+      assert Weight.regen_overweight?(inv, stats(@novice, 1))
+      refute Weight.regen_overweight?(inv, one_more_max(stats(@novice, 1)))
+    end
+
+    test "regen_overweight?/2 is false when max weight is 0" do
+      stats = stats(999_999, 0)
+
+      assert Weight.max_weight(stats) == 0
+      refute Weight.regen_overweight?(inventory([item(amount: 10)]), stats)
     end
   end
 end

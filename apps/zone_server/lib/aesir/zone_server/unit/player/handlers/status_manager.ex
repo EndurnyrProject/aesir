@@ -97,7 +97,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
     updated_stats = Calculator.calculate_stats(game_state.stats, game_state.character_id)
     updated_walk_speed = walk_speed_for(updated_stats)
 
-    if updated_stats != game_state.stats do
+    if Stats.changed?(updated_stats, game_state.stats) do
       StatusSync.send_stat_updates(state.connection_pid, updated_stats)
     end
 

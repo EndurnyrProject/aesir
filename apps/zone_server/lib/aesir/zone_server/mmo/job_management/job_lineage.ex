@@ -316,6 +316,21 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobLineage do
   @spec transcendent?(integer()) :: boolean()
   def transcendent?(job_id), do: descendant_or_self?(job_id, @novice_high_job_id)
 
+  @doc """
+  Whether `job_id` is Monk-classed: a Monk, Champion or Baby Monk, or a job
+  descending from one (the Sura line). Unknown ids and `nil` (a unit without a
+  job) are not.
+  """
+  @spec monk_classed?(integer() | nil) :: boolean()
+  def monk_classed?(nil), do: false
+
+  def monk_classed?(job_id) do
+    case AvailableJobs.job_id_to_name(job_id) do
+      {:ok, job} -> base_job(job) == :monk
+      {:error, _unknown_job} -> false
+    end
+  end
+
   @doc "Returns true when `job_id` is the owner job or one of its descendants."
   @spec descendant_or_self?(integer(), integer()) :: boolean()
   def descendant_or_self?(job_id, owner_job_id) do

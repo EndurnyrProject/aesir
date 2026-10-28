@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStore do
 
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
   alias Aesir.ZoneServer.Mmo.Woe.Persistence
 
@@ -111,6 +112,22 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStore do
       [] -> nil
     end
   end
+
+  @doc """
+  Whether `map` is a guild castle map currently owned by `guild_id`. False for
+  guild 0, maps without the `gvg_castle` flag, and castles without an owner.
+  """
+  @spec owned_by_guild?(String.t(), non_neg_integer()) :: boolean()
+  def owned_by_guild?(map, guild_id) when is_integer(guild_id) and guild_id > 0 do
+    with true <- MapFlags.get(map, :gvg_castle),
+         {:ok, %{id: castle_id}} <- CastleDb.by_map(map) do
+      owner(castle_id) == guild_id
+    else
+      _not_owned -> false
+    end
+  end
+
+  def owned_by_guild?(_map, _guild_id), do: false
 
   @doc """
   Returns the castle's economy state, or zeros when unknown.

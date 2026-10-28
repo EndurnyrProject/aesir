@@ -83,6 +83,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
     |> apply_passive_modifiers()
     |> calculate_derived_stats()
     |> calculate_combat_stats(map_name)
+    |> Map.update!(:generation, &(&1 + 1))
   end
 
   @doc """
