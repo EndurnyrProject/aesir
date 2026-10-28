@@ -300,7 +300,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusCommandsIntegrationTest do
     assert InventoryPersistence.load_inventory(owner.character.id) == before_inventory
   end
 
-  test "successful rest resumes an attacking owner's live combat lock" do
+  test "successful rest ends an attacking owner's attack" do
     owner = start_owner()
     mob = start_mob_session(map_name: "prontera", position: {151, 150})
 
@@ -319,12 +319,39 @@ defmodule Aesir.ZoneServer.Integration.HomunculusCommandsIntegrationTest do
     assert rested.lifecycle == :HOMUNCULUS_LIFECYCLE_RESTED
     refute_receive {:packet_sent, %HomunculusPrivateState{}, _}, 50
 
-    assert_eventually(fn ->
-      game_state = get_player_state(owner.pid)
+    game_state = get_player_state(owner.pid)
+    assert game_state.combat_target_id == nil
+    assert game_state.action_state == :idle
+  end
 
-      game_state.combat_target_id == mob.unit_id and
-        game_state.action_state in [:attacking, :combat_moving]
+  test "a refused rest keeps an attacking owner's attack" do
+    owner = start_owner()
+    mob = start_mob_session(map_name: "prontera", position: {151, 150})
+
+    :sys.replace_state(owner.pid, fn state ->
+      game_state = %{
+        state.game_state
+        | action_state: :attacking,
+          combat_target_id: mob.unit_id,
+          combat_action_type: 7
+      }
+
+      put_in(%{state | game_state: game_state}.game_state.stats.current_state.sp, 49)
     end)
+
+    expected = inspect_state(owner, 54)
+
+    assert_error(
+      owner,
+      55,
+      {:rest, %HomunculusRestCommand{}},
+      :HOMUNCULUS_ERROR_INSUFFICIENT_SP,
+      expected
+    )
+
+    game_state = get_player_state(owner.pid)
+    assert game_state.combat_target_id == mob.unit_id
+    assert game_state.action_state == :attacking
   end
 
   test "rest rejects an unlearned owner skill and a dead owner without mutation" do

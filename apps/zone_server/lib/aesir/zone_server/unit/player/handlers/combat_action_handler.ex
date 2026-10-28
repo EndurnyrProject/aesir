@@ -212,6 +212,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
       game_state.combat_target_id != target_id ->
         {:noreply, state}
 
+      # A swing falling inside a cast ends the attack and leaves the cast running
+      game_state.casting != nil and not SaFreecast.known?(game_state) ->
+        {:noreply, StateCommit.commit(state, PlayerState.stop_attack(game_state))}
+
       not Interpreter.can_attack?(:player, game_state.character_id) ->
         {:noreply, cancel_combat_intent(state)}
 

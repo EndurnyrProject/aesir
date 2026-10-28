@@ -226,11 +226,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     %{timing: timing, reactions: reactions} =
       CastTime.late(timing_definition, level, context.stats, time)
 
-    refreshed = Caster.apply_cast_reactions(caster, reactions)
+    refreshed =
+      caster
+      |> Caster.apply_cast_reactions(reactions)
+      |> stop_attack_at_cast_start(Keyword.get(opts, :attack_reach, false))
+
     context = %{context | caster: refreshed}
 
     case schedule(timing, refreshed, skill_id, level, target, context, opts) do
-      {:error, reason} when early.reactions != [] or reactions != [] ->
+      {:error, reason} when early.reactions != [] or reactions != [] or refreshed != caster ->
         {:error, reason, refreshed}
 
       {:casting, caster, info} ->
@@ -626,6 +630,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
     case validation do
       {:ok, prepared} ->
+        game_state = begin_input_cast(game_state, input)
         complete_prepared_cast(game_state, skill_id, level, target, input, now, prepared)
 
       {:error, reason} ->
@@ -1033,7 +1038,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp finish_item_attempt(%CastContext{} = context, target, early, keep?) do
     definition = context.definition
     skill_id = definition.id
-    caster = context.caster
+    caster = stop_attack_at_cast_start(context.caster, false)
 
     %{timing: timing, reactions: reactions} =
       CastTime.late(
@@ -2322,6 +2327,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   # The cast-start effects of an instant cast run before its effect, as a timed
   # cast's run when its cast bar starts (the caller's job for timed casts).
+  # A cast that passed its checks, up to the range, ends its player's attack as
+  # it begins: the target and the pending swing are dropped. A combo with the
+  # attack's reach keeps the attack, timed or not; a swing falling inside its
+  # cast ends the attack then (`CombatActionHandler.handle_auto_attack/2`). A
+  # refused cast never reaches here.
+  defp stop_attack_at_cast_start(%PlayerState{action_state: :attacking} = caster, false) do
+    {:ok, idle} = PlayerState.transition_to(caster, :idle)
+    idle
+  end
+
+  defp stop_attack_at_cast_start(caster, _keeps_attack?), do: caster
+
+  # An input cast begins and ends at its input's completion, so its attack ends
+  # there, once its checks passed.
+  defp begin_input_cast(game_state, {:with_input, _value}),
+    do: stop_attack_at_cast_start(game_state, false)
+
+  defp begin_input_cast(game_state, :without_input), do: game_state
+
   defp cast_start(game_state, adapter, skill_id) do
     if function_exported?(adapter, :on_cast_start, 2),
       do: adapter.on_cast_start(game_state, skill_id),

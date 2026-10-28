@@ -688,6 +688,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert Map.has_key?(updated.skill_cooldowns, 29)
     end
 
+    test "a completion that passes its checks ends the caster's attack" do
+      attacking = %{
+        game_state(50, %{29 => 1})
+        | action_state: :attacking,
+          combat_target_id: 2_000
+      }
+
+      assert {:ok, updated} =
+               Interpreter.complete_cast_with_input(attacking, 29, 1, :self, "hello")
+
+      assert updated.action_state == :idle
+      assert updated.combat_target_id == nil
+    end
+
     test "completion fully revalidates and commits nothing after cooldown lands" do
       initial = game_state(50, %{29 => 1})
       assert :ok = Interpreter.preflight_cast(initial, 29, 1, :self)
@@ -4382,6 +4396,79 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       assert {:step, _caster} =
                Interpreter.walking_attempt(walking, 6, 1, {:unit, 2_000}, attack_reach: true)
+    end
+
+    test "a cast that begins ends the caster's attack; a refused one keeps it" do
+      stub(Catalog, :by_id, fn 6 ->
+        {:ok, %{unit_definition(:target_enemy, 9) | cast_time: List.duplicate(1_000, 10)}}
+      end)
+
+      register_player(2_000)
+      swing = Process.send_after(self(), :swing, 60_000)
+
+      attacking = %{
+        game_state(100, %{6 => 1})
+        | action_state: :attacking,
+          combat_target_id: 2_000,
+          continuous_attack_timer: swing
+      }
+
+      assert {:error, :insufficient_sp} =
+               Interpreter.begin_cast(
+                 %{attacking | stats: game_state(0, %{6 => 1}).stats},
+                 6,
+                 1,
+                 {:unit, 2_000}
+               )
+
+      assert is_integer(Process.read_timer(swing))
+
+      assert {:casting, caster, _info} = Interpreter.begin_cast(attacking, 6, 1, {:unit, 2_000})
+      assert caster.action_state == :idle
+      assert caster.combat_target_id == nil
+      assert Process.read_timer(swing) == false
+    end
+
+    test "an instant cast failing at its cast end has already ended the attack" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, unit_definition(:target_enemy, 9)} end)
+      register_player(2_000)
+
+      attacking = %{
+        game_state(100, %{6 => 1})
+        | action_state: :attacking,
+          combat_target_id: 2_000
+      }
+
+      assert {:error, :invalid_target, caster} =
+               Interpreter.begin_cast(attacking, 6, 1, {:unit, 2_000})
+
+      assert caster.action_state == :idle
+      assert caster.combat_target_id == nil
+    end
+
+    test "a combo with the attack's reach keeps the attack, timed or not" do
+      register_player(2_000)
+
+      attacking = %{
+        game_state(100, %{6 => 1})
+        | action_state: :attacking,
+          combat_target_id: 2_000
+      }
+
+      stub(Catalog, :by_id, fn 6 -> {:ok, unit_definition(:target_enemy, 9)} end)
+
+      assert {:error, :invalid_target} =
+               Interpreter.begin_cast(attacking, 6, 1, {:unit, 2_000}, attack_reach: true)
+
+      stub(Catalog, :by_id, fn 6 ->
+        {:ok, %{unit_definition(:target_enemy, 9) | cast_time: List.duplicate(1_000, 10)}}
+      end)
+
+      assert {:casting, caster, _info} =
+               Interpreter.begin_cast(attacking, 6, 1, {:unit, 2_000}, attack_reach: true)
+
+      assert caster.action_state == :attacking
+      assert caster.combat_target_id == 2_000
     end
 
     test "a support skill on another player's homunculus is refused silently" do

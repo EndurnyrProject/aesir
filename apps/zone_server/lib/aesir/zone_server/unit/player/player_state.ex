@@ -958,7 +958,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   defp valid_from_combat_moving?(to), do: to in [:idle, :attacking, :moving, :moving_to_item]
   defp valid_from_skill_moving?(to), do: to in [:idle, :moving]
   defp valid_from_moving_to_item?(to), do: to in [:idle, :moving, :combat_moving, :attacking]
-  defp valid_from_attacking?(to), do: to in [:idle, :moving, :combat_moving, :moving_to_item]
+  # `:casting` is a timed combo's: its attack keeps its target and pending swing
+  # under the cast bar.
+  defp valid_from_attacking?(to),
+    do: to in [:idle, :moving, :combat_moving, :moving_to_item, :casting]
+
   # `:moving` and `:attacking` are Free Cast's overlay edges: the caster walks or
   # swings and the cast keeps running (see `Mmo.Skills.Sage.SaFreecast`).
   # `MovementHandler`/`CombatActionHandler` only take them for a caster who knows

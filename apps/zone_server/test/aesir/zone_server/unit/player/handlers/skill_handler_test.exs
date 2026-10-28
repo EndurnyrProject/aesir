@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
@@ -2373,7 +2374,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     end
   end
 
-  describe "skills preserve the lock and resume auto-attack" do
+  describe "a cast ends the attack" do
     setup do
       stub(SpatialIndex, :get_unit_position, fn
         :player, 2000 -> {:error, :not_found}
@@ -2383,21 +2384,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       :ok
     end
 
-    test "an instant cast while locked re-sets the lock and reschedules auto-attack" do
-      stub(Interpreter, :begin_cast, fn gs, 29, 1, {:unit, 2000} -> {:instant, gs} end)
+    test "an instant cast begun while attacking ends the attack and resumes nothing" do
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [], cooldown: [])} end)
       stub(StatusInterpreter, :apply_status, fn :player, 1000, _sc, _ -> :ok end)
       stub_commit()
+      swing = Process.send_after(self(), {:combat, {:auto_attack, 2000}}, 60_000)
 
       assert {:noreply, new_state} =
-               SkillHandler.handle_use_skill(locked_attacking_state(45), 29, 1, 2000)
+               SkillHandler.handle_use_skill(swinging(instant_state(30), swing), 29, 1, 1000)
 
-      assert new_state.game_state.combat_target_id == 2000
-      assert is_reference(new_state.game_state.continuous_attack_timer)
-      assert_receive {:combat, {:auto_attack, 2000}}
+      assert new_state.game_state.action_state == :idle
+      assert new_state.game_state.combat_target_id == nil
+      assert Process.read_timer(swing) == false
+      refute_receive {:combat, {:auto_attack, _}}
     end
 
-    test "a timed cast completing while locked re-sets the lock and reschedules auto-attack" do
+    test "a timed cast begun while attacking resumes nothing when it completes" do
       stub_commit()
       stub(StatusInterpreter, :apply_status, fn :player, _id, _sc, _ -> :ok end)
 
@@ -2405,14 +2407,201 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
                SkillHandler.handle_use_skill(locked_attacking_state(45), 29, 1, 2000)
 
       assert casting.game_state.action_state == :casting
+      assert casting.game_state.combat_target_id == nil
       token = casting.game_state.state_context.token
 
       assert {:noreply, completed} = SkillHandler.handle_cast_complete(casting, token)
 
       assert completed.game_state.action_state == :idle
+      assert completed.game_state.combat_target_id == nil
+      assert completed.game_state.continuous_attack_timer == nil
+      refute_receive {:combat, {:auto_attack, _}}
+    end
+
+    test "a refused cast leaves the attack running" do
+      stub_commit()
+      swing = Process.send_after(self(), {:combat, {:auto_attack, 2000}}, 60_000)
+
+      assert {:noreply, refused} =
+               SkillHandler.handle_use_skill(
+                 swinging(locked_attacking_state(0), swing),
+                 29,
+                 1,
+                 2000
+               )
+
+      assert refused.game_state.action_state == :attacking
+      assert refused.game_state.combat_target_id == 2000
+      assert refused.game_state.continuous_attack_timer == swing
+      assert is_integer(Process.read_timer(swing))
+    end
+
+    test "a combo used while swinging keeps the attack running" do
+      stub(UnitRegistry, :unit_exists?, fn :homunculus, _id -> false end)
+      stub(Interpreter, :castbegin_passes?, fn _game_state, 272, 1, _target -> true end)
+      stub(Catalog, :by_id, fn 272 -> {:ok, definition(id: 272, cast_time: [], cooldown: [])} end)
+      stub_commit()
+
+      expect(Interpreter, :begin_cast, fn game_state, 272, 1, {:unit, 2000}, attack_reach: true ->
+        {:instant, game_state}
+      end)
+
+      swing = Process.send_after(self(), {:combat, {:auto_attack, 2000}}, 60_000)
+      state = swinging(locked_attacking_state(100), swing)
+      combo = Combo.open(Combo.new(), :quadruple, 9_999_999_999)
+      state = %{state | game_state: %{state.game_state | combo: combo}}
+
+      assert {:noreply, comboed} =
+               SkillHandler.handle_use_skill(knowing(state, 272, 1), 272, 1, 1000)
+
+      assert comboed.game_state.action_state == :attacking
+      assert comboed.game_state.combat_target_id == 2000
+      assert comboed.game_state.continuous_attack_timer == swing
+      assert is_integer(Process.read_timer(swing))
+    end
+
+    test "a swing falling inside a timed combo's cast ends the attack and keeps the cast" do
+      swing = Process.send_after(self(), {:combat, {:auto_attack, 2000}}, 60_000)
+      casting = begin_timed_combo(swing)
+
+      assert casting.game_state.action_state == :casting
+      assert casting.game_state.combat_target_id == 2000
+      assert casting.game_state.continuous_attack_timer == swing
+
+      assert {:noreply, swung} = CombatActionHandler.handle_auto_attack(casting, 2000)
+
+      assert swung.game_state.action_state == :casting
+      assert swung.game_state.casting.token == casting.game_state.casting.token
+      assert swung.game_state.combat_target_id == nil
+      assert Process.read_timer(swing) == false
+
+      stub(Interpreter, :complete_cast, fn gs, 272, 1, {:unit, 2000} -> {:ok, gs} end)
+      token = swung.game_state.casting.token
+      assert {:noreply, completed} = SkillHandler.handle_cast_complete(swung, token)
+      assert completed.game_state.action_state == :idle
+      refute_receive {:combat, {:auto_attack, _}}
+    end
+
+    test "a swing due after a timed combo's cast still comes" do
+      swing = Process.send_after(self(), {:combat, {:auto_attack, 2000}}, 60_000)
+      casting = begin_timed_combo(swing)
+
+      stub(Interpreter, :complete_cast, fn gs, 272, 1, {:unit, 2000} -> {:ok, gs} end)
+      token = casting.game_state.casting.token
+      assert {:noreply, completed} = SkillHandler.handle_cast_complete(casting, token)
+
+      assert completed.game_state.action_state == :attacking
+      assert completed.game_state.casting == nil
       assert completed.game_state.combat_target_id == 2000
-      assert is_reference(completed.game_state.continuous_attack_timer)
-      assert_receive {:combat, {:auto_attack, 2000}}
+      assert completed.game_state.continuous_attack_timer == swing
+      assert is_integer(Process.read_timer(swing))
+    end
+
+    test "a combo used while chasing stops the chase and resumes nothing" do
+      stub(UnitRegistry, :unit_exists?, fn :homunculus, _id -> false end)
+      stub(Interpreter, :castbegin_passes?, fn _game_state, 272, 1, _target -> true end)
+      stub(Interpreter, :walking_attempt, fn _gs, 272, 1, {:unit, 2000} -> :in_range end)
+      stub(Catalog, :by_id, fn 272 -> {:ok, definition(id: 272, cast_time: [], cooldown: [])} end)
+      stub_commit()
+
+      stub(MovementHandler, :handle_force_stop_movement, fn state ->
+        {:noreply, %{state | game_state: PlayerState.stop_walking(state.game_state)}}
+      end)
+
+      expect(Interpreter, :begin_cast, fn game_state, 272, 1, {:unit, 2000} ->
+        {:instant, game_state}
+      end)
+
+      state = locked_attacking_state(100)
+      combo = Combo.open(Combo.new(), :quadruple, 9_999_999_999)
+
+      chasing = %{
+        state.game_state
+        | action_state: :combat_moving,
+          movement_state: :moving,
+          movement_intent: :combat,
+          walk_path: [{151, 150}],
+          combo: combo
+      }
+
+      assert {:noreply, comboed} =
+               SkillHandler.handle_use_skill(
+                 knowing(%{state | game_state: chasing}, 272, 1),
+                 272,
+                 1,
+                 1000
+               )
+
+      assert comboed.game_state.action_state == :idle
+      assert comboed.game_state.combat_target_id == nil
+      refute_receive {:combat, {:auto_attack, _}}
+    end
+
+    test "an out-of-range skill used while attacking ends the attack as its walk begins" do
+      stub(Interpreter, :begin_cast, fn _gs, 29, 1, {:unit, 2000} -> {:error, :out_of_range} end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {160, 150, "prontera"}}
+      end)
+
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(range: 9)} end)
+      stub(MapCache, :get, fn "prontera" -> {:ok, :map_data} end)
+
+      stub(Pathfinding, :rewalk_path, fn :map_data, {150, 150}, {151, 150} ->
+        {:ok, [{151, 150}]}
+      end)
+
+      test_pid = self()
+
+      stub(MovementHandler, :handle_request_move, fn state, x, y, opts ->
+        send(test_pid, {:move, state.game_state, x, y, opts})
+        {:noreply, state}
+      end)
+
+      swing = Process.send_after(self(), {:combat, {:auto_attack, 2000}}, 60_000)
+      state = swinging(casting_state(45), swing)
+
+      assert {:noreply, _} = SkillHandler.handle_use_skill(state, 29, 1, 2000)
+
+      assert_received {:move, moving_gs, 151, 150, _opts}
+      assert moving_gs.action_state == :skill_moving
+      assert moving_gs.combat_target_id == nil
+      assert Process.read_timer(swing) == false
+    end
+
+    test "a refused input completion leaves the attack running" do
+      stub(Interpreter, :complete_cast_with_input, fn _gs, 29, 1, :self, "hi" ->
+        {:error, :on_cooldown}
+      end)
+
+      stub_commit()
+      swing = Process.send_after(self(), {:combat, {:auto_attack, 2000}}, 60_000)
+      state = swinging(instant_state(30), swing)
+
+      assert {:noreply, refused} =
+               SkillHandler.complete_cast_with_input(state, 29, 1, :self, "hi")
+
+      assert refused.game_state.action_state == :attacking
+      assert refused.game_state.combat_target_id == 2000
+      assert is_integer(Process.read_timer(swing))
+    end
+
+    test "a stop-attacking status during a cast begun while attacking leaves nothing to resume" do
+      stub_commit()
+      stub(StatusInterpreter, :apply_status, fn :player, _id, _sc, _ -> :ok end)
+
+      assert {:noreply, casting} =
+               SkillHandler.handle_use_skill(locked_attacking_state(45), 29, 1, 2000)
+
+      assert {:noreply, poisoned} = CombatActionHandler.handle_stop_attack(casting)
+      token = poisoned.game_state.state_context.token
+
+      assert {:noreply, completed} = SkillHandler.handle_cast_complete(poisoned, token)
+
+      assert completed.game_state.action_state == :idle
+      assert completed.game_state.combat_target_id == nil
+      refute_receive {:combat, {:auto_attack, _}}
     end
 
     test "an instant cast with no lock does not start an auto-attack loop" do
@@ -2426,21 +2615,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       refute_receive {:combat, {:auto_attack, _}}
     end
 
-    test "a cast whose locked target has died does not resume" do
-      stub(SpatialIndex, :get_unit_position, fn _type, _id -> {:error, :not_found} end)
-      stub(Interpreter, :begin_cast, fn gs, 29, 1, {:unit, 2000} -> {:instant, gs} end)
-      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [], cooldown: [])} end)
-      stub(StatusInterpreter, :apply_status, fn :player, _id, _sc, _ -> :ok end)
-      stub_commit()
-
-      assert {:noreply, new_state} =
-               SkillHandler.handle_use_skill(locked_attacking_state(45), 29, 1, 2000)
-
-      assert new_state.game_state.combat_target_id == nil
-      refute_receive {:combat, {:auto_attack, _}}
-    end
-
-    test "a locked skill that walked into range resumes auto-attack after casting" do
+    test "a skill that walked into range resumes no attack after casting" do
       stub(Interpreter, :walking_attempt, fn _gs, 29, 1, {:unit, 2000} -> :in_range end)
       stub(Interpreter, :begin_cast, fn gs, 29, 1, {:unit, 2000} -> {:instant, gs} end)
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [], cooldown: [])} end)
@@ -2457,23 +2632,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       assert {:noreply, new_state} = SkillHandler.handle_step_action(state, timer)
 
-      assert new_state.game_state.combat_target_id == 2000
-      assert is_reference(new_state.game_state.continuous_attack_timer)
-      assert_receive {:combat, {:auto_attack, 2000}}
+      assert new_state.game_state.combat_target_id == nil
+      refute_receive {:combat, {:auto_attack, _}}
     end
 
-    test "a damage interrupt keeps the lock and resumes auto-attack" do
-      stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
-      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+    test "a damage interrupt of a cast begun while attacking resumes nothing" do
+      stub_commit()
 
-      state = interrupting_state(45, fixed_offset: -100, combat_target_id: 2000)
+      assert {:noreply, casting} =
+               SkillHandler.handle_use_skill(locked_attacking_state(45), 29, 1, 2000)
 
-      result = SkillHandler.interrupt_cast_on_damage(state)
+      assert casting.game_state.casting.interruptible
+      result = SkillHandler.interrupt_cast_on_damage(casting)
 
       assert result.game_state.action_state == :idle
-      assert result.game_state.combat_target_id == 2000
-      assert is_reference(result.game_state.continuous_attack_timer)
-      assert_receive {:combat, {:auto_attack, 2000}}
+      assert result.game_state.combat_target_id == nil
+      refute_receive {:combat, {:auto_attack, _}}
     end
 
     test "a manual-move cancel drops the lock and does not resume" do
@@ -2488,6 +2662,49 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert result.game_state.combat_target_id == nil
       refute_receive {:combat, {:auto_attack, _}}
     end
+  end
+
+  defp begin_timed_combo(swing) do
+    stub(UnitRegistry, :unit_exists?, fn :homunculus, _id -> false end)
+    stub(Interpreter, :castbegin_passes?, fn _game_state, 272, 1, _target -> true end)
+
+    stub(Catalog, :by_id, fn 272 ->
+      {:ok, definition(id: 272, cast_time: [1_000], cooldown: [])}
+    end)
+
+    stub_commit()
+
+    info = %{
+      skill_id: 272,
+      level: 1,
+      target: {:unit, 2000},
+      element: :neutral,
+      fixed: 0,
+      total: 60_000
+    }
+
+    expect(Interpreter, :begin_cast, fn game_state, 272, 1, {:unit, 2000}, attack_reach: true ->
+      {:casting, game_state, info}
+    end)
+
+    state = swinging(locked_attacking_state(100), swing)
+    combo = Combo.open(Combo.new(), :quadruple, 9_999_999_999)
+    state = knowing(%{state | game_state: %{state.game_state | combo: combo}}, 272, 1)
+
+    assert {:noreply, casting} = SkillHandler.handle_use_skill(state, 272, 1, 1000)
+    casting
+  end
+
+  defp swinging(state, swing) do
+    game_state = %{
+      state.game_state
+      | action_state: :attacking,
+        combat_target_id: 2000,
+        combat_action_type: 7,
+        continuous_attack_timer: swing
+    }
+
+    %{state | game_state: game_state}
   end
 
   defp step_action(timer, combat_target_id) do
