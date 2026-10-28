@@ -240,14 +240,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   end
 
   # `On*` labels wire straight to `on_event/2`; the macro derives `events/0`
-  # from the clause heads, so no explicit list is emitted. `OnTouch_` (the
-  # area-trigger variant) normalizes to the plain `"OnTouch"` head the engine
-  # actually dispatches — a script defining both collapses to one clause,
-  # keeping the first and warning.
+  # from the clause heads, so no explicit list is emitted. `OnTouch_` and
+  # `OnTouch` are distinct labels with distinct engine semantics (one toucher
+  # at a time vs. every toucher) and keep their own heads. A label repeated
+  # in one script collapses to one clause, keeping the first and warning.
   defp event_clauses(_env, :function, _catch_end?), do: ""
 
   defp event_clauses(env, _kind, catch_end?) do
-    case env.a.events |> Enum.map(&{normalized_event_head(&1), &1}) |> dedupe_event_heads() do
+    case env.a.events |> Enum.map(&{&1, &1}) |> dedupe_event_heads() do
       [] ->
         ""
 
@@ -270,10 +270,6 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     #{script_end_catch()}
     end
     """
-  end
-
-  defp normalized_event_head(label) do
-    if String.downcase(label) == "ontouch_", do: "OnTouch", else: label
   end
 
   defp dedupe_event_heads(pairs) do

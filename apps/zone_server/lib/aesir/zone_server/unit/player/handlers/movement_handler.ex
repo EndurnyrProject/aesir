@@ -30,7 +30,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Mmo.WaitingRoom
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Network.MessageRouter
-  alias Aesir.ZoneServer.Npc.Events, as: NpcEvents
   alias Aesir.ZoneServer.Npc.Packets, as: NpcPackets
   alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
@@ -40,7 +39,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Pathfinding
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Concealment
@@ -51,9 +49,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.MovementEngine
   alias Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandler
-  alias Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.TouchHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -182,14 +180,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     # Handle visibility updates
     updated_game_state = handle_visibility_update(updated_game_state)
 
-    case maybe_trigger_warp(updated_game_state, next_x, next_y) do
+    # Trigger areas the step left are dropped before the cell is checked, as
+    # the reference does: a warp underfoot wins over every touch area.
+    state = TouchHandler.leave_areas(%{state | game_state: updated_game_state})
+
+    case maybe_trigger_warp(state.game_state) do
       {:warp_fired, marked_state} ->
         {:noreply, %{state | game_state: marked_state}}
 
       :no_warp ->
         touched_state =
-          %{state | game_state: updated_game_state}
-          |> maybe_trigger_touch()
+          state
+          |> TouchHandler.scan()
           |> NavigationHandler.on_moved()
           |> SkillHandler.schedule_step_action(half_step(updated_game_state, {next_x, next_y}))
 
@@ -281,39 +283,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     schedule_step(game_state, step_delay(game_state, {game_state.x, game_state.y}, hd(path)))
   end
 
-  # On-touch warp trigger hook (cell-enter).
-  #
   @doc """
-  Re-checks the warp under the player after an OnTouch status (Hiding,
-  Cloaking, Chase Walk) ended at `{map, x, y}`. Skipped while a warp or map
-  load is pending, when the player has moved on since, or when it is dead.
+  Re-runs the touch check of the cell the player stands on after an OnTouch
+  status (Hiding, Cloaking, Chase Walk) ended there, or after an NPC whose
+  area contains it became visible: the warp underfoot first, else the NPC
+  trigger areas (`TouchHandler.scan/1`). Skipped while a warp or map load is
+  pending, when the player has moved on since `{map, x, y}`, or when it is
+  dead.
   """
   @spec recheck_touch(map(), {String.t(), integer(), integer()}) :: {:noreply, map()}
   def recheck_touch(%{game_state: %{map_name: map, x: x, y: y} = game_state} = state, {map, x, y})
       when game_state.action_state != :dead and is_nil(game_state.pending_map_load) do
-    case maybe_trigger_warp(game_state, x, y) do
+    case maybe_trigger_warp(game_state) do
       {:warp_fired, marked_state} -> {:noreply, %{state | game_state: marked_state}}
-      :no_warp -> {:noreply, state}
+      :no_warp -> {:noreply, TouchHandler.scan(state)}
     end
   end
 
   def recheck_touch(state, _position), do: {:noreply, state}
 
-  # Fires after the player has stepped onto `(x, y)`: if that cell sits inside a
-  # warp's `xs/ys` area, cancel the remaining walk and call `PlayerSession.warp/4`
-  # on the session — reusing the existing map-warp cast (zero new plumbing). The
+  # Fires when the player's cell sits inside a warp's area: cancel the
+  # remaining walk and call `PlayerSession.warp/4` on the session. The
   # per-player re-trigger cooldown guards the same-map-destination instant
   # re-fire loop; within the cooldown this is a no-op and the walk continues.
-  @spec maybe_trigger_warp(PlayerState.t(), integer(), integer()) ::
-          {:warp_fired, PlayerState.t()} | :no_warp
-  defp maybe_trigger_warp(game_state, x, y) do
-    warps_for_map =
-      case Warps.for_map(game_state.map_name) do
-        {:ok, list} -> list
-        :error -> []
-      end
-
-    case triggered_warp(warps_for_map, x, y, game_state.character_id) do
+  @spec maybe_trigger_warp(PlayerState.t()) :: {:warp_fired, PlayerState.t()} | :no_warp
+  defp maybe_trigger_warp(game_state) do
+    case TouchHandler.warp_underfoot(game_state) do
       %Warp{} = warp ->
         if PlayerState.within_warp_cooldown?(game_state) do
           :no_warp
@@ -332,80 +327,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
       nil ->
         :no_warp
-    end
-  end
-
-  # A concealed player only triggers the warps that fire for hidden players;
-  # concealment is read only when an ordinary warp is underfoot.
-  defp triggered_warp(warps, x, y, character_id) do
-    case Warp.Registry.hit?(warps, x, y) do
-      %Warp{trigger_on_hidden: false} = warp ->
-        if Concealment.unit_concealed?(:player, character_id),
-          do: warps |> Enum.filter(& &1.trigger_on_hidden) |> Warp.Registry.hit?(x, y),
-          else: warp
-
-      other ->
-        other
-    end
-  end
-
-  # On-touch NPC trigger-area hook (cell-enter).
-  #
-  # Called only when the warp check above did not fire (a warp makes any
-  # touch area on the map being left moot). Computes the set of touch rects
-  # on the player's current map containing its (already updated) cell,
-  # skipping any NPC that `Npc.Session.visible?/1` reports disabled/hidden, and
-  # replaces `inside_npc_areas` with it — leaving a rect drops its gid so
-  # re-entering fires again, and standing still (this only runs on an actual
-  # step) never re-fires. Every gid newly present (not in the old set) fires:
-  # a busy player (an active `interaction_lock`) skips the fire but still
-  # counts the area as entered (no re-fire while busy).
-  @spec maybe_trigger_touch(map()) :: map()
-  defp maybe_trigger_touch(%{game_state: game_state} = state) do
-    containing =
-      game_state.map_name
-      |> NpcRegistry.touch_rects()
-      |> Enum.filter(fn {gid, xs, ys} ->
-        game_state.x in xs and game_state.y in ys and NpcSession.visible?(gid)
-      end)
-      |> MapSet.new(fn {gid, _xs, _ys} -> gid end)
-
-    entered = MapSet.difference(containing, game_state.inside_npc_areas)
-    marked_state = %{state | game_state: %{game_state | inside_npc_areas: containing}}
-
-    Enum.reduce(entered, marked_state, &fire_touch/2)
-  end
-
-  @spec fire_touch(non_neg_integer(), map()) :: map()
-  defp fire_touch(gid, state) do
-    if SessionState.interaction_blocked?(state) do
-      state
-    else
-      case NpcRegistry.module_for_unit(gid) do
-        {:ok, {module, _placement}} -> attach_or_fallback(gid, module, state)
-        :error -> state
-      end
-    end
-  end
-
-  # Starts the module's `OnTouch` handler as an attached interaction; when the
-  # module declares no `OnTouch` label, falls back to the click path's
-  # `on_talk/1` start.
-  @spec attach_or_fallback(non_neg_integer(), module(), map()) :: map()
-  defp attach_or_fallback(gid, module, state) do
-    base_ctx =
-      state
-      |> Ctx.from_session({:npc, module.npc_id()})
-      |> Map.put(:npc_gid, gid)
-
-    case NpcEvents.trigger_attached(gid, "OnTouch", base_ctx, self()) do
-      {:ok, pid} ->
-        ref = Process.monitor(pid)
-        SessionState.hold_npc_dialog(state, {pid, ref, gid})
-
-      {:error, :no_handler} ->
-        {:noreply, new_state} = NpcInteractionHandler.talk_to_npc(gid, state.game_state, state)
-        new_state
     end
   end
 
@@ -759,7 +680,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   end
 
   @doc """
-  Commits displacement only when the live session still matches its expected cell.
+  Commits displacement only when the live session still matches its expected
+  cell. The landing cell is checked like a step: trigger areas left are
+  dropped, then the warp underfoot or the NPC trigger areas fire.
   """
   @spec handle_displacement(
           SessionState.t(),
@@ -782,7 +705,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
       Movement.set_position(:player, game_state.character_id, game_state, map_name)
       broadcast_displacement(game_state.character_id, map_name, x, y)
-      {:noreply, %{state | game_state: game_state}}
+
+      state = TouchHandler.leave_areas(%{state | game_state: game_state})
+
+      case maybe_trigger_warp(state.game_state) do
+        {:warp_fired, marked_state} -> {:noreply, %{state | game_state: marked_state}}
+        :no_warp -> {:noreply, TouchHandler.scan(state)}
+      end
     else
       {:noreply, state}
     end

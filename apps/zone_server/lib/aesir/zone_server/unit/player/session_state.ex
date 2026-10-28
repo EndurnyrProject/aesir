@@ -82,7 +82,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             homunculus_runtime: %Runtime{private_dirty: false},
             navigation: nil,
             canlog_at: nil,
-            lingering: nil
+            lingering: nil,
+            npc_event_queue: []
 
   @type t() :: %__MODULE__{
           game_state: PlayerState.t(),
@@ -142,7 +143,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
           homunculus_runtime: Runtime.t(),
           navigation: NavigationSession.t() | nil,
           canlog_at: integer() | nil,
-          lingering: reference() | nil
+          lingering: reference() | nil,
+          npc_event_queue: [{non_neg_integer(), String.t()}]
         }
 
   @typedoc """

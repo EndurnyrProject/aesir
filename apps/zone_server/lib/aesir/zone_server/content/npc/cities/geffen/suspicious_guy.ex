@@ -48,7 +48,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.SuspiciousGuy do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     ctx =
       ctx
       |> mes("[?]")

@@ -33,7 +33,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcOwnerEventHandlerTest do
     Process.exit(interaction_pid, :kill)
   end
 
-  test "pending skill text suppresses an owner event and remains active" do
+  test "pending skill text queues an owner event and remains active" do
     reject(&Events.trigger_attached/4)
     timer_ref = Process.send_after(self(), :unused_timeout, 60_000)
 
@@ -47,13 +47,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcOwnerEventHandlerTest do
 
     initial = %{state() | pending_skill_text_input: pending}
 
-    assert {:noreply, unchanged} =
+    assert {:noreply, queued} =
              PlayerSession.handle_cast(
                {:npc, {:run_attached_event, EventNpc, 77, "OnMyMobDead"}},
                initial
              )
 
-    assert unchanged == initial
+    assert queued.npc_event_queue == [{77, "OnMyMobDead"}]
+    assert %{queued | npc_event_queue: []} == initial
     assert is_integer(Process.read_timer(timer_ref))
   end
 

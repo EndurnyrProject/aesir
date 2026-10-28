@@ -54,7 +54,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Npc24373 do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     case get_server_temp_var(ctx, "airplanelocation2", 0) do
       0 -> warp(ctx, "ra_fild12", 292, 204)
       1 -> warp_to_izlude(ctx)

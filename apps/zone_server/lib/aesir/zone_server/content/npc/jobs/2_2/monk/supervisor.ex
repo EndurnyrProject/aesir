@@ -48,7 +48,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Supervisor do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx), do: count_lap(ctx, get_char_var(ctx, :MONK_Q, 0))
+  def on_event("OnTouch_", ctx), do: count_lap(ctx, get_char_var(ctx, :MONK_Q, 0))
 
   @impl true
   @spec on_talk(Ctx.t()) :: Ctx.t()

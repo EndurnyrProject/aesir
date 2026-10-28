@@ -50,7 +50,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.Warp do
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, "Warp#knt")
 
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     ctx
     |> set_char_var(:KNIGHT_Q, 12)
     |> changequest(9010, 9011)

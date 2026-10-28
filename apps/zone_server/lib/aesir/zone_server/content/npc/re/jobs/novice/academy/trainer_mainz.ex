@@ -69,7 +69,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainerMainz do
 
   alias Aesir.ZoneServer.Script.Rathena
   @impl true
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     ev_ontouch(ctx)
   catch
     :throw, {:script_end, ctx} -> ctx

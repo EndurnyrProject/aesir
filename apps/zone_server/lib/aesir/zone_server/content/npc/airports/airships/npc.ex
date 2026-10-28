@@ -57,7 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Npc do
   def on_event("OnHide", ctx), do: ctx |> specialeffect(:bash) |> disablenpc()
   def on_event("OnUnhide", ctx), do: ctx |> enablenpc() |> specialeffect(:summonslave)
 
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     case get_server_temp_var(ctx, "airplanelocation", 0) do
       0 -> warp(ctx, "yuno", 92, 260)
       1 -> warp(ctx, "einbroch", 92, 278)

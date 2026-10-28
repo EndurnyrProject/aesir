@@ -39,7 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Jorje do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     case Enum.random(1..3) do
       1 ->
         ctx

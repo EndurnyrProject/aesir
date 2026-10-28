@@ -37,7 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Dianne do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx), do: emotion(ctx, :cry)
+  def on_event("OnTouch_", ctx), do: emotion(ctx, :cry)
 
   @impl true
   @spec on_talk(Ctx.t()) :: Ctx.t()

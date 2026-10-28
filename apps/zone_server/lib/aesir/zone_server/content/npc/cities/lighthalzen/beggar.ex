@@ -40,7 +40,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Beggar do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx), do: ask_for_money(ctx)
+  def on_event("OnTouch_", ctx), do: ask_for_money(ctx)
 
   @impl true
   @spec on_talk(Ctx.t()) :: Ctx.t()

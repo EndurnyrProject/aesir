@@ -36,4 +36,16 @@ defmodule Aesir.ZoneServer.Npc.Placement do
           trigger: {non_neg_integer(), non_neg_integer()} | nil,
           scope: ContentScope.t()
         }
+
+  @doc """
+  Whether the cell `{map, x, y}` lies inside this placement's touch area. A
+  placement without a touch area contains nothing.
+  """
+  @spec touch_area_contains?(t(), String.t(), integer(), integer()) :: boolean()
+  def touch_area_contains?(%__MODULE__{trigger: nil}, _map, _x, _y), do: false
+
+  def touch_area_contains?(%__MODULE__{map: map, x: nx, y: ny, trigger: {xs, ys}}, map, x, y),
+    do: x in (nx - xs)..(nx + xs) and y in (ny - ys)..(ny + ys)
+
+  def touch_area_contains?(%__MODULE__{}, _map, _x, _y), do: false
 end

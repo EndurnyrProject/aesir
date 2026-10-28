@@ -15362,7 +15362,7 @@
   },
   "jobs/2-2/dancer.txt|floating|dancestep::StepTrigger|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Floating.DancestepSteptrigger",
-    "output_hash": "287c446d0f66c6b469b2ef66707ef95377eca4a4bd08aa61ea4a0be11ce60228",
+    "output_hash": "fba4225f5e5fbe1db628622dd89c06809d54a1a4667d0335ea8cfe47c18f08f4",
     "output_path": "lib/aesir/zone_server/content/npc/floating/dancestep_steptrigger.ex",
     "source_hash": "c3258d8d4ddde3cd3897e48113ceb88ab4c361548a6a0392a22ced78d7f9844c",
     "spawns": []
@@ -19753,7 +19753,7 @@
   },
   "pre-re/jobs/2-2/crusader.txt|script| Summoner#cr5|job_cru:98:105": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M22.Crusader.Summoner",
-    "output_hash": "267f28a684addbfb945300576a819f0f0a71c5acb207da327153208c3d6332fe",
+    "output_hash": "b50dcca85cd949f34ad74868ac2b3229b87c7d14c279bb58dcf1339ae87200b1",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/2_2/crusader/summoner.ex",
     "source_hash": "0d12e286f57ed5cd8f4dc7f9ef9b45f3901fc9207a9ac00c6a4d576b355abd1d",
     "spawns": [
@@ -19775,7 +19775,7 @@
   },
   "pre-re/jobs/2-2/crusader.txt|script|Monster Summon#cr5|job_cru:168:180": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M22.Crusader.MonsterSummon",
-    "output_hash": "ff602a3ab4ae27b6b8d5e886208e611850c56d72ec76cf2773083b812f169fd2",
+    "output_hash": "fc45b5430677426762c470372eb172f8d7d3439a90390d7477fb031019dcee60",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/2_2/crusader/monster_summon.ex",
     "source_hash": "f4cc16e927388e3993cd802f1e4a1e563789f213cbce4e00e065e86618811369",
     "spawns": [
@@ -22783,7 +22783,7 @@
   },
   "re/cities/malaya.txt|floating|Unidentified Creature#i|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Floating.UnidentifiedCreature",
-    "output_hash": "fc195d119f3a5caaeec3a47fed3eb21fda68ed863890453adc823beda3eaf8ec",
+    "output_hash": "130ea7d1faab7d5088719e4cc82390d5ebf0bdcc152a391ff288e3b851135744",
     "output_path": "lib/aesir/zone_server/content/npc/re/floating/unidentified_creature.ex",
     "source_hash": "05e70e01897118e9d9dcb105058e5661af13093fa8f1b9565b4309c2aec57aba",
     "spawns": [
@@ -22833,7 +22833,7 @@
   },
   "re/cities/malaya.txt|floating|Unidentified Creature#j|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Floating.UnidentifiedCreature0",
-    "output_hash": "0bbb4191dbdb79f365ba99059c443bec61a1ee8d313f088a1ca52dd39e7eed89",
+    "output_hash": "b41fea74a7913a01208cb7ce163741b9bdebc5aca290d3cf176ff671f8f46203",
     "output_path": "lib/aesir/zone_server/content/npc/re/floating/unidentified_creature_0.ex",
     "source_hash": "4a51c8294e58984c61aa13c1ac21e6b42ab7e905d22b63c09f80d22e16273bfe",
     "spawns": [
@@ -25492,7 +25492,7 @@
   },
   "re/jobs/2-2/crusader.txt|script| Summoner#cr5|job_cru:98:105": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M22.Crusader.Summoner",
-    "output_hash": "0cfb0c158ae66214c790584cc368f77e74c5d6122dc42d4623f25ab5d1e9c70a",
+    "output_hash": "600f31b434b7c17b42e278fde37169ece7c3d768c5bf71639156b9d5921922c6",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/2_2/crusader/summoner.ex",
     "source_hash": "843d4a7f505a9a4bee34b77774401b9b75f51d2561556c03a161e6818ea80128",
     "spawns": [
@@ -25514,7 +25514,7 @@
   },
   "re/jobs/2-2/crusader.txt|script|Monster Summon#cr5|job_cru:168:180": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M22.Crusader.MonsterSummon",
-    "output_hash": "e8a6349d94869692988f812ed45184c26ada6c27e6694487278f9afe3e8adf9e",
+    "output_hash": "1f5ab876670c996eb0ad43d60e0bf11cf1a4d73ec7d0a3dae942c4e389598411",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/2_2/crusader/monster_summon.ex",
     "source_hash": "f666f18bef6b73abb04572db1f22ad59c937f7e1eb7e7d454903c4206c3a2f60",
     "spawns": [
@@ -30820,7 +30820,7 @@
   },
   "re/jobs/novice/academy.txt|script|Trainer Mainz#ac|iz_ac01:134:47": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainerMainz",
-    "output_hash": "2c9ef361c2ab773f9cb73a61c3aedc2e53e134215a69188852ec760b21ad309b",
+    "output_hash": "de2a056739937d68c1073917cae02830665e32065b92e1629d7afaf0a39aba60",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/trainer_mainz.ex",
     "source_hash": "37fcb5ee8fdee7de8214adb5239e57b9cfe9aa9d9f25143aa337b17cfc9a07fc",
     "spawns": [

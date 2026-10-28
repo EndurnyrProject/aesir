@@ -35,7 +35,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Dance do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     ctx
     |> mapannounce("job_duncer", "Good! Well done! Go back to Bijou!", 1)
     |> set_char_var(:DANC_Q, 9)

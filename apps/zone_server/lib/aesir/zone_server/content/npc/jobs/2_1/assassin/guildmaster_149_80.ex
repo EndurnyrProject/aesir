@@ -69,7 +69,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildmaster14980 do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     ctx = save_guild_respawn(ctx)
 
     cond do

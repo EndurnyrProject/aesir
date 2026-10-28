@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.TouchHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler
@@ -95,6 +96,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
       state = close_storage_on_cross_map(state, same_map?)
       state = reconcile_vending(state, dest_map, fx, fy)
       game_state = state.game_state
+      TouchHandler.leave_all(game_state)
       leave_current_map(game_state, DespawnReason.teleport())
       Broadcast.unsubscribe_mob_despawns(game_state.map_name)
       Broadcast.subscribe_mob_despawns(dest_map)

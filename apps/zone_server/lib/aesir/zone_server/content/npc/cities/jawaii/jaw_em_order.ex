@@ -25,7 +25,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Jawaii.JawEmOrder do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     if Rathena.truthy?(getpartnerid(ctx)) do
       dispatch_welcome_events(ctx)
     else

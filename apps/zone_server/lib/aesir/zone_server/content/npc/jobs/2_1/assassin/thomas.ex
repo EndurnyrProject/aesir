@@ -89,7 +89,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Thomas do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     if get_char_var(ctx, :ASSIN_Q, 0) == 4 do
       offer_retry(ctx)
     else

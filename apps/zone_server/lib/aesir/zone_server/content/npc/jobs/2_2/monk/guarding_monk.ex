@@ -50,7 +50,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.GuardingMonk do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     quest = get_char_var(ctx, :MONK_Q, 0)
 
     cond do

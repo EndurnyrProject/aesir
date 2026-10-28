@@ -53,7 +53,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Exit do
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, "exit#hnttest")
 
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     ctx =
       ctx
       |> donpcevent("Manager#hnt::OnReset")

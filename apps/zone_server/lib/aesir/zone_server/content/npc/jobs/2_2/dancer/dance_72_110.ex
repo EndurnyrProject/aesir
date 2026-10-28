@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Dance72110 do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx), do: ctx |> set_char_var(:DANC_Q, 9) |> warp("comodo", 188, 162)
+  def on_event("OnTouch_", ctx), do: ctx |> set_char_var(:DANC_Q, 9) |> warp("comodo", 188, 162)
   def on_event("OnDisable", ctx), do: disablenpc(ctx, "dance#return#3")
 
   def on_event("OnEnable", ctx) do

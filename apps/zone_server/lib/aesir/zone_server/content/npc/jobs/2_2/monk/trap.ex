@@ -32,7 +32,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Trap do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     ctx
     |> mapannounce("monk_test", "#{char_name(ctx, 0)}, you're trapped. You will be returned.", 1)
     |> warp("monk_test", 387, 387)

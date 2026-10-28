@@ -53,7 +53,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.TestGuide do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     cond do
       get_char_var(ctx, :ASSIN_Q2, 0) < 5 ->
         ctx

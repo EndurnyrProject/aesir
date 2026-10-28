@@ -44,6 +44,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.NpcEventQueue
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcOwnerEventHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler
@@ -60,6 +61,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.TouchHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler
@@ -599,12 +601,20 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @doc """
   Re-runs the touch check of the cell this player stood on (`{map, x, y}`) when
-  an OnTouch status ended there; skipped while a warp is pending, once it has
-  moved on, or when it is dead.
+  an OnTouch status ended there or an NPC covering it became visible; skipped
+  while a warp is pending, once it has moved on, or when it is dead.
   """
   @spec recheck_touch(pid(), {String.t(), integer(), integer()}) :: :ok
   def recheck_touch(pid, position),
     do: GenServer.cast(pid, {:movement, {:recheck_touch, position}})
+
+  @doc """
+  Offers this player the `OnTouch_` of `gid`, whose previous toucher left its
+  area. `excluded` holds the players already ruled out for this handoff.
+  """
+  @spec touch_handoff(pid(), non_neg_integer(), MapSet.t()) :: :ok
+  def touch_handoff(pid, gid, excluded),
+    do: GenServer.cast(pid, {:npc, {:touch_handoff, gid, excluded}})
 
   @doc "Stops this player's attack: a stop-attacking status started on it."
   @spec stop_attack(pid()) :: :ok
@@ -1117,7 +1127,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   # the default item-use flag; the session always survives
   # (this monitor never propagates the interaction's exit). Matched ahead of the
   # connection :DOWN below so a finished dialog isn't mistaken for a dropped
-  # connection.
+  # connection. An NPC event queued while the dialog was open is released.
   @impl true
   def handle_info(
         {:DOWN, ref, :process, _pid, _reason},
@@ -1126,7 +1136,18 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     state =
       if Map.get(state, :progress_bar), do: SessionState.release_progress_bar(state), else: state
 
-    {:noreply, Map.merge(state, %{interaction_lock: nil, npc_item_flag: nil})}
+    state =
+      state
+      |> Map.merge(%{interaction_lock: nil, npc_item_flag: nil})
+      |> NpcEventQueue.release()
+
+    {:noreply, state}
+  end
+
+  # A queued NPC event's dequeue delay elapsed.
+  @impl true
+  def handle_info({:npc, {:run_queued_event, gid, label}}, state) do
+    {:noreply, NpcEventQueue.run_queued(state, gid, label)}
   end
 
   # A connection dropped within 10 s of a combat action leaves the character in
@@ -1245,6 +1266,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:movement, {:recheck_touch, position}}, state) do
     MovementHandler.recheck_touch(state, position)
+  end
+
+  @impl true
+  def handle_cast({:npc, {:touch_handoff, gid, excluded}}, state) do
+    {:noreply, TouchHandler.handle_handoff(state, gid, excluded)}
   end
 
   @impl true
@@ -1682,6 +1708,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     StatusInterpreter.end_unsaved_statuses(:player, game_state.character_id)
     state = apply_pending_vitals(state)
     game_state = WaitingRoomHandler.leave_if_in_room(state.game_state)
+    TouchHandler.leave_all(game_state)
     WarpHandler.leave_current_map(game_state, DespawnReason.logged_out())
 
     unless game_state.action_state == :dead do

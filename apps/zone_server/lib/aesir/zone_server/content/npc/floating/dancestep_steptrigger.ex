@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.DancestepSteptrigger do
   use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
   alias Aesir.ZoneServer.Script.Rathena
   @impl true
-  def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
+  def on_event("OnTouch_", ctx), do: ev_ontouch(ctx)
   @impl true
   def on_talk(ctx) do
     ctx

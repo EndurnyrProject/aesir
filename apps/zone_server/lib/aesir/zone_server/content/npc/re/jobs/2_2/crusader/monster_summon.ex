@@ -25,7 +25,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M22.Crusader.MonsterSummon do
 
   @impl true
   def on_event("OnInit", ctx), do: ev_oninit(ctx)
-  def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
+  def on_event("OnTouch_", ctx), do: ev_ontouch(ctx)
   def on_event("OnStart", ctx), do: ev_onstart(ctx)
   def on_event("OnEnd", ctx), do: ev_onend(ctx)
   @impl true

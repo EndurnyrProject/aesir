@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MobRogue96205 do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:thief) do
       ctx
       |> donpcevent("mob_rogue#7::OnDisable")

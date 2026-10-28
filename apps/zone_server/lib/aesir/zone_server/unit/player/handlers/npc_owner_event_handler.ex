@@ -5,46 +5,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcOwnerEventHandler do
   dispatch (rAthena `mobkillevent`), fired when a mob tagged with `event:`
   dies to this player.
 
-  Builds the ctx the same way `NpcInteractionHandler.talk_to_npc/3` does for a
-  player click (`Ctx.from_session/2` plus the target `npc_gid`), then
-  delegates to `Npc.Events.trigger_attached/4`. The event shares the player's
-  interaction lock with NPC dialogs and pending skill text; a busy player drops
-  the event rather than starting a second interaction.
+  The event goes through `NpcEventQueue.dispatch/3`: it starts at once for a
+  free player and is queued behind the open dialog or pending skill text of a
+  busy one.
   """
 
-  require Logger
-
-  alias Aesir.ZoneServer.Npc.Events, as: NpcEvents
-  alias Aesir.ZoneServer.Script.Ctx
+  alias Aesir.ZoneServer.Unit.Player.Handlers.NpcEventQueue
   alias Aesir.ZoneServer.Unit.Player.SessionState
 
   @doc """
   Runs `label` as an attached event against `module`'s `gid` for this player
-  session and returns the state with its interaction lock when started.
+  session, or queues it while the player is busy.
   """
   @spec run(module(), non_neg_integer(), String.t(), SessionState.t()) :: SessionState.t()
-  def run(module, gid, label, state) do
-    if SessionState.interaction_blocked?(state) do
-      state
-    else
-      start_event(module, gid, label, state)
-    end
-  end
-
-  defp start_event(module, gid, label, state) do
-    base_ctx =
-      state
-      |> Ctx.from_session({:npc, module.npc_id()})
-      |> Map.put(:npc_gid, gid)
-
-    case NpcEvents.trigger_attached(gid, label, base_ctx, self()) do
-      {:ok, pid} ->
-        ref = Process.monitor(pid)
-        SessionState.hold_npc_dialog(state, {pid, ref, gid})
-
-      {:error, reason} ->
-        Logger.warning("npc owner event: #{inspect(reason)} for #{inspect(label)} (gid #{gid})")
-        state
-    end
-  end
+  def run(module, gid, label, state), do: NpcEventQueue.dispatch(state, gid, label, module)
 end

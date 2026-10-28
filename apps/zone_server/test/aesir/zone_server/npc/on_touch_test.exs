@@ -1,10 +1,13 @@
 defmodule Aesir.ZoneServer.Npc.OnTouchTest do
   @moduledoc """
-  End-to-end coverage of Task 10's OnTouch trigger areas: player movement
-  checks the per-map touch rects (`Npc.Registry.touch_rects/1`) on every cell
-  change and fires the owning NPC's `OnTouch` as an attached `Interaction`, or
-  falls back to `on_talk/1` when the module declares a trigger area but no
-  `OnTouch` label (rAthena warper behavior).
+  End-to-end coverage of NPC trigger areas: player movement checks the
+  per-map touch rects (`Npc.Registry.touch_rects/1`) on every cell change and
+  fires the owning NPC's `OnTouch_` (one toucher at a time, never for a
+  concealed player) or `OnTouch` as an attached `Interaction`, or falls back
+  to `on_talk/1` when the module declares a trigger area but no touch label
+  (rAthena warper behavior). Also covers the other scan triggers (knockback,
+  map load, concealment end), the `OnTouch_` handoff on leave, and the event
+  queue a busy player's touches wait in.
 
   Drives the real `MovementHandler.handle_movement_tick/1` ->
   `MovementHandler` path, mirroring `warp_integration_test.exs`'s
@@ -18,13 +21,19 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.ZoneServer.Mmo.Option
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
+  alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Session, as: NpcSession
+  alias Aesir.ZoneServer.Npc.Touch
   alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Movement
+  alias Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.TouchHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -33,6 +42,7 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
 
   @map "prontera"
   @char_id 9001
+  @other_char_id 9002
 
   defmodule TouchNpc do
     use Aesir.ZoneServer.Npc,
@@ -90,18 +100,35 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
     end
   end
 
+  defmodule OnceNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [%{map: "prontera", x: 90, y: 50, sprite: 58, name: "Once", trigger: {1, 1}}]
+
+    @impl true
+    def on_talk(ctx), do: ctx
+
+    @impl true
+    def on_event("OnTouch_", ctx) do
+      send(:on_touch_probe, {:touched_once, ctx.char_id})
+      ctx
+    end
+  end
+
+  @npcs [TouchNpc, WarperNpc, OverlapNpcA, OverlapNpcB, OnceNpc]
+
   setup :set_mimic_from_context
   setup :setup_ets_tables
 
   setup do
     Aesir.TestProbe.register!(:on_touch_probe)
-    NpcRegistry.reload([TouchNpc, WarperNpc, OverlapNpcA, OverlapNpcB])
+    NpcRegistry.reload(@npcs)
 
-    gids = Enum.map([TouchNpc, WarperNpc, OverlapNpcA, OverlapNpcB], &gid_for/1)
+    gids = Enum.map(@npcs, &gid_for/1)
 
     on_exit(fn ->
       :persistent_term.erase(NpcRegistry)
       Enum.each(gids, &:ets.delete(:npc_session_flags, &1))
+      Enum.each(gids, &:ets.delete(Touch.table(), &1))
     end)
 
     stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
@@ -380,6 +407,208 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
     end
   end
 
+  describe "OnTouch_ and concealment" do
+    test "a concealed player skips OnTouch_ without marking it, and OnTouch still fires" do
+      gid = gid_for(OnceNpc)
+      conceal(@char_id)
+
+      state = walking_state(87, 50, [{88, 50}, {89, 50}])
+      {:noreply, state} = MovementHandler.handle_movement_tick(state)
+      {:noreply, state} = MovementHandler.handle_movement_tick(state)
+
+      refute_receive {:touched_once, _}, 50
+      refute MapSet.member?(state.game_state.inside_npc_areas, gid)
+      assert Touch.toucher(gid) == nil
+
+      state = walking_state(58, 50, [{59, 50}])
+      {:noreply, state} = MovementHandler.handle_movement_tick(state)
+
+      assert_receive {:touched, TouchNpc}
+      assert MapSet.member?(state.game_state.inside_npc_areas, gid_for(TouchNpc))
+    end
+
+    test "the concealing status ending re-runs the scan and fires the skipped OnTouch_" do
+      gid = gid_for(OnceNpc)
+      conceal(@char_id)
+
+      state = walking_state(88, 50, [{89, 50}])
+      {:noreply, state} = MovementHandler.handle_movement_tick(state)
+      refute_receive {:touched_once, _}, 50
+
+      reveal(@char_id)
+      {:noreply, state} = MovementHandler.recheck_touch(state, {@map, 89, 50})
+
+      assert_receive {:touched_once, @char_id}
+      assert MapSet.member?(state.game_state.inside_npc_areas, gid)
+      assert Touch.toucher(gid) == @char_id
+      assert {_pid, _ref, ^gid} = state.interaction_lock
+    end
+
+    test "a dead player triggers nothing" do
+      state = walking_state(89, 50, [])
+      dead = %{state | game_state: %{state.game_state | action_state: :dead}}
+
+      assert TouchHandler.scan(dead) == dead
+      refute_receive {:touched_once, _}, 50
+      assert Touch.toucher(gid_for(OnceNpc)) == nil
+    end
+  end
+
+  describe "one toucher at a time" do
+    test "a second player is skipped unmarked, and gets the claim when the first leaves" do
+      gid = gid_for(OnceNpc)
+
+      first = walking_state(88, 50, [{89, 50}, {90, 50}, {91, 50}, {92, 50}])
+      {:noreply, first} = MovementHandler.handle_movement_tick(first)
+      assert_receive {:touched_once, @char_id}
+      assert Touch.toucher(gid) == @char_id
+      first = clear_lock(first)
+
+      second = walking_state(88, 51, [{89, 51}], @other_char_id)
+      {:noreply, second} = MovementHandler.handle_movement_tick(second)
+      refute_receive {:touched_once, _}, 50
+      refute MapSet.member?(second.game_state.inside_npc_areas, gid)
+      assert Touch.toucher(gid) == @char_id
+
+      # Still inside: the claim stays with the first player.
+      {:noreply, first} = MovementHandler.handle_movement_tick(first)
+      {:noreply, first} = MovementHandler.handle_movement_tick(first)
+      assert Touch.toucher(gid) == @char_id
+
+      # (92, 50) leaves the [89..91] rect: the claim is released and offered
+      # to the second player, whose session validates and takes it.
+      {:noreply, first} = MovementHandler.handle_movement_tick(first)
+      refute MapSet.member?(first.game_state.inside_npc_areas, gid)
+      assert Touch.toucher(gid) == nil
+      assert_receive {:"$gen_cast", {:npc, {:touch_handoff, ^gid, excluded}}}
+      assert MapSet.member?(excluded, @char_id)
+
+      second = TouchHandler.handle_handoff(second, gid, excluded)
+      assert_receive {:touched_once, @other_char_id}
+      assert Touch.toucher(gid) == @other_char_id
+      assert MapSet.member?(second.game_state.inside_npc_areas, gid)
+    end
+
+    test "a handoff to a player that left the area moves on without claiming" do
+      gid = gid_for(OnceNpc)
+      outside = walking_state(80, 60, [], @other_char_id)
+
+      assert TouchHandler.handle_handoff(outside, gid, MapSet.new([@char_id])) == outside
+      refute_receive {:touched_once, _}, 50
+      assert Touch.toucher(gid) == nil
+    end
+
+    test "a warp hands off every claim the player holds" do
+      gid = gid_for(OnceNpc)
+      state = walking_state(88, 50, [{89, 50}])
+      {:noreply, state} = MovementHandler.handle_movement_tick(state)
+      assert Touch.toucher(gid) == @char_id
+
+      _second = walking_state(90, 51, [], @other_char_id)
+      TouchHandler.leave_all(state.game_state)
+
+      assert Touch.toucher(gid) == nil
+      assert_receive {:"$gen_cast", {:npc, {:touch_handoff, ^gid, _excluded}}}
+    end
+  end
+
+  describe "other scan triggers" do
+    test "a knockback landing inside a trigger area fires it" do
+      gid = gid_for(TouchNpc)
+      state = walking_state(57, 50, [])
+
+      {:noreply, state} = MovementHandler.handle_displacement(state, 57, 50, @map, 59, 50)
+
+      assert_receive {:touched, TouchNpc}
+      assert MapSet.member?(state.game_state.inside_npc_areas, gid)
+    end
+
+    test "the map-load ack scans the spawn cell when no warp is underfoot" do
+      Mimic.copy(SkillUnitManager)
+      stub(SkillUnitManager, :snapshot_for, fn _id, _map, _x, _y, _range -> MapSet.new() end)
+      gid = gid_for(TouchNpc)
+
+      game_state = %{walking_state(60, 50, []).game_state | pending_map_load: :warp}
+      state = %SessionState{game_state: game_state, connection_pid: self()}
+
+      {:noreply, loaded} = MapLoadHandler.handle_map_loaded(state)
+
+      assert_receive {:touched, TouchNpc}
+      assert MapSet.member?(loaded.game_state.inside_npc_areas, gid)
+    end
+  end
+
+  describe "event queue" do
+    test "a touch while busy is queued and runs once the dialog ends" do
+      gid = gid_for(TouchNpc)
+      {lock_pid, lock_ref} = fake_dialog()
+
+      state = %{walking_state(58, 50, [{59, 50}]) | interaction_lock: {lock_pid, lock_ref, 999}}
+      {:noreply, state} = MovementHandler.handle_movement_tick(state)
+
+      refute_receive {:touched, TouchNpc}, 50
+      assert state.npc_event_queue == [{gid, "OnTouch"}]
+      assert MapSet.member?(state.game_state.inside_npc_areas, gid)
+
+      Process.exit(lock_pid, :kill)
+      assert_receive {:DOWN, ^lock_ref, :process, ^lock_pid, reason}
+
+      {:noreply, state} =
+        PlayerSession.handle_info({:DOWN, lock_ref, :process, lock_pid, reason}, state)
+
+      assert state.interaction_lock == nil
+      assert state.npc_event_queue == []
+      refute_receive {:touched, TouchNpc}, 50
+
+      assert_receive {:npc, {:run_queued_event, ^gid, "OnTouch"}} = message, 500
+      {:noreply, state} = PlayerSession.handle_info(message, state)
+
+      assert_receive {:touched, TouchNpc}
+      assert {_pid, _ref, ^gid} = state.interaction_lock
+    end
+
+    test "a queued touch is dropped when the player has left the area" do
+      gid = gid_for(TouchNpc)
+      {lock_pid, lock_ref} = fake_dialog()
+
+      state = %{walking_state(58, 50, [{59, 50}]) | interaction_lock: {lock_pid, lock_ref, 999}}
+      {:noreply, state} = MovementHandler.handle_movement_tick(state)
+      assert state.npc_event_queue == [{gid, "OnTouch"}]
+
+      moved = %{state | game_state: %{state.game_state | x: 70, y: 60}}
+      Process.exit(lock_pid, :kill)
+      assert_receive {:DOWN, ^lock_ref, :process, ^lock_pid, reason}
+
+      {:noreply, moved} =
+        PlayerSession.handle_info({:DOWN, lock_ref, :process, lock_pid, reason}, moved)
+
+      assert_receive {:npc, {:run_queued_event, ^gid, "OnTouch"}} = message, 500
+      {:noreply, moved} = PlayerSession.handle_info(message, moved)
+
+      refute_receive {:touched, TouchNpc}, 50
+      assert moved.interaction_lock == nil
+      assert moved.npc_event_queue == []
+    end
+
+    @tag :capture_log
+    test "a third queued event is dropped, the claim and the area still taken" do
+      gid = gid_for(OnceNpc)
+      {lock_pid, lock_ref} = fake_dialog()
+
+      state =
+        walking_state(90, 50, [])
+        |> Map.put(:npc_event_queue, [{1, "OnA"}, {2, "OnB"}])
+        |> Map.put(:interaction_lock, {lock_pid, lock_ref, 999})
+
+      queued = TouchHandler.handle_handoff(state, gid, MapSet.new())
+
+      assert queued.npc_event_queue == [{1, "OnA"}, {2, "OnB"}]
+      assert Touch.toucher(gid) == @char_id
+      assert MapSet.member?(queued.game_state.inside_npc_areas, gid)
+      Process.exit(lock_pid, :kill)
+    end
+  end
+
   describe "warp/map change" do
     test "clears inside_npc_areas" do
       game_state =
@@ -398,15 +627,58 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
     NpcRegistry.entity_id(placement)
   end
 
-  defp register_player(game_state) do
-    UnitRegistry.register_unit(:player, @char_id, PlayerState, game_state, self())
-    SpatialIndex.add_unit(:player, @char_id, game_state.x, game_state.y, @map)
+  # A registered, on-map player at `{x, y}` about to walk `path`; the test
+  # process stands in for its session and connection.
+  defp walking_state(x, y, path, char_id \\ @char_id) do
+    game_state =
+      char_id
+      |> character()
+      |> PlayerState.new()
+      |> Map.merge(%{x: x, y: y, walk_path: path, pending_map_load: nil})
+      |> Map.put(:movement_state, if(path == [], do: :standing, else: :moving))
+
+    register_player(game_state, char_id)
+    %{game_state: game_state, connection_pid: self(), interaction_lock: nil}
+  end
+
+  # Clears a finished dialog-less interaction's lock like the session's :DOWN
+  # handler does.
+  defp clear_lock(%{interaction_lock: {_pid, ref, _gid}} = state) do
+    assert_receive {:DOWN, ^ref, :process, pid, reason}
+    {:noreply, state} = PlayerSession.handle_info({:DOWN, ref, :process, pid, reason}, state)
+    state
+  end
+
+  defp fake_dialog do
+    pid = spawn(fn -> Process.sleep(:infinity) end)
+    {pid, Process.monitor(pid)}
+  end
+
+  defp conceal(char_id) do
+    stub(StatusDisplay, :spawn_state, fn
+      :player, ^char_id ->
+        %{body_state: 0, health_state: 0, effect_state: Option.id(:hide), virtue: 0}
+
+      _type, _id ->
+        %{body_state: 0, health_state: 0, effect_state: 0, virtue: 0}
+    end)
+  end
+
+  defp reveal(_char_id) do
+    stub(StatusDisplay, :spawn_state, fn _type, _id ->
+      %{body_state: 0, health_state: 0, effect_state: 0, virtue: 0}
+    end)
+  end
+
+  defp register_player(game_state, char_id \\ @char_id) do
+    UnitRegistry.register_unit(:player, char_id, PlayerState, game_state, self())
+    SpatialIndex.add_unit(:player, char_id, game_state.x, game_state.y, @map)
     Movement.drain_dirty(@map)
   end
 
-  defp character do
+  defp character(id \\ @char_id) do
     %Character{
-      id: @char_id,
+      id: id,
       account_id: 100,
       name: "Wanderer",
       last_map: @map,

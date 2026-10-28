@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Umbala.Npc do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx), do: warp(ctx, "umbala", 145, 166)
+  def on_event("OnTouch_", ctx), do: warp(ctx, "umbala", 145, 166)
 
   @impl true
   @spec on_talk(Ctx.t()) :: Ctx.t()

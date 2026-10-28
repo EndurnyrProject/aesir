@@ -725,8 +725,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert module.events() == ["OnInit", "OnTimer1000"]
   end
 
-  @tag :capture_log
-  test "OnTouch_ normalizes to the OnTouch head the engine dispatches, deduping with OnTouch" do
+  test "OnTouch_ and OnTouch keep distinct heads" do
     src =
       gen!(
         """
@@ -739,14 +738,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
         OnTouch_:
         end;
         """,
-        module: "Aesir.ZoneServer.Content.Npc.Payon.TestNpcOnTouchDedupe"
+        module: "Aesir.ZoneServer.Content.Npc.Payon.TestNpcOnTouchBoth"
       )
 
     assert src =~ ~S|def on_event("OnTouch", ctx), do: ev_ontouch(ctx)|
-    refute src =~ "OnTouch_"
+    assert src =~ ~S|def on_event("OnTouch_", ctx), do: ev_ontouch_1(ctx)|
 
     [{module, _}] = Code.compile_string(src)
-    assert module.events() == ["OnTouch"]
+    assert module.events() == ["OnTouch", "OnTouch_"]
   end
 
   test "npc session/event buildins map to DSL calls" do

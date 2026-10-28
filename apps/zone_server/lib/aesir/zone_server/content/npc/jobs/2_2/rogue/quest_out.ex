@@ -36,7 +36,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.QuestOut do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     ctx |> set_char_var(:ROGUE_Q, 16) |> warp("in_rogue", 378, 113)
   end
 

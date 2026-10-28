@@ -55,7 +55,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.KeeperOfTheDoor do
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, "Keeper of the Door#ASN")
 
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     ctx = donpcevent(ctx, "Thomas#ASNTEST::OnDisable")
     next_step = if get_char_var(ctx, :ASSIN_Q, 0) == 3, do: 3, else: 4
 

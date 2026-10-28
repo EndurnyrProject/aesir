@@ -69,6 +69,9 @@ defmodule Aesir.ZoneServer.Npc.Session do
   alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @flags_table :npc_session_flags
   @display_table :npc_display_overrides
@@ -332,6 +335,7 @@ defmodule Aesir.ZoneServer.Npc.Session do
   def handle_call({:set_enabled, enabled?}, _from, state) do
     new_state = %{state | enabled?: enabled?} |> mirror_flags()
     broadcast_visibility_transition(state, new_state)
+    if enabled?, do: recheck_touch_area(state.gid)
     {:reply, :ok, new_state}
   end
 
@@ -339,6 +343,7 @@ defmodule Aesir.ZoneServer.Npc.Session do
   def handle_call({:set_hidden, hidden?}, _from, state) do
     new_state = %{state | hidden?: hidden?} |> mirror_flags()
     broadcast_visibility_transition(state, new_state)
+    unless hidden?, do: recheck_touch_area(state.gid)
     {:reply, :ok, new_state}
   end
 
@@ -502,6 +507,37 @@ defmodule Aesir.ZoneServer.Npc.Session do
 
   @spec effectively_visible?(t()) :: boolean()
   defp effectively_visible?(%{enabled?: enabled?, hidden?: hidden?}), do: enabled? and not hidden?
+
+  # Enabling or unhiding an NPC re-runs the touch check of every player
+  # standing in its trigger area, whether or not the flip made it visible:
+  # the player's own check reads the flags again.
+  @spec recheck_touch_area(non_neg_integer()) :: :ok
+  defp recheck_touch_area(gid) do
+    with_entry(gid, fn
+      {_module, %Placement{trigger: {xs, ys}} = placement} ->
+        placement.map
+        |> SpatialIndex.get_players_in_area(
+          placement.x - xs,
+          placement.y - ys,
+          placement.x + xs,
+          placement.y + ys
+        )
+        |> Enum.each(&recheck_player_touch/1)
+
+      _no_area ->
+        :ok
+    end)
+  end
+
+  defp recheck_player_touch(char_id) do
+    case UnitRegistry.get_unit(:player, char_id) do
+      {:ok, {_module, %{map_name: map, x: x, y: y}, pid}} when is_pid(pid) ->
+        PlayerSession.recheck_touch(pid, {map, x, y})
+
+      _gone ->
+        :ok
+    end
+  end
 
   @spec broadcast_spawn(non_neg_integer()) :: :ok
   defp broadcast_spawn(gid) do

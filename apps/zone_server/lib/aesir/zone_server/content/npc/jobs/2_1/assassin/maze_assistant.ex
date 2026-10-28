@@ -53,7 +53,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.MazeAssistant do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     if get_char_var(ctx, :ASSIN_Q, 0) == 5 or get_char_var(ctx, :ASSIN_Q, 0) == 6 do
       ctx = warp(ctx, "in_moc_16", 181, 183)
       ctx = set_char_var(ctx, :ASSIN_Q, get_char_var(ctx, :ASSIN_Q, 0) + 1)

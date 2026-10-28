@@ -8,8 +8,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
   pass, so nothing can see or pick the player before its invincibility runs.
   After a warp the client already holds that data, so only the respawn on the
   destination map fires. Both branches clear the warp cooldown, run the
-  on-spawn warp check and publish the player's own vending state (its open
-  shop, or none) with request ID zero. An ack from a player already on its map is ignored:
+  on-spawn touch check (the warp underfoot, else the NPC trigger areas) and
+  publish the player's own vending state (its open shop, or none) with
+  request ID zero. An ack from a player already on its map is ignored:
   nothing restarts, nothing is sent and the player is not spawned again.
   """
 
@@ -22,10 +23,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Warp
-  alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.TouchHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.Invincibility
@@ -53,19 +54,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
     send(self(), :respawn_after_warp)
 
     visible_skill_units = send_skill_unit_snapshot(game_state)
-    cleared_game_state = PlayerState.clear_warp_cooldown(game_state)
-    maybe_fire_spawn_warp(cleared_game_state)
 
     state = %{
       state
       | game_state: %{
-          cleared_game_state
+          PlayerState.clear_warp_cooldown(game_state)
           | pending_map_load: nil,
             visible_skill_units: visible_skill_units
         }
     }
 
-    state = state |> VendingHandler.publish_owner_snapshot() |> Invincibility.start_on_map_load()
+    state =
+      state
+      |> spawn_touch()
+      |> VendingHandler.publish_owner_snapshot()
+      |> Invincibility.start_on_map_load()
 
     {:noreply, NavigationHandler.on_map_loaded(state)}
   end
@@ -116,42 +119,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
     # of the invincibility's deferred arrival (sent when the map sets no time).
     send(self(), :spawn_player)
 
-    cleared_game_state = PlayerState.clear_warp_cooldown(game_state)
-    maybe_fire_spawn_warp(cleared_game_state)
-
     state = %{
       state
       | game_state: %{
-          cleared_game_state
+          PlayerState.clear_warp_cooldown(game_state)
           | pending_map_load: nil,
             visible_skill_units: visible_skill_units
         }
     }
 
-    state = VendingHandler.publish_owner_snapshot(state)
+    state = state |> spawn_touch() |> VendingHandler.publish_owner_snapshot()
     {:noreply, Invincibility.start_on_map_load(state)}
   end
 
-  # On-spawn entry trigger (rAthena `OnTouch` on-spawn): if the spawn cell sits
-  # inside a warp's `xs/ys` area, fire the warp. Runs on both the initial-entry
-  # and `:warp` branches of `handle_map_loaded/1`. The cooldown is cleared
-  # before this check so a warp that triggered the load cycle can't suppress
-  # the on-spawn fire. Real warp data doesn't chain, so this won't loop; the
-  # per-player cooldown guards same-map re-fire within a map (Task 7).
-  @spec maybe_fire_spawn_warp(PlayerState.t()) :: :ok
-  defp maybe_fire_spawn_warp(%PlayerState{} = game_state) do
-    warps_for_map =
-      case Warps.for_map(game_state.map_name) do
-        {:ok, list} -> list
-        :error -> []
-      end
-
-    case Warp.Registry.hit?(warps_for_map, game_state.x, game_state.y) do
+  # On-spawn touch check: the warp whose area holds the spawn cell fires,
+  # else the cell's NPC trigger areas are scanned. Runs on both branches of
+  # `handle_map_loaded/1`, after the warp cooldown is cleared so a warp that
+  # triggered this load cycle cannot suppress the on-spawn fire. The spawn
+  # message is already queued ahead, so a touched script's first session call
+  # finds the player on the map.
+  @spec spawn_touch(map()) :: map()
+  defp spawn_touch(%{game_state: game_state} = state) do
+    case TouchHandler.warp_underfoot(game_state) do
       %Warp{} = warp ->
         PlayerSession.warp(self(), warp.to_map, warp.to_x, warp.to_y)
+        state
 
       nil ->
-        :ok
+        TouchHandler.scan(state)
     end
   end
 

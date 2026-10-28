@@ -45,7 +45,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Prst21 do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     cond do
       Rathena.job_id(base_job(ctx)) == Rathena.job_id(:priest) ->
         warp(ctx, "job_prist", 98, 40)

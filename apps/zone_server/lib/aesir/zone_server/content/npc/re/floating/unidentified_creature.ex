@@ -71,7 +71,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.UnidentifiedCreature do
     :throw, {:script_end, ctx} -> ctx
   end
 
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     ev_ontouch(ctx)
   catch
     :throw, {:script_end, ctx} -> ctx

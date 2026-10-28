@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Zombie51 do
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, "Zombie5_1")
 
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) do
       ctx |> donpcevent("Zombie_Generator#prst::Onm5") |> donpcevent("Zombie5_1::OnDisable")
     else

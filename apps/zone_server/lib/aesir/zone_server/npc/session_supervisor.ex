@@ -2,7 +2,8 @@ defmodule Aesir.ZoneServer.Npc.SessionSupervisor do
   @moduledoc """
   Top-level supervisor for `Aesir.ZoneServer.Npc.Session` processes.
 
-  Owns the public `:npc_session_flags` ETS table (created in `init/1`, so this
+  Owns the public `:npc_session_flags`, `:npc_display_overrides` and
+  `:npc_touching` (`Npc.Touch`) ETS tables (created in `init/1`, so this
   supervisor's own long-lived process is the table owner) and starts
   `Aesir.ZoneServer.Npc.SessionDynamicSupervisor`, which supervises the actual
   per-gid `Npc.Session` processes. Owning the table here, rather than in any
@@ -11,6 +12,8 @@ defmodule Aesir.ZoneServer.Npc.SessionSupervisor do
   """
 
   use Supervisor
+
+  alias Aesir.ZoneServer.Npc.Touch
 
   @flags_table :npc_session_flags
   @display_table :npc_display_overrides
@@ -25,6 +28,7 @@ defmodule Aesir.ZoneServer.Npc.SessionSupervisor do
   def init(_opts) do
     :ets.new(@flags_table, [:set, :public, :named_table, read_concurrency: true])
     :ets.new(@display_table, [:set, :public, :named_table, read_concurrency: true])
+    :ets.new(Touch.table(), [:set, :public, :named_table, read_concurrency: true])
 
     children = [
       {DynamicSupervisor,

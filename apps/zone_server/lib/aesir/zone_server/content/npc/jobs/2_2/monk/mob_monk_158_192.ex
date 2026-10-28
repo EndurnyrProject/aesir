@@ -33,7 +33,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.MobMonk158192 do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     summon_mob(ctx, mob_id: 1041, map: "monk_test", at: {158, 192})
   end
 

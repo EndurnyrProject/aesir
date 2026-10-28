@@ -44,7 +44,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21e.Stargladiator.Moohyun do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     cond do
       Rathena.job_id(class(ctx)) == Rathena.job_id(:taekwon) ->
         if get_char_var(ctx, :STGL_Q, 0) == 0 do

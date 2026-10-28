@@ -37,7 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Crusader.MonsterSummon165115 do
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, "Monster Summon#cr3")
 
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     ctx
     |> donpcevent("Monster Summon#cr0::OnMonster3")
     |> donpcevent("Monster Summon#cr3::OnEnd")

@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.SoldierMorocc do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx), do: warn_player(ctx)
+  def on_event("OnTouch_", ctx), do: warn_player(ctx)
 
   @impl true
   @spec on_talk(Ctx.t()) :: Ctx.t()

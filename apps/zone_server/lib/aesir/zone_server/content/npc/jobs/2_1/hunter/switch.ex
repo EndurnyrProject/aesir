@@ -51,7 +51,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Switch do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     {ctx, choice} =
       ctx
       |> mes("^3355FFThere are 3 buttons")

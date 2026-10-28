@@ -24,7 +24,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Npc13847 do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnTouch", ctx), do: photograph_assassin(ctx)
+  def on_event("OnTouch_", ctx), do: photograph_assassin(ctx)
 
   @impl true
   @spec on_talk(Ctx.t()) :: Ctx.t()

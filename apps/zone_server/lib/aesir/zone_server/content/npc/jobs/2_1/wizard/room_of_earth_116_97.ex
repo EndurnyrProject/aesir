@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.RoomOfEarth11697 do
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, "Room of Earth#Failed")
 
-  def on_event("OnTouch", ctx) do
+  def on_event("OnTouch_", ctx) do
     ctx
     |> mapannounce("job_wiz", "#{char_name(ctx, 0)} has not succeeded.", 1)
     |> warp("geffen", 120, 110)
