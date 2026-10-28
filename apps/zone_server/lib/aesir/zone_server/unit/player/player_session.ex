@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   require Logger
 
+  alias Aesir.Commons.SessionManager
   alias Aesir.Net.ItemVanished
   alias Aesir.Net.SkillUnitDespawn
   alias Aesir.Net.VendingBuy
@@ -65,6 +66,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.Invincibility
+  alias Aesir.ZoneServer.Unit.Player.Logout
   alias Aesir.ZoneServer.Unit.Player.PartySync
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.QuestInfoView
@@ -81,6 +83,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   # rAthena NATURAL_HEAL_INTERVAL
   @natural_heal_interval 500
   @rental_expiry_interval 10_000
+  @linger_ms 10_000
 
   @doc """
   Starts a player session linked to a connection process.
@@ -1126,11 +1129,34 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     {:noreply, Map.merge(state, %{interaction_lock: nil, npc_item_flag: nil})}
   end
 
+  # A connection dropped within 10 s of a combat action leaves the character in
+  # the world for 10 s, owning its online presence, so the account cannot log in
+  # again meanwhile. The decision is taken once, here.
   @impl true
+  def handle_info(
+        {:DOWN, ref, :process, _pid, _reason},
+        %{connection_monitor_ref: ref, game_state: game_state} = state
+      ) do
+    Logger.info("Player #{game_state.character_id} connection process died")
+
+    if Logout.within_window?(Map.get(state, :canlog_at), System.monotonic_time(:millisecond)) and
+         hold_presence(game_state) == :ok do
+      timer = :erlang.start_timer(@linger_ms, self(), {:logout, :linger_expired})
+      {:noreply, Map.put(state, :lingering, timer)}
+    else
+      {:stop, :normal, state}
+    end
+  end
+
   def handle_info({:DOWN, _ref, :process, _pid, _reason}, %{game_state: game_state} = state) do
     Logger.info("Player #{game_state.character_id} connection process died")
     {:stop, :normal, state}
   end
+
+  def handle_info({:timeout, timer, {:logout, :linger_expired}}, %{lingering: timer} = state),
+    do: {:stop, :normal, state}
+
+  def handle_info({:timeout, _stale, {:logout, :linger_expired}}, state), do: {:noreply, state}
 
   # Unknown messages must not crash a live player session.
   def handle_info(message, %{game_state: game_state} = state) do
@@ -1688,6 +1714,25 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         apply_pending_vitals(state)
     after
       0 -> state
+    end
+  end
+
+  defp hold_presence(game_state) do
+    case SessionManager.set_user_online(
+           game_state.account_id,
+           :zone_server,
+           game_state.character_id,
+           game_state.map_name
+         ) do
+      :ok ->
+        :ok
+
+      {:error, reason} = error ->
+        Logger.warning(
+          "Player #{game_state.character_id} could not hold its presence: #{inspect(reason)}"
+        )
+
+        error
     end
   end
 
