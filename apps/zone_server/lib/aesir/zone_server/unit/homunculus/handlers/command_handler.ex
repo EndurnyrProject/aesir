@@ -242,6 +242,13 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
     {:noreply, session}
   end
 
+  def local_effect({:prepared_external_hit, prepared, counter}, %SessionState{} = session) do
+    case SkillAttack.deliver_prepared_skill_hit(prepared, report_hit: true) do
+      {:ok, %{hit?: true}} -> apply_hit_counter(counter, session)
+      {:ok, _stopped} -> {:noreply, session}
+    end
+  end
+
   def local_effect({:mob, {:apply_heal, id, amount, source}}, %SessionState{} = session) do
     :ok = DamageApplication.apply_heal(:mob, id, amount, source)
     {:noreply, session}
@@ -513,6 +520,24 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
 
       _missing ->
         {:error, :not_persisted, session}
+    end
+  end
+
+  # The caster's counter effect of a prepared hit that connected. The hit is
+  # already dealt, so a failed persistence keeps the committed state and logs.
+  defp apply_hit_counter(%{intimacy: intimacy}, %SessionState{} = session) do
+    homunculus = session.homunculus
+
+    case persist_fields(homunculus, %{intimacy_hundredths: intimacy}) do
+      :ok ->
+        {:noreply, StateCommit.commit(session, %{homunculus | intimacy_hundredths: intimacy})}
+
+      {:error, reason} ->
+        Logger.warning(
+          "homunculus #{homunculus.id} hit counter intimacy not persisted: #{inspect(reason)}"
+        )
+
+        {:noreply, session}
     end
   end
 

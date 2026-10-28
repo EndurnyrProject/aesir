@@ -163,11 +163,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShrinkTest do
 
       expect(StatusInterpreter, :apply_status, fn :mob, 7100, :sc_stun, _params -> :ok end)
 
-      assert {:intercept, :blocked} =
-               Autoguard.before_weapon_hit(
+      assert {:ok, 0, _entry} =
+               Autoguard.absorb_damage(
                  {:player, 4000},
                  %StatusEntry{type: :sc_autoguard, val1: 10, state: %{block_chance: 30}},
-                 %{attacker: {:mob, 7100}},
+                 %{damage: 40, dmg_type: :physical, attacker: {:mob, 7100}},
                  %{}
                )
     end
@@ -177,11 +177,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShrinkTest do
       seed_for_roll(1)
       reject(&StatusInterpreter.apply_status/4)
 
-      assert {:intercept, :blocked} =
-               Autoguard.before_weapon_hit(
+      assert {:ok, 0, _entry} =
+               Autoguard.absorb_damage(
                  {:player, 4001},
                  %StatusEntry{type: :sc_autoguard, val1: 10, state: %{block_chance: 30}},
-                 %{attacker: {:mob, 7101}},
+                 %{damage: 40, dmg_type: :physical, attacker: {:mob, 7101}},
                  %{}
                )
     end

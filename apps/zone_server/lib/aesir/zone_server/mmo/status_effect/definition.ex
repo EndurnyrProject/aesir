@@ -296,12 +296,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @callback on_dealt_damage(target(), StatusEntry.t(), map(), context()) :: hook_result()
 
   @doc """
-  Intercepts a weapon swing before it selects Trifecta or resolves damage.
+  Reacts to an ordinary weapon swing before it selects a replacement (Triple
+  Attack, Sacrifice) or rolls its hit: Auto Counter, Poison React, Blade Stop.
 
   The hook may atomically consume a single-use entry of the target (the
   `StatusStorage.take_status/3` claim pattern the Lex Aeterna hit path uses) and
   return `{:intercept, result}` to end the swing without damage, or `:continue`
   to leave the hit untouched. The first status returning an interception wins.
+  A block that depends on the hit connecting (Guard, Parrying) belongs in
+  `absorb_damage/4` instead, which runs after the hit roll.
   """
   @callback before_weapon_hit(target(), StatusEntry.t(), map(), context()) ::
               :continue | {:intercept, term()}

@@ -8,9 +8,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
   alias Aesir.Net.DamageDealt
   alias Aesir.Net.SkillDamage
   alias Aesir.Repo
-  alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
-  alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Homunculus.Ai.Config, as: AiConfig
   alias Aesir.ZoneServer.Mmo.Homunculus.SkillTree
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats
@@ -39,14 +37,11 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
   @origin_y 150
 
   # DamageDealt swing types, mirroring Combat.PacketFactory's private constants.
-  @attack_type_normal 0
   @attack_type_lucky_dodge 10
 
   setup do
     Mimic.copy(Broadcast)
-    Mimic.copy(DamageApplication)
     Mimic.copy(HitCalculations)
-    Mimic.copy(OnHitEffects)
     Mimic.copy(Persistence)
     Catalog.reload()
     on_exit(&Catalog.reload/0)
@@ -263,10 +258,13 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
     accepted = session(intimacy_hundredths: 400, learned_skills: %{@sbr44 => 1})
     register_units(accepted.homunculus, mob())
 
-    assert {:error, :homunculus_not_found, ^accepted} =
-             CastingHandler.begin(accepted, @sbr44, 1, {:unit, {:mob, @mob_gid}})
-
-    refute_receive {:"$gen_cast", {:combat, {:apply_damage, _, _, _metadata}}}
+    # Intimacy 400 passes the gate: the hit is dealt. The reset is the hit's
+    # counter effect and this fixture has no persisted row to carry it, so the
+    # committed intimacy is kept.
+    assert {:ok, cast} = CastingHandler.begin(accepted, @sbr44, 1, {:unit, {:mob, @mob_gid}})
+    assert_receive {:"$gen_cast", {:combat, {:apply_damage, _, {:homunculus, @gid}, _metadata}}}
+    assert cast.homunculus.intimacy_hundredths == 400
+    clear_units()
   end
 
   test "an S.B.R.44 miss reports normally and settles without persisting intimacy" do
@@ -293,7 +291,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
     assert cast.homunculus.cooldowns[@sbr44] > System.monotonic_time(:millisecond)
   end
 
-  test "an intercepted S.B.R.44 settles resources without a miss or connected-hit effect" do
+  test "a Guard-blocked S.B.R.44 lands for nothing after its roll and keeps intimacy" do
     test_pid = self()
 
     Mimic.stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
@@ -301,34 +299,34 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
       :ok
     end)
 
-    reject(&HitCalculations.calculate_hit_result/2)
     reject(&Persistence.load_for_character/1)
     reject(&Persistence.save_semantic/2)
-    reject(&DamageApplication.prepare_unit_damage/5)
-    reject(&DamageApplication.apply_unit_damage/6)
-    reject(&OnHitEffects.after_hit/4)
 
     session = session(intimacy_hundredths: 40_000, learned_skills: %{@sbr44 => 3})
     register_units(session.homunculus, mob())
     :ok = StatusInterpreter.apply_status(:mob, @mob_gid, :sc_autoguard, val1: 10)
-    :rand.seed(:exsss, {1, 1, 1})
+
+    :ok =
+      StatusStorage.update_status(:mob, @mob_gid, :sc_autoguard, fn entry ->
+        %{entry | state: Map.put(entry.state, :block_chance, 100)}
+      end)
 
     assert {:ok, cast} =
              CastingHandler.begin(session, @sbr44, 2, {:unit, {:mob, @mob_gid}})
 
-    # A blocked hit still broadcasts the guard packet the client renders the block
-    # from: a zero-damage DamageDealt on the normal swing type. What must not
-    # happen is the miss packet (lucky-dodge type) or any damage delivery.
-    assert_receive {:combat_packet, %DamageDealt{damage: 0, div: 1, type: @attack_type_normal}}
+    # The hit connected and Guard stopped it in the damage stage: the attacker
+    # sees it land for 0 on the normal type, never as a miss, and the counter
+    # effect (the intimacy reset) is skipped.
+    assert_receive {:combat_packet, %SkillDamage{damage: 0}}
     refute_receive {:combat_packet, %DamageDealt{type: @attack_type_lucky_dodge}}
-    refute_receive {:"$gen_cast", {:combat, {:apply_damage, _, _, _metadata}}}
+    assert_receive {:"$gen_cast", {:combat, {:apply_damage, 0, {:homunculus, @gid}, _metadata}}}
     assert cast.homunculus.intimacy_hundredths == 40_000
     assert cast.homunculus.sp == 99
     assert cast.homunculus.cooldowns[@sbr44] > System.monotonic_time(:millisecond)
     clear_units()
   end
 
-  test "stale targets and intimacy persistence failure prevent every connected-hit effect" do
+  test "a stale target prevents the cast; a persistence failure keeps the dealt hit and intimacy" do
     {character, row} = insert_filir(40_000)
 
     session =
@@ -349,21 +347,22 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
     expect(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :hit end)
     Mimic.stub(Persistence, :load_for_character, fn _owner_id -> row end)
     Mimic.stub(Persistence, :save_semantic, fn _row, _attrs -> {:error, :database_down} end)
-    reject(&DamageApplication.prepare_unit_damage/5)
-    reject(&DamageApplication.apply_unit_damage/6)
-    reject(&OnHitEffects.after_hit/4)
-    reject(&Broadcast.to_in_range/5)
 
-    assert {:error, :database_down, ^session} =
+    assert {:ok, cast} =
              CastingHandler.begin(session, @sbr44, 1, {:unit, {:mob, @mob_gid}})
 
-    refute_receive {:"$gen_cast", {:combat, {:apply_damage, _, _, _metadata}}}
-    assert session.homunculus.sp == 100
-    assert session.homunculus.cooldowns == %{}
-    assert session.homunculus.intimacy_hundredths == 40_000
+    damage = %{renewal: 40_000, pre_renewal: 39_999}[GameMode.mode()]
+
+    assert_receive {:"$gen_cast",
+                    {:combat, {:apply_damage, ^damage, {:homunculus, @gid}, _metadata}}}
+
+    assert cast.homunculus.sp == 99
+    assert cast.homunculus.cooldowns[@sbr44] > System.monotonic_time(:millisecond)
+    assert cast.homunculus.intimacy_hundredths == 40_000
+    assert Repo.get!(Homunculus, row.id).intimacy_hundredths == 40_000
   end
 
-  test "a connected S.B.R.44 hit persists and commits before external damage dispatch" do
+  test "a connected S.B.R.44 hit resets and persists intimacy only after the hit is dealt" do
     {character, row} = insert_filir(40_000)
 
     session =
@@ -378,17 +377,17 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
     test_pid = self()
 
     Mimic.stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet ->
-      assert Repo.get!(Homunculus, row.id).intimacy_hundredths == 100
+      assert Repo.get!(Homunculus, row.id).intimacy_hundredths == 40_000
       assert {:ok, {HomunculusState, committed, _pid}} = UnitRegistry.get_unit(:homunculus, @gid)
-      assert {committed.sp, committed.intimacy_hundredths} == {99, 100}
-      send(test_pid, :delivered_after_commit)
+      assert {committed.sp, committed.intimacy_hundredths} == {99, 40_000}
+      send(test_pid, :delivered_before_reset)
       :ok
     end)
 
     assert {:ok, cast} =
              CastingHandler.begin(session, @sbr44, 3, {:unit, {:mob, @mob_gid}})
 
-    assert_receive :delivered_after_commit
+    assert_receive :delivered_before_reset
     damage = %{renewal: 120_000, pre_renewal: 119_999}[GameMode.mode()]
 
     assert_receive {:"$gen_cast",
@@ -397,6 +396,8 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
     assert cast.homunculus.intimacy_hundredths == 100
     assert cast.homunculus.sp == 99
     assert Repo.get!(Homunculus, row.id).intimacy_hundredths == 100
+    assert {:ok, {HomunculusState, committed, _pid}} = UnitRegistry.get_unit(:homunculus, @gid)
+    assert committed.intimacy_hundredths == 100
   end
 
   defp assert_definition(id, name, max_level, target_type, range, costs, cooldowns) do

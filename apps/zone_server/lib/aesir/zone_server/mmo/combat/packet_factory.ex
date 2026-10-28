@@ -289,12 +289,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
   end
 
   @doc """
-  Builds a zero-damage "guarded" hit packet for a shield-blocked swing.
-
-  A shield block lands as a normal hit dealing 0 damage, so the attacker's client
-  still shows the swing connecting (the defender's guard sprite is played
-  separately by the blocking status). Used when a weapon hit is intercepted by
-  Guard, which otherwise would leave the attacker with no feedback for the swing.
+  Builds a normal hit packet dealing 0 damage, for a swing shown connecting
+  for nothing (Palm Strike's immediate contact).
   """
   @spec build_guard_packet(Combatant.t(), Combatant.t()) :: DamageDealt.t()
   def build_guard_packet(attacker, defender) do

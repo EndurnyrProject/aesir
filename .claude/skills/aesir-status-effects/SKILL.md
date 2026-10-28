@@ -77,8 +77,11 @@ statuses all name each other).
 `id/0` and `metadata/0` come from the macro. Optional hooks (see `definition.ex`):
 `modifiers/2`, `on_apply/3`, `on_expire/3`, `on_tick/3`, `on_damage/4` (victim-side),
 `on_dealt_damage/4` (attacker-side procs — runs in the attacker's own process; do not
-convert to PubSub), `before_weapon_hit/4` (`:continue | {:intercept, term}` — interception
-ends the swing pre-Trifecta), `absorb_damage/4`, `on_contact/4`, `dynamic_option/1`.
+convert to PubSub), `before_weapon_hit/4` (`:continue | {:intercept, term}` — a reaction to
+an ordinary swing, before Trifecta and the hit roll: Auto Counter, Poison React, Blade Stop),
+`absorb_damage/4` (the damage stage, after the hit roll; shield blocks such as Guard and
+Parrying live here, in `Interpreter`'s `@block_stage` after Basilica), `on_contact/4`,
+`dynamic_option/1`.
 
 **Process placement**: `on_apply` runs inside the applier's session (self-call hazards —
 resolve units via `TargetResolver`, never GenServer-call your own session); `on_tick` runs

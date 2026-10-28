@@ -153,8 +153,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          target_type,
          target_id
        ) do
-    with :continue <-
-           player_interception(:swing, player_state, attacker, target, target_pid, target_type) do
+    with :continue <- player_interception(player_state, attacker, target, target_type) do
       resolve_player_attack_or_replacement(
         player_state,
         target_state,
@@ -167,35 +166,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     end
   end
 
-  # The swing stage (Blade Stop, Auto Counter, Poison React) reacts before a
-  # replacement is chosen; the hit stage (Guard, Parrying) intercepts the
-  # ordinary swing here and a replacement inside its own skill attack, once.
-  defp player_interception(stage, player_state, attacker, target, target_pid, target_type) do
+  # The swing reactions (Auto Counter, Poison React, Blade Stop) answer the
+  # swing itself, before a replacement is chosen or the hit is rolled; shield
+  # blocks (Guard, Parrying) roll in the damage stage of the hit that connects.
+  defp player_interception(player_state, attacker, target, target_type) do
     case before_weapon_hit(
            :player,
            attacker,
            target,
            target_type,
            target.unit_id,
-           attacker_root_level(player_state),
-           %{stage: stage}
+           attacker_root_level(player_state)
          ) do
-      :continue ->
-        :continue
-
-      {:intercept, result} ->
-        broadcast_guard_feedback(result, attacker, target)
-        intercepted_coma(result, attacker, target, target_pid, target_type)
-        :intercepted
+      :continue -> :continue
+      {:intercept, _result} -> :intercepted
     end
   end
-
-  # A shield block (Guard, Parrying) is an attack dealt for nothing, which still
-  # rolls the attacker's coma; the other interceptions never deliver the attack.
-  defp intercepted_coma(:blocked, attacker, target, target_pid, target_type),
-    do: missed_coma(attacker, target, target_pid, target_type)
-
-  defp intercepted_coma(_result, _attacker, _target, _target_pid, _target_type), do: :ok
 
   defp missed_coma(attacker, target, target_pid, target_type) do
     DamageApplication.apply_missed_coma(
@@ -219,21 +205,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
        ) do
     case attack_replacement(player_state, attacker) do
       :normal ->
-        with :continue <-
-               player_interception(:hit, player_state, attacker, target, target_pid, target_type) do
-          modifier = normal_attack_modifier(:player, attacker, target_type, target_id)
+        modifier = normal_attack_modifier(:player, attacker, target_type, target_id)
 
-          calculate_player_normal_attack(
-            player_state,
-            target_state,
-            attacker,
-            target,
-            target_pid,
-            target_type,
-            target_id,
-            modifier
-          )
-        end
+        calculate_player_normal_attack(
+          player_state,
+          target_state,
+          attacker,
+          target,
+          target_pid,
+          target_type,
+          target_id,
+          modifier
+        )
 
       {:skill_attack, opts} ->
         resolve_attack_replacement(player_state, attacker, target, target_id, opts)
@@ -556,9 +539,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   end
 
   defp resolve_mob_attack_or_intercept(attacker, target, target_pid, target_type, target_id) do
-    case before_weapon_hit(:mob, attacker, target, target_type, target_id, @mob_root_level, %{}) do
-      {:intercept, result} ->
-        broadcast_guard_feedback(result, attacker, target)
+    case before_weapon_hit(:mob, attacker, target, target_type, target_id, @mob_root_level) do
+      {:intercept, _result} ->
         :intercepted
 
       :continue ->
@@ -627,23 +609,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     :ok
   end
 
-  # A shield block (Guard) lands as a zero-damage hit, so the attacker's client
-  # still sees the swing connect. Other interceptions (Auto Counter, Blade Stop)
-  # own their own feedback and stay silent here.
-  defp broadcast_guard_feedback(:blocked, attacker, target) do
-    DamageApplication.broadcast_nearby(target, PacketFactory.build_guard_packet(attacker, target))
-  end
-
-  defp broadcast_guard_feedback(_result, _attacker, _target), do: :ok
-
+  # The swing reactions own their own feedback (a counter strike, a caught
+  # blade); an intercepted swing broadcasts nothing here.
   defp before_weapon_hit(
          _attacker_type,
          _attacker,
          _target,
          :skill_unit,
          _target_id,
-         _root_level,
-         _stage_info
+         _root_level
        ),
        do: :continue
 
@@ -653,13 +627,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          target,
          target_type,
          target_id,
-         attacker_root_level,
-         stage_info
+         attacker_root_level
        ) do
     StatusInterpreter.before_weapon_hit(
       target_type,
       target_id,
-      Map.merge(stage_info, %{
+      %{
         attacker: {attacker_type, attacker.unit_id},
         target: {target_type, target.unit_id},
         attacker_boss?: attacker.class == :boss,
@@ -669,7 +642,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         distance: cell_distance(attacker, target),
         basic_attack?: true,
         element: primary_attack_element(attacker_type, attacker)
-      })
+      }
     )
   end
 

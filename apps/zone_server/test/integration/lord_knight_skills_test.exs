@@ -138,7 +138,7 @@ defmodule Aesir.ZoneServer.Integration.LordKnightSkillsTest do
            end)
   end
 
-  test "Parrying intercepts a live mob weapon attack and unequipping ends it" do
+  test "Parrying stops a live mob weapon attack that connected and unequipping ends it" do
     force_hits()
     knight = knight(items: [%{nameid: 1151, amount: 1, identify: 1}])
     index = equip!(knight, 1151, 34)
@@ -150,10 +150,24 @@ defmodule Aesir.ZoneServer.Integration.LordKnightSkillsTest do
              StatusStorage.has_status?(:player, knight.character.id, :sc_parrying)
            end)
 
-    assert Enum.any?(1..40, fn _ ->
-             Combat.execute_mob_attack(get_mob_state(mob.pid), {:player, knight.character.id}) ==
-               :intercepted
-           end)
+    # Every swing connects (hits are forced) and deals at least 1 unless the
+    # parry roll (50 percent at level 10) stops it in the damage stage. The
+    # damage cast and the state read come from this process, so they are
+    # ordered.
+    outcomes =
+      Enum.map(1..40, fn _ ->
+        hp_before = get_player_state(knight.pid).stats.current_state.hp
+
+        assert :ok =
+                 Combat.execute_mob_attack(get_mob_state(mob.pid), {:player, knight.character.id})
+
+        if get_player_state(knight.pid).stats.current_state.hp == hp_before,
+          do: :parried,
+          else: :hit
+      end)
+
+    assert :parried in outcomes
+    assert :hit in outcomes
 
     simulate_incoming_message(knight.pid, %UnequipItem{index: PlayerState.client_index(index)})
     assert eventually(fn -> get_player_state(knight.pid).inventory[index].equip == 0 end)

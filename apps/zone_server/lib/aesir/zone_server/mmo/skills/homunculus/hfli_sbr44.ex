@@ -1,5 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HfliSbr44 do
-  @moduledoc "S.B.R.44, Filir's intimacy-powered evolved physical attack."
+  @moduledoc """
+  S.B.R.44, Filir's intimacy-powered evolved physical attack.
+
+  The damage is the pre-cast intimacy at the skill ratio. The intimacy reset to
+  100 (Hate with passion) is the hit's counter effect: it applies once the hit
+  connects, so a miss, or a hit Guard, Safety Wall or Pneuma stops, keeps it.
+  """
 
   use Aesir.ZoneServer.Mmo.Skill,
     id: 8012,
@@ -27,12 +33,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HfliSbr44 do
 
   @impl Active
   def cast(caster, {:unit, target}, level, definition) do
-    intimacy = caster.intimacy_hundredths
-
     case Combat.prepare_staged_skill_attack(caster, target,
            skill_id: definition.id,
            skill_level: level,
-           base_damage: intimacy,
+           base_damage: caster.intimacy_hundredths,
            skill_ratio: 100 * level,
            skip_range: true,
            skip_crit: true
@@ -41,10 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HfliSbr44 do
         {:ok, caster}
 
       {:ok, prepared_hit} ->
-        {:local_effects, %{caster | intimacy_hundredths: 100},
-         [
-           {:prepared_external_hit, prepared_hit}
-         ]}
+        {:local_effects, caster, [{:prepared_external_hit, prepared_hit, %{intimacy: 100}}]}
 
       {:error, _reason} = error ->
         error

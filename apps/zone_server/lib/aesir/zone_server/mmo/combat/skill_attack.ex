@@ -98,7 +98,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       at least 1 and is neither blocked nor a delayed Devotion-forwarded hit.
     * `blocked?` - a blocking status stopped it, or Devotion forwarded it after
       the attack motion.
-    * `connected?` - it reached delivery (no miss, flee or interception).
+    * `connected?` - it reached delivery (no miss or flee).
     * `damage` - the settled total before Devotion forwarding.
     * `target_survives?`, `coma?` - the target's logical survival and coma.
   """
@@ -162,7 +162,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       (default `false`)
     - `:report_hit` - when `true`, returns the `t:hit_report/0` (default `false`)
     - `:ignore_flee` - when `true`, skips the hit/flee roll while retaining
-      interception, validation, damage preparation, and delivery, so the strike
+      validation, damage preparation, and delivery, so the strike
       always connects (e.g. Occult Impaction, Asura Strike) (default `false`)
     - `:fled` - when `true`, the caller already rolled this attack's hit and the
       target fled it (an attack replacement): the roll is skipped, the damage a
@@ -324,9 +324,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   @doc """
   Executes the forced-hit, no-attacker-card physical path used by Venom Knife.
 
-  This narrow entry forces neutral damage. Every weapon interception and
-  ordinary damage-delivery hook stays active; a skill whose definition sets
-  `ignore_auto_guard` is exempt from Guard alone.
+  This narrow entry forces neutral damage. Every ordinary damage-delivery hook
+  stays active; a skill whose definition sets `ignore_auto_guard` is exempt
+  from Guard alone.
   """
   @spec execute_forced_no_card_attack(struct(), integer() | Ref.t(), keyword()) ::
           :ok
@@ -367,7 +367,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     calc_opts = physical_skill_calc_opts(caster_state, opts)
     validator_opts = physical_skill_validator_opts(opts)
 
-    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
+    with {:ok, _target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- AttackValidator.validate(attacker, target, validator_opts),
@@ -375,28 +375,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}),
          :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id) do
       Origin.mark_skill_attack()
-      interception = weapon_hit_intercepted?(attacker, target_type, target, skill_id)
 
-      if interception == :blocked,
-        do: missed_coma(attacker, {target_type, target_pid, target})
-
-      if interception != :continue do
-        {:ok, :miss}
-      else
-        prepare_staged_skill_hit(
-          {attacker, target_type, target},
-          skill_id,
-          skill_level,
-          calc_opts,
-          %{
-            hit_divisions: Keyword.get(opts, :hit_divisions, 1),
-            hit_rate_bonus_pct: hit_rate_bonus_pct,
-            hit_rate_bonus_flat: Keyword.get(opts, :hit_rate_bonus_flat, 0),
-            ignore_flee: Keyword.get(opts, :ignore_flee, false),
-            knockback_options: knockback_options(opts)
-          }
-        )
-      end
+      prepare_staged_skill_hit(
+        {attacker, target_type, target},
+        skill_id,
+        skill_level,
+        calc_opts,
+        %{
+          hit_divisions: Keyword.get(opts, :hit_divisions, 1),
+          hit_rate_bonus_pct: hit_rate_bonus_pct,
+          hit_rate_bonus_flat: Keyword.get(opts, :hit_rate_bonus_flat, 0),
+          ignore_flee: Keyword.get(opts, :ignore_flee, false),
+          knockback_options: knockback_options(opts)
+        }
+      )
     else
       :suppressed -> {:ok, :suppressed}
       error -> error
@@ -408,12 +400,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   The hit was calculated when it was prepared, so it is not gated again: a
   caster whose Gravitation Field started since still lands it. A `:suppressed`
-  preparation delivers nothing.
-  """
-  @spec deliver_prepared_skill_hit(PreparedHit.t() | :suppressed) :: :ok
-  def deliver_prepared_skill_hit(:suppressed), do: :ok
+  preparation delivers nothing, nor does one whose target is gone.
 
-  def deliver_prepared_skill_hit(%PreparedHit{} = prepared) do
+  With `report_hit: true` returns `{:ok, t:hit_report/0}` of the settled hit,
+  so the caster can run the counter effects a hit stopped in its damage stage
+  (Guard, Safety Wall, Pneuma) must not run; an undelivered hit reports a miss.
+  """
+  @spec deliver_prepared_skill_hit(PreparedHit.t() | :suppressed, keyword()) ::
+          :ok | {:ok, hit_report()}
+  def deliver_prepared_skill_hit(prepared, opts \\ [])
+
+  def deliver_prepared_skill_hit(:suppressed, opts),
+    do: suppressed_result(Keyword.get(opts, :report_hit, false))
+
+  def deliver_prepared_skill_hit(%PreparedHit{} = prepared, opts) do
     %PreparedHit{
       attacker: prepared_attacker,
       target_type: target_type,
@@ -428,38 +428,46 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       knockback_options: knockback_options
     } = prepared
 
-    with {:ok, target_pid, target_state, ^target_type} <-
-           TargetResolver.resolve({target_type, prepared_target.unit_id}),
-         :ok <- TargetResolver.ensure_targetable(target_state, target_type),
-         target <- target_state.__struct__.to_combatant(target_state),
-         {:ok, _attacker_pid, attacker_state, attacker_type} <-
-           TargetResolver.resolve({prepared_attacker.unit_type, prepared_attacker.unit_id}),
-         ^attacker_type <- prepared_attacker.unit_type,
-         attacker <- attacker_state.__struct__.to_combatant(attacker_state),
-         :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}) do
-      hit =
-        deliver_calculated_skill_hit(
-          attacker,
-          {target_type, target_pid, target},
-          skill_id,
-          skill_level,
-          damage_result,
-          %{
-            divisions: divisions,
-            element: element,
-            long?: long?,
-            coma?: coma?,
-            target_state: target_state,
-            delivery: :direct
-          }
-        )
+    delivery =
+      with {:ok, target_pid, target_state, ^target_type} <-
+             TargetResolver.resolve({target_type, prepared_target.unit_id}),
+           :ok <- TargetResolver.ensure_targetable(target_state, target_type),
+           target <- target_state.__struct__.to_combatant(target_state),
+           {:ok, _attacker_pid, attacker_state, attacker_type} <-
+             TargetResolver.resolve({prepared_attacker.unit_type, prepared_attacker.unit_id}),
+           ^attacker_type <- prepared_attacker.unit_type,
+           attacker <- attacker_state.__struct__.to_combatant(attacker_state),
+           :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}) do
+        hit =
+          deliver_calculated_skill_hit(
+            attacker,
+            {target_type, target_pid, target},
+            skill_id,
+            skill_level,
+            damage_result,
+            %{
+              divisions: divisions,
+              element: element,
+              long?: long?,
+              coma?: coma?,
+              target_state: target_state,
+              delivery: :direct
+            }
+          )
 
-      result = logical_skill_result(hit, target_state, coma?)
-      maybe_apply_skill_knockback(attacker, target, skill_id, hit, result, knockback_options)
-    end
+        result = logical_skill_result(hit, target_state, coma?)
+        maybe_apply_skill_knockback(attacker, target, skill_id, hit, result, knockback_options)
+        {:delivered, hit, result}
+      end
 
-    :ok
+    prepared_delivery_result(delivery, Keyword.get(opts, :report_hit, false))
   end
+
+  defp prepared_delivery_result({:delivered, hit, result}, true),
+    do: {:ok, hit_report(hit, result)}
+
+  defp prepared_delivery_result(_undelivered, true), do: suppressed_result(true)
+  defp prepared_delivery_result(_delivery, false), do: :ok
 
   @doc """
   Executes Acid Terror through the weapon-damage path while ignoring status DEF.
@@ -683,7 +691,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   Executes a forced-hit physical splash while omitting attacker cardfix only.
 
   This is the restricted delivery path for Venom Splasher. It preserves every
-  interception and damage-delivery hook, including Auto Guard.
+  damage-delivery hook, including Auto Guard.
   """
   @spec execute_forced_no_card_splash(
           struct(),
@@ -1455,12 +1463,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   defp misc_attack_flag(range, _misc_opts), do: BattleFlags.build(:misc, range, true)
 
-  # Resolves one logical attack: the target's weapon interceptions, one
-  # hit/flee roll, one damage calculation normalized over the attack's signed
-  # divisions, and its delivery. A miss or interception broadcasts its own
-  # feedback. Returns the resolved hit and the target's coma decision. A flee
-  # the caller rolled that deals nothing never reaches the interceptions, which
-  # only act on damage.
+  # Resolves one logical attack: one hit/flee roll, one damage calculation
+  # normalized over the attack's signed divisions, and its delivery, whose
+  # damage stage holds the target's blockers (Guard, Parrying among them). A
+  # miss broadcasts its own feedback. Returns the resolved hit and the target's
+  # coma decision.
   @spec apply_skill_damage(
           struct(),
           {:player | :mob | :homunculus | :skill_unit, pid(), struct()},
@@ -1482,7 +1489,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         {missed_hit(hit_opts), missed_coma(attacker, target_context)}
 
       {:ok, _fled} ->
-        intercept_or_resolve(
+        resolve_skill_hit(
           attacker,
           target_context,
           skill_id,
@@ -1502,7 +1509,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          hit_opts
        ),
        do:
-         intercept_or_resolve(
+         resolve_skill_hit(
            attacker,
            target_context,
            skill_id,
@@ -1511,47 +1518,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
            hit_opts
          )
 
-  defp intercept_or_resolve(
-         attacker,
-         {target_type, _target_pid, target} = target_context,
-         skill_id,
-         skill_level,
-         calc_context,
-         hit_opts
-       ) do
-    case weapon_interception(attacker, target_type, target, skill_id, hit_opts) do
-      :blocked ->
-        {missed_hit(hit_opts), missed_coma(attacker, target_context)}
-
-      :intercepted ->
-        {missed_hit(hit_opts), false}
-
-      :continue ->
-        resolve_skill_hit(
-          attacker,
-          target_context,
-          skill_id,
-          skill_level,
-          calc_context,
-          hit_opts
-        )
-    end
-  end
-
-  defp weapon_interception(attacker, target_type, target, skill_id, hit_opts) do
-    if Map.get(hit_opts, :dmg_type, :physical) == :physical,
-      do:
-        weapon_hit_intercepted?(
-          attacker,
-          target_type,
-          target,
-          skill_id
-        ),
-      else: :continue
-  end
-
-  # An attack that reaches the target for nothing (a miss, a perfect dodge, a
-  # shield block) still rolls the attacker's coma; returns that decision.
+  # An attack that reaches the target for nothing (a miss, a perfect dodge)
+  # still rolls the attacker's coma; returns that decision.
   defp missed_coma(attacker, {target_type, target_pid, target}),
     do:
       DamageApplication.apply_missed_coma(
@@ -1577,69 +1545,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       class: DamageShared.hit_class(hit_info, taken, immediate?)
     }
   end
-
-  # A weapon-class skill hit passes through the target's `before_weapon_hit`
-  # interception statuses (Guard) exactly as a basic attack does, but tagged
-  # `basic_attack?: false` so basic-attack-only stances (Auto Counter, Blade
-  # Stop) stay inert. An interception cancels this hit entirely: no hit roll and
-  # no damage. A shield block (Guard) still broadcasts a zero-damage "guarded"
-  # packet so the attacker sees the swing land for 0 and returns `:blocked`;
-  # other interceptions own their own feedback effect, stay silent and return
-  # `:intercepted`.
-  # Magic and misc skills never call this path, nor does a weapon-calculated hit
-  # delivered as misc, so they can never be blocked. A skill whose definition
-  # sets `ignore_auto_guard` is exempt from Guard alone.
-  @spec weapon_hit_intercepted?(
-          struct(),
-          :player | :mob | :homunculus | :skill_unit,
-          struct(),
-          integer()
-        ) :: :blocked | :intercepted | :continue
-  defp weapon_hit_intercepted?(attacker, target_type, target, skill_id) do
-    attack_info =
-      Map.merge(
-        %{
-          attacker: {attacker.unit_type, attacker.unit_id},
-          target: {target_type, target.unit_id},
-          attacker_boss?: attacker.class == :boss,
-          attacker_root_level: 0,
-          attacker_position: attacker.position,
-          attacker_short?: attacker.attack_range <= 3,
-          distance: cell_distance(attacker, target),
-          basic_attack?: false
-        },
-        auto_guard_exemption(skill_id)
-      )
-
-    case StatusInterpreter.before_weapon_hit(target_type, target.unit_id, attack_info) do
-      {:intercept, :blocked} ->
-        DamageApplication.broadcast_nearby(
-          target,
-          PacketFactory.build_guard_packet(attacker, target)
-        )
-
-        :blocked
-
-      {:intercept, _result} ->
-        :intercepted
-
-      :continue ->
-        :continue
-    end
-  end
-
-  defp auto_guard_exemption(skill_id) do
-    case Catalog.by_id(skill_id) do
-      {:ok, %{ignore_auto_guard: true}} -> %{ignores_auto_guard: true}
-      _other -> %{}
-    end
-  end
-
-  @spec cell_distance(struct(), struct()) :: non_neg_integer()
-  defp cell_distance(%{position: {ax, ay}}, %{position: {tx, ty}}),
-    do: max(abs(ax - tx), abs(ay - ty))
-
-  defp cell_distance(_attacker, _target), do: 0
 
   defp resolve_skill_hit(
          attacker,

@@ -316,7 +316,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   @doc """
   Rolls and delivers the equipment coma of an attack that reaches `target`
-  without dealing anything (a miss, a perfect dodge, a shield block), sourced
+  without dealing anything (a miss, a perfect dodge), sourced
   as `source`. The coma leaves the target at 1 HP and 1 SP and is active
   damage, but the miss schedules no attacked event and no equipment procs.
   Returns whether the coma triggered.

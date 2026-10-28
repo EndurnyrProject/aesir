@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguardTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
@@ -28,13 +29,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguardTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.SpecialEffect
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :set_mimic_from_context
   setup :verify_on_exit!
   setup :setup_ets_tables
 
   @skill_id 249
+  @venom_knife 1004
   @shield_nameid 2101
   @left_hand 0x20
 
@@ -42,36 +46,32 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguardTest do
   @block_chance {5, 10, 14, 18, 21, 24, 26, 28, 29, 30}
 
   describe "status block roll" do
-    test "Venom Knife's exact metadata exemption always continues" do
+    test "a skill marked ignore_auto_guard always passes through, no roll" do
       seed_for_roll(1)
       reject(&SpecialEffect.play/3)
 
-      assert :continue =
-               Autoguard.before_weapon_hit(
-                 {:mob, 7000},
-                 entry(10),
-                 %{ignores_auto_guard: true},
-                 %{}
-               )
+      assert {:ok, 40, _entry} =
+               Autoguard.absorb_damage({:mob, 7000}, entry(10), weapon_hit(40, @venom_knife), %{})
     end
 
-    test "a roll at the level's exact block chance intercepts and plays the guard effect" do
+    test "a roll at the level's exact block chance stops the hit and plays the guard effect" do
       for level <- [1, 5, 10] do
         seed_for_roll(elem(@block_chance, level - 1))
         expect(SpecialEffect, :play, fn {:mob, 7001}, :guard, :area -> :ok end)
 
-        assert {:intercept, :blocked} =
-                 Autoguard.before_weapon_hit({:mob, 7001}, entry(level), %{}, %{})
+        assert {:ok, 0, _entry} =
+                 Autoguard.absorb_damage({:mob, 7001}, entry(level), weapon_hit(40), %{})
       end
     end
 
     test "a roll one above the level's block chance lets the hit through, no guard effect" do
-      stub(SpecialEffect, :play, fn _unit, _effect, _target -> :ok end)
+      reject(&SpecialEffect.play/3)
 
       for level <- [1, 5, 10] do
         seed_for_roll(elem(@block_chance, level - 1) + 1)
 
-        assert :continue = Autoguard.before_weapon_hit({:mob, 7002}, entry(level), %{}, %{})
+        assert {:ok, 40, _entry} =
+                 Autoguard.absorb_damage({:mob, 7002}, entry(level), weapon_hit(40), %{})
       end
     end
 
@@ -80,15 +80,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguardTest do
 
       # roll of 25: above lv1 (5) and lv5 (21), at or below lv10 (30).
       seed_for_roll(25)
-      assert :continue = Autoguard.before_weapon_hit({:mob, 7003}, entry(1), %{}, %{})
+      assert {:ok, 40, _} = Autoguard.absorb_damage({:mob, 7003}, entry(1), weapon_hit(40), %{})
 
       seed_for_roll(25)
-      assert :continue = Autoguard.before_weapon_hit({:mob, 7003}, entry(5), %{}, %{})
+      assert {:ok, 40, _} = Autoguard.absorb_damage({:mob, 7003}, entry(5), weapon_hit(40), %{})
 
       seed_for_roll(25)
-
-      assert {:intercept, :blocked} =
-               Autoguard.before_weapon_hit({:mob, 7003}, entry(10), %{}, %{})
+      assert {:ok, 0, _} = Autoguard.absorb_damage({:mob, 7003}, entry(10), weapon_hit(40), %{})
     end
 
     test "a blocked hit does not consume the status: it keeps guarding" do
@@ -97,14 +95,45 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguardTest do
 
       seed_for_roll(1)
 
-      assert {:intercept, :blocked} =
-               Autoguard.before_weapon_hit({:mob, 7004}, entry(10), %{}, %{})
+      assert {:ok, 0, entry} =
+               Autoguard.absorb_damage({:mob, 7004}, entry(10), weapon_hit(40), %{})
 
-      assert StatusStorage.has_status?(:mob, 7004, :sc_autoguard)
+      assert entry == entry(10)
     end
 
-    test "the status is wired into the weapon-hit interception dispatch" do
-      assert :sc_autoguard in StatusRegistry.statuses_implementing(:before_weapon_hit)
+    test "magic and misc hits pass through untouched, without a roll" do
+      seed_for_roll(1)
+      reject(&SpecialEffect.play/3)
+
+      for dmg_type <- [:magic, :misc] do
+        hit = %{weapon_hit(40) | dmg_type: dmg_type}
+        assert {:ok, 40, _} = Autoguard.absorb_damage({:mob, 7005}, entry(10), hit, %{})
+      end
+    end
+
+    test "a block covered by a valid Devotion link shows the guard on the Crusader, no Shrink" do
+      devotee_id = 7006
+      crusader_id = 7007
+      devote(devotee_id, crusader_id)
+      :ok = StatusStorage.apply_status(:player, devotee_id, :sc_shrink, val1: 1)
+
+      seed_for_roll(1)
+      expect(SpecialEffect, :play, fn {:player, ^crusader_id}, :guard, :area -> :ok end)
+      reject(&StatusInterpreter.apply_status/4)
+
+      assert {:ok, 0, _} =
+               Autoguard.absorb_damage({:player, devotee_id}, entry(10), weapon_hit(40), %{})
+    end
+
+    test "the status is a blocker of the damage stage, after Kyrie, Safety Wall, Pneuma and Basilica" do
+      assert :sc_autoguard in StatusRegistry.statuses_implementing(:absorb_damage)
+
+      stages = StatusInterpreter.absorb_stages()
+      guard_at = Enum.find_index(stages, &(&1 == :sc_autoguard))
+
+      for earlier <- [:sc_kyrie, :sc_safetywall, :sc_pneuma, :sc_basilica, :sc_basilica_caster] do
+        assert Enum.find_index(stages, &(&1 == earlier)) < guard_at
+      end
     end
   end
 
@@ -161,7 +190,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguardTest do
     end
   end
 
-  describe "weapon-skill interception through the combat pipeline" do
+  describe "weapon-skill block through the combat pipeline" do
     setup do
       attacker = CombatTestHelper.create_player_combatant(unit_id: 1000, position: {100, 100})
       target = CombatTestHelper.create_player_combatant(unit_id: 5000, position: {100, 101})
@@ -177,21 +206,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguardTest do
       stub(TargetResolver, :ensure_targetable, fn _state, _type -> :ok end)
       stub(AttackValidator, :validate, fn _attacker, _target, _opts -> :ok end)
       stub(Targeting, :validate_enemy, fn _attacker, _target -> :ok end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      stub(SpecialEffect, :play, fn _unit, _effect, _target -> :ok end)
+      stub(UnitRegistry, :get_unit_info, fn :player, _id -> {:ok, %{stats: %{}}} end)
+
+      :ok =
+        StatusStorage.apply_status(:player, 5000, :sc_autoguard,
+          val1: 10,
+          state: %{block_chance: 100}
+        )
 
       {:ok, caster_state: caster_state}
     end
 
-    test "an intercepted weapon skill deals no damage and is tagged non-basic", %{
-      caster_state: caster_state
-    } do
-      expect(StatusInterpreter, :before_weapon_hit, fn :player, 5000, attack_info ->
-        assert attack_info.basic_attack? == false
-        assert attack_info.target == {:player, 5000}
-        refute Map.has_key?(attack_info, :ignores_auto_guard)
-        {:intercept, :blocked}
-      end)
-
-      reject(&DamageCalculator.calculate_damage/3)
+    test "a weapon skill that misses never rolls Guard", %{caster_state: caster_state} do
+      stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :miss end)
+      reject(&Autoguard.absorb_damage/4)
+      reject(&PlayerSession.apply_damage/4)
 
       assert :ok =
                SkillAttack.execute_skill_attack(caster_state, 5000,
@@ -201,34 +232,38 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguardTest do
                  skip_range: true
                )
     end
-  end
 
-  describe "magic exemption" do
-    test "a magic attack never dispatches the weapon-hit interception" do
-      attacker = CombatTestHelper.create_player_combatant(unit_id: 1000, position: {150, 150})
-      target = CombatTestHelper.create_player_combatant(unit_id: 5000, position: {150, 150})
+    test "a weapon skill that connects rolls Guard on its calculated damage and lands for 0",
+         %{caster_state: caster_state} do
+      stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :hit end)
 
-      caster_state = %PlayerState{character_id: 1000}
-      target_state = %PlayerState{character_id: 5000}
-
-      stub(PlayerState, :to_combatant, fn
-        %PlayerState{character_id: 1000} -> attacker
-        %PlayerState{character_id: 5000} -> target
+      stub(DamageCalculator, :calculate_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 60, is_critical: false}}
       end)
 
-      stub(TargetResolver, :resolve, fn 5000 -> {:ok, self(), target_state, :player} end)
-      stub(TargetResolver, :ensure_targetable, fn _state, _type -> :ok end)
-      stub(AttackValidator, :validate, fn _attacker, _target, _opts -> :ok end)
-      stub(Targeting, :validate_enemy, fn _attacker, _target -> :ok end)
+      expect(Autoguard, :absorb_damage, fn {:player, 5000}, entry, hit, context ->
+        assert %{damage: 60, dmg_type: :physical, skill_id: 253} = hit
+        Mimic.call_original(Autoguard, :absorb_damage, [{:player, 5000}, entry, hit, context])
+      end)
 
+      expect(PlayerSession, :apply_damage, fn _pid, 0, {:player, 1000}, _info -> :ok end)
+
+      assert :ok =
+               SkillAttack.execute_skill_attack(caster_state, 5000,
+                 skill_id: 253,
+                 skill_level: 1,
+                 skill_ratio: 100,
+                 skip_range: true
+               )
+    end
+
+    test "a magic attack passes a sure Guard untouched", %{caster_state: caster_state} do
       stub(MagicDamageCalculator, :calculate_magic_damage, fn _a, _t, _opts ->
         {:ok, %{damage: 30, is_critical: false}}
       end)
 
-      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-      stub(PlayerSession, :apply_damage, fn _pid, _damage, _attacker_id, _metadata -> :ok end)
-
-      reject(&StatusInterpreter.before_weapon_hit/3)
+      reject(&SpecialEffect.play/3)
+      expect(PlayerSession, :apply_damage, fn _pid, 30, {:player, 1000}, _info -> :ok end)
 
       assert {:ok, {:player, 5000}} =
                Combat.execute_magic_attack(caster_state, 5000,
@@ -251,6 +286,41 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguardTest do
       val1: level,
       state: %{block_chance: Autoguard.block_chance(level)}
     }
+
+  defp weapon_hit(damage, skill_id \\ nil),
+    do: %{
+      damage: damage,
+      dmg_type: :physical,
+      is_short: true,
+      skill_id: skill_id,
+      attacker: {:player, 1000}
+    }
+
+  defp devote(devotee_id, crusader_id) do
+    crusader_pid = spawn(fn -> Process.sleep(:infinity) end)
+
+    crusader = %PlayerState{
+      character_id: crusader_id,
+      action_state: :idle,
+      stats: %{current_state: %{hp: 100}}
+    }
+
+    UnitRegistry.register_unit(:player, crusader_id, PlayerState, crusader, crusader_pid)
+    SpatialIndex.add_player(devotee_id, 50, 50, "prontera")
+    SpatialIndex.add_player(crusader_id, 51, 50, "prontera")
+
+    link_id = make_ref()
+
+    :ok =
+      StatusStorage.apply_status(:player, devotee_id, :sc_devotion,
+        state: %{peer: {:player, crusader_id}, link_id: link_id, range: 7}
+      )
+
+    :ok =
+      StatusStorage.apply_status(:player, crusader_id, :sc_devoted_by,
+        state: %{links: %{devotee_id => %{peer: {:player, devotee_id}, link_id: link_id}}}
+      )
+  end
 
   # Seeds `:rand` so the next `:rand.uniform(100)` returns exactly `target`, for a
   # deterministic block roll. Every 1..100 value is reachable, so the search

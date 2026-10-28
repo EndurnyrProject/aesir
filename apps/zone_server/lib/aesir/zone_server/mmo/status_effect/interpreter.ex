@@ -59,7 +59,19 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     :sc_energycoat,
     :sc_steelbody
   ]
-  @block_stage [:sc_kyrie, :sc_safetywall, :sc_pneuma, :sc_basilica, :sc_basilica_caster]
+  @block_stage [
+    :sc_kyrie,
+    :sc_safetywall,
+    :sc_pneuma,
+    :sc_basilica,
+    :sc_basilica_caster,
+    :sc_autoguard,
+    :sc_parrying
+  ]
+  # Blockers whose stop is not a block: the hit reached the holder for nothing
+  # (Kyrie Eleison absorbing it, a Guard or Parrying roll), so its additional
+  # and counter stages are skipped like a miss rather than run as a block.
+  @stop_as_miss [:sc_kyrie, :sc_autoguard, :sc_parrying]
   # After the siege map rate, before delivery (see final_weapon_hit/4).
   @final_weapon_stage [:sc_rejectsword]
 
@@ -541,18 +553,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   @doc """
-  Dispatches the target's interception-capable statuses before a weapon hit
-  selects a replacement or resolves damage.
+  Dispatches the target's swing reactions (Auto Counter, Poison React, Blade
+  Stop) before an ordinary weapon swing selects a replacement or rolls its hit.
 
   Each capable status may atomically consume a single-use entry of the target
   and return `{:intercept, result}`; the first interception wins and ends the
   swing. A target holding no such status stays on a constant-time no-op path.
-
-  An ordinary swing is checked in two stages through `attack_info.stage`:
-  `:swing` dispatches only the reactions to the swing itself (Blade Stop, Auto
-  Counter, Poison React), before a replacement strike is chosen; `:hit`
-  dispatches the remaining interceptions (Guard, Parrying) for a swing that
-  stayed ordinary. Without a stage every interception-capable status runs.
+  Shield blocks (Guard, Parrying) are not reactions to the swing: they roll in
+  the damage stage (`absorb_hit/4`), after the hit roll.
   """
   @spec before_weapon_hit(unit_type(), integer(), map()) :: :continue | {:intercept, term()}
   def before_weapon_hit(unit_type, unit_id, attack_info) do
@@ -761,8 +769,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   Assumptio, Defending Aura, Blinding Mist, Energy Coat, Mental Strength), each
   step running even when an earlier one left nothing; then, only for damage left
   above zero, the attacker's Add ATK Damage (weapon hits) or Add MATK Damage
-  (magic hits) and the blockers (Kyrie Eleison, Safety Wall, Pneuma, Basilica),
-  stopping at the first that leaves nothing. Storage order never matters.
+  (magic hits) and the blockers (Kyrie Eleison, Safety Wall, Pneuma, Basilica,
+  Guard, Parrying), stopping at the first that leaves nothing. Storage order
+  never matters.
 
   Status ticks and HP costs (`status_tick?: true`) are not attacks and skip both
   stages. Each callback sees the running `damage` in `hit_info`; returning
@@ -776,8 +785,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   @doc """
   Like `absorb_damage/4`, also classifying the hit: `:block` when Safety Wall,
-  Pneuma or Basilica stopped it, `:hit` otherwise. A hit Kyrie Eleison or the
-  common stages reduced to nothing still connected.
+  Pneuma or Basilica stopped it, `:hit` otherwise. A hit Kyrie Eleison, Guard,
+  Parrying or the common stages reduced to nothing still connected.
   """
   @spec absorb_hit(unit_type(), integer(), integer(), map()) :: {integer(), :hit | :block}
   def absorb_hit(_unit_type, _unit_id, 0, _hit_info), do: {0, :hit}
@@ -791,9 +800,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   @doc """
   Runs only the blocking statuses (Kyrie Eleison, Safety Wall, Pneuma,
-  Basilica) over a single point of damage, for a weapon contact on an
-  infinite-defense target. A Kyrie Eleison barrier loses that one point.
-  Returns the damage left (`0` or `1`) and the `absorb_hit/4` classification.
+  Basilica, Guard, Parrying) over a single point of damage, for a weapon
+  contact on an infinite-defense target. A Kyrie Eleison barrier loses that
+  one point. Returns the damage left (`0` or `1`) and the `absorb_hit/4`
+  classification.
   """
   @spec block_hit(unit_type(), integer(), map()) :: {0 | 1, :hit | :block}
   def block_hit(unit_type, unit_id, hit_info) do
@@ -883,7 +893,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   defp block_step(status_id, {damage, class}, run) do
     case run.(status_id, damage) do
-      0 when status_id == :sc_kyrie -> {:halt, {0, :hit}}
+      0 when status_id in @stop_as_miss -> {:halt, {0, :hit}}
       0 -> {:halt, {0, :block}}
       left -> {:cont, {left, class}}
     end
@@ -2464,28 +2474,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   defp dispatch_damage(unit_type, unit_id, instance, damage_info),
     do: dispatch_hook(:on_damage, unit_type, unit_id, instance, damage_info)
 
-  # Explicit precedence for the statuses that can intercept an incoming weapon
-  # hit, so the winner is deterministic rather than defined by storage iteration
-  # order. Definitive reactions resolve before the chance-based block: a caught
-  # blade halts the exchange, then a qualifying melee counter, then a qualifying
-  # poison-attack counter, and finally the probabilistic shield block - so a
-  # guaranteed reaction is never pre-empted by a chance roll. Any interceptor not
-  # listed here sorts last, preserving today's behaviour until it is placed.
+  # Explicit precedence for the statuses that react to an incoming weapon
+  # swing, in the order the reference checks them: a qualifying melee counter,
+  # then a qualifying poison-attack counter, then a caught blade. Any
+  # interceptor not listed here sorts last.
   @weapon_hit_interception_order [
-    :sc_bladestop_wait,
     :sc_auto_counter,
     :sc_poisonreact,
-    :sc_autoguard
+    :sc_bladestop_wait
   ]
-
-  @weapon_swing_reactions [:sc_bladestop_wait, :sc_auto_counter, :sc_poisonreact]
 
   defp find_weapon_hit_interception(unit_type, unit_id, implementing, attack_info) do
     unit_type
     |> StatusStorage.get_unit_statuses(unit_id)
-    |> Enum.filter(
-      &(MapSet.member?(implementing, &1.type) and interception_stage?(&1.type, attack_info))
-    )
+    |> Enum.filter(&MapSet.member?(implementing, &1.type))
     |> Enum.sort_by(&weapon_hit_interception_priority(&1.type))
     |> Enum.find_value(:continue, fn instance ->
       case dispatch_before_weapon_hit(unit_type, unit_id, instance, attack_info) do
@@ -2494,14 +2496,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       end
     end)
   end
-
-  defp interception_stage?(status_id, %{stage: :swing}),
-    do: status_id in @weapon_swing_reactions
-
-  defp interception_stage?(status_id, %{stage: :hit}),
-    do: status_id not in @weapon_swing_reactions
-
-  defp interception_stage?(_status_id, _attack_info), do: true
 
   defp weapon_hit_interception_priority(status_id) do
     Enum.find_index(@weapon_hit_interception_order, &(&1 == status_id)) ||

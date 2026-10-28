@@ -8,8 +8,9 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
 
   The four engine seams the kit adds each get exercised through a real hit:
 
-    * `before_weapon_hit` — Guard (`sc_autoguard`) intercepts a live mob swing
-      before any damage, with a seeded RNG so the per-level block roll lands.
+    * damage-stage blockers — Guard (`sc_autoguard`) stops a live mob swing that
+      connected, at its block stage after the hit roll and damage calculation,
+      with the block chance pinned so the roll lands.
     * damage stages — Defender (`sc_defender`) cuts a long-range hit at its
       status stage in `DamageApplication` while a melee hit is untouched.
     * `after_damage_taken` — Reflect Shield (`sc_reflectshield`) returns part of a
@@ -65,10 +66,6 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
 
   @cr_devotion 255
   @cr_grandcross 254
-
-  # Seed whose first `:rand.uniform(100)` is 8: below every Guard block chance
-  # from level 2 up, so a level-10 (30%) block deterministically lands.
-  @block_seed {1, 1, 1}
 
   setup do
     Mimic.copy(HitCalculations)
@@ -194,18 +191,17 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
 
       toggle_defensive(CrAutoguard, crusader.pid, 10)
       assert StatusStorage.has_status?(:player, crusader.character.id, :sc_autoguard)
+      pin_guard_roll(crusader.character.id)
 
       crusader_hp = current_hp(crusader.pid)
       flush_packets()
 
-      :rand.seed(:exsss, @block_seed)
-      assert :intercepted = Combat.execute_mob_attack(mob_state(mob), crusader.character.id)
+      assert :ok = Combat.execute_mob_attack(mob_state(mob), crusader.character.id)
 
       assert current_hp(crusader.pid) == crusader_hp
       assert StatusStorage.has_status?(:player, crusader.character.id, :sc_autoguard)
 
-      # The blocked swing still broadcasts a zero-damage "guarded" hit so the
-      # attacker sees the swing land for 0.
+      # The blocked swing connected and lands for 0, so the attacker sees it.
       assert_packet_sent_with(DamageDealt, fn packet ->
         assert packet.src_id == mob.unit_id
         assert packet.target_id == crusader.character.id
@@ -433,6 +429,15 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
       )
 
     :ok = DevotedBy.link(crusader_id, devotee_id, link_id)
+  end
+
+  # Guard rolls in the damage stage, after the hit, crit and damage rolls, so
+  # the roll is pinned through its stored chance rather than a seed.
+  defp pin_guard_roll(crusader_id) do
+    :ok =
+      StatusStorage.update_status(:player, crusader_id, :sc_autoguard, fn entry ->
+        %{entry | state: Map.put(entry.state, :block_chance, 100)}
+      end)
   end
 
   defp toggle_defensive(module, crusader_pid, level) do

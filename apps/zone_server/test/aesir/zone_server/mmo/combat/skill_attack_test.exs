@@ -326,7 +326,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     stub(TargetResolver, :ensure_targetable, fn ^target_state, :player -> :ok end)
     stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
     stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
-    # Weapon-only interception (Auto Guard, Parrying) never sees a misc hit.
+    # Swing reactions answer ordinary swings only, never a skill hit.
     reject(&StatusInterpreter.before_weapon_hit/3)
 
     stub(DamageCalculator, :calculate_damage, fn ^attacker, ^target, opts ->
@@ -454,7 +454,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     stub(TargetResolver, :ensure_targetable, fn ^target_state, :mob -> :ok end)
     stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
     stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
-    expect(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _attack_info -> :continue end)
 
     expect(DamageCalculator, :calculate_damage, fn ^attacker, ^target, _opts ->
       send(test_pid, {:event, :calculate})
@@ -1575,7 +1574,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     assert_received {:ordinary_damage, {:homunculus, 3002}}
   end
 
-  test "forced no-card single hits without a flee roll and carries the Venom Knife hook exemption" do
+  test "forced no-card single hits without a flee roll" do
     attacker =
       CombatTestHelper.create_player_combatant(
         unit_id: 1001,
@@ -1598,14 +1597,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     stub(TargetResolver, :ensure_targetable, fn ^target_state, :mob -> :ok end)
     stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
     stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
-
-    expect(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, attack_info ->
-      assert attack_info.attacker == {:player, 1001}
-      assert attack_info.target == {:mob, 2001}
-      assert attack_info.ignores_auto_guard == true
-      assert attack_info.basic_attack? == false
-      :continue
-    end)
 
     expect(DamageCalculator, :calculate_damage_ignoring_attacker_cards, fn
       ^attacker, ^target, opts ->
@@ -1726,7 +1717,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     end
   end
 
-  test "forced no-card splash forces each hit but does not carry the Auto Guard exemption" do
+  test "forced no-card splash forces each hit" do
     attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
 
     target =
@@ -1749,13 +1740,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     end)
 
     stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
-
-    expect(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, attack_info ->
-      assert attack_info.attacker == {:player, 1001}
-      assert attack_info.target == {:mob, 2001}
-      refute Map.has_key?(attack_info, :ignores_auto_guard)
-      :continue
-    end)
 
     expect(DamageCalculator, :calculate_damage_ignoring_attacker_cards, fn
       ^attacker, ^target, opts ->

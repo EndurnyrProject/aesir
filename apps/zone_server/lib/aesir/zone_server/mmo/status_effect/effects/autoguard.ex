@@ -3,15 +3,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoguard do
   Guard (SC_AUTOGUARD).
 
   The persistent shield-block stance toggled by CR_AUTOGUARD, carrying the skill
-  level in `val1`. While active, every weapon hit that lands on the holder rolls
-  against a per-level block chance in `before_weapon_hit/4`; on a successful roll
-  the swing is intercepted (it deals nothing) and a guard sprite plays on the
-  holder for nearby viewers.
+  level in `val1`. While active, every weapon hit that connects on the holder
+  for damage rolls against a per-level block chance in `absorb_damage/4`, the
+  last blocker of the damage stage after Kyrie Eleison, Safety Wall, Pneuma and
+  Basilica: the hit roll, the damage calculation and the earlier blockers all
+  run first, so a missed or dodged swing never rolls a block. On a successful
+  roll the hit deals nothing, its additional effects are skipped, and a guard
+  sprite plays for nearby viewers on the holder, or on the holder's Crusader
+  when a valid Devotion link covers the holder.
 
   Unlike Auto Counter this is not a single-use stance: a successful block leaves
   the status in place, so it keeps guarding every subsequent weapon hit until the
-  skill is re-cast to toggle it off. Only weapon-class hits reach this hook -
-  basic attacks and weapon skills - so magic and misc damage is never blocked.
+  skill is re-cast to toggle it off. Only weapon-class hits reach the roll -
+  basic attacks and weapon skills - so magic and misc damage is never blocked,
+  nor is a skill whose definition sets `ignore_auto_guard`.
 
   The block chance is fixed when the status starts on its own (5 to 30 percent
   by level, kept in `state.block_chance`); a Devotion copy carries its
@@ -34,7 +39,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoguard do
     flags: [:remove_on_unequip_shield],
     icon: :autoguard
 
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirror
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Shrink
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Unit
@@ -55,34 +62,51 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoguard do
   def on_expire(target, instance, _context), do: DevotionMirror.ended(target, instance)
 
   @impl true
-  @spec before_weapon_hit(
-          {Unit.unit_type(), integer()},
-          StatusEntry.t(),
-          map(),
-          map()
-        ) :: :continue | {:intercept, :blocked}
-  def before_weapon_hit(_target, _entry, %{ignores_auto_guard: true}, _context), do: :continue
-
-  def before_weapon_hit(
-        {unit_type, unit_id},
-        %StatusEntry{val1: level} = entry,
-        attack_info,
-        _context
-      ) do
-    if :rand.uniform(100) <= Map.get(entry.state, :block_chance, 0) do
-      SpecialEffect.play({unit_type, unit_id}, :guard, :area)
-      maybe_shrink_stun({unit_type, unit_id}, attack_info, level)
-      {:intercept, :blocked}
+  @spec absorb_damage({Unit.unit_type(), integer()}, StatusEntry.t(), map(), map()) ::
+          {:ok, non_neg_integer(), StatusEntry.t()}
+  def absorb_damage(target, %StatusEntry{} = entry, %{dmg_type: :physical} = hit_info, _context) do
+    if guards?(entry, hit_info) do
+      blocked(target, entry, hit_info)
+      {:ok, 0, entry}
     else
-      :continue
+      {:ok, hit_info.damage, entry}
     end
   end
 
+  def absorb_damage(_target, entry, %{damage: damage}, _context), do: {:ok, damage, entry}
+
+  defp guards?(entry, hit_info) do
+    not ignores_auto_guard?(Map.get(hit_info, :skill_id)) and
+      :rand.uniform(100) <= Map.get(entry.state, :block_chance, 0)
+  end
+
+  # A hit covered by a valid Devotion link shows the guard on the Crusader and
+  # never triggers Shrink; any other hit shows it on the holder.
+  defp blocked({:player, holder_id} = holder, entry, hit_info) do
+    case Devotion.redirect_target(holder_id) do
+      {:ok, crusader_id} -> SpecialEffect.play({:player, crusader_id}, :guard, :area)
+      _not_devoted -> blocked_by_holder(holder, entry, hit_info)
+    end
+  end
+
+  defp blocked(holder, entry, hit_info), do: blocked_by_holder(holder, entry, hit_info)
+
+  defp blocked_by_holder(holder, %StatusEntry{val1: level}, hit_info) do
+    SpecialEffect.play(holder, :guard, :area)
+    maybe_shrink_stun(holder, hit_info, level)
+  end
+
+  defp ignores_auto_guard?(skill_id) when is_integer(skill_id) do
+    match?({:ok, %{ignore_auto_guard: true}}, Catalog.by_id(skill_id))
+  end
+
+  defp ignores_auto_guard?(_skill_id), do: false
+
   @spec maybe_shrink_stun({Unit.unit_type(), integer()}, map(), integer()) :: :ok
-  defp maybe_shrink_stun(guarder, %{attacker: attacker}, level),
+  defp maybe_shrink_stun(guarder, %{attacker: {_type, _id} = attacker}, level),
     do: Shrink.maybe_stun_attacker(guarder, attacker, level)
 
-  defp maybe_shrink_stun(_guarder, _attack_info, _level), do: :ok
+  defp maybe_shrink_stun(_guarder, _hit_info, _level), do: :ok
 
   @doc """
   The block chance percent of a status started at `level`: 5, 5, 4, 4, 3, 3, 2,

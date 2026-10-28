@@ -841,19 +841,26 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
                        }}
     end
 
-    test "a Guard block rolls equipment coma and delivers nothing on a failed roll",
+    test "a shield block is a damage-stage stop of the calculated swing, not a swing interception",
          %{player_state: player_state, stats: stats} do
-      stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _attack_info ->
-        {:intercept, :blocked}
+      test_pid = self()
+
+      expect(StatusInterpreter, :absorb_hit, fn :mob, 2001, 50, %{dmg_type: :physical} ->
+        {0, :hit}
       end)
 
-      reject(&Passives.attack_replacement/1)
-      reject(&DamageCalculator.calculate_damage/3)
       expect(EquipComa, :trigger?, fn _attacker, _target -> false end)
       reject(&MobSession.apply_coma/2)
-      reject(&MobSession.apply_damage/4)
+      expect(MobSession, :apply_damage, fn _pid, 0, _attacker_id, _metadata -> :ok end)
 
-      assert :intercepted = Combat.execute_attack(stats, player_state, 2001)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      assert :ok = Combat.execute_attack(stats, player_state, 2001)
+
+      assert_received {:packet, %DamageDealt{src_id: 1001, target_id: 2001, damage: 0}}
     end
 
     test "applies one aggregate mutation for a two-division Double Attack",

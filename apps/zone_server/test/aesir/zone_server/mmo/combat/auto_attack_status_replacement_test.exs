@@ -195,36 +195,27 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
                Combat.execute_attack(attacker, player_state, @target_id)
     end
 
-    test "a fled replacement that deals nothing stays a miss the target never intercepts",
+    test "a fled replacement that deals nothing stays a miss the target never blocks",
          %{attacker: attacker, player_state: player_state} do
       stub_passive_replacement()
+      hold_guard(100)
       expect(HitCalculations, :calculate_hit_result, fn _a, _t -> :miss end)
 
       stub(DamageCalculator, :calculate_fled_damage, fn _a, _d, _opts ->
         {:ok, %{damage: 0, is_critical: false}}
       end)
 
-      test_pid = self()
-
-      stub(StatusInterpreter, :before_weapon_hit, fn :mob, @target_id, info ->
-        send(test_pid, {:intercept_check, info.basic_attack?})
-        :continue
-      end)
-
+      reject(&Autoguard.absorb_damage/4)
       reject(&MobSession.apply_damage/4)
 
       assert {:ok, {:combo, :quadruple, _delay}} =
                Combat.execute_attack(attacker, player_state, @target_id)
-
-      assert_received {:intercept_check, true}
-      refute_received {:intercept_check, false}
     end
   end
 
   describe "execute_attack/3 with Sacrifice" do
     setup do
       Mimic.copy(Helpers)
-      Mimic.copy(Autoguard)
       stub(Helpers, :deal_damage, fn {:player, @attacker_id}, _amount -> :ok end)
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet, _opts -> :ok end)
 
@@ -268,10 +259,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
     end
 
     @tag game_mode: :pre_renewal
-    test "classic: Guard blocks the strike",
+    test "classic: Guard blocks the strike after it connects, for nothing",
          %{attacker: attacker, player_state: player_state} do
       hold_guard(100)
-      reject(&MobSession.apply_damage/4)
+      expect(MobSession, :apply_damage, fn _pid, 0, _attacker_id, _metadata -> :ok end)
 
       assert :ok = Combat.execute_attack(attacker, player_state, @target_id)
 
@@ -279,12 +270,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
     end
 
     @tag game_mode: :pre_renewal
-    test "classic: Guard rolls once for the strike",
+    test "classic: Guard rolls once for the strike, on its calculated damage",
          %{attacker: attacker, player_state: player_state} do
       hold_guard(0)
 
-      expect(Autoguard, :before_weapon_hit, 1, fn _target, _entry, _info, _context ->
-        :continue
+      expect(Autoguard, :absorb_damage, 1, fn _target, entry, %{damage: 75} = hit, _context ->
+        assert hit.skill_id == 368
+        {:ok, hit.damage, entry}
       end)
 
       expect(MobSession, :apply_damage, fn _pid, 75, _attacker_id, _metadata -> :ok end)

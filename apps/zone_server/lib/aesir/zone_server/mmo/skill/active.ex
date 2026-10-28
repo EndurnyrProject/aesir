@@ -38,9 +38,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
           | {:mob, {:apply_heal, pos_integer(), non_neg_integer(), Ref.t()}}
           | {:owner_item_cost, pos_integer(), pos_integer()}
 
+  @typedoc """
+  The caster's counter effect of a prepared hit, applied only when the hit
+  connected (`hit?`): a hit stopped in its damage stage (Guard, Safety Wall,
+  Pneuma) skips it, as a missed one does. `intimacy` sets the Homunculus
+  caster's intimacy (hundredths).
+  """
+  @type hit_counter :: %{intimacy: non_neg_integer()}
+
   @typedoc "A staged external hit or heal delivered only after aggregate settlement succeeds."
   @type external_effect ::
           {:prepared_external_hit, PreparedHit.t()}
+          | {:prepared_external_hit, PreparedHit.t(), hit_counter()}
           | {:external_heal, Ref.t(), non_neg_integer(), Ref.t()}
 
   @typedoc "An effect settled by the owning aggregate after the caster state commits."
