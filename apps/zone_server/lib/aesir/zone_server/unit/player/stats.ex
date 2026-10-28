@@ -228,8 +228,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
             # option bit through every `calculate_stats/3` call site.
             riding: false,
 
-            # Bumped on every full recalculation.
-            generation: 0
+            # Bumped by a recalculation whose full-recalculation inputs changed
+            # (`recalculation_basis`, a hash of them): allocated stats, job and
+            # levels, learned skills, worn items, riding, the map, and the held
+            # statuses that force a full recalculation.
+            generation: 0,
+            recalculation_basis: nil
 
   @typedoc """
   Player-specific stats structure extending the base unit stats.
@@ -256,7 +260,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           left_hand: WeaponHand.t() | nil,
           granted_skills: %{integer() => non_neg_integer()},
           riding: boolean(),
-          generation: non_neg_integer()
+          generation: non_neg_integer(),
+          recalculation_basis: non_neg_integer() | nil
         }
 
   @doc """
@@ -324,7 +329,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   """
   @spec changed?(t(), t()) :: boolean()
   def changed?(%__MODULE__{} = left, %__MODULE__{} = right),
-    do: %{left | generation: 0} != %{right | generation: 0}
+    do: unversioned(left) != unversioned(right)
+
+  defp unversioned(stats), do: %{stats | generation: 0, recalculation_basis: nil}
 
   @doc """
   Converts player stats to formula map format for status effect calculations.

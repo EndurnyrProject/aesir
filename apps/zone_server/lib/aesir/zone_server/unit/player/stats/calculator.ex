@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHiltbinding
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsWeaponresearch
+  alias Aesir.ZoneServer.Mmo.StatusEffect.CalcFlags
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -83,7 +84,46 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
     |> apply_passive_modifiers()
     |> calculate_derived_stats()
     |> calculate_combat_stats(map_name)
-    |> Map.update!(:generation, &(&1 + 1))
+    |> advance_generation(player_id, map_name)
+  end
+
+  # The player's full recalculation (the one that restarts the equipment
+  # regeneration intervals) happens when its inputs change: allocated stats,
+  # job and levels, learned skills, worn items, riding, the map, or the start,
+  # refresh or end of a status that forces it. Status ticks and other status
+  # changes only refresh the derived values.
+  defp advance_generation(%Stats{} = stats, player_id, map_name) do
+    progression = stats.progression
+
+    basis =
+      :erlang.phash2({
+        stats.base_stats,
+        progression && {progression.job_id, progression.base_level, progression.job_level},
+        progression && progression.learned_skills,
+        stats.worn_items,
+        stats.riding,
+        map_name,
+        full_recalculation_statuses(player_id)
+      })
+
+    if basis == stats.recalculation_basis,
+      do: stats,
+      else: %{stats | generation: stats.generation + 1, recalculation_basis: basis}
+  end
+
+  defp full_recalculation_statuses(player_id) when is_integer(player_id) do
+    :player
+    |> StatusStorage.get_unit_statuses(player_id)
+    |> Enum.filter(&forces_full_recalculation?(&1.type))
+    |> Enum.map(&{&1.type, &1.started_at})
+    |> Enum.sort()
+  end
+
+  defp full_recalculation_statuses(_player_id), do: []
+
+  defp forces_full_recalculation?(status_id) do
+    flags = CalcFlags.for_event(status_id, :apply)
+    "All" in flags or "Base" in flags
   end
 
   @doc """

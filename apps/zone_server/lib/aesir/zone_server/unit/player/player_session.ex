@@ -33,7 +33,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler
-  alias Aesir.ZoneServer.Unit.Player.Handlers.EquipRegenHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler
@@ -879,7 +878,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_info(:natural_heal_tick, state) do
     Process.send_after(self(), :natural_heal_tick, @natural_heal_interval)
-    {:noreply, state} = EquipRegenHandler.handle_tick(state, @natural_heal_interval)
     NaturalHealHandler.handle_tick(state, @natural_heal_interval)
   end
 

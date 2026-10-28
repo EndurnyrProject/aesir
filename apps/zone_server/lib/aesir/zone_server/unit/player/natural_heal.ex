@@ -171,8 +171,19 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
     def initial, do: %__MODULE__{}
   end
 
-  @typedoc "Current and maximum HP/SP the tick heals against."
-  @type vitals :: %{hp: integer(), sp: integer(), max_hp: integer(), max_sp: integer()}
+  @typedoc """
+  Current and maximum HP/SP the tick heals against. `gate_hp`/`gate_sp` (default
+  `hp`/`sp`) are the values the skill channels' full gate reads: HP and SP
+  before this tick's equipment regeneration and loss.
+  """
+  @type vitals :: %{
+          required(:hp) => integer(),
+          required(:sp) => integer(),
+          required(:max_hp) => integer(),
+          required(:max_sp) => integer(),
+          optional(:gate_hp) => integer(),
+          optional(:gate_sp) => integer()
+        }
 
   @doc """
   Computes one tick's amounts, rates and channel flags from the gathered facts.
@@ -248,8 +259,8 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
     flags = %{
       hp: plan.natural_hp?,
       sp: plan.natural_sp?,
-      shp: plan.skill_hp? and hp < vitals.max_hp,
-      ssp: plan.skill_sp? and sp < vitals.max_sp
+      shp: plan.skill_hp? and Map.get(vitals, :gate_hp, hp) < vitals.max_hp,
+      ssp: plan.skill_sp? and Map.get(vitals, :gate_sp, sp) < vitals.max_sp
     }
 
     flags = if plan.blocked?, do: all_off(), else: flags

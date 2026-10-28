@@ -59,10 +59,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
         game_state.map_name
       )
 
-    if Stats.changed?(updated_stats, game_state.stats),
-      do: StatusSync.send_stat_updates(state.connection_pid, updated_stats)
+    cond do
+      updated_stats == game_state.stats ->
+        {:noreply, state}
 
-    {:noreply, StateCommit.commit(state, %{game_state | stats: updated_stats})}
+      Stats.changed?(updated_stats, game_state.stats) ->
+        StatusSync.send_stat_updates(state.connection_pid, updated_stats)
+        {:noreply, StateCommit.commit(state, %{game_state | stats: updated_stats})}
+
+      true ->
+        {:noreply, StateCommit.commit(state, %{game_state | stats: updated_stats})}
+    end
   end
 
   @doc """

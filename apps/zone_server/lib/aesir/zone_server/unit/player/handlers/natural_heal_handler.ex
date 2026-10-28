@@ -2,7 +2,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
   @moduledoc """
   Drives the per-session natural HP/SP regeneration tick.
 
-  Every tick, dead or alive, it gathers the facts `NaturalHeal` reads (merged
+  Every tick, dead or alive, it first runs the equipment periodic regen/loss
+  (`EquipRegenHandler`), then gathers the facts `NaturalHeal` reads (merged
   status modifiers plus the equipment recovery rates, learned regeneration
   passives, the equipment no-regen mask, sitting, walking, overweight, the
   guild castle bonus, death or concealment, and Tension Relax), runs
@@ -13,8 +14,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
   `SP_HP`/`SP_SP` to the client and persists asynchronously; any other tick
   touches nothing but the session's `regen_timing`.
 
-  The `:zone_server, :natural_regen` application flag (default `true`) turns the
-  tick off entirely; integration tests use it to keep HP and SP still.
+  The skill channels' full-HP/SP gate reads HP and SP from before the equipment
+  tick; the heals land on the values after it.
+
+  The `:zone_server, :natural_regen` application flag (default `true`) turns
+  natural regeneration off (the equipment tick still runs); integration tests use
+  it to keep HP and SP still.
   """
 
   alias Aesir.Commons.StatusParams
@@ -24,6 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Concealment
   alias Aesir.ZoneServer.Unit.Inventory.Weight
+  alias Aesir.ZoneServer.Unit.Player.Handlers.EquipRegenHandler
   alias Aesir.ZoneServer.Unit.Player.NaturalHeal
   alias Aesir.ZoneServer.Unit.Player.NaturalHeal.Inputs
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -34,13 +40,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
   Runs one natural-heal tick of `elapsed_ms` for the player session.
   """
   @spec handle_tick(SessionState.t(), non_neg_integer()) :: {:noreply, SessionState.t()}
-  def handle_tick(%SessionState{} = state, elapsed_ms) do
+  def handle_tick(%SessionState{game_state: %{stats: before}} = state, elapsed_ms) do
+    {:noreply, state} = EquipRegenHandler.handle_tick(state, elapsed_ms)
+
     if Application.get_env(:zone_server, :natural_regen, true),
-      do: run_tick(state, elapsed_ms),
+      do: run_tick(state, elapsed_ms, before.current_state),
       else: {:noreply, state}
   end
 
-  defp run_tick(%SessionState{game_state: game_state} = state, elapsed_ms) do
+  defp run_tick(%SessionState{game_state: game_state} = state, elapsed_ms, before) do
     %{stats: stats, character_id: id} = game_state
     castle_regen_map = castle_regen_map(state)
 
@@ -62,7 +70,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
       hp: stats.current_state.hp,
       sp: stats.current_state.sp,
       max_hp: stats.derived_stats.max_hp,
-      max_sp: stats.derived_stats.max_sp
+      max_sp: stats.derived_stats.max_sp,
+      gate_hp: before.hp,
+      gate_sp: before.sp
     }
 
     {hp_delta, sp_delta, timing} =

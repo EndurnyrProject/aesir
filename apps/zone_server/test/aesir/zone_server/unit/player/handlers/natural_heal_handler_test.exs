@@ -202,6 +202,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
       assert updated.game_state.stats.current_state.hp == 100 + 2 * @hp_amount
     end
 
+    test "runs the equipment tick first and gates skill HP on the HP from before it" do
+      stub(Passives, :regen, fn _ ->
+        %{skill_hp_regen: 7, skill_sp_regen: 0, allow_while_moving: false}
+      end)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{no_natural_hp_regen: true} end)
+
+      state = build_state(hp: 500, sp: 500, equipment: %{{:hp_loss_bonus, 500} => 5})
+      state = %{state | regen_timing: %{state.regen_timing | skill_hp_acc: 9_800}}
+
+      assert {:noreply, updated} = NaturalHealHandler.handle_tick(state, 500)
+      assert updated.game_state.stats.current_state.hp == 495
+      assert updated.regen_timing.skill_hp_acc == 9_800
+    end
+
     test "the equipment no-regen HP bit blocks HP but leaves SP" do
       state = build_state(hp: 100, sp: 50, equipment: %{no_regen: 1})
 

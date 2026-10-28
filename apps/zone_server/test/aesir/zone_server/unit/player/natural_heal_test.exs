@@ -240,6 +240,17 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHealTest do
       assert timing.skill_hp_acc == 0
     end
 
+    test "the skill channels' full gate reads HP from before the equipment tick" do
+      plan = plan(skill_hp: 10, modifiers: @sit_only)
+      timing = %{Timing.initial() | skill_hp_acc: 9_800}
+      vitals = Map.merge(@roomy, %{hp: 99_990, gate_hp: 100_000})
+
+      assert {0, 0, %Timing{skill_hp_acc: 9_800}} = NaturalHeal.tick(plan, timing, @tick, vitals)
+
+      assert {10, 0, %Timing{skill_hp_acc: 300}} =
+               NaturalHeal.tick(plan, timing, @tick, %{vitals | gate_hp: 99_990})
+    end
+
     test "a dead tick heals nothing and resets only the natural timestamps" do
       plan = plan(skill_hp: 10, sitting?: true, sitting_hp: 10, blocked?: true)
 

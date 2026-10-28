@@ -16,6 +16,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Option
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Unit.Player.Appearance
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -468,7 +470,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert updated_stats.derived_stats.max_sp >= 1
     end
 
-    test "bumps the generation on every recalculation" do
+    test "bumps the generation only when the full-recalculation inputs change" do
       stats = %Stats{
         base_stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
         progression: %{
@@ -485,9 +487,43 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       }
 
       once = Calculator.calculate_stats(stats)
-      twice = Calculator.calculate_stats(once)
+      again = Calculator.calculate_stats(once)
+      raised = Calculator.calculate_stats(put_in(again.base_stats.vit, 2))
+      mounted = Calculator.calculate_stats(%{raised | riding: true})
 
-      assert {once.generation, twice.generation} == {1, 2}
+      assert Enum.map([once, again, raised, mounted], & &1.generation) == [1, 1, 2, 3]
+    end
+
+    test "a status that forces a full recalculation bumps the generation, others do not" do
+      player_id = 91_001
+      stub(Interpreter, :get_all_modifiers, fn :player, ^player_id -> %{} end)
+
+      stats = %Stats{
+        base_stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
+        progression: %{
+          base_level: 1,
+          job_level: 1,
+          base_exp: 0,
+          job_exp: 0,
+          job_id: 0,
+          learned_skills: %{}
+        },
+        current_state: %{hp: 1, sp: 1},
+        equipment: %Equipment{},
+        modifiers: %Modifiers{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
+      }
+
+      base = Calculator.calculate_stats(stats, player_id, [])
+      :ok = StatusStorage.apply_status(:player, player_id, :sc_blessing, val1: 1)
+      blessed = Calculator.calculate_stats(base, player_id, [])
+      :ok = StatusStorage.apply_status(:player, player_id, :sc_berserk)
+      berserk = Calculator.calculate_stats(blessed, player_id, [])
+      ticked = Calculator.calculate_stats(berserk, player_id, [])
+      :ok = StatusStorage.remove_status(:player, player_id, :sc_berserk)
+      ended = Calculator.calculate_stats(ticked, player_id, [])
+
+      assert Enum.map([base, blessed, berserk, ticked, ended], & &1.generation) ==
+               [1, 1, 2, 2, 3]
     end
 
     test "changed?/2 ignores the generation" do

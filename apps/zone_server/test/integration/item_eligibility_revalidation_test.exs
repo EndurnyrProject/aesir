@@ -67,8 +67,6 @@ defmodule Aesir.ZoneServer.Integration.ItemEligibilityRevalidationTest do
     assert {:ok, {PlayerState, published, ^session_pid}} =
              UnitRegistry.get_unit(:player, character.id)
 
-    # A later async recalculation may have bumped only the stats generation.
-    rechecked = put_in(rechecked.game_state.stats.generation, published.stats.generation)
     assert published == rechecked.game_state
   end
 
