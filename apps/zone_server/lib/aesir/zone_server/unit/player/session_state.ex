@@ -32,9 +32,11 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   token of the pending disconnect linger, `nil` while connected.
 
   `regen_timing` is the natural regeneration timing (`NaturalHeal.Timing`), and
-  `castle_regen?` whether the player stands on a guild castle map their guild
-  owns, as evaluated on the last landing or warp. `equip_regen_generation` is the
-  `Stats.generation` the equipment regen intervals were last advanced under.
+  `castle_regen_map` the guild castle map on which the player's last landing or
+  warp granted the castle regeneration bonus (their guild owned it), `nil` when
+  none; the bonus applies only while the player is still on that map.
+  `equip_regen_generation` is the `Stats.generation` the equipment regen
+  intervals were last advanced under.
   """
 
   alias Aesir.Commons.GameMode
@@ -91,7 +93,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             lingering: nil,
             npc_event_queue: [],
             regen_timing: %Timing{},
-            castle_regen?: false,
+            castle_regen_map: nil,
             equip_regen_generation: nil
 
   @type t() :: %__MODULE__{
@@ -155,7 +157,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
           lingering: reference() | nil,
           npc_event_queue: [{non_neg_integer(), String.t()}],
           regen_timing: Timing.t(),
-          castle_regen?: boolean(),
+          castle_regen_map: String.t() | nil,
           equip_regen_generation: non_neg_integer() | nil
         }
 

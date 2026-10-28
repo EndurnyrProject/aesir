@@ -13,6 +13,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Mmo.Woe.CastleDb
+  alias Aesir.ZoneServer.Mmo.Woe.CastleStore
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -95,6 +97,74 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
 
       assert {:error, :map_not_found} = WarpHandler.warp(state(), "nowhere", 100, 120)
       refute_received {:send, :control, {:map_move, _}}
+    end
+  end
+
+  describe "warp/4 guild castle regeneration" do
+    setup do
+      stub_teardown()
+      stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
+
+      :ets.insert(
+        EtsTable.table_for(:map_cache),
+        {"aldeg_cas01", MapData.new("aldeg_cas01", 300, 300)}
+      )
+
+      :ok = CastleStore.init()
+      {:ok, castle} = CastleDb.by_map("aldeg_cas01")
+      :ok = CastleStore.hydrate(%{castle.id => castle_row(10)})
+      %{castle: castle}
+    end
+
+    defp castle_row(guild_id),
+      do: %{guild_id: guild_id, economy: 0, defense: 0, invested_economy: 0, invested_defense: 0}
+
+    defp guild_member(map_name, castle_regen_map) do
+      state = state()
+
+      %{
+        state
+        | game_state: %{state.game_state | guild_id: 10, map_name: map_name},
+          castle_regen_map: castle_regen_map
+      }
+    end
+
+    test "warping into a castle the guild owns grants the bonus" do
+      assert {:ok, updated} =
+               WarpHandler.warp(guild_member("prontera", nil), "aldeg_cas01", 100, 120)
+
+      assert updated.castle_regen_map == "aldeg_cas01"
+    end
+
+    test "warping out of the castle loses the bonus" do
+      member = guild_member("aldeg_cas01", "aldeg_cas01")
+
+      assert {:ok, updated} = WarpHandler.warp(member, "geffen", 100, 120)
+      assert updated.castle_regen_map == nil
+    end
+
+    test "a same-map warp keeps the bonus even after the castle changed hands", %{castle: castle} do
+      :ok = CastleStore.hydrate(%{castle.id => castle_row(20)})
+      member = guild_member("aldeg_cas01", "aldeg_cas01")
+
+      assert {:ok, updated} = WarpHandler.warp(member, "aldeg_cas01", 100, 120)
+      assert updated.castle_regen_map == "aldeg_cas01"
+    end
+
+    test "a same-map warp on a non-castle map grants nothing" do
+      assert {:ok, updated} =
+               WarpHandler.warp(guild_member("prontera", nil), "prontera", 100, 120)
+
+      assert updated.castle_regen_map == nil
+    end
+
+    test "a gvg_castle map without a castle row leaves castle_regen? false" do
+      stub(CastleDb, :by_map, fn "aldeg_cas01" -> :error end)
+
+      assert {:ok, updated} =
+               WarpHandler.warp(guild_member("prontera", nil), "aldeg_cas01", 100, 120)
+
+      assert updated.castle_regen_map == nil
     end
   end
 

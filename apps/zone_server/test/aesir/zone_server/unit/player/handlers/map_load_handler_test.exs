@@ -23,6 +23,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandlerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Mmo.Woe.CastleDb
+  alias Aesir.ZoneServer.Mmo.Woe.CastleStore
   alias Aesir.ZoneServer.Navigation.Route
   alias Aesir.ZoneServer.Navigation.Route.Leg
   alias Aesir.ZoneServer.Navigation.Session
@@ -93,6 +95,57 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandlerTest do
     assert loaded.game_state.pending_map_load == nil
     assert Invincibility.active?({:player, @char_id})
     assert Invincibility.active?(loaded.game_state)
+  end
+
+  describe "guild castle regeneration on the login landing" do
+    setup do
+      :ok = CastleStore.init()
+      {:ok, castle} = CastleDb.by_map("aldeg_cas01")
+
+      :ok =
+        CastleStore.hydrate(%{
+          castle.id => %{
+            guild_id: 10,
+            economy: 0,
+            defense: 0,
+            invested_economy: 0,
+            invested_defense: 0
+          }
+        })
+    end
+
+    test "landing in a castle the guild owns grants the bonus" do
+      state = session_state()
+      state = %{state | game_state: %{state.game_state | map_name: "aldeg_cas01", guild_id: 10}}
+
+      {:noreply, loaded} = MapLoadHandler.handle_map_loaded(state)
+
+      assert loaded.castle_regen_map == "aldeg_cas01"
+    end
+
+    test "the warp acknowledgement grants it for a relocation that carried only the game state" do
+      state = struct!(SessionState, session_state())
+
+      game_state = %{
+        state.game_state
+        | map_name: "aldeg_cas01",
+          guild_id: 10,
+          pending_map_load: :warp
+      }
+
+      {:noreply, loaded} = MapLoadHandler.handle_map_loaded(%{state | game_state: game_state})
+
+      assert loaded.castle_regen_map == "aldeg_cas01"
+    end
+
+    test "landing elsewhere grants nothing" do
+      state = session_state()
+      state = %{state | game_state: %{state.game_state | guild_id: 10}}
+
+      {:noreply, loaded} = MapLoadHandler.handle_map_loaded(state)
+
+      assert loaded.castle_regen_map == nil
+    end
   end
 
   test "the spawn is queued ahead of the spawn-cell warp" do

@@ -111,7 +111,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
         state
         |> StateCommit.commit(new_game_state)
         |> SkillMenuHandler.clear()
-        |> Map.merge(%{work_in_progress: false, npc_shop: nil})
+        |> Map.merge(%{
+          work_in_progress: false,
+          npc_shop: nil,
+          castle_regen_map: castle_regen_map(state, dest_map, same_map?)
+        })
 
       StatusInterpreter.remove_on_map_change(:player, game_state.character_id)
 
@@ -138,6 +142,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
       )
 
       {:ok, state}
+    end
+  end
+
+  # The guild castle regeneration bonus: granted on landing in a castle the
+  # player's guild owns, kept on a same-map warp, lost on any other map.
+  defp castle_regen_map(state, dest_map, same_map?) do
+    cond do
+      CastleStore.owned_by_guild?(dest_map, state.game_state.guild_id) -> dest_map
+      same_map? -> Map.get(state, :castle_regen_map)
+      true -> nil
     end
   end
 

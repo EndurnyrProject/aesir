@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
   @spec handle_tick(SessionState.t(), non_neg_integer()) :: {:noreply, SessionState.t()}
   def handle_tick(%SessionState{game_state: game_state} = state, elapsed_ms) do
     %{stats: stats, character_id: id} = game_state
+    castle_regen_map = castle_regen_map(state)
 
     inputs = %Inputs{
       stats: stats,
@@ -43,7 +44,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
       sitting?: game_state.action_state == :sitting,
       walking?: game_state.movement_state == :moving,
       overweight?: Weight.regen_overweight?(game_state.inventory, stats),
-      castle_bonus?: state.castle_regen?,
+      castle_bonus?: castle_regen_map != nil,
       blocked?: game_state.action_state == :dead or Concealment.unit_concealed?(:player, id),
       tension_relax?: StatusStorage.has_status?(:player, id, :sc_tensionrelax)
     }
@@ -60,8 +61,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
       |> NaturalHeal.plan()
       |> NaturalHeal.tick(state.regen_timing, elapsed_ms, vitals)
 
-    {:noreply, apply_regen(%{state | regen_timing: timing}, hp_delta, sp_delta)}
+    state = %{state | regen_timing: timing, castle_regen_map: castle_regen_map}
+    {:noreply, apply_regen(state, hp_delta, sp_delta)}
   end
+
+  # The castle bonus holds only on the map that granted it; any other map drops it.
+  defp castle_regen_map(%SessionState{castle_regen_map: map, game_state: %{map_name: map}}),
+    do: map
+
+  defp castle_regen_map(%SessionState{}), do: nil
 
   # The equipment recovery rates add to the statuses' `hp_regen`/`sp_regen`.
   defp regen_modifiers(game_state) do

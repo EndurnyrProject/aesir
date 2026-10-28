@@ -124,11 +124,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
       assert heals(build_state(hp: 100, sp: 500), 25) == 3
     end
 
-    test "an owned guild castle doubles the natural HP cadence" do
-      state = %{build_state(hp: 100, sp: 500) | castle_regen?: true}
+    test "an owned guild castle doubles the natural HP cadence while on that map" do
+      state = build_state(hp: 100, sp: 500)
+      on_castle = %{state | castle_regen_map: state.game_state.map_name}
+      left_castle = %{state | castle_regen_map: "aldeg_cas01"}
 
-      assert heals(state, 13) == 3
-      assert heals(build_state(hp: 100, sp: 500), 13) == 2
+      assert heals(on_castle, 13) == 3
+      assert heals(left_castle, 13) == 2
+      assert heals(state, 13) == 2
+    end
+
+    test "a castle bonus from another map is dropped" do
+      state = %{build_state(hp: 500, sp: 500) | castle_regen_map: "aldeg_cas01"}
+
+      assert {:noreply, %{castle_regen_map: nil}} = NaturalHealHandler.handle_tick(state, 500)
     end
 
     test "a dead player heals nothing and restarts the natural timestamps" do
@@ -237,6 +246,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
     game_state = %PlayerState{
       character_id: Keyword.get(opts, :id, 1),
       account_id: 100,
+      map_name: "prontera",
       action_state: Keyword.get(opts, :action, :idle),
       movement_state: :standing,
       inventory: Keyword.get(opts, :inventory, %{}),

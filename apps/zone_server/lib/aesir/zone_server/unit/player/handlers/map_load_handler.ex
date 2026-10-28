@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatPoint
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
+  alias Aesir.ZoneServer.Mmo.Woe.CastleStore
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Unit.Inventory.Weight
@@ -46,6 +47,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
   def handle_map_loaded(%{game_state: %{pending_map_load: :warp}} = state) do
     {:noreply, state} = StatsManager.handle_recalculate_stats(state)
     game_state = state.game_state
+
+    state =
+      Map.put(
+        state,
+        :castle_regen_map,
+        landing_castle(game_state) || Map.get(state, :castle_regen_map)
+      )
 
     Logger.debug("Player #{game_state.character_id} finished loading warp destination map")
 
@@ -76,6 +84,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
   def handle_map_loaded(%{connection_pid: connection_pid} = state) do
     {:noreply, state} = StatsManager.handle_recalculate_stats(state)
     game_state = state.game_state
+    state = Map.put(state, :castle_regen_map, landing_castle(game_state))
 
     Logger.debug("Player #{game_state.character_id} finished loading map (LoadEndAck)")
 
@@ -181,4 +190,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
       game_state.view_range
     )
   end
+
+  # Landing in a castle the player's guild owns grants the castle regeneration
+  # bonus. A warp sets it already; the warp acknowledgement grants it too for
+  # relocations that only carry the game state (item scripts).
+  defp landing_castle(%{map_name: map, guild_id: guild_id}),
+    do: if(CastleStore.owned_by_guild?(map, guild_id), do: map)
 end
