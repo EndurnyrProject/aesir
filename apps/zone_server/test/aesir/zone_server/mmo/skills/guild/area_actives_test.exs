@@ -229,13 +229,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.AreaActivesTest do
   describe "modifier maps" do
     test "regeneration follows the reference rate table" do
       assert Regeneration.modifiers(%StatusEntry{type: :sc_regeneration, val1: 1}, %{}) ==
-               %{hp_regen: 200, sp_regen: 100}
+               %{hp_regen_tick_rate: 200, sp_regen_tick_rate: 100}
 
       assert Regeneration.modifiers(%StatusEntry{type: :sc_regeneration, val1: 2}, %{}) ==
-               %{hp_regen: 200, sp_regen: 200}
+               %{hp_regen_tick_rate: 200, sp_regen_tick_rate: 200}
 
       assert Regeneration.modifiers(%StatusEntry{type: :sc_regeneration, val1: 3}, %{}) ==
-               %{hp_regen: 300, sp_regen: 300}
+               %{hp_regen_tick_rate: 300, sp_regen_tick_rate: 300}
     end
 
     test "emergency move grants +25% movement speed" do

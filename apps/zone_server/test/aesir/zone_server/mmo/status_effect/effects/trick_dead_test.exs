@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.TrickDeadTest do
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.TrickDead
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -32,6 +33,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.TrickDeadTest do
     end)
 
     :ok
+  end
+
+  test "stops all regeneration" do
+    assert TrickDead.modifiers(%StatusEntry{}, %{}) == %{no_regen: true}
+    assert :regen in TrickDead.metadata().calc_flags
   end
 
   describe "id/0" do

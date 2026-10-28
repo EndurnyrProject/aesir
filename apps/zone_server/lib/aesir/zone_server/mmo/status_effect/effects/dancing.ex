@@ -54,7 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
         do: 0,
         else: 500 - 40 * lesson(Map.get(context, :target_id))
 
-    %{sp_regen: -100, skill_sp_regen_rate: -100, movement_speed: slow}
+    %{no_natural_sp_regen: true, movement_speed: slow}
   end
 
   @impl true

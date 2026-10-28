@@ -28,7 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Poison do
     if slow_poison?(unit_type, target_id) do
       %{def2_rate: -25}
     else
-      %{def2_rate: -25, hp_regen: -100, sp_regen: -100}
+      %{def2_rate: -25, no_regen: true}
     end
   end
 

@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ExtremityFistRecoveryTest do
          element_level: 1,
          boss_flag: false,
          size: :medium,
-         stats: %{max_hp: 1_000, max_sp: 100, hp: 800, sp: 0}
+         stats: %{max_hp: 1_000, max_sp: 100, hp: 800, sp: 0, job_id: 15}
        }}
     end)
 
@@ -52,10 +52,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ExtremityFistRecoveryTest do
     assert metadata.icon == :extremityfist
   end
 
-  test "suppresses only spirit-point regeneration" do
+  test "stops only a Monk-classed holder's natural SP regeneration" do
     entry = %StatusEntry{type: :sc_extremityfist, val1: 5, state: %{}}
 
-    assert ExtremityFistRecovery.modifiers(entry, %{}) == %{sp_regen: -100}
+    for monk <- [15, 4016] do
+      assert ExtremityFistRecovery.modifiers(entry, %{target: %{job_id: monk}}) ==
+               %{no_natural_sp_regen: true}
+    end
+
+    assert ExtremityFistRecovery.modifiers(entry, %{target: %{job_id: 8}}) == %{}
+    assert ExtremityFistRecovery.modifiers(entry, %{target: %{}}) == %{}
   end
 
   test "blocks spirit-point regen for its full duration and clears on removal" do
@@ -68,7 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ExtremityFistRecoveryTest do
                duration: Formulas.asura_recovery_duration()
              )
 
-    assert Interpreter.get_all_modifiers(:player, player_id) == %{sp_regen: -100}
+    assert Interpreter.get_all_modifiers(:player, player_id) == %{no_natural_sp_regen: true}
 
     assert :ok = Interpreter.remove_status(:player, player_id, :sc_extremityfist)
     assert Interpreter.get_all_modifiers(:player, player_id) == %{}

@@ -434,8 +434,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
                Interpreter.apply_status(:player, player_id, :sc_dpoison, val1: 1, tick: 60_000)
 
       modifiers = Interpreter.get_all_modifiers(:player, player_id)
-      assert modifiers[:hp_regen] == -100
-      assert modifiers[:sp_regen] == -100
+      assert modifiers[:no_regen] == true
       assert modifiers[:def_rate] == -25
     end
   end

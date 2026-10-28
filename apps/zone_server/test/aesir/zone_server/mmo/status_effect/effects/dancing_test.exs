@@ -152,6 +152,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancingTest do
     assert %{movement_speed: 100} = Dancing.modifiers(entry, context)
   end
 
+  test "stops only natural SP regeneration" do
+    assert Dancing.modifiers(%StatusEntry{val3: 0}, %{unit_type: :mob, target_id: 42}) ==
+             %{no_natural_sp_regen: true, movement_speed: 0}
+  end
+
   test "a monster performer is not slowed" do
     assert %{movement_speed: 0} =
              Dancing.modifiers(%StatusEntry{val3: 0}, %{unit_type: :mob, target_id: 42})

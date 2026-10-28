@@ -46,10 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Berserk do
       def2_rate: -100,
       mdef2_rate: -100,
       haste_rate: 25,
-      hp_regen: -100,
-      sp_regen: -100,
-      skill_hp_regen_rate: -100,
-      skill_sp_regen_rate: -100
+      no_regen: true
     }
 
     Map.merge(shared, if(GameMode.mode() == :renewal, do: %{aspd: 15}, else: %{aspd_rate: 30}))

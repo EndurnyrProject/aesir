@@ -77,8 +77,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRingnibelungenTest do
       %{hit: 50},
       %{flee: 50},
       %{},
-      %{hp_regen: 100},
-      %{sp_regen: 100}
+      %{hp_regen_tick_rate: 100},
+      %{sp_regen_tick_rate: 100}
     ]
 
     for {expected_modifiers, roll} <- Enum.with_index(outcomes, 1) do

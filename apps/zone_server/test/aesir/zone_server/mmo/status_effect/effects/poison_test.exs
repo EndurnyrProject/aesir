@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PoisonTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Poison
   alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
   alias Aesir.ZoneServer.Mmo.StatusEntry
+  alias Aesir.ZoneServer.Mmo.StatusStorage
 
   setup :setup_ets_tables
   setup :set_mimic_private
@@ -15,6 +16,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PoisonTest do
 
   defp tick(target, hp, max_hp),
     do: Poison.on_tick(target, @instance, %{target: %{hp: hp, max_hp: max_hp}})
+
+  describe "modifiers/2" do
+    test "stops all regeneration unless Slow Poison holds it" do
+      context = %{unit_type: :player, target_id: 41}
+
+      assert Poison.modifiers(@instance, context) == %{def2_rate: -25, no_regen: true}
+
+      stub(StatusStorage, :has_status?, fn :player, 41, :sc_slowpoison -> true end)
+      assert Poison.modifiers(@instance, context) == %{def2_rate: -25}
+    end
+  end
 
   describe "on_tick/3" do
     test "a player loses 2 + 3/200 of Max HP, a non-player 2 + 1/200" do

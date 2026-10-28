@@ -34,8 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Nibelungen do
       :luk,
       :hit,
       :flee,
-      :hp_regen,
-      :sp_regen,
+      :regen,
       :watk
     ],
     end_on_start: [
@@ -94,8 +93,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Nibelungen do
   defp outcome_modifiers(6), do: %{str: 15, agi: 15, vit: 15, int: 15, dex: 15, luk: 15}
   defp outcome_modifiers(7), do: %{hit: 50}
   defp outcome_modifiers(8), do: %{flee: 50}
-  defp outcome_modifiers(10), do: %{hp_regen: 100}
-  defp outcome_modifiers(11), do: %{sp_regen: 100}
+  defp outcome_modifiers(10), do: %{hp_regen_tick_rate: 100}
+  defp outcome_modifiers(11), do: %{sp_regen_tick_rate: 100}
   defp outcome_modifiers(_none), do: %{}
 
   defp with_mastery_atk(modifiers, 0), do: modifiers

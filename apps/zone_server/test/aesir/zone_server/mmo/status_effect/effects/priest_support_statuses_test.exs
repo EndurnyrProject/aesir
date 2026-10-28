@@ -22,7 +22,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PriestSupportStatusesTest do
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.StatusTickManager
-  alias Aesir.ZoneServer.Unit.Player.NaturalHeal
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
@@ -203,22 +202,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PriestSupportStatusesTest do
     assert ModifierCalculator.get_all_modifiers(:player, @player_id).watk == 25
   end
 
-  test "Magnificat doubles the natural SP regeneration rate", %{player: player} do
-    stats = Calculator.calculate_stats(player.stats, @player_id, [])
-    passive = %{skill_hp_regen: 0, skill_sp_regen: 0, allow_while_moving: false}
-    accumulators = %{elapsed_ms: 60_000, hp_acc: 0, sp_acc: 0, skill_hp_acc: 0, skill_sp_acc: 0}
-
-    {_hp, base_sp, _accumulators} =
-      NaturalHeal.compute(stats, :idle, :standing, %{}, passive, accumulators)
-
+  test "Magnificat raises the natural SP tick rate" do
     :ok = Interpreter.apply_status(:player, @player_id, :sc_magnificat, duration: 30_000)
-    modifiers = ModifierCalculator.get_all_modifiers(:player, @player_id)
 
-    {_hp, boosted_sp, _accumulators} =
-      NaturalHeal.compute(stats, :idle, :standing, modifiers, passive, accumulators)
-
-    assert modifiers.sp_regen == 100
-    assert boosted_sp == base_sp * 2
+    assert ModifierCalculator.get_all_modifiers(:player, @player_id).sp_regen_tick_rate == 100
   end
 
   test "Priest support statuses are dispelled and naturally expire with their icons" do

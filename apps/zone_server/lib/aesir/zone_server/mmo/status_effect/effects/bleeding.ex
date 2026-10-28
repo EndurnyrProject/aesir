@@ -22,7 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Bleeding do
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
 
   @impl true
-  def modifiers(_instance, _context), do: %{hp_regen: -100, sp_regen: -100}
+  def modifiers(_instance, _context), do: %{no_regen: true}
 
   @impl true
   def on_tick(target, instance, _context) do

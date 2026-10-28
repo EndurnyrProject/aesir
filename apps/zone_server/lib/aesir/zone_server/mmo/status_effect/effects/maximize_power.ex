@@ -23,8 +23,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MaximizePower do
   alias Aesir.ZoneServer.Mmo.StatusEntry
 
   @impl true
-  @spec modifiers(StatusEntry.t(), map()) :: %{max_weapon_damage: true, sp_regen: -100}
-  def modifiers(_instance, _context), do: %{max_weapon_damage: true, sp_regen: -100}
+  @spec modifiers(StatusEntry.t(), map()) :: %{
+          max_weapon_damage: true,
+          no_natural_sp_regen: true
+        }
+  def modifiers(_instance, _context), do: %{max_weapon_damage: true, no_natural_sp_regen: true}
 
   @impl true
   @spec on_tick(Definition.target(), StatusEntry.t(), map()) :: {:ok, StatusEntry.t()} | :remove

@@ -4,16 +4,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.RegenerationTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Regeneration
   alias Aesir.ZoneServer.Mmo.StatusEntry
 
-  test "raises HP and SP regeneration by level" do
-    assert Regeneration.modifiers(%StatusEntry{val1: 1}, %{}) == %{hp_regen: 200, sp_regen: 100}
-    assert Regeneration.modifiers(%StatusEntry{val1: 3}, %{}) == %{hp_regen: 300, sp_regen: 300}
+  test "raises the HP and SP tick rates by level" do
+    assert Regeneration.modifiers(%StatusEntry{val1: 1}, %{}) ==
+             %{hp_regen_tick_rate: 200, sp_regen_tick_rate: 100}
+
+    assert Regeneration.modifiers(%StatusEntry{val1: 3}, %{}) ==
+             %{hp_regen_tick_rate: 300, sp_regen_tick_rate: 300}
   end
 
-  test "a val4 blocks the flagged natural regeneration instead" do
+  test "a val4 stops the flagged natural regeneration instead" do
     assert Regeneration.modifiers(%StatusEntry{val1: 10, val4: 3}, %{}) ==
-             %{hp_regen: -100, sp_regen: -100}
+             %{no_natural_hp_regen: true, no_natural_sp_regen: true}
 
-    assert Regeneration.modifiers(%StatusEntry{val1: 10, val4: 1}, %{}) == %{hp_regen: -100}
-    assert Regeneration.modifiers(%StatusEntry{val1: 10, val4: 2}, %{}) == %{sp_regen: -100}
+    assert Regeneration.modifiers(%StatusEntry{val1: 10, val4: 1}, %{}) ==
+             %{no_natural_hp_regen: true}
+
+    assert Regeneration.modifiers(%StatusEntry{val1: 10, val4: 2}, %{}) ==
+             %{no_natural_sp_regen: true}
   end
 end

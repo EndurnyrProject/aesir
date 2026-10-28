@@ -1,9 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Tensionrelax do
   @moduledoc """
-  Tension Relax (SC_TENSIONRELAX) triples natural and skill HP regeneration
-  while sitting in both Renewal and pre-renewal. It ends on standing, full HP,
-  or after 180 seconds. Overweight handling needs no special case: the normal
-  regeneration path already suppresses recovery while overweight.
+  Tension Relax (SC_TENSIONRELAX) triples the natural and skill HP
+  regeneration tick rates while sitting in both Renewal and pre-renewal. While
+  overweight the natural regeneration keeps running at normal speed instead.
+  It ends on standing, full HP, or after 180 seconds.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_tensionrelax,
@@ -21,8 +21,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Tensionrelax do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @impl true
-  @spec modifiers(StatusEntry.t(), map()) :: %{hp_regen: 200, skill_hp_regen_rate: 200}
-  def modifiers(_instance, _context), do: %{hp_regen: 200, skill_hp_regen_rate: 200}
+  @spec modifiers(StatusEntry.t(), map()) :: %{
+          hp_regen_tick_rate: 200,
+          skill_hp_regen_tick_rate: 200
+        }
+  def modifiers(_instance, _context),
+    do: %{hp_regen_tick_rate: 200, skill_hp_regen_tick_rate: 200}
 
   @impl true
   @spec on_tick({:player, integer()}, StatusEntry.t(), map()) :: {:ok, StatusEntry.t()} | :remove

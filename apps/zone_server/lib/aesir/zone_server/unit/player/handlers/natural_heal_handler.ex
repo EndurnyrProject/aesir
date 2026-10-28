@@ -2,16 +2,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
   @moduledoc """
   Drives the per-session natural HP/SP regeneration tick.
 
-  On each tick it gathers the inputs the pure `NaturalHeal` module needs — the
-  player's stats and action/movement state, the aggregated regen modifiers
-  (`hp_regen`/`sp_regen`, statuses plus equipment), and the passive regen
-  contribution from learned skills — applies the resulting clamped deltas to current HP/SP, carries
-  the updated accumulators back onto the player state, and (only when a delta is
-  non-zero) pushes `SP_HP`/`SP_SP` to the client and persists asynchronously.
+  Every tick, dead or alive, it gathers the facts `NaturalHeal` reads (merged
+  status modifiers plus the equipment recovery rates, learned regeneration
+  passives, the equipment no-regen mask, sitting, walking, overweight, the
+  guild castle bonus, death or concealment, and Tension Relax), runs
+  `NaturalHeal.plan/1` and `NaturalHeal.tick/4` over the session's
+  `regen_timing`, and stores the new timing.
 
-  Ticks are skipped entirely when the player is dead, under no-recover,
-  concealed (Hiding, Cloaking, Chase Walk), or already at full HP and full SP;
-  an idle full-health player produces no packets or DB writes.
+  Only a tick that restores HP or SP commits the game state, pushes the changed
+  `SP_HP`/`SP_SP` to the client and persists asynchronously; any other tick
+  touches nothing but the session's `regen_timing`.
   """
 
   alias Aesir.Commons.StatusParams
@@ -20,69 +20,50 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Concealment
+  alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.NaturalHeal
+  alias Aesir.ZoneServer.Unit.Player.NaturalHeal.Inputs
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
   @doc """
-  Computes and applies one natural-heal tick for the player session.
-
-  `elapsed_ms` is the time since the previous tick (the session's tick interval).
-  Returns `{:noreply, state}`. A no-op (returning the state unchanged) when the
-  player is dead, at full HP and SP, under no-recover, or concealed.
+  Runs one natural-heal tick of `elapsed_ms` for the player session.
   """
-  @spec handle_tick(map(), non_neg_integer()) :: {:noreply, map()}
-  def handle_tick(%{game_state: %{action_state: :dead}} = state, _elapsed_ms),
-    do: {:noreply, state}
+  @spec handle_tick(SessionState.t(), non_neg_integer()) :: {:noreply, SessionState.t()}
+  def handle_tick(%SessionState{game_state: game_state} = state, elapsed_ms) do
+    %{stats: stats, character_id: id} = game_state
 
-  def handle_tick(%{game_state: game_state} = state, elapsed_ms) do
-    stats = game_state.stats
+    inputs = %Inputs{
+      stats: stats,
+      modifiers: regen_modifiers(game_state),
+      passive_regen: Passives.regen(stats),
+      sitting_regen: Passives.sitting_regen(stats),
+      no_regen_mask: Map.get(stats.modifiers.equipment, :no_regen, 0),
+      sitting?: game_state.action_state == :sitting,
+      walking?: game_state.movement_state == :moving,
+      overweight?: Weight.regen_overweight?(game_state.inventory, stats),
+      castle_bonus?: state.castle_regen?,
+      blocked?: game_state.action_state == :dead or Concealment.unit_concealed?(:player, id),
+      tension_relax?: StatusStorage.has_status?(:player, id, :sc_tensionrelax)
+    }
 
-    if full?(stats) or recovery_blocked?(game_state) do
-      {:noreply, state}
-    else
-      regen_modifiers = regen_modifiers(game_state)
-      passive_regen = Passives.regen(game_state)
-      sitting_regen = Passives.sitting_regen(game_state)
+    vitals = %{
+      hp: stats.current_state.hp,
+      sp: stats.current_state.sp,
+      max_hp: stats.derived_stats.max_hp,
+      max_sp: stats.derived_stats.max_sp
+    }
 
-      {regen_modifiers, passive_regen, sitting_regen} =
-        block_equipment_regen(game_state, regen_modifiers, passive_regen, sitting_regen)
+    {hp_delta, sp_delta, timing} =
+      inputs
+      |> NaturalHeal.plan()
+      |> NaturalHeal.tick(state.regen_timing, elapsed_ms, vitals)
 
-      accumulators = Map.put(game_state.regen_accumulators, :elapsed_ms, elapsed_ms)
-
-      {hp_delta, sp_delta, accumulators} =
-        NaturalHeal.compute(
-          stats,
-          game_state.action_state,
-          game_state.movement_state,
-          regen_modifiers,
-          passive_regen,
-          sitting_regen,
-          accumulators
-        )
-
-      new_hp = min(stats.derived_stats.max_hp, stats.current_state.hp + hp_delta)
-      new_sp = min(stats.derived_stats.max_sp, stats.current_state.sp + sp_delta)
-
-      updated_stats = %{stats | current_state: %{stats.current_state | hp: new_hp, sp: new_sp}}
-
-      game_state = %{
-        game_state
-        | stats: updated_stats,
-          regen_accumulators: Map.delete(accumulators, :elapsed_ms)
-      }
-
-      state = StateCommit.commit(state, game_state)
-
-      apply_regen(state, hp_delta, sp_delta, new_hp, new_sp)
-
-      {:noreply, state}
-    end
+    {:noreply, apply_regen(%{state | regen_timing: timing}, hp_delta, sp_delta)}
   end
 
-  # Regen percentages come from two independent sources that add: the caster's
-  # active statuses and the equipped items' `hp_regen`/`sp_regen` bonuses.
-  @spec regen_modifiers(map()) :: NaturalHeal.regen_modifiers()
+  # The equipment recovery rates add to the statuses' `hp_regen`/`sp_regen`.
   defp regen_modifiers(game_state) do
     status_modifiers = ModifierCalculator.get_all_modifiers(:player, game_state.character_id)
     equipment = game_state.stats.modifiers.equipment
@@ -95,56 +76,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
     end)
   end
 
-  defp block_equipment_regen(game_state, modifiers, passive, sitting) do
-    mask = Map.get(game_state.stats.modifiers.equipment, :no_regen, 0)
+  defp apply_regen(state, 0, 0), do: state
 
-    {modifiers, passive, sitting} =
-      if Bitwise.band(mask, 1) != 0 do
-        {Map.put(modifiers, :hp_regen, -100), %{passive | skill_hp_regen: 0},
-         %{sitting | sitting_hp_regen: 0}}
-      else
-        {modifiers, passive, sitting}
-      end
+  defp apply_regen(%SessionState{game_state: game_state} = state, hp_delta, sp_delta) do
+    %{stats: stats} = game_state
+    new_hp = stats.current_state.hp + hp_delta
+    new_sp = stats.current_state.sp + sp_delta
+    stats = %{stats | current_state: %{stats.current_state | hp: new_hp, sp: new_sp}}
+    state = StateCommit.commit(state, %{game_state | stats: stats})
 
-    if Bitwise.band(mask, 2) != 0 do
-      {Map.put(modifiers, :sp_regen, -100), %{passive | skill_sp_regen: 0},
-       %{sitting | sitting_sp_regen: 0}}
-    else
-      {modifiers, passive, sitting}
-    end
-  end
-
-  defp apply_regen(_state, 0, 0, _new_hp, _new_sp), do: :ok
-
-  defp apply_regen(state, hp_delta, sp_delta, new_hp, new_sp) do
-    if hp_delta > 0 do
-      StatusSync.send_param(state.connection_pid, StatusParams.hp(), new_hp)
-    end
-
-    if sp_delta > 0 do
-      StatusSync.send_param(state.connection_pid, StatusParams.sp(), new_sp)
-    end
+    if hp_delta > 0, do: StatusSync.send_param(state.connection_pid, StatusParams.hp(), new_hp)
+    if sp_delta > 0, do: StatusSync.send_param(state.connection_pid, StatusParams.sp(), new_sp)
 
     changed =
       %{}
       |> put_when(hp_delta > 0, :hp, new_hp)
       |> put_when(sp_delta > 0, :sp, new_sp)
 
-    CharacterPersistence.update_stats(state.game_state.character_id, changed, async: true)
+    CharacterPersistence.update_stats(game_state.character_id, changed, async: true)
+    state
   end
 
   defp put_when(map, true, key, value), do: Map.put(map, key, value)
   defp put_when(map, false, _key, _value), do: map
-
-  # No-recover, and a concealing option (Hiding, Cloaking, Chase Walk), stop
-  # every natural and skill regeneration.
-  defp recovery_blocked?(%{character_id: id}) do
-    StatusStorage.has_status?(:player, id, :sc_norecover_state) or
-      Concealment.unit_concealed?(:player, id)
-  end
-
-  defp full?(stats) do
-    stats.current_state.hp >= stats.derived_stats.max_hp and
-      stats.current_state.sp >= stats.derived_stats.max_sp
-  end
 end

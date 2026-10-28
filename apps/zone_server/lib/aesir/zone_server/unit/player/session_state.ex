@@ -30,6 +30,10 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   `canlog_at` is the monotonic ms of the player's last combat action (see
   `Aesir.ZoneServer.Unit.Player.Logout`), `nil` before any. `lingering` is the
   token of the pending disconnect linger, `nil` while connected.
+
+  `regen_timing` is the natural regeneration timing (`NaturalHeal.Timing`), and
+  `castle_regen?` whether the player stands on a guild castle map their guild
+  owns, as evaluated on the last landing or warp.
   """
 
   alias Aesir.Commons.GameMode
@@ -38,6 +42,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   alias Aesir.ZoneServer.Navigation.Session, as: NavigationSession
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Runtime
+  alias Aesir.ZoneServer.Unit.Player.NaturalHeal.Timing
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
 
@@ -83,7 +88,9 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             navigation: nil,
             canlog_at: nil,
             lingering: nil,
-            npc_event_queue: []
+            npc_event_queue: [],
+            regen_timing: %Timing{},
+            castle_regen?: false
 
   @type t() :: %__MODULE__{
           game_state: PlayerState.t(),
@@ -144,7 +151,9 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
           navigation: NavigationSession.t() | nil,
           canlog_at: integer() | nil,
           lingering: reference() | nil,
-          npc_event_queue: [{non_neg_integer(), String.t()}]
+          npc_event_queue: [{non_neg_integer(), String.t()}],
+          regen_timing: Timing.t(),
+          castle_regen?: boolean()
         }
 
   @typedoc """

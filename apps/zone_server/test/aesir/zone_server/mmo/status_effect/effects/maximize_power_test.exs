@@ -47,7 +47,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MaximizePowerTest do
 
     assert MaximizePower.id() == :sc_maximizepower
     assert MaximizePower.metadata().icon == :maximize
-    assert MaximizePower.modifiers(entry, %{}) == %{max_weapon_damage: true, sp_regen: -100}
+
+    assert MaximizePower.modifiers(entry, %{}) ==
+             %{max_weapon_damage: true, no_natural_sp_regen: true}
   end
 
   test "drains one SP when the tick can be paid" do
@@ -108,7 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MaximizePowerTest do
 
       assert Interpreter.get_all_modifiers(:player, player_id) == %{
                max_weapon_damage: true,
-               sp_regen: -100
+               no_natural_sp_regen: true
              }
 
       assert next_tick_at in (now + tick)..(System.monotonic_time(:millisecond) + tick)

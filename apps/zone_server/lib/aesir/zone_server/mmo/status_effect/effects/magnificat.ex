@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Magnificat do
   @moduledoc """
   Magnificat (SC_MAGNIFICAT).
 
-  Doubles SP regeneration.
+  Doubles the natural SP regeneration tick rate.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_magnificat,
@@ -17,5 +17,5 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Magnificat do
     icon: :magnificat
 
   @impl true
-  def modifiers(_instance, _context), do: %{sp_regen: 100}
+  def modifiers(_instance, _context), do: %{sp_regen_tick_rate: 100}
 end

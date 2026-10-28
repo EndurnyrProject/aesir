@@ -2,416 +2,355 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHealTest do
   use ExUnit.Case, async: true
 
   alias Aesir.ZoneServer.Unit.Player.NaturalHeal
+  alias Aesir.ZoneServer.Unit.Player.NaturalHeal.Inputs
+  alias Aesir.ZoneServer.Unit.Player.NaturalHeal.Timing
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Stats
 
-  @no_passive %{skill_hp_regen: 0, skill_sp_regen: 0, allow_while_moving: false}
+  @tick 500
+  @roomy %{hp: 100, sp: 100, max_hp: 100_000, max_sp: 100_000}
 
   defp stats(opts) do
-    vit = Keyword.get(opts, :vit, 1)
-    int = Keyword.get(opts, :int, 1)
-    max_hp = Keyword.get(opts, :max_hp, 1000)
-    max_sp = Keyword.get(opts, :max_sp, 100)
-    hp = Keyword.get(opts, :hp, 1)
-    sp = Keyword.get(opts, :sp, 1)
-    base_level = Keyword.get(opts, :base_level, 50)
-
     %PlayerStats{
-      base_stats: %Stats.BaseStats{str: 1, agi: 1, vit: vit, int: int, dex: 1, luk: 1},
-      derived_stats: %Stats.DerivedStats{max_hp: max_hp, max_sp: max_sp, aspd: 150},
-      current_state: %Stats.CurrentState{hp: hp, sp: sp},
-      progression: %PlayerStats.PlayerProgression{
-        base_level: base_level,
-        job_level: 10,
-        base_exp: 0,
-        job_exp: 0,
-        job_id: 1,
-        skill_point: 0,
-        status_point: 0,
-        learned_skills: %{}
+      base_stats: %Stats.BaseStats{
+        str: 1,
+        agi: 1,
+        vit: Keyword.get(opts, :vit, 1),
+        int: Keyword.get(opts, :int, 1),
+        dex: 1,
+        luk: 1
+      },
+      derived_stats: %Stats.DerivedStats{
+        max_hp: Keyword.get(opts, :max_hp, 1000),
+        max_sp: Keyword.get(opts, :max_sp, 100),
+        aspd: 150
+      },
+      current_state: %Stats.CurrentState{hp: 1, sp: 1},
+      progression: %PlayerStats.PlayerProgression{job_id: 1, learned_skills: %{}},
+      modifiers: %PlayerStats.Modifiers{
+        equipment: Keyword.get(opts, :equipment, %{}),
+        status_effects: %{},
+        job_bonuses: %{},
+        passive: Keyword.get(opts, :passive, %{})
       }
     }
   end
 
-  # Enough elapsed for many intervals so an HP amount is emitted in a single call.
-  defp acc(elapsed_ms),
-    do: %{elapsed_ms: elapsed_ms, hp_acc: 0, sp_acc: 0, skill_hp_acc: 0, skill_sp_acc: 0}
-
-  describe "compute/6 idle vs sitting" do
-    test "sitting yields approximately 2x the HP delta of standing-idle for the same elapsed" do
-      s = stats(vit: 50, max_hp: 4000, hp: 100)
-      elapsed = 60_000
-
-      {idle_hp, _sp, _acc} =
-        NaturalHeal.compute(s, :idle, :standing, %{}, @no_passive, acc(elapsed))
-
-      {sit_hp, _sp2, _acc2} =
-        NaturalHeal.compute(s, :sitting, :standing, %{}, @no_passive, acc(elapsed))
-
-      assert idle_hp > 0
-      assert_in_delta sit_hp / idle_hp, 2.0, 0.25
-    end
+  defp inputs(opts) do
+    %Inputs{
+      stats: Keyword.get_lazy(opts, :stats, fn -> stats(opts) end),
+      modifiers: Keyword.get(opts, :modifiers, %{}),
+      passive_regen: %{
+        skill_hp_regen: Keyword.get(opts, :skill_hp, 0),
+        skill_sp_regen: Keyword.get(opts, :skill_sp, 0),
+        allow_while_moving: Keyword.get(opts, :walk_regen?, false)
+      },
+      sitting_regen: %{
+        sitting_hp_regen: Keyword.get(opts, :sitting_hp, 0),
+        sitting_sp_regen: Keyword.get(opts, :sitting_sp, 0)
+      },
+      no_regen_mask: Keyword.get(opts, :mask, 0),
+      sitting?: Keyword.get(opts, :sitting?, false),
+      walking?: Keyword.get(opts, :walking?, false),
+      overweight?: Keyword.get(opts, :overweight?, false),
+      castle_bonus?: Keyword.get(opts, :castle_bonus?, false),
+      blocked?: Keyword.get(opts, :blocked?, false),
+      tension_relax?: Keyword.get(opts, :tension_relax?, false)
+    }
   end
 
-  describe "compute/6 movement" do
-    test "moving yields 0 HP delta without allow_while_moving" do
-      s = stats(vit: 50, max_hp: 4000, hp: 100)
-      {hp, sp, _acc} = NaturalHeal.compute(s, :idle, :moving, %{}, @no_passive, acc(60_000))
-      assert hp == 0
-      # SP still regenerates while moving (rAthena: walking does not block SP).
-      assert sp > 0
-    end
+  defp plan(opts), do: opts |> inputs() |> NaturalHeal.plan()
 
-    test "moving yields HP delta when allow_while_moving is true" do
-      s = stats(vit: 50, max_hp: 4000, hp: 100)
-      passive = %{skill_hp_regen: 0, skill_sp_regen: 0, allow_while_moving: true}
-      {hp, _sp, _acc} = NaturalHeal.compute(s, :idle, :moving, %{}, passive, acc(60_000))
-      assert hp > 0
-    end
+  # Runs `count` ticks (one plan per tick, picked by `plan_for.(n)`) far from
+  # full and returns the tick numbers that restored HP and SP.
+  defp heal_ticks(plan_for, count, timing \\ Timing.initial()) do
+    {_timing, _vitals, hp_ticks, sp_ticks} =
+      Enum.reduce(1..count, {timing, @roomy, [], []}, fn n,
+                                                         {timing, vitals, hp_ticks, sp_ticks} ->
+        {hp, sp, timing} = NaturalHeal.tick(plan_for.(n), timing, @tick, vitals)
+        hp_ticks = if hp > 0, do: [n | hp_ticks], else: hp_ticks
+        sp_ticks = if sp > 0, do: [n | sp_ticks], else: sp_ticks
+        {timing, %{vitals | hp: vitals.hp + hp, sp: vitals.sp + sp}, hp_ticks, sp_ticks}
+      end)
+
+    {Enum.reverse(hp_ticks), Enum.reverse(sp_ticks)}
   end
 
-  describe "compute/6 status regen modifiers" do
-    test "hp_regen -100 zeroes the HP delta" do
-      s = stats(vit: 50, max_hp: 4000, hp: 100)
+  defp heal_ticks_with(opts, count), do: heal_ticks(fn _n -> plan(opts) end, count)
 
-      {hp, _sp, _acc} =
-        NaturalHeal.compute(s, :idle, :standing, %{hp_regen: -100}, @no_passive, acc(60_000))
-
-      assert hp == 0
+  describe "tick/4 natural HP cadence" do
+    test "heals on ticks 1, 13, 25 standing" do
+      assert {[1, 13, 25], _sp} = heal_ticks_with([], 30)
     end
 
-    test "sp_regen -100 zeroes the SP delta but not HP" do
-      s = stats(vit: 50, int: 50, max_hp: 4000, max_sp: 500, hp: 100, sp: 1)
-
-      {hp, sp, _acc} =
-        NaturalHeal.compute(s, :idle, :standing, %{sp_regen: -100}, @no_passive, acc(60_000))
-
-      assert sp == 0
-      assert hp > 0
+    test "heals on ticks 1, 7, 13 sitting" do
+      assert {[1, 7, 13], _sp} = heal_ticks_with([sitting?: true], 18)
     end
 
-    test "normal regen resumes when Slow Poison removes Poison's -100 penalties" do
-      s = stats(vit: 50, int: 50, max_hp: 4_000, max_sp: 500, hp: 100, sp: 1)
-
-      {blocked_hp, blocked_sp, _acc} =
-        NaturalHeal.compute(
-          s,
-          :idle,
-          :standing,
-          %{hp_regen: -100, sp_regen: -100},
-          @no_passive,
-          acc(60_000)
-        )
-
-      {slow_poison_hp, slow_poison_sp, _acc} =
-        NaturalHeal.compute(s, :idle, :standing, %{}, @no_passive, acc(60_000))
-
-      assert {blocked_hp, blocked_sp} == {0, 0}
-      assert slow_poison_hp > 0
-      assert slow_poison_sp > 0
+    test "an owned guild castle halves the interval like sitting" do
+      assert {[1, 7, 13], _sp} = heal_ticks_with([castle_bonus?: true], 18)
     end
 
-    test "positive sp_regen modifier increases the SP delta" do
-      s = stats(vit: 50, int: 50, max_hp: 4000, max_sp: 500, hp: 100, sp: 1)
-
-      {_hp, base_sp, _acc} =
-        NaturalHeal.compute(s, :idle, :standing, %{}, @no_passive, acc(60_000))
-
-      {_hp2, boosted_sp, _acc2} =
-        NaturalHeal.compute(s, :idle, :standing, %{sp_regen: 100}, @no_passive, acc(60_000))
-
-      assert boosted_sp > base_sp
+    test "heals on ticks 1, 25, 49 walking with walk regeneration" do
+      assert {[1, 25, 49], _sp} = heal_ticks_with([walking?: true, walk_regen?: true], 60)
     end
 
-    test "a passive sp_regen_rate multiplies the base SP amount per interval" do
-      # int 50, max SP 5000 -> base amount 1 + 8 + 50 = 59; +30% -> div(59 * 130, 100) = 76
-      s = stats(vit: 50, int: 50, max_hp: 4000, max_sp: 5000, hp: 100, sp: 1)
-      meditatio = put_in(s.modifiers.passive, %{sp_regen_rate: 30})
-
-      {_hp, base_sp, _acc} =
-        NaturalHeal.compute(s, :idle, :standing, %{}, @no_passive, acc(60_000))
-
-      {_hp2, boosted_sp, _acc2} =
-        NaturalHeal.compute(meditatio, :idle, :standing, %{}, @no_passive, acc(60_000))
-
-      assert base_sp > 0
-      assert rem(base_sp, 59) == 0
-      assert boosted_sp == div(base_sp, 59) * 76
+    test "never heals HP walking without walk regeneration, while SP keeps its cadence" do
+      assert {[], [1, 17, 33]} = heal_ticks_with([walking?: true], 40)
     end
 
-    test "Fury's interval multiplier slows natural healing without changing its amount" do
-      s = stats(vit: 50, int: 50, max_hp: 4_000, max_sp: 500, hp: 100, sp: 1)
+    test "a blocked tick restarts the count" do
+      blocked_at_six = fn n -> plan(blocked?: n == 6) end
 
-      {normal_hp, _normal_sp, _normal_acc} =
-        NaturalHeal.compute(s, :idle, :standing, %{}, @no_passive, acc(6_000))
-
-      {fury_hp, _fury_sp, _fury_acc} =
-        NaturalHeal.compute(
-          s,
-          :idle,
-          :standing,
-          %{regen_interval_multiplier: 2},
-          @no_passive,
-          acc(6_000)
-        )
-
-      assert normal_hp > 0
-      assert fury_hp == 0
-    end
-  end
-
-  describe "compute/6 skill HP regen (SM_RECOVERY)" do
-    @skill_passive %{skill_hp_regen: 30, skill_sp_regen: 0, allow_while_moving: false}
-
-    test "skill-channel rates triple or zero the corresponding passive regen without altering base regen" do
-      s = stats(vit: 1, int: 1, max_hp: 4_000, max_sp: 500, hp: 100, sp: 1)
-      passive = %{skill_hp_regen: 30, skill_sp_regen: 20, allow_while_moving: false}
-
-      for {rates, expected_hp, expected_sp} <- [
-            {%{}, 30, 20},
-            {%{skill_hp_regen_rate: 200, skill_sp_regen_rate: 200}, 90, 60},
-            {%{skill_hp_regen_rate: -100, skill_sp_regen_rate: -100}, 0, 0}
-          ] do
-        {hp, sp, _acc} = NaturalHeal.compute(s, :idle, :standing, rates, passive, acc(10_000))
-
-        {base_hp, base_sp, _acc} =
-          NaturalHeal.compute(s, :idle, :standing, rates, @no_passive, acc(10_000))
-
-        assert {hp - base_hp, sp - base_sp} == {expected_hp, expected_sp}
-      end
+      # The block at clock 3000 restarts the 5750 ms interval: due again at 8750.
+      assert {[1, 18], _sp} = heal_ticks(blocked_at_six, 20)
+      assert {[1, 13], _sp} = heal_ticks_with([], 20)
     end
 
-    test "a single 10s tick yields the skill amount on top of base regen while standing-idle" do
-      s = stats(vit: 1, max_hp: 4000, hp: 100)
+    test "at full HP the timestamp keeps cycling and the next heal lands on the cycle boundary" do
+      plan = plan([])
+      full = %{@roomy | hp: 100_000}
 
-      {hp, _sp, _acc} =
-        NaturalHeal.compute(s, :idle, :standing, %{}, @skill_passive, acc(10_000))
-
-      {base_hp, _sp2, _acc2} =
-        NaturalHeal.compute(s, :idle, :standing, %{}, @no_passive, acc(10_000))
-
-      assert hp - base_hp == 30
-    end
-
-    test "skill HP regen also fires while sitting (sitting does not speed it up)" do
-      s = stats(vit: 1, max_hp: 4000, hp: 100)
-
-      {idle_hp, _sp, _acc} =
-        NaturalHeal.compute(s, :idle, :standing, %{}, @skill_passive, acc(10_000))
-
-      {sit_hp, _sp2, _acc2} =
-        NaturalHeal.compute(s, :sitting, :standing, %{}, @no_passive, acc(10_000))
-
-      # the skill amount over a single 10s interval is the same whether sitting or
-      # standing — only the base HP channel differs (sitting halves its interval)
-      {sit_with_skill, _sp3, _acc3} =
-        NaturalHeal.compute(s, :sitting, :standing, %{}, @skill_passive, acc(10_000))
-
-      assert idle_hp > 0
-      assert sit_with_skill - sit_hp == 30
-    end
-
-    test "skill HP regen contributes 0 while moving without allow_while_moving" do
-      s = stats(vit: 1, max_hp: 4000, hp: 100)
-
-      {hp, _sp, _acc} =
-        NaturalHeal.compute(s, :idle, :moving, %{}, @skill_passive, acc(10_000))
-
-      assert hp == 0
-    end
-
-    test "skill HP regen fires while moving when allow_while_moving is true" do
-      s = stats(vit: 1, max_hp: 4000, hp: 100)
-      passive = %{skill_hp_regen: 30, skill_sp_regen: 0, allow_while_moving: true}
-      base_passive = %{skill_hp_regen: 0, skill_sp_regen: 0, allow_while_moving: true}
-
-      {hp, _sp, _acc} =
-        NaturalHeal.compute(s, :idle, :moving, %{}, passive, acc(10_000))
-
-      {base_hp, _sp2, _acc2} =
-        NaturalHeal.compute(s, :idle, :moving, %{}, base_passive, acc(10_000))
-
-      assert hp - base_hp == 30
-    end
-  end
-
-  describe "compute/7 sitting Spiritual Cadence regeneration" do
-    @cadence %{sitting_hp_regen: 120, sitting_sp_regen: 110}
-
-    test "adds its HP and SP contributions after one sitting skill interval" do
-      s = stats(vit: 1, int: 1, max_hp: 10_000, max_sp: 10_000, hp: 100, sp: 100)
-
-      {base_hp, base_sp, _acc} =
-        NaturalHeal.compute(s, :sitting, :standing, %{}, @no_passive, acc(10_000))
-
-      {cadence_hp, cadence_sp, _acc} =
-        NaturalHeal.compute(s, :sitting, :standing, %{}, @no_passive, @cadence, acc(10_000))
-
-      assert {cadence_hp - base_hp, cadence_sp - base_sp} == {120, 110}
-    end
-
-    test "pauses accumulated progress while standing or moving" do
-      s = stats(vit: 1, int: 1, max_hp: 10_000, max_sp: 10_000, hp: 100, sp: 100)
-
-      {_hp, _sp, sitting_acc} =
-        NaturalHeal.compute(s, :sitting, :standing, %{}, @no_passive, @cadence, acc(9_000))
-
-      assert sitting_acc.sitting_hp_acc == 9_000
-      assert sitting_acc.sitting_sp_acc == 9_000
-
-      paused_acc =
-        Enum.reduce([{:idle, :standing}, {:sitting, :moving}], sitting_acc, fn
-          {action_state, movement_state}, accumulators ->
-            {_hp, _sp, next_accumulators} =
-              NaturalHeal.compute(
-                s,
-                action_state,
-                movement_state,
-                %{},
-                @no_passive,
-                @cadence,
-                Map.put(accumulators, :elapsed_ms, 500)
-              )
-
-            assert next_accumulators.sitting_hp_acc == 9_000
-            assert next_accumulators.sitting_sp_acc == 9_000
-            next_accumulators
+      timing =
+        Enum.reduce(1..14, Timing.initial(), fn _n, timing ->
+          {0, _sp, timing} = NaturalHeal.tick(plan, timing, @tick, full)
+          timing
         end)
 
-      full = stats(vit: 1, int: 1, max_hp: 10_000, max_sp: 10_000, hp: 10_000, sp: 10_000)
+      assert timing.hp_last_ms == 6_500
 
-      {0, 0, ineligible_acc} =
-        NaturalHeal.compute(
-          full,
-          :sitting,
-          :standing,
-          %{},
-          @no_passive,
-          @cadence,
-          Map.put(paused_acc, :elapsed_ms, 500)
-        )
+      hurt = %{full | hp: 50_000}
 
-      assert ineligible_acc.sitting_hp_acc == 9_000
-      assert ineligible_acc.sitting_sp_acc == 9_000
+      {hp_ticks, _timing} =
+        Enum.reduce(15..25, {[], timing}, fn n, {ticks, timing} ->
+          {hp, _sp, timing} = NaturalHeal.tick(plan, timing, @tick, hurt)
+          {if(hp > 0, do: [n | ticks], else: ticks), timing}
+        end)
 
-      final_acc = Map.put(ineligible_acc, :elapsed_ms, 1_000)
+      assert hp_ticks == [25]
+    end
+  end
 
-      {base_hp, base_sp, _acc} =
-        NaturalHeal.compute(
-          s,
-          :sitting,
-          :standing,
-          %{},
-          @no_passive,
-          %{sitting_hp_regen: 0, sitting_sp_regen: 0},
-          final_acc
-        )
-
-      {cadence_hp, cadence_sp, _acc} =
-        NaturalHeal.compute(
-          s,
-          :sitting,
-          :standing,
-          %{},
-          @no_passive,
-          @cadence,
-          final_acc
-        )
-
-      assert {cadence_hp - base_hp, cadence_sp - base_sp} == {120, 110}
+  describe "tick/4 natural SP cadence" do
+    test "heals on ticks 1, 17, 33 standing" do
+      assert {_hp, [1, 17, 33]} = heal_ticks_with([], 40)
     end
 
-    test "does not change standing, moving, or status-modified natural regeneration" do
-      s = stats(vit: 50, int: 50, max_hp: 4_000, max_sp: 500, hp: 100, sp: 1)
-
-      for {action_state, movement_state} <- [idle: :standing, sitting: :moving] do
-        {base_hp, base_sp, _acc} =
-          NaturalHeal.compute(
-            s,
-            action_state,
-            movement_state,
-            %{hp_regen: -100, sp_regen: -100},
-            @no_passive,
-            acc(10_000)
-          )
-
-        {cadence_hp, cadence_sp, _acc} =
-          NaturalHeal.compute(
-            s,
-            action_state,
-            movement_state,
-            %{hp_regen: -100, sp_regen: -100},
-            @no_passive,
-            @cadence,
-            acc(10_000)
-          )
-
-        assert {cadence_hp, cadence_sp} == {base_hp, base_sp}
-      end
+    test "a natural SP interval multiplier of 2 heals on ticks 1 and 33" do
+      assert {_hp, [1, 33]} =
+               heal_ticks_with([modifiers: %{natural_sp_interval_multiplier: 2}], 40)
     end
 
-    test "keeps the existing compute/6 status-modified result byte-for-byte" do
-      s = stats(vit: 50, int: 50, max_hp: 4_000, max_sp: 500, hp: 100, sp: 1)
-      modifiers = %{hp_regen: -100, sp_regen: 100}
+    test "Magnificat's tick rate heals on ticks 1, 9, 17" do
+      assert {_hp, [1, 9, 17]} = heal_ticks_with([modifiers: %{sp_regen_tick_rate: 100}], 20)
+    end
+  end
 
-      assert NaturalHeal.compute(s, :idle, :standing, modifiers, @no_passive, acc(10_000)) ==
-               NaturalHeal.compute(
-                 s,
-                 :idle,
-                 :standing,
-                 modifiers,
-                 @no_passive,
-                 %{sitting_hp_regen: 0, sitting_sp_regen: 0},
-                 acc(10_000)
+  describe "tick/4 skill regeneration" do
+    @skill_only %{no_natural_hp_regen: true, no_natural_sp_regen: true}
+
+    test "skill HP heals every 20 ticks at the base rate" do
+      assert {[20, 40], []} = heal_ticks_with([modifiers: @skill_only, skill_hp: 10], 45)
+    end
+
+    test "skill HP at triple rate carries the remainder: ticks 7, 14, 20" do
+      modifiers = Map.put(@skill_only, :skill_hp_regen_tick_rate, 200)
+
+      assert {[7, 14, 20], []} = heal_ticks_with([modifiers: modifiers, skill_hp: 10], 20)
+    end
+
+    test "walking freezes the skill accumulators without resetting them" do
+      plan = plan(modifiers: @skill_only, skill_hp: 10, skill_sp: 10, walking?: true)
+      timing = %{Timing.initial() | skill_hp_acc: 9_000, skill_sp_acc: 9_000}
+
+      assert {0, 0, %Timing{skill_hp_acc: 9_000, skill_sp_acc: 9_000}} =
+               NaturalHeal.tick(plan, timing, @tick, @roomy)
+    end
+
+    test "a blocked tick leaves the skill accumulators untouched" do
+      plan = plan(skill_hp: 10, skill_sp: 10, blocked?: true)
+      timing = %{Timing.initial() | skill_hp_acc: 9_800, skill_sp_acc: 9_800}
+
+      assert {0, 0, %Timing{skill_hp_acc: 9_800, skill_sp_acc: 9_800}} =
+               NaturalHeal.tick(plan, timing, @tick, @roomy)
+    end
+
+    test "dancing keeps SP Recovery ticking while the natural SP channel is off" do
+      assert {[], [20]} =
+               heal_ticks_with(
+                 [
+                   modifiers: %{no_natural_hp_regen: true, no_natural_sp_regen: true},
+                   skill_sp: 10
+                 ],
+                 20
                )
     end
   end
 
-  describe "compute/6 sub-interval accumulation" do
-    test "sub-interval regen accumulates across successive calls rather than being lost" do
-      s = stats(vit: 50, max_hp: 4000, hp: 100)
-      # A short elapsed below one HP interval should heal 0 on its own...
-      small = 500
+  describe "tick/4 sitting skill regeneration" do
+    @sit_only %{no_natural_hp_regen: true, no_natural_sp_regen: true}
 
-      {hp1, _sp, acc1} =
-        NaturalHeal.compute(s, :idle, :standing, %{}, @no_passive, acc(small))
+    test "heals every 20 sitting ticks" do
+      assert {[20, 40], [20, 40]} =
+               heal_ticks_with(
+                 [modifiers: @sit_only, sitting?: true, sitting_hp: 10, sitting_sp: 5],
+                 40
+               )
+    end
 
-      assert hp1 == 0
+    test "heals every 40 sitting ticks while overweight, nothing else heals" do
+      assert {[40], [40]} =
+               heal_ticks_with(
+                 [sitting?: true, overweight?: true, sitting_hp: 10, sitting_sp: 5],
+                 40
+               )
+    end
 
-      # ...but repeated short calls eventually cross the interval and heal.
-      {total_hp, _acc_final} =
-        Enum.reduce(1..40, {hp1, acc1}, fn _i, {sum, a} ->
-          a = %{a | elapsed_ms: small}
-          {hp, _sp, a2} = NaturalHeal.compute(s, :idle, :standing, %{}, @no_passive, a)
-          {sum + hp, a2}
-        end)
+    test "heals nothing under no_regen" do
+      assert {[], []} =
+               heal_ticks_with(
+                 [modifiers: %{no_regen: true}, sitting?: true, sitting_hp: 10, sitting_sp: 5],
+                 40
+               )
+    end
 
-      assert total_hp > 0
+    test "does not run standing" do
+      assert {[], []} =
+               heal_ticks_with([modifiers: @sit_only, sitting_hp: 10, sitting_sp: 5], 40)
     end
   end
 
-  describe "compute/6 full HP and SP" do
-    test "at full HP and SP yields {0, 0, _}" do
-      s = stats(vit: 50, int: 50, max_hp: 4000, max_sp: 500, hp: 4000, sp: 500)
-      {hp, sp, _acc} = NaturalHeal.compute(s, :idle, :standing, %{}, @no_passive, acc(60_000))
-      assert hp == 0
-      assert sp == 0
+  describe "tick/4 ordering" do
+    test "partial natural HP heal clamps and skips skill HP for the tick only" do
+      # VIT 45 and max HP 200: a natural HP amount of 10 against 3 points of room.
+      plan = plan(vit: 45, max_hp: 200, skill_hp: 5)
+      assert plan.hp == 10
+
+      timing = %{Timing.initial() | skill_hp_acc: 9_500}
+      vitals = %{hp: 197, sp: 100, max_hp: 200, max_sp: 100}
+
+      {hp, sp, timing} = NaturalHeal.tick(plan, timing, @tick, vitals)
+
+      assert {hp, sp} == {3, 0}
+      assert timing.skill_hp_acc == 9_500
+
+      {hp, _sp, timing} = NaturalHeal.tick(plan, timing, @tick, %{vitals | hp: 150})
+
+      assert hp == 5
+      assert timing.skill_hp_acc == 0
     end
 
-    test "HP delta is clamped so it never exceeds max_hp" do
-      s = stats(vit: 50, max_hp: 4000, hp: 3990)
-      {hp, _sp, _acc} = NaturalHeal.compute(s, :idle, :standing, %{}, @no_passive, acc(600_000))
-      assert hp <= 10
-      assert s.current_state.hp + hp <= s.derived_stats.max_hp
+    test "a dead tick heals nothing and resets only the natural timestamps" do
+      plan = plan(skill_hp: 10, sitting?: true, sitting_hp: 10, blocked?: true)
+
+      timing = %Timing{
+        clock_ms: 4_000,
+        hp_last_ms: 1_000,
+        sp_last_ms: 2_000,
+        skill_hp_acc: 3_000,
+        skill_sp_acc: 4_000,
+        sitting_hp_acc: 5_000,
+        sitting_sp_acc: 6_000
+      }
+
+      assert NaturalHeal.tick(plan, timing, @tick, @roomy) ==
+               {0, 0, %{timing | clock_ms: 4_500, hp_last_ms: 4_500, sp_last_ms: 4_500}}
+    end
+
+    test "sitting regen runs before the walking gate clears the skill flags" do
+      plan = plan(sitting?: true, walking?: true, sitting_hp: 7, modifiers: @sit_only)
+      timing = %{Timing.initial() | sitting_hp_acc: 9_500}
+
+      assert {7, 0, %Timing{sitting_hp_acc: 0}} = NaturalHeal.tick(plan, timing, @tick, @roomy)
+    end
+
+    test "a partial sitting heal stops the skill HP channel for the tick" do
+      plan = plan(sitting?: true, sitting_hp: 10, skill_hp: 10, modifiers: @sit_only)
+      timing = %{Timing.initial() | sitting_hp_acc: 9_500, skill_hp_acc: 9_500}
+      vitals = %{@roomy | hp: 99_995}
+
+      assert {5, 0, %Timing{sitting_hp_acc: 0, skill_hp_acc: 9_500}} =
+               NaturalHeal.tick(plan, timing, @tick, vitals)
     end
   end
 
-  describe "compute/6 determinism" do
-    test "same inputs produce the same output" do
-      s = stats(vit: 30, int: 20, max_hp: 3000, max_sp: 300, hp: 50, sp: 10)
-      r1 = NaturalHeal.compute(s, :idle, :standing, %{}, @no_passive, acc(60_000))
-      r2 = NaturalHeal.compute(s, :idle, :standing, %{}, @no_passive, acc(60_000))
-      assert r1 == r2
+  describe "plan/1 amounts" do
+    test "natural HP is vit/5 + max(1, max_hp/200) scaled by the recovery rate, floored at 0" do
+      assert plan(vit: 50, max_hp: 4_000).hp == 10 + 20
+      assert plan(vit: 50, max_hp: 4_000, modifiers: %{hp_regen: 50}).hp == 45
+      assert plan(vit: 50, max_hp: 4_000, modifiers: %{hp_regen: -100}).hp == 0
+      assert plan(vit: 50, max_hp: 4_000, modifiers: %{hp_regen: -150}).hp == 0
+      assert plan(vit: 1, max_hp: 100).hp == 1
+    end
+
+    test "natural HP reads effective VIT" do
+      assert plan(vit: 50, max_hp: 4_000, equipment: %{vit: 10}).hp == 12 + 20
+    end
+
+    test "natural SP adds the INT 120 bonus" do
+      assert plan(int: 60, max_sp: 500).sp == 1 + 10 + 5
+      assert plan(int: 130, max_sp: 500).sp == 1 + 21 + 5 + 5 + 4
+    end
+
+    test "Meditatio applies after the recovery rate with a floor of 1" do
+      assert plan(int: 60, max_sp: 500, passive: %{sp_regen_rate: 30}).sp == div(16 * 130, 100)
+
+      assert plan(
+               int: 60,
+               max_sp: 500,
+               modifiers: %{sp_regen: -100},
+               passive: %{sp_regen_rate: 30}
+             ).sp == 1
+
+      assert plan(int: 60, max_sp: 500, modifiers: %{sp_regen: -100}).sp == 0
+    end
+  end
+
+  describe "plan/1 flags and rates" do
+    test "no_regen clears every channel" do
+      plan = plan(modifiers: %{no_regen: true}, skill_hp: 5, skill_sp: 5)
+
+      assert {plan.natural_hp?, plan.natural_sp?, plan.skill_hp?, plan.skill_sp?} ==
+               {false, false, false, false}
+    end
+
+    test "no_natural_sp_regen clears only natural SP" do
+      plan = plan(modifiers: %{no_natural_sp_regen: true}, skill_hp: 5, skill_sp: 5)
+
+      assert {plan.natural_hp?, plan.natural_sp?, plan.skill_hp?, plan.skill_sp?} ==
+               {true, false, true, true}
+    end
+
+    test "the equipment mask clears natural and skill channels per resource" do
+      hp_masked = plan(mask: 1, skill_hp: 5, skill_sp: 5)
+      sp_masked = plan(mask: 2, skill_hp: 5, skill_sp: 5)
+
+      assert {hp_masked.natural_hp?, hp_masked.skill_hp?, hp_masked.natural_sp?,
+              hp_masked.skill_sp?} == {false, false, true, true}
+
+      assert {sp_masked.natural_hp?, sp_masked.skill_hp?, sp_masked.natural_sp?,
+              sp_masked.skill_sp?} == {true, true, false, false}
+    end
+
+    test "the skill flag is set by either the skill or the sitting amount" do
+      assert plan(sitting_hp: 5).skill_hp?
+      assert plan(sitting_sp: 5).skill_sp?
+      refute plan([]).skill_hp?
+    end
+
+    test "Tension Relax raises the HP tick rates unless overweight" do
+      modifiers = %{hp_regen_tick_rate: 200, skill_hp_regen_tick_rate: 200}
+      relaxed = plan(modifiers: modifiers, tension_relax?: true)
+      overweight = plan(modifiers: modifiers, tension_relax?: true, overweight?: true)
+
+      assert {relaxed.hp_rate, relaxed.skill_hp_rate, relaxed.overweight?} == {300, 300, false}
+
+      assert {overweight.hp_rate, overweight.skill_hp_rate, overweight.overweight?} ==
+               {100, 100, false}
+    end
+
+    test "overweight without Tension Relax stays overweight" do
+      assert plan(overweight?: true).overweight?
     end
   end
 end

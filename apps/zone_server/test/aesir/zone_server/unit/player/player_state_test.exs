@@ -195,10 +195,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       assert cross_map.deferred_epoch == 2
     end
 
-    test "regen accumulators default to zero", %{state: state} do
-      assert state.regen_accumulators == %{hp_acc: 0, sp_acc: 0, skill_hp_acc: 0, skill_sp_acc: 0}
-    end
-
     test "walk delays block movement until their monotonic expiry", %{state: state} do
       delayed = PlayerState.apply_walk_delay(state, 1_600, 10_000)
       extended = PlayerState.apply_walk_delay(delayed, 500, 10_500)

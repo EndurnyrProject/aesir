@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DeadlyPoisonTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -20,6 +21,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DeadlyPoisonTest do
         loaded: loaded,
         target: %{hp: hp, max_hp: max_hp}
       })
+
+  describe "modifiers/2" do
+    test "stops all regeneration unless Slow Poison holds it" do
+      context = %{unit_type: :player, target_id: 41}
+
+      stub(StatusStorage, :has_status?, fn :player, 41, :sc_slowpoison -> false end)
+      assert DeadlyPoison.modifiers(@instance, context) == %{no_regen: true, def_rate: -25}
+
+      stub(StatusStorage, :has_status?, fn :player, 41, :sc_slowpoison -> true end)
+      assert DeadlyPoison.modifiers(@instance, context) == %{def_rate: -25}
+    end
+  end
 
   describe "on_apply/3" do
     test "a player loses 10% of Max HP at once, anyone else 15%" do

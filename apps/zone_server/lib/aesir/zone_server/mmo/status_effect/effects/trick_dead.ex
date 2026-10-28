@@ -5,7 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.TrickDead do
   The caster feigns death: cannot move, attack or use skills, and monsters
   ignore them. Applied by NV_TRICKDEAD as a persistent toggle (no duration) -
   re-casting NV_TRICKDEAD removes it. Active damage breaks it, and Provoke also
-  cancels it (see Provoke's `end_on_start`).
+  cancels it (see Provoke's `end_on_start`). It stops all regeneration.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_trickdead,
@@ -18,8 +18,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.TrickDead do
     permanent: true,
     no_save: true,
     remove_on_map_change: true,
+    calc_flags: [:regen],
     icon: :trickdead,
     # NV_TRICKDEAD (143) is the only skill usable while feigning death: recasting
     # it toggles SC_TRICKDEAD off so the player stands back up.
     allow_skills: [143]
+
+  @impl true
+  def modifiers(_instance, _context), do: %{no_regen: true}
 end

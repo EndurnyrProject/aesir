@@ -34,8 +34,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.TensionrelaxTest do
     %{player: player}
   end
 
-  test "triples natural and skill HP regeneration" do
-    assert %{hp_regen: 200, skill_hp_regen_rate: 200} =
+  test "triples the natural and skill HP tick rates" do
+    assert %{hp_regen_tick_rate: 200, skill_hp_regen_tick_rate: 200} ==
              Tensionrelax.modifiers(%StatusEntry{}, %{})
   end
 

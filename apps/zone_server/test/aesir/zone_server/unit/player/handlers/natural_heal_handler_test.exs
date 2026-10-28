@@ -3,16 +3,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
   use Mimic
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.ParamChange
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Skill.Passives
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Tensionrelax
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler
+  alias Aesir.ZoneServer.Unit.Player.NaturalHeal.Timing
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
@@ -24,6 +26,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
   # SP_HP / SP_SP param ids
   @sp_hp 5
   @sp_sp 7
+  # VIT 50 and max HP 500: 10 + 2 HP per natural heal.
+  @hp_amount 12
+  @red_potion 501
 
   setup :set_mimic_from_context
 
@@ -40,16 +45,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
       %{skill_hp_regen: 0, skill_sp_regen: 0, allow_while_moving: false}
     end)
 
-    stub(Passives, :sitting_regen, fn _ ->
-      %{sitting_hp_regen: 0, sitting_sp_regen: 0}
-    end)
+    stub(Passives, :sitting_regen, fn _ -> %{sitting_hp_regen: 0, sitting_sp_regen: 0} end)
 
     :ok
   end
 
   describe "handle_tick/2" do
     test "publishes regenerated HP/SP as one complete resource snapshot" do
-      state = build_state(hp: 100, sp: 50, action: :idle, movement: :standing)
+      state = build_state(hp: 100, sp: 50)
 
       game_state = %{
         state.game_state
@@ -66,314 +69,160 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
       end)
 
       assert {:noreply, updated} =
-               NaturalHealHandler.handle_tick(%{state | game_state: game_state}, 10_000)
+               NaturalHealHandler.handle_tick(%{state | game_state: game_state}, 500)
 
       assert_receive {:party_member, member}
 
       assert member == %Member{
                char_id: 1,
                name: "Aesir",
-               job_id: updated.game_state.stats.progression.job_id,
-               base_level: updated.game_state.stats.progression.base_level,
-               hp: updated.game_state.stats.current_state.hp,
+               job_id: 0,
+               base_level: 1,
+               hp: 100 + @hp_amount,
                max_hp: 500,
                sp: updated.game_state.stats.current_state.sp,
                max_sp: 500,
-               ap: updated.game_state.stats.current_state.ap,
-               max_ap: updated.game_state.stats.derived_stats.max_ap,
+               ap: 0,
+               max_ap: 0,
                online: true,
                map_name: "prontera"
              }
-
-      refute_receive {:party_member, _member}
     end
 
-    test "regenerates HP for a damaged idle player and clamps at max" do
-      # A single 500ms tick is sub-interval; HP rises once enough ticks
-      # accumulate past the base HP interval (the accumulator carries progress).
-      state = build_state(hp: 100, sp: 50, action: :idle, movement: :standing)
+    test "a zero-delta tick only advances the timing" do
+      reject(UnitRegistry, :update_unit_state, 3)
+      reject(CharacterPersistence, :update_stats, 3)
+      state = build_state(hp: 500, sp: 500)
 
-      final =
-        Enum.reduce(1..20, state, fn _, acc ->
-          {:noreply, next} = NaturalHealHandler.handle_tick(acc, 500)
-          next
-        end)
+      assert {:noreply, updated} = NaturalHealHandler.handle_tick(state, 500)
 
-      hp_after = final.game_state.stats.current_state.hp
-
-      assert hp_after > 100
-      assert hp_after <= 500
-      assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_hp}}}
-    end
-
-    test "stops exactly at max HP across repeated ticks" do
-      state = build_state(hp: 495, sp: 100, action: :idle, movement: :standing)
-
-      final =
-        Enum.reduce(1..200, state, fn _, acc ->
-          {:noreply, next} = NaturalHealHandler.handle_tick(acc, 500)
-          next
-        end)
-
-      assert final.game_state.stats.current_state.hp == 500
-    end
-
-    test "does not regen HP while moving without SM_MOVINGRECOVERY but still regens SP" do
-      state = build_state(hp: 100, sp: 50, action: :idle, movement: :moving)
-
-      final =
-        Enum.reduce(1..40, state, fn _, acc ->
-          {:noreply, next} = NaturalHealHandler.handle_tick(acc, 500)
-          next
-        end)
-
-      assert final.game_state.stats.current_state.hp == 100
-      assert final.game_state.stats.current_state.sp > 50
-    end
-
-    test "Tension Relax triples natural and skill HP healing while sitting" do
-      Aesir.TestEtsSetup.setup_ets_tables(%{})
-
-      stub(Passives, :regen, fn _ ->
-        %{skill_hp_regen: 5, skill_sp_regen: 0, allow_while_moving: false}
-      end)
-
-      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 ->
-        if StatusStorage.has_status?(:player, 1, :sc_tensionrelax),
-          do: Tensionrelax.modifiers(StatusStorage.get_status(:player, 1, :sc_tensionrelax), %{}),
-          else: %{}
-      end)
-
-      state = build_state(hp: 1, sp: 50, action: :sitting, movement: :standing)
-      {:noreply, baseline} = NaturalHealHandler.handle_tick(state, 30_000)
-      :ok = StatusStorage.apply_status(:player, 1, :sc_tensionrelax, duration: 180_000)
-      {:noreply, boosted} = NaturalHealHandler.handle_tick(state, 30_000)
-
-      baseline_gain = baseline.game_state.stats.current_state.hp - 1
-      boosted_gain = boosted.game_state.stats.current_state.hp - 1
-      assert baseline_gain == 135
-      assert boosted_gain == 3 * baseline_gain
-    end
-
-    test "an equipment hp_regen bonus shortens the HP interval" do
-      baseline = build_state(hp: 100, sp: 50, action: :idle, movement: :standing)
-
-      equipped =
-        build_state(
-          hp: 100,
-          sp: 50,
-          action: :idle,
-          movement: :standing,
-          equipment: %{hp_regen: 100}
-        )
-
-      {:noreply, plain} = NaturalHealHandler.handle_tick(baseline, 6_000)
-      {:noreply, boosted} = NaturalHealHandler.handle_tick(equipped, 6_000)
-
-      # amount = vit/5 + max(1, max_hp/200) = 12; +100% halves the interval, so
-      # the same 6s elapsed crosses it twice.
-      assert plain.game_state.stats.current_state.hp == 112
-      assert boosted.game_state.stats.current_state.hp == 124
-    end
-
-    test "equipment and status regen bonuses sum into one rate" do
-      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{sp_regen: 100} end)
-
-      state =
-        build_state(
-          hp: 500,
-          sp: 50,
-          action: :idle,
-          movement: :standing,
-          equipment: %{sp_regen: 100}
-        )
-
-      {:noreply, updated} = NaturalHealHandler.handle_tick(state, 8_000)
-
-      # amount = 1 + int/6 + max_sp/100 = 1 + 8 + 5 = 14; rate 300 -> interval
-      # 8000*100/300 = 2666, crossed 3 times in 8s.
-      assert updated.game_state.stats.current_state.sp == 50 + 3 * 14
-    end
-
-    test "bNoRegen HP bit blocks every HP channel but leaves SP regeneration" do
-      stub(Passives, :regen, fn _ ->
-        %{skill_hp_regen: 50, skill_sp_regen: 0, allow_while_moving: false}
-      end)
-
-      stub(Passives, :sitting_regen, fn _ ->
-        %{sitting_hp_regen: 50, sitting_sp_regen: 0}
-      end)
-
-      state =
-        build_state(
-          hp: 100,
-          sp: 50,
-          action: :sitting,
-          movement: :standing,
-          equipment: %{no_regen: 1}
-        )
-
-      final = tick(state, 40)
-
-      assert final.game_state.stats.current_state.hp == 100
-      assert final.game_state.stats.current_state.sp > 50
-    end
-
-    test "bNoRegen SP bit blocks every SP channel but leaves HP regeneration" do
-      stub(Passives, :regen, fn _ ->
-        %{skill_hp_regen: 0, skill_sp_regen: 50, allow_while_moving: false}
-      end)
-
-      stub(Passives, :sitting_regen, fn _ ->
-        %{sitting_hp_regen: 0, sitting_sp_regen: 50}
-      end)
-
-      state =
-        build_state(
-          hp: 100,
-          sp: 50,
-          action: :sitting,
-          movement: :standing,
-          equipment: %{no_regen: 2}
-        )
-
-      final = tick(state, 40)
-
-      assert final.game_state.stats.current_state.hp > 100
-      assert final.game_state.stats.current_state.sp == 50
-    end
-
-    test "regens HP while moving when SM_MOVINGRECOVERY is known" do
-      stub(Passives, :regen, fn _ ->
-        %{skill_hp_regen: 0, skill_sp_regen: 0, allow_while_moving: true}
-      end)
-
-      state = build_state(hp: 100, sp: 50, action: :idle, movement: :moving)
-
-      final =
-        Enum.reduce(1..40, state, fn _, acc ->
-          {:noreply, next} = NaturalHealHandler.handle_tick(acc, 500)
-          next
-        end)
-
-      assert final.game_state.stats.current_state.hp > 100
-    end
-
-    test "adds Spiritual Cadence only while sitting" do
-      baseline = build_state(hp: 100, sp: 50, action: :sitting, movement: :standing)
-
-      {:noreply, without_cadence} = NaturalHealHandler.handle_tick(baseline, 10_000)
-
-      stub(Passives, :sitting_regen, fn _ ->
-        %{sitting_hp_regen: 120, sitting_sp_regen: 110}
-      end)
-
-      cadence = build_state(hp: 100, sp: 50, action: :sitting, movement: :standing)
-      {:noreply, with_cadence} = NaturalHealHandler.handle_tick(cadence, 10_000)
-
-      assert with_cadence.game_state.stats.current_state.hp -
-               without_cadence.game_state.stats.current_state.hp == 120
-
-      assert with_cadence.game_state.stats.current_state.sp -
-               without_cadence.game_state.stats.current_state.sp == 110
-    end
-
-    test "bleeding (hp_regen: -100) zeroes HP regen but SP still regens" do
-      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{hp_regen: -100} end)
-
-      state = build_state(hp: 100, sp: 50, action: :idle, movement: :standing)
-
-      final =
-        Enum.reduce(1..40, state, fn _, acc ->
-          {:noreply, next} = NaturalHealHandler.handle_tick(acc, 500)
-          next
-        end)
-
-      assert final.game_state.stats.current_state.hp == 100
-      assert final.game_state.stats.current_state.sp > 50
-    end
-
-    test "skips entirely when the player is dead" do
-      state = build_state(hp: 0, sp: 0, action: :dead, movement: :standing)
-
-      assert {:noreply, ^state} = NaturalHealHandler.handle_tick(state, 500)
+      assert updated.game_state === state.game_state
+      assert updated.regen_timing == %Timing{clock_ms: 500, hp_last_ms: 500, sp_last_ms: 500}
       refute_received {:send, _channel, _payload}
     end
 
-    test "no-recover skips natural regeneration" do
-      reject(CharacterPersistence, :update_stats, 3)
-      state = build_state(hp: 100, sp: 50, action: :idle, movement: :standing)
-      state = put_in(state.game_state.character_id, 88_001)
-
-      :ok = StatusStorage.apply_status(:player, 88_001, :sc_norecover_state)
-      on_exit(fn -> StatusStorage.remove_status(:player, 88_001, :sc_norecover_state) end)
-
-      assert {:noreply, ^state} = NaturalHealHandler.handle_tick(state, 10_000)
-    end
-
-    test "a hidden or cloaked player does not regenerate, sitting included" do
+    test "a healing tick commits and pushes and persists only the changed resource" do
       test_pid = self()
+      expect(UnitRegistry, :update_unit_state, fn :player, 1, _state -> :ok end)
 
-      stub(CharacterPersistence, :update_stats, fn 88_002, _changed, _opts ->
-        send(test_pid, :persisted)
+      stub(CharacterPersistence, :update_stats, fn 1, changed, async: true ->
+        send(test_pid, {:persisted, changed})
         {:ok, %Character{}}
       end)
 
-      state = build_state(hp: 100, sp: 50, action: :sitting, movement: :standing)
-      state = put_in(state.game_state.character_id, 88_002)
+      state = build_state(hp: 100, sp: 500)
+
+      assert {:noreply, updated} = NaturalHealHandler.handle_tick(state, 500)
+
+      assert updated.game_state.stats.current_state.hp == 100 + @hp_amount
+      assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_hp}}}
+      refute_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_sp}}}
+      assert_received {:persisted, %{hp: 112}}
+    end
+
+    test "regenerates on the reference cadence: ticks 1, 13 and 25 standing" do
+      assert heals(build_state(hp: 100, sp: 500), 25) == 3
+    end
+
+    test "an owned guild castle doubles the natural HP cadence" do
+      state = %{build_state(hp: 100, sp: 500) | castle_regen?: true}
+
+      assert heals(state, 13) == 3
+      assert heals(build_state(hp: 100, sp: 500), 13) == 2
+    end
+
+    test "a dead player heals nothing and restarts the natural timestamps" do
+      reject(CharacterPersistence, :update_stats, 3)
+      state = build_state(hp: 0, sp: 0, action: :dead)
+
+      assert {:noreply, updated} = NaturalHealHandler.handle_tick(state, 500)
+
+      assert updated.game_state === state.game_state
+      assert updated.regen_timing.hp_last_ms == 500
+    end
+
+    test "a hidden or cloaked player does not regenerate" do
+      reject(CharacterPersistence, :update_stats, 3)
+      state = build_state(hp: 100, sp: 50, id: 88_002, action: :sitting)
       on_exit(fn -> StatusStorage.remove_status(:player, 88_002, :sc_hiding) end)
       on_exit(fn -> StatusStorage.remove_status(:player, 88_002, :sc_cloaking) end)
 
       for status <- [:sc_hiding, :sc_cloaking] do
         :ok = StatusStorage.apply_status(:player, 88_002, status, val1: 3)
-        assert {:noreply, ^state} = NaturalHealHandler.handle_tick(state, 10_000)
+        assert {:noreply, updated} = NaturalHealHandler.handle_tick(state, 500)
+        assert updated.game_state === state.game_state
         :ok = StatusStorage.remove_status(:player, 88_002, status)
       end
-
-      refute_received :persisted
-
-      assert {:noreply, healed} = NaturalHealHandler.handle_tick(state, 10_000)
-      assert healed.game_state.stats.current_state.hp > 100
-      assert_received :persisted
     end
 
-    test "no packet push and no persist on a zero-delta tick (full HP and SP)" do
+    test "an overweight player does not regenerate" do
       reject(CharacterPersistence, :update_stats, 3)
+      state = build_state(hp: 100, sp: 50, inventory: heavy_inventory())
 
-      state = build_state(hp: 500, sp: 500, action: :idle, movement: :standing)
-
-      assert {:noreply, _} = NaturalHealHandler.handle_tick(state, 500)
-      refute_received {:send, _channel, _payload}
+      assert run(state, 17).game_state === state.game_state
     end
 
-    test "pushes SP_SP and persists only the SP field when only SP regenerates" do
-      stub(CharacterPersistence, :update_stats, fn _id, changed, _opts ->
-        refute Map.has_key?(changed, :hp)
-        assert Map.has_key?(changed, :sp)
-        {:ok, %Character{}}
+    test "a no_regen status modifier (No-Recover) blocks every channel" do
+      reject(CharacterPersistence, :update_stats, 3)
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{no_regen: true} end)
+
+      state = build_state(hp: 100, sp: 50)
+
+      assert run(state, 17).game_state === state.game_state
+    end
+
+    test "Tension Relax while overweight heals at the normal cadence" do
+      id = 88_003
+      on_exit(fn -> StatusStorage.remove_status(:player, id, :sc_tensionrelax) end)
+      :ok = StatusStorage.apply_status(:player, id, :sc_tensionrelax, duration: 180_000)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ ->
+        %{hp_regen_tick_rate: 200, skill_hp_regen_tick_rate: 200}
       end)
 
-      state = build_state(hp: 500, sp: 100, action: :idle, movement: :standing)
+      state = build_state(hp: 100, sp: 500, id: id, inventory: heavy_inventory())
 
-      final =
-        Enum.reduce(1..20, state, fn _, acc ->
-          {:noreply, next} = NaturalHealHandler.handle_tick(acc, 500)
-          next
-        end)
+      assert heals(state, 13) == 2
+    end
 
-      sp_after = final.game_state.stats.current_state.sp
+    test "equipment and status recovery rates add into the HP amount" do
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{hp_regen: 50} end)
+      state = build_state(hp: 100, sp: 500, equipment: %{hp_regen: 50})
 
-      assert sp_after > 100
-      assert_received {:send, _sp_channel, {_sp_tag, %ParamChange{var_id: @sp_sp}}}
-      refute_received {:send, _hp_channel, {_hp_tag, %ParamChange{var_id: @sp_hp}}}
+      assert {:noreply, updated} = NaturalHealHandler.handle_tick(state, 500)
+      assert updated.game_state.stats.current_state.hp == 100 + 2 * @hp_amount
+    end
+
+    test "the equipment no-regen HP bit blocks HP but leaves SP" do
+      state = build_state(hp: 100, sp: 50, equipment: %{no_regen: 1})
+
+      assert {:noreply, updated} = NaturalHealHandler.handle_tick(state, 500)
+      assert updated.game_state.stats.current_state.hp == 100
+      assert updated.game_state.stats.current_state.sp > 50
     end
   end
 
-  defp tick(state, count) do
-    Enum.reduce(1..count, state, fn _, acc ->
+  defp run(state, ticks) do
+    Enum.reduce(1..ticks, state, fn _, acc ->
       {:noreply, next} = NaturalHealHandler.handle_tick(acc, 500)
       next
     end)
+  end
+
+  defp heals(state, ticks) do
+    final = run(state, ticks)
+
+    div(
+      final.game_state.stats.current_state.hp - state.game_state.stats.current_state.hp,
+      @hp_amount
+    )
+  end
+
+  # 300 Red Potions weigh 21_000, over the natural-heal rate of a STR 10 Novice in both modes.
+  defp heavy_inventory do
+    PlayerState.from_list([
+      %InventoryItem{id: 1, char_id: 1, nameid: @red_potion, amount: 300, equip: 0, identify: 1}
+    ])
   end
 
   defp build_state(opts) do
@@ -386,17 +235,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
     }
 
     game_state = %PlayerState{
-      character_id: 1,
+      character_id: Keyword.get(opts, :id, 1),
       account_id: 100,
-      action_state: opts[:action],
-      movement_state: opts[:movement],
-      stats: stats,
-      regen_accumulators: %{hp_acc: 0, sp_acc: 0, skill_hp_acc: 0, skill_sp_acc: 0}
+      action_state: Keyword.get(opts, :action, :idle),
+      movement_state: :standing,
+      inventory: Keyword.get(opts, :inventory, %{}),
+      stats: stats
     }
 
-    %{
-      game_state: game_state,
-      connection_pid: self()
-    }
+    %SessionState{game_state: game_state, connection_pid: self()}
   end
 end

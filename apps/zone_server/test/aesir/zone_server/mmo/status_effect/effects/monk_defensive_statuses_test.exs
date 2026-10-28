@@ -39,13 +39,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MonkDefensiveStatusesTest do
   end
 
   @tag game_mode: :renewal
-  test "Fury adds the verified internal critical bonus for its level" do
+  test "Fury adds the critical bonus and doubles a Monk's natural SP interval" do
     entry = %StatusEntry{type: :sc_explosionspirits, val1: 3, state: %{}}
 
-    assert ExplosionSpirits.modifiers(entry, %{}) == %{
-             critical: 150,
-             regen_interval_multiplier: 2
-           }
+    for monk <- [15, 4016] do
+      assert ExplosionSpirits.modifiers(entry, %{target: %{job_id: monk}}) == %{
+               critical: 150,
+               natural_sp_interval_multiplier: 2
+             }
+    end
+
+    assert ExplosionSpirits.modifiers(entry, %{target: %{job_id: 8}}) == %{critical: 150}
+    assert ExplosionSpirits.modifiers(entry, %{target: %{}}) == %{critical: 150}
   end
 
   @tag game_mode: :renewal
@@ -104,9 +109,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MonkDefensiveStatusesTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic Fury stops SP regeneration and keeps the critical bonus" do
+  test "classic Fury stops a Monk's natural SP regeneration and keeps the critical bonus" do
     entry = %StatusEntry{type: :sc_explosionspirits, val1: 3, state: %{}}
-    assert ExplosionSpirits.modifiers(entry, %{}) == %{critical: 150, sp_regen: -100}
+
+    assert ExplosionSpirits.modifiers(entry, %{target: %{job_id: 15}}) ==
+             %{critical: 150, no_natural_sp_regen: true}
+
+    assert ExplosionSpirits.modifiers(entry, %{target: %{job_id: 8}}) == %{critical: 150}
   end
 
   @tag game_mode: :pre_renewal

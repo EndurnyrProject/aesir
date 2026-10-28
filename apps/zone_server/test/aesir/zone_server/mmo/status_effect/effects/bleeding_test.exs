@@ -20,6 +20,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BleedingTest do
     end
   end
 
+  test "stops all regeneration" do
+    assert Bleeding.modifiers(@instance, %{}) == %{no_regen: true}
+  end
+
   describe "on_tick/3" do
     test "a player loses one uniform 200 to 799 HP roll, which may kill" do
       test_pid = self()

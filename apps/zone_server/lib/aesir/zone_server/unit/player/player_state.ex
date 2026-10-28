@@ -131,7 +131,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           invincible_timer: reference() | nil,
           invincible_generation: non_neg_integer(),
           skill_cooldowns: %{integer() => integer()},
-          regen_accumulators: %{atom() => non_neg_integer()},
           equip_regen_accumulators: %{{atom(), pos_integer()} => non_neg_integer()},
           stats: PlayerStats.t(),
           vars: %{String.t() => term()},
@@ -355,7 +354,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # attempt's completion locks or fatigues that partner without searching again.
     ensemble_partner: nil,
     plagiarized: nil,
-    regen_accumulators: %{hp_acc: 0, sp_acc: 0, skill_hp_acc: 0, skill_sp_acc: 0},
     # Per-interval elapsed-time accumulators for periodic equipment HP
     # regen/loss (`bHPRegenRate`/`bHPLossRate`), keyed by `{family, interval_ms}`.
     equip_regen_accumulators: %{},
