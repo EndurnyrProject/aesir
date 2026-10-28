@@ -62,22 +62,35 @@ defmodule Aesir.AccountServer do
     {:ok, session_data}
   end
 
+  # With no char server online the login fails before anything else. An account
+  # already on a char or zone server is kicked and this login refused (code 8);
+  # the player logs in on a retry once the old session has ended. An account that
+  # only authenticated here has its old session replaced by this login.
   defp handle_successful_login(account, session_data) do
-    case SessionManager.get_online_user(account.id) do
-      {:ok, _online_user} ->
-        Logger.warning(
-          "Duplicate login for account #{account.id} (#{account.userid}). Kicking old session and proceeding."
-        )
-
-        PubSub.broadcast_kick_connection(account.id, :duplicate_login)
-        proceed_with_login(account, session_data)
-
-      {:error, :not_found} ->
-        proceed_with_login(account, session_data)
+    with {:ok, char_servers} <- available_char_servers(),
+         :ok <- refuse_if_online(account) do
+      proceed_with_login(account, char_servers, session_data)
+    else
+      {:error, reason} -> handle_failed_login(reason, session_data)
     end
   end
 
-  defp proceed_with_login(account, session_data) do
+  defp refuse_if_online(account) do
+    case SessionManager.get_online_user(account.id) do
+      {:ok, %{server_type: server_type}} when server_type != :account_server ->
+        Logger.warning(
+          "Duplicate login for account #{account.id} (#{account.userid}). Kicking old session and refusing."
+        )
+
+        PubSub.broadcast_kick_connection(account.id, :duplicate_login)
+        {:error, :already_online}
+
+      _authed_here_or_offline ->
+        :ok
+    end
+  end
+
+  defp proceed_with_login(account, char_servers, session_data) do
     auth_code = secure_token()
     login_id1 = secure_token()
     login_id2 = secure_token()
@@ -99,26 +112,22 @@ defmodule Aesir.AccountServer do
       username: account.userid
     }
 
-    with :ok <- SessionManager.create_session(account.id, session_for_cluster),
-         {:ok, char_servers} <- available_char_servers() do
-      SessionManager.set_user_online(account.id, :account_server)
-      PubSub.broadcast_player_login(account.id, account.userid)
+    case SessionManager.create_session(account.id, session_for_cluster) do
+      :ok ->
+        SessionManager.set_user_online(account.id, :account_server)
+        PubSub.broadcast_player_login(account.id, account.userid)
 
-      response = %LoginResponse{
-        account_id: account.id,
-        login_id1: login_id1,
-        login_id2: login_id2,
-        sex: sex_code(account.sex),
-        auth_token: auth_token(),
-        char_servers: char_servers
-      }
+        response = %LoginResponse{
+          account_id: account.id,
+          login_id1: login_id1,
+          login_id2: login_id2,
+          sex: sex_code(account.sex),
+          auth_token: auth_token(),
+          char_servers: char_servers
+        }
 
-      Logger.info("Login successful for account: #{account.userid} (ID: #{account.id})")
-      {:ok, updated_session, [{:login_response, response}]}
-    else
-      {:error, :no_char_servers} ->
-        Logger.error("Login failed: no character servers available")
-        handle_failed_login(:no_char_servers, session_data)
+        Logger.info("Login successful for account: #{account.userid} (ID: #{account.id})")
+        {:ok, updated_session, [{:login_response, response}]}
 
       {:error, reason} ->
         Logger.error(
@@ -150,6 +159,7 @@ defmodule Aesir.AccountServer do
 
   defp reason_code(:invalid_credentials), do: 1
   defp reason_code(:banned), do: 6
+  defp reason_code(:already_online), do: 8
   defp reason_code(:account_not_found), do: 0
   defp reason_code(_), do: 3
 
