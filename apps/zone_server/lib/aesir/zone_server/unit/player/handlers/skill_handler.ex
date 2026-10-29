@@ -81,6 +81,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   @cast_cancel_id 275
   @encore_id 305
   @brandish_spear 57
+  @pharmacy 228
+  @pharmacy_menu_refused [228, 147, 108, 496, 497, 498]
   @auto_counter 61
   @divest_skills [215, 216, 217, 218, 476]
   @overlaid_states [:sitting, :trading]
@@ -1628,15 +1630,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
           integer(),
           :start | :request | :item | :completion | :restricted
         ) ::
-          {:ok, SessionState.t()} | {:error, :dead | :status_blocked | :busy}
+          {:ok, SessionState.t()} | {:error, :dead | :status_blocked | :menu_open | :busy}
   def cast_gate(state, skill_id, phase \\ :start)
 
   def cast_gate(%{game_state: game_state} = state, skill_id, phase) do
     with :ok <- ensure_living_caster(game_state),
-         :ok <- check_start_status(game_state, skill_id, phase) do
+         :ok <- check_start_status(game_state, skill_id, phase),
+         :ok <- check_open_menu(state, skill_id, phase) do
       check_cast_action(state, phase)
     end
   end
+
+  # While Pharmacy's production list is open, the production skills that would
+  # open another list are refused at cast begin and cast end, without a message,
+  # an item's cast included.
+  defp check_open_menu(state, skill_id, _phase) when skill_id in @pharmacy_menu_refused do
+    case Map.get(state, :pending_skill_menu) do
+      %{skill_id: @pharmacy} -> {:error, :menu_open}
+      _other -> :ok
+    end
+  end
+
+  defp check_open_menu(_state, _skill_id, _phase), do: :ok
 
   defp check_start_status(_game_state, _skill_id, :completion), do: :ok
 

@@ -3197,6 +3197,42 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     end
   end
 
+  describe "an open Pharmacy menu" do
+    defp with_pharmacy_menu(state),
+      do: %{
+        state
+        | pending_skill_menu: %{skill_id: 228, kind: :ITEMS, entry_ids: [501], level: 10}
+      }
+
+    test "refuses the production skills at every cast phase, item casts included" do
+      state = with_pharmacy_menu(casting_state(45))
+
+      for skill_id <- [228, 147, 108, 496, 497, 498],
+          phase <- [:request, :start, :item, :completion] do
+        assert {:error, _reason} =
+                 SkillHandler.cast_gate(casting(state, skill_id), skill_id, phase)
+      end
+    end
+
+    test "lets every other skill through" do
+      state = with_pharmacy_menu(casting_state(45))
+      assert {:ok, _state} = SkillHandler.cast_gate(state, 231, :request)
+      assert {:ok, _state} = SkillHandler.cast_gate(casting(state, 231), 231, :completion)
+    end
+
+    test "another skill's menu refuses nothing" do
+      state = %{
+        casting_state(45)
+        | pending_skill_menu: %{skill_id: 279, kind: :ITEMS, entry_ids: [], level: 1}
+      }
+
+      assert {:ok, _state} = SkillHandler.cast_gate(state, 228, :request)
+    end
+  end
+
+  defp casting(state, skill_id),
+    do: put_in(state.game_state.casting, %{skill_id: skill_id, token: make_ref()})
+
   defp assert_menu_seen(state, expected) do
     test_pid = self()
 
