@@ -1894,12 +1894,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
     state
     |> SpiritSphereHandler.apply_skill_cost_effects(sphere_cost_plan)
+    |> drain_hp_loss()
+    |> drain_production_result()
     |> drain_forced_movement(skill_id)
     |> drain_warp()
     |> drain_interaction()
     |> drain_menu_offer()
     |> drain_vending_setup()
   end
+
+  # A failed Create Deadly Poison's passive HP loss: it can kill, cancels no cast
+  # and is applied before the production result is sent.
+  defp drain_hp_loss(%{game_state: %{pending_hp_loss: nil}} = state), do: state
+
+  defp drain_hp_loss(%{game_state: %{pending_hp_loss: loss} = game_state} = state) do
+    state = %{state | game_state: %{game_state | pending_hp_loss: nil}}
+    {:noreply, state} = HealthHandler.apply_script_vitals({:heal, -loss, 0}, state)
+    state
+  end
+
+  defp drain_production_result(%{connection_pid: connection_pid, game_state: game_state} = state),
+    do: %{
+      state
+      | game_state: SkillMenuHandler.drain_production_result(connection_pid, game_state)
+    }
 
   @doc false
   @spec drain_forced_movement(map(), integer()) :: map()
@@ -2261,6 +2279,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp failure_reason(:need_equipment), do: :SKILL_CAST_FAILURE_REASON_NEED_EQUIPMENT
   defp failure_reason(:skill_failed), do: :SKILL_CAST_FAILURE_REASON_FAILED
   defp failure_reason(:fullstrip_coated), do: :SKILL_CAST_FAILURE_REASON_FULLSTRIP_COATED
+  defp failure_reason(:stuff_insufficient), do: :SKILL_CAST_FAILURE_REASON_STUFF_INSUFFICIENT
   defp failure_reason(_reason), do: :SKILL_CAST_FAILURE_REASON_UNSPECIFIED
 
   # A combo skill's use is aimed at the unit the player was attacking when the

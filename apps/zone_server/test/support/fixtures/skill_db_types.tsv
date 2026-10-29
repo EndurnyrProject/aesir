@@ -327,6 +327,7 @@
 403	PF_MEMORIZE	Magic	true	Magic	true	none	none	none	0	none	0
 404	PF_FOGWALL	Magic	true	Magic	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 405	PF_SPIDERWEB	Magic	true	Magic	true	none	none	none	0	none	0
+407	ASC_CDP	None	true	None	true	none	none	none	0	none	0
 459	BS_ADRENALINE2	Weapon	true	Weapon	true	none	none	none	0	none	0
 475	ST_PRESERVE	None	true	None	true	none	none	none	0	none	0
 476	ST_FULLSTRIP	Weapon	true	Weapon	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0

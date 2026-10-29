@@ -21,9 +21,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.ScriptVitals
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @weapon_skill_ids 98..104
+  @create_deadly_poison 407
   @pharmacy_skill_id 228
   @weapon_research_id 107
   @oridecon_research_id 97
@@ -62,6 +64,37 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
       finish(consumed, recipe, item_def, success?, crumb_count, element)
     end
   end
+
+  @doc """
+  Runs one production attempt a skill makes directly (Create Deadly Poison), with
+  that skill's success formula and no catalysts.
+
+  A failed Create Deadly Poison also stages `pending_hp_loss`: 25 percent of the
+  caster's maximum HP (`ScriptVitals.percent_of/2`).
+  """
+  @spec run_skill(PlayerState.t(), Recipe.t(), pos_integer()) ::
+          {:ok, PlayerState.t()} | {:error, atom()}
+  def run_skill(%PlayerState{} = caster, %Recipe{} = recipe, @create_deadly_poison) do
+    with {:ok, item_def} <- ItemManagement.get_item_by_id(recipe.product_id),
+         :ok <- check_materials(caster.inventory, recipe.materials, []) do
+      consumed = consume_all(caster, recipe.materials, [])
+
+      chance =
+        SuccessRate.deadly_poison(
+          PlayerStats.get_effective_stat(consumed.stats, :dex),
+          PlayerStats.get_effective_stat(consumed.stats, :luk)
+        )
+
+      success? = rng().(10_000) <= chance
+      {:ok, finished} = finish(consumed, recipe, item_def, success?, 0, nil)
+
+      if success?,
+        do: {:ok, finished},
+        else: {:ok, %{finished | pending_hp_loss: quarter_max_hp(finished)}}
+    end
+  end
+
+  defp quarter_max_hp(caster), do: ScriptVitals.percent_of(caster.stats.derived_stats.max_hp, 25)
 
   defp check_materials(inventory, materials, catalyst_ids) do
     consumed =

@@ -300,13 +300,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
     (storage? or can_act?) and StatusInterpreter.can_use_skill?(:player, player.character_id)
   end
 
-  defp drain_production_result(_connection_pid, %{pending_production_result: nil} = game_state),
+  @doc "Sends and clears a production result a skill staged on `game_state`."
+  @spec drain_production_result(pid() | nil, PlayerState.t()) :: PlayerState.t()
+  def drain_production_result(_connection_pid, %{pending_production_result: nil} = game_state),
     do: game_state
 
-  defp drain_production_result(
-         connection_pid,
-         %{pending_production_result: %{success: success, item_id: item_id}} = game_state
-       ) do
+  def drain_production_result(
+        connection_pid,
+        %{pending_production_result: %{success: success, item_id: item_id}} = game_state
+      ) do
     MessageRouter.send_to(connection_pid, %ProductionResult{success: success, item_id: item_id})
     %{game_state | pending_production_result: nil}
   end

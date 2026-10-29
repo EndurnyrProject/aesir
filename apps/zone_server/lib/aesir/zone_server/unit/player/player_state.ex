@@ -162,7 +162,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
             %{required(:level) => pos_integer(), optional(:sp_spent) => non_neg_integer()} | nil,
           vending_shop: map() | nil,
           pending_production_result: %{success: boolean(), item_id: non_neg_integer()} | nil,
-          open_menu_skill_id: non_neg_integer()
+          open_menu_skill_id: non_neg_integer(),
+          pending_hp_loss: pos_integer() | nil
         }
 
   @client_index_offset 2
@@ -343,6 +344,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # Read-only snapshot of the open skill menu's source skill (0 for none),
     # stamped by SkillHandler before a cast; the session's menu is the authority.
     open_menu_skill_id: 0,
+    # Passive HP loss a cast staged (a failed Create Deadly Poison), applied by
+    # SkillHandler after the cast commits.
+    pending_hp_loss: nil,
     # In-flight timed-cast descriptor (mirrors MobState.casting). Written by
     # transition_to/3 on entering :casting and cleared on leaving it; nil when
     # no cast is in flight. Cast handlers key off this field, not state_context.

@@ -144,6 +144,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate do
   defp baby_rate(rate, _params), do: rate
 
   @doc """
+  The Create Deadly Poison chance from total DEX and LUK, uncapped: 2000 plus
+  40 per DEX plus 20 per LUK.
+  """
+  @spec deadly_poison(non_neg_integer(), non_neg_integer()) :: pos_integer()
+  def deadly_poison(dex, luk), do: 2000 + 40 * dex + 20 * luk
+
+  @doc """
   Calculates a mineral-refining chance without the weapon multiplier or floor.
 
   Star Crumb refining is guaranteed and ignores the supplied formula inputs.

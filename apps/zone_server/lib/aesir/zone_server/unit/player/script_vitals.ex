@@ -162,10 +162,15 @@ defmodule Aesir.ZoneServer.Unit.Player.ScriptVitals do
     {drain_sp(game_state, percent_of(derived.max_sp, -sp_rate)), damage}
   end
 
-  defp percent_of(_max, 0), do: 0
-  defp percent_of(max, 100), do: max
-  defp percent_of(max, rate) when max > 100_000, do: max(div(max, 100) * rate, 1)
-  defp percent_of(max, rate), do: max(div(max * rate, 100), 1)
+  @doc """
+  `rate` percent of `max`, at least 1 for a non-zero rate: above 100,000 the
+  maximum is divided first, so the result moves in whole hundreds.
+  """
+  @spec percent_of(non_neg_integer(), non_neg_integer()) :: non_neg_integer()
+  def percent_of(_max, 0), do: 0
+  def percent_of(max, 100), do: max
+  def percent_of(max, rate) when max > 100_000, do: max(div(max, 100) * rate, 1)
+  def percent_of(max, rate), do: max(div(max * rate, 100), 1)
 
   defp restore(game_state, _key, 0), do: game_state
 

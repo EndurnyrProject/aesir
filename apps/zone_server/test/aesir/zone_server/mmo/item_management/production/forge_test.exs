@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
 
+  @cdp_materials [937, 952, 939, 7033, 972, 657, 713]
+
   setup do
     previous_rng = Application.get_env(:zone_server, :forge_rng)
 
@@ -236,6 +238,53 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
       assert pinned_success?(caster, weapon_recipe(), 5957)
       refute pinned_success?(caster, weapon_recipe(), 5958)
     end
+  end
+
+  describe "Create Deadly Poison" do
+    test "the chance counts equipment DEX and LUK", %{caster: caster} do
+      caster = controlled(caster, %{dex: 10, luk: 10}, %{dex: 40, luk: 20})
+      caster = %{caster | inventory: inventory(Enum.map(@cdp_materials, &{&1, 1}))}
+
+      # 2000 + 40 * 50 + 20 * 30 = 4600
+      assert pinned_skill_success?(caster, 4600)
+      refute pinned_skill_success?(caster, 4601)
+    end
+
+    test "a chance above 10,000 always succeeds", %{caster: caster} do
+      # 2000 + 40 * 200 + 20 * 50 = 11_000
+      caster = controlled(caster, %{dex: 200, luk: 50}, %{})
+      caster = %{caster | inventory: inventory(Enum.map(@cdp_materials, &{&1, 1}))}
+
+      assert pinned_skill_success?(caster, 10_000)
+    end
+
+    test "a failure above 100,000 max HP takes 25 per hundred whole HP", %{caster: caster} do
+      caster = controlled(caster, %{dex: 1, luk: 1}, %{})
+      caster = put_in(caster.stats.derived_stats.max_hp, 100_050)
+      caster = %{caster | inventory: inventory(Enum.map(@cdp_materials, &{&1, 1}))}
+      Application.put_env(:zone_server, :forge_rng, fn 10_000 -> 10_000 end)
+
+      assert {:ok, failed} = Forge.run_skill(caster, cdp_recipe(), 407)
+      # div(100_050, 100) * 25, not div(100_050 * 25, 100) = 25_012
+      assert failed.pending_hp_loss == 25_000
+    end
+  end
+
+  defp pinned_skill_success?(caster, roll) do
+    Application.put_env(:zone_server, :forge_rng, fn 10_000 -> roll end)
+    {:ok, attempted} = Forge.run_skill(caster, cdp_recipe(), 407)
+    attempted.pending_production_result.success
+  end
+
+  defp cdp_recipe do
+    %Recipe{
+      id: 127,
+      product_id: 678,
+      item_level: 22,
+      skill_id: 407,
+      skill_level: 1,
+      materials: Enum.map(@cdp_materials, &%{item_id: &1, amount: 1})
+    }
   end
 
   # Allocated stats `base`, no job bonus, and `equipment` as the only bonus.

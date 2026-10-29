@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Commons.StatusParams
   alias Aesir.Net.CastCancel
   alias Aesir.Net.GroundSkillCast
   alias Aesir.Net.ItemAdded
@@ -3024,6 +3025,113 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       },
       fields
     )
+  end
+
+  describe "staged production effects" do
+    test "a cast's HP loss lands before its production result" do
+      state = casting_state(45)
+      hp = state.game_state.stats.current_state.hp
+
+      staged = %{
+        state.game_state
+        | pending_hp_loss: 10,
+          pending_production_result: %{success: false, item_id: 678}
+      }
+
+      stub(Interpreter, :begin_cast, fn _game_state, 29, 1, :self -> {:instant, staged} end)
+      stub(StatusInterpreter, :on_committed_action, fn :player, 1000, _action -> :unchanged end)
+      stub(CharacterPersistence, :update_stats, fn 1000, _fields, _opts -> :ok end)
+      stub_commit()
+
+      assert {:noreply, new_state} = SkillHandler.handle_use_skill(state, 29, 1, 1000)
+      assert new_state.game_state.stats.current_state.hp == hp - 10
+      assert new_state.game_state.pending_hp_loss == nil
+      assert new_state.game_state.pending_production_result == nil
+
+      {:messages, messages} = Process.info(self(), :messages)
+      hp_left = hp - 10
+      hp_param = StatusParams.hp()
+
+      hp_at =
+        Enum.find_index(
+          messages,
+          &match?({:send, _, {:param_change, %{var_id: ^hp_param, value: ^hp_left}}}, &1)
+        )
+
+      result_at = Enum.find_index(messages, &match?({:send, _, {:production_result, _}}, &1))
+
+      assert is_integer(hp_at) and is_integer(result_at) and hp_at < result_at
+    end
+  end
+
+  describe "staged production effects on a failed cast" do
+    test "the HP loss, the production result and the failure arrive in that order" do
+      state = casting_state(45)
+      hp = state.game_state.stats.current_state.hp
+      test_pid = self()
+
+      staged = %{
+        state.game_state
+        | pending_hp_loss: 10,
+          pending_production_result: %{success: false, item_id: 678}
+      }
+
+      stub(Interpreter, :begin_cast, fn _game_state, 29, 1, :self ->
+        {:failed, staged, :stuff_insufficient}
+      end)
+
+      stub(StatusInterpreter, :on_committed_action, fn :player, 1000, _action -> :unchanged end)
+      stub(CharacterPersistence, :update_stats, fn 1000, _fields, _opts -> :ok end)
+      stub_commit()
+
+      stub(Broadcast, :to_player, fn 1000, packet ->
+        send(test_pid, {:to_player, packet})
+        :ok
+      end)
+
+      assert {:noreply, new_state} = SkillHandler.handle_use_skill(state, 29, 1, 1000)
+      assert new_state.game_state.stats.current_state.hp == hp - 10
+
+      {:messages, messages} = Process.info(self(), :messages)
+      hp_left = hp - 10
+      hp_param = StatusParams.hp()
+
+      hp_at =
+        Enum.find_index(
+          messages,
+          &match?({:send, _, {:param_change, %{var_id: ^hp_param, value: ^hp_left}}}, &1)
+        )
+
+      result_at = Enum.find_index(messages, &match?({:send, _, {:production_result, _}}, &1))
+
+      failure_at =
+        Enum.find_index(
+          messages,
+          &match?(
+            {:to_player, %SkillCastFailed{reason: :SKILL_CAST_FAILURE_REASON_STUFF_INSUFFICIENT}},
+            &1
+          )
+        )
+
+      assert is_integer(hp_at) and is_integer(result_at) and is_integer(failure_at)
+      assert hp_at < result_at and result_at < failure_at
+    end
+  end
+
+  describe "staged HP loss" do
+    test "a loss of every remaining HP kills the player" do
+      state = casting_state(45)
+      staged = %{state.game_state | pending_hp_loss: state.game_state.stats.current_state.hp}
+
+      stub(Interpreter, :begin_cast, fn _game_state, 29, 1, :self -> {:instant, staged} end)
+      stub(StatusInterpreter, :on_committed_action, fn :player, 1000, _action -> :unchanged end)
+      stub(CharacterPersistence, :update_stats, fn 1000, _fields, _opts -> :ok end)
+      stub_commit()
+
+      assert {:noreply, new_state} = SkillHandler.handle_use_skill(state, 29, 1, 1000)
+      assert new_state.game_state.stats.current_state.hp == 0
+      assert new_state.game_state.action_state == :dead
+    end
   end
 
   describe "open menu snapshot" do

@@ -2609,6 +2609,9 @@ enum SkillCastFailureReason {
   // Divest All: the target holds all four Chemical Protections, so nothing
   // can be stripped (the SP is still spent).
   SKILL_CAST_FAILURE_REASON_FULLSTRIP_COATED = 20;
+  // A production skill lacks its materials, cannot fit the product, or the
+  // attempt failed (Create Deadly Poison).
+  SKILL_CAST_FAILURE_REASON_STUFF_INSUFFICIENT = 21;
 }
 
 // Server -> client, caster-only feedback when an attempted skill cast is rejected.
