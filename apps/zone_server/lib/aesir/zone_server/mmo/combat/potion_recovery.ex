@@ -24,6 +24,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecovery do
 
   Not modelled, as their statuses do not exist yet: the Soul Link Alchemist
   base-level bonus, Water Insignia, Critical Wound and Death Hurt.
+
+  ## Slim Pitcher
+
+  Slim Pitcher reads the potion's flat script amounts once and scales them by a
+  single rate, `100 + 10 * Slim Pitcher + 10 * Potion Pitcher + 5 * Potion
+  Research` plus the thrower's Slim Pitcher heal bonus (general heal power does
+  not count), then adds the thrower's H.Plus. Each recipient then takes
+  `100 + 2 * VIT` (`2 * INT` for SP) percent and, a player, `100 + 10 *
+  Increase HP Recovery` (`Increase SP Recovery` for SP) plus its received heal
+  power and Slim Pitcher received bonus, each only on a non-zero amount. No
+  Recovery cancels both. There is no Homunculus multiplier and no Asura rule,
+  and the same Water Insignia, Critical Wound and Death Hurt penalties are not
+  modelled. Renewal and pre-renewal agree.
   """
 
   alias Aesir.Commons.GameMode
@@ -38,6 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecovery do
   @mg_srecovery 9
   @potion_pitcher 231
   @learning_potion 227
+  @slim_pitcher 478
 
   @typedoc "The amounts a potion's script declared: flat (`itemheal`) and percent (`percentheal`)."
   @type potion :: %{
@@ -84,9 +98,57 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecovery do
     }
   end
 
-  @doc "Reads a recipient's terms from its live state."
-  @spec recipient(PlayerState.t() | HomunculusState.t() | MobState.t()) :: recipient()
-  def recipient(%PlayerState{character_id: id, stats: stats}) do
+  @typedoc "What a Slim Pitcher throw reads from the thrower."
+  @type slim_thrower :: %{rate: integer(), hplus: integer()}
+
+  @doc "Reads a Slim Pitcher thrower's rate and H.Plus."
+  @spec slim_thrower(PlayerState.t()) :: slim_thrower()
+  def slim_thrower(%PlayerState{stats: stats}) do
+    rate =
+      10 * PlayerStats.skill_level(stats, @slim_pitcher) +
+        10 * PlayerStats.skill_level(stats, @potion_pitcher) +
+        5 * PlayerStats.skill_level(stats, @learning_potion) +
+        equipment(stats, {:skill_heal, @slim_pitcher})
+
+    %{rate: rate, hplus: Map.get(stats.combat_stats, :hplus, 0)}
+  end
+
+  @doc "The `{hp, sp}` a Slim Pitcher throw of `potion` carries before any recipient scales it."
+  @spec slim_throw(potion(), slim_thrower()) :: {integer(), integer()}
+  def slim_throw(potion, %{rate: rate, hplus: hplus}) do
+    {div(potion.hp * (100 + rate), 100), div(potion.sp * (100 + rate), 100)}
+    |> both(max(hplus, 0))
+  end
+
+  @doc "The `{hp, sp}` one Slim Pitcher recipient takes from a thrown `{hp, sp}`."
+  @spec slim_receive({integer(), integer()}, recipient()) :: {integer(), integer()}
+  def slim_receive({hp, sp}, recipient) do
+    hp = div(hp * (100 + 2 * recipient.vit), 100)
+    sp = div(sp * (100 + 2 * recipient.int), 100)
+
+    {hp, sp} =
+      if recipient.player?,
+        do:
+          {received(hp, recipient.hp_recovery, recipient.received_heal),
+           received(sp, recipient.sp_recovery, recipient.received_heal)},
+        else: {hp, sp}
+
+    {type, id} = recipient.ref
+    if StatusStorage.has_status?(type, id, :sc_norecover_state), do: {0, 0}, else: {hp, sp}
+  end
+
+  defp received(0, _recovery, _bonus), do: 0
+  defp received(amount, recovery, bonus), do: div(amount * (100 + recovery * 10 + bonus), 100)
+
+  @doc """
+  Reads a recipient's terms from its live state. A player's received heal bonus
+  is the one for `skill_id` (Potion Pitcher by default).
+  """
+  @spec recipient(PlayerState.t() | HomunculusState.t() | MobState.t(), pos_integer()) ::
+          recipient()
+  def recipient(state, skill_id \\ @potion_pitcher)
+
+  def recipient(%PlayerState{character_id: id, stats: stats}, skill_id) do
     %{
       ref: {:player, id},
       player?: true,
@@ -96,12 +158,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecovery do
       max_sp: stats.derived_stats.max_sp,
       hp_recovery: PlayerStats.skill_level(stats, @sm_recovery),
       sp_recovery: PlayerStats.skill_level(stats, @mg_srecovery),
-      received_heal:
-        equipment(stats, :heal_power2) + equipment(stats, {:skill_heal2, @potion_pitcher})
+      received_heal: equipment(stats, :heal_power2) + equipment(stats, {:skill_heal2, skill_id})
     }
   end
 
-  def recipient(%HomunculusState{} = homunculus) do
+  def recipient(%HomunculusState{} = homunculus, _skill_id) do
     unit(
       {:homunculus, homunculus.world_gid},
       homunculus.vit,
@@ -111,7 +172,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecovery do
     )
   end
 
-  def recipient(%MobState{} = mob) do
+  def recipient(%MobState{} = mob, _skill_id) do
     %{base_stats: stats} = MobState.to_combatant(mob)
     unit({:mob, mob.instance_id}, stats.vit, stats.int, mob.calculated.max_hp, 0)
   end

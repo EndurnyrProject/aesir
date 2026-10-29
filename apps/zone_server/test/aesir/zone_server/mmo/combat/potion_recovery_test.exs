@@ -4,8 +4,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecoveryTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.Mmo.Combat.PotionRecovery
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
@@ -247,6 +249,70 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecoveryTest do
   end
 
   defp potion(opts), do: Map.merge(%{hp: 0, sp: 0, per_hp: 0, per_sp: 0}, Map.new(opts))
+
+  describe "Slim Pitcher" do
+    test "the caster's rate sums the three skills and its own heal bonus, then H.Plus adds" do
+      thrower =
+        player(@thrower_id,
+          learned: %{478 => 10, 231 => 5, 227 => 10},
+          hplus: 5,
+          equipment: %{
+            :heal_power => 50,
+            {:skill_heal, 478} => 10,
+            {:skill_heal, 231} => 30
+          }
+        )
+
+      # 100 + 10*10 + 10*5 + 5*10 + 10 = 310 percent, heal power ignored: 100 -> 310, 40 -> 124;
+      # H.Plus 5 then adds 15 and 6.
+      assert PotionRecovery.slim_throw(
+               %{hp: 100, sp: 40, per_hp: 0, per_sp: 0},
+               PotionRecovery.slim_thrower(thrower)
+             ) == {325, 130}
+    end
+
+    test "a player recipient scales by VIT/INT, then its recovery skills and Slim Pitcher heal bonus" do
+      target =
+        player(@target_id,
+          vit: 12,
+          int: 8,
+          learned: %{4 => 5, 9 => 3},
+          equipment: %{:heal_power2 => 5, {:skill_heal2, 478} => 3, {:skill_heal2, 231} => 40}
+        )
+
+      # HP 100 * 124% = 124, then * (100 + 50 + 8)% = 195; SP 50 * 116% = 58, then * 138% = 80.
+      assert PotionRecovery.slim_receive({100, 50}, PotionRecovery.recipient(target, 478)) ==
+               {195, 80}
+    end
+
+    test "a Homunculus recipient scales by VIT/INT only, with no multiplier" do
+      assert PotionRecovery.slim_receive({100, 50}, PotionRecovery.recipient(homunculus(), 478)) ==
+               {160, 70}
+    end
+
+    test "a monster recipient scales by its VIT and INT only" do
+      spawn = %MobSpawn{
+        mob: 1002,
+        amount: 1,
+        respawn_time: 0,
+        spawn_area: %MobSpawn.SpawnArea{x: 0, y: 0}
+      }
+
+      mob = MobState.new(66_004, Aesir.TestMob.definition(), spawn, "test", 0, 0)
+
+      # VIT 10: 100 * 120% = 120; INT 5: 50 * 110% = 55.
+      assert PotionRecovery.slim_receive({100, 50}, PotionRecovery.recipient(mob, 478)) ==
+               {120, 55}
+    end
+
+    test "No Recover cancels the heal" do
+      target = player(@target_id, vit: 12)
+      :ok = StatusStorage.apply_status(:player, @target_id, :sc_norecover_state)
+
+      assert PotionRecovery.slim_receive({100, 50}, PotionRecovery.recipient(target, 478)) ==
+               {0, 0}
+    end
+  end
 
   defp player(id, opts) do
     %PlayerState{

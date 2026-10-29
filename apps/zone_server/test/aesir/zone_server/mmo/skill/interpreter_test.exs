@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.TestSupport.EnsembleSkill
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -76,6 +77,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     @impl true
     def validate(_game_state, _target, _level, _definition), do: :ok
+  end
+
+  defmodule LocalEffectsSkill do
+    @behaviour Aesir.ZoneServer.Mmo.Skill.Active
+
+    @impl true
+    def cast(game_state, _target, _level, _definition), do: {:local_effects, game_state, []}
+
+    @impl true
+    def validate(_game_state, _target, _level, _definition), do: :ok
+
+    def __skill_capabilities__, do: [:active]
   end
 
   defmodule OriginAwareSkill do
@@ -447,6 +460,43 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       range: range,
       sp_cost: List.duplicate(9, 10)
     }
+  end
+
+  describe "aggregate-local effects" do
+    defp local_effects_skill(target_type) do
+      definition = %Definition{
+        id: 29,
+        name: :local_effects,
+        display_name: "Local Effects",
+        max_level: 1,
+        target_type: target_type,
+        range: 9,
+        sp_cost: [0]
+      }
+
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
+      stub(Catalog, :active_module_for, fn :local_effects -> {:ok, LocalEffectsSkill} end)
+    end
+
+    test "a ground cast that settles local effects announces its cell" do
+      local_effects_skill(:ground)
+
+      expect(Broadcast, :to_in_range, fn "prontera", 12, 10, _range, packet ->
+        assert %Aesir.Net.GroundSkill{skill_id: 29, src_id: 1000, x: 12, y: 10} = packet
+        :ok
+      end)
+
+      assert {:local_effects, _caster, []} =
+               Interpreter.cast(game_state(100, %{29 => 1}), 29, 1, {:ground, 12, 10})
+    end
+
+    test "a self cast that settles local effects announces no cell" do
+      local_effects_skill(:self)
+      reject(&Broadcast.to_in_range/5)
+
+      assert {:local_effects, _caster, []} =
+               Interpreter.cast(game_state(100, %{29 => 1}), 29, 1, :self)
+    end
   end
 
   describe "cast origins" do

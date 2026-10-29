@@ -2803,7 +2803,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         end)
 
       {:local_effects, caster, effects} when is_list(effects) ->
-        valid_cast_result(adapter, caster, fn -> {:local_effects, caster, effects, true} end)
+        valid_cast_result(adapter, caster, fn ->
+          announce_ground_cast(module, caster, target, level, definition)
+          {:local_effects, caster, effects, true}
+        end)
 
       {:failed, caster, reason} ->
         valid_cast_result(adapter, caster, fn -> {:failed, caster, reason} end)
