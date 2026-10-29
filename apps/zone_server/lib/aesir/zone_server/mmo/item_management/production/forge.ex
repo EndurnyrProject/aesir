@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Catalysts
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes.Recipe
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate
+  alias Aesir.ZoneServer.Mmo.JobManagement.JobMapid
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
@@ -140,8 +141,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
 
     SuccessRate.weapon(%{
       job_level: caster.stats.progression.job_level,
-      dex: caster.stats.base_stats.dex,
-      luk: caster.stats.base_stats.luk,
+      dex: PlayerStats.get_effective_stat(caster.stats, :dex),
+      luk: PlayerStats.get_effective_stat(caster.stats, :luk),
+      baby?: baby?(caster),
       random_term: 10 * rng().(100),
       tier: recipe.item_level,
       family_skill_level: Learned.learned_level(learned, skill_id),
@@ -164,9 +166,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
 
     SuccessRate.pharmacy(recipe.product_id, %{
       job_level: caster.stats.progression.job_level,
-      int: caster.stats.base_stats.int,
-      dex: caster.stats.base_stats.dex,
-      luk: caster.stats.base_stats.luk,
+      int: PlayerStats.get_effective_stat(caster.stats, :int),
+      dex: PlayerStats.get_effective_stat(caster.stats, :dex),
+      luk: PlayerStats.get_effective_stat(caster.stats, :luk),
+      baby?: baby?(caster),
       skill_level: Learned.learned_level(learned, recipe.skill_id),
       learned_skills: learned,
       instruction_change_rank: instruction_change_rank,
@@ -179,11 +182,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
 
     SuccessRate.mineral(mineral_kind(recipe), %{
       job_level: caster.stats.progression.job_level,
-      dex: caster.stats.base_stats.dex,
-      luk: caster.stats.base_stats.luk,
+      dex: PlayerStats.get_effective_stat(caster.stats, :dex),
+      luk: PlayerStats.get_effective_stat(caster.stats, :luk),
       random_term: 10 * rng().(100),
       skill_level: Learned.learned_level(learned, recipe.skill_id)
     })
+  end
+
+  # An unknown job maps to -1, which is not a baby.
+  defp baby?(caster) do
+    {:ok, baby_bit} = JobMapid.constant("EAJL_BABY")
+    mapid = JobMapid.from_job(caster.stats.progression.job_id)
+    mapid > 0 and Bitwise.band(mapid, baby_bit) != 0
   end
 
   defp mineral_kind(%Recipe{skill_id: 94}), do: :iron

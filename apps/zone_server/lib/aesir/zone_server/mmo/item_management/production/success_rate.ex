@@ -25,7 +25,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate do
           required(:skill_level) => non_neg_integer(),
           required(:learned_skills) => Learned.t(),
           required(:instruction_change_rank) => non_neg_integer(),
-          required(:random_term) => integer()
+          required(:random_term) => integer(),
+          optional(:baby?) => boolean()
         }
 
   @typedoc "Inputs shared by mineral-refining formulas."
@@ -52,26 +53,30 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate do
           required(:oridecon_research_level) => non_neg_integer(),
           required(:crumb_count) => non_neg_integer(),
           required(:elemental_stone?) => boolean(),
-          required(:anvil_bonus) => non_neg_integer()
+          required(:anvil_bonus) => non_neg_integer(),
+          optional(:baby?) => boolean()
         }
 
   @doc """
-  Calculates a weapon-forging chance and clamps it to `1..10_000`.
+  Calculates a weapon-forging chance and clamps it to `1..10_000`. A baby class
+  (`baby?: true`, default `false`) keeps 70 percent of the chance before the clamp.
   """
   @spec weapon(weapon_params()) :: pos_integer()
-  def weapon(%{
-        job_level: job_level,
-        dex: dex,
-        luk: luk,
-        random_term: random_term,
-        tier: tier,
-        family_skill_level: family_skill_level,
-        weapon_research_level: weapon_research_level,
-        oridecon_research_level: oridecon_research_level,
-        crumb_count: crumb_count,
-        elemental_stone?: elemental_stone?,
-        anvil_bonus: anvil_bonus
-      }) do
+  def weapon(
+        %{
+          job_level: job_level,
+          dex: dex,
+          luk: luk,
+          random_term: random_term,
+          tier: tier,
+          family_skill_level: family_skill_level,
+          weapon_research_level: weapon_research_level,
+          oridecon_research_level: oridecon_research_level,
+          crumb_count: crumb_count,
+          elemental_stone?: elemental_stone?,
+          anvil_bonus: anvil_bonus
+        } = params
+      ) do
     rate =
       base(job_level, dex, luk, random_term) +
         tier_bonus(tier) +
@@ -84,6 +89,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate do
 
     rate
     |> Kernel.*(@production_rate_multiplier)
+    |> baby_rate(params)
     |> max(1)
     |> min(@maximum_rate)
   end
@@ -100,19 +106,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate do
   end
 
   @doc """
-  Calculates a pharmacy chance and clamps it to `1..10_000`.
+  Calculates a pharmacy chance and clamps it to `1..10_000`. A baby class
+  (`baby?: true`, default `false`) keeps 70 percent of the chance before the clamp.
   """
   @spec pharmacy(integer(), pharmacy_params() | map()) :: pos_integer()
-  def pharmacy(product_id, %{
-        job_level: job_level,
-        int: int,
-        dex: dex,
-        luk: luk,
-        skill_level: skill_level,
-        learned_skills: learned_skills,
-        instruction_change_rank: instruction_change_rank,
-        random_term: random_term
-      })
+  def pharmacy(
+        product_id,
+        %{
+          job_level: job_level,
+          int: int,
+          dex: dex,
+          luk: luk,
+          skill_level: skill_level,
+          learned_skills: learned_skills,
+          instruction_change_rank: instruction_change_rank,
+          random_term: random_term
+        } = params
+      )
       when is_integer(instruction_change_rank) and instruction_change_rank >= 0 do
     rate =
       50 * learning_potion_level(learned_skills) +
@@ -125,9 +135,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate do
         product_class_roll(product_id, random_term)
 
     rate
+    |> baby_rate(params)
     |> max(1)
     |> min(@maximum_rate)
   end
+
+  defp baby_rate(rate, %{baby?: true}), do: div(rate * 70, 100)
+  defp baby_rate(rate, _params), do: rate
 
   @doc """
   Calculates a mineral-refining chance without the weapon multiplier or floor.

@@ -193,6 +193,87 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
              ItemCraft.from_map(output.craft)
   end
 
+  describe "success chance reads total stats" do
+    # Each chance below is derived by hand from the reference formula with the
+    # equipment bonus counted; the roll succeeds exactly up to the chance.
+    test "weapon forging counts equipment DEX", %{caster: caster} do
+      caster = controlled(caster, %{dex: 10, luk: 10}, %{dex: 40})
+      caster = %{caster | inventory: inventory([{998, 2}])}
+
+      # 20*70 + 10*50 + 10*10 + 10*1 + 4000 + 500*3 + 100*10 = 8510
+      assert pinned_success?(caster, weapon_recipe(), 8510)
+      refute pinned_success?(caster, weapon_recipe(), 8511)
+    end
+
+    test "pharmacy counts equipment INT, DEX and LUK", %{caster: caster} do
+      caster =
+        caster
+        |> pharmacy_caster(10)
+        |> controlled(%{int: 10, dex: 10, luk: 10}, %{int: 20, dex: 20, luk: 20})
+        |> Map.put(:inventory, inventory([{1002, 1}]))
+
+      # 300*10 + 20*70 + 10*div(30, 2) + 10*30 + 10*30 + 2010 = 7160
+      assert pinned_success?(caster, pharmacy_recipe(), 7160)
+      refute pinned_success?(caster, pharmacy_recipe(), 7161)
+    end
+
+    test "ore refining counts equipment DEX", %{caster: caster} do
+      caster = controlled(caster, %{dex: 10, luk: 10}, %{dex: 20})
+      caster = put_in(caster.stats.progression.learned_skills, %{94 => 5})
+      caster = %{caster | inventory: inventory([{1002, 1}])}
+
+      # 20*70 + 10*30 + 10*10 + 10*1 + 4000 + 500*5 = 8310
+      assert pinned_success?(caster, iron_recipe(), 8310)
+      refute pinned_success?(caster, iron_recipe(), 8311)
+    end
+
+    test "a baby class forges at 70 percent of the chance", %{caster: caster} do
+      caster = controlled(caster, %{dex: 10, luk: 10}, %{dex: 40})
+      caster = put_in(caster.stats.progression.job_id, 4033)
+      caster = %{caster | inventory: inventory([{998, 2}])}
+
+      # div(8510 * 70, 100) = 5957
+      assert pinned_success?(caster, weapon_recipe(), 5957)
+      refute pinned_success?(caster, weapon_recipe(), 5958)
+    end
+  end
+
+  # Allocated stats `base`, no job bonus, and `equipment` as the only bonus.
+  defp controlled(caster, base, equipment) do
+    stats = caster.stats
+    stats = %{stats | base_stats: Map.merge(stats.base_stats, base)}
+
+    modifiers = %{
+      stats.modifiers
+      | job_bonuses: %{},
+        equipment: Map.merge(stats.modifiers.equipment, equipment)
+    }
+
+    %{caster | stats: %{stats | modifiers: modifiers}}
+  end
+
+  # The formula's random terms take their lowest value and the success roll is `roll`.
+  defp pinned_success?(caster, recipe, roll) do
+    Application.put_env(:zone_server, :forge_rng, fn
+      10_000 -> roll
+      _upper -> 1
+    end)
+
+    {:ok, attempted} = Forge.run(caster, recipe, [])
+    attempted.pending_production_result.success
+  end
+
+  defp iron_recipe do
+    %Recipe{
+      id: 0,
+      product_id: 998,
+      item_level: 26,
+      skill_id: 94,
+      skill_level: 1,
+      materials: [%{item_id: 1002, amount: 1}]
+    }
+  end
+
   defp pharmacy_recipe do
     %Recipe{
       id: 119,
