@@ -98,7 +98,8 @@ defmodule Aesir.ZoneServer.Integration.AlchemistPharmacyIntegrationTest do
 
   test "Pharmacy rejects a Blacksmith recipe reply" do
     character = insert_alchemist(%{@pharmacy_skill_id => 1})
-    insert_items(character.id, [{@medicine_bowl_id, 1}])
+    # Red Potion's materials, so the Pharmacy list has something to open with.
+    insert_items(character.id, [{@medicine_bowl_id, 1}, {7144, 1}, {507, 1}, {1093, 1}])
     session = start_session(character)
 
     cast(session, 1)

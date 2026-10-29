@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinMobCastIntegrationTest do
   @sonic_blow_mob_id 1_098
   @grimtooth_mob_id 1_304
   @venom_dust_mob_id 1_429
+  @eremes_mob_id 1_635
 
   setup :set_mimic_private
   setup :verify_on_exit!
@@ -109,6 +110,38 @@ defmodule Aesir.ZoneServer.Integration.AssassinMobCastIntegrationTest do
     drive_selected_cast(grimtooth, grimtooth_row, {:player, target_id})
 
     assert_eventually(fn -> current_hp(target.pid) < after_sonic end)
+  end
+
+  test "Eremes Guile casts Soul Destroyer and Meteor Assault on a player" do
+    target =
+      start_player_session(
+        id: 9_872,
+        name: "AscMobTarget",
+        map_name: @map,
+        position: {161, 150},
+        hp: 1_000_000,
+        max_hp: 1_000_000
+      )
+
+    initial_hp = current_hp(target.pid)
+
+    breaker_row = row!(@eremes_mob_id, "ASC_BREAKER", state: :chase)
+    assert_row(breaker_row, level: 10, target: :target, cast_time: 0)
+
+    breaker = spawn_test_mob(@map, {160, 150}, mob_id: @eremes_mob_id)
+    Mimic.allow(HitCalculations, self(), breaker.pid)
+    drive_selected_cast(breaker, breaker_row, {:player, target.character.id})
+    assert_eventually(fn -> current_hp(target.pid) < initial_hp end, 2_000)
+
+    after_breaker = current_hp(target.pid)
+    meteor_row = row!(@eremes_mob_id, "ASC_METEORASSAULT", state: :attack)
+    assert_row(meteor_row, level: 10, target: :self, cast_time: 0)
+
+    meteor = spawn_test_mob(@map, {162, 150}, mob_id: @eremes_mob_id)
+    Mimic.allow(HitCalculations, self(), meteor.pid)
+    drive_selected_cast(meteor, meteor_row)
+
+    assert_eventually(fn -> current_hp(target.pid) < after_breaker end, 2_000)
   end
 
   test "Argiope places Venom Dust without a gemstone or player resources" do
