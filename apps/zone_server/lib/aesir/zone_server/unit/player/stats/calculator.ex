@@ -101,11 +101,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
   defp advance_generation(%Stats{} = stats, player_id, map_name) do
     progression = stats.progression
 
+    # `apply_job_bonuses/1` dereferences the progression, so a stats struct that
+    # reaches this point always carries one.
     basis =
       :erlang.phash2({
         stats.base_stats,
-        progression && {progression.job_id, progression.base_level, progression.job_level},
-        progression && passive_skills(progression.learned_skills),
+        {progression.job_id, progression.base_level, progression.job_level},
+        passive_skills(progression.learned_skills),
         stats.worn_items,
         stats.riding,
         map_name,
