@@ -119,7 +119,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   ## Options
     - `:skill_id` / `:skill_level` - identify the skill for the damage packet
-    - `:skill_ratio` - percent of base attack the skill deals
+    - `:skill_ratio` - percent of base attack the skill deals, or `{:target, fun}`
+      with `fun` a one-arity function of the struck target's `Combatant` returning
+      that percent (a ratio that reads the target's stats)
     - `:skip_crit` - skip the critical roll (most skills don't crit)
     - `:critical` - opt into a critical roll before flee; a critical bypasses
       flee and forces the calculator, a failed roll prevents a second roll.
@@ -543,6 +545,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
            ),
          :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id) do
       mark_skill_attack(Keyword.get(opts, :delivery, :direct))
+      calc_opts = Keyword.replace_lazy(calc_opts, :skill_ratio, &target_term(&1, target))
 
       hit_opts = %{
         hit_divisions: Keyword.get(opts, :hit_divisions, 1),
@@ -982,6 +985,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   defp resolve_distance_ratio(calc_opts, _result_opts, _target_state), do: calc_opts
 
+  # A skill whose ratio or misc base reads the struck target's own state passes
+  # `{:target, fun}`; it is resolved once the target's combatant is built, so
+  # the calculation and the term read the same snapshot.
+  defp target_term({:target, fun}, target) when is_function(fun, 1), do: fun.(target)
+
+  defp target_term(value, _target), do: value
+
   # A splash lists the targets its additional effects apply to; a line lists
   # those it dealt damage to (the reference sums `skill_attack`'s returns).
   defp listed?(hit, :hit), do: hit.class == :hit
@@ -1003,7 +1013,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   ## Options
     - `:skill_id` / `:skill_level` - identify the skill for the damage packet
-    - `:base_damage` - the skill's per-level base damage (required)
+    - `:base_damage` - the skill's per-level base damage (required), or `{:target,
+      fun}` with `fun` a one-arity function of the struck target's `Combatant`
     - `:element` - the skill's attack element (default `:neutral`)
     - `:hit_divisions` - signed divisions of the one calculated hit (default `1`);
       the packet shows the normalized count
@@ -1259,7 +1270,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
            MiscDamageCalculator.calculate_misc_damage(
              attacker,
              target,
-             misc_damage_opts(base_damage, element, skill_id, attack_flag, misc_opts)
+             misc_damage_opts(
+               target_term(base_damage, target),
+               element,
+               skill_id,
+               attack_flag,
+               misc_opts
+             )
            ) do
       mark_misc_attack(misc_opts)
       {damage, divisions} = DamageShared.normalize_damage_divisions(damage, hit_divisions)

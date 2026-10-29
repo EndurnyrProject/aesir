@@ -135,6 +135,81 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
       {:ok, caster: caster, attacker: attacker, target: target}
     end
 
+    test "a target-dependent skill ratio is resolved against the struck target", %{
+      caster: caster,
+      target: target
+    } do
+      test_pid = self()
+
+      stub(DamageCalculator, :calculate_damage, fn _attacker, _target, opts ->
+        send(test_pid, {:ratio, opts[:skill_ratio]})
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      ratio = fn struck -> 1_000 + struck.base_stats.vit end
+
+      SkillAttack.execute_skill_attack(caster, {:mob, 2001},
+        skill_id: 490,
+        skill_level: 1,
+        skill_ratio: {:target, ratio},
+        skip_crit: true,
+        ignore_flee: true
+      )
+
+      expected = 1_000 + target.base_stats.vit
+      assert_received {:ratio, ^expected}
+
+      SkillAttack.execute_skill_attack(caster, {:mob, 2001},
+        skill_id: 490,
+        skill_level: 1,
+        skill_ratio: 250,
+        skip_crit: true,
+        ignore_flee: true
+      )
+
+      assert_received {:ratio, 250}
+    end
+
+    test "a target-dependent misc base is resolved against the struck target", %{
+      caster: caster,
+      target: target
+    } do
+      test_pid = self()
+
+      stub(MiscDamageCalculator, :calculate_misc_damage, fn _attacker, _target, opts ->
+        send(test_pid, {:base, opts[:base_damage]})
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      SkillAttack.execute_misc_attack(caster, {:mob, 2001},
+        skill_id: 490,
+        skill_level: 1,
+        base_damage: {:target, fn struck -> 7 * struck.base_stats.vit end}
+      )
+
+      expected = 7 * target.base_stats.vit
+      assert_received {:base, ^expected}
+    end
+
+    test "a missing target never resolves a target-dependent term", %{caster: caster} do
+      stub(TargetResolver, :resolve, fn {:mob, 2001} -> {:error, :target_not_found} end)
+      never = fn _struck -> flunk("resolved against a missing target") end
+
+      assert {:error, _reason} =
+               SkillAttack.execute_skill_attack(caster, {:mob, 2001},
+                 skill_id: 490,
+                 skill_level: 1,
+                 skill_ratio: {:target, never}
+               )
+
+      assert {:error, _reason} =
+               SkillAttack.execute_misc_attack(caster, {:mob, 2001},
+                 skill_id: 490,
+                 skill_level: 1,
+                 base_damage: {:target, never}
+               )
+    end
+
     test "a successful critical bypasses flee and forces the calculator", %{caster: caster} do
       stub(CriticalHits, :is_critical_hit?, fn _rate -> true end)
 

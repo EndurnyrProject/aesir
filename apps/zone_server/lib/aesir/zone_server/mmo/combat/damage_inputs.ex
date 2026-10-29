@@ -28,33 +28,39 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
   }
 
   @doc """
-  A unit's effective LUK, with equipment and status contributions.
+  A unit's total `stat`, with equipment and status contributions.
 
-  A live player reads its own stats. A monster's combatant LUK already carries
+  A live player reads its own stats. A monster's combatant stats already carry
   its status changes. Any other unit, or a player no longer in the registry,
-  sums its base LUK, its equipment LUK and its status LUK.
+  sums its base stat, its equipment stat and its status stat.
   """
-  @spec effective_luk(Combatant.t()) :: integer()
-  def effective_luk(%Combatant{unit_type: :player, unit_id: unit_id} = unit) do
+  @spec effective_stat(Combatant.t(), :str | :agi | :vit | :int | :dex | :luk) :: integer()
+  def effective_stat(%Combatant{unit_type: :player, unit_id: unit_id} = unit, stat) do
     case UnitRegistry.get_unit(:player, unit_id) do
       {:ok, {_module, %{stats: %PlayerStats{} = stats}, _pid}} ->
-        PlayerStats.get_effective_stat(stats, :luk)
+        PlayerStats.get_effective_stat(stats, stat)
 
       _missing ->
-        summed_luk(unit)
+        summed_stat(unit, stat)
     end
   end
 
-  def effective_luk(%Combatant{unit_type: :mob, base_stats: stats}), do: stats.luk
-  def effective_luk(%Combatant{} = unit), do: summed_luk(unit)
+  def effective_stat(%Combatant{unit_type: :mob, base_stats: stats}, stat),
+    do: Map.fetch!(stats, stat)
 
-  defp summed_luk(unit) do
-    status_luk =
+  def effective_stat(%Combatant{} = unit, stat), do: summed_stat(unit, stat)
+
+  @doc "A unit's effective LUK (`effective_stat/2`)."
+  @spec effective_luk(Combatant.t()) :: integer()
+  def effective_luk(%Combatant{} = unit), do: effective_stat(unit, :luk)
+
+  defp summed_stat(unit, stat) do
+    status_bonus =
       unit.unit_type
       |> ModifierCalculator.get_battle_modifiers(unit.unit_id)
-      |> Map.get(:luk, 0)
+      |> Map.get(stat, 0)
 
-    Map.get(unit.base_stats, :luk, 0) + Map.get(unit.equip_modifiers, :luk, 0) + status_luk
+    Map.get(unit.base_stats, stat, 0) + Map.get(unit.equip_modifiers, stat, 0) + status_bonus
   end
 
   @doc "Rolls selected player components without reconstructing display ATK."
