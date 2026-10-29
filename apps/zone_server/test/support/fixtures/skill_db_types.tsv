@@ -344,6 +344,7 @@
 487	CG_LONGINGFREEDOM	-	-	None	true	-	none	-	-	none	0,0,0,0,0
 488	CG_HERMODE	Misc	true	Misc	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 489	CG_TAROTCARD	Misc	true	Misc	true	IgnoreFlee	IgnoreFlee	none	0,0,0,0,0	none	0,0,0,0,0
+490	CR_ACIDDEMONSTRATION	Weapon	false	Misc	false	none	IgnoreFlee	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 492	ITEM_ENCHANTARMS	None	true	None	true	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 653	NPC_EARTHQUAKE	Magic	false	Magic	false	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 660	NPC_BLEEDING	Weapon	false	Weapon	false	none	none	none	0,0,0,0,0	none	0,0,0,0,0
