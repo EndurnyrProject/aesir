@@ -8,7 +8,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmCpSkillsTest do
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
+  alias Aesir.ZoneServer.Mmo.Skills.Alchemist.ChemicalProtection
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
@@ -80,6 +82,45 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmCpSkillsTest do
     end
   end
 
+  describe "hand rules" do
+    test "AM_CP_WEAPON needs a right-hand item: a shield alone fails and keeps the bottle" do
+      register_target(%Equipment{left_hand: 2101})
+
+      assert {:failed, failed, :invalid_target} =
+               SkillInterpreter.cast(game_state(234), 234, 1, {:unit, @target_id})
+
+      assert failed.inventory[0].amount == 1
+      assert StatusStorage.get_status(:player, @target_id, :sc_cp_weapon) == nil
+    end
+
+    test "AM_CP_SHIELD accepts a two-handed weapon and a left-hand dagger" do
+      for equipment <- [
+            %Equipment{right_hand: 1116, left_hand: 1116},
+            %Equipment{right_hand: 1201, left_hand: 1201}
+          ] do
+        register_target(equipment)
+        StatusStorage.remove_status(:player, @target_id, :sc_cp_shield)
+
+        assert {:ok, _} = SkillInterpreter.cast(game_state(235), 235, 1, {:unit, @target_id})
+        assert %{val1: 1} = StatusStorage.get_status(:player, @target_id, :sc_cp_shield)
+      end
+    end
+
+    test "worn_slots lists the coatable pieces in order" do
+      register_target(%Equipment{right_hand: 1101, left_hand: 2101, armor: 2301, head_top: 5001})
+      assert ChemicalProtection.worn_slots(@target_id) == [:weapon, :shield, :armor, :head_top]
+
+      register_target(%Equipment{right_hand: 1116, left_hand: 1116})
+      assert ChemicalProtection.worn_slots(@target_id) == [:weapon, :shield]
+
+      assert ChemicalProtection.worn_slots(99_999) == []
+    end
+  end
+
+  defp register_target(equipment) do
+    :ok = UnitRegistry.register_player(player_state(@target_id, equipment), self())
+  end
+
   test "AM_CP_WEAPON prevents a protected target weapon break" do
     assert {:ok, _} = SkillInterpreter.cast(game_state(234), 234, 1, {:unit, @target_id})
 
@@ -111,7 +152,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmCpSkillsTest do
         progression: %{learned_skills: %{skill_id => 5}}
       }
     }
-    |> Aesir.ZoneServer.PlayerStateFixture.build()
+    |> PlayerStateFixture.build()
   end
 
   defp player_state(character_id, equipment \\ %Equipment{}) do

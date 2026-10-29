@@ -6,13 +6,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.ChemicalProtection do
   protected piece, from inside the implementation and sets
   `SKILL_NOCONSUME_REQ`: the failure is reported and the Coating Bottle is
   spared. A refused status start is not a cast failure.
+
+  The weapon piece is whatever the right hand holds. The shield piece is
+  whatever the left hand holds: a shield, a left-hand weapon, or a two-handed
+  weapon, which fills both hands. Renewal and pre-renewal agree.
   """
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @typedoc "The piece a Chemical Protection skill coats."
@@ -31,7 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.ChemicalProtection do
       ) do
     target_id = Active.resolve_target_id(caster, target)
 
-    if wearing?(target_id, slot) do
+    if slot in worn_slots(target_id) do
       StatusInterpreter.apply_status(:player, target_id, status,
         val1: level,
         caster_id: caster_id,
@@ -44,20 +47,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.ChemicalProtection do
     end
   end
 
-  defp wearing?(target_id, slot) do
+  @doc """
+  The pieces a player target wears that a coating can protect, in the order
+  weapon, shield, armor, head top; `[]` for a non-player or a missing unit.
+  """
+  @spec worn_slots(integer()) :: [slot()]
+  def worn_slots(target_id) do
     case UnitRegistry.get_unit(:player, target_id) do
       {:ok, {_module, %PlayerState{stats: %{equipment: equipment}}, _pid}} ->
-        worn?(equipment, slot)
+        Enum.filter([:weapon, :shield, :armor, :head_top], &worn?(equipment, &1))
 
       _not_a_player ->
-        false
+        []
     end
   end
 
+  defp worn?(equipment, :weapon), do: equipment.right_hand != nil
+  defp worn?(equipment, :shield), do: equipment.left_hand != nil
   defp worn?(equipment, :armor), do: equipment.armor != nil
   defp worn?(equipment, :head_top), do: equipment.head_top != nil
-  defp worn?(equipment, :shield), do: PlayerStats.shield?(equipment)
-
-  defp worn?(equipment, :weapon),
-    do: equipment.right_hand != nil or equipment.left_hand != nil
 end
