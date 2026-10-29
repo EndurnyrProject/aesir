@@ -301,11 +301,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
         {:noreply, commit_spent_failure(state, new_game_state, skill_id, level, target, reason)}
 
-      {:failed, new_game_state, reason, _variant} ->
+      {:failed, new_game_state, reason, variant} ->
         new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
 
         {:noreply,
-         commit_requirement_only_failure(state, new_game_state, skill_id, level, reason)}
+         commit_variant_failure(variant, state, new_game_state, {skill_id, level, target}, reason)}
 
       {:skipped, new_game_state, _reason} ->
         new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
@@ -411,13 +411,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         resolved_state = %{new_state | game_state: end_cast(new_state.game_state)}
         {:noreply, resolved_state}
 
-      {:failed, new_game_state, reason, _variant} ->
+      {:failed, new_game_state, reason, variant} ->
         new_state =
-          commit_requirement_only_failure(
+          commit_variant_failure(
+            variant,
             state,
             new_game_state,
-            ctx.skill_id,
-            ctx.skill_level,
+            {ctx.skill_id, ctx.skill_level, ctx.target},
             reason
           )
 
@@ -444,6 +444,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # cast and the use still closes, but the caster sees the failure instead of
   # the skill.
   defp commit_spent_failure(state, new_game_state, skill_id, level, target, reason) do
+    new_state = commit_cast(state, new_game_state, skill_id, level)
+    report_cast_failure(skill_id, new_state.game_state.character_id, reason)
+    CastEnd.complete(new_state.game_state, skill_id, target)
+    new_state
+  end
+
+  # A four-element failure: an effect that shows itself before failing
+  # (`:after_effect`), or a failure that paid only its requirement.
+  defp commit_variant_failure(
+         :after_effect,
+         state,
+         new_game_state,
+         {skill_id, level, target},
+         reason
+       ),
+       do: commit_shown_failure(state, new_game_state, skill_id, level, target, reason)
+
+  defp commit_variant_failure(
+         _variant,
+         state,
+         new_game_state,
+         {skill_id, level, _target},
+         reason
+       ),
+       do: commit_requirement_only_failure(state, new_game_state, skill_id, level, reason)
+
+  # An effect that shows itself before failing (`:after_effect`): the skill's
+  # effect goes out first, then the cast commits like a spent failure (its staged
+  # production result included) and the failure is reported.
+  defp commit_shown_failure(state, new_game_state, skill_id, level, target, reason) do
+    broadcast_skill_effect(new_game_state, skill_id, level, target)
     new_state = commit_cast(state, new_game_state, skill_id, level)
     report_cast_failure(skill_id, new_state.game_state.character_id, reason)
     CastEnd.complete(new_state.game_state, skill_id, target)
@@ -931,11 +962,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   defp handle_begin_error(state, game_state, skill_id, level, target, locked, error) do
     case error do
-      {:failed, new_game_state, reason, _variant} ->
+      {:failed, new_game_state, reason, variant} ->
         sync_cast_start_stats(state, game_state, new_game_state)
 
         {:noreply,
-         commit_requirement_only_failure(state, new_game_state, skill_id, level, reason)}
+         commit_variant_failure(variant, state, new_game_state, {skill_id, level, target}, reason)}
 
       {:skipped, new_game_state, _reason} ->
         sync_cast_start_stats(state, game_state, new_game_state)

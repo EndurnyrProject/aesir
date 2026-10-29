@@ -3118,6 +3118,53 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     end
   end
 
+  describe "an effect that fails after showing itself" do
+    defp failing_cast(result) do
+      state = casting_state(45)
+      test_pid = self()
+      staged = %{state.game_state | pending_production_result: %{success: false, item_id: 504}}
+
+      stub(Interpreter, :begin_cast, fn _game_state, 29, 1, :self -> result.(staged) end)
+      stub(StatusInterpreter, :on_committed_action, fn :player, 1000, _action -> :unchanged end)
+      stub(CharacterPersistence, :update_stats, fn 1000, _fields, _opts -> :ok end)
+      stub_commit()
+
+      stub(Broadcast, :to_player, fn 1000, packet ->
+        send(test_pid, {:to_player, packet})
+        :ok
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+        send(test_pid, {:in_range, packet})
+        :ok
+      end)
+
+      assert {:noreply, _new_state} = SkillHandler.handle_use_skill(state, 29, 1, 1000)
+      {:messages, messages} = Process.info(self(), :messages)
+      messages
+    end
+
+    defp position(messages, pattern), do: Enum.find_index(messages, pattern)
+
+    test "shows the skill, sends the staged production result, then reports the failure" do
+      messages = failing_cast(&{:failed, &1, :skill_failed, :after_effect})
+
+      effect_at = position(messages, &match?({:in_range, %SkillEffect{skill_id: 29}}, &1))
+      result_at = position(messages, &match?({:send, _, {:production_result, _}}, &1))
+      failure_at = position(messages, &match?({:to_player, %SkillCastFailed{skill_id: 29}}, &1))
+
+      assert is_integer(effect_at) and is_integer(result_at) and is_integer(failure_at)
+      assert effect_at < result_at and result_at < failure_at
+    end
+
+    test "an ordinary spent failure still shows no skill effect" do
+      messages = failing_cast(&{:failed, &1, :skill_failed})
+
+      refute position(messages, &match?({:in_range, %SkillEffect{}}, &1))
+      assert position(messages, &match?({:to_player, %SkillCastFailed{skill_id: 29}}, &1))
+    end
+  end
+
   describe "staged HP loss" do
     test "a loss of every remaining HP kills the player" do
       state = casting_state(45)

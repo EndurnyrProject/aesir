@@ -113,7 +113,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:local_effects, PlayerState.t(), [Active.effect()]}
           | {:deferred, PlayerState.t(), term()}
           | {:failed, PlayerState.t(), atom()}
-          | {:failed, PlayerState.t(), atom(), :type1_only | :requirements_only}
+          | {:failed, PlayerState.t(), atom(), :type1_only | :requirements_only | :after_effect}
           | {:skipped, PlayerState.t(), atom()}
           | {:castend_failed, PlayerState.t(), atom()}
           | {:error, atom()}
@@ -165,7 +165,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:deferred, Active.caster(), term()}
           | {:casting, Active.caster(), cast_info()}
           | {:failed, Active.caster(), atom()}
-          | {:failed, Active.caster(), atom(), :type1_only | :requirements_only}
+          | {:failed, Active.caster(), atom(), :type1_only | :requirements_only | :after_effect}
           | {:skipped, Active.caster(), atom()}
           | {:castend_failed, Active.caster(), atom()}
           | {:error, atom()}
@@ -542,7 +542,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:local_effects, Active.caster(), [Active.effect()]}
           | {:deferred, Active.caster(), term()}
           | {:failed, Active.caster(), atom()}
-          | {:failed, Active.caster(), atom(), :type1_only | :requirements_only}
+          | {:failed, Active.caster(), atom(), :type1_only | :requirements_only | :after_effect}
           | {:skipped, Active.caster(), atom()}
           | {:castend_failed, Active.caster(), atom()}
           | {:error, atom()}
@@ -567,7 +567,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:local_effects, PlayerState.t(), [Active.effect()]}
           | {:deferred, PlayerState.t(), term()}
           | {:failed, PlayerState.t(), atom()}
-          | {:failed, PlayerState.t(), atom(), :type1_only | :requirements_only}
+          | {:failed, PlayerState.t(), atom(), :type1_only | :requirements_only | :after_effect}
           | {:skipped, PlayerState.t(), atom()}
           | {:castend_failed, PlayerState.t(), atom()}
           | {:error, atom()}
@@ -588,7 +588,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:local_effects, PlayerState.t(), [Active.effect()]}
           | {:deferred, PlayerState.t(), term()}
           | {:failed, PlayerState.t(), atom()}
-          | {:failed, PlayerState.t(), atom(), :type1_only | :requirements_only}
+          | {:failed, PlayerState.t(), atom(), :type1_only | :requirements_only | :after_effect}
           | {:skipped, PlayerState.t(), atom()}
           | {:castend_failed, PlayerState.t(), atom()}
           | {:error, atom()}
@@ -945,7 +945,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:deferred, PlayerState.t(), term()}
           | {:casting, PlayerState.t(), cast_info()}
           | {:failed, PlayerState.t(), atom()}
-          | {:failed, PlayerState.t(), atom(), :type1_only | :requirements_only}
+          | {:failed, PlayerState.t(), atom(), :type1_only | :requirements_only | :after_effect}
           | {:skipped, PlayerState.t(), atom()}
           | {:castend_failed, PlayerState.t(), atom()}
           | {:error, atom()}
@@ -967,7 +967,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:deferred, PlayerState.t(), term()}
           | {:casting, PlayerState.t(), cast_info()}
           | {:failed, PlayerState.t(), atom()}
-          | {:failed, PlayerState.t(), atom(), :type1_only | :requirements_only}
+          | {:failed, PlayerState.t(), atom(), :type1_only | :requirements_only | :after_effect}
           | {:skipped, PlayerState.t(), atom()}
           | {:castend_failed, PlayerState.t(), atom()}
           | {:error, atom()}
@@ -1089,7 +1089,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:local_effects, PlayerState.t(), [Active.effect()]}
           | {:deferred, PlayerState.t(), term()}
           | {:failed, PlayerState.t(), atom()}
-          | {:failed, PlayerState.t(), atom(), :type1_only | :requirements_only}
+          | {:failed, PlayerState.t(), atom(), :type1_only | :requirements_only | :after_effect}
           | {:skipped, PlayerState.t(), atom()}
           | {:castend_failed, PlayerState.t(), atom()}
           | {:error, atom()}
@@ -1102,7 +1102,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:local_effects, PlayerState.t(), [Active.effect()]}
           | {:deferred, PlayerState.t(), term()}
           | {:failed, PlayerState.t(), atom()}
-          | {:failed, PlayerState.t(), atom(), :type1_only | :requirements_only}
+          | {:failed, PlayerState.t(), atom(), :type1_only | :requirements_only | :after_effect}
           | {:skipped, PlayerState.t(), atom()}
           | {:castend_failed, PlayerState.t(), atom()}
           | {:error, atom()}
@@ -1328,6 +1328,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       {:failed, game_state, reason, :spare_items} ->
         {:failed, game_state, reason}
 
+      {:failed, game_state, reason, :after_effect} ->
+        announce_ground_cast(module, game_state, target, level, definition)
+        {:failed, game_state, reason}
+
       {:skipped, _game_state, _reason} = skipped ->
         skipped
 
@@ -1406,11 +1410,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           do: {:local_effects, settled, effects},
           else: {:ok, settled}
 
-      {:failed, game_state, reason} ->
-        {:failed, settle_cast(game_state, module, level, definition, prepared_cost, opts), reason}
+      {:failed, _game_state, _reason} = failed ->
+        settle_failed(failed, context)
 
-      {:failed, game_state, reason, :spare_items} ->
-        {:failed, settle_skipped(%{context | game_state: game_state}), reason}
+      {:failed, _game_state, _reason, _variant} = failed ->
+        settle_failed(failed, context)
 
       # The reference ends this use without its effect and without a failure
       # message: a dead target, or an implementation whose early return skips
@@ -1425,6 +1429,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         settle_refusal(reason, context)
     end
   end
+
+  # A failed effect keeps its catalysts spent, except the `:spare_items` variant;
+  # an `:after_effect` failure keeps its variant for the owner to show the skill.
+  defp settle_failed({:failed, game_state, reason, :spare_items}, context),
+    do: {:failed, settle_skipped(%{context | game_state: game_state}), reason}
+
+  defp settle_failed({:failed, game_state, reason}, context),
+    do: {:failed, settle_spent(game_state, context), reason}
+
+  defp settle_failed({:failed, game_state, reason, :after_effect}, context),
+    do: {:failed, settle_spent(game_state, context), reason, :after_effect}
+
+  defp settle_spent(game_state, context) do
+    %{module: module, level: level, definition: definition} = context
+    settle_cast(game_state, module, level, definition, context.prepared_cost, context.opts)
+  end
+
+  defp announce_after_effect(:after_effect, module, caster, target, level, definition),
+    do: announce_ground_cast(module, caster, target, level, definition)
+
+  defp announce_after_effect(_variant, _module, _caster, _target, _level, _definition), do: :ok
 
   # The reference refuses a dead target at the top of its damage and no-damage
   # cast ends, after the requirement is paid: the use ends without its effect,
@@ -2223,7 +2248,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:deferred, Active.caster(), term()}
           | {:casting, Active.caster(), cast_info()}
           | {:failed, Active.caster(), atom()}
-          | {:failed, Active.caster(), atom(), :type1_only | :requirements_only}
+          | {:failed, Active.caster(), atom(), :type1_only | :requirements_only | :after_effect}
           | {:skipped, Active.caster(), atom()}
           | {:castend_failed, Active.caster(), atom()}
           | {:error, atom()}
@@ -2811,8 +2836,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       {:failed, caster, reason} ->
         valid_cast_result(adapter, caster, fn -> {:failed, caster, reason} end)
 
-      {:failed, caster, reason, :spare_items} ->
-        valid_cast_result(adapter, caster, fn -> {:failed, caster, reason, :spare_items} end)
+      {:failed, caster, reason, variant} when variant in [:spare_items, :after_effect] ->
+        valid_cast_result(adapter, caster, fn ->
+          announce_after_effect(variant, module, caster, target, level, definition)
+          {:failed, caster, reason, variant}
+        end)
 
       {:skipped, caster, reason} ->
         valid_cast_result(adapter, caster, fn -> {:skipped, caster, reason} end)

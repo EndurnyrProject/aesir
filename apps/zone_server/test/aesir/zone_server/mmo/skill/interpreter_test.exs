@@ -91,6 +91,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     def __skill_capabilities__, do: [:active]
   end
 
+  defmodule AfterEffectSkill do
+    @behaviour Aesir.ZoneServer.Mmo.Skill.Active
+
+    @impl true
+    def cast(game_state, _target, _level, _definition),
+      do: {:failed, game_state, :skill_failed, :after_effect}
+
+    @impl true
+    def validate(_game_state, _target, _level, _definition), do: :ok
+
+    def __skill_capabilities__, do: [:active]
+  end
+
   defmodule OriginAwareSkill do
     @behaviour Aesir.ZoneServer.Mmo.Skill.Active
 
@@ -488,6 +501,39 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       assert {:local_effects, _caster, []} =
                Interpreter.cast(game_state(100, %{29 => 1}), 29, 1, {:ground, 12, 10})
+    end
+
+    test "a ground effect that fails after showing itself spends its cost and announces its cell" do
+      definition = %Definition{
+        id: 29,
+        name: :after_effect,
+        display_name: "After Effect",
+        max_level: 1,
+        target_type: :ground,
+        range: 9,
+        sp_cost: [10],
+        item_cost: [%{id: 717, amount: 1}]
+      }
+
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
+      stub(Catalog, :active_module_for, fn :after_effect -> {:ok, AfterEffectSkill} end)
+
+      caster = %{
+        game_state(100, %{29 => 1})
+        | inventory: %{0 => %InventoryItem{nameid: 717, amount: 2, equip: 0}},
+          pending_inventory_persist: []
+      }
+
+      expect(Broadcast, :to_in_range, fn "prontera", 12, 10, _range, packet ->
+        assert %Aesir.Net.GroundSkill{skill_id: 29, x: 12, y: 10} = packet
+        :ok
+      end)
+
+      assert {:failed, failed, :skill_failed, :after_effect} =
+               Interpreter.cast(caster, 29, 1, {:ground, 12, 10})
+
+      assert failed.stats.current_state.sp == 90
+      assert failed.inventory[0].amount == 1
     end
 
     test "a self cast that settles local effects announces no cell" do

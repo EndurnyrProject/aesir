@@ -74,7 +74,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   its pacing stay, the catalysts and the cast-end hooks do not, and the caster
   sees no failure. `{:failed, state, reason, :spare_items}` is the same reported
   failure with the catalysts spared, for an implementation the reference marks
-  `SKILL_NOCONSUME_REQ` (classic Basilica on Land Protector).
+  `SKILL_NOCONSUME_REQ` (classic Basilica on Land Protector). `{:failed,
+  state, reason, :after_effect}` settles as `{:failed, state, reason}` does but
+  first shows the skill as a success would (its cell for a ground skill, its
+  effect otherwise), for an implementation that displays itself before it fails
+  (Plant Cultivation's failed roll, Twilight Alchemy's failed batch).
   """
   @callback cast(caster(), target(), pos_integer(), Definition.t()) ::
               {:ok, caster()}
@@ -83,6 +87,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
               | {:deferred, caster(), term()}
               | {:failed, caster(), atom()}
               | {:failed, caster(), atom(), :spare_items}
+              | {:failed, caster(), atom(), :after_effect}
               | {:skipped, caster(), atom()}
               | {:error, atom()}
 
