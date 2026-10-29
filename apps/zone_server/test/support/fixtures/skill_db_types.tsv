@@ -349,6 +349,7 @@
 492	ITEM_ENCHANTARMS	None	true	None	true	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 496	AM_TWILIGHT1	None	true	None	true	none	none	none	0	none	0
 497	AM_TWILIGHT2	None	true	None	true	none	none	none	0	none	0
+498	AM_TWILIGHT3	None	true	None	true	none	none	none	0	none	0
 653	NPC_EARTHQUAKE	Magic	false	Magic	false	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 660	NPC_BLEEDING	Weapon	false	Weapon	false	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 687	NPC_ALLHEAL	None	true	None	true	none	none	none	0	none	0

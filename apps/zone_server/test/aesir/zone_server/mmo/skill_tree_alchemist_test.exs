@@ -16,7 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeAlchemistTest do
     tree = SkillTree.tree_for(alchemist_id)
     owned_entries = Enum.filter(Map.values(tree), &(&1.owner_job_id == alchemist_id))
 
-    assert length(owned_entries) == 18
+    assert length(owned_entries) == 19
 
     for {name, max_level, requires} <- [
           {:am_axemastery, 10, []},

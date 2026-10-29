@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmTwilightTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Alchemist.AmTwilight1
   alias Aesir.ZoneServer.Mmo.Skills.Alchemist.AmTwilight2
+  alias Aesir.ZoneServer.Mmo.Skills.Alchemist.AmTwilight3
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.Member
@@ -62,11 +63,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmTwilightTest do
     stats = put_in(stats.progression.learned_skills, %{228 => 10})
     {:ok, t1} = Catalog.by_id(496)
     {:ok, t2} = Catalog.by_id(497)
+    {:ok, t3} = Catalog.by_id(498)
 
     %{
       caster: %PlayerState{character_id: character.id, stats: stats, party_id: 0},
       t1: t1,
-      t2: t2
+      t2: t2,
+      t3: t3
     }
   end
 
@@ -168,6 +171,96 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmTwilightTest do
     end
   end
 
+  describe "Twilight Alchemy 3" do
+    # Alcohol x100 (guide, Empty Bottle, 5 Poison Spores, 5 Stems, Empty Test
+    # Tube), Acid Bottle x50 (guide, Empty Bottle, Immortal Heart) and Fire Bottle
+    # x50 (guide, Alcohol, Fabric, Empty Bottle).
+    @t3_materials [
+      {7127, 1},
+      {7128, 1},
+      {7129, 1},
+      {713, 200},
+      {7033, 500},
+      {905, 500},
+      {1092, 100},
+      {929, 50},
+      {1059, 50},
+      {970, 50}
+    ]
+
+    test "brews Alcohol, Acid Bottles and Fire Bottles in that order, each with its result", %{
+      caster: caster,
+      t3: t3
+    } do
+      unit_rolls(List.duplicate(1, 200))
+      caster = put_in(holding(caster, @t3_materials).stats.base_stats.str, 300)
+
+      # The new Alcohol stacks onto the held one, so that one is a stored row.
+      alcohol =
+        %InventoryItem{}
+        |> InventoryItem.changeset(%{char_id: caster.character_id, nameid: 970, amount: 50})
+        |> Repo.insert!()
+
+      caster = %{caster | inventory: Map.put(caster.inventory, 9, alcohol)}
+
+      assert {:ok, made} = AmTwilight3.cast(caster, :self, 1, t3)
+      assert made.pending_item_add_failures == []
+
+      assert made.pending_production_result == [
+               %{success: true, item_id: 970},
+               %{success: true, item_id: 7136},
+               %{success: true, item_id: 7135}
+             ]
+
+      assert ItemContainer.held_amount(made.inventory, 970) == 100
+      assert ItemContainer.held_amount(made.inventory, 7136) == 50
+      assert ItemContainer.held_amount(made.inventory, 7135) == 50
+      assert ItemContainer.held_amount(made.inventory, 713) == 0
+    end
+
+    test "fails without its effect unless all three batches can start on what is held", %{
+      caster: caster,
+      t3: t3
+    } do
+      Application.put_env(:zone_server, :forge_rng, fn _ -> flunk("brewed") end)
+
+      for missing <- [
+            List.keydelete(@t3_materials, 7033, 0),
+            List.keydelete(@t3_materials, 929, 0),
+            List.keydelete(@t3_materials, 1059, 0),
+            # Fire Bottles need Alcohol already held, though the batch would make it.
+            List.keydelete(@t3_materials, 970, 0),
+            List.keyreplace(@t3_materials, 713, 0, {713, 199})
+          ] do
+        short = holding(caster, missing)
+        assert {:failed, ^short, :skill_failed} = AmTwilight3.cast(short, :self, 1, t3)
+      end
+    end
+
+    test "needs an online Taekwon or Baby Taekwon in the caster's party", %{
+      caster: caster,
+      t3: t3
+    } do
+      caster = %{caster | party_id: 78}
+
+      for {job_id, online, expected} <- [
+            {4046, true, :ok},
+            {4225, true, :ok},
+            {4046, false, :error},
+            {23, true, :error}
+          ] do
+        stub(PartyManager, :get, fn 78 ->
+          {:ok, %PartyState{party([member(2, job_id, online)]) | party_id: 78}}
+        end)
+
+        assert elem(AmTwilight3.begin_attempt(caster, :self, 1, t3), 0) == expected
+      end
+
+      assert {:error, :skill_failed} =
+               AmTwilight3.begin_attempt(%{caster | party_id: 0}, :self, 1, t3)
+    end
+  end
+
   test "Twilight Alchemy is never learned with points, only granted" do
     progression = %PlayerProgression{
       job_id: 4019,
@@ -177,7 +270,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmTwilightTest do
       learned_skills: %{228 => 10}
     }
 
-    for skill_id <- [496, 497],
+    for skill_id <- [496, 497, 498],
         do: assert({:error, _} = SkillTree.can_learn(progression, skill_id))
 
     granted = %{progression | learned_skills: %{228 => 10, 496 => 1}}

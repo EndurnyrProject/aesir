@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.TwilightAlchemy do
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Produce
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes.Recipe
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.State, as: PartyState
@@ -26,6 +27,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.TwilightAlchemy do
       {:ok, made}
     else
       _not_made -> :error
+    end
+  end
+
+  @doc """
+  Brews a batch of an already checked `recipe` after earlier batches of the same
+  cast: its production results follow theirs. A batch whose materials are gone
+  by its turn brews nothing and stages nothing.
+  """
+  @spec add_batch(PlayerState.t(), Recipe.t(), pos_integer()) :: PlayerState.t()
+  def add_batch(%PlayerState{} = caster, %Recipe{} = recipe, qty) do
+    earlier = List.wrap(caster.pending_production_result)
+
+    case Forge.run_batch(caster, recipe, qty, instruction_change_rank(caster)) do
+      {:ok, made} ->
+        %{made | pending_production_result: earlier ++ List.wrap(made.pending_production_result)}
+
+      {:error, _reason} ->
+        caster
     end
   end
 
