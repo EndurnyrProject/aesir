@@ -102,7 +102,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :crit_def_rate,
     :reduce_damage_return,
     :sp_drain_rate,
-    :sp_drain_percent
+    :sp_drain_percent,
+    :critical_def
   ]
 
   describe "destination/1" do
@@ -320,6 +321,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     test "resolves to its own destination, excluded for ammunition scripts" do
       assert BonusKeys.destination("bMiscAtkDef") == {:ok, :misc_atk_def}
       assert BonusKeys.slot_destination(:misc_atk_def, :arrow) == nil
+    end
+  end
+
+  describe "bCriticalDef" do
+    test "resolves to its own destination, excluded for ammunition scripts" do
+      assert BonusKeys.destination("bCriticalDef") == {:ok, :critical_def}
+      assert BonusKeys.slot_destination(:critical_def, :arrow) == nil
+      assert BonusKeys.slot_destination(:critical_def, nil) == :critical_def
     end
   end
 

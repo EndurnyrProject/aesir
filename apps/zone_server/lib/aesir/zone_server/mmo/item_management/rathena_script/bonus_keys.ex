@@ -155,6 +155,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bsplashrange" => :splash_range,
     "blongatkdef" => :long_atk_def,
     "bnearatkdef" => :near_atk_def,
+    "bcriticaldef" => :critical_def,
     "bmiscatkdef" => :misc_atk_def,
     "bhpgainvalue" => :hp_gain_value,
     "bspgainvalue" => :sp_gain_value,
@@ -196,6 +197,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
                                       :short_atk_rate,
                                       :long_atk_rate,
                                       :near_atk_def,
+                                      :critical_def,
                                       :long_atk_def,
                                       :misc_atk_def
                                     ])

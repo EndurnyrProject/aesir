@@ -51,6 +51,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalTest do
       assert Critical.chance(player(1), mob(luk: 4), skill_divisor: 2) == -3
     end
 
+    test "a player target's critical defense scales the chance last" do
+      defender =
+        CombatTestHelper.create_player_combatant(luk: 20)
+        |> Map.update!(:equip_modifiers, &Map.put(&1, :critical_def, 50))
+
+      # (300 - 40) halved by the skill, then * (100 - 50) / 100
+      assert Critical.chance(player(300), defender, skill_divisor: 2) ==
+               div(div(300 - 40, 2) * 50, 100)
+    end
+
+    test "a monster target has no critical defense" do
+      defender = mob(luk: 20) |> Map.update!(:equip_modifiers, &Map.put(&1, :critical_def, 50))
+
+      assert Critical.chance(player(300), defender, []) == 300 - 40
+    end
+
     test "adds the per-race and all-race equipment bonus in tenths" do
       modifiers = %{{:critical_add_race, :brute} => 5, {:critical_add_race, :all} => 2}
       attacker = %{player(300) | equip_modifiers: modifiers}

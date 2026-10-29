@@ -6,8 +6,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Critical do
   crits. The chance starts from the attacker's per-mille critical rate (none at
   all when it is zero), adds the equipment's per-race critical bonus, loses twice
   the target's LUK (three times for a non-player attacking a player), doubles
-  against a sleeping target, is divided by the skill's divisor and then adds
-  the skill's own bonus. The roll is
+  against a sleeping target, is divided by the skill's divisor, adds the skill's
+  own bonus and finally loses a player target's equipment critical defense
+  percent (bCriticalDef). The roll is
   `random(0..999) < chance`.
   """
 
@@ -45,8 +46,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Critical do
             arrow_bonus(attacker, Keyword.get(opts, :normal_attack, false)) -
             DamageInputs.effective_luk(defender) * luk_factor(attacker, defender)
 
-        div(sleep_factor(defender) * chance, Keyword.get(opts, :skill_divisor, 1)) +
-          Keyword.get(opts, :skill_bonus, 0)
+        (div(sleep_factor(defender) * chance, Keyword.get(opts, :skill_divisor, 1)) +
+           Keyword.get(opts, :skill_bonus, 0))
+        |> critical_defense(defender)
     end
   end
 
@@ -61,6 +63,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Critical do
   end
 
   defp arrow_bonus(_attacker, _normal_attack?), do: 0
+
+  # A player target's equipment critical defense (bCriticalDef) scales the
+  # chance last.
+  defp critical_defense(chance, %Combatant{unit_type: :player, equip_modifiers: modifiers}) do
+    case Map.get(modifiers, :critical_def, 0) do
+      0 -> chance
+      percent -> div(chance * (100 - percent), 100)
+    end
+  end
+
+  defp critical_defense(chance, _defender), do: chance
 
   defp sleep_factor(%Combatant{unit_type: type, unit_id: id}) do
     if StatusStorage.has_status?(type, id, :sc_sleep), do: 2, else: 1
