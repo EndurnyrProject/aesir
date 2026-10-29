@@ -187,4 +187,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AttackSpeedTest do
       assert AttackSpeed.can_attack?(old_attack, small_delay) == true
     end
   end
+
+  describe "max_aspd/1 and act_delay/2" do
+    test "third jobs, their mounts, Kagerou, Rebellion and Summoner reach 193; other jobs 190" do
+      for job_id <- [4054, 4080, 4211, 4215, 4218],
+          do: assert(AttackSpeed.max_aspd(job_id) == 193)
+
+      for job_id <- [0, 7, 4008, nil], do: assert(AttackSpeed.max_aspd(job_id) == 190)
+    end
+
+    test "the skill delay is the attack motion plus the motion at the job's fastest ASPD" do
+      # Lord Knight at 150 ASPD: a 1000 ms attack delay, 500 ms motion, plus 100 at 190.
+      assert AttackSpeed.act_delay(1_000, 4008) == 600
+      # Rune Knight at 193 ASPD: the 140 ms attack delay ends with the skill delay.
+      assert AttackSpeed.act_delay(140, 4054) == 140
+    end
+  end
 end

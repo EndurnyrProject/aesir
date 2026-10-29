@@ -53,7 +53,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas do
           ranged?: boolean(),
           flat_bonus: integer(),
           rate_bonus: integer(),
-          penalty_rate: integer()
+          penalty_rate: integer(),
+          max_aspd: 190 | 193
         }
   @type max_hp_inputs :: %{
           base_hp: non_neg_integer(),

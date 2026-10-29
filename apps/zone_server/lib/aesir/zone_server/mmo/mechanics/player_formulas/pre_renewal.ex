@@ -74,7 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.PreRenewal do
     amotion = div(amotion * max(rate, 0), 1_000)
 
     (200 - div(max(amotion, 1), 10))
-    |> min(190)
+    |> min(inputs.max_aspd)
     |> max(0)
   end
 

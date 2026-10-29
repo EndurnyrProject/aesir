@@ -194,7 +194,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinWeaponCombatIntegrationTest do
     assert hp_before - mob_state(skill_target).hp == packet.damage
   end
 
-  test "Lex, Kyrie, and Safety Wall consume one aggregate dual-hand swing on a real mob" do
+  test "Lex, Kyrie, and Safety Wall run once per hand of a dual-hand swing on a real mob" do
     Enum.each([:lex, :kyrie, :safety_wall], fn absorber ->
       player =
         start_assassin(equipped: [right: @knife, left: @knife_slotted], skills: mastery_skills())
@@ -211,12 +211,12 @@ defmodule Aesir.ZoneServer.Integration.AssassinWeaponCombatIntegrationTest do
         :kyrie ->
           assert hp_loss == 0
 
-          assert %{state: %{hits_remaining: 4}} =
+          assert %{state: %{hits_remaining: 3}} =
                    StatusStorage.get_status(:mob, mob.unit_id, :sc_kyrie)
 
         :safety_wall ->
           assert hp_loss == 0
-          assert %Group{state: %{hits_remaining: 5}} = SkillUnitStorage.get(mob.unit_id)
+          assert %Group{state: %{hits_remaining: 4}} = SkillUnitStorage.get(mob.unit_id)
       end
     end)
   end
@@ -257,7 +257,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinWeaponCombatIntegrationTest do
     assert DevotedBy.count(stale_crusader.character.id) == 0
   end
 
-  test "Energy Coat consumes SP once for one real calculated dual-hand swing" do
+  test "Energy Coat charges SP per hand of one real calculated dual-hand swing" do
     attacker =
       start_assassin(equipped: [right: @knife, left: @knife_slotted], skills: mastery_skills())
 
@@ -283,7 +283,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinWeaponCombatIntegrationTest do
 
     assert eventually(fn -> current_hp(target) < hp_before and current_sp(target) < sp_before end)
     assert hp_before - current_hp(target) == settled.primary.damage + settled.secondary.damage
-    assert sp_before - current_sp(target) == 3
+    assert sp_before - current_sp(target) == 6
   end
 
   test "break, drain, Enchant Poison, Poison React, and passive division hooks stay swing-scoped" do

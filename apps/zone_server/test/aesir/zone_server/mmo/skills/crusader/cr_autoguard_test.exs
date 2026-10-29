@@ -125,6 +125,50 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguardTest do
                Autoguard.absorb_damage({:player, devotee_id}, entry(10), weapon_hit(40), %{})
     end
 
+    test "a block gives the holder the level's walk delay and stands it up" do
+      stub(SpecialEffect, :play, fn _unit, _effect, _target -> :ok end)
+      holder = %PlayerState{character_id: 7010, action_state: :sitting}
+
+      for {level, delay} <- [{5, 300}, {6, 200}, {9, 200}, {10, 100}] do
+        UnitRegistry.register_unit(:player, 7010, PlayerState, holder, self())
+        seed_for_roll(1)
+
+        assert {:ok, 0, _} =
+                 Autoguard.absorb_damage({:player, 7010}, entry(level), weapon_hit(40), %{})
+
+        assert_received {:"$gen_cast", {:movement, {:walk_delay, ^delay}}}
+        assert_received {:"$gen_cast", {:action, :force_stand}}
+      end
+    end
+
+    test "a block covered by Devotion delays the Crusader's walk and stands the devotee" do
+      test_pid = self()
+      devotee_id = 7011
+      crusader_id = 7012
+      devote(devotee_id, crusader_id)
+
+      crusader = %PlayerState{
+        character_id: crusader_id,
+        action_state: :idle,
+        stats: %{current_state: %{hp: 100}}
+      }
+
+      UnitRegistry.register_unit(:player, crusader_id, PlayerState, crusader, test_pid)
+
+      devotee_pid = spawn(fn -> receive do: (message -> send(test_pid, {:devotee, message})) end)
+      devotee = %PlayerState{character_id: devotee_id, action_state: :sitting}
+      UnitRegistry.register_unit(:player, devotee_id, PlayerState, devotee, devotee_pid)
+
+      stub(SpecialEffect, :play, fn _unit, _effect, _target -> :ok end)
+      seed_for_roll(1)
+
+      assert {:ok, 0, _} =
+               Autoguard.absorb_damage({:player, devotee_id}, entry(10), weapon_hit(40), %{})
+
+      assert_received {:"$gen_cast", {:movement, {:walk_delay, 100}}}
+      assert_receive {:devotee, {:"$gen_cast", {:action, :force_stand}}}
+    end
+
     test "the status is a blocker of the damage stage, after Kyrie, Safety Wall, Pneuma and Basilica" do
       assert :sc_autoguard in StatusRegistry.statuses_implementing(:absorb_damage)
 

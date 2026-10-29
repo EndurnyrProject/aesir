@@ -166,6 +166,27 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     finish_ground_hit(target_type, target_id, settled, prepared_hit, attacker)
   end
 
+  defp absorb_ground_swing(target_type, target_id, swing, hit_info, attacker, target) do
+    case Rules.validate_target(resolve_attacker(attacker), target, hit_info) do
+      :ok ->
+        rate = Rules.damage_rate(hit_info)
+
+        {settled, hit_info} =
+          absorb_swing(swing, target_type, target_id, hit_info, attacker, rate)
+
+        {settled,
+         Map.merge(hit_info, %{
+           pre_delivery_prepared?: true,
+           ground_damage_rate: rate,
+           equipment_return_basis: swing.raw_total
+         })}
+
+      {:error, reason} ->
+        {settle_components(swing, 0),
+         Map.merge(hit_info, %{pre_delivery_prepared?: true, settlement_error: reason})}
+    end
+  end
+
   defp absorb_ground_hit(target_type, target_id, damage, hit_info, attacker, target) do
     case Rules.validate_target(resolve_attacker(attacker), target, hit_info) do
       :ok ->
@@ -218,10 +239,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   A marked hit on a monster skips the damage arithmetic statuses, the
   attacker's damage statuses, the siege map rate and every damage return: only
-  the blocking statuses run, against a single point of damage. Only a blocker
-  that stops the hit (Safety Wall, Pneuma, Basilica) makes it deal nothing;
-  Kyrie Eleison absorbing the point still lets the contact deal 1. A contact on the Emperium on siege ground must also be
-  a valid siege attack.
+  the blocking statuses run, against a single point of damage, and any of them
+  leaving nothing (Kyrie Eleison absorbing the point included) makes the whole
+  contact deal nothing. Only Safety Wall, Pneuma and Basilica make it a block.
+  A contact on the Emperium on siege ground must also be a valid siege attack.
   """
   @spec mark_infinite_defense(map(), map()) :: map()
   def mark_infinite_defense(hit_info, %{plant: plant}),
@@ -235,7 +256,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     {damage, hit_info} =
       case StatusInterpreter.block_hit(:mob, target_id, blocker_hit) do
         {0, :block} -> {0, Map.put(hit_info, :blocked?, true)}
-        {_reduced, :hit} -> {damage, hit_info}
+        {0, _stopped} -> {0, hit_info}
+        {_point, :hit} -> {damage, hit_info}
       end
 
     {damage, hit_info} = emperium_siege_check(target_id, damage, hit_info, attacker)
@@ -262,10 +284,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   @doc """
   Settles and delivers one already-calculated ordinary weapon swing.
 
-  Mutating status absorption sees the raw aggregate once. On siege ground,
-  each resulting positive component receives its own map rate and minimum.
-  Devotion then forwards the settled sum when it is above zero. The returned
-  swing retains its raw total, its settled components sum to the one
+  The target's damage statuses run once per hand, right hand first, and on
+  siege ground each hand then receives its own map rate and minimum. Devotion
+  then forwards the settled sum when it is above zero. The returned swing
+  retains its raw total, its settled components sum to the one
   delivered HP mutation (zero for a devotee), and `stages` holds the hit's
   `EquipProcDispatch.hit_event/2` (nil for a swing that dealt nothing raw).
   """
@@ -357,14 +379,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   defp settle_weapon_swing(target_type, target_pid, target_id, swing, hit_info, attacker) do
     case ground_target(target_type, target_id, hit_info) do
       {:ok, target} ->
-        {absorbed, prepared_hit} =
-          absorb_ground_hit(target_type, target_id, swing.raw_total, hit_info, attacker, target)
+        {settled, prepared_hit} =
+          absorb_ground_swing(target_type, target_id, swing, hit_info, attacker, target)
 
-        settled =
-          swing
-          |> settle_components(absorbed)
-          |> rate_components(Rules.damage_rate(hit_info))
-          |> final_weapon_swing(target_type, target_id, prepared_hit, attacker)
+        settled = final_weapon_swing(settled, target_type, target_id, prepared_hit, attacker)
 
         {damage, prepared_hit} =
           finish_ground_hit(
@@ -388,13 +406,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   end
 
   defp apply_ordinary_swing(target_type, target_pid, target_id, swing, hit_info, attacker) do
-    {absorbed, hit_info} =
-      absorb_unit_damage(swing.raw_total, target_type, target_id, hit_info, attacker)
-
-    settled =
-      swing
-      |> settle_components(absorbed)
-      |> final_weapon_swing(target_type, target_id, hit_info, attacker)
+    {absorbed, hit_info} = absorb_swing(swing, target_type, target_id, hit_info, attacker, nil)
+    settled = final_weapon_swing(absorbed, target_type, target_id, hit_info, attacker)
 
     final_damage = component_total(settled)
 
@@ -796,12 +809,57 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
     case StatusInterpreter.absorb_hit(target_type, target_id, damage, absorb_hit) do
       {absorbed, :block} -> {absorbed, Map.put(hit_info, :blocked?, true)}
-      {absorbed, :hit} -> {absorbed, hit_info}
+      {absorbed, _connected_or_miss} -> {absorbed, hit_info}
     end
   end
 
   defp absorb_unit_damage(damage, _target_type, _target_id, hit_info, _attacker),
     do: {damage, hit_info}
+
+  # A swing runs the target's damage statuses once per hand, right hand first,
+  # so each hand spends its own status charges and rolls its own blockers; a
+  # siege `rate` then applies to each hand. When both hands dealt raw damage
+  # and the right still deals more than 1, a stopped left hand deals 1. A
+  # swing left with nothing takes the class of the last hand a blocker
+  # classified: a Guard on the left makes it a miss after a Safety Wall on the
+  # right, a Safety Wall on the left a block after a Guard on the right.
+  defp absorb_swing(swing, target_type, target_id, hit_info, attacker, rate) do
+    absorb_hit = Map.merge(hit_info, %{attacker: absorb_attacker(attacker), swing: make_ref()})
+    {right, right_class} = absorb_hand(swing.primary.damage, target_type, target_id, absorb_hit)
+
+    {left, left_class} =
+      absorb_hand(secondary_damage(swing), target_type, target_id, absorb_hit)
+
+    settled =
+      %{swing | primary: %{swing.primary | damage: right}}
+      |> Map.update!(:secondary, &settle_secondary(&1, left))
+      |> rate_components(rate)
+      |> keep_left_hand(swing)
+
+    class = if left_class == :hit, do: right_class, else: left_class
+
+    if component_total(settled) == 0 and class == :block,
+      do: {settled, Map.put(hit_info, :blocked?, true)},
+      else: {settled, hit_info}
+  end
+
+  defp absorb_hand(damage, target_type, target_id, hit)
+       when damage > 0 and target_type != :skill_unit,
+       do: StatusInterpreter.absorb_hit(target_type, target_id, damage, hit)
+
+  defp absorb_hand(damage, _target_type, _target_id, _hit), do: {damage, :hit}
+
+  defp secondary_damage(%HandedAttack{secondary: nil}), do: 0
+  defp secondary_damage(%HandedAttack{secondary: secondary}), do: secondary.damage
+
+  defp keep_left_hand(
+         %{primary: %{damage: right}, secondary: %{damage: left} = secondary} = settled,
+         %HandedAttack{primary: %{damage: raw_right}, secondary: %{damage: raw_left}}
+       )
+       when raw_right > 0 and raw_left > 0 and right > 1 and left < 1,
+       do: %{settled | secondary: %{secondary | damage: 1}}
+
+  defp keep_left_hand(settled, _swing), do: settled
 
   # The holder's final weapon stage (Counter Instinct) over a weapon hit's
   # settled damage, after the siege map rate and before Devotion. A cut hit's
@@ -912,6 +970,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
         secondary: settle_secondary(swing.secondary, 0)
     }
   end
+
+  defp rate_components(swing, nil), do: swing
 
   defp rate_components(swing, rate) do
     %{

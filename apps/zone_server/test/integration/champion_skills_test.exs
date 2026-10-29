@@ -149,6 +149,7 @@ defmodule Aesir.ZoneServer.Integration.ChampionSkillsTest do
     simulate_incoming_message(champion.pid, %ActionRequest{target_id: mob.unit_id, action: 0})
     assert eventually(fn -> stage(champion) == :quadruple end)
 
+    wait_act_ready(champion)
     cast(champion, @quadruple, 5, mob.unit_id)
     assert eventually(fn -> stage(champion) == :thrust end)
   end

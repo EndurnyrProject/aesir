@@ -477,6 +477,33 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
     end
   end
 
+  describe "arm_attack_delay/3" do
+    # A Knight (190 ASPD at most) with a 1000 ms attack delay: skills wait 500 + 100.
+    @knight_stats %{progression: %{job_id: 7}}
+
+    test "arms both delays on a negative monotonic clock with none running" do
+      state = %PlayerState{stats: @knight_stats, last_attack_timestamp: 0, act_delay_until: 0}
+
+      armed = PlayerState.arm_attack_delay(state, 1_000, -50_000)
+
+      assert armed.last_attack_timestamp == -50_000
+      assert armed.act_delay_until == -49_400
+    end
+
+    test "never shortens a skill delay already running past its own" do
+      state = %PlayerState{
+        stats: @knight_stats,
+        last_attack_timestamp: 100,
+        act_delay_until: 9_000
+      }
+
+      armed = PlayerState.arm_attack_delay(state, 1_000, 5_000)
+
+      assert armed.last_attack_timestamp == 5_000
+      assert armed.act_delay_until == 9_000
+    end
+  end
+
   describe "to_combatant/1 weapon type resolution" do
     setup do
       character = %Character{

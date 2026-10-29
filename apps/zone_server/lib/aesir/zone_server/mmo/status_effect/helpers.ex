@@ -97,6 +97,56 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Helpers do
   def consume_sp(_target, _amount), do: :ok
 
   @doc """
+  Gives a player or mob target a skill's walk delay of `duration` ms in its own
+  session, fire-and-forget. Other targets, or one no longer registered, are a
+  no-op.
+  """
+  @spec walk_delay(Definition.target(), pos_integer()) :: :ok
+  def walk_delay({:player, unit_id}, duration) do
+    case UnitRegistry.get_unit(:player, unit_id) do
+      {:ok, {_module, _state, pid}} -> PlayerSession.walk_delay(pid, duration)
+      {:error, :not_found} -> :ok
+    end
+  end
+
+  def walk_delay({:mob, unit_id}, duration) do
+    case UnitRegistry.get_unit(:mob, unit_id) do
+      {:ok, {_module, _state, pid}} -> MobSession.walk_delay(pid, duration)
+      {:error, :not_found} -> :ok
+    end
+  end
+
+  def walk_delay(_target, _duration), do: :ok
+
+  @doc """
+  Stands a seated player target up in its own session, whatever keeps it
+  seated, fire-and-forget. Other targets are a no-op.
+  """
+  @spec force_stand(Definition.target()) :: :ok
+  def force_stand({:player, unit_id}) do
+    case UnitRegistry.get_unit(:player, unit_id) do
+      {:ok, {_module, %{action_state: :sitting}, pid}} -> PlayerSession.force_stand(pid)
+      _standing_or_gone -> :ok
+    end
+  end
+
+  def force_stand(_target), do: :ok
+
+  @doc """
+  Arms a parry's attack and skill delays on a player target in its own
+  session, fire-and-forget. Other targets are a no-op.
+  """
+  @spec parry_delay(Definition.target()) :: :ok
+  def parry_delay({:player, unit_id}) do
+    case UnitRegistry.get_unit(:player, unit_id) do
+      {:ok, {_module, _state, pid}} -> PlayerSession.parry(pid)
+      {:error, :not_found} -> :ok
+    end
+  end
+
+  def parry_delay(_target), do: :ok
+
+  @doc """
   Restores SP to a player target, fire-and-forget.
 
   The mirror of `consume_sp/2`: resolves the player's session and casts the SP

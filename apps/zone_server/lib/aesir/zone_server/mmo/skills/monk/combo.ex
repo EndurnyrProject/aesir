@@ -213,6 +213,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
     end
   end
 
+  @doc """
+  The window a Raging Trifecta Blow proc at `now` earns, after the proc armed
+  its skill delay: while the caster knows Raging Quadruple Blow it lasts until
+  the caster may use skills again, at least the caster's `amotion`, plus the
+  grace, and schedules `{:combo_timeout, generation}` to the calling session.
+  Otherwise any open window ends.
+  """
+  @spec open_after_trifecta(map(), integer(), non_neg_integer()) :: t()
+  def open_after_trifecta(caster, now, amotion) do
+    if knows?(%{learned: PlayerStats.effective_skills(caster.stats)}, @chain_combo) do
+      window = max(amotion, caster.act_delay_until - now) + @grace_ms
+      combo = open(caster.combo, :quadruple, now + window)
+      Process.send_after(self(), {:combo_timeout, combo.generation}, window)
+      combo
+    else
+      cancel(caster.combo)
+    end
+  end
+
   defp asura?(ctx, min_spheres),
     do: knows?(ctx, @asura) and ctx.fury? and ctx.spheres >= min_spheres
 

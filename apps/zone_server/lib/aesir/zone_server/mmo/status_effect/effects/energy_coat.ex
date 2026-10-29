@@ -12,8 +12,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnergyCoat do
   makes a full SP bar the topmost band.
 
   A charge the holder cannot pay, or one that rounds to zero SP, takes nothing
-  and ends the status, but the hit is still reduced. Cart Termination is never
-  covered; other hits it does not cover pass through unchanged.
+  and ends the status, but the hit is still reduced. Each hand of a weapon
+  swing is charged on its own, the left hand on the SP the right hand's charge
+  left (the charge reaches the holder's session after the swing settles, so
+  the swing's charges so far are kept in the entry state under its `:swing`).
+  Cart Termination is never covered; other hits it does not cover pass through
+  unchanged.
 
   Renewal: the coat covers both weapon and magic damage. Pre-renewal: weapon
   damage only.
@@ -29,7 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnergyCoat do
     icon: :energycoat,
     opt3: :energycoat
 
-  import Aesir.ZoneServer.Mmo.StatusEffect.Helpers, only: [consume_sp: 2]
+  import Aesir.ZoneServer.Mmo.StatusEffect.Helpers, only: [consume_sp: 2, put_state: 3]
 
   alias Aesir.Commons.GameMode
 
@@ -50,7 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnergyCoat do
         target: stats
       }) do
     if absorbs?(GameMode.mode(), dmg_type) and Map.get(hit, :skill_id) != @cart_termination do
-      soak(target, instance, damage, stats)
+      soak(target, instance, damage, stats, Map.get(hit, :swing))
     else
       {:ok, damage, instance}
     end
@@ -58,18 +62,31 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnergyCoat do
 
   def absorb_damage(_target, instance, %{damage: damage}, _context), do: {:ok, damage, instance}
 
-  @spec soak(tuple(), map(), integer(), map()) ::
+  @spec soak(tuple(), map(), integer(), map(), reference() | nil) ::
           {:remove, integer()} | {:ok, integer(), map()}
-  defp soak(target, instance, damage, %{sp: sp, max_sp: max_sp}) do
+  defp soak(target, instance, damage, %{sp: sp, max_sp: max_sp}, swing) do
+    charged = charged_in_swing(instance, swing)
+    sp = sp - charged
     per = div(div(100 * sp, max_sp) - 1, 20)
     charge = div((10 + 5 * per) * max_sp, 1_000)
     reduced = damage - div(damage * 6 * (1 + per), 100)
 
     if charge > 0 and charge <= sp do
       consume_sp(target, charge)
-      {:ok, reduced, instance}
+      {:ok, reduced, record_charge(instance, swing, charged + charge)}
     else
       {:remove, reduced}
     end
   end
+
+  defp charged_in_swing(%{state: %{swing_charge: {swing, charged}}}, swing)
+       when is_reference(swing),
+       do: charged
+
+  defp charged_in_swing(_instance, _swing), do: 0
+
+  defp record_charge(instance, nil, _charged), do: instance
+
+  defp record_charge(instance, swing, charged),
+    do: put_state(instance, :swing_charge, {swing, charged})
 end

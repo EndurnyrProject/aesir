@@ -8,9 +8,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoguard do
   last blocker of the damage stage after Kyrie Eleison, Safety Wall, Pneuma and
   Basilica: the hit roll, the damage calculation and the earlier blockers all
   run first, so a missed or dodged swing never rolls a block. On a successful
-  roll the hit deals nothing, its additional effects are skipped, and a guard
-  sprite plays for nearby viewers on the holder, or on the holder's Crusader
-  when a valid Devotion link covers the holder.
+  roll the hit deals nothing, its additional effects are skipped, a seated
+  holder stands up, and a guard sprite plays for nearby viewers on the holder,
+  or on the holder's Crusader when a valid Devotion link covers the holder.
+  Whoever shows the guard gets a walk delay of 300 ms through level 5, 200 ms
+  through level 9 and 100 ms at level 10.
 
   Unlike Auto Counter this is not a single-use stance: a successful block leaves
   the status in place, so it keeps guarding every subsequent weapon hit until the
@@ -43,6 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoguard do
   alias Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirror
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Shrink
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.SpecialEffect
@@ -83,18 +86,29 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoguard do
   # A hit covered by a valid Devotion link shows the guard on the Crusader and
   # never triggers Shrink; any other hit shows it on the holder.
   defp blocked({:player, holder_id} = holder, entry, hit_info) do
+    Helpers.force_stand(holder)
+
     case Devotion.redirect_target(holder_id) do
-      {:ok, crusader_id} -> SpecialEffect.play({:player, crusader_id}, :guard, :area)
+      {:ok, crusader_id} -> guard_shown({:player, crusader_id}, entry)
       _not_devoted -> blocked_by_holder(holder, entry, hit_info)
     end
   end
 
   defp blocked(holder, entry, hit_info), do: blocked_by_holder(holder, entry, hit_info)
 
-  defp blocked_by_holder(holder, %StatusEntry{val1: level}, hit_info) do
-    SpecialEffect.play(holder, :guard, :area)
+  defp blocked_by_holder(holder, %StatusEntry{val1: level} = entry, hit_info) do
+    guard_shown(holder, entry)
     maybe_shrink_stun(holder, hit_info, level)
   end
+
+  defp guard_shown(unit, %StatusEntry{val1: level}) do
+    SpecialEffect.play(unit, :guard, :area)
+    Helpers.walk_delay(unit, walk_delay(level))
+  end
+
+  defp walk_delay(level) when level <= 5, do: 300
+  defp walk_delay(level) when level <= 9, do: 200
+  defp walk_delay(_level), do: 100
 
   defp ignores_auto_guard?(skill_id) when is_integer(skill_id) do
     match?({:ok, %{ignore_auto_guard: true}}, Catalog.by_id(skill_id))

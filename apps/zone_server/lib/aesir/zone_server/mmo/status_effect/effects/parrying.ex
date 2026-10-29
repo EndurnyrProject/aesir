@@ -8,9 +8,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Parrying do
   rolls a parry. Magic and miscellaneous hits pass through, as does Cart
   Termination. `ignore_auto_guard` bypasses Guard only; Parrying still rolls.
 
-  A parried hit deals nothing; the post-parry attack delay is not modelled.
-  The existing guard visual is reused because there is no distinct parry
-  effect id.
+  A parried hit deals nothing and gives the holder the delays of its own
+  attack (`Helpers.parry_delay/1`): its next attack waits a full attack delay,
+  its skills the attack motion plus the motion at its job's fastest ASPD. The
+  existing guard visual is reused because there is no distinct parry effect id.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_parrying,
@@ -23,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Parrying do
     target_types: [:player],
     icon: :parrying
 
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Unit.SpecialEffect
 
@@ -33,6 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Parrying do
     if Map.get(hit, :skill_id) != @cart_termination and
          :rand.uniform(100) <= 20 + 3 * min(max(level, 1), 10) do
       SpecialEffect.play(target, :guard, :area)
+      Helpers.parry_delay(target)
       {:ok, 0, entry}
     else
       {:ok, hit.damage, entry}

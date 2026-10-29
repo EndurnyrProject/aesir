@@ -229,7 +229,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
   end
 
   describe "execute_attack/3 handed weapon swings" do
-    test "settles dual components once and publishes their one HP mutation" do
+    test "absorbs dual components per hand and publishes their one HP mutation" do
       test_pid = self()
       {stats, player_state} = dual_dagger_player()
       target = combatant(2001, :mob)
@@ -259,14 +259,16 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         %{damage_rate: 150}
       end)
 
-      expect(StatusInterpreter, :absorb_hit, fn :mob, 2001, 350, hit_info ->
+      expect(StatusInterpreter, :absorb_hit, fn :mob, 2001, 250, hit_info ->
         assert hit_info.components == [
                  {:primary, 250, :neutral},
                  {:secondary, 100, :neutral}
                ]
 
-        {350, :hit}
+        {250, :hit}
       end)
+
+      expect(StatusInterpreter, :absorb_hit, fn :mob, 2001, 100, _hit_info -> {100, :hit} end)
 
       expect(StatusInterpreter, :after_damage_taken, fn :mob, 2001, hit_info ->
         assert hit_info.damage == 350
@@ -411,7 +413,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         true
       end)
 
-      expect(StatusInterpreter, :absorb_hit, fn :mob, 2001, 140, hit_info ->
+      expect(StatusInterpreter, :absorb_hit, fn :mob, 2001, 100, hit_info ->
         assert hit_info.coma?
 
         assert hit_info.components == [
@@ -419,8 +421,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
                  {:secondary, 40, :neutral}
                ]
 
-        {140, :hit}
+        {100, :hit}
       end)
+
+      expect(StatusInterpreter, :absorb_hit, fn :mob, 2001, 40, _hit_info -> {40, :hit} end)
 
       reject(&MobSession.apply_damage/4)
       expect(MobSession, :apply_coma, fn _pid, {:player, 1001}, _metadata -> :ok end)
@@ -1052,7 +1056,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         :ok
       end)
 
-      assert {:ok, {:combo, :quadruple, 1_000}} =
+      assert {:ok, {:combo, :quadruple, 596}} =
                Combat.execute_attack(stats, player_state, 2001)
 
       assert_received {:packet, %SkillDamage{skill_id: 263, div: 3, damage: 75}}
@@ -1095,7 +1099,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         :ok
       end)
 
-      assert {:ok, {:combo, :quadruple, 1_000}} =
+      assert {:ok, {:combo, :quadruple, 596}} =
                Combat.execute_attack(stats, player_state, 2001)
 
       assert_received {:packet, %SkillDamage{skill_id: 263, div: 3, damage: 0}}

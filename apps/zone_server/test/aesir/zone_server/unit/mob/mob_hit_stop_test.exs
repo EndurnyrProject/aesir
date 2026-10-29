@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobHitStopTest do
   @moduletag :capture_log
 
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -77,6 +78,50 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobHitStopTest do
 
     assert hit_mob.movement_state == :moving
   end
+
+  describe "a skill's walk delay" do
+    test "stops a walking mob as a hit does and holds it until the delay ends" do
+      before = HitStop.now()
+
+      {:noreply, delayed} = walk_delay(walking_mob(), 300)
+
+      assert delayed.movement_state == :standing
+      assert {delayed.x, delayed.y} == {100, 100}
+      assert delayed.walk_delay_until in (before + 300)..(HitStop.now() + 300)
+    end
+
+    test "a chasing mob resumes one millisecond after the delay" do
+      chasing = %{walking_mob() | chase_target: {:player, 7}}
+
+      {:noreply, delayed} = walk_delay(chasing, 100)
+
+      at = delayed.walk_delay_until + 1
+      assert delayed.chase_resume_at == at
+      assert_receive {:ai, {:chase_resume, ^at}}, 500
+    end
+
+    test "a status-immune mob ignores it" do
+      state = walking_mob()
+      immune = %{state | calculated: %{state.calculated | mode: MobMode.mask([:status_immune])}}
+
+      {:noreply, ignored} = walk_delay(immune, 300)
+
+      assert ignored.movement_state == :moving
+      assert ignored.walk_delay_until == 0
+    end
+
+    test "a delay already running past it is kept and stops nothing" do
+      until = HitStop.now() + 5_000
+
+      {:noreply, kept} = walk_delay(%{walking_mob() | walk_delay_until: until}, 300)
+
+      assert kept.movement_state == :moving
+      assert kept.walk_delay_until == until
+    end
+  end
+
+  defp walk_delay(state, duration),
+    do: MobSession.handle_cast({:movement, {:walk_delay, duration}}, state)
 
   defp mob do
     mob_data = %MobDefinition{

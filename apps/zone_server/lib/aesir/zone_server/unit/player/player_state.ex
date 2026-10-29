@@ -873,6 +873,35 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   def act_ready?(%{act_delay_until: until}, now), do: now >= until
 
   @doc """
+  Arms the delays an attack or a parry leaves at the monotonic `now`, given the
+  player's `attack_delay`: the next attack waits `attack_delay` from `now` and
+  skills wait `AttackSpeed.act_delay/2`. Neither shortens a delay already
+  running.
+  """
+  @spec arm_attack_delay(t(), non_neg_integer(), integer()) :: t()
+  def arm_attack_delay(%__MODULE__{stats: stats} = state, attack_delay, now) do
+    act_until = now + AttackSpeed.act_delay(attack_delay, job_id(stats))
+
+    %{state | last_attack_timestamp: later(state.last_attack_timestamp, now)}
+    |> delay_acts_until(act_until)
+  end
+
+  @doc """
+  Keeps the player from using skills until at least the monotonic `until`; a
+  skill delay already running past it is kept.
+  """
+  @spec delay_acts_until(t(), integer()) :: t()
+  def delay_acts_until(%__MODULE__{} = state, until),
+    do: %{state | act_delay_until: later(state.act_delay_until, until)}
+
+  # 0 is no timestamp at all; monotonic time may be negative.
+  defp later(0, at), do: at
+  defp later(current, at), do: max(current, at)
+
+  defp job_id(%{progression: %{job_id: job_id}}), do: job_id
+  defp job_id(_stats), do: nil
+
+  @doc """
   Stamps `last_warp_at` with the current monotonic time in milliseconds,
   arming the per-player warp re-trigger cooldown. The timestamp is ephemeral
   and is never persisted.

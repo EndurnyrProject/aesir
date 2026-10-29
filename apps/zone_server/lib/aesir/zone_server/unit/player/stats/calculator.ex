@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
 
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.JobManagement
@@ -656,7 +657,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
             Stats.get_status_modifier(stats, :aspd) + Stats.get_equipment_modifier(stats, :aspd) +
               Passives.aspd_bonus(stats),
           rate_bonus: aspd_percent_bonus(stats),
-          penalty_rate: Stats.get_status_modifier(stats, :aspd_penalty_rate)
+          penalty_rate: Stats.get_status_modifier(stats, :aspd_penalty_rate),
+          max_aspd: AttackSpeed.max_aspd(stats.progression.job_id)
         }
 
         Mechanics.player_formulas().aspd(inputs)

@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Mmo.Skills.Monk.MoTripleattack
   alias Aesir.ZoneServer.Mmo.Skills.Thief.TfSteal
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoison
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -230,7 +231,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
                  target_id,
                  opts
                ) do
-          {:ok, {:combo, next_stage, max(attacker.attack_delay_ms, 1)}}
+          {:ok, {:combo, next_stage, MoTripleattack.delay(player_state.stats)}}
         end
     end
   end

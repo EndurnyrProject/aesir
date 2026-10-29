@@ -252,11 +252,11 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
              StatusStorage.get_status(:player, 37, :sc_kyrie)
   end
 
-  test "handed partial absorption distributes the remainder before component rates" do
+  test "handed partial absorption runs per hand before component rates" do
     _attacker = register_player(38, @castle_map)
     target = register_player(39, @castle_map)
     :ok = StatusInterpreter.apply_status(:player, 39, :sc_kyrie, val2: 2, val3: 5)
-    expect_damage(target.pid, 6, {:player, 38})
+    expect_damage(target.pid, 7, {:player, 38})
 
     assert {settled, :ok} =
              DamageApplication.apply_weapon_swing(
@@ -270,7 +270,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
 
     assert settled.raw_total == 11
     assert settled.primary.damage == 4
-    assert settled.secondary.damage == 2
+    assert settled.secondary.damage == 3
     refute StatusStorage.has_status?(:player, 39, :sc_kyrie)
   end
 
@@ -279,7 +279,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
     target = register_player(68, @castle_map, %{short_weapon_damage_return: 100})
     :ok = StatusInterpreter.apply_status(:player, 68, :sc_aeterna)
     :ok = StatusInterpreter.apply_status(:player, 68, :sc_reflectshield, val1: 10)
-    expect_damage(target.pid, 17, {:player, 67})
+    expect_damage(target.pid, 14, {:player, 67})
     expect_damage(attacker.pid, 12, {:player, 68})
 
     assert {settled, :ok} =
@@ -294,7 +294,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
 
     assert settled.raw_total == 11
     assert settled.primary.damage == 11
-    assert settled.secondary.damage == 6
+    assert settled.secondary.damage == 3
     refute StatusStorage.has_status?(:player, 68, :sc_aeterna)
   end
 
@@ -320,7 +320,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
     assert settled.outcome == :critical
   end
 
-  test "fully blocked hands consume one shield hit and do not acquire minima" do
+  test "fully blocked hands consume a shield hit each and do not acquire minima" do
     _attacker = register_player(40, @castle_map)
     target = register_player(41, @castle_map)
     :ok = StatusInterpreter.apply_status(:player, 41, :sc_kyrie, val2: 100, val3: 5)
@@ -339,7 +339,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
     assert settled.primary.damage == 0
     assert settled.secondary.damage == 0
 
-    assert %{state: %{shield_hp: 89, hits_remaining: 4}} =
+    assert %{state: %{shield_hp: 89, hits_remaining: 3}} =
              StatusStorage.get_status(:player, 41, :sc_kyrie)
   end
 
@@ -364,7 +364,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
     assert StatusStorage.has_status?(:player, 43, :sc_aeterna)
   end
 
-  for {shape, forwarded} <- [scalar: 56, handed: 55] do
+  for {shape, forwarded} <- [scalar: 56, handed: 56] do
     test "#{shape} Devotion forwards only settled damage without recipient absorption or returns" do
       _attacker = register_player(44, @castle_map)
       target = register_player(45, @castle_map)

@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.Slaves
   alias Aesir.ZoneServer.Unit.Mob.SpawnView
+  alias Aesir.ZoneServer.Unit.Mob.StateCommit
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.MovementEngine
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -253,6 +254,35 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   end
 
   def handle_hit_stop(%MobState{} = state), do: state
+
+  @doc """
+  Gives the mob a skill's walk delay of `duration` ms (Guard's block): it may
+  not walk until the delay ends, and a walk in progress stops as a hit stop
+  does, a chase resuming one millisecond after the delay. A status-immune mob
+  ignores it, and a delay already running past `duration` is kept and stops
+  nothing.
+  """
+  @spec handle_walk_delay(MobState.t(), pos_integer()) :: {:noreply, MobState.t()}
+  def handle_walk_delay(%MobState{} = state, duration) do
+    now = HitStop.now()
+
+    if MobState.status_immune?(state) or MobState.walk_delayed?(state, now + duration) do
+      {:noreply, state}
+    else
+      walking? = state.movement_state == :moving
+      state = state |> MobState.apply_walk_delay(duration, now) |> handle_hit_stop()
+      {:noreply, state |> resume_chase_after_delay(walking?, now) |> StateCommit.commit()}
+    end
+  end
+
+  defp resume_chase_after_delay(%MobState{chase_target: target} = state, true, now)
+       when target != nil do
+    at = state.walk_delay_until + 1
+    Process.send_after(self(), {:ai, {:chase_resume, at}}, at - now)
+    %{state | chase_resume_at: at}
+  end
+
+  defp resume_chase_after_delay(state, _walking?, _now), do: state
 
   @doc "Shortens a walking mob's path to one cell, or two after crossing the step's midpoint."
   @spec stop_soon(MobState.t()) :: MobState.t()

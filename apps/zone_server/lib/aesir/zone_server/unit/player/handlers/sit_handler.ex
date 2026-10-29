@@ -2,7 +2,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SitHandler do
   @moduledoc """
   Sit and stand requests. A committed posture change is broadcast to the area,
   actor included, as a `DamageDealt` sit/stand action; clients only change
-  posture on that broadcast.
+  posture on that broadcast. Standing up ends Tension Relax and restarts the
+  sitting regeneration from nothing.
   """
 
   alias Aesir.Commons.Utils.ServerTick
@@ -11,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SitHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -36,10 +38,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SitHandler do
       else: {:noreply, state}
   end
 
+  @doc """
+  Stands a seated player up whatever keeps it seated, as Guard's block does.
+  A player not sitting is left as it is.
+  """
+  @spec handle_force_stand(SessionState.t()) :: {:noreply, SessionState.t()}
+  def handle_force_stand(%{game_state: %{action_state: :sitting} = game_state} = state),
+    do: transition(state, game_state, :idle)
+
+  def handle_force_stand(state), do: {:noreply, state}
+
   defp transition(state, game_state, action_state) do
     case PlayerState.transition_to(game_state, action_state) do
       {:ok, updated_game_state} ->
-        state = StateCommit.commit(state, updated_game_state)
+        state = state |> StateCommit.commit(updated_game_state) |> stood_up(action_state)
         broadcast_posture(updated_game_state)
         synchronize_gangster_paradise(updated_game_state)
         {:noreply, state}
@@ -48,6 +60,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SitHandler do
         {:noreply, state}
     end
   end
+
+  defp stood_up(%{game_state: %{character_id: id}, regen_timing: timing} = state, :idle) do
+    :ok = Interpreter.remove_status(:player, id, :sc_tensionrelax, owner_refresh: :notify)
+    %{state | regen_timing: %{timing | sitting_hp_acc: 0, sitting_sp_acc: 0}}
+  end
+
+  defp stood_up(state, _sitting), do: state
 
   defp broadcast_posture(%{character_id: id, map_name: map_name, x: x, y: y} = game_state) do
     type = if game_state.action_state == :sitting, do: @dmg_sit_down, else: @dmg_stand_up

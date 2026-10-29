@@ -86,7 +86,7 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
     assert_eventually(fn -> get_player_stats(castle.pid).combat_stats.flee == base.flee end)
   end
 
-  test "dual hands share partial absorption once then retain 80% independently with matching packet HP" do
+  test "dual hands each run the shield, then retain 80% independently with matching packet HP" do
     ordinary = fighter("prontera", dual: true)
     ordinary_target = target("prontera")
     castle = fighter(@map, dual: true)
@@ -100,11 +100,8 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
 
     settled = swing(castle, castle_target)
 
-    total = raw.damage + raw.damage2
-    absorbed = total - 20
-    secondary = div(absorbed * raw.damage2, total)
-    assert settled.damage == div((absorbed - secondary) * 80, 100)
-    assert settled.damage2 == div(secondary * 80, 100)
+    assert settled.damage == max(div((raw.damage - 20) * 80, 100), 1)
+    assert settled.damage2 == max(div(raw.damage2 * 80, 100), 1)
     refute StatusStorage.has_status?(:mob, castle_target.unit_id, :sc_kyrie)
 
     :ok =
@@ -117,7 +114,7 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
     assert blocked.damage == 0
     assert blocked.damage2 == 0
 
-    assert %{state: %{hits_remaining: 4}} =
+    assert %{state: %{hits_remaining: 3}} =
              StatusStorage.get_status(:mob, castle_target.unit_id, :sc_kyrie)
   end
 

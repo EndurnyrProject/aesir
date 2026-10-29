@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
   alias Aesir.Net.ItemRemoved
   alias Aesir.Net.MoveStop
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Id, as: SkillUnitId
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
@@ -735,6 +736,42 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
     end
   end
 
+  describe "attack and parry delays" do
+    # ASPD 150: a 1000 ms attack delay and a 500 ms attack motion; a job held
+    # at 190 ASPD adds 100 ms to the skill delay.
+    test "a swing keeps the player from skills for its attack motion plus 100 ms" do
+      stub(Stats, :weapon_type, fn _equipment -> :dagger end)
+      stub_target_in_range()
+
+      stub(Combat, :execute_attack, fn _stats, game_state, _target, _recalculate ->
+        {:ok, game_state}
+      end)
+
+      before = AttackSpeed.current_timestamp()
+
+      capture_log(fn ->
+        {:noreply, returned} =
+          CombatActionHandler.handle_attack_request(combat_state(%{}), 2000, 0)
+
+        send(self(), {:returned, returned})
+      end)
+
+      after_call = AttackSpeed.current_timestamp()
+      assert_received {:returned, %{game_state: game_state}}
+      assert game_state.act_delay_until in (before + 600)..(after_call + 600)
+    end
+
+    test "a parry makes the next attack wait a full attack delay and skills 600 ms" do
+      before = AttackSpeed.current_timestamp()
+      {:noreply, %{game_state: parried}} = CombatActionHandler.handle_parry(combat_state(%{}))
+      after_call = AttackSpeed.current_timestamp()
+
+      assert parried.last_attack_timestamp in before..after_call
+      assert parried.act_delay_until in (before + 600)..(after_call + 600)
+      refute AttackSpeed.can_attack?(parried.last_attack_timestamp, 1_000)
+    end
+  end
+
   describe "continuous auto-attack loop" do
     alias Aesir.ZoneServer.Map.MapCache
     alias Aesir.ZoneServer.Pathfinding
@@ -824,12 +861,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
         {{:ok, {:combo, :quadruple, 20}}, game_state}
       end)
 
-      {:noreply, opened} = CombatActionHandler.handle_attack_request(loop_state(), 2000, 7)
+      state = loop_state()
+      stats = Map.put(state.game_state.stats, :progression, %{learned_skills: %{272 => 1}})
+      state = put_in(state.game_state.stats, stats)
+
+      {:noreply, opened} = CombatActionHandler.handle_attack_request(state, 2000, 7)
 
       assert %Combo{stage: :quadruple} = opened.game_state.combo
       generation = opened.game_state.combo.generation
 
-      assert_receive {:combo_timeout, ^generation}, 100
+      # At 193 ASPD the 70 ms attack motion outlasts the 20 ms delay: 70 + 300.
+      refute_receive {:combo_timeout, ^generation}, 300
+      assert_receive {:combo_timeout, ^generation}, 500
       assert {:noreply, expired} = CombatActionHandler.handle_combo_timeout(opened, generation)
       assert expired.game_state.combo.stage == :idle
     end

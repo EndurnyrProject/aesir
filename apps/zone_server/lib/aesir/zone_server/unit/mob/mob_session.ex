@@ -145,6 +145,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     GenServer.cast(pid, {:movement, {:move_to, x, y}})
   end
 
+  @doc "Gives this mob a skill's walk delay of `duration` ms (Guard's block)."
+  @spec walk_delay(pid(), pos_integer()) :: :ok
+  def walk_delay(pid, duration), do: GenServer.cast(pid, {:movement, {:walk_delay, duration}})
+
   @doc """
   Locks the mob's AI target onto `target_ref` (a taunt; the lock follows the
   mob's target-change rules), or drops it when `nil`.
@@ -416,6 +420,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   def handle_cast({:movement, :teleport}, state) do
     MovementHandler.handle_teleport(state)
+  end
+
+  def handle_cast({:movement, {:walk_delay, duration}}, state) do
+    MovementHandler.handle_walk_delay(state, duration)
   end
 
   def handle_cast({:movement, {:warp, map_name, x, y}}, state) do

@@ -296,7 +296,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.InfiniteDefenseTest do
                })
     end
 
-    test "Kyrie Eleison absorbing the point still lets the contact deal 1" do
+    test "Kyrie Eleison absorbing the point stops the contact without a block" do
       stub(UnitRegistry, :get_unit_info, fn :mob, id ->
         {:ok, %{unit_id: id, unit_type: :mob, stats: %{max_hp: 100, hp: 100, level: 1}}}
       end)
@@ -309,7 +309,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.InfiniteDefenseTest do
           val3: 5
         )
 
-      assert {1, _hit} =
+      assert {0, hit} =
                DamageApplication.prepare_unit_damage(
                  :mob,
                  2004,
@@ -317,6 +317,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.InfiniteDefenseTest do
                  contact_hit(),
                  {:player, 1001}
                )
+
+      refute Map.has_key?(hit, :blocked?)
 
       assert %{state: %{shield_hp: 99, hits_remaining: 4}} =
                StatusStorage.get_status(:mob, 2004, :sc_kyrie)

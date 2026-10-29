@@ -3913,12 +3913,12 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       # A flat bonus of 200 contributes exactly 200 * AGI / 200 = AGI points.
       boosted = status_stats(%{aspd: 200}).derived_stats.aspd
 
-      assert boosted == mode_value(min(base + agi, 193), 190)
+      assert boosted == mode_value(min(base + agi, 190), 190)
       assert boosted > base
     end
 
-    test "flat ASPD is clamped at the active mode's cap" do
-      assert status_stats(%{aspd: 2000}).derived_stats.aspd == mode_value(193, 190)
+    test "flat ASPD is clamped at the job's fastest ASPD" do
+      assert status_stats(%{aspd: 2000}).derived_stats.aspd == 190
     end
 
     test "ASPD rate applies to the active formula before the final cap" do
@@ -3984,7 +3984,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       agi = Stats.get_effective_stat(base, :agi)
 
       assert boosted.derived_stats.aspd ==
-               mode_value(min(base.derived_stats.aspd + agi, 193), 190)
+               mode_value(min(base.derived_stats.aspd + agi, 190), 190)
 
       assert boosted.derived_stats.aspd > base.derived_stats.aspd
       assert Stats.get_effective_stat(boosted, :int) == Stats.get_effective_stat(base, :int) + 10
@@ -4041,7 +4041,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert book_with_skill.combat_stats.atk == book_no_skill.combat_stats.atk + 15
 
       assert book_with_skill.derived_stats.aspd ==
-               min(book_no_skill.derived_stats.aspd + 3, mode_value(193, 190))
+               min(book_no_skill.derived_stats.aspd + 3, 190)
 
       assert book_with_skill.derived_stats.aspd > book_no_skill.derived_stats.aspd
     end

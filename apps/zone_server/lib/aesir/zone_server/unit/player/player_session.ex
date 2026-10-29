@@ -240,6 +240,18 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @spec sit(pid()) :: :ok
   def sit(pid), do: GenServer.cast(pid, {:action, :sit})
 
+  @doc "Stands this player up if seated, whatever keeps it seated (Guard's block)."
+  @spec force_stand(pid()) :: :ok
+  def force_stand(pid), do: GenServer.cast(pid, {:action, :force_stand})
+
+  @doc "Gives this player a skill's walk delay of `duration` ms (Guard's block)."
+  @spec walk_delay(pid(), pos_integer()) :: :ok
+  def walk_delay(pid, duration), do: GenServer.cast(pid, {:movement, {:walk_delay, duration}})
+
+  @doc "Arms the attack and skill delays of a hit this player parried."
+  @spec parry(pid()) :: :ok
+  def parry(pid), do: GenServer.cast(pid, {:combat, :parry})
+
   @doc """
   Runs an attached NPC event for this player session on `module`'s `gid`
   (currently only `Map.Coordinator`'s OnMyMobDead owner-event dispatch, fired
@@ -1290,6 +1302,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_cast({:movement, {:walk_delay, duration}}, state) do
+    MovementHandler.handle_walk_delay(state, duration)
+  end
+
+  @impl true
   def handle_cast({:movement, {:warp, map_name, x, y}}, state) do
     WarpHandler.handle_warp(map_name, x, y, state)
   end
@@ -1342,6 +1359,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:combat, :stop_attack}, state) do
     CombatActionHandler.handle_stop_attack(state)
+  end
+
+  @impl true
+  def handle_cast({:combat, :parry}, state) do
+    CombatActionHandler.handle_parry(state)
   end
 
   @impl true
@@ -1438,6 +1460,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:action, :sit}, state) do
     SitHandler.handle_sit(state)
+  end
+
+  @impl true
+  def handle_cast({:action, :force_stand}, state) do
+    SitHandler.handle_force_stand(state)
   end
 
   # Progression: GM base/job level grants (`@baselevelup`/`@joblevelup`).

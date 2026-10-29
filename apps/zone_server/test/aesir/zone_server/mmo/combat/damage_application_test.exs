@@ -180,7 +180,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
              )
   end
 
-  test "settles aggregate absorption proportionally and delivers once" do
+  test "absorbs each hand on its own, right hand first, and delivers once" do
     target_id = 10
     target_pid = spawn(fn -> Process.sleep(:infinity) end)
     test_pid = self()
@@ -213,15 +213,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
 
     assert_received {:absorbed,
                      %{
-                       damage: 150,
+                       damage: 100,
                        components: [
                          {:primary, 100, :neutral},
                          {:secondary, 50, :neutral}
                        ]
                      }}
+
+    assert_received {:absorbed, %{damage: 50}}
   end
 
-  test "full absorption zeroes both components and makes one zero-damage delivery" do
+  test "full absorption of each hand zeroes both components and makes one zero-damage delivery" do
     target_id = 12
     target_pid = spawn(fn -> Process.sleep(:infinity) end)
     stub_unit_info(target_id)
@@ -245,6 +247,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     assert settled.raw_total == 150
     assert settled.primary.damage == 0
     assert settled.secondary.damage == 0
+    assert_received :fully_absorbed
     assert_received :fully_absorbed
     refute_received :fully_absorbed
   end
@@ -862,32 +865,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     assert settled.primary.damage == 50
     assert settled.secondary == nil
     assert_received {:absorbed, %{components: [{:primary, 100, :neutral}]}}
-  end
-
-  test "assigns the proportional division remainder to primary" do
-    target_id = 11
-    target_pid = spawn(fn -> Process.sleep(:infinity) end)
-    stub_unit_info(target_id)
-    Registry.register_module(HalfDamage)
-
-    :ok =
-      Interpreter.apply_status(:player, target_id, :sc_kyrie, state: %{test_pid: self()})
-
-    expect(PlayerSession, :apply_damage, fn ^target_pid, 2, {:player, 20}, _metadata -> :ok end)
-
-    {settled, :ok} =
-      DamageApplication.apply_weapon_swing(
-        :player,
-        target_pid,
-        target_id,
-        swing(3, 2),
-        melee_hit(),
-        20
-      )
-
-    assert settled.primary.damage == 2
-    assert settled.secondary.damage == 0
-    assert settled.raw_total == 5
   end
 
   test "broadcasts SP restoration to the player's topic" do

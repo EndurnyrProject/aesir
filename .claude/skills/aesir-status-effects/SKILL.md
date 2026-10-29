@@ -80,7 +80,10 @@ statuses all name each other).
 convert to PubSub), `before_weapon_hit/4` (`:continue | {:intercept, term}` — a reaction to
 an ordinary swing, before Trifecta and the hit roll: Auto Counter, Poison React, Blade Stop),
 `absorb_damage/4` (the damage stage, after the hit roll; shield blocks such as Guard and
-Parrying live here, in `Interpreter`'s `@block_stage` after Basilica), `on_contact/4`,
+Parrying live here, in `Interpreter`'s `@block_stage` after Basilica; it runs once per hand of
+a dual-wield or katar swing, so a callback spending a session-owned resource tracks the swing's
+spend under `hit_info.swing` as Energy Coat does, and effects on another unit's session go
+through `Helpers` casts such as `walk_delay/2`), `on_contact/4`,
 `dynamic_option/1`.
 
 **Process placement**: `on_apply` runs inside the applier's session (self-call hazards —

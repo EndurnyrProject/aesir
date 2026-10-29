@@ -624,6 +624,35 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   def handle_hit_stop(state), do: {:noreply, state}
 
   @doc """
+  Gives the player a skill's walk delay of `duration` ms (Guard's block): it
+  may not walk until the delay ends, and a walk in progress stops as a hit
+  stop does, an attack chase resuming one millisecond after the delay. A
+  delay already running past `duration` is kept and stops nothing.
+  """
+  @spec handle_walk_delay(SessionState.t(), pos_integer()) :: {:noreply, SessionState.t()}
+  def handle_walk_delay(%{game_state: game_state} = state, duration) do
+    now = HitStop.now()
+
+    if PlayerState.walk_delayed?(game_state, now + duration) do
+      {:noreply, state}
+    else
+      chase = chase_target(game_state)
+      delayed = PlayerState.apply_walk_delay(game_state, duration, now)
+      {:noreply, stopped} = handle_hit_stop(%{state | game_state: delayed})
+
+      if chase,
+        do: Process.send_after(self(), {:combat, {:auto_attack, chase}}, duration + 1)
+
+      {:noreply, StateCommit.commit(stopped, stopped.game_state)}
+    end
+  end
+
+  defp chase_target(%{movement_state: :moving, action_state: :combat_moving} = game_state),
+    do: game_state.combat_target_id
+
+  defp chase_target(_game_state), do: nil
+
+  @doc """
   Forces a player to stop moving immediately.
 
   ## Parameters

@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.Logout
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
@@ -495,7 +496,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
        ) do
     current_timestamp = AttackSpeed.current_timestamp()
     transitioned_state = maybe_consume_ammo(state, transitioned_state, weapon_type)
-    transitioned_state = maybe_open_combo(transitioned_state, combo_window, current_timestamp)
+    amotion = div(compute_attack_delay(state.game_state), 2)
+
+    transitioned_state =
+      maybe_open_combo(transitioned_state, combo_window, current_timestamp, amotion)
 
     game_state =
       determine_post_attack_state(state, target_id, transitioned_state, current_timestamp)
@@ -503,12 +507,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
     {:noreply, state |> StateCommit.commit(game_state) |> Logout.stamp()}
   end
 
-  defp maybe_open_combo(game_state, nil, _now), do: game_state
+  defp maybe_open_combo(game_state, nil, _now, _amotion), do: game_state
 
-  defp maybe_open_combo(game_state, {stage, duration}, now) do
-    combo = Combo.open(game_state.combo, stage, now + duration)
-    Process.send_after(self(), {:combo_timeout, combo.generation}, duration)
-    %{game_state | combo: combo}
+  # A Raging Trifecta Blow proc arms its own skill delay before the swing's
+  # attack delay, then earns its window from it.
+  defp maybe_open_combo(game_state, {:quadruple, delay}, now, amotion) do
+    game_state = PlayerState.delay_acts_until(game_state, now + delay)
+    %{game_state | combo: Combo.open_after_trifecta(game_state, now, amotion)}
   end
 
   @doc "Expires a matching Monk combo window; stale generations are ignored."
@@ -599,8 +604,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
       schedule_next_auto_attack(transitioned_state, target_id, current_timestamp)
     else
       {:ok, idle_state} = PlayerState.transition_to(transitioned_state, :idle)
-      %{idle_state | last_attack_timestamp: current_timestamp}
+      attack_delay = compute_attack_delay(state.game_state)
+      PlayerState.arm_attack_delay(idle_state, attack_delay, current_timestamp)
     end
+  end
+
+  @doc """
+  Arms the delays a parried hit leaves on the parrying player, the same as its
+  own attack: the next attack waits a full attack delay and skills the attack
+  motion plus the motion at the job's fastest ASPD (`PlayerState.arm_attack_delay/3`).
+  A continuous attack's next swing waits for it.
+  """
+  @spec handle_parry(SessionState.t()) :: {:noreply, SessionState.t()}
+  def handle_parry(%{game_state: game_state} = state) do
+    delayed =
+      PlayerState.arm_attack_delay(
+        game_state,
+        compute_attack_delay(game_state),
+        AttackSpeed.current_timestamp()
+      )
+
+    {:noreply, StateCommit.commit(state, delayed)}
   end
 
   # Attack delay (amotion) in ms. While a cast is in flight a Free Caster's
@@ -631,12 +655,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
     attack_delay = compute_attack_delay(game_state)
     timer_ref = Process.send_after(self(), {:combat, {:auto_attack, target_id}}, attack_delay)
 
-    %{
-      game_state
-      | combat_target_id: target_id,
-        combat_action_type: 7,
-        last_attack_timestamp: current_timestamp
-    }
+    %{game_state | combat_target_id: target_id, combat_action_type: 7}
+    |> PlayerState.arm_attack_delay(attack_delay, current_timestamp)
     |> PlayerState.set_continuous_timer(timer_ref)
   end
 

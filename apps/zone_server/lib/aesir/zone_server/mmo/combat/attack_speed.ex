@@ -13,6 +13,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AttackSpeed do
   - ASPD ranges from 0 (slowest) to 193 (fastest); 190 ASPD is 5 attacks/s
   """
 
+  import Bitwise, only: [band: 2]
+
+  alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
+  alias Aesir.ZoneServer.Mmo.JobManagement.JobMapid
+
+  @jobl_third 0x1000
+
   @doc """
   Calculates the attack delay (adelay) in milliseconds from an ASPD value.
 
@@ -64,6 +72,40 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AttackSpeed do
   @doc "A player's attack motion (status amotion): half its attack delay."
   @spec amotion_from_stats(map()) :: integer()
   def amotion_from_stats(stats), do: div(calculate_delay_from_stats(stats), 2)
+
+  @doc """
+  The fastest ASPD a job reaches: 193 for third and fourth jobs, Kagerou,
+  Oboro, Rebellion and the Summoner line, 190 for every other job. A mounted
+  form counts as its own class. An unknown job is held at 190.
+  """
+  @spec max_aspd(integer() | nil) :: 190 | 193
+  def max_aspd(nil), do: 190
+
+  def max_aspd(job_id) do
+    case AvailableJobs.job_id_to_name(job_id) do
+      {:ok, name} -> name |> JobLineage.normalize() |> JobMapid.from_job() |> mapid_max_aspd()
+      {:error, _unknown} -> 190
+    end
+  end
+
+  defp mapid_max_aspd(mapid) when mapid < 0, do: 190
+
+  defp mapid_max_aspd(mapid) do
+    cond do
+      band(mapid, @jobl_third) != 0 -> 193
+      band(mapid, 0xFFF) in [JobMapid.from_job(:rebellion), JobMapid.from_job(:kagerou)] -> 193
+      band(mapid, 0xFF) == JobMapid.from_job(:summoner) -> 193
+      true -> 190
+    end
+  end
+
+  @doc """
+  How long an attack or a parry keeps a player from using skills, given its
+  `attack_delay`: its attack motion plus the attack motion at the job's
+  fastest ASPD, so at that ASPD the skill delay ends with the attack delay.
+  """
+  @spec act_delay(non_neg_integer(), integer() | nil) :: non_neg_integer()
+  def act_delay(attack_delay, job_id), do: div(attack_delay, 2) + (200 - max_aspd(job_id)) * 10
 
   @doc """
   Checks if enough time has passed since the last attack.

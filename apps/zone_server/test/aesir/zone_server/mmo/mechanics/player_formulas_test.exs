@@ -291,7 +291,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
       ranged?: false,
       flat_bonus: 0,
       rate_bonus: 0,
-      penalty_rate: 0
+      penalty_rate: 0,
+      max_aspd: 190
     }
 
     assert PreRenewal.aspd(aspd) === PreRenewal.aspd(%{aspd | agi: 0, dex: 0})

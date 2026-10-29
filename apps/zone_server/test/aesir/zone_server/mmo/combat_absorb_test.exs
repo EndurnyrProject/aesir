@@ -148,7 +148,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatAbsorbTest do
   end
 
   describe "aggregate weapon-swing absorption" do
-    test "one dual-component swing spends one mob absorber budget" do
+    test "each hand of a dual-component swing spends the mob absorber's budget" do
       test_pid = self()
       stub_mob_target(@mob_id)
       stub_entity_info(:mob, @mob_id)
@@ -181,9 +181,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatAbsorbTest do
 
       assert settled.primary.damage + settled.secondary.damage == 0
       assert_received :damage_applied
-
-      assert %{state: %{shield_hp: 9_850, hits_remaining: 1}} =
-               StatusStorage.get_status(:mob, @mob_id, :sc_kyrie)
+      refute StatusStorage.has_status?(:mob, @mob_id, :sc_kyrie)
     end
   end
 

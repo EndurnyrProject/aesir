@@ -32,6 +32,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.ComboTest do
     assert Combo.cancel(cancelled) == cancelled
   end
 
+  describe "open_after_trifecta/3" do
+    test "lasts until skills are usable again, at least the attack motion, plus 300 ms" do
+      caster = trifecta_caster(%{272 => 1}, 1_600)
+
+      assert %{stage: :quadruple, deadline: 1_900} = Combo.open_after_trifecta(caster, 1_000, 400)
+      assert %{deadline: 2_100} = Combo.open_after_trifecta(caster, 1_000, 800)
+    end
+
+    test "without Raging Quadruple Blow it opens nothing and ends an open window" do
+      caster = %{trifecta_caster(%{}, 1_600) | combo: Combo.open(Combo.new(), :thrust, 5_000)}
+
+      assert %{stage: :idle} = Combo.open_after_trifecta(caster, 1_000, 400)
+      refute_receive {:combo_timeout, _generation}, 50
+    end
+  end
+
+  defp trifecta_caster(learned, act_delay_until) do
+    %{
+      stats: %{progression: %{learned_skills: learned}},
+      act_delay_until: act_delay_until,
+      combo: Combo.new()
+    }
+  end
+
   describe "end_on_attack/2" do
     test "ends the window the skill effect left untouched" do
       before = Combo.open(Combo.new(), :quadruple, 1_500)

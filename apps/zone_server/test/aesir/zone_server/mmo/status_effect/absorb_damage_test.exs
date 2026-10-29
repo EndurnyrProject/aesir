@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
+  alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
@@ -14,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.SpecialEffect
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   defmodule PassThroughStatus do
@@ -46,24 +48,24 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
     end
   end
 
-  describe "aggregate weapon swings" do
-    test "Lex Aeterna doubles and consumes once for both components" do
+  describe "dual-hand weapon swings" do
+    test "Lex Aeterna doubles only the right hand, which consumes it" do
       target_id = 8
       target_pid = setup_player_mock(target_id)
       :ok = Interpreter.apply_status(:player, target_id, :sc_aeterna)
 
-      expect(PlayerSession, :apply_damage, fn ^target_pid, 300, {:player, 99}, _metadata ->
+      expect(PlayerSession, :apply_damage, fn ^target_pid, 250, {:player, 99}, _metadata ->
         :ok
       end)
 
       {settled, :ok} = apply_swing(target_pid, target_id)
 
       assert settled.primary.damage == 200
-      assert settled.secondary.damage == 100
+      assert settled.secondary.damage == 50
       refute StatusStorage.has_status?(:player, target_id, :sc_aeterna)
     end
 
-    test "Kyrie spends one hit and one aggregate shield amount" do
+    test "Kyrie spends one hit and its shield per hand" do
       target_id = 9
       target_pid = setup_player_mock(target_id)
 
@@ -76,31 +78,31 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
 
       assert settled.primary.damage + settled.secondary.damage == 0
 
-      assert %{state: %{shield_hp: 850, hits_remaining: 4}} =
+      assert %{state: %{shield_hp: 850, hits_remaining: 3}} =
                StatusStorage.get_status(:player, target_id, :sc_kyrie)
     end
 
-    test "Energy Coat drains SP and reduces the aggregate once" do
+    test "Energy Coat charges per hand, the left hand on the SP the right hand left" do
       target_id = 10
-      target_pid = setup_player_mock(target_id)
+      target_pid = setup_player_mock(target_id, 81)
       :ok = Interpreter.apply_status(:player, target_id, :sc_energycoat)
 
-      # 80/100 SP is the 60-79 band once the boundary point is subtracted, so the
-      # coat soaks 24% and drains 2, not the 30%/3 of the band above it.
+      # 81/100 SP is the 80-99 band: the right hand pays 3 and keeps 70 of 100.
+      # The 78 SP left is the 60-79 band: the left hand pays 2 and keeps 38 of 50.
+      expect(PlayerSession, :consume_sp, fn ^target_pid, 3 -> :ok end)
       expect(PlayerSession, :consume_sp, fn ^target_pid, 2 -> :ok end)
 
-      expect(PlayerSession, :apply_damage, fn ^target_pid, 114, {:player, 99}, _metadata ->
+      expect(PlayerSession, :apply_damage, fn ^target_pid, 108, {:player, 99}, _metadata ->
         :ok
       end)
 
       {settled, :ok} = apply_swing(target_pid, target_id)
 
-      assert settled.primary.damage == 76
+      assert settled.primary.damage == 70
       assert settled.secondary.damage == 38
-      assert StatusStorage.has_status?(:player, target_id, :sc_energycoat)
     end
 
-    test "Safety Wall spends one hit and one aggregate shield amount" do
+    test "Safety Wall spends one hit and its shield per hand" do
       target_id = 11
       target_pid = setup_player_mock(target_id)
       start_safetywall(%{hits_remaining: 6, shield_hp: 9_500})
@@ -112,8 +114,49 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
 
       assert settled.primary.damage + settled.secondary.damage == 0
 
-      assert %Group{state: %{hits_remaining: 5, shield_hp: 9_350}} =
+      assert %Group{state: %{hits_remaining: 4, shield_hp: 9_350}} =
                SkillUnitStorage.get(42)
+    end
+
+    test "a left hand stopped behind a right hand dealing more than 1 still deals 1" do
+      target_id = 12
+      target_pid = setup_player_mock(target_id)
+      stub(SpecialEffect, :play, fn _unit, _effect, _area -> :ok end)
+      :ok = StatusStorage.apply_status(:player, target_id, :sc_parrying, val1: 10)
+
+      expect(PlayerSession, :apply_damage, fn ^target_pid, 101, {:player, 99}, _metadata ->
+        :ok
+      end)
+
+      # Parrying 10 stops a roll of 50 or less: the right hand rolls 64, the left 42.
+      :rand.seed(:exsss, {3, 3, 3})
+      {settled, :ok} = apply_swing(target_pid, target_id)
+
+      assert settled.primary.damage == 100
+      assert settled.secondary.damage == 1
+    end
+
+    test "both hands stopped take the class of the last hand's blocker" do
+      target_id = 13
+      target_pid = setup_player_mock(target_id)
+      stub(SpecialEffect, :play, fn _unit, _effect, _area -> :ok end)
+      start_safetywall(%{hits_remaining: 1, shield_hp: 9_500})
+      :ok = Interpreter.apply_status(:player, target_id, :sc_safetywall, val2: 42)
+      :ok = Interpreter.apply_status(:player, target_id, :sc_autoguard, val1: 10)
+
+      expect(PlayerSession, :apply_damage, fn ^target_pid, 0, {:player, 99}, metadata ->
+        send(self(), {:delivered, metadata})
+        :ok
+      end)
+
+      # Safety Wall blocks the right hand with its last hit; Guard 10 (30%)
+      # then stops the left hand on a roll of 8, which makes the swing a miss.
+      :rand.seed(:exsss, {1, 1, 1})
+      {settled, :ok} = apply_swing(target_pid, target_id)
+
+      assert settled.primary.damage + settled.secondary.damage == 0
+      assert_received {:delivered, metadata}
+      assert DamageShared.hit_class(metadata, 0, false) == :miss
     end
   end
 
@@ -219,7 +262,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
     )
   end
 
-  defp setup_player_mock(player_id) do
+  defp setup_player_mock(player_id, sp \\ 80) do
     Mimic.copy(Aesir.ZoneServer.Mmo.StatusEffect.Resistance)
     Mimic.copy(UnitRegistry)
 
@@ -239,7 +282,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
            max_hp: 1000,
            max_sp: 100,
            hp: 800,
-           sp: 80,
+           sp: sp,
            level: 50,
            base_level: 50,
            str: 10,

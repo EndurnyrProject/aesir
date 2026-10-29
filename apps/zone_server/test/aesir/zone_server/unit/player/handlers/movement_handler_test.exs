@@ -482,6 +482,51 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     end
   end
 
+  describe "handle_walk_delay/2" do
+    setup do
+      Mimic.copy(Movement)
+      stub(Movement, :set_position, fn _type, _id, _state, _map -> :ok end)
+      stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
+      stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [] end)
+      :ok
+    end
+
+    test "stops a walk as a hit does and holds the player until the delay ends" do
+      before = HitStop.now()
+      state = walking(HitStop.schedule({:movement, :movement_tick}, 150))
+
+      {:noreply, delayed} = MovementHandler.handle_walk_delay(state, 300)
+
+      assert {delayed.game_state.x, delayed.game_state.y} == {50, 50}
+      assert delayed.game_state.movement_state == :standing
+      assert delayed.game_state.walk_delay_until in (before + 300)..(HitStop.now() + 300)
+      refute_receive {:combat, {:auto_attack, _target}}, 50
+    end
+
+    test "a delay already running past it is kept and stops nothing" do
+      state = walking(HitStop.schedule({:movement, :movement_tick}, 150))
+      until = HitStop.now() + 5_000
+      state = put_in(state.game_state.walk_delay_until, until)
+
+      {:noreply, kept} = MovementHandler.handle_walk_delay(state, 300)
+
+      assert kept.game_state.movement_state == :moving
+      assert kept.game_state.walk_delay_until == until
+    end
+
+    test "an attack chase resumes one millisecond after the delay" do
+      state = walking(HitStop.schedule({:movement, :movement_tick}, 150))
+      chasing = PlayerState.set_combat_intent(state.game_state, 2000, 7, {60, 60})
+      {:ok, chasing} = PlayerState.transition_to(chasing, :combat_moving)
+
+      {:noreply, _delayed} =
+        MovementHandler.handle_walk_delay(%{state | game_state: chasing}, 100)
+
+      refute_received {:combat, {:auto_attack, 2000}}
+      assert_receive {:combat, {:auto_attack, 2000}}, 500
+    end
+  end
+
   describe "handle_movement_tick/1 status gating" do
     test "a moving player who becomes restricted stops and is snapped back" do
       stub(Interpreter, :can_move?, fn :player, 1 -> false end)

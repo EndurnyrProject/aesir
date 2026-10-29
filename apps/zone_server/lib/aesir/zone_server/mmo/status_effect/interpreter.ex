@@ -71,7 +71,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   # Blockers whose stop is not a block: the hit reached the holder for nothing
   # (Kyrie Eleison absorbing it, a Guard or Parrying roll), so its additional
   # and counter stages are skipped like a miss rather than run as a block.
+  # Only Guard classifies the stop as a miss itself (`:miss`); the others leave
+  # the hit unclassified (`:hit`), which matters when a swing's other hand was
+  # classified.
   @stop_as_miss [:sc_kyrie, :sc_autoguard, :sc_parrying]
+  @classified_miss [:sc_autoguard]
   # After the siege map rate, before delivery (see final_weapon_hit/4).
   @final_weapon_stage [:sc_rejectsword]
 
@@ -785,10 +789,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   @doc """
   Like `absorb_damage/4`, also classifying the hit: `:block` when Safety Wall,
-  Pneuma or Basilica stopped it, `:hit` otherwise. A hit Kyrie Eleison, Guard,
-  Parrying or the common stages reduced to nothing still connected.
+  Pneuma or Basilica stopped it, `:miss` when Guard did, `:hit` otherwise. A
+  hit Kyrie Eleison, Parrying or the common stages reduced to nothing is left
+  unclassified, so it is a miss only by its damage.
   """
-  @spec absorb_hit(unit_type(), integer(), integer(), map()) :: {integer(), :hit | :block}
+  @spec absorb_hit(unit_type(), integer(), integer(), map()) ::
+          {integer(), :hit | :block | :miss}
   def absorb_hit(_unit_type, _unit_id, 0, _hit_info), do: {0, :hit}
 
   def absorb_hit(unit_type, unit_id, damage, hit_info) do
@@ -805,7 +811,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   one point. Returns the damage left (`0` or `1`) and the `absorb_hit/4`
   classification.
   """
-  @spec block_hit(unit_type(), integer(), map()) :: {0 | 1, :hit | :block}
+  @spec block_hit(unit_type(), integer(), map()) :: {0 | 1, :hit | :block | :miss}
   def block_hit(unit_type, unit_id, hit_info) do
     held = Map.new(StatusStorage.get_unit_statuses(unit_type, unit_id), &{&1.type, &1})
     run = &dispatch_absorb(unit_type, unit_id, Map.get(held, &1), &2, hit_info)
@@ -893,6 +899,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   defp block_step(status_id, {damage, class}, run) do
     case run.(status_id, damage) do
+      0 when status_id in @classified_miss -> {:halt, {0, :miss}}
       0 when status_id in @stop_as_miss -> {:halt, {0, :hit}}
       0 -> {:halt, {0, :block}}
       left -> {:cont, {left, class}}

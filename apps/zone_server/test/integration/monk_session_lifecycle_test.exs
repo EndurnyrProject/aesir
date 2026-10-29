@@ -153,7 +153,7 @@ defmodule Aesir.ZoneServer.Integration.MonkSessionLifecycleTest do
       max_hp: 9_000,
       sp: 500,
       max_sp: 500,
-      learned_skills: %{263 => 10},
+      learned_skills: %{263 => 10, 272 => 1},
       last_map: @map,
       last_x: x,
       last_y: y,
