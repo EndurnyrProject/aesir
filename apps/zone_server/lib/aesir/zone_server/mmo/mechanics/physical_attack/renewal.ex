@@ -10,7 +10,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
   adds Stave Crasher's rolled MATK (`:stave_matk`) to the weapon component,
   `calculate_components/2` runs component cards, the critical or signed
   non-critical equipment bonus, the skill ratio (started from the ATK percent,
-  with the status ratio adds) and defense, and
+  with the status ratio adds), Advanced Katar Mastery's rate (`:katar_atk_rate`)
+  and defense, and
   `finish_attack/2` runs the critical tail after any post-defense attribute step.
   """
 
@@ -102,6 +103,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
         Map.get(context, :bonus_atk, 0)
 
     skilled
+    |> PhysicalAttack.add_rate(Map.get(context, :katar_atk_rate, 0))
     |> reduce_res(context)
     |> PhysicalAttack.apply_defense(context, Defense)
     |> trunc()

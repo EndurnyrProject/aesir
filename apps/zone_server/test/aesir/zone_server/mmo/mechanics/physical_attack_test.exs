@@ -273,6 +273,27 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
     end
   end
 
+  describe "Renewal Advanced Katar Mastery rate" do
+    test "raises the damage after the skill ratio and its constant addition" do
+      weapon_only = %{
+        parts()
+        | status_atk: 0,
+          flat_atk: 0,
+          refine_atk: 0,
+          overrefine_atk: 0,
+          mastery_atk: 0
+      }
+
+      context =
+        neutral_context()
+        |> Map.merge(%{defense_mode: :ignore, skill_ratio: 200, bonus_atk: 10})
+
+      # 100 * 200% + 10 = 210; + 20% = 252 (250 if the rate came before the + 10).
+      assert renewal(weapon_only, context) == 210
+      assert renewal(weapon_only, Map.put(context, :katar_atk_rate, 20)) == 252
+    end
+  end
+
   defp neutral_context do
     %{
       context()

@@ -202,6 +202,75 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
     end
   end
 
+  describe "Advanced Katar Mastery" do
+    # Level 5 is a 20 percent rate. Defense, RES and crits are zero here, so the
+    # raised hit is exactly the reference's step applied to the plain one.
+    @tag game_mode: :renewal
+    test "renewal raises a katar swing by the rate and the second hit inherits it" do
+      plain = katar_swing(0)
+      raised = katar_swing(5)
+
+      assert raised.primary.damage == plain.primary.damage + div(plain.primary.damage * 20, 100)
+      assert raised.secondary.damage == div(raised.primary.damage * 21, 100)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic raises a katar swing as one more attack card" do
+      plain = katar_swing(0)
+      raised = katar_swing(5)
+
+      assert raised.primary.damage == div(plain.primary.damage * 1200, 1000)
+      assert raised.secondary.damage == div(raised.primary.damage * 21, 100)
+    end
+
+    test "a player without a katar gains nothing" do
+      dagger = fn level ->
+        attacker =
+          with_hands(hand(:right_hand, 100), nil) |> Map.put(:advanced_katar_level, level)
+
+        {:ok, swing} = HandedAttack.calculate(player(%{}, :dagger), attacker, defender())
+        swing.primary.damage
+      end
+
+      assert dagger.(5) == dagger.(0)
+    end
+
+    @tag game_mode: :renewal
+    test "renewal raises a skill that ignores attack cards" do
+      plain = katar_skill_damage(0)
+      assert katar_skill_damage(5) == plain + div(plain * 20, 100)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic leaves a skill that ignores attack cards unchanged" do
+      assert katar_skill_damage(5) == katar_skill_damage(0)
+    end
+  end
+
+  defp katar_attacker(level) do
+    with_hands(hand(:right_hand, 100, :katar), nil) |> Map.put(:advanced_katar_level, level)
+  end
+
+  defp katar_swing(level) do
+    {:ok, swing} =
+      HandedAttack.calculate(player(%{48 => 10}, :katar), katar_attacker(level), defender())
+
+    swing
+  end
+
+  # Venom Splasher (141) ignores attack cards in both modes.
+  defp katar_skill_damage(level) do
+    {:ok, %{damage: damage}} =
+      DamageCalculator.calculate_damage(katar_attacker(level), defender(),
+        skill_id: 141,
+        skill_level: 1,
+        skill_ratio: 100,
+        skip_crit: true
+      )
+
+    damage
+  end
+
   test "Katar has no secondary against an infinite-defense target, but has one against race Plant" do
     attacker = with_hands(hand(:right_hand, 100, :katar), nil)
     infinite_defense = defender() |> Map.put(:ignore_modes, [:ignore_melee])

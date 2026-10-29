@@ -1178,6 +1178,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       demon_bane_level: PlayerStats.skill_level(state.stats, 23),
       beast_bane_level: PlayerStats.skill_level(state.stats, 126),
       dragonology_level: PlayerStats.skill_level(state.stats, 284),
+      advanced_katar_level: PlayerStats.skill_level(state.stats, 376),
       faith_level: PlayerStats.skill_level(state.stats, 248),
       skin_temper_level: PlayerStats.skill_level(state.stats, 109),
       vulture_eye_level: PlayerStats.skill_level(state.stats, 44),

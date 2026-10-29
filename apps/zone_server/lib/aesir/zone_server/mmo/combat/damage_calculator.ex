@@ -43,6 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal, as: PreRenewalAttack
   alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal, as: RenewalAttack
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skills.AssassinCross.AscKatar
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -884,6 +885,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     classic_hand_stage(parts, context, hit, secondary)
   end
 
+  # Advanced Katar Mastery's percent for a player wielding a katar.
+  defp katar_atk_rate(%{unit_type: :player} = attacker) do
+    if katar?(attacker), do: AscKatar.damage_rate(attacker.advanced_katar_level), else: 0
+  end
+
+  defp katar_atk_rate(_attacker), do: 0
+
   defp katar?(%{right_hand: %WeaponHand{subtype: :katar}}), do: true
   defp katar?(_attacker), do: false
 
@@ -1280,6 +1288,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       status_skill_ratio: status_skill_ratio(attacker_modifiers, skill_id),
       damage_multiplier: Map.get(attacker_modifiers, :damage_multiplier, 0),
       equipment_atk_rate: EquipmentBonuses.percent_atk_rate(attacker, attacker_modifiers),
+      katar_atk_rate: katar_atk_rate(attacker),
       edp_level:
         case held_edp(attacker) do
           %{val1: level} -> level
@@ -1340,7 +1349,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
         arrow?: arrow_attack?(attacker, skill_id),
         ranged?: ranged_hit?(attacker, opts),
         range_rates?: classic?(),
-        attacker_modifiers: modifiers
+        attacker_modifiers: modifiers,
+        katar_rate: if(classic?(), do: katar_atk_rate(attacker), else: 0)
       })
     end
   end

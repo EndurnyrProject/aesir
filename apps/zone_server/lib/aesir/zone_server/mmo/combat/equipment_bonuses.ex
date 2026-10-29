@@ -92,10 +92,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   @typedoc """
   How a physical hit reads the attacker's cards: whether it is an arrow attack
   (a bow or gun normal attack, or a skill that uses ammunition), whether its
-  range is long, whether this mode adds the range rates to the card product, and
-  the attacker's status modifiers.
+  range is long, whether this mode adds the range rates to the card product, the
+  attacker's status modifiers, and the classic Advanced Katar Mastery percent
+  (`:katar_rate`, default 0).
   """
   @type attack_cardfix_opts :: %{
+          optional(:katar_rate) => non_neg_integer(),
           arrow?: boolean(),
           ranged?: boolean(),
           range_rates?: boolean(),
@@ -108,7 +110,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
 
   Both hands' bonuses act together on the right hand. A melee hit takes the
   element, race (with Dragonology), size, each secondary monster group in
-  turn and class. An arrow hit reads the right hand and the ammunition only,
+  turn, class and the classic Advanced Katar Mastery rate (`:katar_rate`, default
+  0). An arrow hit reads the right hand and the ammunition only,
   as race, element, size, the secondary groups summed once, and class. The
   per-monster damage bonus follows, then, where `range_rates?`, the short or
   long attack rate the hit's range selects. The left hand takes only its own
@@ -137,10 +140,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
     cards =
       if opts.arrow?,
         do: [race, element, size, race2_sum(attacker, :addrace2, defender.race2), class],
-        else: [element, race, size] ++ melee_race2(attacker, defender.race2) ++ [class]
+        else:
+          [element, race, size] ++
+            melee_race2(attacker, defender.race2) ++ [class] ++ katar_rate(opts)
 
     cards ++
       [monster_damage_rate(attacker, defender, :add_damage_class)] ++ range_rate(attacker, opts)
+  end
+
+  # Classic Advanced Katar Mastery acts as one more melee card percentage.
+  defp katar_rate(opts) do
+    case Map.get(opts, :katar_rate, 0) do
+      0 -> []
+      rate -> [rate]
+    end
   end
 
   # The other hand's (or the ammunition's) family is where that slot's script

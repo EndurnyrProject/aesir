@@ -117,6 +117,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
     demon_bane_level: 0,
     beast_bane_level: 0,
     dragonology_level: 0,
+    advanced_katar_level: 0,
     faith_level: 0,
     skin_temper_level: 0,
     # Vulture's Eye level, which extends the range of the archer skills that
@@ -218,6 +219,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
           demon_bane_level: integer(),
           beast_bane_level: integer(),
           dragonology_level: integer(),
+          advanced_katar_level: integer(),
           faith_level: integer(),
           skin_temper_level: integer(),
           vulture_eye_level: non_neg_integer(),

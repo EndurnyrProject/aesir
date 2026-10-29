@@ -65,6 +65,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
                [1 + 2, 10 + 20 + 4, 100 + 200, 3, 5, 7 + 8, 11]
     end
 
+    test "a melee hit's katar rate follows the class rate and precedes the monster rate", ctx do
+      assert EquipmentBonuses.physical_attack_cardfix(
+               ctx.attacker,
+               ctx.defender,
+               :right_hand,
+               attack_opts(%{katar_rate: 20})
+             ) ==
+               [1 + 2, 10 + 20 + 4, 100 + 200, 3, 5, 7 + 8, 20, 11]
+    end
+
+    test "an arrow hit takes no katar rate", ctx do
+      assert EquipmentBonuses.physical_attack_cardfix(
+               ctx.attacker,
+               ctx.defender,
+               :right_hand,
+               attack_opts(%{arrow?: true, katar_rate: 20})
+             ) == [10 + 40 + 4, 1 + 4, 100 + 400, 3, 7 + 9, 11]
+    end
+
     test "an arrow hit reads the right hand and ammunition as race, element, size, groups, class",
          ctx do
       assert EquipmentBonuses.physical_attack_cardfix(
