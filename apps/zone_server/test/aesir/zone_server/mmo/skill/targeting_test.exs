@@ -254,6 +254,102 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
     end
   end
 
+  describe "ground_allies/4" do
+    alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+    alias Aesir.ZoneServer.Mmo.StatusStorage
+    alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
+    alias Aesir.ZoneServer.Unit.Mob.MobState
+    alias Aesir.ZoneServer.Unit.SpatialIndex
+
+    defp place(type, id, module, state, {x, y}) do
+      :ok = UnitRegistry.register_unit(type, id, module, state, self())
+      :ok = SpatialIndex.add_unit(type, id, x, y, "prontera")
+    end
+
+    defp standing(id, attrs) do
+      struct(
+        PlayerState,
+        Map.merge(
+          %{
+            character_id: id,
+            map_name: "prontera",
+            action_state: :idle,
+            stats: %{current_state: %{hp: 100}}
+          },
+          attrs
+        )
+      )
+    end
+
+    defp monster(id, {x, y}) do
+      spawn = %MobSpawn{
+        mob: 1002,
+        amount: 1,
+        respawn_time: 0,
+        spawn_area: %MobSpawn.SpawnArea{x: x, y: y}
+      }
+
+      MobState.new(id, Aesir.TestMob.definition(), spawn, "prontera", x, y)
+    end
+
+    test "selects self, party members and their homunculi inside the square" do
+      caster = standing(1, %{party_id: 7})
+      place(:player, 1, PlayerState, caster, {100, 100})
+      place(:player, 2, PlayerState, standing(2, %{party_id: 7}), {103, 97})
+      place(:player, 3, PlayerState, standing(3, %{party_id: 7}), {104, 100})
+      place(:player, 4, PlayerState, standing(4, %{party_id: 7, action_state: :dead}), {101, 100})
+
+      place(
+        :player,
+        5,
+        PlayerState,
+        standing(5, %{party_id: 7, invincible_timer: make_ref()}),
+        {99, 100}
+      )
+
+      place(:player, 6, PlayerState, standing(6, %{}), {100, 101})
+
+      companion = %HomunculusState{
+        id: 1,
+        class_id: 6001,
+        name: "Lif",
+        world_gid: 500,
+        owner_character_id: 2,
+        map_name: "prontera",
+        hp: 100
+      }
+
+      place(:homunculus, 500, HomunculusState, companion, {102, 102})
+
+      selected = Targeting.ground_allies(caster, "prontera", {100, 100}, 3)
+
+      assert Enum.sort(selected) == [{:homunculus, 500}, {:player, 1}, {:player, 2}]
+    end
+
+    test "a hidden party member is still selected, a GM-invisible one is not" do
+      caster = standing(1, %{party_id: 7})
+      place(:player, 1, PlayerState, caster, {100, 100})
+      place(:player, 2, PlayerState, standing(2, %{party_id: 7}), {101, 100})
+      place(:player, 3, PlayerState, standing(3, %{party_id: 7, option: 64}), {102, 100})
+      :ok = StatusStorage.apply_status(:player, 2, :sc_hiding, val1: 1)
+
+      assert Enum.sort(Targeting.ground_allies(caster, "prontera", {100, 100}, 3)) ==
+               [{:player, 1}, {:player, 2}]
+    end
+
+    test "counts a monster the caster owns as its own" do
+      caster = standing(1, %{})
+      place(:player, 1, PlayerState, caster, {100, 100})
+
+      sphere = %{monster(900, {101, 101}) | owner_player_id: 1}
+      place(:mob, 900, MobState, sphere, {101, 101})
+      place(:mob, 901, MobState, monster(901, {99, 99}), {99, 99})
+
+      assert Enum.sort(Targeting.ground_allies(caster, "prontera", {100, 100}, 3)) ==
+               [{:mob, 900}, {:player, 1}]
+    end
+  end
+
   describe "invincible players" do
     alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal
     alias Aesir.ZoneServer.Mmo.Skills.Mage.MgColdbolt

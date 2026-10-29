@@ -255,6 +255,47 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RelationshipTest do
     end
   end
 
+  describe "ally?/3" do
+    test "self and the units it owns are allies in every context" do
+      for versus <- [:off, :gvg, {:pvp, true, true}] do
+        assert Relationship.ally?(player(10), player(10), versus)
+        assert Relationship.ally?(player(10), homunculus(100, 10), versus)
+      end
+    end
+
+    test "a party member is an ally unless the PvP map turns party protection off" do
+      caster = player(10, party_id: 7)
+      member = player(20, party_id: 7)
+
+      assert Relationship.ally?(caster, member, :off)
+      assert Relationship.ally?(caster, member, :gvg)
+      assert Relationship.ally?(caster, member, {:pvp, false, true})
+      refute Relationship.ally?(caster, member, {:pvp, true, false})
+    end
+
+    test "a guild member or allied guild is an ally unless the PvP map turns guilds off" do
+      stub(Relations, :friendly?, fn 1, 2 -> true end)
+      caster = player(10, guild_id: 1)
+      ally = player(20, guild_id: 2)
+
+      assert Relationship.ally?(caster, ally, :off)
+      assert Relationship.ally?(caster, ally, :gvg)
+      assert Relationship.ally?(caster, ally, {:pvp, true, false})
+      refute Relationship.ally?(caster, ally, {:pvp, false, true})
+    end
+
+    test "strangers, zero ids and monsters are not allies" do
+      refute Relationship.ally?(player(10), player(20), :off)
+      refute Relationship.ally?(player(10, party_id: 0), player(20, party_id: 0), :off)
+      refute Relationship.ally?(player(10), mob(300), :off)
+    end
+
+    test "a monster carrying the caster's guild is an ally" do
+      guardian = Combatant.new!(%{unit_type: :mob, unit_id: 300, guild_id: 3})
+      assert Relationship.ally?(player(10, guild_id: 3), guardian, :gvg)
+    end
+  end
+
   defp player(id, overrides \\ []) do
     Combatant.new!(Map.merge(%{unit_type: :player, unit_id: id}, Map.new(overrides)))
   end

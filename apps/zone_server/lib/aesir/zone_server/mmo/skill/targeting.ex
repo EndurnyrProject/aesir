@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Ref
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @typedoc """
@@ -325,6 +326,59 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
     do: StatusStorage.has_status?(:player, id, :sc_silence)
 
   defp silenced_lex_divina?(_definition, _id), do: false
+
+  @doc """
+  The units standing in the square of `radius` cells around `{x, y}` on
+  `map_name` that are on `caster`'s side (`Relationship.ally?/3` under the map's
+  versus rules): itself, its party members, the members of its guild or an
+  allied guild, and the homunculi and monsters those players own, which stand on
+  their owner's side. Dead units, invincible players and GM-invisible players
+  are left out; Hiding and Cloaking do not hide a unit from its own side.
+  The caster is a player.
+  """
+  @spec ground_allies(map(), String.t(), {integer(), integer()}, non_neg_integer()) :: [Ref.t()]
+  def ground_allies(caster, map_name, {x, y}, radius) do
+    versus = versus_context(map_name)
+    side = relationship_combatant(caster)
+
+    map_name
+    |> SpatialIndex.units_in_area(x - radius, y - radius, x + radius, y + radius)
+    |> Enum.filter(fn {type, _id} = ref ->
+      type in [:player, :mob, :homunculus] and ally_in_area?(side, ref, versus)
+    end)
+  end
+
+  defp ally_in_area?(side, {type, id}, versus) do
+    case UnitRegistry.get_unit(type, id) do
+      {:ok, {_module, state, _pid}} ->
+        alive?(state) and reachable_ally?(type, state) and
+          Relationship.ally?(side, owner_side(type, state), versus)
+
+      {:error, :not_found} ->
+        false
+    end
+  end
+
+  defp reachable_ally?(:player, state) do
+    combatant = relationship_combatant(state)
+    not Invincibility.active?(state) and not invisible?(combatant, target_option(combatant))
+  end
+
+  defp reachable_ally?(_type, _state), do: true
+
+  defp owner_side(:homunculus, %{owner_character_id: owner_id}), do: player_side(owner_id)
+
+  defp owner_side(:mob, %{owner_player_id: owner_id}) when is_integer(owner_id),
+    do: player_side(owner_id)
+
+  defp owner_side(_type, state), do: relationship_combatant(state)
+
+  defp player_side(owner_id) do
+    case UnitRegistry.get_unit(:player, owner_id) do
+      {:ok, {_module, owner, _pid}} -> relationship_combatant(owner)
+      {:error, :not_found} -> Combatant.new!(%{unit_type: :player, unit_id: owner_id})
+    end
+  end
 
   @doc "Returns whether `map` is a versus map (`MapFlags.versus?/1`)."
   @spec versus_map?(term()) :: boolean()

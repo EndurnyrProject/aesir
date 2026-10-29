@@ -79,6 +79,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Relationship do
     end
   end
 
+  @doc """
+  Returns whether `target` is on `attacker`'s own side under `versus`: the same
+  social root (itself and the units it owns), a member of the same nonzero party
+  unless a PvP map turns party protection off, or a member of the same or an
+  allied guild unless a PvP map turns guild protection off. GvG and PvE maps
+  always keep both.
+  """
+  @spec ally?(Combatant.t(), Combatant.t(), versus()) :: boolean()
+  def ally?(%Combatant{} = attacker, %Combatant{} = target, versus) do
+    Ref.equal?(social_root(attacker), social_root(target)) or
+      (same_party?(attacker, target) and not match?({:pvp, true, _noguild}, versus)) or
+      (friendly_guild?(attacker, target) and not match?({:pvp, _noparty, true}, versus))
+  end
+
   @doc "Returns whether a player may directly support the exact owned Homunculus."
   @spec direct_support?(Combatant.t(), Combatant.t()) :: boolean()
   def direct_support?(
