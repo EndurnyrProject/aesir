@@ -335,9 +335,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
     end
 
     assert flagged.(:renewal) ==
-             MapSet.new([:am_acidterror, :am_demonstration, :as_venomknife, :pa_sacrifice])
+             MapSet.new([
+               :am_acidterror,
+               :am_demonstration,
+               :as_venomknife,
+               :asc_meteorassault,
+               :pa_sacrifice
+             ])
 
     assert flagged.(:pre_renewal) ==
-             MapSet.new([:am_acidterror, :am_demonstration, :as_venomknife])
+             MapSet.new([:am_acidterror, :am_demonstration, :as_venomknife, :asc_meteorassault])
   end
 end
