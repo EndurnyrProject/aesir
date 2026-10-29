@@ -52,12 +52,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
   @typedoc """
   The owner's homunculus as the skill checks of a player's cast read it: its
-  lifecycle and HP, stamped by the skill handler before the cast is checked.
+  lifecycle, HP and Instruction Change rank (0 unless it lives), stamped by the
+  skill handler before the cast is checked.
   """
   @type homunculus_summary :: %{
           lifecycle: :active | :rested | :dead,
           hp: non_neg_integer(),
-          max_hp: non_neg_integer()
+          max_hp: non_neg_integer(),
+          instruction_change_rank: non_neg_integer()
         }
 
   @type t :: %__MODULE__{

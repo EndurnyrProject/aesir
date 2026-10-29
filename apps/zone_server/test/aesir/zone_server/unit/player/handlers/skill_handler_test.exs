@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.Homunculus.Stats, as: HomunculusStats
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.Skill.CastEnd
@@ -36,6 +37,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
@@ -3194,6 +3196,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
     test "a cast with no open menu sees 0" do
       assert_menu_seen(casting_state(45), 0)
+    end
+  end
+
+  describe "stamped homunculus summary" do
+    test "carries a living Vanilmirth's Instruction Change rank and 0 once it is dead" do
+      vanilmirth = %HomunculusState{
+        id: 1,
+        owner_character_id: 1000,
+        class_id: 6004,
+        name: "Vanil",
+        lifecycle: :active,
+        action_state: :idle,
+        hp: 50,
+        max_hp: 100,
+        learned_skills: %{8015 => 4}
+      }
+
+      state = Map.put(casting_state(45), :homunculus, vanilmirth)
+      rank = HomunculusStats.instruction_change_rank(vanilmirth)
+      assert rank > 0
+
+      assert %{instruction_change_rank: ^rank} =
+               SkillHandler.stamp_homunculus(state, state.game_state).homunculus_summary
+
+      dead = Map.put(state, :homunculus, %{vanilmirth | hp: 0})
+
+      assert %{instruction_change_rank: 0} =
+               SkillHandler.stamp_homunculus(dead, dead.game_state).homunculus_summary
     end
   end
 

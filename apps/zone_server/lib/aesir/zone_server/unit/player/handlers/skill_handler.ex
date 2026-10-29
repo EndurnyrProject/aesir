@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.Homunculus.Stats, as: HomunculusStats
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.CastEnd
@@ -611,8 +612,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   @doc """
-  Copies the owner's homunculus lifecycle and HP onto `game_state`, where the
-  homunculus skills' cast checks read it.
+  Copies the owner's homunculus lifecycle, HP and (while it lives) Instruction
+  Change rank onto `game_state`, where the homunculus and production skills'
+  casts read it.
   """
   @spec stamp_homunculus(SessionState.t() | map(), PlayerState.t()) :: PlayerState.t()
   def stamp_homunculus(state, game_state) do
@@ -621,9 +623,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         %{game_state | homunculus_summary: nil}
 
       homunculus ->
-        summary = %{lifecycle: homunculus.lifecycle, hp: homunculus.hp, max_hp: homunculus.max_hp}
+        summary = %{
+          lifecycle: homunculus.lifecycle,
+          hp: homunculus.hp,
+          max_hp: homunculus.max_hp,
+          instruction_change_rank: living_instruction_change_rank(homunculus)
+        }
+
         %{game_state | homunculus_summary: summary}
     end
+  end
+
+  defp living_instruction_change_rank(homunculus) do
+    if HomunculusState.living?(homunculus),
+      do: HomunculusStats.instruction_change_rank(homunculus),
+      else: 0
   end
 
   # The session context a cast reads from the game state: the homunculus summary
