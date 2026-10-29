@@ -300,16 +300,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
     (storage? or can_act?) and StatusInterpreter.can_use_skill?(:player, player.character_id)
   end
 
-  @doc "Sends and clears a production result a skill staged on `game_state`."
+  @doc "Sends, in order, and clears the production results a skill staged on `game_state`."
   @spec drain_production_result(pid() | nil, PlayerState.t()) :: PlayerState.t()
   def drain_production_result(_connection_pid, %{pending_production_result: nil} = game_state),
     do: game_state
 
-  def drain_production_result(
-        connection_pid,
-        %{pending_production_result: %{success: success, item_id: item_id}} = game_state
-      ) do
-    MessageRouter.send_to(connection_pid, %ProductionResult{success: success, item_id: item_id})
+  def drain_production_result(connection_pid, %{pending_production_result: results} = game_state) do
+    results
+    |> List.wrap()
+    |> Enum.each(fn %{success: success, item_id: item_id} ->
+      MessageRouter.send_to(connection_pid, %ProductionResult{success: success, item_id: item_id})
+    end)
+
     %{game_state | pending_production_result: nil}
   end
 

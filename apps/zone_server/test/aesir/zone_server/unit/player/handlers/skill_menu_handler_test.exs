@@ -280,6 +280,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
       assert new_state.game_state.pending_production_result == nil
     end
 
+    test "sends every staged result in order when several were staged" do
+      game_state = %{
+        pending_state().game_state
+        | pending_production_result: [
+            %{success: true, item_id: 970},
+            %{success: false, item_id: 7136}
+          ]
+      }
+
+      drained = SkillMenuHandler.drain_production_result(self(), game_state)
+
+      {:messages, messages} = Process.info(self(), :messages)
+
+      assert [970, 7136] =
+               for(
+                 {:send, _, {:production_result, %ProductionResult{item_id: id}}} <- messages,
+                 do: id
+               )
+
+      assert drained.pending_production_result == nil
+    end
+
     test "sends nothing when no production result was staged" do
       expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_autospell, _params -> :ok end)
 

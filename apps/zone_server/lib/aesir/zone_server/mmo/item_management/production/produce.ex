@@ -9,7 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Produce do
   to it, so each hammer lists its weapon tier and the tiers below. A product is
   offered when the first recipe making it whose required skill is learned at the
   recipe's level passes the trigger, every material is held (an amount of zero
-  only needs possession) and one more copy fits (`fits_inventory?/2`). A negative
+  only needs possession) and one more copy fits (`fits_inventory?/3`). A negative
   trigger (a skill producing directly, without a list) accepts any item level. While
   another skill's menu is open, a recipe needing a different skill does not
   count. Every recipe is walked in database order, so a product two recipes
@@ -64,14 +64,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Produce do
   @doc "The recipe `product_id` is made from, when `trigger` allows producing it now."
   @spec producible(PlayerState.t(), integer(), integer(), non_neg_integer()) ::
           {:ok, Recipe.t()} | :error
-  def producible(%PlayerState{} = caster, product_id, trigger, open_menu_skill_id) do
+  def producible(%PlayerState{} = caster, product_id, trigger, open_menu_skill_id),
+    do: producible(caster, product_id, trigger, open_menu_skill_id, 1)
+
+  @doc """
+  As `producible/4` for `qty` copies at once: every material must be held
+  `qty` times over (one held copy for a possession-only one) and the whole
+  quantity must fit (`fits_inventory?/3`).
+  """
+  @spec producible(PlayerState.t(), integer(), integer(), non_neg_integer(), pos_integer()) ::
+          {:ok, Recipe.t()} | :error
+  def producible(%PlayerState{} = caster, product_id, trigger, open_menu_skill_id, qty) do
     learned = PlayerStats.effective_skills(caster.stats)
 
     with {:ok, item_def} <- ItemManagement.get_item_by_id(product_id),
          %Recipe{} = recipe <- first_recipe(product_id, learned, open_menu_skill_id),
-         true <- fits_inventory?(caster.inventory, item_def),
+         true <- fits_inventory?(caster.inventory, item_def, qty),
          true <- trigger_allows?(trigger, recipe.item_level),
-         true <- materials_held?(caster.inventory, recipe.materials) do
+         true <- materials_held?(caster.inventory, recipe.materials, qty) do
       {:ok, recipe}
     else
       _ -> :error
@@ -104,27 +114,30 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Produce do
   end
 
   @doc """
-  Whether one more copy of `item_def` fits `inventory`, weight aside.
+  Whether `amount` more copies of `item_def` (one by default) fit `inventory`,
+  weight aside.
 
-  A non-stackable item always fits. A stackable one must fit its own inventory
-  stack limit, and the first slot already holding it (the lowest index) must stay
-  below 30,000 and that limit and lie within the usable inventory slots.
+  More than 30,000 never fits. A non-stackable item otherwise always fits. A
+  stackable one must fit its own inventory stack limit, and the first slot
+  already holding it (the lowest index) must stay within 30,000 and that limit
+  with the new copies and lie within the usable inventory slots.
   """
-  @spec fits_inventory?(ItemContainer.t(), ItemDefinition.t()) :: boolean()
-  def fits_inventory?(inventory, item_def) do
+  @spec fits_inventory?(ItemContainer.t(), ItemDefinition.t(), pos_integer()) :: boolean()
+  def fits_inventory?(inventory, item_def, amount \\ 1) do
     limit = ItemDefinition.stack_limit(item_def, :inventory)
 
     cond do
+      amount > @max_stack -> false
       not ItemDefinition.stackable?(item_def) -> true
-      limit != nil and limit < 1 -> false
-      true -> first_stack_fits?(first_held(inventory, item_def.id), limit)
+      limit != nil and amount > limit -> false
+      true -> first_stack_fits?(first_held(inventory, item_def.id), limit, amount)
     end
   end
 
-  defp first_stack_fits?(nil, _limit), do: true
+  defp first_stack_fits?(nil, _limit, _amount), do: true
 
-  defp first_stack_fits?({index, held}, limit) do
-    held.amount < @max_stack and (is_nil(limit) or held.amount < limit) and
+  defp first_stack_fits?({index, held}, limit, amount) do
+    amount <= @max_stack - held.amount and (is_nil(limit) or amount <= limit - held.amount) and
       index < Inventory.capacity()
   end
 
@@ -139,9 +152,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Produce do
   defp trigger_allows?(trigger, item_level) when trigger > 10, do: item_level in 11..20
   defp trigger_allows?(trigger, item_level), do: item_level <= trigger
 
-  defp materials_held?(inventory, materials) do
+  defp materials_held?(inventory, materials, qty) do
     Enum.all?(materials, fn %{item_id: item_id, amount: amount} ->
-      ItemContainer.held_amount(inventory, item_id) >= max(amount, 1)
+      ItemContainer.held_amount(inventory, item_id) >= max(amount * qty, 1)
     end)
   end
 end

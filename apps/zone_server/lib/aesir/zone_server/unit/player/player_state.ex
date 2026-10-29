@@ -47,6 +47,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           | :dead
           | :trading
 
+  @typedoc "A staged production outcome the session reports to the client."
+  @type production_result :: %{success: boolean(), item_id: non_neg_integer()}
+
   @typedoc """
   The owner's homunculus as the skill checks of a player's cast read it: its
   lifecycle and HP, stamped by the skill handler before the cast is checked.
@@ -161,7 +164,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           pending_vending_setup:
             %{required(:level) => pos_integer(), optional(:sp_spent) => non_neg_integer()} | nil,
           vending_shop: map() | nil,
-          pending_production_result: %{success: boolean(), item_id: non_neg_integer()} | nil,
+          pending_production_result: production_result() | [production_result()] | nil,
           open_menu_skill_id: non_neg_integer(),
           pending_hp_loss: pos_integer() | nil
         }

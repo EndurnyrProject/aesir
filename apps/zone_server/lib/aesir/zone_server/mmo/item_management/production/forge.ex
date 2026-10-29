@@ -94,6 +94,39 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
     end
   end
 
+  @doc """
+  Runs a Pharmacy batch of `qty` (more than one) copies of `recipe`, with the caller-supplied
+  Instruction Change rank.
+
+  Every material is spent `qty` times over up front. The success chance (its
+  random term included) is computed once, then each copy rolls against it; the
+  copies that succeed are added as one stack with one successful production
+  result. A batch where none succeeds stages a successful result and then a
+  failed one, as the batch first shows itself made.
+  """
+  @spec run_batch(PlayerState.t(), Recipe.t(), pos_integer(), non_neg_integer()) ::
+          {:ok, PlayerState.t()} | {:error, atom()}
+  def run_batch(
+        %PlayerState{} = caster,
+        %Recipe{skill_id: @pharmacy_skill_id} = recipe,
+        qty,
+        rank
+      )
+      when is_integer(qty) and qty > 1 do
+    materials = Enum.map(recipe.materials, &%{&1 | amount: &1.amount * qty})
+
+    with {:ok, item_def} <- ItemManagement.get_item_by_id(recipe.product_id),
+         :ok <- check_materials(caster.inventory, materials, []) do
+      consumed = consume_all(caster, materials, [])
+      chance = success_chance(consumed, recipe, 0, nil, rank)
+      made = Enum.count(1..qty, fn _copy -> rng().(10_000) <= chance end)
+
+      if made > 0,
+        do: add_product(consumed, recipe, item_def, made, 0, nil),
+        else: {:ok, stage_all_failed(consumed, recipe.product_id)}
+    end
+  end
+
   defp quarter_max_hp(caster), do: ScriptVitals.percent_of(caster.stats.derived_stats.max_hp, 25)
 
   defp check_materials(inventory, materials, catalyst_ids) do
@@ -132,16 +165,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
     |> Enum.reduce(caster, fn {id, amount}, state -> consume(state, id, amount) end)
   end
 
+  # Takes `amount` from the held stacks in turn, as many as it spans.
+  defp consume(caster, _id, 0), do: caster
+
   defp consume(caster, id, amount) do
     index = ItemContainer.stackable_index(caster.inventory, id)
-    {:ok, inventory, change} = ItemContainer.remove(caster.inventory, index, amount)
+    taken = min(amount, caster.inventory[index].amount)
+    {:ok, inventory, change} = ItemContainer.remove(caster.inventory, index, taken)
 
-    %{
-      caster
-      | inventory: inventory,
-        pending_inventory_persist:
-          caster.pending_inventory_persist ++ [{caster.inventory, inventory, change}]
-    }
+    consume(
+      %{
+        caster
+        | inventory: inventory,
+          pending_inventory_persist:
+            caster.pending_inventory_persist ++ [{caster.inventory, inventory, change}]
+      },
+      id,
+      amount - taken
+    )
   end
 
   defp catalysts(%Recipe{skill_id: @pharmacy_skill_id}, _chosen_catalyst_ids, _inventory),
@@ -240,7 +281,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
     {:ok, stage_result(caster, recipe.product_id, false)}
   end
 
-  defp finish(caster, recipe, item_def, true, crumbs, element) do
+  defp finish(caster, recipe, item_def, true, crumbs, element),
+    do: add_product(caster, recipe, item_def, 1, crumbs, element)
+
+  defp add_product(caster, recipe, item_def, amount, crumbs, element) do
     opts =
       if recipe.skill_id in @weapon_skill_ids do
         forged_element = if is_nil(element), do: :neutral, else: element
@@ -250,7 +294,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
         %{identify: 1}
       end
 
-    case InventoryOps.add(caster.character_id, caster.inventory, caster.stats, item_def, 1, opts) do
+    case InventoryOps.add(
+           caster.character_id,
+           caster.inventory,
+           caster.stats,
+           item_def,
+           amount,
+           opts
+         ) do
       {:ok, inventory, change} ->
         forged = %{
           caster
@@ -267,6 +318,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
         {:ok,
          stage_result(InventoryManager.stage_add_failure(caster, reason), recipe.product_id, true)}
     end
+  end
+
+  # A batch shows the production as made before it learns nothing came of it:
+  # a successful result, then a failed one.
+  defp stage_all_failed(caster, item_id) do
+    %{
+      caster
+      | pending_production_result: [
+          %{success: true, item_id: item_id},
+          %{success: false, item_id: item_id}
+        ]
+    }
   end
 
   defp stage_result(caster, item_id, success?) do

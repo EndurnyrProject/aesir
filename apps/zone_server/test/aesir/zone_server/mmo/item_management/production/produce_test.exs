@@ -85,6 +85,40 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ProduceTest do
     end
   end
 
+  describe "fits_inventory?/3" do
+    test "a quantity above 30,000 never fits, stackable or not" do
+      refute Produce.fits_inventory?(%{}, item_def(:weapon, %{}), 30_001)
+      assert Produce.fits_inventory?(%{}, item_def(:usable, %{}), 30_000)
+    end
+
+    test "the quantity must fit the item's stack limit, held copies included" do
+      limited = item_def(:usable, %{inventory: 5})
+
+      assert Produce.fits_inventory?(%{}, limited, 5)
+      refute Produce.fits_inventory?(%{}, limited, 6)
+      assert Produce.fits_inventory?(%{0 => stack(900, 2)}, limited, 3)
+      refute Produce.fits_inventory?(%{0 => stack(900, 2)}, limited, 4)
+    end
+
+    test "the first held stack plus the quantity must stay within 30,000" do
+      plain = item_def(:usable, %{})
+
+      assert Produce.fits_inventory?(%{0 => stack(900, 29_800)}, plain, 200)
+      refute Produce.fits_inventory?(%{0 => stack(900, 29_801)}, plain, 200)
+    end
+  end
+
+  describe "producible/5" do
+    test "every material must be held for the whole quantity; a guide only once" do
+      enough = caster(%{228 => 10}, [{7144, 1}, {509, 200}, {1093, 200}])
+      short = caster(%{228 => 10}, [{7144, 1}, {509, 199}, {1093, 200}])
+
+      assert {:ok, %{product_id: 504}} = Produce.producible(enough, 504, -1, 0, 200)
+      assert :error = Produce.producible(short, 504, -1, 0, 200)
+      assert {:ok, _recipe} = Produce.producible(short, 504, -1, 0, 199)
+    end
+  end
+
   describe "producible/4" do
     test "a negative trigger accepts a recipe of any item level" do
       caster = caster(%{94 => 1}, [{1002, 1}])

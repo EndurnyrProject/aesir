@@ -116,6 +116,83 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
     assert brewed.pending_production_result == %{success: true, item_id: 501}
   end
 
+  describe "run_batch/4" do
+    # Pharmacy 1, job 70 and 1 INT/DEX/LUK keep the chance near 3,700: a unit
+    # roll of 1 succeeds and one of 10,000 fails.
+    defp batch_caster(caster, held) do
+      caster
+      |> pharmacy_caster(1)
+      |> put_in([Access.key!(:stats), Access.key!(:base_stats), Access.key!(:int)], 1)
+      |> put_in([Access.key!(:stats), Access.key!(:base_stats), Access.key!(:dex)], 1)
+      |> put_in([Access.key!(:stats), Access.key!(:base_stats), Access.key!(:luk)], 1)
+      |> Map.put(:inventory, inventory([{1002, held}]))
+    end
+
+    defp batch_rolls(unit_rolls) do
+      {:ok, agent} = Agent.start_link(fn -> {unit_rolls, 0} end)
+
+      Application.put_env(:zone_server, :forge_rng, fn
+        10_000 ->
+          Agent.get_and_update(agent, fn {[roll | rest], terms} -> {roll, {rest, terms}} end)
+
+        _upper ->
+          Agent.update(agent, fn {rolls, terms} -> {rolls, terms + 1} end)
+          1
+      end)
+
+      agent
+    end
+
+    test "rolls every unit against one chance and adds the successes as one stack", %{
+      caster: caster
+    } do
+      agent = batch_rolls([1, 10_000, 1, 10_000])
+
+      assert {:ok, made} = Forge.run_batch(batch_caster(caster, 4), pharmacy_recipe(), 4, 0)
+
+      assert ItemContainer.held_amount(made.inventory, 501) == 2
+      assert ItemContainer.held_amount(made.inventory, 1002) == 0
+      assert made.pending_production_result == %{success: true, item_id: 501}
+      assert {[], 1} = Agent.get(agent, & &1)
+    end
+
+    test "a batch whose every unit fails adds nothing and still spends the materials", %{
+      caster: caster
+    } do
+      batch_rolls([10_000, 10_000, 10_000])
+
+      assert {:ok, failed} = Forge.run_batch(batch_caster(caster, 3), pharmacy_recipe(), 3, 0)
+
+      assert ItemContainer.held_amount(failed.inventory, 501) == 0
+      assert ItemContainer.held_amount(failed.inventory, 1002) == 0
+
+      assert failed.pending_production_result == [
+               %{success: true, item_id: 501},
+               %{success: false, item_id: 501}
+             ]
+    end
+
+    test "materials split over several stacks are spent across them", %{caster: caster} do
+      batch_rolls([1, 1, 1])
+
+      caster = %{
+        batch_caster(caster, 0)
+        | inventory: %{0 => item(1002, 1), 7 => item(1002, 2)}
+      }
+
+      assert {:ok, made} = Forge.run_batch(caster, pharmacy_recipe(), 3, 0)
+      assert ItemContainer.held_amount(made.inventory, 1002) == 0
+      assert ItemContainer.held_amount(made.inventory, 501) == 3
+    end
+
+    test "materials short of the whole batch produce nothing", %{caster: caster} do
+      batch_rolls([])
+      short = batch_caster(caster, 3)
+
+      assert {:error, :no_materials} = Forge.run_batch(short, pharmacy_recipe(), 4, 0)
+    end
+  end
+
   test "failed pharmacy attempt burns its recipe materials", %{caster: caster} do
     Application.put_env(:zone_server, :forge_rng, fn
       991 -> 1
