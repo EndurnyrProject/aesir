@@ -37,6 +37,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalTest do
       assert Critical.chance(player(300), mob(luk: 20), skill_bonus: 200) == (300 - 40) * 2 + 200
     end
 
+    test "a skill's divisor divides the chance after the sleep doubling, before its bonus" do
+      assert Critical.chance(player(300), mob(luk: 20), skill_divisor: 2) == div(300 - 40, 2)
+
+      StatusStorage.apply_status(:mob, 2001, :sc_sleep, val1: 1)
+
+      assert Critical.chance(player(300), mob(luk: 20), skill_divisor: 2, skill_bonus: 50) ==
+               div((300 - 40) * 2, 2) + 50
+    end
+
+    test "a divided negative chance truncates toward zero" do
+      # 1 - 2 * 4 = -7, halved toward zero = -3
+      assert Critical.chance(player(1), mob(luk: 4), skill_divisor: 2) == -3
+    end
+
     test "adds the per-race and all-race equipment bonus in tenths" do
       modifiers = %{{:critical_add_race, :brute} => 5, {:critical_add_race, :all} => 2}
       attacker = %{player(300) | equip_modifiers: modifiers}

@@ -125,6 +125,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       flee and forces the calculator, a failed roll prevents a second roll.
       Wins over `:skip_crit` / `:force_crit`; callers should not mix them.
     - `:critical_rate_bonus` - flat critical percentage points (default `0`)
+    - `:critical_divisor` - divides the critical chance before the bonus is added
+      (Soul Destroyer's 2, default `1`)
     - `:critical_max_weapon` - retain maximum weapon damage on criticals
       (default `true`); `false` keeps normal weapon variance
     - `:force_crit` - guarantee a critical, applying the crit multiplier without
@@ -833,6 +835,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       :force_crit,
       :critical,
       :critical_rate_bonus,
+      :critical_divisor,
       :critical_max_weapon,
       :bonus_atk,
       :envenom_atk,
@@ -863,6 +866,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         :force_crit,
         :critical,
         :critical_rate_bonus,
+        :critical_divisor,
         :critical_max_weapon,
         :skill_id,
         :element
@@ -1670,7 +1674,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     cond do
       Keyword.get(opts, :critical, false) ->
         bonus = Keyword.get(opts, :critical_rate_bonus, 0) * 10
-        Critical.roll?(attacker, target, skill_bonus: bonus)
+        divisor = Keyword.get(opts, :critical_divisor, 1)
+        Critical.roll?(attacker, target, skill_bonus: bonus, skill_divisor: divisor)
 
       Keyword.get(opts, :force_crit, false) ->
         true

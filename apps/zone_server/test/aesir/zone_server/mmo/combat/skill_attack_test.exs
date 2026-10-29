@@ -156,6 +156,33 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
                )
     end
 
+    test "a critical divisor divides the chance the skill rolls", %{caster: caster} do
+      test_pid = self()
+
+      stub(CriticalHits, :is_critical_hit?, fn rate ->
+        send(test_pid, {:critical_rate, rate})
+        false
+      end)
+
+      stub(DamageCalculator, :calculate_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      attack = fn extra ->
+        SkillAttack.execute_skill_attack(
+          caster,
+          {:mob, 2001},
+          [skill_id: 382, skill_level: 5, critical: true, ignore_flee: true] ++ extra
+        )
+
+        assert_received {:critical_rate, rate}
+        rate
+      end
+
+      plain = attack.([])
+      assert attack.(critical_divisor: 2) == div(plain, 2)
+    end
+
     test "a failed critical forwards skip_crit and still allows a flee miss", %{caster: caster} do
       stub(CriticalHits, :is_critical_hit?, fn _rate -> false end)
 

@@ -6,7 +6,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Critical do
   crits. The chance starts from the attacker's per-mille critical rate (none at
   all when it is zero), adds the equipment's per-race critical bonus, loses twice
   the target's LUK (three times for a non-player attacking a player), doubles
-  against a sleeping target and then adds the skill's own bonus. The roll is
+  against a sleeping target, is divided by the skill's divisor and then adds
+  the skill's own bonus. The roll is
   `random(0..999) < chance`.
   """
 
@@ -28,6 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Critical do
   ## Options
     - `:normal_attack` - a normal attack: a player's bow or gun swing adds the
       ammunition and long-range critical bonuses (default `false`).
+    - `:skill_divisor` - the skill's divisor (Soul Destroyer's 2), applied after
+      the sleep doubling and truncating toward zero (default `1`).
     - `:skill_bonus` - the skill's own per-mille bonus, added last (default `0`).
   """
   @spec chance(Combatant.t(), Combatant.t(), keyword()) :: integer()
@@ -42,7 +45,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Critical do
             arrow_bonus(attacker, Keyword.get(opts, :normal_attack, false)) -
             DamageInputs.effective_luk(defender) * luk_factor(attacker, defender)
 
-        sleep_factor(defender) * chance + Keyword.get(opts, :skill_bonus, 0)
+        div(sleep_factor(defender) * chance, Keyword.get(opts, :skill_divisor, 1)) +
+          Keyword.get(opts, :skill_bonus, 0)
     end
   end
 
