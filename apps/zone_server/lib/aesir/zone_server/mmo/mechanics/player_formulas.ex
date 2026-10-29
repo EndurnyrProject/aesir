@@ -113,7 +113,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas do
   @callback flee(flee_inputs()) :: integer()
   @callback critical(critical_inputs()) :: critical_basis()
   @callback perfect_dodge(perfect_dodge_inputs()) :: integer()
-  @callback aspd(aspd_inputs()) :: non_neg_integer()
+  @callback aspd(aspd_inputs()) :: integer()
   @callback max_hp(max_hp_inputs()) :: pos_integer()
   @callback max_sp(max_sp_inputs()) :: pos_integer()
   @callback trait_slots(trait_inputs(), trait_bonuses()) :: trait_slots()

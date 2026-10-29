@@ -130,17 +130,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
     # Store the action type in game state for later use
     state = %{state | game_state: %{state.game_state | combat_action_type: action_type}}
 
-    # Check attack rate limiting and after-cast act delay. Free Cast lets its
-    # owner attack through the after-cast delay (a second Free Cast gate,
-    # separate from attacking-while-casting).
+    # Only the attack delay and a combo window's hold gate a requested attack:
+    # the after-cast skill delay never does.
     attack_delay = compute_attack_delay(state.game_state)
-    can_attack = AttackSpeed.can_attack?(state.game_state.last_attack_timestamp, attack_delay)
 
-    act_ready =
-      PlayerState.act_ready?(state.game_state, AttackSpeed.current_timestamp()) or
-        SaFreecast.known?(state.game_state)
+    wait =
+      PlayerState.attack_wait(state.game_state, attack_delay, AttackSpeed.current_timestamp())
 
-    if can_attack and act_ready do
+    if wait == 0 do
       # Check if target is in range
       case check_attack_range(state, target_id) do
         {:in_range, _distance} ->
@@ -246,19 +243,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   defp swing_or_wait(%{game_state: game_state} = state, target_id) do
     attack_delay = compute_attack_delay(game_state)
 
-    if AttackSpeed.can_attack?(game_state.last_attack_timestamp, attack_delay) do
-      execute_immediate_attack(state, target_id)
-    else
-      remaining =
-        attack_delay - (AttackSpeed.current_timestamp() - game_state.last_attack_timestamp)
+    case PlayerState.attack_wait(game_state, attack_delay, AttackSpeed.current_timestamp()) do
+      0 ->
+        execute_immediate_attack(state, target_id)
 
-      timer_ref =
-        Process.send_after(self(), {:combat, {:auto_attack, target_id}}, max(remaining, 0))
+      remaining ->
+        timer_ref = Process.send_after(self(), {:combat, {:auto_attack, target_id}}, remaining)
 
-      {:noreply,
-       state
-       |> StateCommit.commit(PlayerState.set_continuous_timer(game_state, timer_ref))
-       |> Logout.stamp()}
+        {:noreply,
+         state
+         |> StateCommit.commit(PlayerState.set_continuous_timer(game_state, timer_ref))
+         |> Logout.stamp()}
     end
   end
 
@@ -513,7 +508,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   # attack delay, then earns its window from it.
   defp maybe_open_combo(game_state, {:quadruple, delay}, now, amotion) do
     game_state = PlayerState.delay_acts_until(game_state, now + delay)
-    %{game_state | combo: Combo.open_after_trifecta(game_state, now, amotion)}
+    Combo.open_after_trifecta(game_state, now, amotion)
   end
 
   @doc "Expires a matching Monk combo window; stale generations are ignored."

@@ -34,10 +34,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AttackSpeedTest do
       assert AttackSpeed.calculate_delay(999) == 140
     end
 
-    test "caps ASPD below 0 to minimum" do
-      # Should treat ASPD < 0 as 0
-      assert AttackSpeed.calculate_delay(-10) == 4000
-      assert AttackSpeed.calculate_delay(-999) == 4000
+    test "keeps an ASPD below 0 and floors it at -200 (an 8000 ms delay)" do
+      assert AttackSpeed.calculate_delay(-10) == 4200
+      assert AttackSpeed.calculate_delay(-999) == 8000
     end
   end
 

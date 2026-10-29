@@ -231,7 +231,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
                  target_id,
                  opts
                ) do
-          {:ok, {:combo, next_stage, MoTripleattack.delay(player_state.stats)}}
+          level = Keyword.fetch!(opts, :skill_level)
+          {:ok, {:combo, next_stage, MoTripleattack.delay(player_state, level)}}
         end
     end
   end

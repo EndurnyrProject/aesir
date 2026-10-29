@@ -142,6 +142,13 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusSyncTest do
     assert params[StatusParams.crate()] == 66
   end
 
+  test "an ASPD below 0 goes out as 0 on the unsigned wire" do
+    stats = stats()
+    StatusSync.send_stat_updates(self(), put_in(stats.derived_stats.aspd, -50))
+
+    assert collect_params()[StatusParams.aspd()] == 0
+  end
+
   test "existing base/derived/combat/progression params are unchanged" do
     StatusSync.send_stat_updates(self(), stats())
 

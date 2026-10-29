@@ -50,7 +50,7 @@ defmodule Aesir.ZoneServer.Unit.Stats do
     @type t() :: %__MODULE__{
             max_hp: non_neg_integer() | nil,
             max_sp: non_neg_integer() | nil,
-            aspd: non_neg_integer() | nil,
+            aspd: integer() | nil,
             max_ap: non_neg_integer()
           }
   end

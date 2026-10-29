@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincombo do
       :huuma
     ],
     display_name: "Raging Quadruple Blow",
+    ignore_status_delay: true,
     max_level: 5,
     target_type: :target_enemy,
     damage_type: :damage,
@@ -86,9 +87,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincombo do
 
     with :ok <- Root.check_cast(:player, caster.character_id, definition.id),
          :ok <- Combat.execute_skill_attack(caster, target_id, opts),
-         delay <- Enum.at(definition.after_cast_delay, level - 1, 0),
-         {:ok, combo} <- Combo.open_follow_up(caster, :quadruple, now, delay) do
-      {:ok, %{caster | combo: combo}}
+         delay <- Enum.at(definition.after_cast_delay, level - 1, 0) do
+      Combo.open_follow_up(caster, :quadruple, now, delay)
     end
   end
 

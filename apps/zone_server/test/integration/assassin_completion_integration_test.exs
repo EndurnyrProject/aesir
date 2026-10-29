@@ -455,6 +455,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
          id: 136,
          name: :as_sonicblow,
          display_name: "Sonic Blow",
+         ignore_status_delay: true,
          max_level: 10,
          target_type: :target_enemy,
          damage_type: :damage,

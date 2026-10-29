@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
       :huuma
     ],
     display_name: "Raging Thrust",
+    ignore_status_delay: true,
     max_level: 5,
     target_type: :target_enemy,
     damage_type: :damage,
@@ -85,9 +86,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
              target_id,
              skill_options(caster, level, definition)
            ),
-         duration <- Enum.at(definition.after_cast_delay, level - 1, 0),
-         {:ok, combo} <- Combo.open_follow_up(caster, :thrust, now, duration) do
-      {:ok, %{caster | combo: combo}}
+         duration <- Enum.at(definition.after_cast_delay, level - 1, 0) do
+      Combo.open_follow_up(caster, :thrust, now, duration)
     else
       {:error, _reason} = error -> error
     end

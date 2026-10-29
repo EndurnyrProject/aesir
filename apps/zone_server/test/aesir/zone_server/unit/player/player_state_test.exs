@@ -195,6 +195,25 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       assert cross_map.deferred_epoch == 2
     end
 
+    test "relocation ends the walk, attack and combo holds but keeps the skill delay", %{
+      state: state
+    } do
+      held = %{
+        state
+        | walk_delay_until: 9_000,
+          last_attack_timestamp: 8_000,
+          attack_lock_until: 9_500,
+          act_delay_until: 9_900
+      }
+
+      moved = PlayerState.relocate(held, "geffen", 50, 60)
+
+      assert {moved.walk_delay_until, moved.last_attack_timestamp, moved.attack_lock_until} ==
+               {0, 0, 0}
+
+      assert moved.act_delay_until == 9_900
+    end
+
     test "walk delays block movement until their monotonic expiry", %{state: state} do
       delayed = PlayerState.apply_walk_delay(state, 1_600, 10_000)
       extended = PlayerState.apply_walk_delay(delayed, 500, 10_500)

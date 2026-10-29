@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChTigerfist do
     no_target_self: true,
     name: :ch_tigerfist,
     display_name: "Glacier Fist",
+    ignore_status_delay: true,
     max_level: 5,
     target_type: :target_enemy,
     damage_type: :damage,
@@ -64,9 +65,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChTigerfist do
          target = {target_type, target_id},
          {:ok, %{hit?: hit?}} <-
            Combat.execute_skill_attack(caster, target_id, attack_options(caster, level)),
-         :ok <- if(hit?, do: maybe_immobilise(caster, target, level), else: :ok),
-         {:ok, combo} <- Combo.open_follow_up(caster, :tiger_fist, now, duration) do
-      {:ok, %{caster | combo: combo}}
+         :ok <- if(hit?, do: maybe_immobilise(caster, target, level), else: :ok) do
+      Combo.open_follow_up(caster, :tiger_fist, now, duration)
     end
   end
 

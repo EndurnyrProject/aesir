@@ -33,14 +33,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
   Renewal and pre-renewal share these rules, except that in pre-renewal Chain
   Crush also opens toward Glacier Fist (1+ sphere), so the two can loop.
 
-  A window a combo skill opens lasts its after-cast delay plus a 300 ms grace,
-  so the follow-up can be cast once the delay has passed.
+  A window a combo skill opens lasts its after-cast delay, at least the
+  caster's attack motion, plus a 300 ms grace, so the follow-up can be cast
+  once the delay has passed. Until the window ends the caster neither attacks
+  nor walks (`PlayerState.lock_for_combo/3`), even when the chain moves on or
+  ends sooner.
   """
 
   alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Fury
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Root
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
@@ -183,16 +188,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
 
   @doc """
   Opens the window a landed `opener` earns, replacing any open one, or closes
-  the chain. `caster` has already paid the opener's spheres. The window lasts
-  `delay` plus the grace and schedules `{:combo_timeout, generation}` to the
+  the chain, and returns `caster` holding it. `caster` has already paid the
+  opener's spheres. The window lasts the opener's after-cast `delay`, at least
+  the caster's attack motion, plus the grace, holds the caster's attacks and
+  walking for as long, and schedules `{:combo_timeout, generation}` to the
   calling session.
   """
   @spec open_follow_up(
-          map(),
+          PlayerState.t(),
           :quadruple | :thrust | :tiger_fist | :chain_crush,
           integer(),
           non_neg_integer()
-        ) :: {:ok, t()}
+        ) :: {:ok, PlayerState.t()}
   def open_follow_up(caster, opener, now, delay) do
     ctx = %{
       learned: PlayerStats.effective_skills(caster.stats),
@@ -202,34 +209,35 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
 
     case follow_up_stage(opener, ctx) do
       :idle ->
-        {:ok, cancel(caster.combo)}
+        {:ok, %{caster | combo: cancel(caster.combo)}}
 
       stage ->
-        window = delay + @grace_ms
-
-        combo = open(caster.combo, stage, now + window)
-        Process.send_after(self(), {:combo_timeout, combo.generation}, window)
-        {:ok, combo}
+        amotion = AttackSpeed.amotion_from_stats(caster.stats)
+        {:ok, open_window(caster, stage, now, max(amotion, delay) + @grace_ms)}
     end
   end
 
   @doc """
-  The window a Raging Trifecta Blow proc at `now` earns, after the proc armed
-  its skill delay: while the caster knows Raging Quadruple Blow it lasts until
-  the caster may use skills again, at least the caster's `amotion`, plus the
-  grace, and schedules `{:combo_timeout, generation}` to the calling session.
-  Otherwise any open window ends.
+  Returns `caster` holding the window a Raging Trifecta Blow proc at `now`
+  earns, after the proc armed its skill delay: while the caster knows Raging
+  Quadruple Blow it lasts until the caster may use skills again, at least the
+  caster's `amotion`, plus the grace, holds the caster's attacks and walking
+  for as long, and schedules `{:combo_timeout, generation}` to the calling
+  session. Otherwise any open window ends.
   """
-  @spec open_after_trifecta(map(), integer(), non_neg_integer()) :: t()
+  @spec open_after_trifecta(PlayerState.t(), integer(), non_neg_integer()) :: PlayerState.t()
   def open_after_trifecta(caster, now, amotion) do
     if knows?(%{learned: PlayerStats.effective_skills(caster.stats)}, @chain_combo) do
-      window = max(amotion, caster.act_delay_until - now) + @grace_ms
-      combo = open(caster.combo, :quadruple, now + window)
-      Process.send_after(self(), {:combo_timeout, combo.generation}, window)
-      combo
+      open_window(caster, :quadruple, now, max(amotion, caster.act_delay_until - now) + @grace_ms)
     else
-      cancel(caster.combo)
+      %{caster | combo: cancel(caster.combo)}
     end
+  end
+
+  defp open_window(caster, stage, now, window) do
+    combo = open(caster.combo, stage, now + window)
+    Process.send_after(self(), {:combo_timeout, combo.generation}, window)
+    PlayerState.lock_for_combo(%{caster | combo: combo}, now + window, now)
   end
 
   defp asura?(ctx, min_spheres),

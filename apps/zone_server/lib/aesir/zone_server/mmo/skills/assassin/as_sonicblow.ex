@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblow do
     name: :as_sonicblow,
     requires: [],
     display_name: "Sonic Blow",
+    ignore_status_delay: true,
     max_level: 10,
     target_type: :target_enemy,
     damage_type: :damage,

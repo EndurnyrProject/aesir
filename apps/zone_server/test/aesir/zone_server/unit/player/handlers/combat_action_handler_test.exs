@@ -187,7 +187,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
     end
   end
 
-  describe "after-cast act delay gate" do
+  describe "after-cast delay and attacks" do
     defp attack_ready_state(act_delay_until) do
       game_state = %PlayerState{
         character_id: 1000,
@@ -202,23 +202,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       %{game_state: game_state}
     end
 
-    test "a melee attack is blocked (no range check) while act-delayed" do
+    test "a running after-cast delay never blocks a requested attack" do
       future = System.monotonic_time(:millisecond) + 60_000
       state = attack_ready_state(future)
-
-      log =
-        capture_log(fn ->
-          assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 2000, 0)
-          assert returned.game_state.action_state == :idle
-          send(self(), :done)
-        end)
-
-      assert_received :done
-      refute log =~ "range"
-    end
-
-    test "a melee attack proceeds to the range check once the act delay is clear" do
-      state = attack_ready_state(0)
 
       log =
         capture_log(fn ->
@@ -228,6 +214,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
 
       assert_received :done
       assert log =~ "range"
+    end
+  end
+
+  describe "combo window hold" do
+    test "a requested attack waits out a combo window's hold" do
+      future = System.monotonic_time(:millisecond) + 60_000
+      state = put_in(attack_ready_state(0).game_state.attack_lock_until, future)
+
+      log =
+        capture_log(fn ->
+          assert {:noreply, _returned} = CombatActionHandler.handle_attack_request(state, 2000, 0)
+          send(self(), :done)
+        end)
+
+      assert_received :done
+      refute log =~ "range"
     end
   end
 
@@ -1410,28 +1412,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       assert returned.game_state.casting == cast
     end
 
-    test "Free Cast lets its owner attack through the after-cast act delay" do
+    test "a caster without Free Cast also attacks through the after-cast act delay" do
       stub_in_range_swing()
-      future = System.monotonic_time(:millisecond) + 60_000
-
-      state =
-        freecast_attack_state(%{
-          act_delay_until: future,
-          learned_skills: %{@freecast_id => 5}
-        })
-
-      assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 2000, 7)
-      assert returned.game_state.action_state == :attacking
-    end
-
-    test "a caster without Free Cast is still blocked by the after-cast act delay" do
-      reject(&Combat.execute_attack/4)
       future = System.monotonic_time(:millisecond) + 60_000
 
       state = freecast_attack_state(%{act_delay_until: future})
 
       assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 2000, 7)
-      assert returned.game_state.action_state == :idle
+      assert returned.game_state.action_state == :attacking
     end
   end
 end

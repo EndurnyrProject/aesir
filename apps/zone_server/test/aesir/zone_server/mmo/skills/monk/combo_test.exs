@@ -1,7 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Monk.ComboTest do
   use ExUnit.Case, async: true
 
+  import Aesir.TestEtsSetup
+
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
+
+  setup :setup_ets_tables
 
   test "opens a generation-tagged window that names no required target" do
     combo = Combo.open(Combo.new(), :quadruple, 1_500)
@@ -36,20 +42,48 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.ComboTest do
     test "lasts until skills are usable again, at least the attack motion, plus 300 ms" do
       caster = trifecta_caster(%{272 => 1}, 1_600)
 
-      assert %{stage: :quadruple, deadline: 1_900} = Combo.open_after_trifecta(caster, 1_000, 400)
-      assert %{deadline: 2_100} = Combo.open_after_trifecta(caster, 1_000, 800)
+      opened = Combo.open_after_trifecta(caster, 1_000, 400)
+      assert %{stage: :quadruple, deadline: 1_900} = opened.combo
+      assert %{deadline: 2_100} = Combo.open_after_trifecta(caster, 1_000, 800).combo
     end
 
-    test "without Raging Quadruple Blow it opens nothing and ends an open window" do
+    test "holds the caster's attacks and walking until the window ends" do
+      opened = Combo.open_after_trifecta(trifecta_caster(%{272 => 1}, 1_600), 1_000, 400)
+
+      assert opened.attack_lock_until == 1_900
+      assert opened.walk_delay_until == 1_900
+    end
+
+    test "without Raging Quadruple Blow it opens nothing, holds nothing and ends an open window" do
       caster = %{trifecta_caster(%{}, 1_600) | combo: Combo.open(Combo.new(), :thrust, 5_000)}
 
-      assert %{stage: :idle} = Combo.open_after_trifecta(caster, 1_000, 400)
+      closed = Combo.open_after_trifecta(caster, 1_000, 400)
+      assert closed.combo.stage == :idle
+      assert closed.attack_lock_until == 0
       refute_receive {:combo_timeout, _generation}, 50
     end
   end
 
+  describe "open_follow_up/4" do
+    test "a delay shorter than the attack motion still opens the window for the motion plus 300 ms" do
+      # ASPD 150 is a 500 ms attack motion, longer than the 200 ms delay.
+      {spheres, _entry} = SpiritSpheres.summon(SpiritSpheres.new(), 9_999_999, 5)
+
+      caster = %PlayerState{
+        character_id: System.unique_integer([:positive]),
+        stats: %{progression: %{learned_skills: %{273 => 1}}, derived_stats: %{aspd: 150}},
+        spirit_spheres: spheres,
+        combo: Combo.new()
+      }
+
+      assert {:ok, opened} = Combo.open_follow_up(caster, :quadruple, 1_000, 200)
+      assert %{stage: :thrust, deadline: 1_800} = opened.combo
+      assert opened.attack_lock_until == 1_800
+    end
+  end
+
   defp trifecta_caster(learned, act_delay_until) do
-    %{
+    %PlayerState{
       stats: %{progression: %{learned_skills: learned}},
       act_delay_until: act_delay_until,
       combo: Combo.new()

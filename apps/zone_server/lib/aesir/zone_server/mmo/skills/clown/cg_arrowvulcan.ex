@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgArrowvulcan do
     id: 394,
     name: :cg_arrowvulcan,
     display_name: "Arrow Vulcan",
+    ignore_status_delay: true,
     max_level: 10,
     requires: [],
     target_type: :target_enemy,

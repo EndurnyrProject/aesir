@@ -303,6 +303,28 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     assert PreRenewal.max_sp(sp) === PreRenewal.max_sp(%{sp | int: 0})
   end
 
+  test "ASPD can fall below 0 down to -200, an 8000 ms attack delay, in both modes" do
+    base = %{
+      agi: 0,
+      dex: 0,
+      left_weapon_delay: nil,
+      ranged?: false,
+      flat_bonus: 0,
+      rate_bonus: 0,
+      max_aspd: 190
+    }
+
+    # Renewal: 196 less a 100 weapon delay is 96, then 200 - 104 x (1000 + rate) / 1000.
+    renewal = Map.put(base, :weapon_delay, 100)
+    assert Renewal.aspd(Map.put(renewal, :penalty_rate, 1_000)) == -8
+    assert Renewal.aspd(Map.put(renewal, :penalty_rate, 3_000)) == -200
+
+    # Classic: a 2000 ms motion under a 50% or 150% penalty is 3000 or 5000 ms.
+    classic = Map.put(base, :weapon_delay, 2_000)
+    assert PreRenewal.aspd(Map.put(classic, :penalty_rate, 500)) == -100
+    assert PreRenewal.aspd(Map.put(classic, :penalty_rate, 1_500)) == -200
+  end
+
   test "mode-specific HIT and FLEE apply their combat baselines" do
     inputs = %{base_level: 1, dex: 1, agi: 1, luk: 0, con: 0, flat_bonus: -5}
 

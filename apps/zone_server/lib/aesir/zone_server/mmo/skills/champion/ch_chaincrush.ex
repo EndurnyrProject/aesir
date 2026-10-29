@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChChaincrush do
     no_target_self: true,
     name: :ch_chaincrush,
     display_name: "Chain Crush Combo",
+    ignore_status_delay: true,
     max_level: 10,
     target_type: :target_enemy,
     damage_type: :damage,
@@ -63,9 +64,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChChaincrush do
              caster,
              target_id,
              attack_options(caster, level, definition)
-           ),
-         {:ok, combo} <- Combo.open_follow_up(caster, :chain_crush, now, duration) do
-      {:ok, %{caster | combo: combo}}
+           ) do
+      Combo.open_follow_up(caster, :chain_crush, now, duration)
     end
   end
 

@@ -116,6 +116,11 @@ rider effects on the returned `hit?` when the skill has on-hit riders.
   scaled, item and status rates) plus a fixed part only gear and statuses shorten; pre-renewal
   is one variable cast. The formula returns reactions (`:consume_memorize`, `:end_suffragium`)
   as data; `Caster.apply_cast_reactions/2` applies them at the real attempt boundary.
+- **After-cast delay.** `Skill.AfterCastDelay.resolve/3` is the one source of a player's
+  after-cast delay (combo AGI/DEX base, Bragi + `bDelayrate` summed into one single-precision
+  reduction, `bSkillDelay`, truncation). Set `ignore_status_delay`/`ignore_item_delay` from the
+  skill_db `CastDelayFlags` (IgnoreStatus/IgnoreItemBonus); they are separate from the
+  cast-time flags. The skill delay never gates a normal attack.
 - **Invocation identity and the autocast flag.** `Skill.Origin` keeps a stack of the executing
   skill, caster and invocation kind, and separately the caster's runtime autocast flag. Only an
   equipment proc sets the flag, for exactly its execution, and it is never restored by

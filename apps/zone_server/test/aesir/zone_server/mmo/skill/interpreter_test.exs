@@ -3073,8 +3073,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       stub(Catalog, :by_id, fn 272 -> {:ok, definition} end)
 
+      # 1000 less 4 + 2 is 994; the -50% delay rate halves it to 497, which no
+      # longer rises to the 500 ms attack motion.
       stub(SmProvoke, :cast, fn caster, :self, 1, resolved_definition ->
-        assert resolved_definition.after_cast_delay == [500]
+        assert resolved_definition.after_cast_delay == [497]
 
         {:ok,
          put_in(
@@ -3091,8 +3093,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       before = System.monotonic_time(:millisecond)
       assert {:ok, updated} = Interpreter.complete_cast(gs, 272, 1, :self)
-      assert updated.act_delay_until >= before + 500
-      assert updated.act_delay_until < before + 600
+      assert updated.act_delay_until >= before + 497
+      assert updated.act_delay_until < before + 597
     end
 
     test "Champion combo skills take the AGI and DEX reduced combo delay" do
@@ -3195,22 +3197,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert updated.act_delay_until >= before + 750
     end
 
-    test "equipment :delay_rate scales the status-reduced delay rather than summing into it" do
+    test "status reductions and the equipment delay rate sum into one reduction" do
       stub(Catalog, :by_id, fn 6 -> {:ok, definition_with_act_delay([500])} end)
       stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
 
       stub(StatusStorage, :get_unit_statuses, fn :player, 1000 ->
-        [%StatusEntry{state: %{delay_reduction: 50}}]
+        [%StatusEntry{state: %{delay_reduction: 30}}]
       end)
 
-      gs = game_state(100, %{6 => 1}, %{delay_rate: -50})
+      gs = game_state(100, %{6 => 1}, %{delay_rate: -20})
       before = System.monotonic_time(:millisecond)
 
       assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
 
-      # 500 * 0.5 * 0.5 = 125ms, not the 0ms an additive -100% would give
-      assert updated.act_delay_until >= before + 125
-      assert updated.act_delay_until < before + 250
+      # 30% + 20% is one 50% reduction: 250 ms, not the 280 ms of 0.7 x 0.8.
+      assert updated.act_delay_until >= before + 250
+      assert updated.act_delay_until < before + 280
     end
 
     test "sums :delay_reduction across multiple statuses" do

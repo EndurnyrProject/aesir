@@ -383,6 +383,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     "bignoredefracerate" => %{family: :ignore_def_race, param: :race, unit: :percent},
     "bignoremdefracerate" => %{family: :ignore_mdef_race, param: :race, unit: :percent},
     "bskillcooldown" => %{family: :skill_cooldown, param: :skill, unit: :ms},
+    "bskilldelay" => %{family: :skill_delay, param: :skill, unit: :ms},
     "bskillusesp" => %{family: :skill_use_sp, param: :skill, unit: :sp},
     "bvariablecastrate" => %{family: :skill_varcast_rate, param: :skill, unit: :percent},
     "bcastrate" => %{family: :skill_varcast_rate, param: :skill, unit: :percent},

@@ -36,6 +36,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   IgnoreStatus and IgnoreItemBonus: the skill's cast time ignores status
   reductions, or equipment cast-rate bonuses.
 
+  `ignore_status_delay` and `ignore_item_delay` mirror the same two flags of the
+  source's after-cast delay flags: the skill's after-cast delay ignores status
+  reductions (Bragi), or the equipment delay bonuses (`bDelayrate`,
+  `bSkillDelay`). See `Skill.AfterCastDelay`.
+
   `ignore_noncrit_atk_bonus` mirrors the source's IgnoreNonCritAtkBonus flag:
   the skill's physical hits never receive the equipment non-critical damage
   rate. It is mode-keyable.
@@ -184,6 +189,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             ignore_dex: false,
             ignore_status_cast: false,
             ignore_item_cast: false,
+            ignore_status_delay: false,
+            ignore_item_delay: false,
             ignore_noncrit_atk_bonus: false,
             ignore_atk_card: false,
             ignore_auto_guard: false,
@@ -250,6 +257,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           ignore_dex: boolean(),
           ignore_status_cast: boolean(),
           ignore_item_cast: boolean(),
+          ignore_status_delay: boolean(),
+          ignore_item_delay: boolean(),
           ignore_noncrit_atk_bonus: boolean(),
           ignore_atk_card: boolean(),
           ignore_auto_guard: boolean(),
@@ -324,6 +333,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     ignore_dex: :boolean,
     ignore_status_cast: :boolean,
     ignore_item_cast: :boolean,
+    ignore_status_delay: :boolean,
+    ignore_item_delay: :boolean,
     ignore_noncrit_atk_bonus: :boolean,
     ignore_atk_card: :boolean,
     ignore_auto_guard: :boolean,
@@ -382,6 +393,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     ignore_dex: false,
     ignore_status_cast: false,
     ignore_item_cast: false,
+    ignore_status_delay: false,
+    ignore_item_delay: false,
     ignore_noncrit_atk_bonus: false,
     ignore_atk_card: false,
     ignore_auto_guard: false,

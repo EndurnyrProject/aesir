@@ -36,12 +36,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Mmo.Combat
-  alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SkillRange
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.MobSkill.Event, as: MobSkillEvent
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.AfterCastDelay
   alias Aesir.ZoneServer.Mmo.Skill.Castability
   alias Aesir.ZoneServer.Mmo.Skill.CastContext
   alias Aesir.ZoneServer.Mmo.Skill.Caster
@@ -55,7 +55,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.PlacementCheck
   alias Aesir.ZoneServer.Mmo.Skill.UseRestrictions
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Npc.SkillCaster
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -65,7 +64,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # Vulture's Eye: the passive whose learned level widens a `vulture_range` skill.
   @vulture_skill_id 44
   @fire_wall_skill_id 18
-  # Monk and Champion combo skills: delay reduced by AGI and DEX, floored at attack motion.
+  # Monk and Champion combo skills: their resolved delay sizes the window they open.
   @combo_delay_skill_ids [272, 273, 371, 372]
   # How much an ordinary or item cast may shorten an act delay already armed.
   @act_delay_slack 100
@@ -244,18 +243,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       outcome ->
         outcome
     end
-  end
-
-  # Sums a stored reduction percentage (`:delay_reduction`) across the caster's
-  # active statuses, for the after-cast delay path (additive sum, one multiply -
-  # rAthena skill_delayfix:10491).
-  @spec sum_status_reduction(integer(), atom()) :: non_neg_integer()
-  defp sum_status_reduction(character_id, state_key) do
-    :player
-    |> StatusStorage.get_unit_statuses(character_id)
-    |> Enum.reduce(0, fn entry, acc ->
-      acc + Map.get(entry.state || %{}, state_key, 0)
-    end)
   end
 
   # Lets a skill override its per-level cast-time table for this cast (Asura is
@@ -1283,14 +1270,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   def npc_cast(%SkillCaster{}, _skill, _level, _target), do: {:error, :invalid_level}
   def npc_cast(_caster, _skill, _level, _target), do: {:error, :unsupported_caster}
 
-  @doc "Resolves the committed after-cast duration, including Monk combo flooring."
+  @doc "Resolves the committed after-cast duration (`Skill.AfterCastDelay`)."
   @spec resolved_after_cast_delay(PlayerState.t() | map(), Definition.t(), pos_integer()) ::
           non_neg_integer()
   def resolved_after_cast_delay(game_state, definition, level) do
     case Enum.at(definition.after_cast_delay, level - 1) do
       nil -> 0
       0 -> 0
-      base -> resolve_delay(game_state, definition.id, base)
+      _base -> AfterCastDelay.resolve(game_state, definition, level)
     end
   end
 
@@ -2970,27 +2957,4 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   defp put_act_delay(game_state, _definition, _level, _now, _slack), do: game_state
-
-  defp resolve_delay(game_state, skill_id, base) do
-    base = combo_base_delay(game_state, skill_id, base)
-    reduction = sum_status_reduction(game_state.character_id, :delay_reduction)
-    delay_rate = equip_modifier(game_state, :delay_rate)
-    reduced = round(base * (100 - reduction) / 100 * max(0, 100 + delay_rate) / 100)
-
-    if skill_id in @combo_delay_skill_ids,
-      do: combo_delay_floor(game_state, reduced),
-      else: max(0, reduced)
-  end
-
-  defp combo_base_delay(game_state, skill_id, base) when skill_id in @combo_delay_skill_ids do
-    stats = game_state.stats.base_stats
-    max(0, base - 4 * stats.agi - 2 * stats.dex)
-  end
-
-  defp combo_base_delay(_game_state, _skill_id, base), do: base
-
-  defp combo_delay_floor(game_state, reduced) do
-    attack_motion = AttackSpeed.calculate_delay_from_stats(game_state.stats) |> div(2)
-    max(attack_motion, max(0, reduced))
-  end
 end

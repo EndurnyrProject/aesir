@@ -58,7 +58,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusSync do
       StatusParams.max_sp() => stats.derived_stats.max_sp,
       StatusParams.hp() => stats.current_state.hp,
       StatusParams.sp() => stats.current_state.sp,
-      StatusParams.aspd() => stats.derived_stats.aspd,
+      # The wire value is unsigned, so an ASPD below 0 shows as 0.
+      StatusParams.aspd() => max(stats.derived_stats.aspd, 0),
 
       # Combat stats
       StatusParams.hit() => stats.combat_stats.hit,

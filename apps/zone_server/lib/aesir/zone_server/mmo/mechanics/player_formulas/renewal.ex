@@ -80,7 +80,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.Renewal do
     final_aspd
     |> apply_aspd_penalty(inputs.penalty_rate)
     |> min(inputs.max_aspd)
-    |> max(0)
+    |> max(-200)
   end
 
   @impl true

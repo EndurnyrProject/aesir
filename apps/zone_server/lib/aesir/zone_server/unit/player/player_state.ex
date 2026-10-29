@@ -114,6 +114,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           pickup_target_id: integer() | nil,
           last_attack_timestamp: integer(),
           act_delay_until: integer(),
+          attack_lock_until: integer(),
           last_warp_at: integer() | nil,
           last_emote_at: integer() | nil,
           deferred_epoch: non_neg_integer(),
@@ -345,6 +346,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     skill_cooldowns: %{},
     last_attack_timestamp: 0,
     act_delay_until: 0,
+    # A combo window's hold on attacks (monotonic ms, 0 when none).
+    attack_lock_until: 0,
     last_warp_at: nil,
     # Flood-control timestamp for emotes (monotonic ms); nil until the first emote.
     last_emote_at: nil,
@@ -449,6 +452,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       pickup_target_id: nil,
       last_attack_timestamp: 0,
       act_delay_until: 0,
+      attack_lock_until: 0,
 
       # Character Stats
       stats: PlayerStats.from_character(character),
@@ -485,6 +489,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   transient movement/combat state so the player lands idle on the destination
   map.
 
+  The player may walk and attack again at once on arrival: the walk delay, the
+  last attack's delay and any combo window's hold end, while the after-cast
+  skill delay keeps running.
+
   Drops any in-flight cast: this sets `action_state` directly rather than going
   through `transition_to/3`, so nothing else would clear it, and a Free Cast
   caster warped mid-walk would otherwise land holding a descriptor whose timer
@@ -500,7 +508,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         action_state: :idle,
         casting: nil,
         pending_forced_movement: nil,
-        inside_npc_areas: MapSet.new()
+        inside_npc_areas: MapSet.new(),
+        walk_delay_until: 0,
+        last_attack_timestamp: 0,
+        attack_lock_until: 0
     }
     |> clear_visibility()
     |> advance_deferred_epoch()
@@ -893,6 +904,32 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   @spec delay_acts_until(t(), integer()) :: t()
   def delay_acts_until(%__MODULE__{} = state, until),
     do: %{state | act_delay_until: later(state.act_delay_until, until)}
+
+  @doc """
+  Milliseconds until the player may swing again at the monotonic `now`, given
+  its `attack_delay`: its last attack's delay and any combo window's hold, 0
+  when it may swing now.
+  """
+  @spec attack_wait(t(), non_neg_integer(), integer()) :: non_neg_integer()
+  def attack_wait(%__MODULE__{} = state, attack_delay, now) do
+    cadence =
+      if state.last_attack_timestamp == 0,
+        do: now,
+        else: state.last_attack_timestamp + attack_delay
+
+    hold = if state.attack_lock_until == 0, do: now, else: state.attack_lock_until
+    max(max(cadence, hold) - now, 0)
+  end
+
+  @doc """
+  Holds the player's attacks and walking for a combo window that ends at the
+  monotonic `until`; neither hold shortens one already running.
+  """
+  @spec lock_for_combo(t(), integer(), integer()) :: t()
+  def lock_for_combo(%__MODULE__{} = state, until, now) do
+    %{state | attack_lock_until: later(state.attack_lock_until, until)}
+    |> apply_walk_delay(until - now, now)
+  end
 
   # 0 is no timestamp at all; monotonic time may be negative.
   defp later(0, at), do: at
