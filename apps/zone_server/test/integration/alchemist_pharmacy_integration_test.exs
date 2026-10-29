@@ -10,7 +10,6 @@ defmodule Aesir.ZoneServer.Integration.AlchemistPharmacyIntegrationTest do
   alias Aesir.Net.SkillMenu
   alias Aesir.Net.SkillMenuReply
   alias Aesir.Repo
-  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
@@ -38,22 +37,14 @@ defmodule Aesir.ZoneServer.Integration.AlchemistPharmacyIntegrationTest do
 
     cast(session, 10)
 
-    pharmacy_products = Enum.map(Recipes.offerable(@pharmacy_skill_id, 10), & &1.product_id)
-
+    # Only the recipe whose materials are held is listed: Red Potion.
     assert_receive {:packet_sent,
                     %SkillMenu{
                       src_skill_id: @pharmacy_skill_id,
                       kind: :ITEMS,
-                      entry_ids: ^pharmacy_products
+                      entry_ids: [501]
                     }, _},
                    1_000
-
-    assert Enum.all?(pharmacy_products, fn product_id ->
-             Enum.any?(
-               Recipes.all(),
-               &(&1.product_id == product_id and &1.skill_id == @pharmacy_skill_id)
-             )
-           end)
 
     assert Inventory.held_amount(get_player_state(session.pid).inventory, @medicine_bowl_id) == 0
 

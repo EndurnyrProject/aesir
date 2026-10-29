@@ -24,24 +24,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.RecipesTest do
     assert Enum.all?(recipes, &match?(%Recipe{}, &1))
   end
 
-  test "offerable filters by skill id and required skill level" do
-    recipes = Recipes.offerable(99, 2)
-
-    assert recipes != []
-    assert Enum.all?(recipes, &(&1.skill_id == 99))
-    assert Enum.all?(recipes, &(&1.skill_level <= 2))
-    assert Enum.any?(recipes, &(&1.skill_level == 2))
-    refute Enum.any?(recipes, &(&1.skill_level == 3))
-  end
-
-  test "a level-one weapon cast excludes tier-two and tier-three recipes" do
-    recipes = Recipes.offerable(99, 1)
-
-    assert recipes != []
-    assert Enum.all?(recipes, &(&1.item_level == 1))
-    refute Enum.any?(recipes, &(&1.item_level in [2, 3]))
-  end
-
   test "reload rebuilds the catalog" do
     expected = Recipes.all()
     :persistent_term.put(Recipes, %{all: [], by_id: %{}})

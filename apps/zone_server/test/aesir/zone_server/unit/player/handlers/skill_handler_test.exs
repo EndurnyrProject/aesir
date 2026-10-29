@@ -3026,6 +3026,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     )
   end
 
+  describe "open menu snapshot" do
+    # Autospell's menu is the one a skill request may be made under.
+    test "a cast sees the open skill menu's source skill" do
+      state = %{
+        casting_state(45)
+        | pending_skill_menu: %{skill_id: 279, kind: :ITEMS, entry_ids: [], level: 1}
+      }
+
+      assert_menu_seen(state, 279)
+    end
+
+    test "a cast with no open menu sees 0" do
+      assert_menu_seen(casting_state(45), 0)
+    end
+  end
+
+  defp assert_menu_seen(state, expected) do
+    test_pid = self()
+
+    stub(Interpreter, :begin_cast, fn game_state, 29, 1, :self ->
+      send(test_pid, {:open_menu, game_state.open_menu_skill_id})
+      {:error, :invalid_target}
+    end)
+
+    stub(Broadcast, :to_player, fn 1000, %SkillCastFailed{} -> :ok end)
+
+    SkillHandler.handle_use_skill(state, 29, 1, 1000)
+    assert_received {:open_menu, ^expected}
+  end
+
   describe "logout window" do
     test "a cast that begins opens it" do
       stub(Broadcast, :to_player, fn 1000, %SkillCasting{} -> :ok end)

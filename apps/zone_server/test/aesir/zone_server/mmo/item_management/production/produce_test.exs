@@ -48,6 +48,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ProduceTest do
     end
   end
 
+  describe "offer/4" do
+    test "a skill's list keeps only that skill's recipe rows" do
+      caster = caster(%{228 => 1}, [{7144, 1}, {507, 1}, {1093, 1}])
+
+      assert 501 in Produce.offer(caster, 22, 0, 228)
+      assert Produce.offer(caster, 22, 0, 94) == []
+    end
+  end
+
   describe "fits_inventory?/2" do
     test "a non-stackable product always fits" do
       assert Produce.fits_inventory?(%{0 => stack(900, 30_000)}, item_def(:weapon, %{}))

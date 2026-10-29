@@ -46,8 +46,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Produce do
   menu is open (0 for none).
   """
   @spec offer(PlayerState.t(), integer(), non_neg_integer()) :: [integer()]
-  def offer(%PlayerState{} = caster, trigger, open_menu_skill_id) do
+  def offer(%PlayerState{} = caster, trigger, open_menu_skill_id),
+    do: offer(caster, trigger, open_menu_skill_id, 0)
+
+  @doc """
+  The products a list opened by `list_skill_id` shows (0 for an item's list):
+  as `offer/3`, keeping only the recipe rows that skill makes.
+  """
+  @spec offer(PlayerState.t(), integer(), non_neg_integer(), non_neg_integer()) :: [integer()]
+  def offer(%PlayerState{} = caster, trigger, open_menu_skill_id, list_skill_id) do
     for recipe <- Recipes.all(),
+        list_skill_id <= 0 or recipe.skill_id == list_skill_id,
         match?({:ok, _}, producible(caster, recipe.product_id, trigger, open_menu_skill_id)),
         do: recipe.product_id
   end

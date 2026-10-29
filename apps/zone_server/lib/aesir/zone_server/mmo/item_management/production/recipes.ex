@@ -34,15 +34,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes do
   @spec all() :: [Recipe.t()]
   def all, do: index().all
 
-  @doc "Returns recipes a cast at `skill_level` may offer for `skill_id`."
-  @spec offerable(integer(), integer()) :: [Recipe.t()]
-  def offerable(skill_id, skill_level) do
-    Enum.filter(index().all, fn recipe ->
-      recipe.skill_id == skill_id and recipe.skill_level <= skill_level and
-        (not weapon_recipe?(recipe) or recipe.item_level <= skill_level)
-    end)
-  end
-
   @doc "Rebuilds the cached recipe index from disk."
   @spec reload() :: :ok
   def reload do
@@ -93,6 +84,4 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes do
         end)
     }
   end
-
-  defp weapon_recipe?(%Recipe{skill_id: skill_id}), do: skill_id in 98..104
 end

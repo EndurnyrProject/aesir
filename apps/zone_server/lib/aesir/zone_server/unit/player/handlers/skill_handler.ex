@@ -162,7 +162,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # abort; the cancel then invalidates the token before the zap is applied, and a
   # single `commit_cast/4` publishes both SP deltas at once.
   defp cast_cancel(%{game_state: game_state} = state, level) do
-    case Interpreter.begin_cast(game_state, @cast_cancel_id, level, :self) do
+    case Interpreter.begin_cast(
+           stamp_cast_context(state, game_state),
+           @cast_cancel_id,
+           level,
+           :self
+         ) do
       {:instant, charged_game_state} ->
         state = Logout.stamp(state)
         sync_cast_start_stats(state, game_state, charged_game_state)
@@ -271,7 +276,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   defp complete_input_cast(state, skill_id, level, target, input) do
     result =
-      Interpreter.complete_cast_with_input(state.game_state, skill_id, level, target, input)
+      Interpreter.complete_cast_with_input(
+        stamp_cast_context(state, state.game_state),
+        skill_id,
+        level,
+        target,
+        input
+      )
 
     state = stamp_if_begun(state, result)
 
@@ -334,7 +345,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   defp complete_cast(state, game_state, ctx) do
     expected_id = Map.get(ctx, :homunculus_id)
-    game_state = stamp_homunculus(state, game_state)
+    game_state = stamp_cast_context(state, game_state)
 
     result =
       case Map.get(ctx, :origin) do
@@ -582,8 +593,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
+  # The session context a cast reads from the game state: the homunculus summary
+  # and the open skill menu's source skill (0 for none).
+  defp stamp_cast_context(state, game_state) do
+    menu_skill_id =
+      case Map.get(state, :pending_skill_menu) do
+        %{skill_id: skill_id} -> skill_id
+        _none -> 0
+      end
+
+    %{stamp_homunculus(state, game_state) | open_menu_skill_id: menu_skill_id}
+  end
+
   defp checked_use(%{game_state: game_state} = state, skill_id, level, aimed, locked, opts) do
-    case walking_attempt(stamp_homunculus(state, game_state), skill_id, level, aimed, opts) do
+    case walking_attempt(stamp_cast_context(state, game_state), skill_id, level, aimed, opts) do
       :in_range ->
         start_use(state, skill_id, level, aimed, locked, opts)
 
@@ -607,7 +630,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     case ensure_idle_for_cast(state, opts) do
       {:ok, ready} ->
         result =
-          begin_cast(stamp_homunculus(ready, ready.game_state), skill_id, level, target, opts)
+          begin_cast(stamp_cast_context(ready, ready.game_state), skill_id, level, target, opts)
 
         handle_begin_result(ready, ready.game_state, skill_id, level, target, locked, result)
 
@@ -671,7 +694,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     with {:ok, gated} <- cast_gate(state, skill_id, :restricted),
          {:ok, ready} <- ensure_idle_for_cast(gated, overlay?: true) do
       result =
-        Interpreter.begin_cast(ready.game_state, skill_id, level, :self,
+        Interpreter.begin_cast(
+          stamp_cast_context(ready, ready.game_state),
+          skill_id,
+          level,
+          :self,
           learned?: false,
           origin: :script
         )
@@ -753,6 +780,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     game_state = state.game_state
     on_ready = &consume_pending_item(state, &1)
     keep? = Map.get(state.pending_item_skill, :keep_requirement?, false)
+
+    game_state = stamp_cast_context(state, game_state)
 
     case Interpreter.begin_item_cast(game_state, skill_id, level, target, on_ready, keep?) do
       {:error, reason, refreshed, :before_start} ->
@@ -1193,7 +1222,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
          {:ok, ready_state} <- ensure_idle_for_cast(gated_state, notify?: false),
          {:deferred, game_state, %Interpreter.Deferred{} = descriptor} <-
            Interpreter.cast(
-             stamp_homunculus(ready_state, ready_state.game_state),
+             stamp_cast_context(ready_state, ready_state.game_state),
              skill_id,
              level,
              :self
@@ -1964,7 +1993,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   @spec handle_auto_cast(SessionState.t(), integer(), pos_integer(), Active.target()) ::
           {:noreply, SessionState.t()}
   def handle_auto_cast(%{game_state: game_state} = state, skill_id, level, target) do
-    case Interpreter.auto_cast(game_state, skill_id, level, target) do
+    case Interpreter.auto_cast(stamp_cast_context(state, game_state), skill_id, level, target) do
       {:ok, new_game_state} ->
         new_state = commit_cast(state, new_game_state, skill_id, level, false)
         broadcast_skill_use(new_state.game_state, skill_id, level, target)
@@ -2019,7 +2048,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   defp cast_usable_proc(state, skill_id, level, target) do
-    result = Interpreter.proc_cast(state.game_state, skill_id, level, target)
+    result =
+      Interpreter.proc_cast(stamp_cast_context(state, state.game_state), skill_id, level, target)
+
     run_proc_cast(state, skill_id, level, target, result)
   end
 
@@ -2058,7 +2089,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     opts = [act_delay?: false, placement_skill: trigger_skill]
 
     EquipProcDispatch.with_on_skill_lock(state.game_state.character_id, entry, fn ->
-      result = Interpreter.proc_cast(state.game_state, skill_id, level, target, opts)
+      result =
+        Interpreter.proc_cast(
+          stamp_cast_context(state, state.game_state),
+          skill_id,
+          level,
+          target,
+          opts
+        )
+
       run_proc_cast(state, skill_id, level, target, result)
     end)
   end
