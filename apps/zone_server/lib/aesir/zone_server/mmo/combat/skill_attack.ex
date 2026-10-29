@@ -847,7 +847,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       :element,
       :skill_id,
       :skip_status_atk,
-      :spirit_spheres
+      :spirit_spheres,
+      :misc_part
     ]) ++ shield_base_opts(caster_state, opts)
   end
 
@@ -1566,6 +1567,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     case {hit_result, fled_damage(hit_result, attacker, target, skill, calc_context, hit_opts)} do
       {:miss, {:ok, fled}} ->
         {calc_opts, _calculator} = damage_calculation(calc_context)
+        fled = Map.put(fled, :fled?, true)
 
         deliver_skill_hit(
           attacker,
@@ -1620,7 +1622,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
     case normalize_divisions(fled, hit_opts.hit_divisions) do
       {%{damage: damage}, _divisions} when damage >= 1 -> {:ok, fled}
-      _nothing -> :none
+      # Classic Soul Destroyer's INT part always lands; its settlement decides.
+      _nothing -> if Map.has_key?(fled, :misc_part), do: {:ok, fled}, else: :none
     end
   end
 
@@ -1792,11 +1795,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         )
     }
 
-    hit_info = DamageApplication.mark_infinite_defense(hit_info, damage_result)
+    hit_info =
+      hit_info
+      |> DamageApplication.mark_infinite_defense(damage_result)
+      |> put_misc_part(damage_result)
 
     source = damage_source(attacker, target_type)
 
-    if damage_result.damage > 1 do
+    if damage_result.damage + Map.get(damage_result, :misc_part, 0) > 1 do
       EquipVanish.after_hit(attacker, target, target_pid, attack_flag)
     end
 
@@ -1809,6 +1815,43 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         source
       )
 
+    if fled_misc_miss?(damage_result, damage, hit_info) do
+      DamageApplication.broadcast_nearby(
+        target,
+        PacketFactory.build_miss_packet(attacker, target)
+      )
+
+      %{hit?: false, damage: 0, taken: 0, divisions: divisions, class: :miss}
+    else
+      deliver_prepared_calculated_hit(
+        attacker,
+        {target_type, target_pid, target},
+        {skill_id, skill_level},
+        {damage_result, damage, hit_info},
+        {attack_flag, divisions, immediate?, source},
+        hit_metadata
+      )
+    end
+  end
+
+  defp put_misc_part(hit_info, %{misc_part: misc}), do: Map.put(hit_info, :misc_part, misc)
+  defp put_misc_part(hit_info, _damage_result), do: hit_info
+
+  # A fled weapon part whose INT part settled to nothing stays the miss it was,
+  # unless the weapon part itself was blocked.
+  defp fled_misc_miss?(%{fled?: true, misc_part: _misc}, 0, hit_info),
+    do: not Map.get(hit_info, :blocked?, false)
+
+  defp fled_misc_miss?(_damage_result, _damage, _hit_info), do: false
+
+  defp deliver_prepared_calculated_hit(
+         attacker,
+         {target_type, target_pid, target},
+         {skill_id, skill_level},
+         {damage_result, damage, hit_info},
+         {attack_flag, divisions, immediate?, source},
+         hit_metadata
+       ) do
     packet =
       PacketFactory.build_skill_damage_packet(
         attacker,

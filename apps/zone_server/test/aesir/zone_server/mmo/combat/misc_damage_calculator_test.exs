@@ -126,6 +126,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculatorTest do
                )
     end
 
+    test "the caller can make a hit ignore elements its skill does not" do
+      assert {:ok, %{damage: 100, is_critical: false}} =
+               MiscDamageCalculator.calculate_misc_damage(
+                 attacker(),
+                 defender(10, element: {:earth, 1}),
+                 misc(base_damage: 100, element: :fire, ignore_element: true)
+               )
+    end
+
     test "a zero base deals 0: misc damage has no minimum" do
       assert {:ok, %{damage: 0, is_critical: false}} =
                MiscDamageCalculator.calculate_misc_damage(

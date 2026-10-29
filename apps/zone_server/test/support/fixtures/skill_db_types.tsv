@@ -310,6 +310,7 @@
 375	PF_SOULBURN	Magic	false	Magic	false	IgnoreDefCard,IgnoreElement	IgnoreDefCard,IgnoreElement	none	0,0,0,0,0	none	0,0,0,0,0
 376	ASC_KATAR	Weapon	true	Weapon	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 378	ASC_EDP	Weapon	true	Weapon	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
+379	ASC_BREAKER	Weapon	false	Weapon	false	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 380	SN_SIGHT	Weapon	true	Weapon	true	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 381	SN_FALCONASSAULT	Misc	false	Misc	false	IgnoreDefCard,IgnoreFlee	IgnoreFlee	none	0,0,0,0,0	none	0,0,0,0,0
 382	SN_SHARPSHOOTING	Weapon	false	Weapon	false	none	none	Arrow	1,1,1,1,1	Arrow	1,1,1,1,1

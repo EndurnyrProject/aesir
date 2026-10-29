@@ -64,6 +64,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator do
     - `:element` - the skill's attack element (default `:neutral`).
     - `:fixed_damage` - when set, short-circuits the pipeline and returns that
       flat value (default `nil`).
+    - `:ignore_element` - overrides the definition's IgnoreElement for this hit
+      (classic Soul Destroyer's INT part ignores elements; its skill does not).
 
   ## Returns
 
@@ -83,6 +85,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator do
   defp calculate_pipeline_damage(attacker, defender, opts) do
     skill_id = Keyword.fetch!(opts, :skill_id)
     {:ok, definition} = Catalog.by_id(skill_id)
+
+    definition = %{
+      definition
+      | ignore_element: Keyword.get(opts, :ignore_element, definition.ignore_element)
+    }
+
     attack_flag = Keyword.fetch!(opts, :attack_flag)
     element = Keyword.get(opts, :element, :neutral)
 

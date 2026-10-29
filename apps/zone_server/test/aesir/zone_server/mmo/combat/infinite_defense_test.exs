@@ -324,6 +324,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.InfiniteDefenseTest do
                StatusStorage.get_status(:mob, 2004, :sc_kyrie)
     end
 
+    @tag game_mode: :pre_renewal
+    test "a Soul Destroyer contact on a plant deals 1, without its INT part" do
+      stub(UnitRegistry, :get_unit_info, fn :mob, id ->
+        {:ok, %{unit_id: id, unit_type: :mob, stats: %{max_hp: 100, hp: 100, level: 1}}}
+      end)
+
+      :ok = Interpreter.apply_status(:mob, 2005, :sc_aeterna, [])
+      hit = %{contact_hit() | skill_id: 379} |> Map.put(:misc_part, 500)
+
+      assert {1, _hit} =
+               DamageApplication.prepare_unit_damage(:mob, 2005, 1, hit, {:player, 1001})
+
+      assert StatusStorage.has_status?(:mob, 2005, :sc_aeterna)
+    end
+
     test "mark_infinite_defense copies only a contact's plant kind" do
       assert %{infinite_defense: :ordinary} =
                DamageApplication.mark_infinite_defense(%{}, %{damage: 1, plant: :ordinary})

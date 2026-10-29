@@ -156,6 +156,40 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
                )
     end
 
+    test "a fled Soul Destroyer weapon part still lands its INT part", %{caster: caster} do
+      stub(HitCalculations, :calculate_hit_result, fn _hit, _flee -> :miss end)
+
+      stub(DamageCalculator, :calculate_fled_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 0, is_critical: false, misc_part: 40}}
+      end)
+
+      assert {:ok, %{hit?: true, damage: 40}} =
+               SkillAttack.execute_skill_attack(caster, {:mob, 2001},
+                 skill_id: 379,
+                 skill_level: 5,
+                 skip_crit: true,
+                 report_hit: true
+               )
+    end
+
+    test "a fled Soul Destroyer whose INT part settles to nothing is a miss", %{caster: caster} do
+      stub(HitCalculations, :calculate_hit_result, fn _hit, _flee -> :miss end)
+
+      stub(DamageCalculator, :calculate_fled_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 0, is_critical: false, misc_part: 40}}
+      end)
+
+      stub(StatusInterpreter, :absorb_hit, fn :mob, 2001, _damage, _info -> {0, :hit} end)
+
+      assert {:ok, %{hit?: false, connected?: false, damage: 0}} =
+               SkillAttack.execute_skill_attack(caster, {:mob, 2001},
+                 skill_id: 379,
+                 skill_level: 5,
+                 skip_crit: true,
+                 report_hit: true
+               )
+    end
+
     test "a critical divisor divides the chance the skill rolls", %{caster: caster} do
       test_pid = self()
 

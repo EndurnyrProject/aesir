@@ -236,6 +236,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
     end
   end
 
+  describe "Soul Destroyer INT part" do
+    # A neutral step against Ghost 1 would cut the part to a quarter; the INT
+    # part ignores elements, so the base reaches the target whole.
+    @tag game_mode: :pre_renewal
+    test "the hit and the fled result both carry the INT part, with no element step" do
+      ghost = defender() |> Map.put(:element, {:ghost, 1})
+      attacker = with_hands(hand(:right_hand, 100), nil)
+      opts = [skill_id: 379, skill_level: 1, skill_ratio: 100, skip_crit: true, misc_part: 100]
+
+      assert {:ok, %{misc_part: 100}} = DamageCalculator.calculate_damage(attacker, ghost, opts)
+
+      assert {:ok, %{misc_part: 100}} =
+               DamageCalculator.calculate_fled_damage(attacker, ghost, opts)
+    end
+  end
+
   describe "Advanced Katar Mastery" do
     # Level 5 is a 20 percent rate. Defense, RES and crits are zero here, so the
     # raised hit is exactly the reference's step applied to the plain one.

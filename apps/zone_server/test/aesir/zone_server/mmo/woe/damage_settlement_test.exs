@@ -61,6 +61,17 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
     assert Process.alive?(attacker.pid)
   end
 
+  test "a Soul Destroyer misc part takes its own castle-ground rate" do
+    _attacker = register_player(12, @castle_map)
+    _target = register_player(22, @castle_map)
+
+    hit = Map.merge(ordinary_hit(), %{skill_id: 379, misc_part: 50})
+
+    # A skill hit's weapon and misc parts each take the 60 percent skill rate:
+    # 100 -> 60 and 50 -> 30.
+    assert {90, _hit_info} = prepare(22, 100, hit, {:player, 12})
+  end
+
   test "a partial shield absorbs before the castle-ground rate" do
     _attacker = register_player(11, @castle_map)
     target = register_player(21, @castle_map)

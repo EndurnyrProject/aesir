@@ -366,6 +366,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
                        }}
     end
 
+    test "a Soul Destroyer misc part is added after the stage halves the weapon part", ctx do
+      hit = Map.merge(melee_hit(), %{skill_id: 379, misc_part: 30})
+
+      assert {80, _hit_info} =
+               DamageApplication.prepare_unit_damage(
+                 :player,
+                 ctx.target_id,
+                 100,
+                 hit,
+                 ctx.attacker_id
+               )
+    end
+
     test "a dual-wield swing gives the stage only its right-hand part", ctx do
       %{target_id: target_id, attacker_id: attacker_id, attacker_pid: attacker_pid} = ctx
       target_pid = spawn(fn -> Process.sleep(:infinity) end)
@@ -401,6 +414,72 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
       end
 
       refute_received {:final_weapon_hit, _damage, _hit_info}
+    end
+  end
+
+  describe "Soul Destroyer misc part" do
+    setup do
+      target_id = 60
+      stub_unit_info(target_id)
+      %{target_id: target_id, hit: Map.merge(melee_hit(), %{skill_id: 379, misc_part: 30})}
+    end
+
+    @tag game_mode: :pre_renewal
+    test "Lex Aeterna doubles both parts and ends on the misc part", ctx do
+      :ok = Interpreter.apply_status(:player, ctx.target_id, :sc_aeterna, [])
+
+      assert {260, _hit_info} =
+               DamageApplication.prepare_unit_damage(:player, ctx.target_id, 100, ctx.hit, nil)
+
+      refute StatusStorage.has_status?(:player, ctx.target_id, :sc_aeterna)
+    end
+
+    test "a status that blocks the hit blocks the misc part too", ctx do
+      Registry.register_module(FullAbsorb)
+
+      :ok =
+        Interpreter.apply_status(:player, ctx.target_id, :sc_pneuma, state: %{test_pid: self()})
+
+      assert {0, _hit_info} =
+               DamageApplication.prepare_unit_damage(:player, ctx.target_id, 100, ctx.hit, nil)
+    end
+
+    test "equipment damage return reflects only the weapon part", ctx do
+      stub_unit_info(ctx.target_id, %{equip_modifiers: %{short_weapon_damage_return: 30}})
+      attacker_id = 61
+      attacker_pid = spawn(fn -> Process.sleep(:infinity) end)
+      register_attacker(attacker_id, attacker_pid, %{})
+      test_pid = self()
+
+      stub(PlayerSession, :apply_damage, fn pid, damage, source, metadata ->
+        send(test_pid, {:damage, pid, damage, source, metadata})
+        :ok
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      target_pid = spawn(fn -> Process.sleep(:infinity) end)
+
+      {damage, hit} =
+        DamageApplication.prepare_unit_damage(:player, ctx.target_id, 100, ctx.hit, attacker_id)
+
+      assert damage == 130
+
+      DamageApplication.apply_unit_damage(
+        :player,
+        target_pid,
+        ctx.target_id,
+        damage,
+        hit,
+        attacker_id
+      )
+
+      # 30 percent of the weapon part (100), not of the delivered 130
+      assert_received {:damage, ^attacker_pid, 30, _source, %{reflected: true}}
+    end
+
+    test "off siege ground the misc part takes no map rate", ctx do
+      assert {130, _hit_info} =
+               DamageApplication.prepare_unit_damage(:player, ctx.target_id, 100, ctx.hit, nil)
     end
   end
 
@@ -933,33 +1012,36 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     UnitRegistry.register_player(player, pid)
   end
 
-  defp stub_unit_info(target_id) do
+  defp stub_unit_info(target_id, extra \\ %{}) do
     stub(UnitRegistry, :get_unit_info, fn :player, ^target_id ->
       {:ok,
-       %{
-         unit_id: target_id,
-         unit_type: :player,
-         race: :human,
-         element: :neutral,
-         element_level: 1,
-         boss_flag: false,
-         size: :medium,
-         stats: %{
-           max_hp: 1_000,
-           max_sp: 100,
-           hp: 1_000,
-           sp: 100,
-           level: 50,
-           base_level: 50,
-           str: 10,
-           agi: 10,
-           vit: 10,
-           int: 10,
-           dex: 10,
-           luk: 10,
-           mdef: 5
-         }
-       }}
+       Map.merge(
+         %{
+           unit_id: target_id,
+           unit_type: :player,
+           race: :human,
+           element: :neutral,
+           element_level: 1,
+           boss_flag: false,
+           size: :medium,
+           stats: %{
+             max_hp: 1_000,
+             max_sp: 100,
+             hp: 1_000,
+             sp: 100,
+             level: 50,
+             base_level: 50,
+             str: 10,
+             agi: 10,
+             vit: 10,
+             int: 10,
+             dex: 10,
+             luk: 10,
+             mdef: 5
+           }
+         },
+         extra
+       )}
     end)
   end
 end

@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
+  alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Mmo.Mechanics
@@ -143,13 +144,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   @spec calculate_damage(combatant(), combatant(), keyword()) ::
           {:ok, damage_result()} | {:error, atom()}
   def calculate_damage(attacker, defender, opts) do
-    calculate_damage_with(
-      attacker,
-      defender,
-      opts,
-      :primary,
-      :normal
-    )
+    attacker
+    |> calculate_damage_with(defender, opts, :primary, :normal)
+    |> with_misc_part(attacker, defender, opts)
   end
 
   @doc """
@@ -305,10 +302,38 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   """
   @spec calculate_fled_damage(combatant(), combatant(), keyword()) :: {:ok, damage_result()}
   def calculate_fled_damage(attacker, defender, opts) do
-    if classic?(),
-      do: {:ok, classic_fled_damage(select_weapon_hand(attacker, :primary), defender, opts)},
-      else: {:ok, %{damage: 0, is_critical: false}}
+    fled =
+      if classic?(),
+        do: {:ok, classic_fled_damage(select_weapon_hand(attacker, :primary), defender, opts)},
+        else: {:ok, %{damage: 0, is_critical: false}}
+
+    with_misc_part(fled, attacker, defender, opts)
   end
+
+  # Classic Soul Destroyer's INT part (`:misc_part`, the skill's base): the misc
+  # tail with the hit's range and no element step, carried beside the weapon
+  # damage for the target's own settlement. It never rolls flee.
+  defp with_misc_part({:ok, result}, attacker, defender, opts) do
+    case Keyword.get(opts, :misc_part) do
+      base when is_integer(base) ->
+        range = if Keyword.get(opts, :ranged, false), do: :long, else: :short
+
+        {:ok, %{damage: misc}} =
+          MiscDamageCalculator.calculate_misc_damage(attacker, defender,
+            skill_id: Keyword.fetch!(opts, :skill_id),
+            attack_flag: BattleFlags.build(:misc, range, true),
+            base_damage: base,
+            ignore_element: true
+          )
+
+        {:ok, Map.put(result, :misc_part, misc)}
+
+      nil ->
+        {:ok, result}
+    end
+  end
+
+  defp with_misc_part(error, _attacker, _defender, _opts), do: error
 
   # Neither hand has damage, so the attribute step itself is skipped; the Magnum
   # Break share's zero base still takes its element.

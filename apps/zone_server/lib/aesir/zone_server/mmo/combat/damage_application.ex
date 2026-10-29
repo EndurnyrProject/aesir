@@ -113,7 +113,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
       |> absorb_unit_damage(target_type, target_id, hit_info, attacker_id)
 
     {settled, hit_info} = intercept_magic(target_type, target_id, settled, hit_info)
-    settled = final_weapon_hit(settled, target_type, target_id, hit_info, attacker_id)
+    weapon = final_weapon_hit(settled, target_type, target_id, hit_info, attacker_id)
+    settled = settle_misc_part(weapon, target_type, target_id, hit_info, attacker_id, nil)
+    hit_info = mark_misc_settled(hit_info, settled - weapon)
 
     case reroute_to_crusader(target_type, target_id, settled, hit_info, attacker_id) do
       {:rerouted, _delivery} -> {0, rerouted(hit_info, settled)}
@@ -162,6 +164,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
       absorbed
       |> apply_ground_rate(Rules.damage_rate(hit_info))
       |> final_weapon_hit(target_type, target_id, prepared_hit, attacker)
+      |> settle_misc_part(
+        target_type,
+        target_id,
+        prepared_hit,
+        attacker,
+        Rules.damage_rate(hit_info)
+      )
 
     finish_ground_hit(target_type, target_id, settled, prepared_hit, attacker)
   end
@@ -798,6 +807,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   defp apply_ground_rate(damage, _rate), do: damage
 
+  # Classic Soul Destroyer's INT part settles after the weapon part as its own
+  # misc hit: the target's damage statuses (Lex Aeterna ends here), then the
+  # siege rate when the target stands on siege ground (`rate`), and joins the
+  # weapon damage. A block it meets does not mark the weapon hit.
+  defp settle_misc_part(
+         weapon,
+         target_type,
+         target_id,
+         %{misc_part: misc} = hit_info,
+         attacker,
+         rate
+       )
+       when is_integer(misc) do
+    misc_hit = hit_info |> Map.delete(:misc_part) |> Map.put(:dmg_type, :misc)
+    {settled, _misc_hit} = absorb_unit_damage(misc, target_type, target_id, misc_hit, attacker)
+    weapon + if(rate, do: apply_ground_rate(settled, rate), else: settled)
+  end
+
+  defp settle_misc_part(weapon, _target_type, _target_id, _hit_info, _attacker, _rate), do: weapon
+
+  # The settled INT part, which the equipment damage return never sees.
+  defp mark_misc_settled(hit_info, 0), do: hit_info
+  defp mark_misc_settled(hit_info, misc), do: Map.put(hit_info, :misc_settled, misc)
+
   # Status absorb hooks see the hit's source as `hit_info.attacker` (a typed
   # unit ref, or nil when unknown), e.g. Basilica letting only bosses through.
   # A hit a blocking status stopped is marked `blocked?: true`.
@@ -1051,7 +1084,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
       |> mark_trap_return(target_type, target_id)
 
     status_reflect = StatusInterpreter.after_damage_taken(target_type, target_id, delivered_hit)
-    equip_reflect = equipment_damage_return(target_type, target_id, delivered_hit)
+
+    equip_reflect =
+      equipment_damage_return(
+        target_type,
+        target_id,
+        Map.put(delivered_hit, :damage, max(damage - Map.get(hit_info, :misc_settled, 0), 0))
+      )
 
     apply_reflected_damage(
       [status_reflect, equip_reflect],
