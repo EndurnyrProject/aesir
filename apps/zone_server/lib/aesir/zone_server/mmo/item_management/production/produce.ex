@@ -9,7 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Produce do
   to it, so each hammer lists its weapon tier and the tiers below. A product is
   offered when the first recipe making it whose required skill is learned at the
   recipe's level passes the trigger, every material is held (an amount of zero
-  only needs possession) and one more copy still fits an existing stack. While
+  only needs possession) and one more copy fits (`fits_inventory?/2`). A negative
+  trigger (a skill producing directly, without a list) accepts any item level. While
   another skill's menu is open, a recipe needing a different skill does not
   count. Every recipe is walked in database order, so a product two recipes
   make is offered twice.
@@ -28,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Produce do
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes.Recipe
   alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
@@ -58,7 +60,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Produce do
 
     with {:ok, item_def} <- ItemManagement.get_item_by_id(product_id),
          %Recipe{} = recipe <- first_recipe(product_id, learned, open_menu_skill_id),
-         true <- fits_stack?(caster.inventory, item_def),
+         true <- fits_inventory?(caster.inventory, item_def),
          true <- trigger_allows?(trigger, recipe.item_level),
          true <- materials_held?(caster.inventory, recipe.materials) do
       {:ok, recipe}
@@ -92,11 +94,38 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Produce do
     end)
   end
 
-  defp fits_stack?(inventory, item_def) do
-    not ItemDefinition.stackable?(item_def) or
-      ItemContainer.held_amount(inventory, item_def.id) < @max_stack
+  @doc """
+  Whether one more copy of `item_def` fits `inventory`, weight aside.
+
+  A non-stackable item always fits. A stackable one must fit its own inventory
+  stack limit, and the first slot already holding it (the lowest index) must stay
+  below 30,000 and that limit and lie within the usable inventory slots.
+  """
+  @spec fits_inventory?(ItemContainer.t(), ItemDefinition.t()) :: boolean()
+  def fits_inventory?(inventory, item_def) do
+    limit = ItemDefinition.stack_limit(item_def, :inventory)
+
+    cond do
+      not ItemDefinition.stackable?(item_def) -> true
+      limit != nil and limit < 1 -> false
+      true -> first_stack_fits?(first_held(inventory, item_def.id), limit)
+    end
   end
 
+  defp first_stack_fits?(nil, _limit), do: true
+
+  defp first_stack_fits?({index, held}, limit) do
+    held.amount < @max_stack and (is_nil(limit) or held.amount < limit) and
+      index < Inventory.capacity()
+  end
+
+  defp first_held(inventory, item_id) do
+    inventory
+    |> Enum.filter(fn {_index, item} -> item.nameid == item_id end)
+    |> Enum.min_by(fn {index, _item} -> index end, fn -> nil end)
+  end
+
+  defp trigger_allows?(trigger, _item_level) when trigger < 0, do: true
   defp trigger_allows?(trigger, item_level) when trigger > 20, do: item_level == trigger
   defp trigger_allows?(trigger, item_level) when trigger > 10, do: item_level in 11..20
   defp trigger_allows?(trigger, item_level), do: item_level <= trigger

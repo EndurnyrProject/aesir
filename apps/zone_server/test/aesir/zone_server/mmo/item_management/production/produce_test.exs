@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ProduceTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Produce
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -47,6 +48,43 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ProduceTest do
     end
   end
 
+  describe "fits_inventory?/2" do
+    test "a non-stackable product always fits" do
+      assert Produce.fits_inventory?(%{0 => stack(900, 30_000)}, item_def(:weapon, %{}))
+    end
+
+    test "one more copy must fit the item's own inventory stack limit" do
+      limited = item_def(:usable, %{inventory: 5})
+
+      assert Produce.fits_inventory?(%{0 => stack(900, 4)}, limited)
+      refute Produce.fits_inventory?(%{0 => stack(900, 5)}, limited)
+      refute Produce.fits_inventory?(%{}, item_def(:usable, %{inventory: 0}))
+    end
+
+    test "only the first slot holding the item is checked against the 30,000 cap" do
+      plain = item_def(:usable, %{})
+
+      assert Produce.fits_inventory?(%{3 => stack(900, 1), 50 => stack(900, 29_999)}, plain)
+      refute Produce.fits_inventory?(%{3 => stack(900, 30_000), 50 => stack(900, 1)}, plain)
+    end
+
+    test "a held stack beyond the usable inventory slots does not fit" do
+      plain = item_def(:usable, %{})
+
+      assert Produce.fits_inventory?(%{99 => stack(900, 1)}, plain)
+      refute Produce.fits_inventory?(%{100 => stack(900, 1)}, plain)
+    end
+  end
+
+  describe "producible/4" do
+    test "a negative trigger accepts a recipe of any item level" do
+      caster = caster(%{94 => 1}, [{1002, 1}])
+
+      assert {:ok, %{product_id: 998}} = Produce.producible(caster, 998, -1, 0)
+      assert :error = Produce.producible(caster, 998, 1, 0)
+    end
+  end
+
   describe "on_menu_reply/4" do
     test "a reply the trigger does not allow closes without producing" do
       caster = caster(%{98 => 3}, [{984, 4}, {999, 40}, {726, 1}])
@@ -62,6 +100,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ProduceTest do
                Produce.on_menu_reply(caster, %{id: 1101, extras: []}, 1, %{trading?: true})
     end
   end
+
+  defp item_def(type, stack_limit),
+    do: %ItemDefinition{
+      id: 900,
+      aegis_name: "Test",
+      name: "Test",
+      type: type,
+      stack_limit: stack_limit
+    }
+
+  defp stack(id, amount), do: %InventoryItem{nameid: id, amount: amount, identify: 1}
 
   defp caster(learned, items) do
     stats =
