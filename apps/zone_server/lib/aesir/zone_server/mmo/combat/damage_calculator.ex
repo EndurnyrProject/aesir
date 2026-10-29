@@ -54,6 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   @unsplit_plant_skills [263, 267]
   @cart_revolution 153
   @sacrifice 368
+  @meteor_assault 406
 
   @typedoc """
   Result of damage calculation containing final damage and critical hit status.
@@ -885,6 +886,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     classic_hand_stage(parts, context, hit, secondary)
   end
 
+  # Renewal's weapon element property rate, which Meteor Assault never takes.
+  defp watk_element_rate(_modifiers, @meteor_assault), do: 0
+  defp watk_element_rate(modifiers, _skill_id), do: Map.get(modifiers, :watk_element_rate, 0)
+
   # Advanced Katar Mastery's percent for a player wielding a katar.
   defp katar_atk_rate(%{unit_type: :player} = attacker) do
     if katar?(attacker), do: AscKatar.damage_rate(attacker.advanced_katar_level), else: 0
@@ -1289,6 +1294,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       damage_multiplier: Map.get(attacker_modifiers, :damage_multiplier, 0),
       equipment_atk_rate: EquipmentBonuses.percent_atk_rate(attacker, attacker_modifiers),
       katar_atk_rate: katar_atk_rate(attacker),
+      watk_element_rate: watk_element_rate(attacker_modifiers, skill_id),
       edp_level:
         case held_edp(attacker) do
           %{val1: level} -> level

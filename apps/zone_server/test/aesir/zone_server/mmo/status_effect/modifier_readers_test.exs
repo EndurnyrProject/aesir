@@ -78,6 +78,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                :enchant_arms_element,
                :damage_bonus,
                :damage_multiplier,
+               # PhysicalAttack.Renewal weapon component (renewal SC_WATK_ELEMENT)
+               :watk_element_rate,
                :def_bonus,
                :def_rate,
                :def2_rate,

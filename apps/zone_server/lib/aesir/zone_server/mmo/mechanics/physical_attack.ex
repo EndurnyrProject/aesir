@@ -98,6 +98,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
           optional(:stave_matk) => non_neg_integer(),
           optional(:edp_level) => non_neg_integer(),
           optional(:katar_atk_rate) => non_neg_integer(),
+          optional(:watk_element_rate) => integer(),
           size_rate: integer(),
           attacker_cards: [integer()],
           defense: Defense.physical_context()

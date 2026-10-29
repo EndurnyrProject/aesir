@@ -32,6 +32,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
       assert {:ok, :sc_blessing} = Resolver.resolve_status("SC_BLESSING")
     end
 
+    test "maps SC_WATK_ELEMENT so scripts can start the weapon element property" do
+      assert {:ok, :sc_watk_element} = Resolver.resolve_status("SC_WATK_ELEMENT")
+    end
+
     test "maps the SC_INCAGI alias to :sc_increaseagi" do
       assert {:ok, :sc_increaseagi} = Resolver.resolve_status("SC_INCAGI")
     end

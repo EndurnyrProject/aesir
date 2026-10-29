@@ -182,6 +182,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "SC_BATKFOOD" => :sc_batkfood,
     "SC_MATKFOOD" => :sc_matkfood,
     "SC_WATKFOOD" => :sc_watkfood,
+    "SC_WATK_ELEMENT" => :sc_watk_element,
     "SC_INCSTR" => :sc_incstr,
     "SC_INCINT" => :sc_incint,
     "SC_INCDEX" => :sc_incdex,

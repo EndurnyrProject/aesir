@@ -294,6 +294,42 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
     end
   end
 
+  describe "Renewal weapon element property rate (SC_WATK_ELEMENT)" do
+    test "raises only the weapon component, after its cards and before EDP" do
+      weapon_only = %{
+        parts()
+        | weapon_atk: 103,
+          status_atk: 0,
+          flat_atk: 0,
+          refine_atk: 0,
+          overrefine_atk: 0,
+          mastery_atk: 0
+      }
+
+      context = neutral_context() |> Map.merge(%{defense_mode: :ignore, edp_level: 1})
+
+      # EDP level 1 is 280%. 103 + 20% = 123, * 2.8 = 344 (345 if EDP came first).
+      assert renewal(weapon_only, context) == 288
+      assert renewal(weapon_only, Map.put(context, :watk_element_rate, 20)) == 344
+    end
+
+    test "leaves the equipment component alone" do
+      equipment_only = %{
+        parts()
+        | weapon_atk: 0,
+          status_atk: 0,
+          refine_atk: 0,
+          overrefine_atk: 0,
+          mastery_atk: 0
+      }
+
+      context = Map.put(neutral_context(), :defense_mode, :ignore)
+
+      assert renewal(equipment_only, Map.put(context, :watk_element_rate, 20)) ==
+               renewal(equipment_only, context)
+    end
+  end
+
   defp neutral_context do
     %{
       context()

@@ -8,7 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
   of both hands, in the reference order) and doubles right-hand status ATK,
   `after_component_elements/2` derives the equipment percentage part and then
   adds Stave Crasher's rolled MATK (`:stave_matk`) to the weapon component,
-  `calculate_components/2` runs component cards, the critical or signed
+  `calculate_components/2` runs component cards, the weapon element property rate
+  on the weapon component (`:watk_element_rate`) and EDP, the critical or signed
   non-critical equipment bonus, the skill ratio (started from the ATK percent,
   with the status ratio adds), Advanced Katar Mastery's rate (`:katar_atk_rate`)
   and defense, and
@@ -83,7 +84,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
     mastery = modified_component(components.mastery_atk, context, :status)
 
     weapon =
-      components.weapon_atk |> modified_component(context, :weapon) |> edp_component(context)
+      components.weapon_atk
+      |> modified_component(context, :weapon)
+      |> PhysicalAttack.add_rate(Map.get(context, :watk_element_rate, 0))
+      |> edp_component(context)
 
     equipment =
       components.flat_atk |> modified_component(context, :weapon) |> edp_component(context)

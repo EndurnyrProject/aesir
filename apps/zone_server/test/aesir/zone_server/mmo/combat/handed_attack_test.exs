@@ -202,6 +202,40 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
     end
   end
 
+  describe "renewal weapon element property rate" do
+    setup do
+      stub(ModifierCalculator, :get_battle_modifiers, fn
+        :player, _id -> %{watk_element_rate: 20}
+        _type, _id -> %{}
+      end)
+
+      :ok
+    end
+
+    @tag game_mode: :renewal
+    test "raises a normal attack" do
+      attacker = with_hands(hand(:right_hand, 100), nil)
+      {:ok, raised} = HandedAttack.calculate(player(%{}, :dagger), attacker, defender())
+
+      stub(ModifierCalculator, :get_battle_modifiers, fn _type, _id -> %{} end)
+      {:ok, plain} = HandedAttack.calculate(player(%{}, :dagger), attacker, defender())
+
+      assert raised.primary.damage > plain.primary.damage
+    end
+
+    @tag game_mode: :renewal
+    test "does not raise Meteor Assault" do
+      attacker = with_hands(hand(:right_hand, 100), nil)
+      opts = [skill_id: 406, skill_level: 1, skill_ratio: 100, skip_crit: true]
+      {:ok, %{damage: with_rate}} = DamageCalculator.calculate_damage(attacker, defender(), opts)
+
+      stub(ModifierCalculator, :get_battle_modifiers, fn _type, _id -> %{} end)
+      {:ok, %{damage: plain}} = DamageCalculator.calculate_damage(attacker, defender(), opts)
+
+      assert with_rate == plain
+    end
+  end
+
   describe "Advanced Katar Mastery" do
     # Level 5 is a 20 percent rate. Defense, RES and crits are zero here, so the
     # raised hit is exactly the reference's step applied to the plain one.
