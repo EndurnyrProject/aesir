@@ -45,6 +45,7 @@ sc_blessing	ends	ends
 sc_blind	ends	ends
 sc_bloodlust	ends	ends
 sc_boost500	ends	ends
+sc_cartboost	survives	survives
 sc_chasewalk	ends	ends
 sc_chasewalk2	ends	ends
 sc_cloaking	ends	ends
