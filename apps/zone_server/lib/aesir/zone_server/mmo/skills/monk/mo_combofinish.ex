@@ -64,6 +64,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Formulas
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @behaviour Active
 
@@ -99,7 +100,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
     [
       skill_id: definition.id,
       skill_level: level,
-      skill_ratio: Formulas.thrust_ratio(level, caster.stats.base_stats.str),
+      skill_ratio:
+        Formulas.thrust_ratio(level, PlayerStats.get_effective_stat(caster.stats, :str)),
       hit_divisions: Formulas.thrust_hit_count(),
       skip_crit: true
     ]

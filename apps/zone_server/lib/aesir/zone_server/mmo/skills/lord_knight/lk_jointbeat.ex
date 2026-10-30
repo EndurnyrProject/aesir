@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkJointbeat do
     ]
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Jointbeat
@@ -60,7 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkJointbeat do
 
   defp maybe_apply_break(caster, target, break, level) do
     # Per mille: `status_change_start` gets ten times this per 10000.
-    chance = 50 * (level + 1) - div(270 * target.base_stats.str, 100)
+    chance = 50 * (level + 1) - div(270 * DamageInputs.effective_stat(target, :str), 100)
 
     _ =
       Interpreter.apply_status(target.unit_type, target.unit_id, :sc_jointbeat,

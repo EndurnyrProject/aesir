@@ -92,6 +92,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkJointbeatTest do
     assert break in Jointbeat.breaks()
   end
 
+  test "a player's total STR reduces the wound chance" do
+    target = PlayerStateFixture.build(%{character_id: 6_150, stats: %{}})
+    target = put_in(target.stats.base_stats.str, 20)
+
+    target =
+      put_in(target.stats.modifiers, %{
+        target.stats.modifiers
+        | job_bonuses: %{str: 3},
+          equipment: %{str: 5},
+          status_effects: %{str: 7}
+      })
+
+    :ok = UnitRegistry.register_player(target, self())
+    caster = spear_caster()
+    {:ok, definition} = Catalog.by_name(:lk_jointbeat)
+    combatant = PlayerState.to_combatant(target)
+    stub(Combat, :resolve_combatant, fn 6_150 -> {:ok, combatant} end)
+    stub(Combat, :execute_skill_attack, fn _caster, 6_150, _opts -> {:ok, %{hit?: true}} end)
+
+    expect(StatusInterpreter, :apply_status, fn :player, 6_150, :sc_jointbeat, params ->
+      assert params[:success_rate] == 45.6
+      {:error, :resisted}
+    end)
+
+    assert {:ok, ^caster} = LkJointbeat.cast(caster, {:unit, 6_150}, 10, definition)
+  end
+
   test "forwards a non-positive break chance" do
     caster = spear_caster()
     {:ok, definition} = Catalog.by_name(:lk_jointbeat)

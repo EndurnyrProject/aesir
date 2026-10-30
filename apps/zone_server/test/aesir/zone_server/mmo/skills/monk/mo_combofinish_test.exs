@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinishTest do
   import Mimic
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -36,7 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinishTest do
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
       assert opts[:skill_id] == 273
       assert opts[:skill_level] == 3
-      assert opts[:skill_ratio] == 740
+      assert opts[:skill_ratio] == 746
       assert opts[:hit_divisions] == 1
       assert opts[:skip_crit]
       :ok
@@ -46,6 +47,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinishTest do
              MoCombofinish.cast(caster, {:unit, @target_id}, 3, MoCombofinish.definition())
 
     assert updated.combo.stage == :idle
+  end
+
+  test "Thrust uses total STR only in Renewal" do
+    Mimic.set_mimic_private()
+    caster = caster(:thrust)
+
+    caster =
+      put_in(caster.stats.modifiers, %{
+        caster.stats.modifiers
+        | job_bonuses: %{str: 3},
+          equipment: %{str: 5},
+          status_effects: %{str: 7}
+      })
+
+    expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+      expected = if GameMode.mode() == :renewal, do: 755, else: 420
+      assert opts[:skill_ratio] == expected
+      :ok
+    end)
+
+    assert {:ok, %{combo: %{stage: :idle}}} =
+             MoCombofinish.cast(caster, {:unit, @target_id}, 3, MoCombofinish.definition())
   end
 
   test "a failed strike leaves the Thrust window open" do
