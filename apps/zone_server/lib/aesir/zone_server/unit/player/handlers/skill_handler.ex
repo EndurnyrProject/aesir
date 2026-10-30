@@ -2052,7 +2052,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       offer =
       game_state.pending_menu_offer
 
-    opts = offer |> Map.take([:labels, :context]) |> Map.to_list()
+    opts = offer |> Map.take([:labels, :context, :preserve_pending_on_empty]) |> Map.to_list()
 
     %{state | game_state: %{game_state | pending_menu_offer: nil}}
     |> SkillMenuHandler.open(skill_id, kind, entry_ids, level, opts)

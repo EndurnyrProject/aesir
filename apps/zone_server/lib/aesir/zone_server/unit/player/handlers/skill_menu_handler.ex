@@ -71,7 +71,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   def open(state, skill_id, kind, entry_ids, level),
     do: open(state, skill_id, kind, entry_ids, level, [])
 
-  @doc "Opens a menu with optional labels and server-owned reply context."
+  @doc """
+  Opens a menu with optional labels and server-owned reply context.
+  `preserve_pending_on_empty: true` sends an empty view without arming or
+  replacing the pending descriptor; the default retains ordinary replacement.
+  """
   @spec open(
           map(),
           non_neg_integer(),
@@ -91,12 +95,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
         labels: Keyword.get(opts, :labels, [])
       })
 
-      %{
+      if entry_ids == [] and Keyword.get(opts, :preserve_pending_on_empty, false) do
         state
-        | pending_skill_menu:
-            %{skill_id: skill_id, kind: kind, entry_ids: entry_ids, level: level}
-            |> Map.merge(Map.new(Keyword.take(opts, [:context])))
-      }
+      else
+        %{
+          state
+          | pending_skill_menu:
+              %{skill_id: skill_id, kind: kind, entry_ids: entry_ids, level: level}
+              |> Map.merge(Map.new(Keyword.take(opts, [:context])))
+        }
+      end
     end
   end
 
