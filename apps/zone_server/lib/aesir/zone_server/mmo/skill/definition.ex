@@ -48,6 +48,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   `ignore_auto_guard` mirrors the source's IgnoreAutoGuard flag: the skill's
   weapon hits are never blocked by Guard. It is mode-keyable.
 
+  `ignore_cicada` declares whether Cicada-style evasion can intercept the skill.
+  It defaults to false and is mode-keyable.
+
   `cast_cancel` mirrors the source's CastCancel flag (default true): damage to
   the caster cancels the skill's cast. It is mode-keyable.
 
@@ -194,6 +197,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             ignore_noncrit_atk_bonus: false,
             ignore_atk_card: false,
             ignore_auto_guard: false,
+            ignore_cicada: false,
             ignore_def_card: false,
             ignore_element: false,
             ignore_flee: false,
@@ -262,6 +266,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           ignore_noncrit_atk_bonus: boolean(),
           ignore_atk_card: boolean(),
           ignore_auto_guard: boolean(),
+          ignore_cicada: boolean(),
           ignore_def_card: boolean(),
           ignore_element: boolean(),
           ignore_flee: boolean(),
@@ -338,6 +343,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     ignore_noncrit_atk_bonus: :boolean,
     ignore_atk_card: :boolean,
     ignore_auto_guard: :boolean,
+    ignore_cicada: :boolean,
     ignore_def_card: :boolean,
     ignore_element: :boolean,
     ignore_flee: :boolean,
@@ -398,6 +404,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     ignore_noncrit_atk_bonus: false,
     ignore_atk_card: false,
     ignore_auto_guard: false,
+    ignore_cicada: false,
     ignore_def_card: false,
     ignore_element: false,
     ignore_flee: false,
@@ -455,6 +462,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     :ignore_noncrit_atk_bonus,
     :ignore_atk_card,
     :ignore_auto_guard,
+    :ignore_cicada,
     :ignore_def_card,
     :ignore_element,
     :ignore_flee,

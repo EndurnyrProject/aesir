@@ -6,7 +6,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ReflectShield do
   Implements `after_damage_taken/4`: `val1` carries the skill level, and every
   short-range physical or misc hit that is neither reflected nor redirected
   reflects `(10 + 3 * val1)` percent of the delivered damage back to the
-  attacker. A short trap hit on a player whose equipment returns melee damage
+  attacker. Cart Termination does not trigger this status in either mode.
+  A short trap hit on a player whose equipment returns melee damage
   (`trap_return?`) is returned by that equipment instead. A copy
   inherited through Devotion (`state.inherited`) reflects skills only, and a
   devotee standing out of its Crusader's Devotion range reflects nothing.
@@ -78,6 +79,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ReflectShield do
 
   defp reflectable?(hit_info) do
     not Map.has_key?(hit_info, :infinite_defense) and
+      Map.get(hit_info, :skill_id) != 485 and
       reflectable_type?(hit_info) and
       Map.get(hit_info, :is_short, false) == true and
       not Map.get(hit_info, :reflected, false) and

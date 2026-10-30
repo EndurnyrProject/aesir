@@ -127,6 +127,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Audit do
       compare_ammo(definition, source_row, max_level) ++
       compare_require_weapon(definition, source_row) ++
       compare_vulture_range(definition, source_row) ++
+      compare_ignore_cicada(definition, source_row) ++
       compare_item_cost(definition, source_row)
   end
 
@@ -401,6 +402,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Audit do
     if source_flag == aesir_flag,
       do: [],
       else: [%{field: :vulture_range, aesir: aesir_flag, source: source_flag}]
+  end
+
+  @spec compare_ignore_cicada(Definition.t(), map()) :: [finding()]
+  defp compare_ignore_cicada(%Definition{ignore_cicada: aesir_flag}, source_row) do
+    source_flag = fetch_path(source_row, ["Flags", "IgnoreCicada"], false) == true
+
+    if source_flag == aesir_flag,
+      do: [],
+      else: [%{field: :ignore_cicada, aesir: aesir_flag, source: source_flag}]
   end
 
   @spec compare_item_cost(Definition.t(), map()) :: [finding()]
