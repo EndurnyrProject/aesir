@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Skills.Thief.TfSteal
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoison
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -1439,18 +1440,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     DamageApplication.broadcast_nearby(target, packet)
   end
 
-  # A player's summon answers the additional-effect stage with its master's
-  # equipment breaks. The survival gate needs the target's pre-hit HP, which
-  # this path does not otherwise carry: it is read before the hit is delivered,
-  # and only for a summon, so the ordinary monster path stays lookup-free.
+  # Summons inherit equipment rates; an ordinary monster holding Meltdown has
+  # its own rates. Only these hits need the target's pre-delivery HP snapshot.
   defp summon_break_hit(
-         %{unit_type: :mob, proc_owner_id: owner} = attacker,
+         %{unit_type: :mob, proc_owner_id: owner, unit_id: id} = attacker,
          target_type,
          target_id,
          damage,
          hit_info
-       )
-       when is_integer(owner) do
+       ) do
+    if is_integer(owner) or StatusStorage.has_status?(:mob, id, :sc_meltdown) do
+      prepare_mob_break_hit(attacker, target_type, target_id, damage, hit_info)
+    else
+      :none
+    end
+  end
+
+  defp summon_break_hit(_attacker, _target_type, _target_id, _damage, _hit_info), do: :none
+
+  defp prepare_mob_break_hit(attacker, target_type, target_id, damage, hit_info) do
     case TargetResolver.resolve(target_type, target_id) do
       {:ok, target_pid, target_state, ^target_type} ->
         attack_flag = normal_attack_flag(attacker)
@@ -1466,8 +1474,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         :none
     end
   end
-
-  defp summon_break_hit(_attacker, _target_type, _target_id, _damage, _hit_info), do: :none
 
   defp dispatch_summon_breaks(:none, _delivery), do: :ok
   defp dispatch_summon_breaks(_hit, {:error, _reason}), do: :ok

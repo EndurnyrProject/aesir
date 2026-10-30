@@ -213,6 +213,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.WhitesmithBreakDecisionsTest do
            ) == []
   end
 
+  test "legacy_opaque_nonplayer_targets_remain_safe" do
+    meltdown(:mob, 201)
+    context = %{attacker: {:mob, 201}, source: {:mob, 201}, wearer: nil}
+
+    assert EquipBreak.resolve(context, {:mob, %URI{}},
+             rng: fn _ -> flunk("opaque target rolled") end
+           ) == []
+  end
+
   defp wearer(mods) do
     wearer =
       CombatTestHelper.create_player_combatant(unit_id: 101, weapon_type: :one_handed_sword)

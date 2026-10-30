@@ -106,7 +106,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
 
   defp removed_cleanups(previous, current) do
     previous
-    |> Map.drop(Map.keys(current))
+    |> Enum.reject(fn {key, cleanup} ->
+      case Map.fetch(current, key) do
+        {:ok, retained} -> Map.get(cleanup, :refine) == Map.get(retained, :refine)
+        :error -> false
+      end
+    end)
     |> Enum.sort_by(fn {_key, cleanup} -> cleanup.source_order end)
   end
 

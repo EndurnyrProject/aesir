@@ -648,7 +648,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
 
   defp effective_zeny_cost(caster, skill_id, cost) when skill_id in [42, 485] do
     eligible? = skill_id == 42 or GameMode.mode() == :renewal
-    reduction = if eligible?, do: Passives.zeny_cost_reduction(caster), else: 0
+
+    reduction =
+      if eligible?, do: caster |> Passives.zeny_cost_reduction() |> min(100) |> max(0), else: 0
+
     cost - div(cost * reduction, 100)
   end
 

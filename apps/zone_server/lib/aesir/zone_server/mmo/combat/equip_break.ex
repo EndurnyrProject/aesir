@@ -79,10 +79,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
   configured natural rate plus the pre-renewal Over Thrust terms of the
   **attacking unit's** status container (which stays the summon's for a summon's
   hit), and the wearer's own weapon, prevention and Chemical Protection
-  (Weapon). A bare wearer is its own attacking unit.
+  (Weapon). A bare wearer is its own attacking unit. An explicit three-identity
+  hit context delegates to `resolve_hit/3`, retaining this call boundary for
+  existing combat consumers and legacy non-player target tuples.
   """
-  @spec resolve(context() | Stats.t() | Combatant.t(), target(), keyword()) :: [decision()]
+  @spec resolve(
+          context() | hit_context() | Stats.t() | Combatant.t(),
+          target() | hit_target(),
+          keyword()
+        ) :: [decision()]
   def resolve(wearer_or_context, target, opts \\ [])
+
+  def resolve(%{wearer: _, attacker: _, source: _} = context, target, opts) do
+    resolve_hit(context, hit_target(target), opts)
+  end
 
   def resolve(%{wearer: wearer, attacker: attacker}, target, opts) do
     rng = Keyword.get(opts, :rng, @default_rng)
@@ -126,6 +136,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
     end
   end
 
+  defp hit_target({:player, _, _} = target), do: target
+  defp hit_target({:unit, _, _} = target), do: target
+
+  defp hit_target({type, %module{} = state}) do
+    if function_exported?(module, :get_unit_id, 1),
+      do: {:unit, type, module.get_unit_id(state)},
+      else: nil
+  end
+
+  defp hit_target({type, id}) when is_integer(id), do: {:unit, type, id}
+  defp hit_target(_opaque_legacy_target), do: nil
+
   defp hit_self_decisions(nil, _attacker, _rng), do: []
 
   defp hit_self_decisions(wearer, attacker, rng),
@@ -161,6 +183,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
       []
     end
   end
+
+  defp hit_target_decisions(_weapon_rate, _armor_rate, _source, _target, _rng), do: []
 
   @doc """
   Resolves the target weapon and armor break rates alone, without the

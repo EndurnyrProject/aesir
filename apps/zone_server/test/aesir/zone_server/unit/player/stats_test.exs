@@ -2891,14 +2891,17 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       expected = %{
         {44, 0} => %{
+          refine: 7,
           source_order: {0, 0},
           effects: [{:heal, 7, 20}, {:status_end, :summer}]
         },
         {44, 1} => %{
+          refine: 7,
           source_order: {0, 1},
           effects: [{:heal, 7, 20}, {:status_end, :summer}]
         },
         {45, 2} => %{
+          refine: 4,
           source_order: {1, 2},
           effects: [{:heal, 4, 20}, {:status_end, :summer}]
         }

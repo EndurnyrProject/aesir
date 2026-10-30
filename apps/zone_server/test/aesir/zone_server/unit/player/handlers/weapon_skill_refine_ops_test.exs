@@ -16,8 +16,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WeaponSkillRefineOpsTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.RefineOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -265,6 +267,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WeaponSkillRefineOpsTest do
       assert {_made, ^expected} =
                RefineOps.weapon_skill(state, 0, state.inventory[0].id, 10, success_roll: 55)
     end
+  end
+
+  test "equipped_refine_runs_card_on_unequip_cleanup", %{player: player} do
+    state = holding(player, refine: 9, equip: 2, card0: 4_165)
+
+    session = %SessionState{
+      game_state: state,
+      connection_pid: self(),
+      applied_card_unequip_effects: state.stats.card_unequip_effects
+    }
+
+    assert {made, {:ok, :success, 10}} =
+             RefineOps.weapon_skill(state, 0, state.inventory[0].id, 10, success_roll: 0)
+
+    assert {:noreply, settled} =
+             EquipProcHandler.reconcile_statuses(%{session | game_state: made})
+
+    assert settled.game_state.stats.current_state.sp == state.stats.current_state.sp - 5
+    assert {:noreply, unchanged} = EquipProcHandler.reconcile_statuses(settled)
+
+    assert unchanged.game_state.stats.current_state.sp ==
+             settled.game_state.stats.current_state.sp
   end
 
   defp holding(player, attrs \\ [], ore \\ 1_010) do

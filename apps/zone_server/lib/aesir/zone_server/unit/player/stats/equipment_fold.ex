@@ -722,6 +722,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
     row_id = card_source_row_id!(item)
 
     cleanup = %{
+      refine: item.refine,
       source_order: {worn_ordinal, card_slot},
       effects: EquipScript.evaluate(program, inputs).effects
     }

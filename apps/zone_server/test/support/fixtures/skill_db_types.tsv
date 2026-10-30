@@ -315,6 +315,8 @@
 381	SN_FALCONASSAULT	Misc	false	Misc	false	IgnoreDefCard,IgnoreFlee	IgnoreFlee	none	0,0,0,0,0	none	0,0,0,0,0
 382	SN_SHARPSHOOTING	Weapon	false	Weapon	false	none	none	Arrow	1,1,1,1,1	Arrow	1,1,1,1,1
 383	SN_WINDWALK	Weapon	true	Weapon	true	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
+384	WS_MELTDOWN	Weapon	true	Weapon	true	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
+387	WS_CARTBOOST	Weapon	true	Weapon	true	none	none	none	0	none	0
 389	ST_CHASEWALK	None	true	None	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 390	ST_REJECTSWORD	Weapon	true	Weapon	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 394	CG_ARROWVULCAN	Weapon	false	Weapon	false	none	none	Arrow	1,1,1,1,1,1,1,1,1,1	Arrow	1,1,1,1,1,1,1,1,1,1
@@ -334,6 +336,7 @@
 459	BS_ADRENALINE2	Weapon	true	Weapon	true	none	none	none	0	none	0
 475	ST_PRESERVE	None	true	None	true	none	none	none	0	none	0
 476	ST_FULLSTRIP	Weapon	true	Weapon	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
+477	WS_WEAPONREFINE	Weapon	true	Weapon	true	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 478	CR_SLIMPITCHER	None	true	None	true	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 479	CR_FULLPROTECTION	Weapon	true	Weapon	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 480	PA_SHIELDCHAIN	Weapon	false	Weapon	false	none	none	none	0,0,0,0,0	none	0,0,0,0,0
@@ -341,6 +344,8 @@
 482	PF_DOUBLECASTING	Magic	true	Magic	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 483	HW_GANBANTEIN	None	true	None	true	none	none	none	0	none	0
 484	HW_GRAVITATION	Magic	false	Misc	true	none	IgnoreDefCard,IgnoreElement,IgnoreFlee	none	0,0,0,0,0	none	0,0,0,0,0
+485	WS_CARTTERMINATION	Weapon	false	Weapon	false	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
+486	WS_OVERTHRUSTMAX	Weapon	true	Weapon	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 487	CG_LONGINGFREEDOM	-	-	None	true	-	none	-	-	none	0,0,0,0,0
 488	CG_HERMODE	Misc	true	Misc	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 489	CG_TAROTCARD	Misc	true	Misc	true	IgnoreFlee	IgnoreFlee	none	0,0,0,0,0	none	0,0,0,0,0

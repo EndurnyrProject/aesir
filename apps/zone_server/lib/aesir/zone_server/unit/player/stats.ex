@@ -160,8 +160,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   @typedoc "Stable identity of one card cleanup source within a worn host row."
   @type card_source_key :: {pos_integer(), 0..3}
 
-  @typedoc "Evaluated card cleanup effects and their deterministic worn-source order."
+  @typedoc "Evaluated card cleanup effects, host refine level, and deterministic worn-source order."
   @type card_cleanup :: %{
+          refine: non_neg_integer(),
           source_order: {non_neg_integer(), 0..3},
           effects: [EquipScript.effect()]
         }

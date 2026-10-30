@@ -46,6 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -253,9 +254,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
           pos_integer() | nil
         ) :: :ok
   def dispatch_breaks(attacker, target, event, attack_flag, skill_id) do
-    if target.type != :skill_unit and break_hit?(event, attack_flag) do
-      wearer = wearer(attacker)
-
+    with true <- target.type != :skill_unit and break_hit?(event, attack_flag),
+         wearer <- wearer(attacker),
+         true <-
+           not is_nil(wearer) or
+             StatusStorage.has_status?(attacker.unit_type, attacker.unit_id, :sc_meltdown) do
       source =
         if wearer,
           do: {wearer.unit_type, wearer.unit_id},
@@ -267,9 +270,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
         source: source
       }
 
-      context
-      |> EquipBreak.resolve_hit(break_target(target), skill_id: skill_id)
-      |> Enum.each(&dispatch_break(&1, context, target))
+      decisions =
+        if skill_id in [337, 485],
+          do: EquipBreak.resolve(context, break_target(target), skill_id: skill_id),
+          else: EquipBreak.resolve(context, break_target(target))
+
+      Enum.each(decisions, &dispatch_break(&1, context, target))
     end
 
     :ok
@@ -293,6 +299,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
 
   defp break_target(%{type: :player, id: id}), do: {:player, id, nil}
 
+  defp break_target(%{type: type, state: state}), do: {type, state}
   defp break_target(%{type: type, id: id}), do: {:unit, type, id}
 
   defp dispatch_break({:self, slot}, %{wearer: wearer}, _target) do

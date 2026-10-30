@@ -52,6 +52,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOps do
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
+  alias Aesir.ZoneServer.Unit.Player.PlayerEvents
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
 
@@ -146,6 +147,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOps do
     case persist_weapon_skill(state, index, ctx, outcome) do
       {:ok, inventory} ->
         advanced = EquipmentHandler.committed_weapon_refine(state, inventory, index)
+        PlayerEvents.inventory_changed(state.character_id)
         {finish_weapon_skill(advanced, index, ctx, outcome), tag(outcome)}
 
       {:error, reason} ->

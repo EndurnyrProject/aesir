@@ -95,8 +95,8 @@ defmodule Aesir.ZoneServer.Integration.EquipStatusLifecycleIntegrationTest do
 
              status_state?(session.pid, character.id, @status_params) and
                state.applied_card_unequip_effects == %{
-                 {armor.id, 0} => %{source_order: {0, 0}, effects: [{:heal, 0, 5}]},
-                 {head.id, 0} => %{source_order: {1, 0}, effects: [{:heal, 0, 5}]}
+                 {armor.id, 0} => %{refine: 0, source_order: {0, 0}, effects: [{:heal, 0, 5}]},
+                 {head.id, 0} => %{refine: 0, source_order: {1, 0}, effects: [{:heal, 0, 5}]}
                } and
                state.game_state.stats.current_state.sp == initial_sp
            end)
@@ -116,7 +116,7 @@ defmodule Aesir.ZoneServer.Integration.EquipStatusLifecycleIntegrationTest do
 
              status_state?(session.pid, character.id, @status_params) and
                state.applied_card_unequip_effects == %{
-                 {head.id, 0} => %{source_order: {0, 0}, effects: [{:heal, 0, 5}]}
+                 {head.id, 0} => %{refine: 0, source_order: {0, 0}, effects: [{:heal, 0, 5}]}
                } and
                state.game_state.stats.current_state.sp == initial_sp + 5 and
                StatusStorage.has_status?(:player, character.id, :sc_strangelights)
