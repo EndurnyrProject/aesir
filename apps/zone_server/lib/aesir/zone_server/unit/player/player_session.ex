@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.FameHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
@@ -1716,7 +1717,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     state = SkillTextInputHandler.clear(state)
     state = SkillHandler.cancel_deferred(state)
     state = SpiritSphereHandler.discard(state)
-    game_state = PlayerState.clear_pending_forced_movement(state.game_state)
+
+    game_state = FameHandler.drain(nil, state.game_state)
+    game_state = PlayerState.clear_pending_forced_movement(game_state)
     state = %{state | game_state: game_state}
     Process.demonitor(connection_monitor_ref, [:flush])
     state = HomunculusCommandHandler.terminate(state)

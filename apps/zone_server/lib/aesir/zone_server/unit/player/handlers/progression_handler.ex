@@ -24,6 +24,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   the separate `resetstate` stat reset.
   """
 
+  require Logger
+
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.SpriteChange
   alias Aesir.ZoneServer.CharacterPersistence
@@ -847,7 +849,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
       }
       |> Map.merge(Map.new(extra))
 
-    CharacterPersistence.update_character(game_state.character_id, fields, async: true)
+    case CharacterPersistence.update_character(game_state.character_id, fields,
+           async: not Map.has_key?(fields, :class)
+         ) do
+      {:error, reason} ->
+        Logger.error(
+          "Failed to update character #{game_state.character_id}: #{inspect(reason)}, fields: #{inspect(fields)}"
+        )
+
+      result ->
+        result
+    end
   end
 
   defp job_for(progression) do

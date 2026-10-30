@@ -101,7 +101,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
        }}
     end)
 
-    stub(CharacterPersistence, :update_character, fn 1000, _attrs, async: true -> {:ok, %{}} end)
+    stub(CharacterPersistence, :update_character, fn 1000, attrs, async: async ->
+      assert async == not Map.has_key?(attrs, :class)
+      {:ok, %{}}
+    end)
+
     stub(Broadcast, :to_player, fn _char_id, _packet -> :ok end)
     stub(Broadcast, :to_visible_players, fn _game_state, _packet, _opts -> :ok end)
 
@@ -933,7 +937,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
     test "leaving a trait job for a non-trait job zeroes the six trait stats and trait_point" do
       test_pid = self()
 
-      stub(CharacterPersistence, :update_character, fn 1000, attrs, async: true ->
+      stub(CharacterPersistence, :update_character, fn 1000, attrs, async: false ->
         send(test_pid, {:persisted, attrs})
         {:ok, %{}}
       end)

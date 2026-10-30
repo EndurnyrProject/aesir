@@ -154,3 +154,4 @@ Mimic.copy(Aesir.Repo)
 # timing jitter in the full-stack integration tests (e.g. npc_events warp flakes).
 GameModeTestSupport.start(assert_receive_timeout: 500)
 Mimic.copy(Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler)
+Mimic.copy(Aesir.ZoneServer.Mmo.Fame.Store)

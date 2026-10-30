@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StateCommit do
   alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.Mmo.Skills.Sage.SaFreecast
   alias Aesir.ZoneServer.Unit.Player.GuildSync
+  alias Aesir.ZoneServer.Unit.Player.Handlers.FameHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PartySync
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -28,6 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StateCommit do
   """
   @spec commit(SessionState.t(), PlayerState.t()) :: SessionState.t()
   def commit(%{game_state: %PlayerState{} = previous} = session, %PlayerState{} = game_state) do
+    game_state = FameHandler.drain(Map.get(session, :connection_pid), game_state)
     UnitRegistry.update_unit_state(:player, game_state.character_id, game_state)
     sync_cast_speed(session, previous, game_state)
 

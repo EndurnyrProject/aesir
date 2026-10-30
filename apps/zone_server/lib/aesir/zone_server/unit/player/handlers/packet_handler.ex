@@ -60,6 +60,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.PartyLeaveRequest
   alias Aesir.Net.PartyOptionsRequest
   alias Aesir.Net.PickupItemRequest
+  alias Aesir.Net.RankingRequest
   alias Aesir.Net.Respawn
   alias Aesir.Net.SkillCast
   alias Aesir.Net.SkillMenuReply
@@ -98,6 +99,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EmoteHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.FameHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
@@ -199,6 +201,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
       when is_struct(message) and message.__struct__ in @room_frozen and in_room?(state) do
     Logger.debug("Dropping #{inspect(message.__struct__)} from a chat-room member")
     {:noreply, state}
+  end
+
+  def handle_message(%RankingRequest{} = request, state) do
+    FameHandler.handle_request(request, state)
   end
 
   def handle_message(%HomunculusRequest{} = request, state) do
