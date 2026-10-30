@@ -294,7 +294,53 @@ message Envelope {
 
     // 228: refused return to character select
     RespawnResult respawn_result = 228;  // s2c zone gameplay
+    // 229-231: production rankings and maker-private fame awards
+    RankingRequest ranking_request = 229;  // c2s zone
+    RankingResponse ranking_response = 230;  // s2c zone gameplay
+    FameUpdate fame_update = 231;  // s2c zone gameplay
   }
+}
+
+// Production rankings available to any authenticated player.
+enum RankingCategory {
+  RANKING_UNSPECIFIED = 0;
+  RANKING_BLACKSMITH = 1;
+  RANKING_ALCHEMIST = 2;
+}
+
+message RankingRequest {
+  RankingCategory category = 1;
+}
+
+// Repeated entry order defines rank, from first to tenth.
+message RankingEntry {
+  uint32 character_id = 1;
+  string name = 2;
+  uint32 fame = 3;
+}
+
+message RankingResponse {
+  enum Result {
+    OK = 0;
+    INVALID_CATEGORY = 1;
+    UNAVAILABLE = 2;
+  }
+  RankingCategory category = 1;
+  // Empty on error; at most ten positive scores on success.
+  repeated RankingEntry entries = 2;
+  // Requester's own production fame, independent of the requested board.
+  // Meaningful only on success; zero for ineligible professions.
+  uint32 own_fame = 3;
+  Result result = 4;
+}
+
+// Private notification to the maker, emitted after fame persistence succeeds.
+message FameUpdate {
+  RankingCategory category = 1;
+  // Requested positive award, even when the total is already capped.
+  uint32 awarded_points = 2;
+  // Resulting fame after applying the 1,000,000,000 cap.
+  uint32 total_fame = 3;
 }
 
 enum CreatorKind {

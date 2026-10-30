@@ -215,6 +215,9 @@
     {"field": 225, "tag": "vending_setup_ready", "message": "VendingSetupReady", "direction": "s2c", "servers": ["zone"], "channel": "world"},
     {"field": 226, "tag": "vending_purchase_result", "message": "VendingPurchaseResult", "direction": "s2c", "servers": ["zone"], "channel": "world"},
     {"field": 227, "tag": "vending_close_result", "message": "VendingCloseResult", "direction": "s2c", "servers": ["zone"], "channel": "world"},
-    {"field": 228, "tag": "respawn_result", "message": "RespawnResult", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"}
+    {"field": 228, "tag": "respawn_result", "message": "RespawnResult", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
+    {"field": 229, "tag": "ranking_request", "message": "RankingRequest", "direction": "c2s", "servers": ["zone"]},
+    {"field": 230, "tag": "ranking_response", "message": "RankingResponse", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
+    {"field": 231, "tag": "fame_update", "message": "FameUpdate", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"}
   ]
 }
