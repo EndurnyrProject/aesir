@@ -227,7 +227,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
     definition = item_cost_definition(caster, module, target, level, definition)
 
     with {:ok, cost} <- resolve_cost(caster, module, target, level, definition) do
-      zeny = effective_zeny_cost(caster, Enum.at(definition.zeny_cost, level - 1, 0))
+      zeny =
+        effective_zeny_cost(caster, definition.id, Enum.at(definition.zeny_cost, level - 1, 0))
+
       {:ok, definition, cost, zeny}
     end
   end
@@ -346,7 +348,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
       cost = waive_proc_sp(cost, definition)
 
       zeny =
-        min(effective_zeny_cost(caster, Enum.at(definition.zeny_cost, level - 1, 0)), caster.zeny)
+        min(
+          effective_zeny_cost(caster, definition.id, Enum.at(definition.zeny_cost, level - 1, 0)),
+          caster.zeny
+        )
 
       {:ok,
        caster
@@ -639,12 +644,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
     Cost.validate_resolved(cost)
   end
 
-  defp effective_zeny_cost(_caster, 0), do: 0
+  defp effective_zeny_cost(_caster, _skill_id, 0), do: 0
 
-  defp effective_zeny_cost(caster, cost) do
-    reduction = caster |> Passives.zeny_cost_reduction() |> min(100) |> max(0)
-    div(cost * (100 - reduction), 100)
+  defp effective_zeny_cost(caster, skill_id, cost) when skill_id in [42, 485] do
+    eligible? = skill_id == 42 or GameMode.mode() == :renewal
+    reduction = if eligible?, do: Passives.zeny_cost_reduction(caster), else: 0
+    cost - div(cost * reduction, 100)
   end
+
+  defp effective_zeny_cost(_caster, _skill_id, cost), do: cost
 
   # Too few spheres reports how many the skill needs.
   defp check_spheres(caster, cost) do

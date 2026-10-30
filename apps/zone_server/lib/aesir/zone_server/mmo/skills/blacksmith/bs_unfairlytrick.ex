@@ -1,9 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsUnfairlytrick do
   @moduledoc """
-  Unfair Trick (BS_UNFAIRLYTRICK). Reduces the zeny cost of zeny-consuming skills
-  (Mammonite and, in renewal, Cart Termination).
+  Unfair Trick (BS_UNFAIRLYTRICK). Reduces Mammonite's zeny cost in both modes
+  and Cart Termination's in Renewal only. Other zeny costs are unaffected.
 
-  Renewal: 20% off. Pre-renewal: 10% off.
+  Renewal: 20% off eligible costs. Pre-renewal: 10% off Mammonite only.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
