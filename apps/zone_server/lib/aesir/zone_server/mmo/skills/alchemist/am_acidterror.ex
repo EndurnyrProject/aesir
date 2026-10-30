@@ -11,8 +11,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterror do
   attack before the ratio, a 1 s cast, 120 s bleeding, and a 3/7/10/12/13 percent
   armor break.
 
-  The bleeding and armor break follow a hit that deals damage, and a player's
-  hit that a blocking status (Pneuma) stopped.
+  The bleeding and armor break require the target to survive the hit. They
+  follow a hit that deals damage, and a player's hit that a blocking status
+  (Pneuma) stopped.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 230,
@@ -65,6 +66,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterror do
     ]
 
     case Combat.execute_acid_terror_attack(caster, target_id, opts) do
+      {:ok, %{target_survives?: false}} ->
+        {:ok, caster}
+
       {:ok, %{hit?: true}} ->
         apply_on_hit(caster, target_id, level)
         {:ok, caster}
