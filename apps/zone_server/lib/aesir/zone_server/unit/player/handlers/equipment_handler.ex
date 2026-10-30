@@ -349,15 +349,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   defp sync_committed_inventory(game_state, persisted, removed, state, acknowledge) do
     old_equipment = game_state.stats.equipment
 
-    if weapon_unequipped?(game_state.inventory, removed) do
-      remove_statuses_with_flag(game_state.character_id, :remove_on_unequip_weapon)
-    end
-
-    updated_game_state = advance(game_state, persisted)
-
-    if shield_removed?(game_state.inventory, removed, updated_game_state.stats.equipment) do
-      remove_statuses_with_flag(game_state.character_id, :remove_on_unequip_shield)
-    end
+    updated_game_state = advance_unequipped(game_state, persisted, removed)
 
     acknowledge.()
     sync_after_change(updated_game_state, state)
@@ -368,6 +360,47 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
     state = StateCommit.commit(state, updated_game_state)
     PlayerEvents.inventory_changed(updated_game_state.character_id)
     state
+  end
+
+  @doc """
+  Runs the local equipment lifecycle after a skill-refine transaction commits.
+
+  A worn surviving weapon is taken off and put back on in memory, enforcing
+  unequip-sensitive statuses before recalculating its refined contribution.
+  Destruction leaves it unequipped. No row is written again and no request or
+  synchronous session call is issued. Unworn selections only advance inventory.
+  """
+  @spec committed_weapon_refine(PlayerState.t(), Inventory.t(), non_neg_integer()) ::
+          PlayerState.t()
+  def committed_weapon_refine(previous, persisted, index) do
+    if previous.inventory[index].equip == 0 do
+      %{previous | inventory: persisted}
+    else
+      taken_off =
+        case Map.get(persisted, index) do
+          nil -> persisted
+          item -> Map.put(persisted, index, %{item | equip: 0})
+        end
+
+      unequipped = advance_unequipped(previous, taken_off, [index])
+      enforce_weapon_requirements(unequipped)
+
+      if Map.has_key?(persisted, index), do: advance(unequipped, persisted), else: unequipped
+    end
+  end
+
+  defp advance_unequipped(game_state, persisted, removed) do
+    if weapon_unequipped?(game_state.inventory, removed) do
+      remove_statuses_with_flag(game_state.character_id, :remove_on_unequip_weapon)
+    end
+
+    updated = advance(game_state, persisted)
+
+    if shield_removed?(game_state.inventory, removed, updated.stats.equipment) do
+      remove_statuses_with_flag(game_state.character_id, :remove_on_unequip_shield)
+    end
+
+    updated
   end
 
   @spec maybe_bind_on_equip(InventoryOps.inventory(), non_neg_integer(), integer(), map()) ::
@@ -467,9 +500,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
 
   defp weapon_unequipped?(inventory, unequipped_indices) do
     Enum.any?(unequipped_indices, fn index ->
-      inventory
-      |> unequipped_mask(index)
-      |> right_hand?()
+      mask = unequipped_mask(inventory, index)
+      right_hand?(mask) or (left_hand?(mask) and weapon?(inventory[index]))
     end)
   end
 

@@ -7,8 +7,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOps do
   `Aesir.ZoneServer.Unit.Inventory.Persistence.transaction/1` consumes the ore
   (plus zeny, plus a Blacksmith Blessing when requested) **regardless of
   outcome** and applies the roll's effect on the target item. `apply/6` is the
-  only entry point; callers pass the authoritative `PlayerState` and get back
-  the advanced state plus a tagged result.
+  ordinary-refine entry; `weapon_skill/5` keeps Upgrade Weapon's distinct
+  percent roll, ore-only cost and binary outcome. Callers pass the authoritative
+  `PlayerState` and get back the advanced state plus a tagged result.
 
   ## Offsets
 
@@ -35,16 +36,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOps do
   `ScriptEffectHandler`), not this module's.
   """
 
+  import Bitwise
+
   alias Aesir.Commons.InterServer.PubSub
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Fame
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.JobManagement.JobMapid
   alias Aesir.ZoneServer.Mmo.Refine.Refine
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
+  alias Aesir.ZoneServer.Mmo.Refine.WeaponSkill
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
+  alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
@@ -103,6 +109,85 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOps do
       {:ok, ctx} -> commit(state, index, cost_type, use_blessing?, ctx, opts)
       {:error, reason} -> {state, {:error, reason}}
     end
+  end
+
+  @typedoc "The binary result of a committed Upgrade Weapon skill attempt, or a rejection."
+  @type weapon_skill_result ::
+          {:ok, :success, non_neg_integer()} | {:ok, :broke} | {:error, term()}
+
+  @doc """
+  Attempts Upgrade Weapon against the current persisted row identity at `index`.
+
+  Revalidates the captured learned rank and next normal process, then draws a
+  0..99 roll (`:success_roll` may inject it). One transaction consumes one ore
+  and increments or destroys one weapon, without ordinary-refine currency,
+  protection, downgrade or broadcast policies. Only a committed attempt runs
+  the equipment lifecycle and stages inventory notifications and qualifying fame.
+  Rejection or rollback returns the original post-opening state, including SP.
+  """
+  @spec weapon_skill(PlayerState.t(), non_neg_integer(), integer(), non_neg_integer(), keyword()) ::
+          {PlayerState.t(), weapon_skill_result()}
+  def weapon_skill(state, index, expected_item_id, learned_rank, opts \\ []) do
+    case WeaponSkill.prepare(state, index, expected_item_id, learned_rank) do
+      {:ok, ctx} -> commit_weapon_skill(state, index, ctx, opts)
+      {:error, reason} -> {state, {:error, reason}}
+    end
+  end
+
+  defp commit_weapon_skill(state, index, ctx, opts) do
+    roll = Keyword.get_lazy(opts, :success_roll, fn -> :rand.uniform(100) - 1 end)
+    progression = state.stats.progression
+    {:ok, third_flag} = JobMapid.constant("EAJL_THIRD")
+    mapid = JobMapid.from_job(progression.job_id)
+    third? = mapid >= 0 and band(mapid, third_flag) != 0
+    chance = WeaponSkill.chance(ctx.normal_rate, progression.job_level, third?)
+    outcome = WeaponSkill.outcome(ctx.item.refine, chance, roll)
+
+    case persist_weapon_skill(state, index, ctx, outcome) do
+      {:ok, inventory} ->
+        advanced = EquipmentHandler.committed_weapon_refine(state, inventory, index)
+        {finish_weapon_skill(advanced, index, ctx, outcome), tag(outcome)}
+
+      {:error, reason} ->
+        {state, {:error, reason}}
+    end
+  end
+
+  defp persist_weapon_skill(state, index, ctx, outcome) do
+    Persistence.transaction(fn ->
+      with {:ok, inventory, _change} <-
+             InventoryOps.remove(state.character_id, state.inventory, ctx.ore_index, 1) do
+        apply_weapon_skill_outcome(state.character_id, inventory, index, ctx.item, outcome)
+      end
+    end)
+  end
+
+  defp apply_weapon_skill_outcome(_char_id, inventory, index, item, {:success, level}),
+    do: update_refine(inventory, index, item, level)
+
+  defp apply_weapon_skill_outcome(char_id, inventory, index, _item, {:break}) do
+    with {:ok, inventory, _change} <- InventoryOps.remove(char_id, inventory, index, 1),
+         do: {:ok, inventory}
+  end
+
+  defp finish_weapon_skill(state, index, ctx, outcome) do
+    {notification, points} =
+      case outcome do
+        {:success, level} ->
+          {{:added, index, state.inventory[index]},
+           Fame.refine_points(ctx.item, ctx.definition, state.character_id, level)}
+
+        {:break} ->
+          {{:removed, index, 1}, 0}
+      end
+
+    %{
+      state
+      | pending_inventory_notify:
+          state.pending_inventory_notify ++
+            [{:removed, ctx.ore_index, 1}, notification]
+    }
+    |> Fame.award(points)
   end
 
   @doc """
