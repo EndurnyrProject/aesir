@@ -315,12 +315,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
 
   defp add_product(caster, recipe, item_def, amount, crumbs, element) do
     opts =
-      if recipe.skill_id in @weapon_skill_ids do
-        forged_element = if is_nil(element), do: :neutral, else: element
-        craft = ItemCraft.forged(forged_element, crumbs, caster.character_id)
-        %{identify: 1, craft: ItemCraft.to_map(craft)}
-      else
-        %{identify: 1}
+      cond do
+        recipe.skill_id in @weapon_skill_ids ->
+          forged_element = if is_nil(element), do: :neutral, else: element
+          craft = ItemCraft.forged(forged_element, crumbs, caster.character_id)
+          %{identify: 1, craft: ItemCraft.to_map(craft)}
+
+        recipe.skill_id == @pharmacy_skill_id ->
+          %{identify: 1, craft: caster.character_id |> ItemCraft.signed() |> ItemCraft.to_map()}
+
+        true ->
+          %{identify: 1}
       end
 
     case InventoryOps.add(

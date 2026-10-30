@@ -310,16 +310,14 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   end
 
   @doc """
-  Total quantity of item `nameid` held across all stackable slots.
-
-  Sums the stackable stacks of `nameid` (unequipped, no cards, no random
-  options); equipped or carded copies do not count toward the stackable total.
+  Total quantity of item `nameid` held across all slots, regardless of metadata.
   """
   @spec held_amount(t(), integer()) :: non_neg_integer()
   defdelegate held_amount(inventory, nameid), to: ItemContainer
 
   @doc """
-  Index of a stackable slot holding item `nameid`, or `nil` when none exists.
+  Lowest index holding a positive amount of item `nameid`, regardless of metadata,
+  or `nil` when absent.
   """
   @spec stackable_index(t(), integer()) :: non_neg_integer() | nil
   defdelegate stackable_index(inventory, nameid), to: ItemContainer

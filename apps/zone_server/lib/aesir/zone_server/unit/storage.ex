@@ -48,13 +48,14 @@ defmodule Aesir.ZoneServer.Unit.Storage do
   defdelegate remove(storage, index, amount), to: ItemContainer
 
   @doc """
-  Total quantity of item `nameid` held across all stackable storage slots.
+  Total quantity of item `nameid` held across all storage slots, regardless of metadata.
   """
   @spec held_amount(t(), integer()) :: non_neg_integer()
   defdelegate held_amount(storage, nameid), to: ItemContainer
 
   @doc """
-  Index of a stackable storage slot holding item `nameid`, or `nil` when none.
+  Lowest index holding a positive amount of item `nameid`, regardless of metadata,
+  or `nil` when absent.
   """
   @spec stackable_index(t(), integer()) :: non_neg_integer() | nil
   defdelegate stackable_index(storage, nameid), to: ItemContainer

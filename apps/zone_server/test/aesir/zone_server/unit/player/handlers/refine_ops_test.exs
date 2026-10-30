@@ -194,6 +194,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOpsTest do
       assert Aesir.ZoneServer.Unit.Inventory.held_amount(new_state.inventory, @blessing) == 0
     end
 
+    @tag game_mode: :renewal
+    test "blessings split across stacks cannot satisfy the first stack requirement", %{
+      character: char,
+      stats: stats
+    } do
+      seed_inv(char.id, @sword, 1, %{refine: 8})
+      seed_inv(char.id, @phracon, 1)
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @sword)
+
+      inventory =
+        inventory
+        |> Map.put(10, %InventoryItem{nameid: @blessing, amount: 1})
+        |> Map.put(11, %InventoryItem{
+          nameid: @blessing,
+          amount: 2,
+          craft: %{"kind" => "signed", "creator_char_id" => char.id}
+        })
+
+      state = build_state(char, stats, inventory)
+
+      assert {^state, {:error, :no_blessing}} =
+               RefineOps.apply(state, index, @sword, :normal, true)
+    end
+
     @tag game_mode: :pre_renewal
     test "rejects blessing when its item is absent without consuming", %{
       character: char,

@@ -695,13 +695,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   def check_recovered_weight(_caster, _definition), do: :ok
 
   defp check_catalysts(caster, definition) do
-    if Enum.all?(effective_item_cost(caster, definition), fn %{id: id, amount: amount} ->
-         Inventory.held_amount(caster.inventory, id) >= amount
-       end) do
-      :ok
-    else
-      {:error, :missing_catalyst}
-    end
+    held? =
+      Enum.all?(effective_item_cost(caster, definition), fn %{id: id, amount: amount} ->
+        case Inventory.stackable_index(caster.inventory, id) do
+          nil -> false
+          index -> caster.inventory[index].amount >= amount
+        end
+      end)
+
+    if held?, do: :ok, else: {:error, :missing_catalyst}
   end
 
   @doc "Returns the item requirements owed by a player for a skill."
@@ -769,12 +771,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
         caster
 
       index ->
-        take = min(amount, caster.inventory[index].amount)
-        {:ok, inventory, change} = Inventory.remove(caster.inventory, index, take)
-
-        caster
-        |> record_inventory_change(inventory, change)
-        |> remove_item(id, amount - take)
+        case Inventory.remove(caster.inventory, index, amount) do
+          {:ok, inventory, change} -> record_inventory_change(caster, inventory, change)
+          {:error, _reason} -> caster
+        end
     end
   end
 

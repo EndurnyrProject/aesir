@@ -72,13 +72,14 @@ defmodule Aesir.ZoneServer.Unit.Cart do
   defdelegate remove(cart, index, amount), to: ItemContainer
 
   @doc """
-  Total quantity of item `nameid` held across all stackable cart slots.
+  Total quantity of item `nameid` held across all cart slots, regardless of metadata.
   """
   @spec held_amount(t(), integer()) :: non_neg_integer()
   defdelegate held_amount(cart, nameid), to: ItemContainer
 
   @doc """
-  Index of a stackable cart slot holding item `nameid`, or `nil` when none.
+  Lowest index holding a positive amount of item `nameid`, regardless of metadata,
+  or `nil` when absent.
   """
   @spec stackable_index(t(), integer()) :: non_neg_integer() | nil
   defdelegate stackable_index(cart, nameid), to: ItemContainer

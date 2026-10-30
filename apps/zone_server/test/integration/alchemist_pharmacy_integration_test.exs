@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Integration.AlchemistPharmacyIntegrationTest do
   alias Aesir.Net.SkillMenu
   alias Aesir.Net.SkillMenuReply
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
@@ -29,9 +30,9 @@ defmodule Aesir.ZoneServer.Integration.AlchemistPharmacyIntegrationTest do
     :ok = Catalog.reload()
   end
 
-  test "Pharmacy offers only pharmacy recipes, consumes its bowl, and brews the selected product" do
+  test "Pharmacy brews a signed potion that Potion Pitcher can consume" do
     Application.put_env(:zone_server, :forge_rng, fn _upper -> 1 end)
-    character = insert_alchemist(%{@pharmacy_skill_id => 10})
+    character = insert_alchemist(%{@pharmacy_skill_id => 10, 231 => 1})
     insert_items(character.id, [{@medicine_bowl_id, 1}, {7144, 1}, {507, 1}, {1093, 1}])
     session = start_session(character)
 
@@ -53,9 +54,21 @@ defmodule Aesir.ZoneServer.Integration.AlchemistPharmacyIntegrationTest do
 
     inventory = get_player_state(session.pid).inventory
     assert Inventory.held_amount(inventory, 501) == 1
+    potion = Enum.find_value(inventory, fn {_index, item} -> item.nameid == 501 && item end)
+    assert ItemCraft.from_map(potion.craft) == {:ok, ItemCraft.signed(character.id)}
     assert Inventory.held_amount(inventory, 507) == 0
     assert Inventory.held_amount(inventory, 1093) == 0
     assert Inventory.held_amount(inventory, 7144) == 1
+
+    simulate_incoming_message(session.pid, %SkillCast{
+      skill_id: 231,
+      level: 1,
+      target_id: character.id
+    })
+
+    assert_eventually(fn ->
+      Inventory.held_amount(get_player_state(session.pid).inventory, 501) == 0
+    end)
   end
 
   test "a failed Pharmacy attempt burns the bowl and recipe materials" do

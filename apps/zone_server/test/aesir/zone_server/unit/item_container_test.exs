@@ -535,17 +535,40 @@ defmodule Aesir.ZoneServer.Unit.ItemContainerTest do
       assert ItemContainer.held_amount(c, @red_potion) == 12
     end
 
-    test "held_amount ignores equipped or carded copies" do
+    test "held_amount counts equipped, carded, signed and option-bearing copies by item id" do
       c =
         container([
           item(nameid: @red_potion, amount: 5, equip: 2),
-          item(nameid: @red_potion, amount: 7, card0: 4001)
+          item(nameid: @red_potion, amount: 7, card0: 4001),
+          item(
+            nameid: @red_potion,
+            amount: 3,
+            craft: %{"kind" => "signed", "creator_char_id" => 1}
+          ),
+          item(nameid: @red_potion, amount: 2, random_options: [%{id: 1, value: 1, param: 0}]),
+          item(nameid: @sword, amount: 1)
         ])
 
-      assert ItemContainer.held_amount(c, @red_potion) == 0
+      assert ItemContainer.held_amount(c, @red_potion) == 17
     end
 
-    test "stackable_index returns the index of a stackable slot, nil when none" do
+    test "stackable_index finds signed copies and chooses the lowest occupied index" do
+      c =
+        Map.new(0..40, fn index ->
+          {index,
+           item(
+             nameid: @red_potion,
+             amount: 1,
+             craft: %{"kind" => "signed", "creator_char_id" => index}
+           )}
+        end)
+        |> Map.put(0, item(nameid: @red_potion, amount: 0))
+
+      assert ItemContainer.stackable_index(c, @red_potion) == 1
+      assert ItemContainer.stackable_index(c, @sword) == nil
+    end
+
+    test "stackable_index returns the index of a held slot, nil when none" do
       c = container([item(nameid: @red_potion, amount: 5)])
 
       assert ItemContainer.stackable_index(c, @red_potion) == 0

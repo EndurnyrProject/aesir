@@ -63,32 +63,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalystTest do
     stub(Catalog, :by_id, fn 6 -> {:ok, catalyst_definition()} end)
     stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
 
-    gs = game_state(100, %{6 => 1}, %{0 => gem(3)})
+    signed = %{gem(3) | craft: %{"kind" => "signed", "creator_char_id" => 7}}
+    gs = game_state(100, %{6 => 1}, %{0 => signed})
 
     assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
     assert updated.stats.current_state.sp == 100 - 9
-    assert %{0 => %InventoryItem{amount: 2}} = updated.inventory
+    assert %{0 => %InventoryItem{amount: 2, craft: craft}} = updated.inventory
+    assert craft == signed.craft
 
     assert [{%{}, %{0 => %InventoryItem{amount: 2}}, {:reduced, 0, 2}}] =
              updated.pending_inventory_persist
   end
 
-  test "consumption spills across stacks and stages a delta per stack touched" do
+  test "the first matching stack must hold the whole skill cost" do
     stub(Catalog, :by_id, fn 6 ->
       {:ok, %{catalyst_definition() | item_cost: [%{id: @gem_id, amount: 4}]}}
     end)
 
-    stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+    reject(&SmProvoke.cast/4)
 
-    gs = game_state(100, %{6 => 1}, %{0 => gem(2), 1 => gem(3)})
+    gs = game_state(100, %{6 => 1}, %{0 => gem(2), 1 => gem(4)})
 
-    assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
-    assert updated.inventory == %{1 => %InventoryItem{nameid: @gem_id, amount: 1, equip: 0}}
-
-    assert [
-             {%{0 => _, 1 => _}, %{1 => _}, {:removed, 0}},
-             {%{1 => _}, %{1 => %InventoryItem{amount: 1}}, {:reduced, 1, 1}}
-           ] = updated.pending_inventory_persist
+    assert {:error, :missing_catalyst} = Interpreter.complete_cast(gs, 6, 1, :self)
   end
 
   test ":no_consume result completes the cast but leaves the inventory untouched" do

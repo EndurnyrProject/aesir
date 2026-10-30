@@ -95,7 +95,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
     assert length(failed.pending_inventory_persist) == 2
   end
 
-  test "pharmacy ignores forge catalysts and adds an unstamped product", %{caster: caster} do
+  test "pharmacy ignores forge catalysts and signs its product", %{caster: caster} do
     Application.put_env(:zone_server, :forge_rng, fn _upper -> 1 end)
 
     caster =
@@ -112,8 +112,36 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
       Enum.find_value(brewed.inventory, fn {_index, item} -> item.nameid == 501 && item end)
 
     assert output.amount == 1
-    assert ItemCraft.from_map(output.craft) == :error
+    assert ItemCraft.from_map(output.craft) == {:ok, ItemCraft.signed(caster.character_id)}
     assert brewed.pending_production_result == %{success: true, item_id: 501}
+  end
+
+  test "pharmacy consumes signed materials across makers and keeps product identities separate",
+       %{caster: caster} do
+    Application.put_env(:zone_server, :forge_rng, fn _upper -> 1 end)
+    own = ItemCraft.signed(caster.character_id) |> ItemCraft.to_map()
+    other = ItemCraft.signed(caster.character_id + 1) |> ItemCraft.to_map()
+
+    caster =
+      caster
+      |> pharmacy_caster(10)
+      |> Map.put(:inventory, %{
+        0 => %{item(501, 1) | craft: own},
+        1 => %{item(501, 2) | craft: other},
+        2 => item(501, 4)
+      })
+
+    recipe = %{pharmacy_recipe() | materials: [%{item_id: 501, amount: 2}]}
+
+    assert {:ok, brewed} = Forge.run(caster, recipe, [])
+    assert ItemContainer.held_amount(brewed.inventory, 501) == 6
+    assert Enum.any?(brewed.inventory, fn {_, item} -> item.craft == own and item.amount == 1 end)
+
+    assert Enum.any?(brewed.inventory, fn {_, item} ->
+             item.craft == other and item.amount == 1
+           end)
+
+    assert Enum.any?(brewed.inventory, fn {_, item} -> item.craft == nil and item.amount == 4 end)
   end
 
   describe "run_batch/4" do
@@ -151,6 +179,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
       assert {:ok, made} = Forge.run_batch(batch_caster(caster, 4), pharmacy_recipe(), 4, 0)
 
       assert ItemContainer.held_amount(made.inventory, 501) == 2
+
+      output =
+        Enum.find_value(made.inventory, fn {_index, item} -> item.nameid == 501 && item end)
+
+      assert ItemCraft.from_map(output.craft) == {:ok, ItemCraft.signed(caster.character_id)}
       assert ItemContainer.held_amount(made.inventory, 1002) == 0
       assert made.pending_production_result == %{success: true, item_id: 501}
       assert {[], 1} = Agent.get(agent, & &1)

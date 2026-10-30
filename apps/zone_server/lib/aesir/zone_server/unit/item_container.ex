@@ -352,27 +352,29 @@ defmodule Aesir.ZoneServer.Unit.ItemContainer do
   end
 
   @doc """
-  Total quantity of item `nameid` held across all stackable slots.
+  Total quantity of item `nameid` held across all slots.
 
-  Sums the stackable stacks of `nameid` (unequipped, no cards, no random
-  options, no craft metadata); equipped, carded, or crafted copies do not count
-  toward the stackable total.
+  Matches by item id regardless of equipment, cards, random options or craft
+  metadata. This is a possession lookup, not a stack-merge check.
   """
   @spec held_amount(t(), integer()) :: non_neg_integer()
   def held_amount(container, nameid) when is_map(container) do
     Enum.reduce(container, 0, fn {_index, item}, acc ->
-      if plain_stack?(item, nameid), do: acc + item.amount, else: acc
+      if item.nameid == nameid, do: acc + item.amount, else: acc
     end)
   end
 
   @doc """
-  Index of a stackable slot holding item `nameid`, or `nil` when none exists.
+  Lowest index holding a positive amount of item `nameid`, or `nil` when absent.
+
+  Matches by item id only, including equipped and crafted copies.
   """
   @spec stackable_index(t(), integer()) :: non_neg_integer() | nil
   def stackable_index(container, nameid) when is_map(container) do
-    Enum.find_value(container, fn {index, item} ->
-      if plain_stack?(item, nameid), do: index
-    end)
+    container
+    |> Enum.filter(fn {_index, item} -> item.nameid == nameid and item.amount > 0 end)
+    |> Enum.map(&elem(&1, 0))
+    |> Enum.min(fn -> nil end)
   end
 
   @doc """
@@ -417,10 +419,4 @@ defmodule Aesir.ZoneServer.Unit.ItemContainer do
   @spec removal_index(change()) :: non_neg_integer()
   def removal_index({:removed, index}), do: index
   def removal_index({:reduced, index, _left}), do: index
-
-  defp plain_stack?(%InventoryItem{} = item, nameid) do
-    item.nameid == nameid and item.equip == 0 and
-      item.card0 == 0 and item.card1 == 0 and item.card2 == 0 and item.card3 == 0 and
-      is_nil(item.craft) and item.random_options == []
-  end
 end

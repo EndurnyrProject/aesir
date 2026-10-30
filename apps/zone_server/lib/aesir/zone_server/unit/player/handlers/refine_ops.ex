@@ -313,8 +313,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOps do
   defp ensure_blessing(inventory, %{blessing_amount: amount}, true) do
     with {:ok, %ItemDefinition{id: blessing_nameid}} <-
            ItemManagement.get_item_by_aegis(@blessing_aegis),
-         true <- Inventory.held_amount(inventory, blessing_nameid) >= amount do
-      {:ok, Inventory.stackable_index(inventory, blessing_nameid)}
+         index when not is_nil(index) <- Inventory.stackable_index(inventory, blessing_nameid),
+         true <- inventory[index].amount >= amount do
+      {:ok, index}
     else
       _ -> {:error, :no_blessing}
     end
