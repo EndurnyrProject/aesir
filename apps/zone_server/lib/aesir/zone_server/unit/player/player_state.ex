@@ -12,10 +12,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
   import Bitwise
 
+  alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Fame
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
@@ -142,6 +144,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           vars: %{String.t() => term()},
           temp_vars: %{String.t() => term()},
           zeny: integer(),
+          fame: non_neg_integer(),
+          potion_success_counter: non_neg_integer(),
+          pending_fame_awards: [Fame.award_event()],
           quest_log: %{non_neg_integer() => QuestLog.Entry.t()},
           show_delay: boolean(),
           inventory: %{non_neg_integer() => InventoryItem.t()},
@@ -283,6 +288,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # Post-map-load and revive invincibility (`Unit.Player.Invincibility`).
     invincible_timer: nil,
     invincible_generation: 0,
+    fame: 0,
+    potion_success_counter: 0,
+    pending_fame_awards: [],
     memo_points: [],
     vars: %{},
     temp_vars: %{},
@@ -403,7 +411,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   @doc """
   Creates a new PlayerState from a Character's last known position.
   """
-  def new(%Aesir.Commons.Models.Character{} = character) do
+  @spec new(Character.t()) :: t()
+  def new(%Character{} = character) do
     %__MODULE__{
       character_id: character.id,
       character_name: character.name,
@@ -474,6 +483,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       vars: character.vars || %{},
       temp_vars: %{},
       zeny: character.zeny,
+      fame: character.fame,
 
       # e_option sprite-state bitmask (persisted; carries the riding bit)
       option: character.option,
