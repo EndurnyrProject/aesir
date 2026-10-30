@@ -296,6 +296,34 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RelationshipTest do
     end
   end
 
+  test "GvG noparty removes only party protection, not ownership or guild protection" do
+    caster = player(10, party_id: 7, guild_id: 1)
+    party_member = player(20, party_id: 7)
+
+    refute Relationship.enemy?(caster, party_member, {:gvg, false})
+    assert Relationship.ally?(caster, party_member, {:gvg, false})
+    assert Relationship.enemy?(caster, party_member, {:gvg, true})
+    refute Relationship.ally?(caster, party_member, {:gvg, true})
+
+    stub(Relations, :friendly?, fn
+      1, guild_id when guild_id in [1, 2] -> true
+      _, _ -> false
+    end)
+
+    for target <- [
+          caster,
+          homunculus(100, 10),
+          player(30, guild_id: 1),
+          player(40, party_id: 7, guild_id: 2)
+        ] do
+      refute Relationship.enemy?(caster, target, {:gvg, true})
+      assert Relationship.ally?(caster, target, {:gvg, true})
+    end
+
+    refute Relationship.enemy?(caster, player(50), :off)
+    assert Relationship.enemy?(caster, mob(300), {:gvg, true})
+  end
+
   defp player(id, overrides \\ []) do
     Combatant.new!(Map.merge(%{unit_type: :player, unit_id: id}, Map.new(overrides)))
   end

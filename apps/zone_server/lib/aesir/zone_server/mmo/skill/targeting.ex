@@ -727,7 +727,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   defp versus_context(map_name) when is_binary(map_name) do
     cond do
       MapFlags.gvg?(map_name) ->
-        :gvg
+        {:gvg, MapFlags.get(map_name, :gvg_noparty)}
 
       MapFlags.get(map_name, :pvp) ->
         {:pvp, MapFlags.get(map_name, :pvp_noparty), MapFlags.get(map_name, :pvp_noguild)}

@@ -186,6 +186,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
                )
     end
 
+    test "GvG noparty removes party protection only while GvG is active" do
+      attacker = player(1000, %{map_name: "prontera", party_id: 10})
+      target = player(2000, %{map_name: "prontera", party_id: 10})
+
+      :ok = MapFlags.set_runtime("prontera", :gvg_noparty, true)
+      assert {:error, :invalid_target} = Targeting.validate_enemy(attacker, target)
+
+      :ok = MapFlags.set_runtime("prontera", :gvg, true)
+      assert :ok = Targeting.validate_enemy(attacker, target)
+
+      :ok = MapFlags.clear_runtime("prontera", :gvg_noparty)
+      assert {:error, :invalid_target} = Targeting.validate_enemy(attacker, target)
+    end
+
     test "non-binary or missing map names resolve to :off" do
       for map_name <- [nil, :prontera] do
         assert {:error, :invalid_target} =
@@ -324,6 +338,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
       selected = Targeting.ground_allies(caster, "prontera", {100, 100}, 3)
 
       assert Enum.sort(selected) == [{:homunculus, 500}, {:player, 1}, {:player, 2}]
+    end
+
+    test "GvG noparty excludes party-only ground allies but preserves self and guild" do
+      caster = standing(1, %{party_id: 7, guild_id: 3})
+      place(:player, 1, PlayerState, caster, {100, 100})
+      place(:player, 2, PlayerState, standing(2, %{party_id: 7}), {101, 100})
+      place(:player, 3, PlayerState, standing(3, %{party_id: 7, guild_id: 3}), {102, 100})
+      :ok = MapFlags.set_runtime("prontera", :gvg, true)
+
+      assert Enum.sort(Targeting.ground_allies(caster, "prontera", {100, 100}, 3)) ==
+               [{:player, 1}, {:player, 2}, {:player, 3}]
+
+      :ok = MapFlags.set_runtime("prontera", :gvg_noparty, true)
+
+      assert Enum.sort(Targeting.ground_allies(caster, "prontera", {100, 100}, 3)) ==
+               [{:player, 1}, {:player, 3}]
     end
 
     test "a hidden party member is still selected, a GM-invisible one is not" do

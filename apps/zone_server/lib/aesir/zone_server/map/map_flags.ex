@@ -24,7 +24,7 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
 
   Only `@flags` are accepted. The WoE-consumed subset (`gvg`, `gvg_castle`,
   `nosave`, `noteleport`, `nowarp`, `noreturn`) drives behavior this phase;
-  `pvp`, `pvp_noparty`, and `pvp_noguild` are consumed by the targeting layer to
+  `gvg_noparty`, `pvp`, `pvp_noparty`, and `pvp_noguild` are consumed by the targeting layer to
   resolve player-versus-player hostility; `nomobloot` and `nomvploot` suppress a
   dead monster's ordinary and MVP drop pools; `noskill`, `noteleport`, `nowarp`
   and `noicewall` refuse a player's skill request, `novending` refuses Vending; and any other atom is
@@ -52,6 +52,7 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
   """
   @type flag ::
           :gvg
+          | :gvg_noparty
           | :gvg_castle
           | :nosave
           | :noteleport
@@ -76,6 +77,7 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
 
   @flags [
     :gvg,
+    :gvg_noparty,
     :gvg_castle,
     :nosave,
     :noteleport,

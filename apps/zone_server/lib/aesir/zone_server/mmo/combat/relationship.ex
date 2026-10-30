@@ -42,7 +42,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Relationship do
   end
 
   @typedoc "Versus context for player-vs-player hostility."
-  @type versus :: :off | :gvg | {:pvp, noparty :: boolean(), noguild :: boolean()}
+  @type versus ::
+          :off
+          | :gvg
+          | {:gvg, noparty :: boolean()}
+          | {:pvp, noparty :: boolean(), noguild :: boolean()}
 
   @doc "Returns whether two combatants are enemies on a PvE map."
   @spec enemy?(Combatant.t(), Combatant.t()) :: boolean()
@@ -54,7 +58,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Relationship do
   Returns whether two combatants are enemies under an explicit versus context.
 
   `:off` reproduces PvE behavior: player sides are never enemies. Under `:gvg`
-  player sides are enemies unless they share a nonzero party or guild. Under
+  player sides are enemies unless they share a nonzero party or guild.
+  `{:gvg, true}` removes party protection but keeps guild protection. Under
   `{:pvp, noparty, noguild}` party/guild protection applies unless the matching
   override is set. Mob and homunculus-vs-mob branches are identical across all
   contexts.
@@ -82,14 +87,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Relationship do
   @doc """
   Returns whether `target` is on `attacker`'s own side under `versus`: the same
   social root (itself and the units it owns), a member of the same nonzero party
-  unless a PvP map turns party protection off, or a member of the same or an
-  allied guild unless a PvP map turns guild protection off. GvG and PvE maps
-  always keep both.
+  unless a PvP or GvG map turns party protection off, or a member of the same
+  or an allied guild unless a PvP map turns guild protection off. PvE maps
+  keep both protections.
   """
   @spec ally?(Combatant.t(), Combatant.t(), versus()) :: boolean()
   def ally?(%Combatant{} = attacker, %Combatant{} = target, versus) do
     Ref.equal?(social_root(attacker), social_root(target)) or
-      (same_party?(attacker, target) and not match?({:pvp, true, _noguild}, versus)) or
+      (same_party?(attacker, target) and
+         not (match?({:pvp, true, _noguild}, versus) or match?({:gvg, true}, versus))) or
       (friendly_guild?(attacker, target) and not match?({:pvp, _noparty, true}, versus))
   end
 
@@ -119,7 +125,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Relationship do
   defp versus_enemy?(_attacker, _target, :off), do: false
 
   defp versus_enemy?(attacker, target, :gvg),
-    do: not (same_party?(attacker, target) or friendly_guild?(attacker, target))
+    do: versus_enemy?(attacker, target, {:gvg, false})
+
+  defp versus_enemy?(attacker, target, {:gvg, noparty}),
+    do: not ((same_party?(attacker, target) and not noparty) or friendly_guild?(attacker, target))
 
   defp versus_enemy?(attacker, target, {:pvp, noparty, noguild}) do
     party_protected? = same_party?(attacker, target) and not noparty

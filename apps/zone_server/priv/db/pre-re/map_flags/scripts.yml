@@ -281,22 +281,27 @@
   zone: 2048
 - flags:
     - gvg
+    - gvg_noparty
     - noteleport
   map: guild_vs1
 - flags:
     - gvg
+    - gvg_noparty
     - noteleport
   map: guild_vs2
 - flags:
     - gvg
+    - gvg_noparty
     - noteleport
   map: guild_vs3
 - flags:
     - gvg
+    - gvg_noparty
     - noteleport
   map: guild_vs4
 - flags:
     - gvg
+    - gvg_noparty
     - noteleport
   map: guild_vs5
 - flags:

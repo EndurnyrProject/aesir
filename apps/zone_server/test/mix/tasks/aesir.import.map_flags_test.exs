@@ -44,6 +44,16 @@ defmodule Mix.Tasks.Aesir.Import.MapFlagsTest do
            ]
   end
 
+  test "GvG noparty is independent of versus flags and can be unset" do
+    assert rows([
+             "arena\tmapflag\tgvg\n",
+             "arena\tmapflag\tgvg_noparty\n",
+             "arena\tmapflag\tpvp\n",
+             "cleared\tmapflag\tgvg_noparty\n",
+             "cleared\tmapflag\tgvg_noparty\toff\n"
+           ]) == [%{"map" => "arena", "flags" => ["gvg_noparty"]}]
+  end
+
   test "restricted zones add bit 1 << (n + 4), an off line clears them and a bare one is skipped" do
     lines = [
       "jail\tmapflag\trestricted\t1\n",

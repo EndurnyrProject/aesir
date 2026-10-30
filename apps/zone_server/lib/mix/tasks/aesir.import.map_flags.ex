@@ -4,7 +4,7 @@ defmodule Mix.Tasks.Aesir.Import.MapFlags do
   Replays the `mapflag` lines of the scripts rAthena loads for a mode
   (`npc/scripts_mapflags.conf`, then `npc/re/` or `npc/pre-re/scripts_mapflags.conf`)
   and writes the resulting `gvg`, `gvg_te`, `gvg_castle`, `gvg_te_castle`,
-  `gvg_dungeon`, `battleground`, `noskill`, `noteleport`, `nowarp`,
+  `gvg_dungeon`, `gvg_noparty`, `battleground`, `noskill`, `noteleport`, `nowarp`,
   `noicewall`, `novending` and `restricted` zone flags to
   `apps/zone_server/priv/db/<mode>/map_flags/scripts.yml`.
 
@@ -35,6 +35,7 @@ defmodule Mix.Tasks.Aesir.Import.MapFlags do
     :gvg,
     :gvg_castle,
     :gvg_dungeon,
+    :gvg_noparty,
     :gvg_te,
     :gvg_te_castle,
     :noicewall,
