@@ -71,6 +71,7 @@ defmodule Aesir.Commons.Models.Character do
           mother: integer(),
           child: integer(),
           fame: integer(),
+          fame_order: integer(),
           rename: integer(),
           delete_date: NaiveDateTime.t() | nil,
           moves: integer(),
@@ -158,6 +159,7 @@ defmodule Aesir.Commons.Models.Character do
     field :mother, :integer, default: 0
     field :child, :integer, default: 0
     field :fame, :integer, default: 0
+    field :fame_order, :integer, default: 0
     field :rename, :integer, default: 0
     field :delete_date, :naive_datetime
     field :moves, :integer, default: 0
