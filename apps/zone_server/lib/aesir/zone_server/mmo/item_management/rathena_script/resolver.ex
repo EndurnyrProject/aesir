@@ -126,6 +126,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "SC_BLESSING" => :sc_blessing,
     "SC_CARTBOOST" => :sc_cartboost,
     "SC_MAXOVERTHRUST" => :sc_maxoverthrust,
+    "SC_MELTDOWN" => :sc_meltdown,
     "SC_INCAGI" => :sc_increaseagi,
     "SC_INCREASEAGI" => :sc_increaseagi,
     "SC_DECAGI" => :sc_decreaseagi,

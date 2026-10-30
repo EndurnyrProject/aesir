@@ -173,6 +173,7 @@ sc_maximizepower	ends	ends
 sc_maxoverthrust	ends	ends
 sc_mdef_rate	survives	survives
 sc_mdefset	ends	ends
+sc_meltdown	survives	survives
 sc_memorize	ends	ends
 sc_mental_potion	ends	absent
 sc_mermaid_longing	survives	survives

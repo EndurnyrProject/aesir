@@ -45,6 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Origin
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -54,8 +55,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
   @grand_cross 254
   @lock {__MODULE__, :on_skill_lock}
   @polymorph_scale 10_000
-  # The two weapon skills whose hits never roll the natural break rates.
-  @excluded_break_skills [337, 485]
 
   @typedoc """
   One resolved hit as its procs see it.
@@ -239,9 +238,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
 
   The roll belongs to the additional-effect stage: it runs on a connected hit
   that left the target alive, never on a miss or a blocked hit, and only for a
-  weapon hit. A player summon's hit answers with its master's equipment rates,
-  while the master is also the wearer the self-break aims at. `target` is a
-  `t:hit_target/0`; a skill unit holds no status container, so it takes no
+  weapon hit. The original attacker supplies status rates; a player summon's
+  master supplies equipment rates and self-break prevention. A monster without
+  a wearer still supplies Meltdown rates. Non-player decisions apply typed
+  strips from the dispatched source; excluded skills retain self-breaks only.
+  `target` is a `t:hit_target/0`; a skill unit holds no status container, so it takes no
   break roll at all.
   """
   @spec dispatch_breaks(
@@ -252,31 +253,32 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
           pos_integer() | nil
         ) :: :ok
   def dispatch_breaks(attacker, target, event, attack_flag, skill_id) do
-    if target.type != :skill_unit and break_hit?(event, attack_flag, skill_id) do
-      case wearer(attacker) do
-        nil -> :ok
-        wearer -> dispatch_wearer_breaks(attacker, wearer, target)
-      end
+    if target.type != :skill_unit and break_hit?(event, attack_flag) do
+      wearer = wearer(attacker)
+
+      source =
+        if wearer,
+          do: {wearer.unit_type, wearer.unit_id},
+          else: {attacker.unit_type, attacker.unit_id}
+
+      context = %{
+        wearer: wearer,
+        attacker: {attacker.unit_type, attacker.unit_id},
+        source: source
+      }
+
+      context
+      |> EquipBreak.resolve_hit(break_target(target), skill_id: skill_id)
+      |> Enum.each(&dispatch_break(&1, context, target))
     end
 
     :ok
   end
 
-  defp dispatch_wearer_breaks(attacker, wearer, target) do
-    case EquipBreak.resolve(
-           %{wearer: wearer, attacker: {attacker.unit_type, attacker.unit_id}},
-           break_target(target)
-         ) do
-      [] -> :ok
-      decisions -> Enum.each(decisions, &dispatch_break(&1, wearer, target))
-    end
-  end
+  defp break_hit?(nil, _attack_flag), do: false
 
-  defp break_hit?(nil, _attack_flag, _skill_id), do: false
-
-  defp break_hit?(event, attack_flag, skill_id) do
-    event.attack_effects? and event.hit_class == :hit and
-      BattleFlags.weapon?(attack_flag) and skill_id not in @excluded_break_skills
+  defp break_hit?(event, attack_flag) do
+    event.attack_effects? and event.hit_class == :hit and BattleFlags.weapon?(attack_flag)
   end
 
   defp wearer_pid(%Combatant{unit_id: id}) do
@@ -291,9 +293,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
 
   defp break_target(%{type: :player, id: id}), do: {:player, id, nil}
 
-  defp break_target(%{type: type} = target), do: {type, Map.get(target, :state)}
+  defp break_target(%{type: type, id: id}), do: {:unit, type, id}
 
-  defp dispatch_break({:self, slot}, wearer, _target) do
+  defp dispatch_break({:self, slot}, %{wearer: wearer}, _target) do
     with {:ok, wearer_pid} <- wearer_pid(wearer),
          do: PlayerSession.break_equip(wearer_pid, break_slot(slot))
   end
@@ -302,6 +304,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
     do: PlayerSession.break_equip(pid, break_slot(slot))
 
   defp dispatch_break({:target, _slot}, _wearer, _target), do: :ok
+
+  defp dispatch_break({:strip, status, val2, duration}, %{source: {source_type, source_id}}, %{
+         type: type,
+         id: id
+       }) do
+    StatusInterpreter.apply_status(type, id, status,
+      val1: 0,
+      val2: val2,
+      duration: duration,
+      caster_id: source_id,
+      source_type: source_type
+    )
+  end
 
   defp break_slot(:weapon), do: :right_hand
   # The left hand may hold a two-handed weapon's composite bit; the first
