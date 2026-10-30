@@ -11,8 +11,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
   Chemical Protection status before rolling.
 
   Player targets include the character id because status effects are stored by
-  unit identity: `{:player, character_id, stats}`. Non-player targets never emit
-  target-break decisions because they have no breakable equipment.
+  unit identity: `{:player, character_id, stats}`. Legacy resolve entry points
+  ignore non-player targets. `resolve_hit/3` additionally supports typed
+  non-player strip decisions with explicit attacker/source/wearer ownership.
 
   Garment and shoes are valid `resolve_slot/4` targets and honor the matching
   `unbreakable_*` prevention flag, but no natural weapon hit ever rolls them:
@@ -28,7 +29,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
   alias Aesir.ZoneServer.Unit.Player.Stats
 
   @type slot :: :weapon | :shield | :armor | :helm | :garment | :shoes
-  @type decision :: {:self, :weapon} | {:target, slot()}
+  @typedoc "A player item break or a non-player strip to dispatch after a hit."
+  @type decision ::
+          {:self, :weapon}
+          | {:target, slot()}
+          | {:strip, atom(), non_neg_integer(), pos_integer()}
+
+  @typedoc "The original status owner, dispatched source, and optional equipment wearer."
+  @type hit_context :: %{
+          attacker: {atom(), integer()},
+          source: {atom(), integer()},
+          wearer: Stats.t() | Combatant.t() | nil
+        }
+
+  @typedoc "A player with prevention stats or a non-player status-capable recipient."
+  @type hit_target :: {:player, integer(), Stats.t()} | {:unit, atom(), integer()}
   @type target :: {:player, integer(), Stats.t()} | {atom(), term()}
   @type rng :: (pos_integer() -> pos_integer())
   @type context :: %{wearer: Stats.t() | Combatant.t(), attacker: {atom(), integer()} | nil}
@@ -85,6 +100,66 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
   def resolve(wearer, target, opts)
       when is_struct(wearer, Stats) or is_struct(wearer, Combatant) do
     resolve(%{wearer: wearer, attacker: unit_ref(wearer)}, target, opts)
+  end
+
+  @doc """
+  Resolves a connected, surviving weapon hit's self and target break decisions.
+
+  The original attacker supplies held Meltdown rates and classic Over Thrust
+  additions. The optional wearer supplies equipment rates and self prevention.
+  The dispatched source independently needs Meltdown to strip non-player targets.
+  Skill ids 337 and 485 exclude target attempts, never preceding self attempts.
+  No mutation or session dispatch occurs here. `:rng` retains the 1..10,000 draw.
+  """
+  @spec resolve_hit(hit_context(), hit_target(), keyword()) :: [decision()]
+  def resolve_hit(%{attacker: attacker, source: source, wearer: wearer}, target, opts \\ []) do
+    rng = Keyword.get(opts, :rng, @default_rng)
+    self_decisions = hit_self_decisions(wearer, attacker, rng)
+
+    if Keyword.get(opts, :skill_id) in [337, 485] do
+      self_decisions
+    else
+      {weapon_bonus, armor_bonus} = meltdown_rates(attacker)
+      weapon_rate = equipment_modifier(wearer, :break_weapon_rate) + weapon_bonus
+      armor_rate = equipment_modifier(wearer, :break_armor_rate) + armor_bonus
+      self_decisions ++ hit_target_decisions(weapon_rate, armor_rate, source, target, rng)
+    end
+  end
+
+  defp hit_self_decisions(nil, _attacker, _rng), do: []
+
+  defp hit_self_decisions(wearer, attacker, rng),
+    do: List.wrap(self_weapon(wearer, self_break_bonus(attacker), rng))
+
+  defp meltdown_rates({type, id}) do
+    case StatusStorage.get_status(type, id, :sc_meltdown) do
+      nil -> {0, 0}
+      entry -> {entry.val2, entry.val3}
+    end
+  end
+
+  defp hit_target_decisions(weapon_rate, armor_rate, _source, {:player, _, _} = target, rng),
+    do: target_decisions(weapon_rate, armor_rate, target, rng)
+
+  defp hit_target_decisions(
+         weapon_rate,
+         armor_rate,
+         {source_type, source_id},
+         {:unit, type, id},
+         rng
+       ) do
+    if StatusStorage.has_status?(source_type, source_id, :sc_meltdown) do
+      for {rate, protection, strip, val2} <- [
+            {weapon_rate, :sc_cp_weapon, :sc_stripweapon, 25},
+            {armor_rate, :sc_cp_armor, :sc_striparmor, 40}
+          ],
+          rate > 0,
+          not StatusStorage.has_status?(type, id, protection),
+          broke?(rate, rng),
+          do: {:strip, strip, val2, 75_000}
+    else
+      []
+    end
   end
 
   @doc """
@@ -230,13 +305,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
 
   @spec weapon_breakable?(Stats.t() | Combatant.t()) :: boolean()
   defp weapon_breakable?(%Stats{equipment: equipment}) do
-    Stats.weapon_type(equipment) not in @weapon_break_immune_types
+    Stats.weapon_type(equipment) not in @weapon_break_immune_types and
+      Stats.weapon_type(%{equipment | right_hand: equipment.left_hand}) != :one_handed_axe
   end
+
+  defp weapon_breakable?(%Combatant{left_hand: %{subtype: :one_handed_axe}}), do: false
 
   defp weapon_breakable?(%Combatant{weapon: %{type: type}}),
     do: type not in @weapon_break_immune_types
 
-  @spec equipment_modifier(Stats.t() | Combatant.t(), atom()) :: integer()
+  @spec equipment_modifier(Stats.t() | Combatant.t() | nil, atom()) :: integer()
+  defp equipment_modifier(nil, _key), do: 0
+
   defp equipment_modifier(%Stats{} = wearer, key),
     do: Stats.get_equipment_modifier(wearer, key)
 
