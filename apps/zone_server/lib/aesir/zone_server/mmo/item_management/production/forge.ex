@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
   production result.
   """
 
+  alias Aesir.ZoneServer.Mmo.Fame
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Anvil
@@ -119,12 +120,26 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
          :ok <- check_materials(caster.inventory, materials, []) do
       consumed = consume_all(caster, materials, [])
       chance = success_chance(consumed, recipe, 0, nil, rank)
-      made = Enum.count(1..qty, fn _copy -> rng().(10_000) <= chance end)
+
+      {made, counter, points} = batch_results(consumed, recipe, qty, chance)
+
+      produced = Fame.award(%{consumed | potion_success_counter: counter}, points)
 
       if made > 0,
-        do: add_product(consumed, recipe, item_def, made, 0, nil),
-        else: {:ok, stage_all_failed(consumed, recipe.product_id)}
+        do: add_product(produced, recipe, item_def, made, 0, nil),
+        else: {:ok, stage_all_failed(produced, recipe.product_id)}
     end
+  end
+
+  defp batch_results(caster, recipe, qty, chance) do
+    Enum.reduce(1..qty, {0, caster.potion_success_counter, 0}, fn _, {made, counter, points} ->
+      success? = rng().(10_000) <= chance
+
+      {counter, awarded} =
+        Fame.potion_result(counter, recipe.skill_id, recipe.product_id, success?)
+
+      {made + if(success?, do: 1, else: 0), counter, points + awarded}
+    end)
   end
 
   defp quarter_max_hp(caster), do: ScriptVitals.percent_of(caster.stats.derived_stats.max_hp, 25)
@@ -277,12 +292,26 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
 
   defp rng, do: Application.get_env(:zone_server, :forge_rng, @default_rng)
 
-  defp finish(caster, recipe, _item_def, false, _crumbs, _element) do
-    {:ok, stage_result(caster, recipe.product_id, false)}
-  end
+  defp finish(caster, recipe, item_def, success?, crumbs, element) do
+    {counter, points} =
+      Fame.potion_result(
+        caster.potion_success_counter,
+        recipe.skill_id,
+        recipe.product_id,
+        success?
+      )
 
-  defp finish(caster, recipe, item_def, true, crumbs, element),
-    do: add_product(caster, recipe, item_def, 1, crumbs, element)
+    points =
+      if success? and recipe.skill_id in @weapon_skill_ids,
+        do: Fame.forge_points(item_def.weapon_level, crumbs, element),
+        else: points
+
+    caster = Fame.award(%{caster | potion_success_counter: counter}, points)
+
+    if success?,
+      do: add_product(caster, recipe, item_def, 1, crumbs, element),
+      else: {:ok, stage_result(caster, recipe.product_id, false)}
+  end
 
   defp add_product(caster, recipe, item_def, amount, crumbs, element) do
     opts =
