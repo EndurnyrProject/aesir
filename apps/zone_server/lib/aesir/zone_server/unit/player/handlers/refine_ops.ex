@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOps do
   alias Aesir.Commons.InterServer.PubSub
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Mmo.Fame
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Refine.Refine
@@ -139,11 +140,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOps do
            update_refine(state.inventory, index, item, new_refine)
          end) do
       {:ok, inventory} ->
-        {advance_state(state, inventory, state.zeny, item, {:success, new_refine}),
-         {:ok, new_refine}}
+        advanced = advance_state(state, inventory, state.zeny, item, {:success, new_refine})
+        {award_script_refine(advanced, item, new_refine), {:ok, new_refine}}
 
       {:error, reason} ->
         {state, {:error, reason}}
+    end
+  end
+
+  defp award_script_refine(state, item, new_refine) do
+    case ItemManagement.get_item_by_id(item.nameid) do
+      {:ok, definition} ->
+        Fame.award(state, Fame.refine_points(item, definition, state.character_id, new_refine))
+
+      {:error, _reason} ->
+        state
     end
   end
 
