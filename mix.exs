@@ -26,6 +26,7 @@ defmodule Aesir.MixProject do
 
   defp aliases do
     [
+      sobelow: ["cmd mix sobelow --no-router --private --skip --exit Low"],
       "test.integration": &test_integration/1,
       "test.re": &test_mode("renewal", "test", &1),
       "test.pre_re": &test_mode("pre_renewal", "test", &1),

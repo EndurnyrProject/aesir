@@ -75,6 +75,8 @@ defmodule Aesir.Commons.Network.ProtoManifest.Parser do
     end
   end
 
+  # Namespace atoms come from the trusted, compile-time .proto source, not client input.
+  # sobelow_skip ["DOS.ModuleConcat"]
   defp parse_namespace!(source, path) do
     case Regex.run(~r/^package\s+([\w.]+);/m, source) do
       [_, package] ->
@@ -92,7 +94,8 @@ defmodule Aesir.Commons.Network.ProtoManifest.Parser do
     end
   end
 
-  # sobelow_skip ["DOS.StringToAtom"]
+  # Field and module atoms come from the same trusted, compile-time .proto source.
+  # sobelow_skip ["DOS.StringToAtom", "DOS.ModuleConcat"]
   defp parse_line!(line, namespace, path) do
     case Regex.named_captures(@field_regex, line) do
       nil ->

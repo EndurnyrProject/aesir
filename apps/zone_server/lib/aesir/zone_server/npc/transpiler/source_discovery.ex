@@ -130,6 +130,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.SourceDiscovery do
     end)
   end
 
+  # expand!/7 checks root confinement, including symlinks, before this read.
+  # sobelow_skip ["Traversal.FileModule"]
   defp read_conf!(path, relative, referred_by, chain) do
     case File.read(path) do
       {:ok, content} ->

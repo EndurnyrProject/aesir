@@ -369,6 +369,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
 
   defp status_atom(:anybad), do: :anybad
   defp status_atom(index) when is_integer(index), do: Enum.at(@common_statuses, index, :anybad)
+
+  # Status names come from the trusted local mob-skill DB, not client input.
+  # sobelow_skip ["DOS.BinToAtom"]
   defp status_atom(name) when is_atom(name), do: :"sc_#{name}"
 
   defp mob_statuses(%MobState{instance_id: id}),
