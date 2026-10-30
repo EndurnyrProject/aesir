@@ -6,8 +6,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsOverthrust do
 
   The caster always gets 5% per level. Renewal recipients get 5% at levels 1 and 2,
   10% at 3 and 4, and 15% at 5; pre-renewal recipients get a flat 5%. Pre-renewal
-  also gives the caster's own attacks a 0.1% chance of breaking the weapon, which
-  Aesir does not model in either mode.
+  also adds a 0.1% natural self-weapon break risk on the buff holder's weapon
+  hits through the shared hit stage; Renewal adds no such risk.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,

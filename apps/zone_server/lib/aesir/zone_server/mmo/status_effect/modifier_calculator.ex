@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator do
     sc_jointbeat: [:atk_rate],
     sc_enchantarms: [:enchant_arms_element],
     sc_overthrust: [:skill_ratio],
+    sc_maxoverthrust: [:skill_ratio],
     sc_aurablade: [:post_defense_atk, :post_defense_atk_excludes],
     sc_volcano: [:element_ratio],
     sc_deluge: [:element_ratio],

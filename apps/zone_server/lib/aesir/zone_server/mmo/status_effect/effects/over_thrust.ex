@@ -5,8 +5,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.OverThrust do
   The caster supplies the percent per application in `val1` (the caster's own
   buff is stronger than the party version at the same skill level), so this
   definition carries no per-level table. It adds to every weapon attack's skill
-  ratio (`skill_ratio`). The pre-renewal 0.1% weapon-break chance on the
-  caster's attacks is not modelled; renewal has none.
+  ratio (`skill_ratio`). The shared hit stage adds the pre-renewal 0.1%
+  self-weapon break risk from the original attacker's held buff; Renewal has
+  none. Maximum Power Thrust prevents this ordinary buff.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_overthrust,
@@ -15,6 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.OverThrust do
     clear_buff_flags: [:remove_on_hermode],
     properties: [:buff],
     calc_flags: [:atk],
+    prevented_by: [:sc_maxoverthrust],
+    opt3: :overthrust,
     icon: :overthrust
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition

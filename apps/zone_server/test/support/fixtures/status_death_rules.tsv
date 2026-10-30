@@ -170,6 +170,7 @@ sc_marionette2	ends	ends
 sc_matkfood	ends	ends
 sc_matkpotion	survives	survives
 sc_maximizepower	ends	ends
+sc_maxoverthrust	ends	ends
 sc_mdef_rate	survives	survives
 sc_mdefset	ends	ends
 sc_memorize	ends	ends
