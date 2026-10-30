@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging do
   @moduledoc """
   Drains the inventory changes a skill staged on `PlayerState` while it ran.
 
-  A skill's `cast/4` (and `Skill.Menu.on_menu_reply/3`) only ever sees the player
+  A skill's `cast/4` (and `Skill.Menu.on_menu_reply/4`) only ever sees the player
   state, never the connection or the repo, so it records what it did on staging
   fields instead of acting:
 
@@ -10,8 +10,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging do
       deltas whose DB write is still owed, staged by the paths that mutate the
       inventory purely (the interpreter's catalyst consumption, ammo, and
       SA_CREATECON's material consumption).
-    * `:pending_inventory_notify` — `change` descriptors for rows already
-      written through by `InventoryOps.add/6`, owing only an `ItemAdded` packet.
+    * `:pending_inventory_notify`: add descriptors or `{:removed, index, amount}`
+      for committed rows, owing only inventory packets and no second DB write.
     * `:pending_item_add_failures` — refusal reasons staged by a grant that
       could not add, owing one `ItemAddFailed` each.
 
@@ -28,8 +28,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging do
 
   require Logger
 
+  alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
+  alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @doc """
@@ -84,7 +86,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging do
   defp notify(%{pending_inventory_notify: []} = game_state, _connection_pid), do: game_state
 
   defp notify(%{pending_inventory_notify: changes} = game_state, connection_pid) do
-    Enum.each(changes, &InventoryManager.notify_added(connection_pid, game_state.inventory, &1))
+    Enum.each(changes, fn
+      {:removed, index, amount} ->
+        MessageRouter.send_to(connection_pid, InventoryView.item_removed(index, amount, 0))
+
+      added ->
+        InventoryManager.notify_added(connection_pid, game_state.inventory, added)
+    end)
+
     %{game_state | pending_inventory_notify: []}
   end
 
