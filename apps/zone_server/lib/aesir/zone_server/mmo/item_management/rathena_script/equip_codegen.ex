@@ -52,7 +52,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   - `bonus2 bKey,param,amount` — `{:bonus, {family, param}, expr}` when `bKey`
     resolves via `BonusKeys.param_schema/1` and `param` resolves through
     `Resolver` according to the schema's param kind (race/element/size/class/status/race2
-    via a `{:name, const}` constant, element/size also via an `{:int, id}` literal,
+    via a `{:name, const}` constant, race/element/size also via an `{:int, id}` literal,
     skill via a `{:name, const}` bare name, a
     `{:str, name}` quoted name — the corpus idiom `bonus2 bSkillAtk,"SM_BASH",n`
     — or an `{:int, id}` literal, and item via a bare `{:int, id}` kept verbatim).
@@ -847,7 +847,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     end
   end
 
-  # The gate is either a race constant or, for the by-monster key, a bare
+  # The gate is either a named/numeric race or, for the by-monster key, a bare
   # monster id kept verbatim - the same spirit as the item id, and not validated
   # against the mob catalog at transpile time.
   @spec resolve_drop_gate(:race | :monster, term()) ::
@@ -861,9 +861,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   defp drop_item_id(other), do: unsupported({:unresolved_param, other})
 
   @spec resolve_drop_race(term()) :: {:ok, atom()} | {:error, {:unsupported, detail()}}
-  defp resolve_drop_race({:name, const}) do
-    case resolve(&Resolver.resolve_race/1, const) do
-      {:ok, {:class, :boss}} -> unsupported({:unresolved_param, const})
+  defp resolve_drop_race({kind, value}) when kind in [:name, :int] do
+    case resolve(&Resolver.resolve_race/1, value) do
+      {:ok, {:class, :boss}} -> unsupported({:unresolved_param, value})
       {:ok, race} -> {:ok, race}
       {:error, _} = error -> error
     end
@@ -1237,8 +1237,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
           %{:family => atom(), :param => BonusKeys.param(), optional(atom()) => term()},
           term()
         ) :: {:ok, dest()} | {:error, {:unsupported, detail()}}
-  defp resolve_param(%{family: family, param: :race}, {:name, const}) do
-    with {:ok, race} <- resolve(&Resolver.resolve_race/1, const), do: race_dest(family, race)
+  defp resolve_param(%{family: family, param: :race}, {kind, value}) when kind in [:name, :int] do
+    with {:ok, race} <- resolve(&Resolver.resolve_race/1, value), do: race_dest(family, race)
   end
 
   defp resolve_param(%{family: family, param: :element}, {:name, const}) do

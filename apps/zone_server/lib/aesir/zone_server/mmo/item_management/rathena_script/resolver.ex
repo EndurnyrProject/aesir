@@ -334,6 +334,22 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "RC_Boss" => {:class, :boss}
   }
 
+  @race_ids %{
+    0 => :formless,
+    1 => :undead,
+    2 => :brute,
+    3 => :plant,
+    4 => :insect,
+    5 => :fish,
+    6 => :demon,
+    7 => :demi_human,
+    8 => :angel,
+    9 => :dragon,
+    10 => :player_human,
+    11 => :player_doram,
+    12 => :all
+  }
+
   @sizes %{
     "Size_Small" => :small,
     "Size_Medium" => :medium,
@@ -519,7 +535,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   end
 
   @doc """
-  Resolves an `RC_*` race constant case-insensitively to its combat race atom
+  Resolves a numeric race ID or an `RC_*` constant (case-insensitively) to its combat race atom
   (`Combat.RaceModifiers`'s type). `RC_Boss` is a sentinel: it does not name a
   race, it redirects race-family bonuses (`bAddRace`/`bSubRace`) to the class
   family, so it resolves to `{:class, :boss}` rather than a race atom.
@@ -527,7 +543,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   carries that race yet: the bonus is inert at runtime (no combatant ever
   matches it) but the rest of the item's script still transpiles.
   """
-  @spec resolve_race(String.t()) :: {:ok, atom() | {:class, :boss}} | error()
+  @spec resolve_race(String.t() | integer()) :: {:ok, atom() | {:class, :boss}} | error()
+  def resolve_race(id) when is_integer(id) do
+    case Map.fetch(@race_ids, id) do
+      {:ok, race} -> {:ok, race}
+      :error -> unknown(Integer.to_string(id))
+    end
+  end
+
   def resolve_race(symbol) when is_binary(symbol), do: lookup_folded(@races_folded, symbol)
 
   @doc """

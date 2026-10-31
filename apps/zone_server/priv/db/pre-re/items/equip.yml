@@ -32652,6 +32652,11 @@
   locations:
     - head_top
   name: 2nd Anniversary Hat
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 1)
+    ctx = bonus(ctx, :max_sp, 80)
+    ctx = bonus(ctx, {:add_monster_drop, 7864, :demi_human}, 50)
+    ctx
   refineable: true
   type: armor
   view: 109

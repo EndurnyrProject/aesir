@@ -10,11 +10,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Entry
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Group
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.SubGroup
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Transpiler
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
 
   setup :setup_ets_tables
@@ -298,6 +300,28 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
     test "a zero-chance bonus never drops" do
       mods = %{{:add_monster_drop, 501} => 0}
 
+      assert [] = DropCalculator.roll_equipment_drops(mods, :brute, nil, "prontera", 150, 150)
+    end
+
+    test "a transpiled numeric race gate preserves bonuses and the drop threshold" do
+      script = "bonus bDex,1; bonus bMaxSP,80; bonus3 bAddMonsterDropItem,501,7,50;"
+      assert {:ok, program} = Transpiler.transpile_equip(script)
+      assert program == EquipScript.parse!(EquipScript.to_source(program))
+      mods = EquipScript.eval(program, %{})
+      assert mods == %{:dex => 1, :max_sp => 80, {:add_monster_drop, 501, :demi_human} => 50}
+
+      # The first drop roll is 50 with the first seed and 51 with the second.
+      :rand.seed(:exsss, {12_269, 2, 3})
+
+      assert [{501, 1, _, _, true}] =
+               DropCalculator.roll_equipment_drops(mods, :demi_human, nil, "prontera", 150, 150)
+
+      :rand.seed(:exsss, {13_175, 2, 3})
+
+      assert [] =
+               DropCalculator.roll_equipment_drops(mods, :demi_human, nil, "prontera", 150, 150)
+
+      :rand.seed(:exsss, {12_269, 2, 3})
       assert [] = DropCalculator.roll_equipment_drops(mods, :brute, nil, "prontera", 150, 150)
     end
 

@@ -253,6 +253,22 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
       assert Resolver.resolve_race("rC_NoPe") == {:error, {:unknown_symbol, "rC_NoPe"}}
     end
 
+    test "numeric race IDs resolve without accepting sentinels or out-of-range IDs" do
+      for {id, race} <- [
+            {0, :formless},
+            {7, :demi_human},
+            {10, :player_human},
+            {11, :player_doram},
+            {12, :all}
+          ] do
+        assert Resolver.resolve_race(id) == {:ok, race}
+      end
+
+      for id <- [-1, 13] do
+        assert Resolver.resolve_race(id) == {:error, {:unknown_symbol, Integer.to_string(id)}}
+      end
+    end
+
     test "maps RC_All to :all" do
       assert {:ok, :all} = Resolver.resolve_race("RC_All")
     end

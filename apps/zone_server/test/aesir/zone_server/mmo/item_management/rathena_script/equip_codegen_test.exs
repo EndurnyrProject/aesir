@@ -334,6 +334,32 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus3 bAddMonsterDropItem,517,RC_Brute,3000;")
     end
 
+    test "numeric races match named constants for ordinary bonuses and drop gates" do
+      for {id, name, race} <- [
+            {0, "RC_Formless", :formless},
+            {7, "RC_DemiHuman", :demi_human},
+            {12, "RC_All", :all}
+          ] do
+        assert {:ok, [{:bonus, {:subrace, ^race}, 5}] = program} =
+                 compile("bonus2 bSubRace,#{id},5;")
+
+        assert {:ok, ^program} = compile("bonus2 bSubRace,#{name},5;")
+
+        assert {:ok, [{:bonus, {:add_monster_drop, 7864, ^race}, 50}] = drop_program} =
+                 compile("bonus3 bAddMonsterDropItem,7864,#{id},50;")
+
+        assert {:ok, ^drop_program} = compile("bonus3 bAddMonsterDropItem,7864,#{name},50;")
+      end
+    end
+
+    test "invalid numeric races reject the whole script in either parameter path" do
+      for id <- [-1, 13],
+          command <- ["bonus2 bSubRace,#{id},5;", "bonus3 bAddMonsterDropItem,7864,#{id},50;"] do
+        assert {:error, {:unsupported, {:unresolved_param, _}}} =
+                 compile("bonus bDex,1; " <> command)
+      end
+    end
+
     test "bAddMonsterDropItem bonus3 rejects a non-literal item id" do
       assert {:error, {:unsupported, {:unresolved_param, _}}} =
                compile("bonus3 bAddMonsterDropItem,getrefine(),RC_Brute,3000;")
