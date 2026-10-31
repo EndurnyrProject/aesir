@@ -5631,7 +5631,7 @@
   locations:
     - both_accessory
   name: Hylozoist Card
-  on_equip: 'bonus(ctx, :class_change, 100)'
+  on_equip: bonus(ctx, :class_change, 100)
   type: card
   weight: 10
 - aegis_name: High_Orc_Card

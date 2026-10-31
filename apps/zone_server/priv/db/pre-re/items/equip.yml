@@ -3382,7 +3382,7 @@
   locations:
     - right_hand
   name: Azoth
-  on_equip: 'bonus(ctx, :class_change, 300)'
+  on_equip: bonus(ctx, :class_change, 300)
   range: 1
   refineable: true
   subtype: dagger
@@ -4200,6 +4200,10 @@
   locations:
     - both_hand
   name: Drill Katar
+  on_equip: |-
+    ctx = bonus(ctx, :hit, 30)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 476}, 1, 150)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -4557,6 +4561,14 @@
   locations:
     - both_hand
   name: Chakram
+  on_equip: |-
+    ctx = if (skill_lv(ctx, 134) == 10) do
+      bonus(ctx, :hit, 10)
+    else
+      ctx
+    end
+    ctx = bonus(ctx, {:skill_atk, 406}, 20)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -15126,6 +15138,22 @@
   locations:
     - left_hand
   name: Ahura Mazdah
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 50)
+    ctx = bonus(ctx, :mdef, 99)
+    ctx = bonus(ctx, :unbreakable_shield, 1)
+    ctx = bonus(ctx, :short_weapon_damage_return, 100)
+    ctx = bonus(ctx, {:subrace, :demi_human}, 95)
+    ctx = bonus(ctx, {:subrace, :player_human}, 95)
+    ctx = grant_skill(ctx, 479, 5)
+    ctx = grant_skill(ctx, 93, 1)
+    ctx = grant_skill(ctx, 476, 5)
+    ctx = grant_skill(ctx, 366, 10)
+    ctx = bonus(ctx, :max_hp_rate, 200)
+    ctx = bonus(ctx, :no_gemstone, 1)
+    ctx = bonus(ctx, :movement_speed, 25)
+    ctx = bonus(ctx, :no_walk_delay, 1)
+    ctx
   type: armor
   view: 1
   weight: 10
