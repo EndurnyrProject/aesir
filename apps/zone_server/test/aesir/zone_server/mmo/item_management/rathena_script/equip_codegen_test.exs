@@ -834,6 +834,26 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus2 bGetZenyNum,100,25;")
     end
 
+    test "numeric secondary races match named constants across bonus families" do
+      for {key, family} <- [
+            {"bAddRace2", :addrace2},
+            {"bMagicAddRace2", :magic_addrace2},
+            {"bSubRace2", :subrace2}
+          ] do
+        assert {:ok, [{:bonus, :str, 1}, {:bonus, {^family, :orc}, 30}] = program} =
+                 compile("bonus bStr,1; bonus2 #{key},3,30;")
+
+        assert {:ok, ^program} = compile("bonus bStr,1; bonus2 #{key},RC2_Orc,30;")
+      end
+    end
+
+    test "invalid secondary race IDs reject the whole script" do
+      for id <- [-1, 0, 43] do
+        assert {:error, {:unsupported, {:unresolved_param, _}}} =
+                 compile("bonus bStr,1; bonus2 bAddRace2,#{id},30;")
+      end
+    end
+
     test "bAddRace2 resolves RC2 groups case-insensitively" do
       assert {:ok, [{:bonus, {:addrace2, :biolab}, 20}]} =
                compile("bonus2 bAddRace2,RC2_BioLab,20;")

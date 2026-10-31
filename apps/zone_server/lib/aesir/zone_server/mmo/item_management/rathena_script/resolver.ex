@@ -379,56 +379,51 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   @battle_flags Map.new(BattleFlag.ids(), fn {name, value} -> {"bf_#{name}", value} end)
   @trigger_flags Map.new(AutoTriggerFlag.ids(), fn {name, value} -> {"atf_#{name}", value} end)
 
-  # rAthena's `e_race2` monster-group enum (`bAddRace2`'s param). Keyed on the
-  # downcased constant name because the corpus spells the same group both ways
-  # (`RC2_BioLab` and `RC2_BIOLAB`, `RC2_Illusion_Vampire` and
-  # `RC2_ILLUSION_VAMPIRE`); `resolve_race2/1` downcases before lookup. Groups
-  # are opaque param atoms (no combatant carries a race2 yet), so the atom is
-  # just the name minus its `rc2_` prefix.
-  @race2 %{
-    "rc2_goblin" => :goblin,
-    "rc2_kobold" => :kobold,
-    "rc2_orc" => :orc,
-    "rc2_golem" => :golem,
-    "rc2_guardian" => :guardian,
-    "rc2_ninja" => :ninja,
-    "rc2_gvg" => :gvg,
-    "rc2_battlefield" => :battlefield,
-    "rc2_treasure" => :treasure,
-    "rc2_biolab" => :biolab,
-    "rc2_manuk" => :manuk,
-    "rc2_splendide" => :splendide,
-    "rc2_scaraba" => :scaraba,
-    "rc2_ogh_atk_def" => :ogh_atk_def,
-    "rc2_ogh_hidden" => :ogh_hidden,
-    "rc2_bio5_swordman_thief" => :bio5_swordman_thief,
-    "rc2_bio5_acolyte_merchant" => :bio5_acolyte_merchant,
-    "rc2_bio5_mage_archer" => :bio5_mage_archer,
-    "rc2_bio5_mvp" => :bio5_mvp,
-    "rc2_clocktower" => :clocktower,
-    "rc2_thanatos" => :thanatos,
-    "rc2_faceworm" => :faceworm,
-    "rc2_hearthunter" => :hearthunter,
-    "rc2_rockridge" => :rockridge,
-    "rc2_werner_lab" => :werner_lab,
-    "rc2_temple_demon" => :temple_demon,
-    "rc2_illusion_vampire" => :illusion_vampire,
-    "rc2_malangdo" => :malangdo,
-    "rc2_ep172alpha" => :ep172alpha,
-    "rc2_ep172beta" => :ep172beta,
-    "rc2_ep172bath" => :ep172bath,
-    "rc2_illusion_turtle" => :illusion_turtle,
-    "rc2_rachel_sanctuary" => :rachel_sanctuary,
-    "rc2_illusion_luanda" => :illusion_luanda,
-    "rc2_illusion_frozen" => :illusion_frozen,
-    "rc2_illusion_moonlight" => :illusion_moonlight,
-    "rc2_ep16_def" => :ep16_def,
-    "rc2_edda_arunafeltz" => :edda_arunafeltz,
-    "rc2_lasagna" => :lasagna,
-    "rc2_glast_heim_abyss" => :glast_heim_abyss,
-    "rc2_destroyed_valkyrie_realm" => :destroyed_valkyrie_realm,
-    "rc2_encroached_gephenia" => :encroached_gephenia
+  @race2_ids %{
+    1 => :goblin,
+    2 => :kobold,
+    3 => :orc,
+    4 => :golem,
+    5 => :guardian,
+    6 => :ninja,
+    7 => :gvg,
+    8 => :battlefield,
+    9 => :treasure,
+    10 => :biolab,
+    11 => :manuk,
+    12 => :splendide,
+    13 => :scaraba,
+    14 => :ogh_atk_def,
+    15 => :ogh_hidden,
+    16 => :bio5_swordman_thief,
+    17 => :bio5_acolyte_merchant,
+    18 => :bio5_mage_archer,
+    19 => :bio5_mvp,
+    20 => :clocktower,
+    21 => :thanatos,
+    22 => :faceworm,
+    23 => :hearthunter,
+    24 => :rockridge,
+    25 => :werner_lab,
+    26 => :temple_demon,
+    27 => :illusion_vampire,
+    28 => :malangdo,
+    29 => :ep172alpha,
+    30 => :ep172beta,
+    31 => :ep172bath,
+    32 => :illusion_turtle,
+    33 => :rachel_sanctuary,
+    34 => :illusion_luanda,
+    35 => :illusion_frozen,
+    36 => :illusion_moonlight,
+    37 => :ep16_def,
+    38 => :edda_arunafeltz,
+    39 => :lasagna,
+    40 => :glast_heim_abyss,
+    41 => :destroyed_valkyrie_realm,
+    42 => :encroached_gephenia
   }
+  @race2 Map.new(@race2_ids, fn {_id, group} -> {"rc2_#{group}", group} end)
 
   # rAthena's `readparam` character-parameter constants that the equip corpus
   # reads (`readparam(bStr)`), mapped to the stat atoms `EquipScript` feeds from
@@ -568,11 +563,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   def resolve_mob_class(symbol) when is_binary(symbol), do: lookup(@mob_classes, symbol)
 
   @doc """
-  Resolves an rAthena `RC2_*` monster-group constant (`bAddRace2`'s param) to
-  its group atom. Lookup is case-insensitive: the corpus spells the same group
-  in several casings, so the symbol is downcased before lookup.
+  Resolves a numeric secondary-race ID or a case-insensitive `RC2_*` constant
+  to the monster-group atom carried by combatants. `NONE` and `MAX` are not
+  monster groups and do not resolve.
   """
-  @spec resolve_race2(String.t()) :: {:ok, atom()} | error()
+  @spec resolve_race2(String.t() | integer()) :: {:ok, atom()} | error()
+  def resolve_race2(id) when is_integer(id) do
+    case Map.fetch(@race2_ids, id) do
+      {:ok, group} -> {:ok, group}
+      :error -> unknown(Integer.to_string(id))
+    end
+  end
+
   def resolve_race2(symbol) when is_binary(symbol) do
     case Map.fetch(@race2, String.downcase(symbol)) do
       {:ok, value} -> {:ok, value}

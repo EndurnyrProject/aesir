@@ -9,6 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
+  alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Transpiler
 
   describe "physical_attack_cardfix/4" do
     setup do
@@ -125,6 +127,35 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
                attack_opts(%{})
              ) ==
                [13]
+    end
+  end
+
+  describe "transpiled secondary-race bonuses" do
+    test "a numeric Orc-group bonus matches secondary groups, not primary race" do
+      assert {:ok, program} = Transpiler.transpile_equip("bonus2 bAddRace2,3,30;")
+      assert program == EquipScript.parse!(EquipScript.to_source(program))
+      modifiers = EquipScript.eval(program, %{})
+      assert modifiers == %{{:addrace2, :orc} => 30}
+
+      attacker =
+        CombatTestHelper.create_player_combatant()
+        |> with_equip_modifiers(modifiers)
+
+      opts = %{
+        arrow?: false,
+        ranged?: false,
+        range_rates?: false,
+        attacker_modifiers: %{}
+      }
+
+      for {groups, expected} <- [{[:orc], 30}, {[:orc, :goblin], 30}, {[:goblin], 0}, {[], 0}] do
+        defender =
+          CombatTestHelper.create_mob_combatant(race: :demi_human)
+          |> Map.put(:race2, groups)
+
+        rates = EquipmentBonuses.physical_attack_cardfix(attacker, defender, :right_hand, opts)
+        assert Enum.sum(rates) == expected
+      end
     end
   end
 

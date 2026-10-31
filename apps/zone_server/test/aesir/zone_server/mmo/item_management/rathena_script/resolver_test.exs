@@ -307,6 +307,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
     end
   end
 
+  describe "resolve_race2/1" do
+    test "numeric group IDs preserve enum positions and exclude sentinel values" do
+      for {id, group} <- [
+            {1, :goblin},
+            {3, :orc},
+            {10, :biolab},
+            {38, :edda_arunafeltz},
+            {42, :encroached_gephenia}
+          ] do
+        assert Resolver.resolve_race2(id) == {:ok, group}
+      end
+
+      for id <- [-1, 0, 43] do
+        assert Resolver.resolve_race2(id) == {:error, {:unknown_symbol, Integer.to_string(id)}}
+      end
+    end
+  end
+
   describe "resolve_eff/1" do
     test "maps Eff_Stun to :sc_stun" do
       assert {:ok, :sc_stun} = Resolver.resolve_eff("Eff_Stun")

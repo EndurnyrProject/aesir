@@ -4853,6 +4853,7 @@
   locations:
     - right_hand
   name: Orc Lady Card
+  on_equip: bonus(ctx, {:addrace2, :orc}, 30)
   type: card
   weight: 10
 - aegis_name: Orc_Archer_Card

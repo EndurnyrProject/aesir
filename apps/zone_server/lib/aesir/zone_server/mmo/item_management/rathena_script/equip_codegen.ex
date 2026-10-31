@@ -52,7 +52,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   - `bonus2 bKey,param,amount` — `{:bonus, {family, param}, expr}` when `bKey`
     resolves via `BonusKeys.param_schema/1` and `param` resolves through
     `Resolver` according to the schema's param kind (race/element/size/class/status/race2
-    via a `{:name, const}` constant, race/element/size also via an `{:int, id}` literal,
+    via a `{:name, const}` constant, race/race2/element/size also via an `{:int, id}` literal,
     skill via a `{:name, const}` bare name, a
     `{:str, name}` quoted name — the corpus idiom `bonus2 bSkillAtk,"SM_BASH",n`
     — or an `{:int, id}` literal, and item via a bare `{:int, id}` kept verbatim).
@@ -1281,8 +1281,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     with {:ok, status} <- resolve(&Resolver.resolve_eff/1, const), do: {:ok, {family, status}}
   end
 
-  defp resolve_param(%{family: family, param: :race2}, {:name, const}) do
-    with {:ok, race2} <- resolve(&Resolver.resolve_race2/1, const), do: {:ok, {family, race2}}
+  defp resolve_param(%{family: family, param: :race2}, {kind, value})
+       when kind in [:name, :int] do
+    with {:ok, race2} <- resolve(&Resolver.resolve_race2/1, value), do: {:ok, {family, race2}}
   end
 
   defp resolve_param(%{family: family, param: :item_group}, {:name, const}) do
