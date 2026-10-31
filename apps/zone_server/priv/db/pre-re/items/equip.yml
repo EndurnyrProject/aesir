@@ -44070,6 +44070,12 @@
   locations:
     - head_top
   name: Classic Hat
+  on_equip: |-
+    ctx = bonus(ctx, :str, 1)
+    ctx = bonus(ctx, {:subsize, :small}, 5)
+    ctx = bonus(ctx, {:subsize, :medium}, 5)
+    ctx = bonus(ctx, {:subsize, :large}, 5)
+    ctx
   refineable: true
   type: armor
   view: 475

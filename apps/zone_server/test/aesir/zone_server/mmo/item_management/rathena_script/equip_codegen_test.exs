@@ -517,6 +517,28 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus2 bIgnoreMdefRaceRate,RC_Angel,50;")
     end
 
+    test "numeric size parameters preserve sibling bonuses and match named constants" do
+      for {id, name, size} <- [
+            {0, "Size_Small", :small},
+            {1, "Size_Medium", :medium},
+            {2, "Size_Large", :large},
+            {3, "Size_All", :all}
+          ],
+          {key, family} <- [{"bSubSize", :subsize}, {"bMagicAddSize", :magic_addsize}] do
+        assert {:ok, program} = compile("bonus bStr,1; bonus2 #{key},#{id},5;")
+        assert {:ok, ^program} = compile("bonus bStr,1; bonus2 #{key},#{name},5;")
+        assert program == EquipScript.parse!(EquipScript.to_source(program))
+        assert EquipScript.eval(program, %{}) == %{:str => 1, {family, size} => 5}
+      end
+    end
+
+    test "invalid numeric sizes reject the whole script" do
+      for id <- [-1, 4] do
+        assert {:error, {:unsupported, {:unresolved_param, _}}} =
+                 compile("bonus bStr,1; bonus2 bSubSize,#{id},5;")
+      end
+    end
+
     test "exp_add_race transpiles for a specific race and for the RC_All wildcard" do
       assert {:ok, [{:bonus, {:exp_add_race, :all}, 10}]} =
                compile("bonus2 bExpAddRace,RC_All,10;")
