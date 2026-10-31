@@ -1169,9 +1169,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus bNotAVocabularyKey,2;")
     end
 
-    test "a conditional read outside the inputs is rejected" do
-      assert {:error, {:unsupported, {:unsupported_call, "getequiprefinerycnt"}}} =
+    test "slot-refine conditions are supported while reads outside the inputs are rejected" do
+      assert {:ok, [{:if, {:>, {:equip_item, :refine, 9}, 5}, [{:bonus, :str, 10}], []}]} =
                compile("if (getequiprefinerycnt(EQI_HAND_R)>5) bonus bStr,10;")
+
+      assert {:error, {:unsupported, {:unsupported_call, "getcharid"}}} =
+               compile("if (getcharid(0)>5) bonus bStr,10;")
     end
 
     test "unassigned variable is rejected" do

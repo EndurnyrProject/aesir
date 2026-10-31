@@ -206,6 +206,19 @@ defmodule Aesir.ZoneServer.Script.DslEquipReadsTest do
       assert Dsl.getiteminfo(ctx, @sword, 6) == 500
     end
 
+    test "ITEMINFO_VIEW returns the weapon subtype instead of its appearance view" do
+      assert Dsl.getiteminfo(detached_ctx(), @sword, 11) == 2
+    end
+
+    test "ITEMINFO_VIEW returns the ammunition subtype ordinal" do
+      assert Dsl.getiteminfo(detached_ctx(), 1750, 11) == 1
+    end
+
+    test "ITEMINFO_VIEW preserves armor appearance and unknown-item defaults" do
+      assert Dsl.getiteminfo(detached_ctx(), 2220, 11) == 16
+      assert Dsl.getiteminfo(detached_ctx(), 9_999_999, 11) == -1
+    end
+
     test "reads armor level from an armor and returns 0 from a weapon" do
       ctx = build_ctx()
 

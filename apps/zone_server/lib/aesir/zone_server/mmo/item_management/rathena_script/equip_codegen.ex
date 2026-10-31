@@ -87,6 +87,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     `Class`/`BaseClass`/`BaseJob` `==`/`!=` a `Job_*` constant compiles to
     `{:job_cmp, op, reader, job}`, resolved through `JobLineage` at runtime. A
     read outside this vocabulary, such as `eaclass()`, is unsupported.
+  - Equipment reads use the wearer's slot snapshot: `getequipid(slot)`,
+    `getequiprefinerycnt(slot)`, and `getiteminfo(getequipid(slot), ITEMINFO_VIEW)`.
+    Empty slots retain the script command's `-1` id/view and `0` refine defaults.
+  - Numeric expressions in conditions use zero/nonzero truthiness.
   - Expressions are input-pure only: integer literals (including negated),
     `getrefine()` -> `:refine`, `BaseLevel` -> `:base_level`, `JobLevel` ->
     `:job_level`, inlined `.@var`, `+ - * /` arithmetic (`/` -> `:div`, matching
@@ -113,6 +117,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
   alias Aesir.ZoneServer.Npc.Transpiler.Parser
+  alias Aesir.ZoneServer.Npc.Transpiler.Resolver, as: NpcResolver
 
   @type context :: :equip | :unequip
   @typep compile_context :: context() | :autobonus_primary | :autobonus_secondary
@@ -1348,9 +1353,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   defp compile_expr({:name, "JobLevel"}, _env), do: {:ok, :job_level}
 
   defp compile_expr({:name, symbol} = ast, _env) do
-    case Resolver.resolve_date_constant(String.upcase(symbol)) do
-      {:ok, value} -> {:ok, value}
-      {:error, _reason} -> unsupported({:expression, ast})
+    with {:ok, source} <- NpcResolver.constant(String.upcase(symbol)),
+         {value, ""} <- Integer.parse(source) do
+      {:ok, value}
+    else
+      _ -> unsupported({:expression, ast})
     end
   end
 
@@ -1381,6 +1388,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   # expression evaluating to 1/0.
   defp compile_expr({:bin, op, _lhs, _rhs} = ast, env) when op in @compare_ops do
     with {:ok, condition} <- compile_cond(ast, env), do: {:ok, {:bool, condition}}
+  end
+
+  defp compile_expr({:call, "getequipid", [slot]}, env),
+    do: compile_equipment_read(:id, slot, env)
+
+  defp compile_expr({:call, "getequiprefinerycnt", [slot]}, env),
+    do: compile_equipment_read(:refine, slot, env)
+
+  defp compile_expr({:call, "getiteminfo", [{:call, name, [slot]}, selector]} = ast, env) do
+    if String.downcase(name) == "getequipid" and item_view_selector?(selector) do
+      compile_equipment_read(:view, slot, env)
+    else
+      unsupported({:expression, ast})
+    end
   end
 
   # `getskilllv(<skill>)` reads the wearer's learned level of a skill; the id
@@ -1431,6 +1452,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   defp compile_expr(other, _env), do: unsupported({:expression, other})
 
+  defp item_view_selector?({:int, 11}), do: true
+  defp item_view_selector?({:name, name}), do: String.upcase(name) == "ITEMINFO_VIEW"
+  defp item_view_selector?(_selector), do: false
+
+  defp compile_equipment_read(field, {:name, name} = slot, env) do
+    case NpcResolver.equip_slot(String.upcase(name)) do
+      {:ok, index} -> {:ok, {:equip_item, field, index}}
+      :error -> compile_equipment_read_expr(field, slot, env)
+    end
+  end
+
+  defp compile_equipment_read(field, slot, env),
+    do: compile_equipment_read_expr(field, slot, env)
+
+  defp compile_equipment_read_expr(field, slot, env) do
+    with {:ok, expr} <- compile_expr(slot, env), do: {:ok, {:equip_item, field, expr}}
+  end
+
   @spec compile_math(:min | :max | :pow, term(), term(), %{String.t() => EquipScript.expr()}) ::
           {:ok, EquipScript.expr()} | {:error, {:unsupported, detail()}}
   defp compile_math(op, lhs, rhs, env) do
@@ -1446,7 +1485,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     with {:ok, ids} <- resolve_item_refs(args), do: {:ok, {:equipped, ids}}
   end
 
-  defp compile_cond({:not, {:call, "isequipped", _args} = condition}, env) do
+  defp compile_cond({:not, condition}, env) do
     with {:ok, condition} <- compile_cond(condition, env), do: {:ok, {:not, condition}}
   end
 
@@ -1475,7 +1514,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     end
   end
 
-  defp compile_cond(other, _env), do: unsupported({:condition, other})
+  defp compile_cond(other, env) do
+    case compile_expr(other, env) do
+      {:ok, expr} -> {:ok, {:!=, expr, 0}}
+      {:error, _reason} -> unsupported({:condition, other})
+    end
+  end
 
   defp compile_equality_cond(op, lhs, rhs, env) do
     if string_shaped?(lhs) or string_shaped?(rhs) do

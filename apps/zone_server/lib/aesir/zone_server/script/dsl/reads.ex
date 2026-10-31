@@ -619,7 +619,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
       8 => & &1.defense,
       9 => & &1.range,
       10 => & &1.slots,
-      11 => & &1.view,
+      11 => &ItemDefinition.script_view/1,
       12 => & &1.equip_level_min,
       # Weapon/armor level read as 0 unless the item is the matching type.
       13 => fn definition ->

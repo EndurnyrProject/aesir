@@ -15,7 +15,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   the id of the card that armed it; on-hit status bonuses register into
   `EquipAddEff`'s ordered lists the same way.
   Pure: it reads the item and refine catalogs and writes only to
-  the struct it is given.
+  the struct it is given. Equipment queries read one slot snapshot rebuilt from
+  all worn rows before any item, card, option, or active autobonus is evaluated.
   """
 
   alias Aesir.Commons.Models.InventoryItem
@@ -158,6 +159,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
       stats.progression
       |> equip_script_inputs(equip_stat_params(stats), 0)
       |> Map.put(:equipped_item_counts, equipped_item_counts(worn_items))
+      |> Map.put(:equipped_slots, equipped_slots(worn_items))
       |> Map.merge(extra_inputs)
       |> Map.put_new_lazy(:local_time, &NaiveDateTime.local_now/0)
 
@@ -414,6 +416,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   end
 
   defp equip_stat_params(%Stats{}), do: %{}
+
+  defp equipped_slots(worn_items) do
+    slots = EquipLocation.equip_index_order() |> Enum.with_index() |> Map.new()
+
+    entries =
+      for item <- worn_items,
+          {:ok, %ItemDefinition{} = definition} <- [ItemManagement.get_item_by_id(item.nameid)],
+          location <- EquipLocation.bitmask_to_location_atoms(item.equip) do
+        snapshot = %{
+          id: item.nameid,
+          refine: item.refine,
+          view: ItemDefinition.script_view(definition)
+        }
+
+        {Map.fetch!(slots, location), snapshot}
+      end
+
+    Enum.reduce(entries, %{}, fn {index, snapshot}, acc -> Map.put_new(acc, index, snapshot) end)
+  end
 
   defp equipped_item_counts(worn_items) do
     Enum.reduce(worn_items, %{}, fn item, counts ->

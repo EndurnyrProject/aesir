@@ -15,9 +15,22 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.JobManagement.ItemEligibility
+  alias Aesir.ZoneServer.Mmo.WeaponTypes
 
   @renewal_classes [:baby, :fourth, :normal, :third, :third_baby, :third_upper, :upper]
   @pre_renewal_classes [:baby, :normal, :upper]
+
+  @ammo_subtypes %{
+    arrow: 1,
+    dagger: 2,
+    bullet: 3,
+    shell: 4,
+    grenade: 5,
+    shuriken: 6,
+    kunai: 7,
+    cannonball: 8,
+    throw_weapon: 9
+  }
 
   @typedoc "Broad item category (rAthena `Type`)."
   @type item_type ::
@@ -111,6 +124,21 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
           on_unequip: EquipScript.program() | nil,
           attack_element: atom()
         }
+
+  @doc """
+  Returns the script-visible view of an item.
+
+  Weapons and ammunition return their subtype ordinal, defaulting to `0` when
+  unset or unknown. Other item types return their stored appearance view.
+  """
+  @spec script_view(t()) :: integer()
+  def script_view(%__MODULE__{type: :weapon, subtype: subtype}),
+    do: WeaponTypes.get_weapon_id(subtype)
+
+  def script_view(%__MODULE__{type: :ammo, subtype: subtype}),
+    do: Map.get(@ammo_subtypes, subtype, 0)
+
+  def script_view(%__MODULE__{view: view}), do: view
 
   @doc "Returns the unrestricted item class categories for a game mode."
   @spec default_classes(ItemEligibility.mode()) :: [ItemEligibility.category()]

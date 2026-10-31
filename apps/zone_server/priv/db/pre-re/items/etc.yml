@@ -6927,6 +6927,15 @@
   locations:
     - right_hand
   name: Sword Guardian Card
+  on_equip: |-
+    if ((equip_item(ctx, :view, 9) == 2) || (equip_item(ctx, :view, 9) == 3)) do
+      ctx = bonus(ctx, :hit, 5)
+      ctx = bonus(ctx, :critical, 5)
+      ctx = bonus(ctx, {:skill_atk, 62}, 25)
+      ctx
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Bow_Guardian_Card
@@ -6935,6 +6944,15 @@
   locations:
     - right_hand
   name: Bow Guardian Card
+  on_equip: |-
+    if (equip_item(ctx, :view, 9) == 11) do
+      ctx = bonus(ctx, :hit, 5)
+      ctx = bonus(ctx, :critical, 5)
+      ctx = bonus(ctx, {:skill_atk, 47}, 50)
+      ctx
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Salamander_Card
@@ -7107,6 +7125,15 @@
   locations:
     - right_hand
   name: Necromancer Card
+  on_equip: |-
+    if (equip_item(ctx, :view, 9) == 10) do
+      ctx = bonus(ctx, :int, 1)
+      ctx = bonus(ctx, {:ignore_mdef_class, :normal}, 2)
+      ctx = bonus(ctx, {:ignore_mdef_class, :boss}, 2)
+      ctx
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Fallen_Bishop_Card

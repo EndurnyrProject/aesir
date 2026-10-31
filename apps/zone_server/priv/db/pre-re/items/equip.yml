@@ -4542,6 +4542,14 @@
   locations:
     - both_hand
   name: Krishna
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 137}, 10)
+    ctx = if (skill_lv(ctx, 136) != 0) do
+      auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 136}, skill_lv(ctx, 136), 5)
+    else
+      auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 136}, 1, 5)
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -22903,6 +22911,18 @@
   locations:
     - garment
   name: Valkyrian Manteau
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_garment, 1)
+    ctx = if ((job_is(ctx, :base_class, :mage) || job_is(ctx, :base_class, :archer)) || job_is(ctx, :base_class, :acolyte)) do
+      bonus(ctx, :perfect_dodge, ((5 + (equip_item(ctx, :refine, 3) * 2)) * 10))
+    else
+      if ((job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :merchant)) || job_is(ctx, :base_class, :thief)) do
+        bonus(ctx, :short_weapon_damage_return, (5 + (equip_item(ctx, :refine, 3) * 2)))
+      else
+        ctx
+      end
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -42377,6 +42397,12 @@
     - head_top
   name: RJC Katusa Flower
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 91}, (15 + equip_item(ctx, :refine, 9)))
+    ctx = bonus(ctx, {:skill_atk, 90}, (15 + equip_item(ctx, :refine, 9)))
+    ctx = bonus(ctx, {:skill_varcast_rate, 91}, -25)
+    ctx = bonus(ctx, {:skill_varcast_rate, 90}, -25)
+    ctx
   refineable: true
   slots: 1
   type: armor

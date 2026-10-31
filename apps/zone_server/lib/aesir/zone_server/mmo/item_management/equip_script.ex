@@ -71,6 +71,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   supported atoms are the six base stats (`:str :agi :vit :int :dex :luk`) and
   the six trait stats (`:pow :sta :wis :spl :con :crt`).
 
+  ## Equipment-slot queries
+
+  `equip_item(ctx, field, slot)` reads `:id`, `:refine`, or script-visible
+  `:view` from the wearer's `:equipped_slots` snapshot. Slot numbers use the
+  equipment index, independent of the item whose program is running. Empty
+  or unknown slots return `0` for refine and `-1` for id/view.
+
   ## Random-option constructs
 
   `{:random_option, field}` (source `random_option(ctx, :value)`) reads the
@@ -127,6 +134,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           optional(:stats) => %{atom() => integer()},
           optional(:job_id) => integer(),
           optional(:equipped_item_counts) => %{pos_integer() => pos_integer()},
+          optional(:equipped_slots) => %{
+            integer() => %{id: pos_integer(), refine: non_neg_integer(), view: integer()}
+          },
           optional(:local_time) => NaiveDateTime.t(),
           optional(:character_info) => Rathena.character_info() | nil,
           optional(:map_name) => String.t() | nil,
@@ -151,6 +161,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           | {:skill_lv, pos_integer()}
           | {:stat, atom()}
           | {:random_option, random_option_field()}
+          | {:equip_item, :id | :refine | :view, expr()}
           | {:bool, condition()}
           | {:gettime, expr()}
 
@@ -386,6 +397,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp render_expr({:skill_lv, id}), do: "skill_lv(ctx, #{id})"
   defp render_expr({:stat, stat}), do: "stat(ctx, #{inspect(stat)})"
   defp render_expr({:random_option, field}), do: "random_option(ctx, #{inspect(field)})"
+
+  defp render_expr({:equip_item, field, slot}),
+    do: "equip_item(ctx, #{inspect(field)}, #{render_expr(slot)})"
+
   defp render_expr({:bool, condition}), do: "bool(ctx, #{render_cond(condition)})"
   defp render_expr({:gettime, selector}), do: "gettime(ctx, #{render_expr(selector)})"
   defp render_expr({:div, l, r}), do: "div(#{render_expr(l)}, #{render_expr(r)})"
@@ -510,6 +525,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp parse_expr!({:random_option, _, [{:ctx, _, c}, field]})
        when is_atom(c) and field in [:id, :value, :param],
        do: {:random_option, field}
+
+  defp parse_expr!({:equip_item, _, [{:ctx, _, c}, field, slot]})
+       when is_atom(c) and field in [:id, :refine, :view],
+       do: {:equip_item, field, parse_expr!(slot)}
 
   defp parse_expr!({:bool, _, [{:ctx, _, c}, condition]}) when is_atom(c),
     do: {:bool, parse_cond!(condition)}
@@ -952,6 +971,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp eval_expr({:random_option, field}, inputs),
     do: inputs |> Map.get(:random_option, %{}) |> Map.get(field, 0)
+
+  defp eval_expr({:equip_item, field, slot}, inputs) do
+    item = inputs |> Map.get(:equipped_slots, %{}) |> Map.get(eval_expr(slot, inputs), %{})
+    Map.get(item, field, if(field == :refine, do: 0, else: -1))
+  end
 
   defp eval_expr({:bool, condition}, inputs), do: if(eval_cond(condition, inputs), do: 1, else: 0)
 
