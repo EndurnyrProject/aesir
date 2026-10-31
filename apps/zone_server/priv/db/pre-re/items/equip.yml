@@ -5953,6 +5953,16 @@
   locations:
     - both_hand
   name: Giant Axe
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 485}, 15)
+    ctx = if (stat(ctx, :str) >= 95) do
+      ctx = bonus(ctx, :hit, 10)
+      ctx = bonus(ctx, :aspd_rate, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -28396,6 +28406,7 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_equip: bonus(ctx, {:exp_add_race, :undead}, 15)
   type: armor
 - aegis_name: Clamorous_Ring
   armor_level: 1
@@ -42312,6 +42323,17 @@
     - head_top
   name: Aries Diadem
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :vit, 2)
+    ctx = bonus(ctx, {:subele, :fire}, 5)
+    ctx = if (refine(ctx) > 6) do
+      ctx = bonus(ctx, :def, 1)
+      ctx = bonus(ctx, :vit, 1)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: armor
   view: 531
@@ -42326,6 +42348,17 @@
     - head_top
   name: Aries Crown
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :vit, 2)
+    ctx = bonus(ctx, {:subele, :fire}, 5)
+    ctx = if (refine(ctx) > 6) do
+      ctx = bonus(ctx, :def, 1)
+      ctx = bonus(ctx, :vit, 1)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: armor
   view: 532
@@ -42368,6 +42401,18 @@
     - head_top
   name: Taurus Diadem
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, :delay_rate, -2)
+    ctx = bonus(ctx, {:subele, :earth}, 5)
+    ctx = if (refine(ctx) > 6) do
+      ctx = bonus(ctx, :dex, 1)
+      ctx = bonus(ctx, :matk_rate, 1)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: armor
   view: 535
@@ -42382,6 +42427,18 @@
     - head_top
   name: Taurus Crown
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, :delay_rate, -2)
+    ctx = bonus(ctx, {:subele, :earth}, 5)
+    ctx = if (refine(ctx) > 6) do
+      ctx = bonus(ctx, :dex, 1)
+      ctx = bonus(ctx, :matk_rate, 1)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: armor
   view: 536
@@ -42867,6 +42924,18 @@
     - head_top
   name: Cancer Diadem
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :int, 2)
+    ctx = bonus(ctx, {:subele, :water}, 5)
+    ctx = if (refine(ctx) > 6) do
+      ctx = bonus(ctx, :mdef, 1)
+      ctx = bonus(ctx, :heal_power, 3)
+      ctx = bonus(ctx, :matk_rate, 2)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: armor
   view: 560
@@ -42881,6 +42950,18 @@
     - head_top
   name: Cancer Crown
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = bonus(ctx, {:subele, :water}, 5)
+    ctx = if (refine(ctx) > 6) do
+      ctx = bonus(ctx, :def, 1)
+      ctx = bonus(ctx, :atk, 15)
+      ctx = bonus(ctx, :flee, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: armor
   view: 561

@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
 
   alias Aesir.ZoneServer.Mmo.AutoTriggerFlag
   alias Aesir.ZoneServer.Mmo.BattleFlag
+  alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -447,6 +448,34 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
   end
 
   describe "generate/1 case-insensitive keys" do
+    test "mixed-case parameters preserve surrounding bonuses and refine branches" do
+      script = """
+      bonus bVit,2;
+      bonus2 bSubEle,Ele_fire,5;
+      bonus2 bExpAddRace,RC_undead,15;
+      if (getrefine()>6) {
+        bonus bDef,1;
+        bonus bVit,1;
+      }
+      """
+
+      assert {:ok, program} = compile(script)
+      assert program == EquipScript.parse!(EquipScript.to_source(program))
+
+      assert EquipScript.eval(program, %{refine: 6}) == %{
+               :vit => 2,
+               {:subele, :fire} => 5,
+               {:exp_add_race, :undead} => 15
+             }
+
+      assert EquipScript.eval(program, %{refine: 7}) == %{
+               :vit => 3,
+               :def => 1,
+               {:subele, :fire} => 5,
+               {:exp_add_race, :undead} => 15
+             }
+    end
+
     test "corpus casing and exported casing both resolve" do
       assert {:ok, [{:bonus, :patk, 20}]} = compile("bonus bPAtk,20;")
       assert {:ok, [{:bonus, :patk, 20}]} = compile("bonus bPatk,20;")

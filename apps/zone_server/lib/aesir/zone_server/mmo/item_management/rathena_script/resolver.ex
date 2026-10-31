@@ -448,10 +448,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "Eff_Stone" => :sc_stonewait
   }
 
-  # Case-folded index of @statuses. rAthena treats script constants
-  # case-insensitively, so the item DB mixes casings for the same status
-  # (e.g. `SC_HALLUCINATION` and `SC_Hallucination`). Resolving on the folded
-  # key covers every casing without hand-listing each variant.
+  # Constants are case-insensitive; fold the indexes once while preserving
+  # each unknown symbol's original spelling in errors.
+  @elements_folded Map.new(@elements, fn {symbol, atom} -> {String.downcase(symbol), atom} end)
+  @races_folded Map.new(@races, fn {symbol, atom} -> {String.downcase(symbol), atom} end)
   @statuses_folded Map.new(@statuses, fn {symbol, atom} -> {String.downcase(symbol), atom} end)
 
   @doc "Resolves a date selector, month, or weekday constant."
@@ -467,13 +467,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   def resolve_status(symbol) when is_binary(symbol) do
     case lookup(@statuses, symbol) do
       {:ok, _} = ok -> ok
-      {:error, _} -> resolve_status_folded(symbol)
+      {:error, _} -> lookup_folded(@statuses_folded, symbol)
     end
   end
 
-  @spec resolve_status_folded(String.t()) :: {:ok, atom()} | error()
-  defp resolve_status_folded(symbol) do
-    case Map.fetch(@statuses_folded, String.downcase(symbol)) do
+  @spec lookup_folded(map(), String.t()) :: {:ok, term()} | error()
+  defp lookup_folded(table, symbol) do
+    case Map.fetch(table, String.downcase(symbol)) do
       {:ok, atom} -> {:ok, atom}
       :error -> unknown(symbol)
     end
@@ -487,8 +487,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   @spec statuses() :: %{String.t() => atom()}
   def statuses, do: @statuses
 
+  @doc "Resolves an element constant case-insensitively."
   @spec resolve_element(String.t()) :: {:ok, atom()} | error()
-  def resolve_element(symbol) when is_binary(symbol), do: lookup(@elements, symbol)
+  def resolve_element(symbol) when is_binary(symbol), do: lookup_folded(@elements_folded, symbol)
 
   @doc """
   Resolves an rAthena `Job_*` class constant to its job atom. The curated
@@ -518,7 +519,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   end
 
   @doc """
-  Resolves an rAthena `RC_*` race constant to its combat race atom
+  Resolves an `RC_*` race constant case-insensitively to its combat race atom
   (`Combat.RaceModifiers`'s type). `RC_Boss` is a sentinel: it does not name a
   race, it redirects race-family bonuses (`bAddRace`/`bSubRace`) to the class
   family, so it resolves to `{:class, :boss}` rather than a race atom.
@@ -527,7 +528,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   matches it) but the rest of the item's script still transpiles.
   """
   @spec resolve_race(String.t()) :: {:ok, atom() | {:class, :boss}} | error()
-  def resolve_race(symbol) when is_binary(symbol), do: lookup(@races, symbol)
+  def resolve_race(symbol) when is_binary(symbol), do: lookup_folded(@races_folded, symbol)
 
   @doc """
   Resolves an rAthena `Size_*` constant to its combat size atom

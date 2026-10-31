@@ -50,6 +50,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
       assert {:ok, :fire} = Resolver.resolve_element("Ele_Fire")
     end
 
+    test "element constants ignore casing without accepting unknown names" do
+      for {symbol, element} <- [{"Ele_fire", :fire}, {"ele_EARTH", :earth}, {"ELE_WATER", :water}] do
+        assert Resolver.resolve_element(symbol) == {:ok, element}
+      end
+
+      assert Resolver.resolve_element("eLe_NoPe") == {:error, {:unknown_symbol, "eLe_NoPe"}}
+    end
+
     test "maps Ele_Dark to :shadow mirroring the importer table" do
       assert {:ok, :shadow} = Resolver.resolve_element("Ele_Dark")
     end
@@ -235,6 +243,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
   describe "resolve_race/1" do
     test "maps RC_Brute to :brute" do
       assert {:ok, :brute} = Resolver.resolve_race("RC_Brute")
+    end
+
+    test "race constants ignore casing without accepting unknown names" do
+      assert Resolver.resolve_race("RC_undead") == {:ok, :undead}
+      assert Resolver.resolve_race("rc_UNDEAD") == {:ok, :undead}
+      assert Resolver.resolve_race("rc_ALL") == {:ok, :all}
+      assert Resolver.resolve_race("rc_BOSS") == {:ok, {:class, :boss}}
+      assert Resolver.resolve_race("rC_NoPe") == {:error, {:unknown_symbol, "rC_NoPe"}}
     end
 
     test "maps RC_All to :all" do
