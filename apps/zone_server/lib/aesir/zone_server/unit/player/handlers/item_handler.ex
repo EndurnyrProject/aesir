@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
 
   require Logger
 
+  alias Aesir.Commons.Auth
   alias Aesir.Commons.GameMode
   alias Aesir.Net.ItemUseResult
   alias Aesir.Net.ProgressBarAbort
@@ -65,6 +66,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
          {:ok, item} <- fetch_item(game_state.inventory, server_index),
          {:ok, definition} <- fetch_definition(item.nameid),
          :ok <- item_use_allowed?(game_state),
+         :ok <- seated_item_use_allowed?(definition, game_state),
          :ok <- delayed_item_use_allowed?(definition, game_state) do
       use_definition(definition, client_index, server_index, state)
     else
@@ -101,6 +103,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
     end
   end
 
+  defp seated_item_use_allowed?(
+         %{no_use_sitting: true, use_override: override},
+         %{action_state: :sitting, account_id: account_id}
+       ) do
+    if Auth.get_account!(account_id).gm_level < override,
+      do: {:error, :sitting},
+      else: :ok
+  end
+
+  defp seated_item_use_allowed?(_definition, _game_state), do: :ok
+
   defp delayed_item?(%{type: :delay_consume}), do: true
   defp delayed_item?(definition), do: Map.get(definition, :no_consume, false)
 
@@ -131,8 +144,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   defp run_effect(client_index, server_index, %{id: item_id} = definition, state) do
     original = Ctx.from_session(state, {:item, item_id})
     ctx = CompiledItemScripts.on_use(item_id, original)
+    state = ctx.session_state || state
 
     case ctx do
+      %Ctx{status: {:error, :not_enough_items}, source: {:item, _}} ->
+        apply_item_effects(
+          ctx,
+          ctx.session_effects,
+          definition,
+          client_index,
+          server_index,
+          state
+        )
+
       %Ctx{status: {:error, reason}} ->
         reject(client_index, reason, state)
 

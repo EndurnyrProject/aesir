@@ -64,6 +64,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet do
     "itemskill" => %{shape: :itemskill, dsl: "itemskill"},
     "unitskilluseid" => %{shape: :unit_skill_use, dsl: "unitskilluseid"},
     "produce" => %{shape: :call, dsl: "produce", args: [:int]},
+    "skilleffect" => %{shape: :call, dsl: "skilleffect", args: [:skill, :int]},
     "specialeffect2" => %{shape: :call, dsl: "specialeffect2", args: [:effect]},
     "announce" => %{shape: :announce, dsl: "announce", fixed: 2},
     "broadcast" => %{shape: :announce, dsl: "broadcast", fixed: 2},

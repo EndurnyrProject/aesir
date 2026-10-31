@@ -15,13 +15,15 @@ defmodule Aesir.ZoneServer.Script.Dsl.Internal do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @doc """
-  Routes a state-mutating op through the single-writer session (always a
-  cross-process GenServer.call from the interaction, never a self-call), then
-  folds the authoritative game_state back into ctx. A refused op is a failed
+  Routes a state-mutating op through the single-writer session, then folds
+  the authoritative state back into ctx. Item-script deletion and posture
+  operations thread the owning session inline. NPC interactions use a
+  cross-process call, never a self-call. A refused op is a failed
   command: the script goes on with the ctx unchanged (`Ctx.fail/3`), unless the
   caller passes `:halt` for a command whose refusal ends the script. A
   detached ctx has no session to call, so it halts `:no_player` (the script
@@ -29,6 +31,19 @@ defmodule Aesir.ZoneServer.Script.Dsl.Internal do
   """
   @spec apply_op(Ctx.t(), tuple(), :fail | :halt) :: Ctx.t()
   def apply_op(ctx, op, on_error \\ :fail)
+
+  def apply_op(%Ctx{source: {:item, _}, session_state: state} = ctx, op, on_error)
+      when not is_nil(state) and elem(op, 0) in [:delitem, :stand] do
+    {reply, state} = ScriptEffectHandler.apply_op(op, %{state | game_state: ctx.game_state})
+    ctx = %{ctx | game_state: state.game_state, session_state: state}
+
+    case reply do
+      {:ok, _game_state} -> ctx
+      {:error, reason} when on_error == :halt -> Ctx.halt(ctx, reason)
+      {:error, reason} -> Ctx.fail(ctx, elem(op, 0), reason)
+    end
+  end
+
   def apply_op(%Ctx{session_pid: nil} = ctx, _op, _on_error), do: Ctx.halt(ctx, :no_player)
 
   def apply_op(%Ctx{session_pid: session_pid} = ctx, op, on_error) do

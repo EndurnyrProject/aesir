@@ -50,7 +50,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Loader do
                |> Map.new(&{Atom.to_string(&1), &1})
 
   @spec load() :: index()
-  def load, do: "items" |> DataLoader.load(@cache_file, &build/1) |> index()
+  def load do
+    "items"
+    |> DataLoader.load(@cache_file, &build/1)
+    |> Enum.map(&struct(ItemDefinition, Map.from_struct(&1)))
+    |> index()
+  end
 
   @spec build([Path.t()]) :: [ItemDefinition.t()]
   defp build(sources) do

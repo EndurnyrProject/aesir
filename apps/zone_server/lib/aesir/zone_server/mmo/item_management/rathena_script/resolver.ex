@@ -140,6 +140,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "SC_IMPOSITIO" => :sc_impositio,
     "SC_SUFFRAGIUM" => :sc_suffragium,
     "SC_ASPERSIO" => :sc_aspersio,
+    "SC_WINDWALK" => :sc_windwalk,
     "SC_BENEDICTIO" => :sc_benedictio,
     "SC_AETERNA" => :sc_aeterna,
     "SC_SIGNUMCRUCIS" => :sc_signumcrucis,

@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.RefineOps
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SitHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler
@@ -88,6 +89,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:enable_items}
           | {:progressbar, non_neg_integer(), non_neg_integer(), pos_integer()}
           | {:nude}
+          | {:stand}
           | {:getexp, non_neg_integer(), non_neg_integer()}
           | {:set_char_var, atom(), term()}
           | {:set_temp_var, atom(), term()}
@@ -395,10 +397,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     {{:ok, state.game_state}, state}
   end
 
-  # `disable_items` / `enable_items` (disableitemuse / enableitemuse): set the
-  # running script's item-use flag, which decides whether the player may use
-  # items, equip and use self skills while the dialog holds them. The flag ends
-  # with the dialog; the next script starts from the mode's default.
+  def apply_op({:stand}, %{game_state: %{action_state: :sitting}} = state) do
+    {:noreply, state} = SitHandler.handle_stand(state)
+    {{:ok, state.game_state}, state}
+  end
+
+  def apply_op({:stand}, state), do: {{:ok, state.game_state}, state}
+
+  # `disable_items` / `enable_items` set the dialog's item-use flag.
   def apply_op({:disable_items}, state),
     do: {{:ok, state.game_state}, put_item_flag(state, false)}
 

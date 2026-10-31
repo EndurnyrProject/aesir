@@ -12,13 +12,19 @@ defmodule Aesir.ZoneServer.Script.Dsl.Skills do
 
   require Logger
 
+  alias Aesir.Commons.Utils.ServerTick
+  alias Aesir.Net.GroundSkill
+  alias Aesir.Net.SkillDamage
   alias Aesir.Net.SkillEffect
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
   alias Aesir.ZoneServer.Npc.SkillCaster
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @npcskill_min_stat 1
   @npcskill_max_stat 255
@@ -83,13 +89,13 @@ defmodule Aesir.ZoneServer.Script.Dsl.Skills do
   end
 
   @doc """
-  Plays a skill's visual effect on the attached player, shown to every player
-  in view range (rAthena `skilleffect`). `skill` accepts a numeric id (sent
-  verbatim, matching an un-cataloged skill's client-side animation) or a
-  catalog name atom/string; `level` is passed through. The optional rAthena
-  target argument is dropped — the effect always plays on the invoking
-  player. Purely cosmetic, so a detached ctx or an unresolvable name is a
-  silent no-op rather than a halt.
+  Plays a skill's visual effect on the attached player without casting it.
+
+  The player's posture is updated through its owning session before the visual
+  is broadcast. A status preventing standing keeps the player seated without
+  suppressing the visual. Ground, damage and supportive skills use their
+  respective messages. This entry point targets only the attached player.
+  Detached or errored contexts do nothing.
   """
   @spec skilleffect(Ctx.t(), atom() | integer() | String.t(), integer()) :: Ctx.t()
   def skilleffect(%Ctx{status: {:error, _}} = ctx, _skill, _level), do: ctx
@@ -98,25 +104,73 @@ defmodule Aesir.ZoneServer.Script.Dsl.Skills do
   def skilleffect(%Ctx{} = ctx, skill, level) do
     case skilleffect_id(skill) do
       {:ok, skill_id} ->
+        ctx = stand_for_visual(ctx)
+        packet = skill_visual(ctx, skill_id, max(level, 0))
+
         Broadcast.to_in_range(
           ctx.game_state.map_name,
           ctx.game_state.x,
           ctx.game_state.y,
           Config.view_range(),
-          %SkillEffect{
-            skill_id: skill_id,
-            level: max(level, 0),
-            src_id: ctx.char_id,
-            target_id: ctx.char_id,
-            result: 1
-          }
+          packet
         )
+
+        ctx
 
       :error ->
         Logger.warning("skilleffect: unknown skill #{inspect(skill)}, skipping")
+        ctx
     end
+  end
 
-    ctx
+  defp stand_for_visual(%Ctx{game_state: %{action_state: :sitting}} = ctx),
+    do: apply_op(ctx, {:stand})
+
+  defp stand_for_visual(ctx), do: ctx
+
+  defp skill_visual(ctx, skill_id, level) do
+    case Catalog.by_id(skill_id) do
+      {:ok, definition} -> visual_packet(Definition.cast_type(definition), ctx, skill_id, level)
+      :error -> visual_packet(:no_damage, ctx, skill_id, level)
+    end
+  end
+
+  defp visual_packet(:ground, ctx, skill_id, level) do
+    %GroundSkill{
+      skill_id: skill_id,
+      level: level,
+      src_id: ctx.char_id,
+      x: ctx.game_state.x,
+      y: ctx.game_state.y,
+      server_tick: ServerTick.now()
+    }
+  end
+
+  defp visual_packet(:damage, ctx, skill_id, level) do
+    agi = PlayerStats.to_formula_map(ctx.game_state.stats).total_stats.agi
+
+    %SkillDamage{
+      skill_id: skill_id,
+      level: level,
+      src_id: ctx.char_id,
+      target_id: ctx.char_id,
+      server_tick: ServerTick.now(),
+      src_delay: AttackSpeed.amotion_from_stats(ctx.game_state.stats),
+      dst_delay: min(800, max(400, 800 - 4 * agi)),
+      damage: 0,
+      div: 1,
+      type: 6
+    }
+  end
+
+  defp visual_packet(:no_damage, ctx, skill_id, level) do
+    %SkillEffect{
+      skill_id: skill_id,
+      level: level,
+      src_id: ctx.char_id,
+      target_id: ctx.char_id,
+      result: 1
+    }
   end
 
   # Numeric ids pass through so a skill the server has not implemented still

@@ -17,6 +17,11 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   the interaction holds on its session so a blocking primitive can exit cleanly
   if the session dies.
 
+  Item scripts run inside the owning session. Their `session_state` carries
+  that session through inline operations without calling its own mailbox;
+  `game_state` remains the current script snapshot. NPC contexts instead use
+  `session_pid` to call their owning session.
+
   NPC event handlers (`OnInit`/`OnTimer`/`donpcevent`, rAthena semantics) run
   with no player attached: `detached/2` builds a `Ctx` for that case, with
   `session_pid`, `char_id`, `account_id`, `connection_pid`, and `game_state`
@@ -32,6 +37,7 @@ defmodule Aesir.ZoneServer.Script.Ctx do
 
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.ScriptVitals
+  alias Aesir.ZoneServer.Unit.Player.SessionState
 
   @typedoc """
   Tag identifying the script trigger: an item ID, an NPC module atom, or the
@@ -71,6 +77,7 @@ defmodule Aesir.ZoneServer.Script.Ctx do
             status: :ok,
             interaction_pid: nil,
             session_pid: nil,
+            session_state: nil,
             npc_gid: nil,
             page: [],
             session_ref: nil,
@@ -87,6 +94,7 @@ defmodule Aesir.ZoneServer.Script.Ctx do
           status: status(),
           interaction_pid: pid() | nil,
           session_pid: pid() | nil,
+          session_state: SessionState.t() | map() | nil,
           npc_gid: non_neg_integer() | nil,
           page: [String.t()],
           session_ref: reference() | nil,
@@ -106,12 +114,13 @@ defmodule Aesir.ZoneServer.Script.Ctx do
           %{:game_state => PlayerState.t(), :connection_pid => pid(), optional(any()) => any()},
           source()
         ) :: t()
-  def from_session(%{game_state: %PlayerState{} = ps, connection_pid: pid}, source) do
+  def from_session(%{game_state: %PlayerState{} = ps, connection_pid: pid} = state, source) do
     %__MODULE__{
       char_id: ps.character_id,
       account_id: ps.account_id,
       connection_pid: pid,
       game_state: ps,
+      session_state: if(match?({:item, _}, source), do: state),
       source: source
     }
   end
@@ -175,15 +184,8 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   `false` for a `detached/2` context (no session, no `game_state`); `true` for
   a `from_session/2` context.
 
-  Keys on `game_state`, not `session_pid` — the DSL's `apply_op` seam keys on
-  `session_pid` instead, and the two discriminators diverge on purpose for an
-  item-triggered ctx: `from_session/2` never sets `session_pid` (item scripts
-  run inline on the session, not through a cross-process call), so
-  `attached?/1` reports `true` there while an `apply_op`-routed effect
-  (`give_item`, `pay_zeny`, ...) still halts `:no_player` if called from an
-  item script. That is fine, and strictly better than the prior behavior: a
-  `nil` `session_pid` used to `exit(:noproc)` the whole `PlayerSession` on the
-  `GenServer.call`; halting the ctx leaves the session alive.
+  Keys on `game_state`, not `session_pid`: item scripts run inside the
+  owning session and carry `session_state` instead of calling its mailbox.
   """
   @spec attached?(t()) :: boolean()
   def attached?(%__MODULE__{game_state: nil}), do: false

@@ -9,8 +9,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
   trade restriction's group-level override (`trade_override`), the `NoConsume`
   usable flag as `no_consume` (the item is never removed, and its item skill can
   still cast), and the `Stack` block as `stack_limit`, the per-container stack
-  cap. The other nested Trade/NoUse/Delay restrictions remain intentionally
-  unmodelled.
+  cap. `no_use_sitting` and `use_override` model the seated-use restriction
+  and its group-level bypass. Other nested Trade/NoUse/Delay restrictions
+  remain unmodelled.
   """
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
@@ -76,6 +77,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
             refineable: false,
             bind_on_equip: false,
             no_consume: false,
+            no_use_sitting: false,
+            use_override: 100,
             no_trade: false,
             trade_override: 100,
             no_cart: false,
@@ -113,6 +116,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
           refineable: boolean(),
           bind_on_equip: boolean(),
           no_consume: boolean(),
+          no_use_sitting: boolean(),
+          use_override: non_neg_integer(),
           no_trade: boolean(),
           trade_override: non_neg_integer(),
           no_cart: boolean(),

@@ -175,6 +175,10 @@ defmodule Aesir.ZoneServer.Script.Dsl.ItemCounts do
     end
   end
 
+  defp target_session(%Ctx{source: {:item, _}, session_state: state}, nil)
+       when not is_nil(state),
+       do: {:ok, :self}
+
   defp target_session(%Ctx{session_pid: nil}, nil), do: :no_player
   defp target_session(_ctx, nil), do: {:ok, :self}
   defp target_session(%Ctx{account_id: own}, own), do: {:ok, :self}

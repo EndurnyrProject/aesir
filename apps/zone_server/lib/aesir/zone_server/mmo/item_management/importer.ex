@@ -305,7 +305,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
          {:ok, classes} <- parse_classes(Map.fetch(entry, "Classes"), item_id, mode),
          {:ok, gender} <- parse_gender(Map.fetch(entry, "Gender"), item_id),
          {:ok, trade_override} <-
-           parse_trade_override(get_in(entry, ["Trade", "Override"]), item_id) do
+           parse_trade_override(get_in(entry, ["Trade", "Override"]), item_id),
+         {:ok, use_override} <-
+           parse_use_override(get_in(entry, ["NoUse", "Override"]), item_id) do
       definition = %ItemDefinition{
         id: item_id,
         aegis_name: Map.fetch!(entry, "AegisName"),
@@ -332,6 +334,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
         refineable: Map.get(entry, "Refineable", false),
         bind_on_equip: get_in(entry, ["Flags", "BindOnEquip"]) || false,
         no_consume: get_in(entry, ["Flags", "NoConsume"]) || false,
+        no_use_sitting: get_in(entry, ["NoUse", "Sitting"]) || false,
+        use_override: use_override,
         no_trade: get_in(entry, ["Trade", "NoTrade"]) || false,
         trade_override: trade_override,
         no_cart: get_in(entry, ["Trade", "NoCart"]) || false,
@@ -344,6 +348,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
       {:ok, ItemDefinition.normalize_gender(definition)}
     end
   end
+
+  defp parse_use_override(nil, _item_id), do: {:ok, 100}
+
+  defp parse_use_override(value, _item_id) when is_integer(value) and value in 0..65_535,
+    do: {:ok, min(value, 100)}
+
+  defp parse_use_override(value, item_id),
+    do: {:error, {:invalid_use_override, item_id, value}}
 
   defp parse_trade_override(nil, _item_id), do: {:ok, 100}
 
