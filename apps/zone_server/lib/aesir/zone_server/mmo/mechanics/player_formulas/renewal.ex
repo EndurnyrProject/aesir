@@ -84,33 +84,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.Renewal do
   end
 
   @impl true
-  def max_hp(inputs) do
-    hp_with_vit = trunc(inputs.base_hp * (1.0 + inputs.vit * 0.01))
-
-    hp_with_factor =
-      if inputs.hp_factor > 0 do
-        trunc(hp_with_vit * (100 + inputs.hp_factor) / 100)
-      else
-        hp_with_vit
-      end
-
-    hp_with_factor
-    |> apply_transcendent_bonus(inputs.transcendent?)
-    |> Kernel.+(inputs.hp_increase + inputs.flat_bonus)
-    |> apply_max_rate(inputs.equipment_rate + inputs.modifier_rate)
-    |> max(1)
-  end
+  defdelegate max_hp(inputs), to: PlayerFormulas
 
   @impl true
-  def max_sp(inputs) do
-    inputs.base_sp
-    |> Kernel.*(1.0 + inputs.int * 0.01)
-    |> trunc()
-    |> apply_transcendent_bonus(inputs.transcendent?)
-    |> Kernel.+(inputs.sp_increase + inputs.flat_bonus)
-    |> apply_max_rate(inputs.equipment_rate + inputs.modifier_rate)
-    |> max(1)
-  end
+  defdelegate max_sp(inputs), to: PlayerFormulas
 
   @impl true
   def trait_slots(values, bonuses) do
@@ -127,11 +104,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.Renewal do
   defp apply_aspd_penalty(aspd, penalty_rate) do
     200 - div((200 - aspd) * (1_000 + penalty_rate), 1_000)
   end
-
-  defp apply_max_rate(value, rate), do: trunc(value * (100 + rate) / 100)
-
-  defp apply_transcendent_bonus(value, true), do: trunc(value * 1.25)
-  defp apply_transcendent_bonus(value, false), do: value
 
   defp combat_modifier(bonus, trait_term), do: (bonus + trait_term) |> max(0) |> min(32_767)
 end

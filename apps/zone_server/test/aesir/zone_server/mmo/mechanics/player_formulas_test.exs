@@ -438,11 +438,11 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     assert PreRenewal.trait_slots(values, %{bonuses | hplus: 40_000}).hplus === 32_767
   end
 
-  test "HP and SP retain each mode's rate, equipment-stat, and upper-job stages" do
+  test "HP and SP share the reference rate, equipment-stat and rounding stages" do
     hp = hp_inputs(equipment_rate: 10, modifier_rate: 10)
     sp = sp_inputs(equipment_rate: 10, modifier_rate: 10)
 
-    assert {Renewal.max_hp(hp), Renewal.max_sp(sp)} === {1_200, 1_200}
+    assert {Renewal.max_hp(hp), Renewal.max_sp(sp)} === {1_210, 1_210}
     assert {PreRenewal.max_hp(hp), PreRenewal.max_sp(sp)} === {1_210, 1_210}
 
     assert PreRenewal.max_hp(
@@ -451,13 +451,22 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
              4
 
     assert {Renewal.max_hp(hp_inputs(vit: 10, equipment_vit: 10)),
-            Renewal.max_sp(sp_inputs(int: 10, equipment_int: 10))} === {1_100, 1_100}
+            Renewal.max_sp(sp_inputs(int: 10, equipment_int: 10))} === {1_110, 1_110}
 
     assert {PreRenewal.max_hp(hp_inputs(vit: 10, equipment_vit: 10)),
             PreRenewal.max_sp(sp_inputs(int: 10, equipment_int: 10))} === {1_110, 1_110}
 
     assert {PreRenewal.max_hp(hp_inputs(transcendent?: true)),
             PreRenewal.max_sp(sp_inputs(transcendent?: true))} === {1_250, 1_250}
+  end
+
+  test "vitality retains fractional bases and applies item rates alongside equipment rates" do
+    for formulas <- [Renewal, PreRenewal] do
+      assert formulas.max_hp(hp_inputs(base_hp: 99, vit: 1, equipment_rate: 100)) == 199
+
+      assert formulas.max_sp(sp_inputs(equipment_rate: 10, item_rate: 20, modifier_rate: 10)) ==
+               1_430
+    end
   end
 
   test "transcendent jobs get 25% more HP and SP in both modes, before flat bonuses" do
@@ -471,7 +480,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     end
   end
 
-  test "renewal production boundary matches parent HP and SP ordering" do
+  test "renewal production boundary preserves separate equipment and status stages" do
     stub(Mechanics, :player_formulas, fn -> Renewal end)
 
     stub(JobManagement, :get_base_stats_for_level, fn :swordman, 1 ->
@@ -486,13 +495,13 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
          equipment: %{max_hp_rate: 10, max_sp_rate: 10},
          status_effects: %{max_hp_rate: 10, max_sp_rate: 5},
          passive: %{max_sp_rate: 5}
-       }, {1_200, 1_200}},
+       }, {1_210, 1_210}},
       {%Modifiers{
          equipment: %{max_hp: 1, max_sp: 1, max_hp_rate: -10, max_sp_rate: -10},
          status_effects: %{max_hp_rate: -10, max_sp_rate: -10},
          passive: %{max_sp_rate: 0}
-       }, {800, 800}},
-      {%Modifiers{equipment: %{vit: 10, int: 10}, passive: %{max_sp_rate: 0}}, {1_100, 1_100}}
+       }, {810, 810}},
+      {%Modifiers{equipment: %{vit: 10, int: 10}, passive: %{max_sp_rate: 0}}, {1_110, 1_110}}
     ]
 
     for {modifiers, {max_hp, max_sp}} <- cases do

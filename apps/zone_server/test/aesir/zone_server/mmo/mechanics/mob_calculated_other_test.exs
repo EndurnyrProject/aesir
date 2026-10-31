@@ -148,6 +148,22 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedOtherTest do
     end
   end
 
+  test "HP potion flat amounts apply to monsters but SP item percentages do not", %{
+    form: form,
+    spawn: spawn
+  } do
+    held = [
+      entry(:sc_promote_health_reserch, 1, 1, 830),
+      entry(:sc_energy_drink_reserch, 1, 3, 14),
+      entry(:sc_incmhprate, 20)
+    ]
+
+    for formulas <- [Renewal, PreRenewal] do
+      assert resource(formulas, state(form, spawn), held, "MaxHp") == 2_196
+      assert resource(formulas, state(form, spawn), held, "MaxSp") == 100
+    end
+  end
+
   test "renewal resources add the Angelus flat HP and the Nibelungen outcome, classic does not",
        %{form: form, spawn: spawn} do
     state = state(form, spawn)

@@ -768,6 +768,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # Restore the statuses persisted at logout (rAthena sc_data), consuming
     # the saved rows. Runs after registration for the same reason as the cart.
     state = StatusPersistence.restore_on_spawn(state)
+    state = StatusPersistence.restore_vitals(state, character)
     state = SkillCooldownPersistence.restore_on_spawn(state)
     {:noreply, state} = EquipProcHandler.reconcile_statuses(state)
 

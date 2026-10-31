@@ -322,7 +322,8 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
 
     session =
       start_player_session(
-        Keyword.put(opts, :learned_skills, %{Integer.to_string(@skill_id) => 1})
+        Keyword.merge([base_level: 50, sp: 50], opts)
+        |> Keyword.put(:learned_skills, %{Integer.to_string(@skill_id) => 1})
       )
 
     :sys.replace_state(session.pid, fn state ->

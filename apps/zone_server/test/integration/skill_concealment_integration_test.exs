@@ -18,11 +18,11 @@ defmodule Aesir.ZoneServer.Integration.SkillConcealmentIntegrationTest do
       start_player_session(
         class: 1,
         position: {150, 150},
-        sp: 50,
-        max_sp: 50,
+        sp: 10,
         learned_skills: %{Integer.to_string(@bash) => 1}
       )
 
+    initial_sp = get_player_state(caster.pid).stats.current_state.sp
     mob = start_mob_session(unit_id: 93_180, position: {151, 150}, hp: 1_000, max_hp: 1_000)
     :ok = StatusStorage.apply_status(:mob, mob.unit_id, :sc_hiding)
     flush_packets()
@@ -35,7 +35,7 @@ defmodule Aesir.ZoneServer.Integration.SkillConcealmentIntegrationTest do
 
     assert eventually(fn -> get_player_state(caster.pid).action_state == :idle end)
     refute_receive {:packet_sent, %SkillCastFailed{}, _}, 200
-    assert get_player_state(caster.pid).stats.current_state.sp == 50
+    assert get_player_state(caster.pid).stats.current_state.sp == initial_sp
 
     :ok = StatusStorage.remove_status(:mob, mob.unit_id, :sc_hiding)
 
@@ -45,6 +45,8 @@ defmodule Aesir.ZoneServer.Integration.SkillConcealmentIntegrationTest do
       target_id: mob.unit_id
     })
 
-    assert eventually(fn -> get_player_state(caster.pid).stats.current_state.sp == 42 end)
+    assert eventually(fn ->
+             get_player_state(caster.pid).stats.current_state.sp == initial_sp - 8
+           end)
   end
 end

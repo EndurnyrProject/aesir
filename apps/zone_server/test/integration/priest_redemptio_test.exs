@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Integration.PriestRedemptioTest do
     caster_character =
       character_fixture("RedemptioCaster", %{
         class: 8,
+        int: 99,
         learned_skills: %{"1014" => 1},
         last_map: "prontera",
         last_x: 150,

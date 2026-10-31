@@ -174,7 +174,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
       assert {:error, :invalid_transition} =
                VendingHandler.open_shop(vending, "Shop", [{0, 5, 100}])
 
-      assert vending.game_state.stats.current_state.sp == 300
+      assert vending.game_state.stats.current_state.sp == base.game_state.stats.current_state.sp
     end
 
     test "a paid grant can open with less than the skill cost remaining" do

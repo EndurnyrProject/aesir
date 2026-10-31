@@ -103,6 +103,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusTargetingTest do
     # the map's AI pass; the test stands in for that pass with the owner's id.
     owner_id = state.game_state.character_id
     hp_before = homunculus.hp
+    owner_hp = state.game_state.stats.current_state.hp
     MobSession.hard_think(mob.pid, owner_id)
 
     assert_eventually(fn ->
@@ -114,7 +115,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusTargetingTest do
 
     assert_eventually(fn -> PlayerSession.get_state(session.pid).homunculus.hp < hp_before end)
     assert MobSession.get_state(mob.pid).target_ref == {:homunculus, homunculus.world_gid}
-    assert PlayerSession.get_state(session.pid).game_state.stats.current_state.hp == 1_000
+    assert PlayerSession.get_state(session.pid).game_state.stats.current_state.hp == owner_hp
 
     simulate_incoming_message(session.pid, %HomunculusRequest{
       request_id: 1,

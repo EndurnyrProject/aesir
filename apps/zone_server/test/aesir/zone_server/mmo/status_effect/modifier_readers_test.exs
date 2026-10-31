@@ -68,6 +68,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                :max_hp,
                :max_hp_rate,
                :max_sp_rate,
+               :max_sp_item_rate,
                :batk_rate,
                # DamageCalculator / MagicDamageCalculator / DamageShared
                :atk_bonus,

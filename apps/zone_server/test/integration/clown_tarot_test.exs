@@ -77,6 +77,8 @@ defmodule Aesir.ZoneServer.Integration.ClownTarotTest do
   test "a mob Tarot row plays its card on the player target" do
     {player, mob} = start_duel()
     player_id = player.character.id
+    initial_hp = get_player_state(player.pid).stats.current_state.hp
+    assert initial_hp > 4444
     stub(TarotDeck, :roll, fn 100 -> 1 end)
     stub(TarotDeck, :draw, fn -> :tower end)
     row = %{skill: "CG_TAROTCARD", skill_id: 489, level: 5, target: :target}
@@ -88,7 +90,7 @@ defmodule Aesir.ZoneServer.Integration.ClownTarotTest do
                    1_000
 
     assert eventually(fn ->
-             get_player_state(player.pid).stats.current_state.hp == 10_000 - 4444
+             get_player_state(player.pid).stats.current_state.hp == initial_hp - 4444
            end)
   end
 
@@ -101,7 +103,7 @@ defmodule Aesir.ZoneServer.Integration.ClownTarotTest do
   defp start_duel do
     player =
       :novice
-      |> ClownSessions.character(@map, {155, 150}, %{})
+      |> ClownSessions.character(@map, {155, 150}, %{}, %{class: 7})
       |> ClownSessions.start_session()
 
     mob = start_mob({150, 150})

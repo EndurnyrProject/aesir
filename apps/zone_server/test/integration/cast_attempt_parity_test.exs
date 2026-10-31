@@ -29,6 +29,8 @@ defmodule Aesir.ZoneServer.Integration.CastAttemptParityTest do
     player =
       start_player_session(
         name: "CastParity",
+        base_level: 50,
+        int: 99,
         sp: 100,
         max_sp: 100,
         learned_skills: %{"14" => 1, "28" => 1, "29" => 1}
@@ -86,6 +88,7 @@ defmodule Aesir.ZoneServer.Integration.CastAttemptParityTest do
 
   test "an item stages one client-selected cast without learned or SP requirements" do
     player = start_item_player("ItemCast", @fire_scroll, 1)
+    initial_sp = get_player_state(player.pid).stats.current_state.sp
     mob = start_mob_session(position: {151, 150}, awake: false)
     index = item_index(player, @fire_scroll)
 
@@ -106,7 +109,7 @@ defmodule Aesir.ZoneServer.Integration.CastAttemptParityTest do
 
     assert %SkillCasting{skill_id: 19} = assert_packet_sent(SkillCasting)
     assert eventually(fn -> get_mob_state(mob.pid).hp < 100 end)
-    assert get_player_state(player.pid).stats.current_state.sp == 100
+    assert get_player_state(player.pid).stats.current_state.sp == initial_sp
     assert eventually(fn -> inventory_amount(player.pid, @fire_scroll) == 0 end)
   end
 
@@ -175,19 +178,21 @@ defmodule Aesir.ZoneServer.Integration.CastAttemptParityTest do
   end
 
   test "a script starts a real cast of a skill the player never learned" do
-    player = start_player_session(name: "ScriptCast", sp: 100, max_sp: 100)
+    player = start_player_session(name: "ScriptCast", base_level: 50, int: 99, sp: 100)
+    initial_sp = get_player_state(player.pid).stats.current_state.sp
     id = player.character.id
     on_exit(fn -> StatusStorage.clear_unit_statuses(:player, id) end)
 
     assert {:ok, _state} = PlayerSession.script_apply(player.pid, {:unitskilluseid, 34, 7})
 
     assert eventually(fn -> StatusStorage.has_status?(:player, id, :sc_blessing) end)
-    assert get_player_state(player.pid).stats.current_state.sp == 100 - 52
+    assert get_player_state(player.pid).stats.current_state.sp == initial_sp - 52
   end
 
   @tag game_mode: :renewal, integration_pre_re: false
   test "a Moon Cookie's script casts Blessing on the player and is spent" do
     player = start_item_player("MoonCookie", @moon_cookie, 1)
+    initial_sp = get_player_state(player.pid).stats.current_state.sp
     id = player.character.id
     index = item_index(player, @moon_cookie)
     on_exit(fn -> StatusStorage.clear_unit_statuses(:player, id) end)
@@ -196,7 +201,7 @@ defmodule Aesir.ZoneServer.Integration.CastAttemptParityTest do
 
     assert eventually(fn -> StatusStorage.has_status?(:player, id, :sc_blessing) end)
     assert eventually(fn -> inventory_amount(player.pid, @moon_cookie) == 0 end)
-    assert get_player_state(player.pid).stats.current_state.sp == 100 - 52
+    assert get_player_state(player.pid).stats.current_state.sp == initial_sp - 52
   end
 
   # A character row of its own, because the consumed item's row is deleted
@@ -221,12 +226,12 @@ defmodule Aesir.ZoneServer.Integration.CastAttemptParityTest do
         char_num: 0,
         name: "#{name}#{unique}",
         class: 0,
-        base_level: 1,
+        base_level: 50,
         job_level: 1,
         str: 5,
         agi: 5,
         vit: 5,
-        int: 5,
+        int: 99,
         dex: 5,
         luk: 5,
         hp: 100,

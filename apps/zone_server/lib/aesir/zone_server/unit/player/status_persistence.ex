@@ -21,12 +21,14 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistence do
 
   require Logger
 
+  alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.CharacterStatus
   alias Aesir.Repo
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
 
   @doc """
   Persists the player's current statuses, replacing any previously saved rows.
@@ -64,6 +66,28 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistence do
     game_state.character_id
     |> consume_saved_statuses()
     |> Enum.reduce(state, &restore_status/2)
+  end
+
+  @doc """
+  Clamps the character's saved HP/SP after login statuses have been restored.
+
+  Initial stat and equipment construction runs without the saved statuses,
+  so their lower temporary maxima must not discard a persisted potion pool.
+  Call after `restore_on_spawn/1`, once every saved modifier is present.
+  """
+  @spec restore_vitals(map(), Character.t()) :: map()
+  def restore_vitals(state, %Character{} = character) do
+    game_state = state.game_state
+    stats = game_state.stats
+    current = stats.current_state
+
+    restored = %{
+      current
+      | hp: min(character.hp, stats.derived_stats.max_hp),
+        sp: min(character.sp, stats.derived_stats.max_sp)
+    }
+
+    StateCommit.commit(state, %{game_state | stats: %{stats | current_state: restored}})
   end
 
   defp consume_saved_statuses(char_id) do

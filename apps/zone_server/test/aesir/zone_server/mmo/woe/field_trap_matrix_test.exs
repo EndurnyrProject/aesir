@@ -145,6 +145,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.FieldTrapMatrixTest do
         id: id,
         account_id: id,
         name: "Trap#{id}",
+        class: 7,
+        base_level: 99,
         position: position,
         hp: 5_000,
         max_hp: 5_000,

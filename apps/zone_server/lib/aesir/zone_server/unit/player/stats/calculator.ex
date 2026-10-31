@@ -337,12 +337,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
         }
 
         %{stats | derived_stats: derived_stats}
-        |> clamp_current_to_max(
-          max_hp,
-          Stats.get_status_modifier(stats, :max_hp_rate),
-          max_sp,
-          Stats.get_status_modifier(stats, :max_sp_rate)
-        )
+        |> clamp_current_to_max(max_hp, max_sp)
         |> clamp_ap(max_ap)
 
       err ->
@@ -350,25 +345,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
     end
   end
 
-  # A max_hp_rate/max_sp_rate malus (Combat Pill -3%, 2011 RWC -10%) shrinks the
-  # max below the current pool, so clamp current HP/SP down to the reduced max.
-  # Only negative rates clamp; positive/zero rates never force current below its
-  # existing value.
   defp clamp_current_to_max(
          %Stats{current_state: %{hp: hp, sp: sp} = current} = stats,
          max_hp,
-         max_hp_rate,
-         max_sp,
-         max_sp_rate
+         max_sp
        )
        when is_integer(hp) and is_integer(sp) do
-    new_hp = if max_hp_rate < 0, do: min(hp, max_hp), else: hp
-    new_sp = if max_sp_rate < 0, do: min(sp, max_sp), else: sp
-
-    %{stats | current_state: %{current | hp: new_hp, sp: new_sp}}
+    %{stats | current_state: %{current | hp: min(hp, max_hp), sp: min(sp, max_sp)}}
   end
 
-  defp clamp_current_to_max(stats, _max_hp, _max_hp_rate, _max_sp, _max_sp_rate), do: stats
+  defp clamp_current_to_max(stats, _max_hp, _max_sp), do: stats
 
   # MaxAP (formula row 26): trait jobs read the imported base_ap table at the
   # character's base level; a missing row is data corruption and fails loudly
@@ -723,6 +709,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
       sp_increase: sp_increase,
       flat_bonus: get_sp_bonus_flat(stats),
       equipment_rate: Stats.get_equipment_modifier(stats, :max_sp_rate),
+      item_rate: Stats.get_status_modifier(stats, :max_sp_item_rate),
       modifier_rate:
         Stats.get_status_modifier(stats, :max_sp_rate) + stats.modifiers.passive.max_sp_rate,
       transcendent?: transcendent?

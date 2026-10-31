@@ -183,8 +183,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert stats.progression.base_exp == 1000
       assert stats.progression.job_exp == 500
 
-      assert stats.current_state.hp == 800
-      assert stats.current_state.sp == 300
+      assert stats.current_state.hp == min(character.hp, stats.derived_stats.max_hp)
+      assert stats.current_state.sp == min(character.sp, stats.derived_stats.max_sp)
 
       # Should have calculated derived stats
       assert stats.derived_stats.max_hp > 0
@@ -3831,7 +3831,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       assert level_75_stats(%{max_sp: 200}).derived_stats.max_sp == baseline + 200
       assert baseline == 85
-      assert level_75_stats(%{max_sp_rate: 10}).derived_stats.max_sp == mode_value(93, 94)
+      assert level_75_stats(%{max_sp_rate: 10}).derived_stats.max_sp == 94
     end
   end
 
@@ -4126,11 +4126,13 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert reduced.current_state.hp < base.derived_stats.max_hp
     end
 
-    test "a non-negative rate leaves current HP/SP untouched even above the max" do
-      over = status_stats(%{max_hp_rate: 10}, %{hp: 99_999, sp: 99_999})
+    test "current HP/SP clamp whenever a recomputed maximum is lower" do
+      for rates <- [%{}, %{max_hp_rate: 10}] do
+        over = status_stats(rates, %{hp: 99_999, sp: 99_999})
 
-      assert over.current_state.hp == 99_999
-      assert over.current_state.sp == 99_999
+        assert over.current_state.hp == over.derived_stats.max_hp
+        assert over.current_state.sp == over.derived_stats.max_sp
+      end
     end
   end
 end

@@ -202,6 +202,46 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistenceTest do
     end
   end
 
+  describe "restore_vitals/2" do
+    test "saved pools are clamped only against the fully restored maxima", %{character: character} do
+      character = %{character | hp: 700, sp: 50}
+      player = PlayerState.new(character)
+      :ok = UnitRegistry.register_player(player, self())
+      assert player.stats.current_state.hp < 700
+
+      for {status, size, bonus} <- [
+            {"sc_promote_health_reserch", 1, 830},
+            {"sc_energy_drink_reserch", 3, 14}
+          ] do
+        %CharacterStatus{}
+        |> CharacterStatus.changeset(%{
+          char_id: character.id,
+          status_type: status,
+          val1: 1,
+          val2: size,
+          val3: bonus,
+          remaining_ms: 100_000
+        })
+        |> Repo.insert!()
+      end
+
+      state = StatusPersistence.restore_on_spawn(%{game_state: player, connection_pid: self()})
+      state = StatusPersistence.restore_vitals(state, character)
+
+      assert state.game_state.stats.current_state.hp == 700
+
+      assert state.game_state.stats.current_state.sp ==
+               state.game_state.stats.derived_stats.max_sp
+
+      assert state.game_state.stats.current_state.sp > player.stats.current_state.sp
+
+      assert %{val3: 830} =
+               StatusStorage.get_status(:player, character.id, :sc_promote_health_reserch)
+
+      assert Repo.all(CharacterStatus) == []
+    end
+  end
+
   describe "restore_on_spawn/1" do
     test "re-applies saved rows with the loaded flag and consumes them", %{character: character} do
       :ok =

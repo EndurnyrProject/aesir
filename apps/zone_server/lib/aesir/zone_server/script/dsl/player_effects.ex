@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Script.Ctx
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.ScriptVitals
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -128,21 +129,25 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   @doc """
   Applies a status effect to the player for `duration_ms` with strength `val`.
 
+  `val` is either a single `val1` or a four-integer list carrying `val1` through
+  `val4`, as used by multi-value consumable statuses.
+
   Starts it as the `sc_start` script command does, with the player as its own
   source: an item script lands at `rate` (per 10000) through the status
   defense, with the duration kept (`SCSTART_NOTICKDEF`), unless the script gave
   an explicit `flag` (`SCSTART_*` bits); an NPC script's start cannot be avoided
   (`SCSTART_NOAVOID`).
 
-  The status lives in external storage, not in `game_state`, so the context is
-  returned unchanged. A detached ctx has no unit to start it on, so the command
-  does nothing and the script goes on.
+  The status lives in external storage. An inline item context reconciles its
+  owning session immediately, so later reads and heals see the new maxima and
+  modifiers. A detached ctx has no unit to start it on, so the command does
+  nothing and the script goes on.
   """
   @spec sc_start(
           Ctx.t(),
           atom(),
           non_neg_integer(),
-          integer(),
+          integer() | [integer()],
           0..10_000,
           non_neg_integer() | nil
         ) ::
@@ -158,14 +163,31 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
     flag = flag || default_start_flag(ctx.source)
 
     params =
-      [val1: val, duration: duration_ms, success_rate: min(rate, 10_000) / 100]
+      val
+      |> start_values()
+      |> Keyword.merge(duration: duration_ms, success_rate: min(rate, 10_000) / 100)
       |> put_start_flag(:no_avoid, flag, @scstart_noavoid)
       |> put_start_flag(:no_tick_def, flag, @scstart_notickdef)
       |> put_start_flag(:no_rate_def, flag, @scstart_noratedef)
 
-    StatusInterpreter.apply_status(:player, ctx.char_id, status, params)
-    ctx
+    case StatusInterpreter.apply_status(:player, ctx.char_id, status, params) do
+      :ok -> refresh_item_status(ctx)
+      {:error, _reason} -> ctx
+    end
   end
+
+  defp refresh_item_status(%Ctx{source: {:item, _}, session_state: state} = ctx)
+       when not is_nil(state) do
+    state = StatusManager.recalculate_after_status_change(%{state | game_state: ctx.game_state})
+    %{ctx | game_state: state.game_state, session_state: state}
+  end
+
+  defp refresh_item_status(ctx), do: ctx
+
+  defp start_values([val1, val2, val3, val4]),
+    do: [val1: val1, val2: val2, val3: val3, val4: val4]
+
+  defp start_values(val1) when is_integer(val1), do: [val1: val1]
 
   defp default_start_flag({:npc, _module}), do: @scstart_noavoid
   defp default_start_flag(_item), do: @scstart_notickdef

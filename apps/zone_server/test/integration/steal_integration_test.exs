@@ -153,10 +153,15 @@ defmodule Aesir.ZoneServer.Integration.StealIntegrationTest do
         |> ClownSessions.character("prontera", {150, 150}, %{50 => 1}, %{class: @rogue, dex: 1})
         |> ClownSessions.start_session()
 
+      initial_sp = get_player_state(session.pid).stats.current_state.sp
       ClownSessions.cast(session, 50, 1, mob.unit_id)
 
       assert_packet_sent(SkillCastFailed)
-      assert_eventually(fn -> get_player_state(session.pid).stats.current_state.sp == 990 end)
+
+      assert_eventually(fn ->
+        get_player_state(session.pid).stats.current_state.sp == initial_sp - 10
+      end)
+
       assert_eventually(fn -> get_mob_state(mob.pid).last_skill_id == @npc_agiup end)
       refute get_mob_state(mob.pid).stolen_from
     end

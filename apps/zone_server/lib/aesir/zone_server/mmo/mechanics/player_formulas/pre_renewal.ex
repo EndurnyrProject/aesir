@@ -79,24 +79,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.PreRenewal do
   end
 
   @impl true
-  def max_hp(inputs) do
-    inputs.base_hp
-    |> Kernel.*(1.0 + max(inputs.vit, 0) * 0.01)
-    |> apply_transcendent_bonus(inputs.transcendent?)
-    |> Kernel.+(inputs.flat_bonus + inputs.equipment_vit)
-    |> apply_max_rates(inputs.equipment_rate, inputs.modifier_rate)
-    |> max(1)
-  end
+  defdelegate max_hp(inputs), to: PlayerFormulas
 
   @impl true
-  def max_sp(inputs) do
-    inputs.base_sp
-    |> Kernel.*(1.0 + max(inputs.int, 0) * 0.01)
-    |> apply_transcendent_bonus(inputs.transcendent?)
-    |> Kernel.+(inputs.flat_bonus + inputs.equipment_int)
-    |> apply_max_rates(inputs.equipment_rate, inputs.modifier_rate)
-    |> max(1)
-  end
+  defdelegate max_sp(inputs), to: PlayerFormulas
 
   @doc """
   Classic has no trait stats, so every trait slot is 0 except HPlus: an item
@@ -107,13 +93,5 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.PreRenewal do
   def trait_slots(_values, bonuses) do
     hplus = bonuses.hplus |> max(-32_768) |> min(32_767)
     %{patk: 0, smatk: 0, res: 0, mres: 0, hplus: hplus, crate: 0}
-  end
-
-  defp apply_transcendent_bonus(value, true), do: value * 1.25
-  defp apply_transcendent_bonus(value, false), do: value
-
-  defp apply_max_rates(value, equipment_rate, modifier_rate) do
-    equipment_adjusted = value * (100 + equipment_rate) / 100
-    trunc(equipment_adjusted) + trunc(equipment_adjusted * modifier_rate / 100)
   end
 end

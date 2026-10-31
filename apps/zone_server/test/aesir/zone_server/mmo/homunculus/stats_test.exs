@@ -188,6 +188,18 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.StatsTest do
     assert shrunk.hp == 900
   end
 
+  test "potion HP follows passive growth without compounding and expires with a pool clamp" do
+    original = state(6_002, %{8_007 => 4})
+    boosted = Stats.recompute(original, %{max_hp: 830, max_sp_item_rate: 14})
+    assert boosted.max_hp == 1_910
+    assert boosted.max_sp == 200
+    assert Stats.recompute(boosted, %{max_hp: 830}).max_hp == 1_910
+
+    expired = Stats.recompute(%{boosted | hp: 1_900})
+    assert expired.max_hp == 1_080
+    assert expired.hp == 1_080
+  end
+
   test "basic attacks become eligible exactly at the derived delay" do
     homunculus = %{Stats.recompute(state(6_001, %{})) | attack_delay_ms: 623}
     runtime = %Runtime{private_dirty: false, last_basic_attack_at_ms: 1_000}

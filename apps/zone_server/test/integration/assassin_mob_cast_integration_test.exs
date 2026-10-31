@@ -74,10 +74,13 @@ defmodule Aesir.ZoneServer.Integration.AssassinMobCastIntegrationTest do
       start_player_session(
         id: 9_871,
         name: "AssassinMobTarget",
+        class: 7,
+        base_level: 99,
+        vit: 0,
         map_name: @map,
         position: {151, 150},
-        hp: 1_000_000,
-        max_hp: 1_000_000
+        hp: 5_000,
+        max_hp: 5_000
       )
 
     target_id = target.character.id
@@ -117,10 +120,13 @@ defmodule Aesir.ZoneServer.Integration.AssassinMobCastIntegrationTest do
       start_player_session(
         id: 9_872,
         name: "AscMobTarget",
+        class: 7,
+        base_level: 99,
+        vit: 0,
         map_name: @map,
         position: {161, 150},
-        hp: 1_000_000,
-        max_hp: 1_000_000
+        hp: 5_000,
+        max_hp: 5_000
       )
 
     initial_hp = current_hp(target.pid)

@@ -1,6 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas do
   @moduledoc """
   Pure player-stat leaves over effective stats and inputs prepared by shared orchestration.
+
+  Maximum HP and SP share their arithmetic in both modes: scale the job table
+  by VIT/INT and the upper-job bonus, add flat bonuses and equipment VIT/INT,
+  calculate equipment and item percentages from that same amount, then add
+  the truncated ordinary status-rate contribution before the final truncation.
   """
 
   @type base_atk_inputs :: %{
@@ -68,6 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas do
           transcendent?: boolean()
         }
   @type max_sp_inputs :: %{
+          optional(:item_rate) => number(),
           base_sp: non_neg_integer(),
           int: integer(),
           equipment_int: integer(),
@@ -101,6 +107,38 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas do
           hplus: integer(),
           crate: non_neg_integer()
         }
+
+  @doc "Calculates maximum HP from the job table and the ordered flat and rate bonuses."
+  @spec max_hp(max_hp_inputs()) :: pos_integer()
+  def max_hp(inputs) do
+    value =
+      base_pool(inputs.base_hp, inputs.vit, inputs.transcendent?) + inputs.flat_bonus +
+        inputs.equipment_vit
+
+    apply_max_rates(value, inputs, 0)
+  end
+
+  @doc "Calculates maximum SP, keeping the item percentage separate from status rates."
+  @spec max_sp(max_sp_inputs()) :: pos_integer()
+  def max_sp(inputs) do
+    value =
+      base_pool(inputs.base_sp, inputs.int, inputs.transcendent?) + inputs.flat_bonus +
+        inputs.equipment_int
+
+    apply_max_rates(value, inputs, Map.get(inputs, :item_rate, 0))
+  end
+
+  defp base_pool(base, stat, true), do: base_pool(base, stat, false) * 1.25
+  defp base_pool(base, stat, false), do: base * (1.0 + max(stat, 0) * 0.01)
+
+  defp apply_max_rates(value, inputs, item_rate) do
+    adjusted =
+      value + value * inputs.equipment_rate / 100 + value * max(item_rate, -100) / 100
+
+    trunc(adjusted + trunc(adjusted * max(inputs.modifier_rate, -100) / 100))
+    |> max(1)
+    |> min(4_294_967_295)
+  end
 
   @callback base_atk(base_atk_inputs(), ranged? :: boolean()) :: integer()
   @callback base_def(base_def_inputs()) :: integer()

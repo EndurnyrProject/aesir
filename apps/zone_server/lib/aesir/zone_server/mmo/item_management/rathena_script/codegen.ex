@@ -51,6 +51,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   the one roll. A `rate` of `10000` with no flag collapses back to the plain
   call. The six-arg GID-targeted form is unsupported.
 
+  `sc_start4 type,ticks,val1,val2,val3,val4` uses the same DSL operation with
+  a four-value list. Optional rate and flag arguments have the same semantics
+  as `sc_start`; explicit unit targets remain unsupported.
+
+  `sc_start2` is supported for the HP/SP increase-potion statuses, filling the
+  unused last two values with zero. Other two-value statuses remain rejected
+  until their complete parameter semantics are implemented.
+
   ## Char variable increments
 
   `Var++;` / `Var--;` on a bare permanent char variable (e.g. `RouletteGold++`,
@@ -140,6 +148,25 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
          {:ok, r} <- render_arg(:int, rate),
          {:ok, f} <- render_flag(flag) do
       render_sc_start_rate(s, t, v, r, f)
+    end
+  end
+
+  defp render_command("sc_start2", [{:name, name} = status, ticks, val1, val2 | opts])
+       when name in ["SC_PROMOTE_HEALTH_RESERCH", "SC_ENERGY_DRINK_RESERCH"] and
+              length(opts) <= 2 do
+    render_command("sc_start4", [status, ticks, val1, val2, {:int, 0}, {:int, 0} | opts])
+  end
+
+  defp render_command("sc_start4", [status, ticks, val1, val2, val3, val4 | opts])
+       when length(opts) <= 2 do
+    rate = Enum.at(opts, 0, {:int, 10_000})
+
+    with {:ok, s} <- render_arg(:status, status),
+         {:ok, t} <- render_arg(:int, ticks),
+         {:ok, values} <- map_ok([val1, val2, val3, val4], &render_arg(:int, &1)),
+         {:ok, r} <- render_arg(:int, rate),
+         {:ok, f} <- render_flag(Enum.drop(opts, 1)) do
+      render_sc_start_rate(s, t, "[#{Enum.join(values, ", ")}]", r, f)
     end
   end
 

@@ -264,7 +264,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas do
   end
 
   defp max_hp(base_hp, held, mode) do
-    flat = if mode == :renewal, do: value(held, :sc_angelus, :val1) * 50, else: 0
+    flat =
+      value(held, :sc_promote_health_reserch, :val3) +
+        if(mode == :renewal, do: value(held, :sc_angelus, :val1) * 50, else: 0)
 
     rate =
       100 +

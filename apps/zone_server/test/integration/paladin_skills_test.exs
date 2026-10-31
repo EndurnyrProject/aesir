@@ -382,7 +382,7 @@ defmodule Aesir.ZoneServer.Integration.PaladinSkillsTest do
     {:ok, _state} = PartyManager.create("Templars#{paladin_char.id}", paladin_char)
     party_id = Repo.get(Character, paladin_char.id).party_id
 
-    ally_char = insert_character("ally", %{class: 0, base_level: 50, vit: 1, hp: 1_000})
+    ally_char = insert_character("ally", %{class: 1, base_level: 99, vit: 1, hp: 1_000})
     {:ok, _state} = PartyManager.add_member(party_id, ally_char)
 
     %{

@@ -18,7 +18,10 @@ defmodule Aesir.ZoneServer.Integration.EquipmentProcCostParityTest do
   defp start_caster(opts) do
     session =
       start_player_session(
-        Keyword.merge([map_name: @map, position: {150, 150}, dex: 99, int: 99], opts)
+        Keyword.merge(
+          [map_name: @map, position: {150, 150}, base_level: 50, dex: 99, int: 99],
+          opts
+        )
       )
 
     on_exit(fn -> if Process.alive?(session.pid), do: end_player_session(session) end)

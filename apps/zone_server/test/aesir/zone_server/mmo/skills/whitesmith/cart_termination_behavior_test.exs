@@ -71,7 +71,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Whitesmith.CartTerminationBehaviorTest do
     assert {:ok, prepared} = Player.cost(caster, WsCarttermination, {:unit, 201}, definition, 1)
     {paid, _} = Player.commit_primary(caster, prepared)
     assert paid.zeny == 9_400
-    assert paid.stats.current_state.sp == 85
+    assert paid.stats.current_state.sp == caster.stats.current_state.sp - 15
     stub(HitCalculations, :calculate_hit_result, fn _, _ -> :miss end)
     assert {:ok, ^paid} = WsCarttermination.cast(paid, {:unit, 201}, 1, definition)
     assert StatusStorage.has_status?(:player, 101, :sc_cartboost)

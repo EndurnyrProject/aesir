@@ -15,6 +15,10 @@ sc_almighty	survives	absent
 sc_angelus	ends	ends
 sc_ankle	ends	ends
 sc_appleidun	survives	survives
+sc_armor_element_earth	ends	ends
+sc_armor_element_fire	ends	ends
+sc_armor_element_water	ends	ends
+sc_armor_element_wind	ends	ends
 sc_aspdpotion0	ends	ends
 sc_aspdpotion1	ends	ends
 sc_aspdpotion2	ends	ends
@@ -85,6 +89,7 @@ sc_emergency_move	ends	absent
 sc_enchantarms	ends	ends
 sc_encpoison	ends	ends
 sc_endure	survives	survives
+sc_energy_drink_reserch	ends	ends
 sc_energycoat	ends	ends
 sc_ensemblefatigue	ends	ends
 sc_eternalchaos	ends	ends
@@ -193,6 +198,7 @@ sc_poison	ends	ends
 sc_poisonreact	ends	ends
 sc_pork_rib_stew	survives	absent
 sc_preserve	ends	ends
+sc_promote_health_reserch	ends	ends
 sc_providence	ends	ends
 sc_provoke	ends	ends
 sc_push_cart	survives	survives

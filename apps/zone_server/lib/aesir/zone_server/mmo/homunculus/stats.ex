@@ -38,7 +38,13 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Stats do
 
     base = base_stats(state, instruct)
     effective = effective_stats(base, modifiers)
-    max_hp = state.raw_max_hp + div(state.raw_max_hp * 2 * skin, 100)
+
+    max_hp =
+      max(
+        state.raw_max_hp + div(state.raw_max_hp * 2 * skin, 100) + modifier(modifiers, :max_hp),
+        1
+      )
+
     max_sp = state.raw_max_sp + div(state.raw_max_sp * brain, 100)
 
     inputs = %{

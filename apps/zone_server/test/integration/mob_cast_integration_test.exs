@@ -433,7 +433,9 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
         start_player_session(
           id: 9_810,
           name: "Bolted",
-          base_level: 50,
+          class: 7,
+          base_level: 99,
+          vit: 99,
           hp: 20_000,
           max_hp: 20_000
         )
@@ -657,6 +659,8 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
         start_player_session(
           id: 9_815,
           name: "Activator",
+          class: 7,
+          base_level: 99,
           position: {150, 150},
           map_name: @map,
           hp: 2_000,
@@ -669,6 +673,8 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
         start_player_session(
           id: 9_816,
           name: "Connected",
+          class: 7,
+          base_level: 99,
           position: {150, 151},
           map_name: @map,
           hp: 2_000,
@@ -681,6 +687,8 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
         start_player_session(
           id: 9_817,
           name: "Outside",
+          class: 7,
+          base_level: 99,
           position: {152, 150},
           map_name: @map,
           hp: 2_000,
