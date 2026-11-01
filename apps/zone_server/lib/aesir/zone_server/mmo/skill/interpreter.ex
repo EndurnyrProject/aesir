@@ -920,6 +920,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   """
   @spec begin_item_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
           {:instant, PlayerState.t()}
+          | {:instant, PlayerState.t(), [Active.effect()]}
           | {:casting, PlayerState.t(), cast_info()}
           | {:failed, PlayerState.t(), atom()}
           | {:error, atom()}
@@ -1158,6 +1159,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         {:ok, pace_item_cast(caster, module, skill_id, definition, level, now)}
         |> retain_menu_requirements(false)
 
+      {:local_effects, caster, effects} ->
+        {:local_effects, pace_item_cast(caster, module, skill_id, definition, level, now),
+         effects}
+
       {:failed, caster, reason} ->
         {:failed, pace_item_cast(caster, module, skill_id, definition, level, now), reason}
 
@@ -1234,11 +1239,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   cannot be spammed past the skill's own pacing.
   """
   @spec item_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
-          {:ok, PlayerState.t()} | {:failed, PlayerState.t(), atom()} | {:error, atom()}
+          {:ok, PlayerState.t()}
+          | {:local_effects, PlayerState.t(), [Active.effect()]}
+          | {:failed, PlayerState.t(), atom()}
+          | {:error, atom()}
   def item_cast(%PlayerState{} = game_state, skill_id, level, target)
       when is_integer(level) and level > 0 do
     case begin_item_cast(game_state, skill_id, level, target) do
       {:instant, caster} -> {:ok, caster}
+      {:instant, caster, effects} -> {:local_effects, caster, effects}
       {:casting, caster, _info} -> complete_item_cast(caster, skill_id, level, target)
       error -> error
     end
@@ -1312,14 +1321,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         invoke_cast(module, game_state, target, level, definition, scope)
       end)
 
-    case settle_skill_attack(result, game_state, adapter, attacked?) do
+    result =
+      result
+      |> settle_skill_attack(game_state, adapter, attacked?)
+      |> without_catalyst_flag()
+
+    case result do
       {:ok, game_state} ->
         announce_ground_cast(module, game_state, target, level, definition)
         {:ok, game_state}
 
-      {:ok, game_state, :no_consume} ->
+      {:local_effects, game_state, effects} ->
         announce_ground_cast(module, game_state, target, level, definition)
-        {:ok, game_state}
+        {:local_effects, game_state, effects}
 
       {:deferred, game_state, descriptor} ->
         {:deferred, game_state, descriptor}
@@ -1341,6 +1355,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         error
     end
   end
+
+  defp without_catalyst_flag({:ok, caster, :no_consume}), do: {:ok, caster}
+  defp without_catalyst_flag(result), do: result
 
   defp complete_resolved_cast(
          game_state,

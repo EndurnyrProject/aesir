@@ -2,11 +2,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Provoke do
   @moduledoc """
   Provoke (SC_PROVOKE).
 
-  Raises the target's ATK (val2) while lowering its DEF (val3), drawing its
-  attention to the caster. Wakes targets out of Freeze, Stone, Sleep and
-  Trick Dead.
+  Raises the target's attack percentage (val2) while lowering soft DEF
+  (val3). Only non-player targets also lose hard DEF. It grants no HIT.
+  Wakes targets out of Freeze, Stone, Sleep and Trick Dead.
 
-  Undead and status-immune targets cannot be taunted at all, in either mode.
+  Renewal and pre-renewal share these values and target-type rules.
+  Undead and status-immune targets cannot be taunted at all in either mode.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_provoke,
@@ -16,25 +17,39 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Provoke do
     clear_buff_flags: [:debuff, :remove_on_hermode],
     immunity: [:boss, :undead],
     properties: [:debuff],
-    calc_flags: [:atk, :def, :def2, :hit],
+    calc_flags: [:batk, :watk, :def, :def2],
     end_on_start: [:sc_freeze, :sc_stone, :sc_sleep, :sc_trickdead],
-    prevented_by: [:sc_refresh, :sc_inspiration],
     icon: :provoke
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
 
+  alias Aesir.ZoneServer.Unit.UnitRegistry
+
   @impl true
-  def modifiers(instance, _context) do
+  def modifiers(instance, context) do
     %{
       atk_rate: instance.val2,
-      def_rate: -instance.val3,
-      def2_rate: -instance.val3,
-      hit: instance.val3
+      def_rate: if(Map.get(context, :unit_type) == :player, do: 0, else: -instance.val3),
+      def2_rate: -instance.val3
     }
   end
 
   @impl true
-  def on_apply(_target, instance, _context) do
-    {:ok, put_state(instance, :provoked_by, instance.source_id)}
+  def on_apply(_target, instance, context) do
+    initialized =
+      cond do
+        Map.get(context, :loaded, false) ->
+          instance
+
+        instance.val1 == 10 and instance.source_type != :player and
+          not is_nil(instance.source_id) and
+            UnitRegistry.unit_exists?(instance.source_type, instance.source_id) ->
+          %{instance | val2: 0, val3: 100}
+
+        true ->
+          %{instance | val2: 2 + 3 * instance.val1, val3: 5 + 5 * instance.val1}
+      end
+
+    {:ok, put_state(initialized, :provoked_by, instance.source_id)}
   end
 end

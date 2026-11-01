@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.CastEnd
+  alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -390,7 +391,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       {:local_effects, new_game_state, effects} ->
         new_state =
           state
-          |> commit_cast(new_game_state, ctx.skill_id, ctx.skill_level)
+          |> commit_local_cast(new_game_state, ctx.skill_id, ctx.skill_level, effects)
           |> settle_local_effects(effects)
 
         broadcast_skill_use(new_state.game_state, ctx.skill_id, ctx.skill_level, ctx.target)
@@ -947,7 +948,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
         new_state =
           state
-          |> commit_cast(new_game_state, skill_id, level)
+          |> commit_local_cast(new_game_state, skill_id, level, effects)
           |> settle_local_effects(effects)
 
         broadcast_skill_use(new_game_state, skill_id, level, target)
@@ -1380,11 +1381,43 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp settle_local_effects(state, effects) do
     effects
     |> Enum.reduce(state, fn effect, current ->
-      {:noreply, updated} = HomunculusCommandHandler.local_effect(effect, current)
+      {:noreply, updated} = apply_local_skill_effect(effect, current)
       updated
     end)
     |> HomunculusCommandHandler.publish_private_state_if_dirty()
   end
+
+  defp apply_local_skill_effect({:player, {:status_events, _events}}, state),
+    do: {:noreply, state}
+
+  defp apply_local_skill_effect({:player, {:skill_visual, skill_id, level}}, state) do
+    game_state = state.game_state
+
+    Broadcast.to_in_range(
+      game_state.map_name,
+      game_state.x,
+      game_state.y,
+      Config.view_range(),
+      %SkillEffect{
+        skill_id: skill_id,
+        level: level,
+        target_id: game_state.character_id,
+        src_id: game_state.character_id,
+        result: 1
+      }
+    )
+
+    {:noreply, state}
+  end
+
+  defp apply_local_skill_effect({:player, {:conditional_cast_cancel}}, state),
+    do: {:noreply, interrupt_cast_on_damage(state)}
+
+  defp apply_local_skill_effect({:player, {:apply_coma, source, metadata}}, state),
+    do: HealthHandler.apply_coma(source, metadata, state)
+
+  defp apply_local_skill_effect(effect, state),
+    do: HomunculusCommandHandler.local_effect(effect, state)
 
   defp resolve_potion(
          state,
@@ -1906,9 +1939,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     publish_cast_commit(state, skill_id, level, postdelay?, sphere_cost_plan)
   end
 
-  defp prepare_cast_commit(%{connection_pid: connection_pid} = state, new_game_state) do
+  defp commit_local_cast(state, new_game_state, skill_id, level, effects) do
+    status_batches = for {:player, {:status_events, events}} <- effects, do: events
+
+    if status_batches == [] do
+      commit_cast(state, new_game_state, skill_id, level)
+    else
+      {prepared, sphere_cost_plan} =
+        prepare_status_cast_commit(state, new_game_state, List.flatten(status_batches))
+
+      publish_cast_commit(prepared, skill_id, level, true, sphere_cost_plan)
+    end
+  end
+
+  defp prepare_status_cast_commit(state, new_game_state, events) do
+    refreshed =
+      state.game_state
+      |> stamp_vending_cost(new_game_state)
+      |> PlayerCaster.refresh_status_events(events)
+
+    prepare_snapshot_commit(state, refreshed)
+  end
+
+  defp prepare_cast_commit(state, new_game_state) do
     new_game_state = stamp_vending_cost(state.game_state, new_game_state)
-    previous_spheres = state.game_state.spirit_spheres
     equipped = Map.values(Inventory.equipped_items(new_game_state.inventory))
 
     updated_stats =
@@ -1916,10 +1970,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
     walk_speed = StatusManager.walk_speed_for(updated_stats)
 
-    if walk_speed != state.game_state.walk_speed,
-      do: StatusSync.send_param(connection_pid, StatusParams.speed(), walk_speed)
+    prepare_snapshot_commit(state, %{
+      new_game_state
+      | stats: updated_stats,
+        walk_speed: walk_speed
+    })
+  end
 
-    new_game_state = %{new_game_state | stats: updated_stats, walk_speed: walk_speed}
+  defp prepare_snapshot_commit(%{connection_pid: connection_pid} = state, new_game_state) do
+    previous_spheres = state.game_state.spirit_spheres
+
+    if new_game_state.walk_speed != state.game_state.walk_speed,
+      do: StatusSync.send_param(connection_pid, StatusParams.speed(), new_game_state.walk_speed)
 
     {new_game_state, sphere_cost_plan} =
       SpiritSphereHandler.prepare_skill_cost(new_game_state, previous_spheres)
@@ -2397,6 +2459,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # Auto Counter's cast starts no visual of its own: its stance effect reaches
   # onlookers 100 ms later, sent by the skill module itself.
   defp broadcast_skill_effect(_game_state, @auto_counter, _level, _target), do: :ok
+
+  defp broadcast_skill_effect(_game_state, 473, _level, _target), do: :ok
 
   # A no-damage cast shows the skill's effect; a damage cast's visuals are its hits.
   defp broadcast_skill_effect(game_state, skill_id, level, target) do

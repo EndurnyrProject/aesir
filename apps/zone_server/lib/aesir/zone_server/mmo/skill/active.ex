@@ -32,7 +32,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   @typedoc "A player, mob, Homunculus, or NPC caster state."
   @type caster :: PlayerState.t() | MobState.t() | HomunculusState.t() | SkillCaster.t()
 
-  @typedoc "An aggregate-local effect returned without messaging the owner process."
+  @typedoc """
+  An aggregate-local effect returned without messaging the owner process.
+
+  `{:player, {:status_events, events}}` marks an owning-player status cast:
+  its committed lifecycle events select the stat calculation at settlement,
+  instead of forcing the ordinary full equipment fold. Other local effects
+  run in list order after the caster state is committed.
+  """
   @type local_effect ::
           {:homunculus | :player, tuple()}
           | {:mob, {:apply_heal, pos_integer(), non_neg_integer(), Ref.t()}}
