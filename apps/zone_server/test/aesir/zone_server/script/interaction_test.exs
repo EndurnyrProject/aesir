@@ -105,6 +105,10 @@ defmodule Aesir.ZoneServer.Script.InteractionTest do
     assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :MENU, options: ["A", "B"]}}}
     send(pid, {:npc_interact, %NpcInteract{npc_id: @gid, response: {:choice, 2}}})
 
+    assert_receive {:"$gen_call", from, {:npc, {:script_apply, {:set_temp_var, :menu, 2}}}}
+    game_state = %{base_ctx().game_state | temp_vars: %{"menu" => 2}}
+    GenServer.reply(from, {:ok, game_state})
+
     assert_receive {:chose, 2}
     assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :CLOSE}}}
     assert_receive {:DOWN, ^ref, :process, ^pid, :normal}, 500

@@ -5,6 +5,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   Cards open stateless target discovery without running or consuming anything.
   The existing consumable path validates other items, runs the effect
   synchronously inside the player session and commits the resulting state.
+  Teleport-menu scripts only stage their helper here; the item is spent before
+  the helper starts in the ordinary monitored interaction process.
   Ordinary items consume one unit on success; a `delay_consume` item, or a
   `no_consume` one, that grants a skill waits until the client selects a valid
   cast, and a `no_consume` item is never consumed (`pc.cpp:6488-6545`).
@@ -21,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   alias Aesir.Net.SystemNotice
   alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
   alias Aesir.ZoneServer.Mmo.ItemManagement.Eligibility
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDialogs
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.ItemManagement.NoEquip
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -32,6 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
+  alias Aesir.ZoneServer.Unit.Player.Handlers.ItemDialogHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
@@ -130,11 +134,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
 
     with :ok <- usable?(definition),
          :ok <- Eligibility.check(definition, context),
-         :ok <- map_allows?(definition, state.game_state) do
+         :ok <- map_allows?(definition, state.game_state),
+         :ok <- item_dialog_allowed?(definition, state) do
       run_effect(client_index, server_index, definition, state)
     else
       {:error, reason} -> reject(client_index, reason, state)
     end
+  end
+
+  defp item_dialog_allowed?(%{id: id}, state) do
+    if CompiledItemScripts.interactive?(id) and SessionState.interaction_blocked?(state),
+      do: {:error, :disabled},
+      else: :ok
   end
 
   # A Homunculus effect commits the inventory removal and the homunculus row in
@@ -160,6 +171,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
       %Ctx{status: {:error, reason}} ->
         reject(client_index, reason, state)
 
+      %Ctx{session_effects: [{:item_dialog, _helper, _args}]} ->
+        consume_item_dialog(ctx, original, definition, client_index, server_index, state)
+
       %Ctx{session_effects: [{:homunculus, effect}]} ->
         if %{ctx | session_effects: []} == original do
           ItemEffectHandler.handle(client_index, server_index, effect, state)
@@ -169,6 +183,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
 
       %Ctx{session_effects: effects} ->
         apply_item_effects(ctx, effects, definition, client_index, server_index, state)
+    end
+  end
+
+  defp consume_item_dialog(
+         %Ctx{session_effects: [{:item_dialog, helper, args}]} = ctx,
+         original,
+         %{id: item_id} = definition,
+         client_index,
+         server_index,
+         state
+       ) do
+    if %{ctx | session_effects: []} == original and
+         match?(%{type: :usable, no_consume: false}, definition) and
+         CompiledItemScripts.interactive?(item_id) and
+         match?({:ok, _}, ItemDialogs.target({helper, args})) do
+      remove_consumed_item(client_index, server_index, ctx, state, nil, {item_id, helper, args})
+    else
+      reject_invalid_script(client_index, item_id, state)
     end
   end
 
@@ -189,7 +221,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
     effects = Enum.reject(effects, &match?({:produce, _}, &1))
 
     with :ok <- validate_item_skill(pending),
-         :ok <- reject_homunculus(effects),
+         :ok <- reject_exclusive_effects(effects),
          {:ok, updated} <- apply_session_effects(effects, %{state | game_state: ctx.game_state}) do
       consumed =
         if stage_before_target?(definition) and pending do
@@ -246,11 +278,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
     end)
   end
 
-  # A Homunculus effect must be the script's only effect (see run_effect/4).
-  defp reject_homunculus(effects) do
-    if Enum.any?(effects, &match?({:homunculus, _}, &1)),
-      do: {:error, :invalid_script},
-      else: :ok
+  # These effects own a separate consumption path and cannot be mixed.
+  defp reject_exclusive_effects(effects) do
+    if Enum.any?(effects, &match?({:homunculus, _}, &1)) or
+         Enum.any?(effects, &match?({:item_dialog, _, _}, &1)),
+       do: {:error, :invalid_script},
+       else: :ok
   end
 
   defp reject_invalid_script(client_index, item_id, state) do
@@ -307,7 +340,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
     end
   end
 
-  defp remove_consumed_item(client_index, server_index, ctx, state, pending) do
+  defp remove_consumed_item(client_index, server_index, ctx, state, pending, dialog \\ nil) do
     char_id = state.game_state.character_id
 
     case InventoryOps.remove(char_id, ctx.game_state.inventory, server_index, 1) do
@@ -326,7 +359,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
         PlayerEvents.inventory_changed(char_id)
 
         committed = SkillHandler.drain_warp(committed)
-        {:noreply, stage_consumed_item_skill(committed, pending)}
+
+        case dialog do
+          nil -> {:noreply, stage_consumed_item_skill(committed, pending)}
+          {item_id, helper, args} -> ItemDialogHandler.start(committed, item_id, helper, args)
+        end
 
       {:error, reason} ->
         Logger.warning(

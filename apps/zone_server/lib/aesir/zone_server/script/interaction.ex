@@ -1,9 +1,9 @@
 defmodule Aesir.ZoneServer.Script.Interaction do
   @moduledoc """
-  The suspendable process backing one NPC conversation.
+  The suspendable process backing one NPC or item-menu interaction.
 
-  Started by the player session on an `NpcTalk` and run straight-line: it
-  invokes `module.on_talk/1` and lets the blocking dialog primitives
+  Started by the player session with an NPC callback or an item's helper
+  entry function, it runs straight-line and lets the blocking dialog primitives
   (`Aesir.ZoneServer.Script.Dsl.next/1`/`select/2`/`input/2`) suspend on the
   client by `receive`-ing the routed `NpcInteract`. `close/1` (or any normal
   return with un-flushed `mes` text) flushes a terminal `CLOSE` frame, and the

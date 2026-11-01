@@ -4754,6 +4754,7 @@
 - aegis_name: Dun_Tele_Scroll3
   id: 12352
   name: Dungeon Teleport Scroll 3
+  on_use: ItemDialogs.stage(ctx, :cash_dungeon, [3])
   type: usable
   weight: 10
 - aegis_name: Tiny_Waterbottle
@@ -5875,21 +5876,25 @@
 - aegis_name: E_WOB_Rune
   id: 12507
   name: Yellow Butterfly Wing
+  on_use: ItemDialogs.stage(ctx, :cash_city, [1])
   type: usable
   weight: 10
 - aegis_name: E_WOB_Schwaltz
   id: 12508
   name: Green Butterfly Wing
+  on_use: ItemDialogs.stage(ctx, :cash_city, [2])
   type: usable
   weight: 10
 - aegis_name: E_WOB_Rachel
   id: 12509
   name: Red Butterfly Wing
+  on_use: ItemDialogs.stage(ctx, :cash_city, [3])
   type: usable
   weight: 10
 - aegis_name: E_WOB_Local
   id: 12510
   name: Blue Butterfly Wing
+  on_use: ItemDialogs.stage(ctx, :cash_city, [5])
   type: usable
   weight: 10
 - aegis_name: E_Siege_Teleport_Scroll
@@ -7497,36 +7502,42 @@
   buy: 2
   id: 12977
   name: Teleport Scroll 1
+  on_use: ItemDialogs.stage(ctx, :cash_tele, [1])
   type: usable
   weight: 10
 - aegis_name: Teleport_Scroll2
   buy: 2
   id: 12978
   name: Teleport Scroll 2
+  on_use: ItemDialogs.stage(ctx, :cash_tele, [2])
   type: usable
   weight: 10
 - aegis_name: Teleport_Scroll3
   buy: 2
   id: 12979
   name: Teleport Scroll 3
+  on_use: ItemDialogs.stage(ctx, :cash_tele, [3])
   type: usable
   weight: 10
 - aegis_name: Teleport_Scroll4
   buy: 2
   id: 12980
   name: Teleport Scroll 4
+  on_use: ItemDialogs.stage(ctx, :cash_tele, [4])
   type: usable
   weight: 10
 - aegis_name: Teleport_Scroll5
   buy: 2
   id: 12981
   name: Teleport Scroll 5
+  on_use: ItemDialogs.stage(ctx, :cash_tele, [5])
   type: usable
   weight: 10
 - aegis_name: Teleport_Scroll6
   buy: 2
   id: 12982
   name: Teleport Scroll 6
+  on_use: ItemDialogs.stage(ctx, :cash_tele, [6])
   type: usable
   weight: 10
 - aegis_name: Pet_Egg_Scroll_Box6
@@ -13803,6 +13814,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: ItemDialogs.stage(ctx, :cash_dungeon, [1])
   type: usable
   weight: 10
 - aegis_name: PVP_Tele_Scroll
@@ -14290,26 +14302,31 @@
 - aegis_name: Dun_Tele_Scroll2
   id: 14581
   name: Dungeon Teleport Scroll II
+  on_use: ItemDialogs.stage(ctx, :cash_dungeon, [2])
   type: usable
   weight: 10
 - aegis_name: WOB_Rune
   id: 14582
   name: Yellow Butterfly Wing
+  on_use: ItemDialogs.stage(ctx, :cash_city, [1])
   type: usable
   weight: 10
 - aegis_name: WOB_Schwaltz
   id: 14583
   name: Green Butterfly Wing
+  on_use: ItemDialogs.stage(ctx, :cash_city, [2])
   type: usable
   weight: 10
 - aegis_name: WOB_Rachel
   id: 14584
   name: Red Butterfly Wing
+  on_use: ItemDialogs.stage(ctx, :cash_city, [3])
   type: usable
   weight: 10
 - aegis_name: WOB_Local
   id: 14585
   name: Blue Butterfly Wing
+  on_use: ItemDialogs.stage(ctx, :cash_city, [4])
   type: usable
   weight: 10
 - aegis_name: Spark_Candy
@@ -14359,6 +14376,7 @@
   no_guild_storage: true
   no_trade: true
   no_use_sitting: true
+  on_use: ItemDialogs.stage(ctx, :cash_siege_tele, [])
   type: usable
   weight: 10
 - aegis_name: Job_Manual50

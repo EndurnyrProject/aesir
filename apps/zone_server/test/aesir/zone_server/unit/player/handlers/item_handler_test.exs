@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Script.Interaction
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ItemEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
@@ -65,6 +66,65 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
     stub(StatusManager, :recalculate_after_status_change, fn state -> state end)
 
     :ok
+  end
+
+  test "a teleport menu cannot replace an active dialog or spend its item" do
+    source = "ItemDialogs.stage(ctx, :cash_city, [1])"
+    ScriptCompiler.compile_all!([item_def(14582, source)])
+    definition = %{usable_definition(14582, source) | type: :usable}
+    stub(Items, :by_id, fn 14582 -> {:ok, definition} end)
+    reject(&InventoryOps.remove/4)
+
+    state =
+      Map.put(state_with_potion(14582), :interaction_lock, {
+        self(),
+        make_ref(),
+        SessionState.system_dialog_gid()
+      })
+
+    assert {:noreply, ^state} = ItemHandler.handle_use_item(@red_potion_client_index, state)
+    assert_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: false, reason: 4}}}
+  end
+
+  test "a failed item removal never starts a destination interaction" do
+    source = "ItemDialogs.stage(ctx, :cash_city, [1])"
+    ScriptCompiler.compile_all!([item_def(14582, source)])
+    definition = %{usable_definition(14582, source) | type: :usable}
+    stub(Items, :by_id, fn 14582 -> {:ok, definition} end)
+    Mimic.copy(Interaction)
+    reject(&Interaction.start/4)
+    expect(InventoryOps, :remove, fn 1000, _inventory, 0, 1 -> {:error, :inventory_failure} end)
+    state = state_with_potion(14582)
+    assert {:noreply, ^state} = ItemHandler.handle_use_item(@red_potion_client_index, state)
+    assert_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: false}}}
+  end
+
+  test "startup receives committed inventory without inline authority and failure does not refund" do
+    source = "ItemDialogs.stage(ctx, :cash_city, [1])"
+    ScriptCompiler.compile_all!([item_def(14582, source)])
+    definition = %{usable_definition(14582, source) | type: :usable}
+    stub(Items, :by_id, fn 14582 -> {:ok, definition} end)
+    expect_potion_consumed()
+    Mimic.copy(Interaction)
+    owner = self()
+
+    expect(Interaction, :start, fn ^owner, _module, ctx, entry ->
+      assert ctx.source == {:item, 14582}
+      assert ctx.session_state == nil
+      assert ctx.game_state.inventory[0].amount == 4
+      assert is_function(entry, 1)
+      assert ctx.npc_gid > SessionState.system_dialog_gid()
+      assert_received {:send, :gameplay, {:item_removed, %ItemRemoved{amount: 1}}}
+      assert_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: true}}}
+      {:error, :injected_start_failure}
+    end)
+
+    assert {:noreply, committed} =
+             ItemHandler.handle_use_item(@red_potion_client_index, state_with_potion(14582))
+
+    assert committed.game_state.inventory[0].amount == 4
+    refute Map.get(committed, :interaction_lock)
+    refute_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: false}}}
   end
 
   test "a pending labelled skill menu permits ordinary item use" do

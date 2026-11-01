@@ -7,20 +7,21 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   once a command ended the script (`halt/2`), and the `failures` of commands that
   failed without ending it (`fail/3`).
 
-  For NPC interactions it additionally carries the running interaction process
+  For NPC and item-menu interactions it additionally carries the running process
   (`interaction_pid`), the player session process (`session_pid` — the
   single-writer of `PlayerState` that state-mutating DSL primitives route their
-  `{:script_apply, op}` calls to), the deterministic NPC unit id the client
-  knows (`npc_gid` — stamped on outgoing `NpcDialog` frames and matched against
+  `{:script_apply, op}` calls to), the dialog correlation id the client
+  echoes (`npc_gid` — stamped on outgoing `NpcDialog` frames and matched against
   incoming `NpcInteract`), `page` (the accumulated `mes/2` lines awaiting a
   flush at the next dialog suspension point), and `session_ref`, the monitor
   the interaction holds on its session so a blocking primitive can exit cleanly
   if the session dies.
 
-  Item scripts run inside the owning session. Their `session_state` carries
-  that session through inline operations without calling its own mailbox;
-  `game_state` remains the current script snapshot. NPC contexts instead use
-  `session_pid` to call their owning session.
+  Ordinary item scripts run inside the owning session. Their `session_state`
+  carries that session through inline operations without calling its own mailbox;
+  `game_state` remains the current script snapshot. NPC and item-menu contexts
+  instead use `session_pid` to call their owning session. Item-menu contexts
+  retain their item source but never carry inline `session_state` authority.
 
   NPC event handlers (`OnInit`/`OnTimer`/`donpcevent`, rAthena semantics) run
   with no player attached: `detached/2` builds a `Ctx` for that case, with
@@ -64,6 +65,7 @@ defmodule Aesir.ZoneServer.Script.Ctx do
           | {:homunculus, homunculus_effect()}
           | {:item_skill, integer(), pos_integer(), boolean()}
           | {:produce, integer()}
+          | {:item_dialog, atom(), [integer()]}
           | {:script_damage, ScriptVitals.damage()}
           | {:unit_skill_use, integer(), pos_integer()}
           | {:potion_pitch, :flat | :percent, integer(), integer()}
@@ -108,7 +110,7 @@ defmodule Aesir.ZoneServer.Script.Ctx do
 
   The session map must contain at least:
   - `:game_state` — a `PlayerState` carrying `character_id` and `account_id`
-  - `:connection_pid` — the TCP connection process for this session
+  - `:connection_pid` — the connection process for this session
   """
   @spec from_session(
           %{:game_state => PlayerState.t(), :connection_pid => pid(), optional(any()) => any()},

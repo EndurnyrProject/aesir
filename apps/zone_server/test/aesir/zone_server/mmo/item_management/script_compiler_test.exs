@@ -41,6 +41,41 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompilerTest do
     assert ctx.game_state.stats.current_state.hp == 150
   end
 
+  test "compiled classification follows the standalone staged source and staging changes only effects" do
+    source = "ItemDialogs.stage(ctx, :cash_city, [5])"
+
+    assert :ok =
+             ScriptCompiler.compile_all!([
+               item_def(12510, source),
+               item_def(501, "heal(ctx, hp: 50)")
+             ])
+
+    assert CompiledItemScripts.interactive?(12510)
+    refute CompiledItemScripts.interactive?(501)
+    refute CompiledItemScripts.interactive?(999_999)
+    ctx = build_ctx()
+    staged = CompiledItemScripts.on_use(12510, ctx)
+    assert staged.session_effects == [{:item_dialog, :cash_city, [5]}]
+    assert %{staged | session_effects: []} == ctx
+
+    assert :ok = ScriptCompiler.compile_all!([item_def(12510, "ctx")])
+    refute CompiledItemScripts.interactive?(12510)
+  end
+
+  test "invalid or embedded staging calls fail compilation instead of entering the inline path" do
+    for source <- [
+          "ItemDialogs.stage(ctx, :cash_city, [6])",
+          "ItemDialogs.stage(ctx, :unknown, [])",
+          "ItemDialogs.stage(ctx, :cash_city, [base_level(ctx)])",
+          "ctx = heal(ctx, hp: 10); ItemDialogs.stage(ctx, :cash_city, [1])",
+          "if true do ItemDialogs.stage(ctx, :cash_city, [1]) else ctx end"
+        ] do
+      assert_raise ArgumentError, ~r/item.dialog/, fn ->
+        ScriptCompiler.compile_all!([item_def(12510, source)])
+      end
+    end
+  end
+
   test "a Homunculus item script stages its typed effect" do
     assert ScriptCompiler.compile_all!([item_def(12_040, "homevolution(ctx)")]) == :ok
 

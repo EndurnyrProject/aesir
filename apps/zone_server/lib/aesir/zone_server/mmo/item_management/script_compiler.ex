@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler do
   """
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDialogs
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
 
   @target Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
@@ -27,16 +28,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler do
   """
   @spec compile_all!([ItemDefinition.t()]) :: :ok
   def compile_all!(items \\ Items.all()) do
-    clauses =
+    {clauses, dialog_clauses} =
       items
       |> Enum.reject(&is_nil(&1.on_use))
       |> Enum.map(&clause/1)
+      |> Enum.unzip()
 
     body =
       quote do
+        alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDialogs
         alias Aesir.ZoneServer.Script.Rathena
         import Aesir.ZoneServer.Script.Dsl
         unquote_splicing(clauses ++ [fallback_clause()])
+
+        @doc "Whether this item's compiled source stages a destination dialog."
+        @spec interactive?(integer()) :: boolean()
+        unquote_splicing(Enum.reject(dialog_clauses, &is_nil/1))
+        def interactive?(_id), do: false
       end
 
     create_module!(body)
@@ -55,18 +63,54 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler do
     end
   end
 
-  @spec clause(ItemDefinition.t()) :: Macro.t()
+  @spec clause(ItemDefinition.t()) :: {Macro.t(), Macro.t() | nil}
   defp clause(%ItemDefinition{id: id, on_use: source}) do
     body = Code.string_to_quoted!(source)
     ctx_var = Macro.var(:ctx, nil)
+    interactive? = interactive_source?(body)
 
-    quote do
-      def on_use(unquote(id), unquote(ctx_var)) do
-        unquote(body)
-      catch
-        :throw, {:script_end, %Aesir.ZoneServer.Script.Ctx{} = ended} -> ended
+    on_use =
+      quote do
+        def on_use(unquote(id), unquote(ctx_var)) do
+          unquote(body)
+        catch
+          :throw, {:script_end, %Aesir.ZoneServer.Script.Ctx{} = ended} -> ended
+        end
       end
+
+    dialog_clause =
+      if interactive? do
+        quote do
+          def interactive?(unquote(id)), do: true
+        end
+      end
+
+    {on_use, dialog_clause}
+  end
+
+  defp interactive_source?(
+         {{:., _, [{:__aliases__, _, [:ItemDialogs]}, :stage]}, _,
+          [{:ctx, _, context}, helper, args]}
+       )
+       when is_atom(context) do
+    case ItemDialogs.target({helper, args}) do
+      {:ok, _module} -> true
+      :error -> raise ArgumentError, "invalid item-dialog request"
     end
+  end
+
+  defp interactive_source?(body) do
+    {_body, staged?} =
+      Macro.prewalk(body, false, fn
+        {{:., _, [{:__aliases__, _, aliases}, :stage]}, _, _args} = node, found ->
+          {node, found or List.last(aliases) == :ItemDialogs}
+
+        node, found ->
+          {node, found}
+      end)
+
+    if staged?, do: raise(ArgumentError, "item-dialog staging must be the entire item script")
+    false
   end
 
   @spec fallback_clause() :: Macro.t()

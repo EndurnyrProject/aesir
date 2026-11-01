@@ -104,6 +104,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNpcTest do
     {:noreply, ^locked} =
       PacketHandler.handle_message(%NpcInteract{npc_id: gid, response: {:choice, 1}}, locked)
 
+    assert_receive {:"$gen_call", from, {:npc, {:script_apply, {:set_temp_var, :menu, 1}}}}
+    game_state = %{locked.game_state | temp_vars: %{"menu" => 1}}
+    GenServer.reply(from, {:ok, game_state})
+
     assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :CLOSE, text: "you picked 1"}}}
   end
 

@@ -22,7 +22,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Internal do
   @doc """
   Routes a state-mutating op through the single-writer session, then folds
   the authoritative state back into ctx. Item-script deletion and posture
-  operations thread the owning session inline. NPC interactions use a
+  operations thread the owning session inline. NPC and item-menu interactions use a
   cross-process call, never a self-call. A refused op is a failed
   command: the script goes on with the ctx unchanged (`Ctx.fail/3`), unless the
   caller passes `:halt` for a command whose refusal ends the script. A

@@ -1,12 +1,13 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   @moduledoc """
-  Handles NPC clicks and dialog responses for a player session.
+  Handles NPC clicks and responses to NPC, skill and item dialogs.
 
   A click resolves the unit to a shop window or a bespoke NPC module; the
   latter starts a supervised, monitored `Script.Interaction` process whose pid
   is stored as the session's interaction lock. One dialog at a time: a click
   while a lock is held is ignored (matches the client), and dialog responses
-  are only forwarded to the locked interaction.
+  are only forwarded to the locked interaction, including a teleport item's
+  synthetic dialog id.
 
   A click on a bespoke NPC module gid that is currently disabled or hidden
   (`Npc.Session.visible?/1`) starts no interaction: the movement diff already

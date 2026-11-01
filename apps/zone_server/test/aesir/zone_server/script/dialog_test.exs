@@ -54,6 +54,7 @@ defmodule Aesir.ZoneServer.Script.DialogTest do
       assert_received {:send, _ch, {:npc_dialog, %NpcDialog{expect: :MENU, options: ["A", "B"]}}}
       assert choice == 2
       assert result_ctx.page == []
+      assert result_ctx.game_state.temp_vars["menu"] == 2
     end
 
     test "a cancel response ends the dialog (interaction exits :normal)" do
@@ -139,6 +140,18 @@ defmodule Aesir.ZoneServer.Script.DialogTest do
 
     send(pid, {:npc_interact, %NpcInteract{npc_id: @gid, response: response}})
 
+    case response do
+      {:choice, choice} ->
+        assert_receive {:"$gen_call", from,
+                        {:npc, {:script_apply, {:set_temp_var, :menu, ^choice}}}}
+
+        game_state = %{build_ctx().game_state | temp_vars: %{"menu" => choice}}
+        GenServer.reply(from, {:ok, game_state})
+
+      _other ->
+        :ok
+    end
+
     receive do
       {:result, value} -> value
     after
@@ -162,6 +175,7 @@ defmodule Aesir.ZoneServer.Script.DialogTest do
       char_id: 1,
       account_id: 100,
       connection_pid: self(),
+      session_pid: self(),
       game_state: %PlayerState{character_id: 1, account_id: 100},
       source: {:npc, :test_npc},
       npc_gid: @gid,

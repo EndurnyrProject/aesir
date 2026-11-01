@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   alias Aesir.Net.NpcInteract
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Script.Ctx
+  alias Aesir.ZoneServer.Script.Dsl.Variables
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
 
   @typedoc "The dialog frame kind, mirroring the `NpcDialog.Expect` proto enum."
@@ -62,16 +63,27 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   Flushes the buffered page as a `MENU` frame with `options`, blocks for the
   client's choice, and returns `{ctx, choice}`.
 
-  `choice` is the 1-based index the client selected; a cancel/ESC response
-  yields `0`. The page buffer is cleared. On a detached ctx, halts `:no_player`
-  and returns `{ctx, nil}` without flushing or blocking.
+  Empty labels are hidden, but `choice` retains its original 1-based logical
+  position and is stored in the player's temporary `menu` variable. A
+  cancel/ESC ends the interaction without returning. Invalid selections
+  disconnect the session instead of reaching a script branch.
   """
-  @spec select(Ctx.t(), [String.t()]) :: {Ctx.t(), non_neg_integer() | nil}
-  def select(%Ctx{game_state: nil} = ctx, _options), do: {Ctx.halt(ctx, :no_player), nil}
+  @spec select(Ctx.t(), [String.t()]) :: {Ctx.t(), pos_integer()}
+  def select(%Ctx{game_state: nil} = ctx, _options), do: Ctx.halt(ctx, :no_player)
 
   def select(%Ctx{} = ctx, options) do
-    flush(ctx, :MENU, options)
-    {%{ctx | page: []}, await(ctx, :choice)}
+    visible = options |> Enum.with_index(1) |> Enum.reject(fn {label, _} -> label == "" end)
+    flush(ctx, :MENU, Enum.map(visible, &elem(&1, 0)))
+    choice = await(ctx, :choice)
+
+    if is_integer(choice) and choice > 0 and choice <= length(visible) do
+      {_label, logical} = Enum.at(visible, choice - 1)
+      ctx = Variables.set_temp_var(%{ctx | page: []}, :menu, logical)
+      {ctx, logical}
+    else
+      PlayerSession.disconnect(ctx.session_pid)
+      exit(:normal)
+    end
   end
 
   @doc """

@@ -77,6 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   """
 
   alias Aesir.ZoneServer.Announcement.Flags
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDialogs
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
   alias Aesir.ZoneServer.Mmo.Option
@@ -90,7 +91,26 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   @option_names %{"Option_Wug" => :wug, "Option_Wugrider" => :wugrider}
 
   @spec generate([ast_stmt()]) :: {:ok, String.t()} | {:error, {:unsupported, detail()}}
-  def generate(stmts) when is_list(stmts), do: render_stmts(stmts)
+  def generate(stmts) when is_list(stmts) do
+    case Enum.flat_map(stmts, &unblock/1) do
+      [{:cmd, "callfunc", [{:str, name} | args]}] -> render_item_dialog(name, args)
+      _ordinary -> render_stmts(stmts)
+    end
+  end
+
+  defp render_item_dialog(name, args) do
+    with {:ok, values} <-
+           map_ok(args, fn
+             {:int, value} -> {:ok, value}
+             other -> unsupported({:expression, other})
+           end),
+         {:ok, {helper, values}} <- ItemDialogs.resolve(name, values) do
+      {:ok, "ItemDialogs.stage(ctx, #{inspect(helper)}, #{inspect(values)})"}
+    else
+      :error -> unsupported("callfunc")
+      {:error, _reason} = error -> error
+    end
+  end
 
   @spec render_stmts([ast_stmt()]) :: {:ok, String.t()} | {:error, {:unsupported, detail()}}
   defp render_stmts(stmts) do

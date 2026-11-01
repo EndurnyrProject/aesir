@@ -21,6 +21,33 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
     Resolver.with_source_catalogs(catalogs, fn -> compile(script) end)
   end
 
+  test "standalone teleport helpers stage a typed item dialog without executing it" do
+    for {script, helper, args} <- [
+          {~s|callfunc "F_CashDungeon",3;|, :cash_dungeon, [3]},
+          {~s|{ callfunc "F_CashCity",5; }|, :cash_city, [5]},
+          {~s|callfunc "F_CashTele",6;|, :cash_tele, [6]},
+          {~s|callfunc "F_CashSiegeTele";|, :cash_siege_tele, []}
+        ] do
+      assert {:ok, "ItemDialogs.stage(ctx, #{inspect(helper)}, #{inspect(args)})"} ==
+               compile(script)
+    end
+  end
+
+  test "helper calls reject mixed scripts, expressions, unknown names and invalid literal arguments" do
+    for script <- [
+          ~s|heal 1,0; callfunc "F_CashCity",1;|,
+          ~s|if (BaseLevel > 1) callfunc "F_CashCity",1;|,
+          ~s|getitem callfunc("F_Rand",501,502),1;|,
+          ~s|callfunc "F_CashStore";|,
+          ~s|callfunc "F_CashCity",6;|,
+          ~s|callfunc "F_CashCity",BaseLevel;|,
+          ~s|callfunc "F_CashTele";|,
+          ~s|callfunc "F_CashSiegeTele",1;|
+        ] do
+      assert {:error, {:unsupported, _}} = compile(script)
+    end
+  end
+
   test "homevolution emits the generic zero-argument DSL call" do
     assert {:ok, "homevolution(ctx)"} = compile("homevolution;")
   end
