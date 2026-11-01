@@ -3635,6 +3635,16 @@
   no_guild_storage: true
   no_trade: true
   no_use_sitting: true
+  on_use: |-
+    ctx = set_local(ctx, :type, getiteminfo(ctx, getequipid(ctx, 9), 11))
+    ctx = if (((get_local(ctx, :type, 0) == 6) or (get_local(ctx, :type, 0) == 7)) or (get_local(ctx, :type, 0) == 8)) do
+      ctx = skilleffect(ctx, 111, 0)
+      ctx = sc_start(ctx, :sc_adrenaline, 150000, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: usable
   weight: 10
 - aegis_name: Megaphone_

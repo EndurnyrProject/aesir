@@ -96,6 +96,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
   alias Aesir.ZoneServer.Mmo.Option
+  alias Aesir.ZoneServer.Npc.Transpiler.Resolver, as: NpcResolver
 
   @type ast_stmt :: tuple()
   @type detail :: term()
@@ -549,6 +550,22 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
 
   defp render_const("bc_" <> _ = name) do
     with {:ok, value} <- flag_value({:name, name}), do: {:ok, Integer.to_string(value)}
+  end
+
+  defp render_const("ITEMINFO_VIEW"), do: {:ok, "11"}
+
+  defp render_const("EQI_" <> _ = name) do
+    case NpcResolver.equip_slot(name) do
+      {:ok, index} -> {:ok, Integer.to_string(index)}
+      :error -> unsupported({:unknown_const, name})
+    end
+  end
+
+  defp render_const("W_" <> _ = name) do
+    case NpcResolver.constant(name) do
+      {:ok, source} -> {:ok, source}
+      :error -> unsupported({:unknown_const, name})
+    end
   end
 
   defp render_const(name), do: unsupported({:unknown_const, name})

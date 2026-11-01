@@ -163,7 +163,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancerDanceStatusesTest do
           :sc_adrenaline,
           :sc_adrenaline2
         ] do
-      assert :ok = apply_status(status)
+      assert :ok = StatusStorage.apply_status(:player, @player_id, status, duration: 30_000)
     end
 
     assert :ok = apply_status(:sc_dontforgetme)

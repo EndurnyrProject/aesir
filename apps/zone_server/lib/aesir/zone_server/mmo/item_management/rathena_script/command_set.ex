@@ -91,6 +91,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet do
   }
 
   @call_reads %{
+    "getequipid" => %{shape: :call, dsl: "getequipid", args: [:expr]},
+    "getiteminfo" => %{shape: :call, dsl: "getiteminfo", args: [:expr, :expr]},
     "getskilllv" => %{shape: :call, dsl: "getskilllv", args: [:skill]},
     "checkoption" => %{shape: :call, dsl: "checkoption", args: [:option]},
     "checkfalcon" => %{shape: :call, dsl: "checkfalcon", args: []},

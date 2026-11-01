@@ -165,7 +165,11 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
     params =
       val
       |> start_values()
-      |> Keyword.merge(duration: duration_ms, success_rate: min(rate, 10_000) / 100)
+      |> Keyword.merge(
+        caster_id: ctx.char_id,
+        duration: duration_ms,
+        success_rate: min(rate, 10_000) / 100
+      )
       |> put_start_flag(:no_avoid, flag, @scstart_noavoid)
       |> put_start_flag(:no_tick_def, flag, @scstart_notickdef)
       |> put_start_flag(:no_rate_def, flag, @scstart_noratedef)

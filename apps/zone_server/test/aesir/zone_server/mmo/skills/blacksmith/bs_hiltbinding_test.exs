@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHiltbindingTest do
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsOverthrust
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsWeaponperfect
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Party.State, as: PartyState
@@ -53,14 +54,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHiltbindingTest do
   test "a Hilt Binding caster extends all four buffs for self and party recipients" do
     caster = player_state(1, %{105 => 1})
     member = player_state(2, %{})
+    UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
     UnitRegistry.register_unit(:player, 2, PlayerState, member, self())
 
     stub(PartyManager, :get, fn 10 -> {:ok, party_state()} end)
     test_pid = self()
 
     stub(StatusInterpreter, :apply_status, fn :player, target_id, status, params ->
-      send(test_pid, {:status, target_id, status, params[:duration]})
-      :ok
+      result =
+        call_original(StatusInterpreter, :apply_status, [:player, target_id, status, params])
+
+      entry = StatusStorage.get_status(:player, target_id, status)
+      send(test_pid, {:status, target_id, status, entry.expires_at - entry.started_at})
+      result
     end)
 
     for {module, status, duration, applications} <- [

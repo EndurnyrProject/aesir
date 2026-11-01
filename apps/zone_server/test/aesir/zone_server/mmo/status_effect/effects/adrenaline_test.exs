@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AdrenalineTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Adrenaline
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Adrenaline2
@@ -11,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AdrenalineTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @adrenaline2_weapons [
@@ -119,18 +121,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AdrenalineTest do
   end
 
   defp stub_player do
-    stub(UnitRegistry, :get_unit_info, fn :player, 1 ->
-      {:ok,
-       %{
-         unit_id: 1,
-         unit_type: :player,
-         race: :formless,
-         element: :neutral,
-         element_level: 1,
-         boss_flag: false,
-         size: :medium,
-         stats: %{max_hp: 100, max_sp: 50, hp: 100, sp: 50, level: 1, base_level: 1}
-       }}
-    end)
+    player =
+      PlayerState.new(%Character{
+        id: 1,
+        account_id: 1,
+        name: "Adrenaline",
+        sex: "M",
+        class: 10,
+        base_level: 1,
+        job_level: 1,
+        hp: 100,
+        sp: 50,
+        last_map: "prontera"
+      })
+
+    :ok = UnitRegistry.register_player(put_in(player.stats.equipment.right_hand, 1301), self())
   end
 end
