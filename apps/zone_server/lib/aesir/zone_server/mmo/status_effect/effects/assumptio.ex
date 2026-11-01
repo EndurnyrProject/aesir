@@ -15,10 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Assumptio do
   application.
 
   In both modes it is dispellable on players, while Dispel spares it on mobs,
-  and mobs can grant it to boss allies. Deviations: the status shows the
-  renewal icon in both modes (status icons are static per definition), and
-  Kaite exclusivity and Hermode removal are not modelled because neither skill
-  exists.
+  and mobs can grant it to boss allies. It ends Kaite in both modes. Renewal
+  shows the Assumptio2 icon; pre-renewal shows the Assumptio icon.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_assumptio,
@@ -26,9 +24,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Assumptio do
     no_clear_buff: false,
     clear_buff_flags: [:remove_on_hermode],
     properties: [:buff],
-    calc_flags: [:def],
-    end_on_start: [renewal: [], pre_renewal: [:sc_kyrie]],
-    icon: :assumptio2
+    calc_flags: [renewal: [:def], pre_renewal: []],
+    end_on_start: [renewal: [:sc_kaite], pre_renewal: [:sc_kyrie, :sc_kaite]],
+    opt3: :assumptio,
+    icon: [renewal: :assumptio2, pre_renewal: :assumptio]
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Map.MapFlags

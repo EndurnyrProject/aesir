@@ -36,7 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusEventRoutingTest do
       no_clear_buff: false
 
     @impl true
-    def on_apply(_target, _instance, _context), do: {:end_only, [:sc_test_routing_flee]}
+    def before_overlap(_target, _instance, _context), do: {:end_only, [:sc_test_routing_flee]}
   end
 
   setup :setup_ets_tables

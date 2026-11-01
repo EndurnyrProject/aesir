@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AssumptioTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
@@ -35,13 +36,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AssumptioTest do
     %{player: player}
   end
 
-  test "is a dispellable buff with the renewal icon that reaches boss mobs" do
+  test "is a dispellable buff with its mode icon that reaches boss mobs" do
     metadata = Assumptio.metadata()
 
     refute metadata.no_dispel
     refute :boss in metadata.immunity
-    assert metadata.calc_flags == [:def]
-    assert metadata.icon == :assumptio2
+    assert metadata.calc_flags == if(GameMode.mode() == :renewal, do: [:def], else: [])
+    assert metadata.icon == if(GameMode.mode() == :renewal, do: :assumptio2, else: :assumptio)
   end
 
   describe "renewal" do

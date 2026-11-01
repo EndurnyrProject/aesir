@@ -2,10 +2,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Blessing do
   @moduledoc """
   Blessing (SC_BLESSING).
 
-  Raises STR, INT and DEX by val2. Cast on a cursed target it is consumed curing
-  the curse instead; cast on a petrified target it cures the petrification and
-  still applies. Against an undead or demon target the caster sets val2 to 0,
-  and the buff halves those three stats instead. The halving works on the
+  Raises STR, INT and DEX by val2. On a player, Curse is cured first;
+  otherwise petrification is cured. Either cure succeeds without applying a
+  new Blessing, even when a stronger Blessing is already held. Players receive
+  val1 as their normal stat increase. Against a non-player undead or demon
+  target val2 is 0, and the buff halves those three stats instead. The halving works on the
   recipient's calculated stats (allocated points plus job and equipment
   contributions), not on the allocated points alone; it deliberately reads the
   value without the status layer, since it emits a delta on the very stats it
@@ -23,13 +24,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Blessing do
     no_clear_buff: false,
     clear_buff_flags: [:remove_on_hermode],
     properties: [:buff],
-    calc_flags: [:str, :int, :dex, :hit],
-    prevented_by: [:sc_refresh, :sc_inspiration],
+    calc_flags: [renewal: [:str, :int, :dex, :hit], pre_renewal: [:str, :int, :dex]],
     icon: :blessing
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
 
   alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @impl true
   def modifiers(%{val2: 0} = instance, context) do
@@ -61,13 +63,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Blessing do
   end
 
   @impl true
-  def on_apply(target, instance, _context) do
-    if has_status?(target, :sc_curse) do
-      remove_status(target, :sc_curse)
-      :remove
-    else
-      if has_status?(target, :sc_stone), do: remove_status(target, :sc_stone)
-      {:ok, instance}
+  def before_overlap({type, _id} = target, _instance, _context) do
+    cond do
+      type == :player and has_status?(target, :sc_curse) -> {:end_only, [:sc_curse]}
+      type == :player and has_status?(target, :sc_stone) -> {:end_only, [:sc_stone]}
+      true -> {:continue, high_spirit_end_actions(target)}
     end
   end
+
+  @impl true
+  def on_apply({:player, _id}, instance, %{loaded: false}),
+    do: {:ok, %{instance | val2: instance.val1}}
+
+  def on_apply({type, id}, instance, %{loaded: false}) do
+    {:ok, info} = UnitRegistry.get_unit_info(type, id)
+    val2 = if RaceModifiers.undead_or_demon?(info), do: 0, else: instance.val1
+    {:ok, %{instance | val2: val2}}
+  end
+
+  def on_apply(_target, instance, _context), do: {:ok, instance}
 end

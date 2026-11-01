@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncreaseAgiTest do
   use ExUnit.Case, async: true
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncreaseAgi
   alias Aesir.ZoneServer.Mmo.StatusEntry
 
@@ -12,9 +13,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncreaseAgiTest do
       assert %{haste_rate: 25} = IncreaseAgi.modifiers(entry(val1: 10, val2: 15), %{})
     end
 
-    test "still scales AGI (val2) and ASPD (val1)" do
-      assert %{agi: 6, aspd: 1} = IncreaseAgi.modifiers(entry(val1: 1, val2: 6), %{})
-      assert %{agi: 15, aspd: 10} = IncreaseAgi.modifiers(entry(val1: 10, val2: 15), %{})
+    test "scales AGI from val2 and grants the direct ASPD bonus only in renewal" do
+      for {level, agi} <- [{1, 6}, {10, 15}] do
+        modifiers = IncreaseAgi.modifiers(entry(val1: level, val2: agi), %{})
+        assert modifiers.agi == agi
+        assert modifiers.aspd == if(GameMode.mode() == :renewal, do: level, else: 0)
+      end
     end
   end
 end

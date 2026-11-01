@@ -1985,9 +1985,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
       modifiers = Interpreter.get_all_modifiers(:player, target_id)
 
-      # The provoke status adds HIT=val3 (which is 0 in this case)
-      assert is_map(modifiers)
-      assert Map.has_key?(modifiers, :hit)
+      assert modifiers == %{atk_rate: 32, def_rate: 0, def2_rate: -55}
+      refute Map.has_key?(modifiers, :hit)
     end
   end
 

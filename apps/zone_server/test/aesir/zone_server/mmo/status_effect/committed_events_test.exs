@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.CommittedEventsTest do
       no_clear_buff: false
 
     @impl true
-    def on_apply(_target, _instance, _context), do: {:end_only, [:sc_test_events_plain]}
+    def before_overlap(_target, _instance, _context), do: {:end_only, [:sc_test_events_plain]}
   end
 
   defmodule ChainedStatus do
@@ -46,8 +46,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.CommittedEventsTest do
       no_clear_buff: false
 
     @impl true
-    def on_apply(_target, %{state: %{ends: ends}} = instance, _context),
-      do: {:ok, instance, Enum.map(ends, &{:end_status, &1})}
+    def before_overlap(_target, %{state: %{ends: ends}}, _context),
+      do: {:continue, Enum.map(ends, &{:end_status, &1})}
   end
 
   defmodule KillingEndStatus do

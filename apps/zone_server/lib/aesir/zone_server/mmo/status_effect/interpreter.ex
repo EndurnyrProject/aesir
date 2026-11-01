@@ -6,20 +6,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   `Aesir.ZoneServer.Mmo.StatusEffect.Definition`, registered in
   `Aesir.ZoneServer.Mmo.StatusEffect.Effects`. This module drives their lifecycle:
 
-  1. `apply_status/4` checks status immunity, equipment magic immunity
-     (`{:error, :magic_immune}`), boss immunity, prevention, conflicts and
-     resistance, then runs the module's `on_apply` callback and stores the
-     instance. An `on_apply` returning `:remove` vetoes the
-     application (e.g. Blessing being consumed as a cure).
+  1. `apply_status/4` validates the target, start gates and resistance, runs
+     ordered pre-overlap actions, resolves held-level protection, and then
+     initializes and stores the instance. A cure-only start may finish without
+     storing the requested status; committed mutations retain their own identities.
   2. `process_tick/3` runs `on_tick` for periodic behavior.
   3. `on_damage/3` notifies eligible callbacks of the unit's delivered damage.
   4. `remove_status/3` runs `on_expire` and deletes the instance.
   """
   require Logger
 
+  import Bitwise, only: [band: 2]
+
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
+  alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition, as: SkillDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Origin
@@ -132,7 +134,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   script's endless status); a status with a defense recipe cannot start that
   way and returns `{:error, :infinite_defended_status}`.
   `no_avoid: true` additionally skips the immunity gates (race, element, boss and
-  magic immunity): the application cannot be avoided, only prevented.
+  magic immunity). A definition's `:failed_mado` flag still refuses that start
+  while the target carries the Madogear option.
 
   `start_delay: ms` starts the status that many milliseconds later, as
   `status_change_start`'s delay: the immunity, Fail-list and defense checks run
@@ -195,12 +198,24 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   defp apply_known_status(unit_type, unit_id, status_id, status_params, definition) do
     with :ok <- ensure_eligible_target(unit_type, definition),
          :ok <- ensure_living_target(unit_type, unit_id),
-         :ok <- ensure_status_allowed(unit_type, unit_id, status_id) do
+         :ok <- ensure_status_allowed(unit_type, unit_id, status_id),
+         :ok <- check_failed_mado(unit_type, unit_id, definition, status_params) do
       if Keyword.get(status_params, :loaded, false) do
         apply_loaded_status(unit_type, unit_id, status_id, status_params, definition)
       else
         apply_new_status(unit_type, unit_id, status_id, status_params, definition)
       end
+    end
+  end
+
+  defp check_failed_mado(unit_type, unit_id, definition, params) do
+    with true <- :failed_mado in definition.flags and Keyword.get(params, :no_avoid, false),
+         {:ok, {_module, %{option: option}, _pid}} when is_integer(option) <-
+           UnitRegistry.get_unit(unit_type, unit_id),
+         true <- band(option, Option.id(:madogear)) != 0 do
+      {:error, :madogear}
+    else
+      _no_mount_gate -> :ok
     end
   end
 
@@ -2146,8 +2161,26 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
           ),
         else: instance
 
-    # The statuses this application ends before meeting the held instance: its
-    # end-on-start list and, for a body state, every held body state.
+    context = %{loaded: Keyword.get(status_params, :loaded, false)}
+
+    case definition.module.before_overlap({unit_type, unit_id}, instance, context) do
+      :continue ->
+        meet_overlap(unit_type, unit_id, status_id, status_params, definition, duration, instance)
+
+      {:end_only, status_ids} ->
+        remove_statuses_with_events(unit_type, unit_id, status_ids, status_params)
+
+      {:continue, actions} ->
+        status_ids = Enum.map(actions, fn {:end_status, id} -> id end)
+        {:ok, events} = remove_statuses_with_events(unit_type, unit_id, status_ids, status_params)
+
+        unit_type
+        |> meet_overlap(unit_id, status_id, status_params, definition, duration, instance)
+        |> prepend_events(events)
+    end
+  end
+
+  defp meet_overlap(unit_type, unit_id, status_id, status_params, definition, duration, instance) do
     definition = %{definition | end_on_start: ended_on_start(unit_type, unit_id, definition)}
     held = held_instance(unit_type, unit_id, status_id, definition)
 
@@ -2204,25 +2237,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
           new_instance,
           status_params
         )
-
-      {:end_only, status_ids} ->
-        remove_statuses_with_events(unit_type, unit_id, status_ids, status_params)
-
-      {:ok, new_instance, actions} ->
-        status_ids = Enum.map(actions, fn {:end_status, id} -> id end)
-        {:ok, events} = remove_statuses_with_events(unit_type, unit_id, status_ids, status_params)
-
-        unit_type
-        |> store_applied_status(
-          unit_id,
-          status_id,
-          duration,
-          definition,
-          {instance, held, incoming},
-          new_instance,
-          status_params
-        )
-        |> prepend_events(events)
 
       :remove ->
         :ok

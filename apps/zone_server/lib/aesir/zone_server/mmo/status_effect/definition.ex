@@ -34,7 +34,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       `:prevents_items`, `:prevents_chat`, and `:prevents_equip_change` block
       the corresponding player actions while the status is active
     - `:calc_flags` - stat recalculation flags
-    - `:flags` - behavior flags (`:no_move`, `:no_attack`, ...); `:stop_attacking`
+    - `:flags` - behavior flags (`:no_move`, `:no_attack`, ...); `:failed_mado`
+      refuses a no-avoid start while the target carries the Madogear option;
+      `:stop_attacking`
       stops the holder's attack when the status starts, and `:on_touch` re-runs
       the touch check of a player's cell when the status ends
     - `:prevented_by` - statuses that prevent this one from being applied
@@ -181,11 +183,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @doc "Returns the stat modifiers granted by this status for the given instance."
   @callback modifiers(StatusEntry.t(), context()) :: map()
 
-  @typedoc "A status application result, including engine-owned ordered removal actions."
-  @type apply_result ::
-          hook_result()
-          | {:end_only, [atom()]}
-          | {:ok, StatusEntry.t(), [{:end_status, atom()}]}
+  @doc """
+  Runs ordered start actions before held-level overlap is checked.
+
+  A cure-only result succeeds without replacing an existing instance. Continue
+  actions end only the named statuses before normal overlap and initialization.
+  The early context carries `:loaded`; values are available on the instance.
+  """
+  @callback before_overlap(target(), StatusEntry.t(), context()) ::
+              :continue | {:continue, [{:end_status, atom()}]} | {:end_only, [atom()]}
 
   @doc """
   Invoked when the status is applied, before it is stored; the returned
@@ -193,13 +199,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   when it starts are stored and persisted with it. The context carries the
   resolved `:duration` (nil for a permanent status) and `:loaded` (true when
   restoring a saved status). May veto the application by returning :remove.
-
-  `{:end_only, statuses}` ends the ordered statuses without storing this
-  application. `{:ok, instance, [{:end_status, status_id}]}` asks the engine to
-  end statuses before storing the application. Engine-owned ends retain their
-  committed lifecycle events for inline owner reconciliation.
+  Ordered cure-only and linked-status start actions belong in before_overlap/3.
   """
-  @callback on_apply(target(), StatusEntry.t(), context()) :: apply_result()
+  @callback on_apply(target(), StatusEntry.t(), context()) :: hook_result()
 
   @doc """
   Invoked when the status is removed or expires, and to undo `c:on_apply/3`
@@ -567,6 +569,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       def modifiers(_instance, _context), do: %{}
 
       @impl true
+      def before_overlap(_target, _instance, _context), do: :continue
+
+      @impl true
       def on_apply(_target, instance, _context), do: {:ok, instance}
 
       @impl true
@@ -589,6 +594,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
         do: Definition.level_overlap(metadata(), held, incoming)
 
       defoverridable modifiers: 2,
+                     before_overlap: 3,
                      on_apply: 3,
                      on_expire: 3,
                      on_tick: 3,
@@ -797,6 +803,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   end
 
   @mode_keyable [
+    :icon,
     :flags,
     :calc_flags,
     :allow_skills,

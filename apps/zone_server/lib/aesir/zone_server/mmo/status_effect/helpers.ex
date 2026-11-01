@@ -40,6 +40,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Helpers do
     StatusStorage.has_status?(unit_type, unit_id, status_id)
   end
 
+  @doc "Returns an end action only for the High Spirit variant of a held soul link."
+  @spec high_spirit_end_actions(Definition.target()) :: [{:end_status, atom()}]
+  def high_spirit_end_actions({unit_type, unit_id}) do
+    case StatusStorage.get_status(unit_type, unit_id, :sc_spirit) do
+      %{val2: 494} -> [{:end_status, :sc_spirit}]
+      _other_link_or_absent -> []
+    end
+  end
+
   @doc """
   Deals damage to the target through the combat system.
 
