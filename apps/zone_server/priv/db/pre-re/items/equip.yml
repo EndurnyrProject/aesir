@@ -43826,6 +43826,7 @@
     - head_top
   name: Splash Hat
   no_guild_storage: true
+  on_equip: 'autobonus(ctx, %{primary: [{:status_start, :sc_windweapon, 180000, 1}], trigger: :attack, secondary: [], battle_flag: 849}, 3, 180000)'
   refineable: true
   slots: 1
   type: armor

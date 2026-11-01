@@ -60,6 +60,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   statuses remain rejected until their complete parameter semantics are implemented.
   Elemental Change also accepts an element constant in its second value.
 
+  ## Script-local assignments
+
+  Integer `.@var` assignments use the context's script-local store. Reads default
+  to zero, assignments evaluate once in statement order, and branch updates
+  remain visible to later statements.
+
+  ## Zeny assignments and exits
+
+  `Zeny = expr` and its compound-assignment forms use the balance parameter
+  setter, not a character variable or a credit operation. The setter performs
+  signed 32-bit conversion and ends the script if the result is negative.
+  A plain `end;` also terminates execution while preserving prior effects.
+
   ## Char variable increments
 
   `Var++;` / `Var--;` on a bare permanent char variable (e.g. `RouletteGold++`,
@@ -137,6 +150,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   @spec render_stmt(ast_stmt()) :: {:ok, String.t()} | {:error, {:unsupported, detail()}}
   defp render_stmt({:cmd, name, args}), do: render_command(name, args)
 
+  defp render_stmt({:assign, {:var, :local, name, :int}, expr}) do
+    with {:ok, value} <- render_expr(expr),
+         do: {:ok, "set_local(ctx, #{inspect(String.to_atom(name))}, #{value})"}
+  end
+
+  defp render_stmt({:assign, {:name, "Zeny"}, expr}) do
+    with {:ok, value} <- render_expr(expr), do: {:ok, "set_zeny(ctx, #{value})"}
+  end
+
   defp render_stmt({:assign, {:name, name}, {:bin, op, {:name, name}, {:int, 1}}})
        when op in [:+, :-] do
     key = inspect(String.to_atom(name))
@@ -155,6 +177,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
 
   @spec render_command(String.t(), [term()]) ::
           {:ok, String.t()} | {:error, {:unsupported, detail()}}
+  defp render_command("end", []), do: {:ok, "throw({:script_end, ctx})"}
+
   defp render_command("warp", [{:str, target}, _x, _y] = args) do
     case CommandSet.warp_target(target) do
       {:ok, dsl_atom} -> {:ok, "warp(ctx, #{dsl_atom})"}
@@ -469,6 +493,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   defp render_expr({:not, _} = expr) do
     with {:ok, condition} <- render_condition(expr), do: {:ok, "Rathena.bool_int(#{condition})"}
   end
+
+  defp render_expr({:var, :local, name, :int}),
+    do: {:ok, "get_local(ctx, #{inspect(String.to_atom(name))}, 0)"}
 
   defp render_expr({:name, name}) do
     case CommandSet.read(name) do

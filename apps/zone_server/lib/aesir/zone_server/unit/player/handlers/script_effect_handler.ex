@@ -71,7 +71,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   @max_cart_type 13
 
   @type op ::
-          {:pay_zeny, non_neg_integer()}
+          {:set_zeny, non_neg_integer()}
+          | {:pay_zeny, non_neg_integer()}
           | {:credit_zeny, non_neg_integer()}
           | {:give_item, integer(), pos_integer()}
           | {:give_item2, integer(), pos_integer(), map()}
@@ -208,6 +209,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   equals the input `state`.
   """
   @spec apply_op(op(), state()) :: {reply(), state()}
+  def apply_op({:set_zeny, value}, %{game_state: gs} = state)
+      when is_integer(value) and value >= 0 do
+    new_zeny = min(value, Zeny.max_zeny())
+    new_gs = %{gs | zeny: new_zeny}
+
+    StatusSync.send_param(state.connection_pid, StatusParams.zeny(), new_zeny)
+    CharacterPersistence.update_character(gs.character_id, %{zeny: new_zeny}, async: true)
+
+    commit(state, new_gs)
+  end
+
   def apply_op({:pay_zeny, amount}, %{game_state: gs} = state) do
     if gs.zeny < amount do
       {{:error, :not_enough_zeny}, state}

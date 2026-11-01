@@ -61,6 +61,23 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   def zeny(%Ctx{game_state: gs}), do: gs.zeny
 
   @doc """
+  Assigns the player's balance after signed 32-bit parameter conversion, pushing
+  and persisting it through the owning session. A negative converted value ends
+  the script without changing the balance or cancelling the item use.
+  """
+  @spec set_zeny(Ctx.t(), integer()) :: Ctx.t()
+  def set_zeny(%Ctx{status: {:error, _}} = ctx, _value), do: ctx
+  def set_zeny(%Ctx{game_state: nil} = ctx, _value), do: no_player!(ctx, "set_zeny/2")
+
+  def set_zeny(%Ctx{} = ctx, value) when is_integer(value) do
+    value = Bitwise.band(value, 0xFFFF_FFFF)
+
+    if value > 0x7FFF_FFFF,
+      do: throw({:script_end, Ctx.fail(ctx, :set_zeny, :negative_zeny)}),
+      else: apply_op(ctx, {:set_zeny, value})
+  end
+
+  @doc """
   Debits `amount` zeny through the session seam, pushing the change to the
   client and persisting it. A player who is short pays nothing and the script
   goes on.

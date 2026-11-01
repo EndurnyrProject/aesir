@@ -7,9 +7,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   synchronously inside the player session and commits the resulting state.
   Teleport-menu scripts only stage their helper here; the item is spent before
   the helper starts in the ordinary monitored interaction process.
-  Ordinary items consume one unit on success; a `delay_consume` item, or a
-  `no_consume` one, that grants a skill waits until the client selects a valid
-  cast, and a `no_consume` item is never consumed (`pc.cpp:6488-6545`).
+  Ordinary items consume one unit on success. A `delay_consume` item stays in
+  inventory until a staged skill claims it; branches that do not stage a skill
+  keep it. A `no_consume` item is never consumed.
   `ItemUseResult` acknowledges the item use and `ItemRemoved` reports the actual
   consumption. A failed item-use check leaves inventory unchanged.
   """
@@ -333,7 +333,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   end
 
   defp consume(client_index, server_index, definition, ctx, state, pending) do
-    if Map.get(definition, :no_consume, false) do
+    if delayed_item?(definition) do
       acknowledge_kept_item(client_index, ctx, state, pending)
     else
       remove_consumed_item(client_index, server_index, ctx, state, pending)

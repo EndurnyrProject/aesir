@@ -3,6 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Windweapon do
   Lightning Loader (SC_WINDWEAPON).
 
   Endows the weapon with the wind element, replacing other weapon endows.
+  In Renewal, players also gain `val1` percent wind-element magic damage.
+  Pre-renewal and non-player endows only change the weapon element.
 
   These endows contribute the same `attack_element` modifier and aggregation
   sums colliding keys, so they list each other in `end_on_start`
@@ -10,8 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Windweapon do
   Enchant (SC_ENCHANTARMS) is not among them: it coexists with this endow and
   outranks it.
 
-  rAthena ends this status when the endowed weapon is unequipped
-  (`RemoveOnUnequipWeapon`), which the equipment handler enforces off the
+  The status ends when the endowed weapon is unequipped, enforced by the
   `:remove_on_unequip_weapon` flag, so the endow drops on a weapon swap.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
@@ -19,7 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Windweapon do
     no_dispel: false,
     no_clear_buff: false,
     properties: [:buff],
-    calc_flags: [:atk_ele],
+    calc_flags: [renewal: [:all], pre_renewal: [:atk_ele]],
     flags: [:remove_on_unequip_weapon],
     end_on_start: [
       :sc_aspersio,
@@ -32,6 +33,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Windweapon do
     ],
     icon: :propertywind
 
+  alias Aesir.Commons.GameMode
+
   @impl true
+  def modifiers(%{val1: level}, %{unit_type: :player}) do
+    case GameMode.mode() do
+      :renewal -> %{:attack_element => :wind, {:magic_atk_ele, :wind} => level}
+      :pre_renewal -> %{attack_element: :wind}
+    end
+  end
+
   def modifiers(_instance, _context), do: %{attack_element: :wind}
 end

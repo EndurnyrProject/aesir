@@ -66,7 +66,7 @@ defmodule Aesir.ZoneServer.Unit.VendingRulesTest do
   test "listing policy checks the prospective balance before any tax" do
     cart = %{0 => %InventoryItem{nameid: 501, amount: 2, identify: 1, bound: 0}}
     rules = %{Config.vending_rules() | allow_over_max: false}
-    context = %{rules: rules, seller_zeny: 999_999_900, eligibility: %{0 => :ok}}
+    context = %{rules: rules, seller_zeny: 2_147_483_547, eligibility: %{0 => :ok}}
 
     assert {:error, :zeny_limit} = Vending.validate_open(cart, [{0, 2, 51}], 1, context)
     assert {:ok, [_]} = Vending.validate_open(cart, [{0, 2, 50}], 1, context)

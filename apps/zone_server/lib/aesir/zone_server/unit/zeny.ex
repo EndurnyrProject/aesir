@@ -7,5 +7,5 @@ defmodule Aesir.ZoneServer.Unit.Zeny do
   Returns the maximum zeny balance.
   """
   @spec max_zeny() :: pos_integer()
-  def max_zeny, do: 1_000_000_000
+  def max_zeny, do: 2_147_483_647
 end

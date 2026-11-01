@@ -281,19 +281,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     test_pid = self()
 
     expect(CharacterPersistence, :update_character, fn 1000,
-                                                       %{zeny: 1_000_000_000},
+                                                       %{zeny: 2_147_483_647},
                                                        [async: true] ->
       send(test_pid, :zeny_persisted)
       {:ok, %Character{}}
     end)
 
-    assert {:noreply, %{game_state: %{zeny: 1_000_000_000}}} =
-             ScriptEffectHandler.handle_gm_credit_zeny(500, base_state(zeny: 999_999_999))
+    assert {:noreply, %{game_state: %{zeny: 2_147_483_647}}} =
+             ScriptEffectHandler.handle_gm_credit_zeny(500, base_state(zeny: 2_147_483_646))
 
     assert_received :zeny_persisted
 
     assert_received {:send, _ch,
-                     {:param_change, %ParamChange{var_id: @zeny_param, value: 1_000_000_000}}}
+                     {:param_change, %ParamChange{var_id: @zeny_param, value: 2_147_483_647}}}
   end
 
   describe "{:credit_zeny, amount}" do
@@ -320,11 +320,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
 
     test "clamps the credited total to MAX_ZENY" do
       {reply, new_state} =
-        ScriptEffectHandler.apply_op({:credit_zeny, 500}, base_state(zeny: 999_999_999))
+        ScriptEffectHandler.apply_op({:credit_zeny, 500}, base_state(zeny: 2_147_483_646))
 
       assert {:ok, game_state} = reply
-      assert game_state.zeny == 1_000_000_000
-      assert new_state.game_state.zeny == 1_000_000_000
+      assert game_state.zeny == 2_147_483_647
+      assert new_state.game_state.zeny == 2_147_483_647
     end
   end
 

@@ -154,6 +154,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   # -- Items (Dsl.Items) -------------------------------------------------------
 
   defdelegate zeny(ctx), to: Items
+  defdelegate set_zeny(ctx, value), to: Items
   defdelegate pay_zeny(ctx, amount), to: Items
   defdelegate credit_zeny(ctx, amount), to: Items
   defdelegate give_item(ctx, item_id, qty), to: Items

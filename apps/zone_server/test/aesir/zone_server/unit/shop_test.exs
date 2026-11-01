@@ -219,7 +219,7 @@ defmodule Aesir.ZoneServer.Unit.ShopTest do
     test "clamps the total credit to MAX_ZENY" do
       inv = inventory([item(nameid: @priceless, amount: 2)])
 
-      assert {:ok, %{total_credit: 1_000_000_000}} =
+      assert {:ok, %{total_credit: 2_147_483_647}} =
                Shop.compute_sell([{0, 2}], player(%{inventory: inv}))
     end
 

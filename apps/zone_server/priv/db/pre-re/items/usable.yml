@@ -1190,6 +1190,7 @@
 - aegis_name: Handsei
   id: 668
   name: Red Envelope
+  on_use: set_zeny(ctx, (zeny(ctx) + Enum.random(1000..10000)))
   type: usable
   weight: 20
 - aegis_name: Rice_Cake_Soup
@@ -2856,6 +2857,7 @@
   buy: 1
   id: 12134
   name: Red Envelope
+  on_use: set_zeny(ctx, (zeny(ctx) + Enum.random(1000..10000)))
   type: usable
   weight: 10
 - aegis_name: Green_Ale
@@ -4795,6 +4797,7 @@
   buy: 800
   id: 12353
   name: Small Bottle
+  on_use: sc_start(ctx, :sc_waterweapon, 90000, 1)
   type: usable
   weight: 10
 - aegis_name: Buche_De_Noel
@@ -5156,6 +5159,46 @@
   name: Gift Box?
   no_guild_storage: true
   no_use_sitting: true
+  on_use: |-
+    ctx = set_local(ctx, :rnd, Enum.random(1..10))
+    ctx = if (get_local(ctx, :rnd, 0) == 1) do
+      itemskill(ctx, 53, level: 1)
+    else
+      if (get_local(ctx, :rnd, 0) == 2) do
+        itemskill(ctx, 151, level: 1)
+      else
+        if (get_local(ctx, :rnd, 0) == 3) do
+          itemskill(ctx, 318, level: 1)
+        else
+          if (get_local(ctx, :rnd, 0) == 4) do
+            itemskill(ctx, 326, level: 1)
+          else
+            if (get_local(ctx, :rnd, 0) == 5) do
+              throw({:script_end, ctx})
+            else
+              if (get_local(ctx, :rnd, 0) == 6) do
+                give_item(ctx, 909, 1)
+              else
+                if (get_local(ctx, :rnd, 0) == 7) do
+                  itemskill(ctx, 24, level: 1)
+                else
+                  if (get_local(ctx, :rnd, 0) == 8) do
+                    specialeffect2(ctx, :beginasura)
+                  else
+                    if (get_local(ctx, :rnd, 0) == 9) do
+                      specialeffect2(ctx, :mvp)
+                    else
+                      specialeffect2(ctx, :curseattack)
+                    end
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+    ctx
   type: delay_consume
   weight: 10
 - aegis_name: PCBang_Gift_Box
@@ -5172,6 +5215,7 @@
   buy: 20
   id: 12399
   name: Castle Treasure Box
+  on_use: set_zeny(ctx, (zeny(ctx) + 1000000))
   type: usable
   weight: 1000
 - aegis_name: Water_Of_Blessing_

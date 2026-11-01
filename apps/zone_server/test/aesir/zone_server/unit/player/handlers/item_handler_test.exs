@@ -397,7 +397,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   end
 
   describe "handle_use_item/2 with Falcon Flute" do
-    test "equips the falcon and consumes the item from the player session" do
+    test "equips the falcon and retains the delayed item in the player session" do
       {:ok, definition} = Items.by_id(12848)
       ScriptCompiler.compile_all!([definition])
       stub(Items, :by_id, fn 12848 -> {:ok, definition} end)
@@ -409,17 +409,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
         {:ok, put_in(session.game_state.option, Option.id(:falcon))}
       end)
 
-      expect(InventoryOps, :remove, fn 1000, inventory, @red_potion_slot, 1 ->
-        {:ok, %{@red_potion_slot => %{inventory[@red_potion_slot] | amount: 4}},
-         {:reduced, @red_potion_slot, 4}}
-      end)
+      reject(&InventoryOps.remove/4)
 
       assert {:noreply, committed} =
                ItemHandler.handle_use_item(@red_potion_client_index, state)
 
       assert committed.game_state.option == Option.id(:falcon)
-      assert committed.game_state.inventory[@red_potion_slot].amount == 4
+      assert committed.game_state.inventory[@red_potion_slot].amount == 5
       assert_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: true}}}
+      refute_received {:send, :gameplay, {:item_removed, _}}
     end
 
     test "does not consume the flute when equipping the falcon fails" do
@@ -956,7 +954,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
 
   describe "handle_use_item/2 with an effect that ends the script" do
     test "sends ItemUseResult{ok: false}, consumes nothing" do
-      source = "give_item(ctx, 501, 1)"
+      source = "throw({:script_end, %{ctx | status: {:error, :injected_stop}}})"
       ScriptCompiler.compile_all!([item_def(@warp_item_id, source)])
 
       definition = usable_definition(@warp_item_id, source)

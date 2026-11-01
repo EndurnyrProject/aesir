@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @potion 501
-  @max_zeny 1_000_000_000
+  @max_zeny 2_147_483_647
 
   setup :verify_on_exit!
   setup :set_mimic_from_context
@@ -193,7 +193,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
     test "the credit clamps at MAX_ZENY", ctx do
       shop = shop()
       register_shop(shop)
-      stub_sell_price(@potion, 2_000_000_000)
+      stub_sell_price(@potion, @max_zeny)
       inventory = seed_inventory(ctx.seller.id, 1)
 
       {:noreply, new_state} =
