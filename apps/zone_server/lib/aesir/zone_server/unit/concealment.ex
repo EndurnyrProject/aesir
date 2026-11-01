@@ -1,11 +1,11 @@
 defmodule Aesir.ZoneServer.Unit.Concealment do
   @moduledoc """
-  Observer-side concealment reveal for the intravision equipment flag.
+  Observer-side concealment reveal for equipment or timed Intravision.
 
   Hiding/Cloaking/Chase Walk are not omitted from other players' view on the
   server; they are carried as concealment bits in the unit's shared sprite
   `effect_state` (an `Option` bitmask) and rendered as concealed by the client.
-  A unit whose wearer carries the `:intravision` equipment flag must instead see
+  A player with equipment or status Intravision must instead see
   those units normally, so this module masks the concealment bits out of the
   `effect_state` of a spawn/state packet *for that observer only*, leaving the
   concealed unit's status untouched (unlike Sight/Ruwach, which force-end it).
@@ -49,7 +49,7 @@ defmodule Aesir.ZoneServer.Unit.Concealment do
 
   @doc """
   Reveals a packet's concealed unit for `observer_char_id` when that player
-  carries the intravision flag; a no-op for a missing or non-intravision
+  has equipment or status Intravision; a no-op for a missing or non-intravision
   observer.
   """
   @spec reveal_for(struct(), integer()) :: struct()
@@ -57,7 +57,7 @@ defmodule Aesir.ZoneServer.Unit.Concealment do
     reveal(packet, intravision?(observer_char_id))
   end
 
-  @doc "Whether the player `char_id` currently carries the intravision flag."
+  @doc "Whether the player `char_id` currently has equipment or status Intravision."
   @spec intravision?(integer()) :: boolean()
   def intravision?(char_id) do
     case UnitRegistry.get_unit(:player, char_id) do

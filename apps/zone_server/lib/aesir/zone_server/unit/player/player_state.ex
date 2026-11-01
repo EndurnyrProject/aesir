@@ -1111,13 +1111,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   end
 
   @doc """
-  Whether this player carries the intravision equipment flag, which lets them
-  see units concealed by Hiding/Cloaking/Chase Walk.
+  Whether equipment or a timed Intravision status lets this player see units
+  concealed by Hiding/Cloaking/Chase Walk. It does not grant detector targeting.
   """
   @spec intravision?(t()) :: boolean()
-  def intravision?(%__MODULE__{stats: stats}) do
-    PlayerStats.get_equipment_modifier(stats, :intravision) > 0
+  def intravision?(%__MODULE__{stats: %PlayerStats{} = stats}) do
+    PlayerStats.get_equipment_modifier(stats, :intravision) > 0 or
+      PlayerStats.get_status_modifier(stats, :intravision) > 0
   end
+
+  def intravision?(%__MODULE__{}), do: false
 
   @impl Aesir.ZoneServer.Unit
   def get_size(%__MODULE__{}), do: :medium

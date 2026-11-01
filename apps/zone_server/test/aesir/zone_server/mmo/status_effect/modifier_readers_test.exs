@@ -18,6 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
 
   # Every modifier key with at least one reader in lib/. Grouped by reader.
   @read_keys MapSet.new([
+               # PlayerState.intravision?/1, through observer-specific concealment rendering
+               :intravision,
                # Stats.get_effective_stat/2 (base + trait stats)
                :str,
                :agi,

@@ -134,6 +134,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "SC_DECREASEAGI" => :sc_decreaseagi,
     "SC_ANGELUS" => :sc_angelus,
     "SC_ADRENALINE" => :sc_adrenaline,
+    "SC_INTRAVISION" => :sc_intravision,
     "SC_CONCENTRATE" => :sc_concentrate,
     "SC_GLORIA" => :sc_gloria,
     "SC_KYRIE" => :sc_kyrie,

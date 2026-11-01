@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StateCommit do
   alias Aesir.ZoneServer.Unit.Player.GuildSync
   alias Aesir.ZoneServer.Unit.Player.Handlers.FameHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler
   alias Aesir.ZoneServer.Unit.Player.PartySync
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -25,7 +26,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StateCommit do
 
   A cast starting or ending for a player who knows Free Cast changes its
   current walk speed (`StatusManager.current_walk_speed/1`); the new speed is
-  sent to the client when it differs.
+  sent to the client when it differs. Equipment/status Intravision transitions
+  refresh only this observer's already-visible concealed units after publication.
   """
   @spec commit(SessionState.t(), PlayerState.t()) :: SessionState.t()
   def commit(%{game_state: %PlayerState{} = previous} = session, %PlayerState{} = game_state) do
@@ -53,7 +55,11 @@ defmodule Aesir.ZoneServer.Unit.Player.StateCommit do
         )
     end
 
-    %{session | game_state: game_state}
+    committed = %{session | game_state: game_state}
+
+    if PlayerState.intravision?(previous) != PlayerState.intravision?(game_state),
+      do: VisibilityHandler.refresh_concealment(committed),
+      else: committed
   end
 
   defp sync_cast_speed(session, %PlayerState{casting: before}, %PlayerState{casting: now} = state)

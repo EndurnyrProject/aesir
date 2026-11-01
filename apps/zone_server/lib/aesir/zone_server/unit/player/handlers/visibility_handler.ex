@@ -13,12 +13,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
   the id dropped from the matching visible set so re-entering range re-spawns it.
   """
 
+  import Bitwise, only: [band: 2, bor: 2]
+
   alias Aesir.Net.ItemVanished
   alias Aesir.Net.SkillUnitDespawn
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.VendingBoardShown
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.WaitingRoom
@@ -29,11 +32,38 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
   alias Aesir.ZoneServer.Unit.Homunculus.SpawnView, as: HomunculusSpawnView
   alias Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SpawnView
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Aesir.ZoneServer.Unit.Vending.Registry, as: VendingRegistry
+
+  @doc "Refreshes currently visible concealed units only for this session's observer."
+  @spec refresh_concealment(SessionState.t()) :: SessionState.t()
+  def refresh_concealment(%{game_state: player} = state) do
+    reveal? = PlayerState.intravision?(player)
+
+    for {type, ids} <- [player: player.visible_players, mob: player.visible_mobs],
+        id <- ids || [],
+        {type, id} != {:player, player.character_id} do
+      refresh_concealed_unit(type, id, player.map_name, reveal?, state.connection_pid)
+    end
+
+    state
+  end
+
+  defp refresh_concealed_unit(type, id, map_name, reveal?, connection_pid) do
+    with {:ok, {_module, %{map_name: ^map_name} = unit, _pid}} <- UnitRegistry.get_unit(type, id),
+         packet = StatusDisplay.state_packet(type, id),
+         options = bor(Map.get(unit, :option, 0) || 0, packet.effect_state),
+         0 <- band(options, Option.id(:invisible)),
+         true <- Concealment.concealed?(packet.effect_state) do
+      MessageRouter.send_to(connection_pid, Concealment.reveal(packet, reveal?))
+    else
+      _not_visible_or_concealed -> :ok
+    end
+  end
 
   @doc """
   Sends the entering player's spawn packet, active icons and (if any) vending
