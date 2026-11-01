@@ -118,12 +118,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Resistance do
 
   @doc """
   Rolls an undefended status: `{:ok, tick}` when its rate lands, otherwise
-  `:resisted`.
+  `:resisted`. A successful zero duration becomes one millisecond; nil remains
+  an infinite duration.
   """
   @spec roll_chance(integer(), integer() | nil, (integer() -> boolean())) ::
           {:ok, integer() | nil} | :resisted
   def roll_chance(rate, tick, roll),
-    do: if(lands?(rate, roll), do: {:ok, tick}, else: :resisted)
+    do: if(lands?(rate, roll), do: {:ok, ordinary_duration(tick)}, else: :resisted)
+
+  defp ordinary_duration(0), do: 1
+  defp ordinary_duration(tick), do: tick
 
   @doc """
   Returns a status's defense recipe, `:default` for a status without one, or

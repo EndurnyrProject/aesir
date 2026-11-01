@@ -1906,7 +1906,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     result =
       case defense_source(unit_type, unit_id, status_params) do
         :gone ->
-          {:ok, tick}
+          Resistance.roll_chance(10_000, tick, roll)
 
         {:ok, {source_type, source_id, source_info}} ->
           if Resistance.defended?(status) do
