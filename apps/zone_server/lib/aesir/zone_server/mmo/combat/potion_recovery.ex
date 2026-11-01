@@ -18,12 +18,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecovery do
   level`, scales it by `150 + 10 * level` percent, then by the recipient's VIT
   and a player recipient's Increase HP Recovery and received heal bonuses.
 
-  Both then add the thrower's H.Plus (players only), and the recipient's No
-  Recovery cancels both. In renewal a Homunculus recipient takes three times the
-  HP, and Asura recovery cancels the SP. Every step truncates on its own.
+  Both then add the thrower's H.Plus (players only), then Critical Wound
+  reduces HP and SP. No Recovery replaces that penalty with 100%. In renewal
+  a Homunculus recipient takes three times the remaining HP, and Asura recovery
+  cancels SP. Every step truncates on its own.
 
   Not modelled, as their statuses do not exist yet: the Soul Link Alchemist
-  base-level bonus, Water Insignia, Critical Wound and Death Hurt.
+  base-level bonus, Water Insignia and Death Hurt.
 
   ## Slim Pitcher
 
@@ -33,10 +34,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecovery do
   not count), then adds the thrower's H.Plus. Each recipient then takes
   `100 + 2 * VIT` (`2 * INT` for SP) percent and, a player, `100 + 10 *
   Increase HP Recovery` (`Increase SP Recovery` for SP) plus its received heal
-  power and Slim Pitcher received bonus, each only on a non-zero amount. No
-  Recovery cancels both. There is no Homunculus multiplier and no Asura rule,
-  and the same Water Insignia, Critical Wound and Death Hurt penalties are not
-  modelled. Renewal and pre-renewal agree.
+  power and Slim Pitcher received bonus, each only on a non-zero amount.
+  Critical Wound reduces both results; No Recovery replaces its penalty with
+  100%. There is no Homunculus multiplier or Asura rule. Water Insignia and
+  Death Hurt are not modelled. Renewal and pre-renewal agree.
   """
 
   alias Aesir.Commons.GameMode
@@ -133,8 +134,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecovery do
            received(sp, recipient.sp_recovery, recipient.received_heal)},
         else: {hp, sp}
 
-    {type, id} = recipient.ref
-    if StatusStorage.has_status?(type, id, :sc_norecover_state), do: {0, 0}, else: {hp, sp}
+    healing_penalty({hp, sp}, recipient.ref)
   end
 
   defp received(0, _recovery, _bonus), do: 0
@@ -255,14 +255,31 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecovery do
       |> both(if recipient.player?, do: recipient.received_heal, else: 0)
       |> both(if hplus > 0, do: hplus, else: 0)
 
-    {hp, sp} =
-      if StatusStorage.has_status?(type, id, :sc_norecover_state), do: {0, 0}, else: {hp, sp}
+    {hp, sp} = healing_penalty({hp, sp}, recipient.ref)
 
     hp = if renewal? and type == :homunculus, do: hp * 3, else: hp
 
     if renewal? and StatusStorage.has_status?(type, id, :sc_extremityfist),
       do: {hp, 0},
       else: {hp, sp}
+  end
+
+  defp healing_penalty({hp, sp}, {type, id}) do
+    penalty =
+      if StatusStorage.has_status?(type, id, :sc_norecover_state),
+        do: 100,
+        else: wound_penalty(type, id)
+
+    if penalty > 0,
+      do: {hp - div(hp * penalty, 100), sp - div(sp * penalty, 100)},
+      else: {hp, sp}
+  end
+
+  defp wound_penalty(type, id) do
+    case StatusStorage.get_status(type, id, :sc_criticalwound) do
+      %{val2: penalty} when is_integer(penalty) -> penalty
+      _absent -> 0
+    end
   end
 
   defp both({hp, sp}, rate), do: {percent(hp, rate), percent(sp, rate)}

@@ -166,9 +166,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaElementTest do
                    definition(unquote(name))
                  )
 
+        %{val1: element_level} =
+          StatusStorage.get_status(:mob, @mob_instance_id, :sc_elementalchange)
+
+        assert element_level in 1..4
         attack(snapshot(mob, ["Def_Ele"]))
 
-        assert_received {:defense_element, unquote(element), 1}
+        assert_received {:defense_element, unquote(element), ^element_level}
       end
     end
   end

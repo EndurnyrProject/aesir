@@ -4,6 +4,7 @@
 # Columns: id, renewal, pre-renewal. Values: ends, survives, absent (no such
 # status in that mode), holy_dark (survives only while its element is Holy or
 # Dark: Elemental Change).
+sc_acaraje	survives	survives
 sc_adaptation	ends	absent
 sc_add_atk_damage	ends	ends
 sc_add_matk_damage	ends	ends
@@ -19,6 +20,7 @@ sc_armor_element_earth	ends	ends
 sc_armor_element_fire	ends	ends
 sc_armor_element_water	ends	ends
 sc_armor_element_wind	ends	ends
+sc_armor_resist	ends	ends
 sc_aspdpotion0	ends	ends
 sc_aspdpotion1	ends	ends
 sc_aspdpotion2	ends	ends
@@ -58,6 +60,7 @@ sc_closeconfine2	survives	survives
 sc_cocktail_warg_blood	survives	survives
 sc_combat_pill	survives	absent
 sc_combat_pill2	survives	absent
+sc_commonsc_resist	ends	ends
 sc_concentrate	ends	ends
 sc_concentration	ends	ends
 sc_confusion	ends	ends
@@ -65,6 +68,7 @@ sc_cp_armor	ends	ends
 sc_cp_helm	ends	ends
 sc_cp_shield	ends	ends
 sc_cp_weapon	ends	ends
+sc_criticalwound	ends	ends
 sc_crifood	ends	absent
 sc_cup_of_boza	survives	absent
 sc_curse	ends	ends
@@ -150,6 +154,7 @@ sc_incmsprate	survives	survives
 sc_incstr	survives	survives
 sc_incvit	survives	survives
 sc_increaseagi	ends	ends
+sc_increase_maxhp	ends	ends
 sc_increase_maxsp	ends	ends
 sc_infinity_drink	ends	absent
 sc_intfood	ends	ends
@@ -160,6 +165,7 @@ sc_jexpboost	survives	survives
 sc_jointbeat	ends	ends
 sc_kyrie	ends	ends
 sc_aeterna	ends	ends
+sc_l_lifepotion	ends	survives
 sc_life_force_f	ends	ends
 sc_lifeinsurance	survives	survives
 sc_ljosalfar	survives	survives
@@ -171,6 +177,9 @@ sc_magicpower	ends	ends
 sc_magicrod	ends	ends
 sc_magnificat	ends	ends
 sc_mana_plus	ends	ends
+sc_manu_atk	ends	ends
+sc_manu_def	ends	ends
+sc_manu_matk	ends	ends
 sc_maple_falls	survives	survives
 sc_marionette	ends	ends
 sc_marionette2	ends	ends
@@ -242,6 +251,9 @@ sc_steelbody	ends	ends
 sc_stone	ends	ends
 sc_stonewait	ends	ends
 sc_stop	ends	ends
+sc_spl_atk	ends	ends
+sc_spl_def	ends	ends
+sc_spl_matk	ends	ends
 sc_strfood	ends	ends
 sc_str_scroll	survives	absent
 sc_strangelights	survives	survives
@@ -251,6 +263,7 @@ sc_stripshield	ends	ends
 sc_stripweapon	ends	ends
 sc_stun	ends	ends
 sc_sub_weaponproperty	survives	absent
+sc_s_lifepotion	ends	survives
 sc_suffragium	ends	ends
 sc_summer	survives	survives
 sc_super_star	survives	survives
@@ -262,6 +275,7 @@ sc_truesight	ends	ends
 sc_twohandquicken	ends	ends
 sc_ultimatecook	ends	absent
 sc_violentgale	ends	ends
+sc_vitata_500	ends	ends
 sc_vitfood	ends	ends
 sc_vitalize_potion	ends	absent
 sc_volcano	ends	ends

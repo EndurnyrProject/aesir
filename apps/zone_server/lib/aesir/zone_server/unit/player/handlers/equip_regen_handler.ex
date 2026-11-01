@@ -2,7 +2,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipRegenHandler do
   @moduledoc """
   Drives the per-session periodic HP/SP regen/loss granted by equipment
   (`bHPRegenRate`/`bHPLossRate`/`bSPRegenRate`/`bSPLossRate`), sharing the
-  natural-heal tick cadence.
+  natural-heal tick cadence. Life Potion statuses contribute separate
+  percentage HP-recovery intervals to the same accumulator engine.
 
   Unlike natural regen this runs even at full HP/SP, because a periodic HP-loss
   item must still bleed the wearer, and it applies loss before regen: HP loss
@@ -20,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipRegenHandler do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.EquipRegen
+  alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.StatusSync
@@ -41,8 +43,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipRegenHandler do
 
     state = %{state | equip_regen_generation: stats.generation}
 
+    modifiers = periodic_modifiers(stats)
+
     {deltas, accumulators} =
-      EquipRegen.compute(stats.modifiers.equipment, carried, elapsed_ms)
+      EquipRegen.compute(modifiers, carried, elapsed_ms, stats.derived_stats)
 
     cond do
       accumulators == %{} ->
@@ -55,10 +59,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipRegenHandler do
           do: {:noreply, state},
           else: {:noreply, commit(state, game_state.stats, accumulators)}
 
+      deltas.hp_gain < 0 and deltas.sp_gain > 0 ->
+        current = stats.current_state
+        new_hp = max(current.hp - deltas.hp_loss, 1)
+        new_sp = max(current.sp - deltas.sp_loss, 0)
+        updated_stats = %{stats | current_state: %{current | hp: new_hp, sp: new_sp}}
+        state = commit(state, updated_stats, accumulators)
+        apply_changes(state, current.hp, new_hp, current.sp, new_sp)
+        HealthHandler.apply_heal({:potion, deltas.hp_gain, deltas.sp_gain}, nil, state)
+
       true ->
         current = stats.current_state
         derived = stats.derived_stats
-        hp_gain = if berserk?(game_state), do: 0, else: deltas.hp_gain
+        hp_gain = if berserk?(game_state), do: 0, else: max(deltas.hp_gain, 0)
         new_hp = min(derived.max_hp, max(current.hp - deltas.hp_loss, 1) + hp_gain)
         new_sp = min(derived.max_sp, max(current.sp - deltas.sp_loss, 0) + deltas.sp_gain)
 
@@ -68,6 +81,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipRegenHandler do
 
         {:noreply, state}
     end
+  end
+
+  defp periodic_modifiers(stats) do
+    status =
+      stats.modifiers
+      |> Map.get(:status_effects, %{})
+      |> Map.filter(fn
+        {{:percent_hp_regen_bonus, _interval}, _value} -> true
+        _entry -> false
+      end)
+
+    Map.merge(stats.modifiers.equipment, status)
   end
 
   defp commit(state, stats, accumulators) do

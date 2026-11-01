@@ -29,9 +29,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillHeal do
   part (none for Sanctuary, Apple of Idun or Evil Land): a roll over the caster's
   base MATK bounds without item or skill MATK.
 
-  Penalties, on a heal only: a target under No Recovery loses the whole amount
-  (pre-renewal) or has it scaled to nothing (renewal). Renewal then raises a
-  player caster's heal by its trait heal bonus (H.Plus) and never heals below 1.
+  Penalties, on a heal only: Critical Wound subtracts its percentage from the
+  amount in pre-renewal, while renewal multiplies by a binary32-rounded remaining
+  share before H.Plus. No Recovery replaces that penalty with 100%. Renewal
+  then raises a player caster's heal by H.Plus and never heals below 1.
   """
 
   alias Aesir.Commons.GameMode
@@ -179,7 +180,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillHeal do
     |> percent(caster_heal_power(caster, skill_id))
     |> percent(received_heal_power(target, skill_id))
     |> percent(inc_heal_rate(target, skill_id))
-    |> no_recovery(heal?, target)
+    |> healing_penalty(heal?, target, :pre_renewal)
   end
 
   defp recipe(:renewal, caster, target, skill_id, hp, skill_rate, heal?) do
@@ -192,7 +193,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillHeal do
       |> halve(heal?, skill_id)
       |> percent(bonus)
       |> Kernel.+(matk_part(caster, skill_id))
-      |> no_recovery(heal?, target)
+      |> healing_penalty(heal?, target, :renewal)
       |> percent(if caster.player? and caster.hplus > 0, do: caster.hplus, else: 0)
 
     if heal?, do: max(hp, 1), else: hp
@@ -248,11 +249,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillHeal do
   defp matk_part(caster, _skill_id),
     do: DamageShared.roll(caster.heal_matk_min, caster.heal_matk_max)
 
-  # The only heal penalty Aesir implements is No Recovery's 100%: pre-renewal
-  # subtracts all of it, renewal scales the heal by nothing.
-  defp no_recovery(hp, true, {type, id}) do
-    if StatusStorage.has_status?(type, id, :sc_norecover_state), do: 0, else: hp
+  defp healing_penalty(hp, true, {type, id}, mode) do
+    penalty =
+      if StatusStorage.has_status?(type, id, :sc_norecover_state),
+        do: 100,
+        else: wound_penalty(type, id)
+
+    reduce_heal(hp, penalty, mode)
   end
 
-  defp no_recovery(hp, _heal?, _target), do: hp
+  defp healing_penalty(hp, _heal?, _target, _mode), do: hp
+
+  defp wound_penalty(type, id) do
+    case StatusStorage.get_status(type, id, :sc_criticalwound) do
+      %{val2: penalty} when is_integer(penalty) -> penalty
+      _absent -> 0
+    end
+  end
+
+  defp reduce_heal(hp, penalty, _mode) when penalty <= 0, do: hp
+
+  defp reduce_heal(hp, penalty, :pre_renewal), do: hp - div(hp * penalty, 100)
+
+  defp reduce_heal(hp, penalty, :renewal) do
+    <<remaining::float-32>> = <<(100 - min(penalty, 100)) / 100::float-32>>
+    trunc(hp * remaining)
+  end
 end

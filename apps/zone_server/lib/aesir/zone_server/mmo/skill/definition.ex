@@ -247,7 +247,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           element: element(),
           knockback: non_neg_integer() | [non_neg_integer()],
           hit_count: hit_count(),
-          splash_radius: non_neg_integer(),
+          splash_radius: non_neg_integer() | [non_neg_integer()],
           hit_interval: non_neg_integer(),
           unit_duration: [non_neg_integer()],
           hp_cost: [non_neg_integer()],
@@ -324,7 +324,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     element: :atom,
     knockback: {:oneof, [:integer, {:list, :integer}]},
     hit_count: {:oneof, [{:integer, {:neq, 0}}, {:list, {:integer, {:neq, 0}}}]},
-    splash_radius: :integer,
+    splash_radius: {:oneof, [:integer, {:list, :integer}]},
     hit_interval: :integer,
     unit_duration: {:list, :integer},
     hp_cost: {:list, {:integer, {:gte, 0}}},
@@ -579,6 +579,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
 
   def range_at_level(%__MODULE__{range: range}, level) when is_list(range) do
     Enum.at(range, max(level - 1, 0), List.last(range))
+  end
+
+  @doc "Resolves a scalar or per-level splash radius, using the last value above the table."
+  @spec splash_radius_at_level(t(), non_neg_integer()) :: non_neg_integer()
+  def splash_radius_at_level(%__MODULE__{splash_radius: radius}, _level)
+      when is_integer(radius), do: radius
+
+  def splash_radius_at_level(%__MODULE__{splash_radius: radii}, level) when is_list(radii) do
+    Enum.at(radii, max(level - 1, 0), List.last(radii))
   end
 
   @doc """

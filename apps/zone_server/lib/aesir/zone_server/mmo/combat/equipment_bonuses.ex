@@ -76,7 +76,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
       race:
         read(defender, :subrace, attacker.race, attack_flag) +
           status_subrace(status_modifiers, attacker.race),
-      race2: read_race2(defender, :subrace2, attacker.race2),
+      race2:
+        read_race2(defender, :subrace2, attacker.race2) +
+          status_race2(status_modifiers, :subrace2, attacker.race2),
       class: read(defender, :subclass, attacker.class, attack_flag),
       element:
         read(defender, :subele, attack_element, attack_flag) +
@@ -138,11 +140,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
     class = hand_sum(attacker, :addclass, defender.class, other_hand)
 
     cards =
-      if opts.arrow?,
-        do: [race, element, size, race2_sum(attacker, :addrace2, defender.race2), class],
-        else:
-          [element, race, size] ++
-            melee_race2(attacker, defender.race2) ++ [class] ++ katar_rate(opts)
+      if opts.arrow? do
+        race2 =
+          race2_sum(attacker, :addrace2, defender.race2) +
+            status_race2(opts.attacker_modifiers, :addrace2, defender.race2)
+
+        [race, element, size, race2, class]
+      else
+        [element, race, size] ++
+          melee_race2(attacker, defender.race2, opts.attacker_modifiers) ++
+          [class] ++ katar_rate(opts)
+      end
 
     cards ++
       [monster_damage_rate(attacker, defender, :add_damage_class)] ++ range_rate(attacker, opts)
@@ -163,12 +171,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
     read(attacker, family, param) + read(attacker, other_family, param)
   end
 
-  defp melee_race2(attacker, race2) do
-    Enum.map(
-      race2,
-      &(race2_rate(attacker, :addrace2, &1) + race2_rate(attacker, :left_addrace2, &1))
-    )
+  defp melee_race2(attacker, race2, modifiers) do
+    Enum.map(race2, fn group ->
+      race2_rate(attacker, :addrace2, group) +
+        race2_rate(attacker, :left_addrace2, group) +
+        Map.get(modifiers, {:addrace2, group}, 0)
+    end)
   end
+
+  defp status_race2(modifiers, family, groups),
+    do: Enum.reduce(groups, 0, &(Map.get(modifiers, {family, &1}, 0) + &2))
 
   defp race2_sum(combatant, family, race2),
     do: Enum.reduce(race2, 0, &(race2_rate(combatant, family, &1) + &2))
@@ -233,7 +245,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
     element_resists ++
       [
         rates.size,
-        race2_sum(defender, :subrace2, attacker.race2),
+        race2_sum(defender, :subrace2, attacker.race2) +
+          status_race2(opts.status_modifiers, :subrace2, attacker.race2),
         rates.race + RaceModifiers.dragonology_resist_rate(defender, attacker.race),
         rates.class,
         def_monster_rate(defender, attacker),
@@ -290,7 +303,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
       [
         read(defender, :subrace, attacker.race, flag) + status_subrace(modifiers, attacker.race),
         read(defender, :subsize, attacker.size),
-        race2_sum(defender, :subrace2, attacker.race2),
+        race2_sum(defender, :subrace2, attacker.race2) +
+          status_race2(modifiers, :subrace2, attacker.race2),
         read(defender, :subclass, attacker.class),
         Map.get(defender.equip_modifiers, :misc_atk_def, 0),
         range_rate
@@ -350,9 +364,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
 
   @doc """
   Magic attack-side rate sums keyed on the defender's traits, including
-  secondary monster groups, and the spell's element.
+  secondary monster groups, and the spell's element. The optional status map
+  adds monster-group buffs to the matching equipment channel.
   """
-  @spec magic_attack_rates(Combatant.t(), Combatant.t(), pos_integer() | nil, atom()) :: %{
+  @spec magic_attack_rates(Combatant.t(), Combatant.t(), pos_integer() | nil, atom()) :: map()
+  @spec magic_attack_rates(Combatant.t(), Combatant.t(), pos_integer() | nil, atom(), map()) :: %{
           race: rate(),
           race2: rate(),
           class: rate(),
@@ -365,11 +381,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
         %Combatant{} = attacker,
         %Combatant{} = defender,
         skill_id,
-        spell_element
+        spell_element,
+        status_modifiers \\ %{}
       ) do
     %{
       race: read(attacker, :magic_addrace, defender.race),
-      race2: read_race2(attacker, :magic_addrace2, defender.race2),
+      race2:
+        read_race2(attacker, :magic_addrace2, defender.race2) +
+          status_race2(status_modifiers, :magic_addrace2, defender.race2),
       class: read(attacker, :magic_addclass, defender.class),
       element_target: read(attacker, :magic_addele, element_atom(defender.element)),
       size: read(attacker, :magic_addsize, defender.size),

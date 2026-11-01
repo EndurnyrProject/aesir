@@ -132,7 +132,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
     :player
     |> StatusStorage.get_unit_statuses(player_id)
     |> Enum.filter(&forces_full_recalculation?(&1.type))
-    |> Enum.map(&{&1.type, &1.started_at})
+    |> Enum.map(&{&1.type, &1.generation})
     |> Enum.sort()
   end
 
@@ -699,7 +699,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
       hp_factor: hp_factor,
       hp_increase: hp_increase,
       flat_bonus: get_hp_bonus_flat(stats),
-      equipment_rate: Stats.get_equipment_modifier(stats, :max_hp_rate),
+      equipment_rate:
+        Stats.get_equipment_modifier(stats, :max_hp_rate) +
+          Stats.get_status_modifier(stats, :max_hp_equip_rate),
       modifier_rate: Stats.get_status_modifier(stats, :max_hp_rate),
       transcendent?: transcendent?
     })
@@ -712,7 +714,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
       equipment_int: equipment_primary_stat_bonus(stats, :int),
       sp_increase: sp_increase,
       flat_bonus: get_sp_bonus_flat(stats),
-      equipment_rate: Stats.get_equipment_modifier(stats, :max_sp_rate),
+      equipment_rate:
+        Stats.get_equipment_modifier(stats, :max_sp_rate) +
+          Stats.get_status_modifier(stats, :max_sp_equip_rate),
       item_rate: Stats.get_status_modifier(stats, :max_sp_item_rate),
       modifier_rate:
         Stats.get_status_modifier(stats, :max_sp_rate) + stats.modifiers.passive.max_sp_rate,

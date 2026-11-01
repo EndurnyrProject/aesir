@@ -4119,6 +4119,10 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_use: |-
+    ctx = sc_start(ctx, :sc_increase_maxhp, 3600000, [5, 10, 0, 0])
+    ctx = percent_heal(ctx, hp: 10)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Gold_Pill_2
@@ -4128,6 +4132,10 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_use: |-
+    ctx = sc_start(ctx, :sc_increase_maxsp, 3600000, [5, 10, 0, 0])
+    ctx = percent_heal(ctx, sp: 10)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Mimic_Scroll
@@ -4154,6 +4162,7 @@
 - aegis_name: Undead_Element_Scroll
   id: 12279
   name: Undead Elemental Scroll
+  on_use: sc_start(ctx, :sc_armor_resist, 300000, [20, 20, 20, 20])
   type: usable
   weight: 10
 - aegis_name: Holy_Element_Scroll
@@ -4342,6 +4351,7 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_use: sc_start(ctx, :sc_commonsc_resist, 3600000, 10)
   type: usable
   weight: 10
 - aegis_name: Wild_Rose_Scroll
@@ -4674,6 +4684,10 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion_berserk)
+    ctx = sc_start(ctx, :sc_manu_atk, 600000, 10)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Manuk's_Courage
@@ -4682,6 +4696,10 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :guard)
+    ctx = sc_start(ctx, :sc_manu_def, 600000, 10)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Pinguicula's_fruit_Jam
@@ -4690,6 +4708,10 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion_berserk)
+    ctx = sc_start(ctx, :sc_spl_atk, 600000, 10)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Luciola's_Honey_Jam
@@ -4698,6 +4720,10 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :guard)
+    ctx = sc_start(ctx, :sc_spl_def, 600000, 10)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Unripe_Acorn
@@ -4720,6 +4746,10 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion_berserk)
+    ctx = sc_start(ctx, :sc_manu_matk, 600000, 10)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Cornus'_Tears
@@ -4728,6 +4758,10 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion_berserk)
+    ctx = sc_start(ctx, :sc_spl_matk, 600000, 10)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Angeling_Potion
@@ -4925,6 +4959,10 @@
   id: 12375
   name: Akaraje
   no_guild_storage: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :steal)
+    ctx = sc_start(ctx, :sc_acaraje, 1200000, [10, 5, 0, 0])
+    ctx
   type: usable
   weight: 80
 - aegis_name: Mysterious_Can2
@@ -5448,6 +5486,10 @@
   buy: 10
   id: 12436
   name: Vitata 500
+  on_use: |-
+    ctx = sc_start(ctx, :sc_vitata_500, 500000, 0)
+    ctx = item_heal(ctx, sp: 200)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Enrich_Celermine_Juice
@@ -13865,6 +13907,10 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :heal3)
+    ctx = sc_start(ctx, :sc_s_lifepotion, 600000, [-5, 5, 0, 0])
+    ctx
   type: usable
   weight: 10
 - aegis_name: Med_Life_Potion
@@ -13873,6 +13919,10 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :heal3)
+    ctx = sc_start(ctx, :sc_l_lifepotion, 600000, [-7, 4, 0, 0])
+    ctx
   type: usable
   weight: 10
 - aegis_name: Abrasive
@@ -13917,6 +13967,10 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :cloaking)
+    ctx = sc_start(ctx, :sc_elementalchange, 1800000, [1, 7, 1, 0])
+    ctx
   type: usable
   weight: 10
 - aegis_name: Holy_Armor_S
@@ -13925,6 +13979,10 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :benedictio)
+    ctx = sc_start(ctx, :sc_elementalchange, 1800000, [1, 6, 1, 0])
+    ctx
   type: usable
   weight: 10
 - aegis_name: S_Def_Potion

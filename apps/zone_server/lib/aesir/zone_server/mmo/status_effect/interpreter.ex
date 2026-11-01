@@ -1844,8 +1844,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
               source: defense_view(source_type, source_id, source_info),
               scresist: held_val(unit_type, unit_id, :sc_scresist, :val1),
               siegfried: held_val(unit_type, unit_id, :sc_siegfried, :val2),
-              res_eff:
-                entity_info |> Map.get(:equip_modifiers, %{}) |> Map.get({:res_eff, status}, 0),
+              res_eff: status_effect_resistance(unit_type, unit_id, entity_info, status),
               roll: roll,
               no_rate_def: Keyword.get(status_params, :no_rate_def, false),
               no_tick_def: Keyword.get(status_params, :no_tick_def, false)
@@ -1860,6 +1859,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       {:ok, duration} -> {:ok, duration}
       :resisted -> {:error, :resisted}
     end
+  end
+
+  defp status_effect_resistance(unit_type, unit_id, entity_info, status) do
+    equipment = entity_info |> Map.get(:equip_modifiers, %{}) |> Map.get({:res_eff, status}, 0)
+
+    bonus =
+      unit_type
+      |> ModifierCalculator.get_all_modifiers(unit_id)
+      |> Map.get({:res_eff, status}, 0)
+
+    min(equipment + bonus, 10_000)
   end
 
   # The source of a status defense: the caster, or the target without one. A

@@ -60,8 +60,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CombatBuffsTest do
     end
 
     test "max hp/sp rate buffs emit rate-delta keys from val1" do
-      assert %{max_sp_rate: 5} ==
-               Effects.IncreaseMaxSp.modifiers(entry(:sc_increase_maxsp, 5), %{})
+      assert %{max_sp_equip_rate: 5, sp_regen: 10} ==
+               Effects.IncreaseMaxSp.modifiers(%StatusEntry{val1: 5, val2: 10}, %{})
 
       assert %{max_hp_rate: 10} == Effects.MustleM.modifiers(entry(:sc_mustle_m, 10), %{})
       assert %{max_sp_rate: 10} == Effects.LifeForceF.modifiers(entry(:sc_life_force_f, 10), %{})

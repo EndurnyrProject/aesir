@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.CalcFlags do
   so an absent calculated producer cannot silently look like a live-only effect.
   Runtime catalogs use the normal database overlay and cache boundaries.
   Overlay rows are complete records: `available` and `scripted` must be booleans.
+  A scripted status forces All, including when its explicit flag list is empty.
   """
 
   alias Aesir.Commons.GameMode
@@ -83,7 +84,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.CalcFlags do
         unless is_boolean(row["available"]) and is_boolean(row["scripted"]),
           do: raise(ArgumentError, "invalid status admission facts for #{id}")
 
-        {id, flags}
+        {id, if(row["scripted"], do: ["All"], else: flags)}
       end)
 
     Enum.each(definitions, fn definition ->

@@ -235,6 +235,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
       Aesir.ZoneServer.Mmo.Skills.Npc.AttributeStrike,
       Aesir.ZoneServer.Mmo.Skills.Npc.SlaveSummon,
       Aesir.ZoneServer.Mmo.Skills.Npc.StatusStrike,
+      Aesir.ZoneServer.Mmo.Skills.Npc.WideAilment,
       Aesir.ZoneServer.Mmo.Skills.Shared.BoltEcho,
       Aesir.ZoneServer.Mmo.Skills.Shared.CellStatus,
       Aesir.ZoneServer.Mmo.Skills.Shared.Envenom,

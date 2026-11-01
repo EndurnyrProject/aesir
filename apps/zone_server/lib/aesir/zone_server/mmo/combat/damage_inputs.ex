@@ -341,7 +341,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
     attack_flag = Keyword.get(opts, :attack_flag, @magic_attack_flag)
 
     equip =
-      equipment_rates(attacker, defender, defender_modifiers, {skill_id, attack_flag}, element)
+      equipment_rates(
+        attacker,
+        defender,
+        {modifiers, defender_modifiers},
+        {skill_id, attack_flag},
+        element
+      )
 
     {hard, soft} = mdef_values(defender, defender_modifiers)
 
@@ -437,18 +443,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
   defp equipment_rates(
          %Combatant{} = attacker,
          %Combatant{} = defender,
-         modifiers,
+         {attacker_modifiers, defender_modifiers},
          {skill_id, attack_flag},
          element
        ) do
     %{
-      attack: EquipmentBonuses.magic_attack_rates(attacker, defender, skill_id, element),
+      attack:
+        EquipmentBonuses.magic_attack_rates(
+          attacker,
+          defender,
+          skill_id,
+          element,
+          attacker_modifiers
+        ),
       taken:
         EquipmentBonuses.magic_defense_rates(
           defender,
           attacker,
           element,
-          modifiers,
+          defender_modifiers,
           skill_id,
           attack_flag
         ),

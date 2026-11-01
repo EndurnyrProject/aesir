@@ -55,9 +55,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   a four-value list. Optional rate and flag arguments have the same semantics
   as `sc_start`; explicit unit targets remain unsupported.
 
-  `sc_start2` is supported for the HP/SP increase-potion statuses, filling the
-  unused last two values with zero. Other two-value statuses remain rejected
-  until their complete parameter semantics are implemented.
+  `sc_start2` is supported for the research, max HP/SP, Life Potion, Vitata 500
+  and Akaraje statuses, filling the unused last two values with zero. Other two-value
+  statuses remain rejected until their complete parameter semantics are implemented.
+  Elemental Change also accepts an element constant in its second value.
 
   ## Char variable increments
 
@@ -77,6 +78,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   """
 
   alias Aesir.ZoneServer.Announcement.Flags
+  alias Aesir.ZoneServer.Mmo.Element
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDialogs
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
@@ -172,9 +174,42 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   end
 
   defp render_command("sc_start2", [{:name, name} = status, ticks, val1, val2 | opts])
-       when name in ["SC_PROMOTE_HEALTH_RESERCH", "SC_ENERGY_DRINK_RESERCH"] and
-              length(opts) <= 2 do
+       when name in [
+              "SC_PROMOTE_HEALTH_RESERCH",
+              "SC_ENERGY_DRINK_RESERCH",
+              "SC_INCREASE_MAXHP",
+              "SC_INCREASE_MAXSP",
+              "SC_ACARAJE",
+              "SC_S_LIFEPOTION",
+              "SC_L_LIFEPOTION",
+              "SC_VITATA_500"
+            ] and length(opts) <= 2 do
     render_command("sc_start4", [status, ticks, val1, val2, {:int, 0}, {:int, 0} | opts])
+  end
+
+  defp render_command("sc_start4", [
+         {:name, "SC_ELEMENTALCHANGE"} = status,
+         ticks,
+         val1,
+         {:name, element},
+         val3,
+         val4 | opts
+       ])
+       when length(opts) <= 2 do
+    case Resolver.resolve_element(element) do
+      {:ok, element} ->
+        render_command("sc_start4", [
+          status,
+          ticks,
+          val1,
+          {:int, Element.id(element)},
+          val3,
+          val4 | opts
+        ])
+
+      {:error, reason} ->
+        unsupported(reason)
+    end
   end
 
   defp render_command("sc_start4", [status, ticks, val1, val2, val3, val4 | opts])

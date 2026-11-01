@@ -394,6 +394,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
       remove_statuses_with_flag(game_state.character_id, :remove_on_unequip_weapon)
     end
 
+    if Enum.any?(removed, fn index ->
+         :armor in EquipLocation.bitmask_to_location_atoms(
+           unequipped_mask(game_state.inventory, index)
+         )
+       end) do
+      remove_statuses_with_flag(game_state.character_id, :remove_on_unequip_armor)
+    end
+
     updated = advance(game_state, persisted)
 
     if shield_removed?(game_state.inventory, removed, updated.stats.equipment) do

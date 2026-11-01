@@ -357,6 +357,11 @@
 498	AM_TWILIGHT3	None	true	None	true	none	none	none	0	none	0
 653	NPC_EARTHQUAKE	Magic	false	Magic	false	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 660	NPC_BLEEDING	Weapon	false	Weapon	false	none	none	none	0,0,0,0,0	none	0,0,0,0,0
+663	NPC_WIDESILENCE	None	true	None	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
+665	NPC_WIDEBLEEDING	None	true	None	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
+667	NPC_WIDECONFUSE	None	true	None	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
+673	NPC_CRITICALWOUND	Weapon	false	Weapon	false	none	none	none	0,0,0,0,0	none	0,0,0,0,0
+677	NPC_WIDECURSE	None	true	None	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 687	NPC_ALLHEAL	None	true	None	true	none	none	none	0	none	0
 1001	KN_CHARGEATK	Weapon	false	Weapon	false	none	none	none	0	none	0
 1002	CR_SHRINK	Weapon	true	Weapon	true	none	none	none	0	none	0

@@ -8,12 +8,12 @@ defmodule Aesir.ZoneServer.Unit.Player.ItemHeal do
   (`val1`), each on the running bonus. SP uses INT, Increase SP Recovery and the
   SP rates, without Increase Heal Rate. A bonus only ever raises an amount.
 
-  The recipient's statuses then apply: No Recovery cancels both, and in renewal
-  Apple of Idun adds `val3 / 100` HP and Asura recovery cancels SP.
+  The recipient's statuses then apply: in renewal Apple of Idun adds
+  `val3 / 100` HP, then Critical Wound reduces both amounts. No Recovery
+  replaces that penalty with 100%. Renewal Asura recovery then cancels SP.
 
-  Not modelled: ranked (famous Alchemist) potions, and the Critical Wound, Death
-  Hurt, Vitality Activation, Water Insignia and Bite Scar terms, whose statuses
-  do not exist yet.
+  Not modelled: ranked (famous Alchemist) potions, and the Death Hurt, Vitality
+  Activation, Water Insignia and Bite Scar terms, whose statuses do not exist yet.
   """
 
   alias Aesir.Commons.GameMode
@@ -83,14 +83,26 @@ defmodule Aesir.ZoneServer.Unit.Player.ItemHeal do
     renewal? = GameMode.mode() == :renewal
     hp = if renewal?, do: hp + apple_idun(char_id), else: hp
 
-    {hp, sp} =
+    penalty =
       if StatusStorage.has_status?(:player, char_id, :sc_norecover_state),
-        do: {0, 0},
+        do: 100,
+        else: wound_penalty(char_id)
+
+    {hp, sp} =
+      if penalty > 0,
+        do: {hp - div(hp * penalty, 100), sp - div(sp * penalty, 100)},
         else: {hp, sp}
 
     if renewal? and StatusStorage.has_status?(:player, char_id, :sc_extremityfist),
       do: {hp, 0},
       else: {hp, sp}
+  end
+
+  defp wound_penalty(char_id) do
+    case StatusStorage.get_status(:player, char_id, :sc_criticalwound) do
+      %{val2: penalty} when is_integer(penalty) -> penalty
+      _absent -> 0
+    end
   end
 
   defp apple_idun(char_id) do

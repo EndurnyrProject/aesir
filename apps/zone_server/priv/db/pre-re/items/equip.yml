@@ -4162,6 +4162,12 @@
   locations:
     - both_hand
   name: Wild Beast Claw
+  on_equip: |-
+    if (refine(ctx) >= 9) do
+      auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 2, 100)
+    else
+      auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 1, 100)
+    end
   range: 1
   refineable: true
   slots: 1
@@ -4223,6 +4229,12 @@
   locations:
     - both_hand
   name: Blood Tears
+  on_equip: |-
+    if (refine(ctx) >= 9) do
+      auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 665}, 2, 30)
+    else
+      auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 665}, 1, 30)
+    end
   range: 1
   refineable: true
   slots: 2
@@ -4851,6 +4863,31 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 75)
+    ctx = bonus(ctx, {:addrace, :player_human}, 75)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, ((refine(ctx) - 4) * (refine(ctx) - 4)))
+      ctx = bonus(ctx, {:addrace, :player_human}, ((refine(ctx) - 4) * (refine(ctx) - 4)))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, :aspd_rate, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, :aspd_rate, 5)
+      ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 1, 50)
+      ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 673, trigger_skill: 42}, 2, 200)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: one_handed_axe
@@ -5794,6 +5831,31 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 70)
+    ctx = bonus(ctx, {:addrace, :player_human}, 70)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 25)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 25)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, ((refine(ctx) - 3) * (refine(ctx) - 3)))
+      ctx = bonus(ctx, {:addrace, :player_human}, ((refine(ctx) - 3) * (refine(ctx) - 3)))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 1, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 1, 100)
+      ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 673, trigger_skill: 42}, 2, 200)
+      ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 673, trigger_skill: 485}, 2, 200)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: two_handed_axe
@@ -6603,6 +6665,36 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 95)
+    ctx = bonus(ctx, {:addrace, :player_human}, 95)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, ((refine(ctx) - 4) * (refine(ctx) - 4)))
+      ctx = bonus(ctx, {:addrace, :player_human}, ((refine(ctx) - 4) * (refine(ctx) - 4)))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, :aspd_rate, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      if job_is(ctx, :base_job, :knight) do
+        auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 673, trigger_skill: 56}, 2, 200)
+      else
+        if job_is(ctx, :base_job, :crusader) do
+          auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 367}, 5, 100)
+        else
+          ctx
+        end
+      end
+    else
+      ctx
+    end
+    ctx
   range: 3
   refineable: true
   subtype: one_handed_spear
@@ -7461,6 +7553,13 @@
   locations:
     - both_hand
   name: Ivory Lance
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 2)
+    ctx = bonus(ctx, :aspd_rate, 3)
+    ctx = bonus(ctx, {:add_eff, :sc_bleeding}, 300)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 1, 30)
+    ctx = grant_skill(ctx, 58, 5)
+    ctx
   range: 3
   refineable: true
   slots: 1
@@ -7528,6 +7627,35 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 70)
+    ctx = bonus(ctx, {:addrace, :player_human}, 70)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 25)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 25)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, ((refine(ctx) - 4) * (refine(ctx) - 4)))
+      ctx = bonus(ctx, {:addrace, :player_human}, ((refine(ctx) - 4) * (refine(ctx) - 4)))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      if job_is(ctx, :base_job, :knight) do
+        auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 673, trigger_skill: 56}, 2, 200)
+      else
+        if job_is(ctx, :base_job, :crusader) do
+          auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 367}, 5, 200)
+        else
+          ctx
+        end
+      end
+    else
+      ctx
+    end
+    ctx
   range: 3
   refineable: true
   subtype: two_handed_spear
@@ -10251,6 +10379,20 @@
   locations:
     - right_hand
   name: Lich's Bone Wand
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, :dex, 1)
+    ctx = set(ctx, :atk_ele, :undead)
+    ctx = bonus(ctx, :matk_rate, 20)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 677}, 5, (10 + refine(ctx)))
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :matk_rate, 3)
+      ctx = bonus(ctx, :max_sp, 300)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -10880,6 +11022,20 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, :dex, 1)
+    ctx = set(ctx, :atk_ele, :undead)
+    ctx = bonus(ctx, :matk_rate, 20)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 677}, 5, (10 + refine(ctx)))
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :matk_rate, 3)
+      ctx = bonus(ctx, :max_sp, 300)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -12451,6 +12607,11 @@
   locations:
     - right_hand
   name: Horn of Hillslion
+  on_equip: |-
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 1, 100)
+    ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 266, trigger_skill: 370}, 1, 100)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 261}, 5, 100)
+    ctx
   range: 1
   refineable: true
   slots: 3
@@ -12937,6 +13098,11 @@
   locations:
     - right_hand
   name: Bass Guitar
+  on_equip: |-
+    ctx = bonus(ctx, :sp_gain_value, 3)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 91}, 3, 30)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 667}, 2, 100)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -13661,6 +13827,11 @@
   locations:
     - right_hand
   name: Sea Witch's Foot
+  on_equip: |-
+    ctx = bonus(ctx, :sp_gain_value, 5)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 88}, 3, 50)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 663}, 2, 100)
+    ctx
   range: 2
   refineable: true
   slots: 1
@@ -27760,6 +27931,11 @@
   locations:
     - both_accessory
   name: Cursed Hand
+  on_equip: |-
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 1, 30)
+    ctx = bonus(ctx, :hit, 10)
+    ctx = bonus(ctx, :hp_regen, 20)
+    ctx
   slots: 1
   type: armor
   weight: 50
@@ -46009,6 +46185,12 @@
   locations:
     - right_hand
   name: Ivory Knife
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 2)
+    ctx = bonus(ctx, :aspd_rate, 3)
+    ctx = bonus(ctx, {:add_eff, :sc_bleeding}, 300)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 1, 30)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -46120,6 +46302,28 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 75)
+    ctx = bonus(ctx, {:addrace, :player_human}, 75)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 76}, 1, 20)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, ((refine(ctx) - 4) * (refine(ctx) - 4)))
+      ctx = bonus(ctx, {:addrace, :player_human}, ((refine(ctx) - 4) * (refine(ctx) - 4)))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      auto_cast(ctx, %{force: 1, flag: 0, trigger: :on_skill, skill_id: 665, trigger_skill: 214}, 1, 250)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: dagger
@@ -47849,6 +48053,34 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 75)
+    ctx = bonus(ctx, {:addrace, :player_human}, 75)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, ((refine(ctx) - 4) * (refine(ctx) - 4)))
+      ctx = bonus(ctx, {:addrace, :player_human}, ((refine(ctx) - 4) * (refine(ctx) - 4)))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 6) do
+      bonus(ctx, :aspd_rate, 5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, :aspd_rate, 5)
+      ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 673, trigger_skill: 5}, 2, 200)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: one_handed_sword
@@ -48068,6 +48300,15 @@
   locations:
     - armor
   name: Bone Plate
+  on_equip: |-
+    ctx = bonus(ctx, :str, 1)
+    ctx = bonus(ctx, :mdef, 3)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 10)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 10)
+    ctx = bonus(ctx, {:ignore_def_race, :brute}, 10)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 665}, 1, 10)
+    ctx
   refineable: true
   slots: 1
   type: armor

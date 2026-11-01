@@ -17,8 +17,10 @@ defmodule Aesir.ZoneServer.Unit.Player.EquipRegen do
   applies loss before regen (HP loss cannot kill, regen cannot exceed max),
   matching the tick order of the natural-heal loop.
 
-  Accumulators for entries no longer present (gear removed) are dropped, since
-  only the entries currently on the equipment map are advanced.
+  Accumulators for entries no longer present (gear removed or status ended) are
+  dropped. `compute/4` also accepts `:percent_hp_regen_bonus` entries from
+  statuses, converting each percentage using the supplied maximum HP and
+  truncating each interval's recovery before multiplying by elapsed intervals.
   """
 
   @families %{
@@ -28,9 +30,12 @@ defmodule Aesir.ZoneServer.Unit.Player.EquipRegen do
     sp_loss_bonus: :sp_loss
   }
 
-  @type accumulators :: %{{atom(), pos_integer()} => non_neg_integer()}
+  @typedoc "Elapsed milliseconds per equipment interval or per status-specific interval."
+  @type accumulators :: %{
+          {atom(), pos_integer() | {atom(), pos_integer()}} => non_neg_integer()
+        }
   @type deltas :: %{
-          hp_gain: non_neg_integer(),
+          hp_gain: integer(),
           hp_loss: non_neg_integer(),
           sp_gain: non_neg_integer(),
           sp_loss: non_neg_integer()
@@ -46,14 +51,25 @@ defmodule Aesir.ZoneServer.Unit.Player.EquipRegen do
   letting the caller take a no-op fast path.
   """
   @spec compute(map(), accumulators(), non_neg_integer()) :: {deltas(), accumulators()}
-  def compute(equip_modifiers, accumulators, elapsed_ms)
-      when is_map(equip_modifiers) and is_map(accumulators) do
+  def compute(equip_modifiers, accumulators, elapsed_ms),
+    do: compute(equip_modifiers, accumulators, elapsed_ms, %{})
+
+  @doc """
+  Advances periodic equipment and status recovery, using `max_hp` to convert
+  percentage recovery. Negative percentages stay signed rather than becoming
+  flat HP amounts. Each due interval truncates independently.
+  """
+  @spec compute(map(), accumulators(), non_neg_integer(), %{optional(:max_hp) => pos_integer()}) ::
+          {deltas(), accumulators()}
+  def compute(equip_modifiers, accumulators, elapsed_ms, maxima)
+      when is_map(equip_modifiers) and is_map(accumulators) and is_map(maxima) do
     zero = %{hp_gain: 0, hp_loss: 0, sp_gain: 0, sp_loss: 0}
 
     Enum.reduce(equip_modifiers, {zero, %{}}, fn entry, {deltas, acc} ->
       case periodic_entry(entry) do
         {bucket, key, interval, value} ->
           total = Map.get(accumulators, key, 0) + elapsed_ms
+          value = recovery_value(key, value, maxima)
           amount = div(total, interval) * value
           {Map.update!(deltas, bucket, &(&1 + amount)), Map.put(acc, key, rem(total, interval))}
 
@@ -63,8 +79,17 @@ defmodule Aesir.ZoneServer.Unit.Player.EquipRegen do
     end)
   end
 
+  defp recovery_value({:percent_hp_regen_bonus, {_status_id, _interval}}, value, maxima),
+    do: div(Map.get(maxima, :max_hp, 0) * value, 100)
+
+  defp recovery_value(_key, value, _maxima), do: value
+
   @spec periodic_entry({term(), term()}) ::
-          {atom(), {atom(), pos_integer()}, pos_integer(), integer()} | :skip
+          {atom(), term(), pos_integer(), integer()} | :skip
+  defp periodic_entry({{:percent_hp_regen_bonus, {_status_id, interval}} = key, value})
+       when is_integer(interval) and interval > 0 and is_integer(value),
+       do: {:hp_gain, key, interval, value}
+
   defp periodic_entry({{family, interval} = key, value})
        when is_integer(interval) and interval > 0 and is_integer(value) do
     case Map.fetch(@families, family) do

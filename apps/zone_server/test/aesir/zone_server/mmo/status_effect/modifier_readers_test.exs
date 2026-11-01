@@ -70,6 +70,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                :max_hp_rate,
                :max_sp_rate,
                :max_sp_item_rate,
+               :max_hp_equip_rate,
+               :max_sp_equip_rate,
                :batk_rate,
                # DamageCalculator / MagicDamageCalculator / DamageShared
                :atk_bonus,
@@ -139,7 +141,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
     :magic_addrace,
     :pseudo_element_atk,
     :addele,
-    :magic_atk_ele
+    :magic_atk_ele,
+    :addrace2,
+    :subrace2,
+    :magic_addrace2,
+    :res_eff,
+    :percent_hp_regen_bonus
   ]
 
   test "every key emitted by an effect's modifiers/2 has a reader" do

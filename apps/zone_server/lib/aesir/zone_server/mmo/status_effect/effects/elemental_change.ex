@@ -2,26 +2,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ElementalChange do
   @moduledoc """
   Elemental Change (SC_ELEMENTALCHANGE).
 
-  Overrides the carrier's *defense* element only -- never the attack element.
-  rAthena keeps the two calculations entirely separate: `status_calc_element`
-  and `status_calc_element_lv` (defense element/level) consult
-  `SC_ELEMENTALCHANGE`, while `status_calc_attack_element` does not
-  (`status.cpp:8761-8817` vs `status.cpp:8836-8862`). A mob endowed with this
-  status still attacks with its native weapon element.
+  Overrides only the carrier's defense element, never its weapon element, in
+  both game modes. Converter skills and consumable armor scrolls share it.
 
-  Mob-only: applied by the four `SA_ELEMENT*` converter skills (Task 24).
-  `val1` holds the element level (1-4), `val2` the rAthena element id,
-  mirroring `sc_start2`'s `(skill_lv, skill_get_ele(...))` argument order in
-  `elementalchangewater.cpp:22-24`.
+  `val1` holds the element level and `val2` the element id. A level-one skill
+  application (`val3 == 0`) rolls a level from 1 through 4; a script's nonzero
+  `val3` keeps its fixed level. A zero element rolls an element from 0 through 9.
+  The initialization marker is then cleared. Levels above four are capped.
+  Saved applications retain their initialized values on restore.
 
   Death ends it unless its element is Holy or Dark.
-
-  `StatusStorage.apply_status/4` replaces the existing entry when a status of
-  the same type is re-applied to a unit (single ETS row keyed by
-  `{unit_type, unit_id, status_type}`), so a second converter skill landing on
-  an already-overridden mob swaps the element cleanly instead of stacking --
-  `ModifierCalculator.merge_modifiers/2` never sees two `:element_override`
-  values to sum.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_elementalchange,
@@ -33,18 +23,30 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ElementalChange do
     icon: :armor_property
 
   alias Aesir.ZoneServer.Mmo.Element
+  alias Aesir.ZoneServer.Mmo.StatusEntry
+
+  @impl true
+  def on_apply(_target, instance, %{loaded: true}), do: {:ok, instance}
+
+  def on_apply(_target, instance, _context) do
+    element = if instance.val2 == 0, do: :rand.uniform(10) - 1, else: instance.val2
+
+    level =
+      if instance.val1 == 1 and instance.val3 == 0,
+        do: :rand.uniform(4),
+        else: min(instance.val1, 4)
+
+    {:ok, %{instance | val1: level, val2: element, val3: 0}}
+  end
 
   @impl true
   def modifiers(instance, _context) do
     element = Element.from_id!(instance.val2)
-    %{element_override: {element, cap_level(instance.val1)}}
+    %{element_override: {element, instance.val1}}
   end
 
   @doc "Death ends it unless its element is Holy or Dark."
   @impl true
-  @spec ends_on_death?(Aesir.ZoneServer.Mmo.StatusEntry.t()) :: boolean()
+  @spec ends_on_death?(StatusEntry.t()) :: boolean()
   def ends_on_death?(instance), do: Element.from_id!(instance.val2) not in [:holy, :shadow]
-
-  @spec cap_level(integer()) :: 1..4
-  defp cap_level(level), do: level |> max(1) |> min(4)
 end
