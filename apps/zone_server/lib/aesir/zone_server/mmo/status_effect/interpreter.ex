@@ -111,11 +111,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   `first_tick` milliseconds after it starts when given (a restore passes the
   time that was left until its next tick when saved), then every interval.
 
-  `owner_refresh: :notify` publishes an asynchronous player stat refresh only
-  after the status is stored. Applications default to `:auto`: the owning
-  session's handlers recalculate synchronously, so an application made from
-  that session defers, while one made from any other process (another player's
-  cast, a mob, a manager) notifies the owner.
+  `owner_refresh: :notify` publishes status identity/event notifications for
+  committed mutations, including removals from a cure-only or failed start.
+  Applications default to `:auto`: the owning session's handlers reconcile
+  synchronously, so an application made from that session defers, while one
+  made from another process notifies the owner. Retained overlaps notify nothing.
 
   A skill may pass `success_rate` (a percentage) and `resistance_roll` (given
   the final per-10000 rate) to combine its base application chance with the
@@ -169,7 +169,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
           apply_known_status(unit_type, unit_id, status_id, status_params, definition)
       end
 
-    event_result(result)
+    finish_apply_result(result, unit_type, unit_id, status_params)
+  end
+
+  defp finish_apply_result(result, unit_type, unit_id, status_params) do
+    outcome = event_result(result)
+
+    events =
+      case outcome do
+        {:ok, committed} -> committed
+        {:error, _reason, committed} -> committed
+      end
+
+    maybe_refresh_owner(unit_type, unit_id, events, status_params)
+    outcome
   end
 
   defp event_result(:ok), do: {:ok, []}
@@ -301,7 +314,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     with %{} = definition <- Registry.get_definition(status_id),
          {:ok, {_module, target_state, _pid}} <- UnitRegistry.get_unit(unit_type, unit_id),
          true <- Unit.living?(target_state) do
-      create_and_store(unit_type, unit_id, status_id, status_params, definition, duration)
+      unit_type
+      |> create_and_store(unit_id, status_id, status_params, definition, duration)
+      |> finish_apply_result(unit_type, unit_id, status_params)
     end
   end
 
@@ -525,10 +540,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
         damage_broken_snapshot(unit_type, unit_id)
       end)
 
-    ended =
-      Enum.filter(held, fn {status_id, generation} ->
-        not keeps_without_hp?(status_id, unit_type, damage_info) and
-          end_generation(unit_type, unit_id, status_id, generation)
+    {ended, events} =
+      Enum.reduce(held, {[], []}, fn {status_id, generation} = entry, {ended, events} ->
+        removed =
+          if keeps_without_hp?(status_id, unit_type, damage_info),
+            do: [],
+            else: end_generation_events(unit_type, unit_id, status_id, generation)
+
+        if removed == [],
+          do: {ended, events},
+          else: {ended ++ [entry], events ++ removed}
       end)
 
     case ended do
@@ -540,19 +561,24 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
         :ok
     end
 
-    maybe_refresh_owner(unit_type, unit_id, ended != [], [])
+    maybe_refresh_owner(unit_type, unit_id, events, [])
   end
 
   # Retries while the same generation is rewritten in place (a tick) between the
   # read and the compare-delete.
-  defp end_generation(unit_type, unit_id, status_id, generation) do
+  defp end_generation(unit_type, unit_id, status_id, generation),
+    do: end_generation_events(unit_type, unit_id, status_id, generation) != []
+
+  defp end_generation_events(unit_type, unit_id, status_id, generation) do
     case StatusStorage.get_status(unit_type, unit_id, status_id) do
       %StatusEntry{generation: ^generation} = current ->
-        expire_status_if_current(unit_type, unit_id, status_id, current) or
-          end_generation(unit_type, unit_id, status_id, generation)
+        case expire_status_events_if_current(unit_type, unit_id, status_id, current) do
+          [] -> end_generation_events(unit_type, unit_id, status_id, generation)
+          events -> events
+        end
 
       _gone_or_newer ->
-        false
+        []
     end
   end
 
@@ -953,7 +979,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
           {:ok, [status_event()]}
   def remove_status_with_events(unit_type, unit_id, status_id, opts) do
     events = remove_status_events(unit_type, unit_id, status_id)
-    maybe_refresh_owner(unit_type, unit_id, events != [], opts)
+    maybe_refresh_owner(unit_type, unit_id, events, opts)
     {:ok, events}
   end
 
@@ -967,9 +993,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
         ]) ::
           boolean()
   def remove_status_if_current(unit_type, unit_id, status_id, instance, opts \\ []) do
-    removed? = expire_status_if_current(unit_type, unit_id, status_id, instance)
-    maybe_refresh_owner(unit_type, unit_id, removed?, opts)
-    removed?
+    events = expire_status_events_if_current(unit_type, unit_id, status_id, instance)
+    maybe_refresh_owner(unit_type, unit_id, events, opts)
+    events != []
   end
 
   @doc """
@@ -1052,15 +1078,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   """
   @spec remove_statuses(unit_type(), integer(), [atom()], [remove_option()]) :: :ok
   def remove_statuses(unit_type, unit_id, status_ids, opts \\ []) do
-    unit_type
-    |> remove_statuses_with_events(unit_id, status_ids, opts)
-    |> without_events()
+    {:ok, events} = remove_statuses_with_events(unit_type, unit_id, status_ids, opts)
+    maybe_refresh_owner(unit_type, unit_id, events, opts)
   end
 
-  defp remove_statuses_with_events(unit_type, unit_id, status_ids, opts) do
+  defp remove_statuses_with_events(unit_type, unit_id, status_ids, _opts) do
     events = Enum.flat_map(status_ids, &remove_status_events(unit_type, unit_id, &1))
-
-    maybe_refresh_owner(unit_type, unit_id, events != [], opts)
     {:ok, events}
   end
 
@@ -1388,11 +1411,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance, target)
   end
 
-  defp maybe_refresh_owner(:player, unit_id, true, opts) do
+  defp maybe_refresh_owner(:player, unit_id, [_ | _] = events, opts) do
     case Keyword.get(opts, :owner_refresh, :auto) do
-      :notify -> PubSub.broadcast(Aesir.PubSub, "player:#{unit_id}", {:stats, :status_changed})
+      :notify -> notify_player_events(unit_id, events)
       :defer -> :ok
-      :auto -> if owner_process?(unit_id), do: :ok, else: notify_player_owner(unit_id)
+      :auto -> if owner_process?(unit_id), do: :ok, else: notify_player_events(unit_id, events)
       policy -> raise ArgumentError, "invalid owner refresh policy: #{inspect(policy)}"
     end
   end
@@ -1406,8 +1429,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end
   end
 
-  defp notify_player_owner(unit_id) do
-    PubSub.broadcast(Aesir.PubSub, "player:#{unit_id}", {:stats, :status_changed})
+  defp notify_player_events(unit_id, events) do
+    Enum.each(events, fn {status_id, event} ->
+      PubSub.broadcast(
+        Aesir.PubSub,
+        "player:#{unit_id}",
+        {:stats, {:status_changed, status_id, event}}
+      )
+    end)
   end
 
   @doc """
@@ -2011,7 +2040,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
       if StatusStorage.get_status(unit_type, unit_id, status_id) === stored_instance,
         do: {:current, [{status_id, :removed}]},
-        else: {:superseded, [{status_id, :removed}]}
+        else: {:superseded, []}
     else
       {:current, []}
     end
@@ -2401,16 +2430,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     :ok
   end
 
-  defp finish_application(unit_type, unit_id, status_id, stored_instance, status_params) do
+  defp finish_application(unit_type, unit_id, status_id, stored_instance, _status_params) do
     case ensure_living_target(unit_type, unit_id) do
       :ok ->
         if StatusStorage.get_status(unit_type, unit_id, status_id) === stored_instance do
           StatusDisplay.on_applied(unit_type, unit_id, status_id, stored_instance)
           notify_unit_status_applied(unit_type, unit_id, status_id)
-
-          maybe_refresh_owner(unit_type, unit_id, true,
-            owner_refresh: Keyword.get(status_params, :owner_refresh, :auto)
-          )
 
           {:ok, [{status_id, :apply}]}
         else
@@ -2450,7 +2475,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   def expire_status_if_current(unit_type, unit_id, status_id, instance),
     do: expire_status_events_if_current(unit_type, unit_id, status_id, instance) != []
 
-  defp expire_status_events_if_current(unit_type, unit_id, status_id, instance) do
+  @doc "Expires the current entry and returns every committed removal in its lifecycle chain."
+  @spec expire_status_events_if_current(unit_type(), integer(), atom(), StatusEntry.t()) ::
+          [status_event()]
+  def expire_status_events_if_current(unit_type, unit_id, status_id, instance) do
     if StatusStorage.remove_status_if_current(unit_type, unit_id, status_id, instance) do
       events = expire_status_entry(unit_type, unit_id, status_id, instance)
       notify_mob_status_write(unit_type, unit_id, status_id, :removed)

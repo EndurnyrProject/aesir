@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
   Verifies the tick manager's exact per-status deadlines (arming, anchored
   ticks, tick-before-expiry ordering, stale generations) and its post-processing
   notifications: monster lifecycle notifications belong to the interpreter,
-  while the player path keeps its `{:stats, :status_changed}` PubSub broadcast.
+  while player expiry broadcasts retain the committed status identity and event.
   """
 
   use ExUnit.Case, async: true
@@ -31,8 +31,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
     stub(Interpreter, :process_tick, fn _type, _id, _status -> :ok end)
     stub(Interpreter, :process_tick_if_current, fn _type, _id, _status, _generation -> :stop end)
 
-    stub(Interpreter, :expire_status_if_current, fn unit_type, unit_id, status_id, entry ->
-      StatusStorage.remove_status_if_current(unit_type, unit_id, status_id, entry)
+    stub(Interpreter, :expire_status_events_if_current, fn unit_type, unit_id, status_id, entry ->
+      if StatusStorage.remove_status_if_current(unit_type, unit_id, status_id, entry),
+        do: [{status_id, :removed}],
+        else: []
     end)
 
     stub(UnitRegistry, :unit_exists?, fn _type, _id -> true end)
@@ -180,9 +182,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
         :continue
       end)
 
-      expect(Interpreter, :expire_status_if_current, fn :player, ^player_id, @status, expired ->
+      expect(Interpreter, :expire_status_events_if_current, fn :player,
+                                                               ^player_id,
+                                                               @status,
+                                                               expired ->
         send(test_pid, :expired)
-        StatusStorage.remove_status_if_current(:player, player_id, @status, expired)
+        assert StatusStorage.remove_status_if_current(:player, player_id, @status, expired)
+        [{@status, :removed}]
       end)
 
       key = {:player, player_id, @status}
@@ -190,7 +196,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
 
       state = fire(state, :player, player_id, generation, due_at)
 
-      assert_receive {:stats, :status_changed}
+      assert_receive {:stats, {:status_changed, @status, :removed}}
       {:messages, messages} = Process.info(self(), :messages)
       assert Enum.filter(messages, &is_atom/1) == [:ticked, :expired]
       refute StatusStorage.has_status?(:player, player_id, @status)
@@ -202,7 +208,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
       %{generation: generation} = stored(:player, @player_id, duration: 5_000)
       entry = set_deadlines(:player, @player_id, nil, now - 1)
       due_at = entry.expires_at
-      reject(&Interpreter.expire_status_if_current/4)
+      reject(&Interpreter.expire_status_events_if_current/4)
 
       key = {:player, @player_id, @status}
       state = %StatusTickManager.State{timers: %{key => {make_ref(), generation, due_at}}}
@@ -220,7 +226,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
       %{generation: generation} = stored(:player, @player_id, tick: 1_000, duration: 5_000)
       set_deadlines(:player, @player_id, now - 1, now + 4_000)
       reject(&Interpreter.process_tick_if_current/4)
-      reject(&Interpreter.expire_status_if_current/4)
+      reject(&Interpreter.expire_status_events_if_current/4)
 
       key = {:player, @player_id, @status}
       stale = 1
@@ -256,7 +262,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
       now = System.monotonic_time(:millisecond)
       %{generation: generation} = stored(:player, @player_id, duration: 5_000)
       set_deadlines(:player, @player_id, nil, now - 1)
-      reject(&Interpreter.expire_status_if_current/4)
+      reject(&Interpreter.expire_status_events_if_current/4)
 
       key = {:player, @player_id, @status}
       current = {make_ref(), generation, now + 3_000}
@@ -342,7 +348,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
 
     test "an expired status of a unit missing from the registry is cleared, not processed" do
       stub(UnitRegistry, :unit_exists?, fn :player, @player_id -> false end)
-      reject(&Interpreter.expire_status_if_current/4)
+      reject(&Interpreter.expire_status_events_if_current/4)
 
       :ok = StatusStorage.apply_status(:player, @player_id, @status)
       :ok = StatusStorage.update_status(:player, @player_id, @status, &%{&1 | expires_at: past()})
@@ -398,13 +404,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
       tick()
 
       assert StatusStorage.has_status?(:player, @player_id, @status)
-      refute_receive {:stats, :status_changed}
+      refute_receive {:stats, {:status_changed, _, _}}
 
       :ok = StatusStorage.update_status(:player, @player_id, @status, &%{&1 | expires_at: past()})
       tick()
 
       refute StatusStorage.has_status?(:player, @player_id, @status)
-      assert_receive {:stats, :status_changed}
+      assert_receive {:stats, {:status_changed, @status, :removed}}
     end
 
     test "an expired player status still broadcasts one lifecycle refresh and no cast" do
@@ -415,8 +421,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
 
       tick()
 
-      assert_receive {:stats, :status_changed}
-      refute_receive {:stats, :status_changed}
+      assert_receive {:stats, {:status_changed, @status, :removed}}
+      refute_receive {:stats, {:status_changed, _, _}}
       refute_received {:"$gen_cast", {:casting, {:status_changed, _, _}}}
     end
 
@@ -428,11 +434,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
       :ok = StatusStorage.update_status(:mob, @mob_id, @status, &%{&1 | expires_at: past()})
       expired = StatusStorage.get_status(:mob, @mob_id, @status)
 
-      stub(Interpreter, :expire_status_if_current, fn :mob, @mob_id, @status, ^expired ->
+      stub(Interpreter, :expire_status_events_if_current, fn :mob, @mob_id, @status, ^expired ->
         {:stored, fresh, _prior} = StatusStorage.apply_status_with_entry(:mob, @mob_id, @status)
         send(test_pid, {:fresh_generation, fresh})
 
-        call_original(Interpreter, :expire_status_if_current, [:mob, @mob_id, @status, expired])
+        call_original(Interpreter, :expire_status_events_if_current, [
+          :mob,
+          @mob_id,
+          @status,
+          expired
+        ])
       end)
 
       tick()

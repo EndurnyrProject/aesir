@@ -39,7 +39,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
-  alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerEvents
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -388,11 +387,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
     {:noreply, stage_consumed_item_skill(committed, pending)}
   end
 
-  defp commit_used_item(state, game_state) do
-    recalced = StatusManager.recalculate_after_status_change(%{state | game_state: game_state})
-
-    StateCommit.commit(recalced, recalced.game_state)
-  end
+  defp commit_used_item(state, game_state), do: StateCommit.commit(state, game_state)
 
   defp stage_consumed_item_skill(state, nil), do: state
 

@@ -246,11 +246,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   end
 
   defp run_expiry(unit_type, unit_id, %StatusEntry{type: status_id} = entry) do
-    if Interpreter.expire_status_if_current(unit_type, unit_id, status_id, entry) do
+    events = Interpreter.expire_status_events_if_current(unit_type, unit_id, status_id, entry)
+
+    if events != [] do
       Interpreter.run_timeout(unit_type, unit_id, status_id, entry)
 
       if unit_type == :player,
-        do: notify_player_status_expiration(unit_id),
+        do: notify_player_status_expiration(unit_id, events),
         else: notify_unit_session(unit_type, unit_id, status_id, :expired)
     end
   end
@@ -264,8 +266,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   end
 
   # Expiration can change both stats and status-driven state such as walk speed.
-  defp notify_player_status_expiration(player_id) do
-    PubSub.broadcast(Aesir.PubSub, "player:#{player_id}", {:stats, :status_changed})
+  defp notify_player_status_expiration(player_id, events) do
+    Enum.each(events, fn {status_id, event} ->
+      PubSub.broadcast(
+        Aesir.PubSub,
+        "player:#{player_id}",
+        {:stats, {:status_changed, status_id, event}}
+      )
+    end)
   end
 
   # Broadcast on the player's topic so this manager stays decoupled from

@@ -174,19 +174,22 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
       |> put_start_flag(:no_tick_def, flag, @scstart_notickdef)
       |> put_start_flag(:no_rate_def, flag, @scstart_noratedef)
 
-    case StatusInterpreter.apply_status(:player, ctx.char_id, status, params) do
-      :ok -> refresh_item_status(ctx)
-      {:error, _reason} -> ctx
-    end
+    events =
+      case StatusInterpreter.apply_status_with_events(:player, ctx.char_id, status, params) do
+        {:ok, committed} -> committed
+        {:error, _reason, committed} -> committed
+      end
+
+    refresh_item_status(ctx, events)
   end
 
-  defp refresh_item_status(%Ctx{source: {:item, _}, session_state: state} = ctx)
+  defp refresh_item_status(%Ctx{source: {:item, _}, session_state: state} = ctx, events)
        when not is_nil(state) do
-    state = StatusManager.recalculate_after_status_change(%{state | game_state: ctx.game_state})
+    state = StatusManager.refresh_events(%{state | game_state: ctx.game_state}, events)
     %{ctx | game_state: state.game_state, session_state: state}
   end
 
-  defp refresh_item_status(ctx), do: ctx
+  defp refresh_item_status(ctx, _events), do: ctx
 
   defp start_values([val1, val2, val3, val4]),
     do: [val1: val1, val2: val2, val3: val3, val4: val4]
@@ -200,7 +203,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
     do: if(band(flag, bit) != 0, do: Keyword.put(params, key, true), else: params)
 
   @doc """
-  Removes a status effect from the player. Returns the context unchanged.
+  Removes a status effect from the player and reconciles committed inline mutations.
 
   Canonical status-removal op, pairing with `sc_start/4`. A detached ctx has no
   unit to remove it from, so the command does nothing and the script goes on.
@@ -210,8 +213,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   def sc_end(%Ctx{game_state: nil} = ctx, _status), do: ctx
 
   def sc_end(%Ctx{} = ctx, status) do
-    StatusInterpreter.remove_status(:player, ctx.char_id, status)
-    ctx
+    {:ok, events} = StatusInterpreter.remove_status_with_events(:player, ctx.char_id, status, [])
+    refresh_item_status(ctx, events)
   end
 
   @doc """

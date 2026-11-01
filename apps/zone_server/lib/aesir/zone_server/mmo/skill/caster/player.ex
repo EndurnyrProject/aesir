@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   alias Aesir.ZoneServer.Mmo.Skill.UseRestrictions
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Mmo.SkillTree
+  alias Aesir.ZoneServer.Mmo.StatusEffect.CalcFlags
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -27,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
+  alias Aesir.ZoneServer.Unit.Player.Stats.StatusSelection
 
   @waivable_gemstone_ids [715, 716, 717]
   @gem_floor_skills [:hw_ganbantein, :sa_abracadabra]
@@ -508,6 +510,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   @spec on_skill_attack(PlayerState.t(), PlayerState.t()) :: PlayerState.t()
   def on_skill_attack(%PlayerState{combo: combo} = caster, %PlayerState{combo: before}) do
     %{caster | combo: Combo.end_on_attack(before, combo)}
+  end
+
+  @doc "Refreshes committed status events inline without messaging or committing the owning session."
+  @spec refresh_status_events(PlayerState.t(), [StatusInterpreter.status_event()]) ::
+          PlayerState.t()
+  def refresh_status_events(caster, events) do
+    Enum.reduce(events, caster, fn {status_id, event}, current ->
+      selection =
+        StatusSelection.affected_fields(CalcFlags.for_event(status_id, event), GameMode.mode())
+
+      stats =
+        Calculator.calculate_status_change(current.stats, current.character_id, status_id, event)
+
+      speed =
+        if selection.full? or selection.walk_speed?,
+          do: StatusManager.walk_speed_for(stats),
+          else: current.walk_speed
+
+      %{current | stats: stats, walk_speed: speed}
+    end)
   end
 
   @doc "Refreshes the owning player's snapshot after cast-time status consumption."

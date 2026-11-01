@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
   """
 
   alias Aesir.Commons.StatusParams
+  alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skills.Sage.SaFreecast
   alias Aesir.ZoneServer.Mmo.Skills.Thief.TfMiss
@@ -12,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WalkSpeed
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
@@ -32,12 +34,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
   @spec handle_apply_status(atom(), keyword(), map()) ::
           {:reply, :ok | {:error, term()}, map()}
   def handle_apply_status(status_id, status_params, %{game_state: game_state} = state) do
-    case Interpreter.apply_status(:player, game_state.character_id, status_id, status_params) do
-      :ok ->
-        {:reply, :ok, recalculate_after_status_change(state)}
+    case Interpreter.apply_status_with_events(
+           :player,
+           game_state.character_id,
+           status_id,
+           status_params
+         ) do
+      {:ok, events} ->
+        {:reply, :ok, refresh_events(state, events)}
 
-      {:error, reason} ->
-        {:reply, {:error, reason}, state}
+      {:error, reason, events} ->
+        {:reply, {:error, reason}, refresh_events(state, events)}
     end
   end
 
@@ -53,8 +60,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
   """
   @spec handle_remove_status(atom(), map()) :: {:reply, :ok, map()}
   def handle_remove_status(status_id, %{game_state: game_state} = state) do
-    Interpreter.remove_status(:player, game_state.character_id, status_id, owner_refresh: :defer)
-    {:reply, :ok, recalculate_after_status_change(state)}
+    {:ok, events} =
+      Interpreter.remove_status_with_events(:player, game_state.character_id, status_id,
+        owner_refresh: :defer
+      )
+
+    {:reply, :ok, refresh_events(state, events)}
   end
 
   @doc """
@@ -86,11 +97,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
     {:reply, has_status, state}
   end
 
+  @doc "Refreshes one committed status mutation through its selected calculation channels."
+  @spec refresh_status(SessionState.t(), atom(), :apply | :removed) :: SessionState.t()
+  def refresh_status(state, status_id, event), do: refresh_events(state, [{status_id, event}])
+
+  @doc "Reconciles committed status mutations, publishing only changes to the owner's numeric state."
+  @spec refresh_events(SessionState.t(), [Interpreter.status_event()]) :: SessionState.t()
+  def refresh_events(state, []), do: state
+
+  def refresh_events(%{game_state: previous} = state, events) do
+    updated = PlayerCaster.refresh_status_events(previous, events)
+
+    if published_stats(updated.stats) != published_stats(previous.stats) do
+      StatusSync.send_stat_updates(state.connection_pid, updated.stats)
+    end
+
+    if updated.walk_speed != previous.walk_speed do
+      StatusSync.send_param(state.connection_pid, StatusParams.speed(), updated.walk_speed)
+    end
+
+    StateCommit.commit(state, updated)
+  end
+
+  defp published_stats(stats),
+    do:
+      Map.take(stats, [:base_stats, :derived_stats, :combat_stats, :current_state, :progression])
+
   @doc """
-  Recomputes the player's stats and walk speed from the now-current set of
-  active statuses and pushes any change to the client. Shared by the apply and
-  remove paths, and by `ItemHandler` after an item-use script whose effect
-  started or ended a status, so the recalc logic lives in one place.
+  Performs an explicit full stat and walk-speed reconciliation and sends changes
+  to the client. Status-specific mutations use `refresh_events/2` so an empty
+  or partial selection does not accidentally trigger a full recalculation.
   """
   @spec recalculate_after_status_change(map()) :: map()
   def recalculate_after_status_change(%{game_state: game_state} = state) do

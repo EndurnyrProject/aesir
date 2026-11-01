@@ -1058,6 +1058,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_info({:stats, {:status_changed, status_id, event}}, state) do
+    {:noreply, StatusManager.refresh_status(state, status_id, event)}
+  end
+
+  @impl true
   def handle_info({:stats, :status_changed}, state) do
     {:noreply, StatusManager.recalculate_after_status_change(state)}
   end

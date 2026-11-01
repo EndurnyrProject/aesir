@@ -440,7 +440,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   end
 
   describe "handle_use_item/2 stat recalculation" do
-    test "recalculates from the post-script state and commits the recalced snapshot" do
+    test "commits post-script vitals and inventory without an unrelated full recalculation" do
       ScriptCompiler.compile_all!([item_def(@red_potion_id, "heal(ctx, hp: 50)")])
 
       state = state_with_potion()
@@ -453,19 +453,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
          {:reduced, @red_potion_slot, 4}}
       end)
 
-      recalced_derived = %{state.game_state.stats.derived_stats | aspd: 193}
-      recalced_stats = %{state.game_state.stats | derived_stats: recalced_derived}
-
-      expect(StatusManager, :recalculate_after_status_change, fn recalc_state ->
-        assert recalc_state.game_state.stats.current_state.hp == 150
-        assert recalc_state.game_state.inventory[@red_potion_slot].amount == 4
-        put_in(recalc_state.game_state.stats, recalced_stats)
-      end)
+      reject(&StatusManager.recalculate_after_status_change/1)
 
       assert {:noreply, committed} =
                ItemHandler.handle_use_item(@red_potion_client_index, state)
 
-      assert committed.game_state.stats == recalced_stats
+      assert committed.game_state.stats.current_state.hp == 150
+      assert committed.game_state.inventory[@red_potion_slot].amount == 4
+      assert committed.game_state.stats.derived_stats == state.game_state.stats.derived_stats
     end
   end
 
