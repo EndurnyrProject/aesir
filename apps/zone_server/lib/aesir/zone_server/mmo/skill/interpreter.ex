@@ -1198,7 +1198,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # behavior, the target it may complete on, then the completion state of the
   # caster and the target.
   defp validate_item_target(caster, target, level, definition) do
-    with :ok <- check_max_level(definition, level),
+    with :ok <- check_item_level(level),
          :ok <- check_castable(definition),
          {:ok, module} <- fetch_active_module(definition),
          :ok <- check_target(caster, target, definition),
@@ -1226,8 +1226,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   ammo, weight and the act-delay gate - and charging none of them.
 
   What it keeps is what makes the cast well-formed rather than affordable: the
-  skill must exist, be castable at that level, have a behavior module, and the
-  target must be valid and in range; the behavior's own `validate/4` still runs.
+  skill must exist, have a behavior module, and the target must be valid and in
+  range; the behavior's own `validate/4` still runs. The positive skill level is
+  authorized by the item's script and may exceed the learned skill's maximum.
+  Ordinary skill requests retain their maximum-level checks.
   The skill's cooldown and aftercast delay are armed on success, so an item cast
   cannot be spammed past the skill's own pacing.
   """
@@ -1709,7 +1711,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
     with :ok <- check_player_restrictions(caster, adapter, skill_id, item),
          {:ok, definition} <- fetch_definition(skill_id),
-         :ok <- check_max_level(definition, level),
+         :ok <- check_use_level(definition, level, item),
          :ok <- check_castable(definition),
          :ok <- check_player_learned(caster, adapter, definition, level, opts),
          {:ok, _module} <- fetch_active_module(definition),
@@ -2421,6 +2423,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp fetch_definition(_skill), do: {:error, :unknown_skill}
 
   defp clamp_level(level, definition), do: min(level, definition.max_level)
+
+  defp check_use_level(definition, level, %{skill_id: id, level: item_level})
+       when id == definition.id and item_level == level,
+       do: check_item_level(level)
+
+  defp check_use_level(definition, level, _item), do: check_max_level(definition, level)
+
+  defp check_item_level(level) when is_integer(level) and level > 0, do: :ok
+  defp check_item_level(_level), do: {:error, :invalid_level}
 
   defp check_max_level(definition, level) when level <= definition.max_level, do: :ok
   defp check_max_level(_definition, _level), do: {:error, :invalid_level}

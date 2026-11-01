@@ -4268,8 +4268,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
                Interpreter.item_cast(item_game_state(), 999_999, 1, :self)
     end
 
-    test "still refuses a level above the skill's max" do
-      assert {:error, :invalid_level} = Interpreter.item_cast(item_game_state(), 6, 11, :self)
+    test "retains an item-authorized level above max while ordinary casts reject it" do
+      definition =
+        item_definition(%{
+          cooldown: List.duplicate(3000, 11),
+          after_cast_delay: List.duplicate(700, 11)
+        })
+
+      stub(Catalog, :by_id, fn 6 -> {:ok, definition} end)
+
+      expect(SmProvoke, :cast, fn caster, :self, 11, %{max_level: 10} ->
+        {:ok, caster}
+      end)
+
+      assert {:ok, _updated} = Interpreter.item_cast(item_game_state(), 6, 11, :self)
+      assert {:error, :invalid_level} = Interpreter.preflight_skill(item_game_state(), 6, 11)
     end
 
     test "still refuses a level of zero" do
