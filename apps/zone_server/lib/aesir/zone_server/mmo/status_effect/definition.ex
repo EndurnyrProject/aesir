@@ -181,14 +181,25 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @doc "Returns the stat modifiers granted by this status for the given instance."
   @callback modifiers(StatusEntry.t(), context()) :: map()
 
+  @typedoc "A status application result, including engine-owned ordered removal actions."
+  @type apply_result ::
+          hook_result()
+          | {:end_only, [atom()]}
+          | {:ok, StatusEntry.t(), [{:end_status, atom()}]}
+
   @doc """
   Invoked when the status is applied, before it is stored; the returned
   `val1`-`val4`, `state` and `phase` are kept, so the values the status sets
   when it starts are stored and persisted with it. The context carries the
   resolved `:duration` (nil for a permanent status) and `:loaded` (true when
   restoring a saved status). May veto the application by returning :remove.
+
+  `{:end_only, statuses}` ends the ordered statuses without storing this
+  application. `{:ok, instance, [{:end_status, status_id}]}` asks the engine to
+  end statuses before storing the application. Engine-owned ends retain their
+  committed lifecycle events for inline owner reconciliation.
   """
-  @callback on_apply(target(), StatusEntry.t(), context()) :: hook_result()
+  @callback on_apply(target(), StatusEntry.t(), context()) :: apply_result()
 
   @doc """
   Invoked when the status is removed or expires, and to undo `c:on_apply/3`

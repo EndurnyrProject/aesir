@@ -147,15 +147,37 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   @spec apply_status(unit_type(), integer(), atom(), StatusEntry.status_params()) ::
           :ok | {:error, atom()}
   def apply_status(unit_type, unit_id, status_id, status_params \\ []) do
-    case Registry.get_definition(status_id) do
-      nil ->
-        Logger.warning("Unknown status effect: #{status_id}")
-        {:error, :unknown_status}
-
-      definition ->
-        apply_known_status(unit_type, unit_id, status_id, status_params, definition)
-    end
+    unit_type
+    |> apply_status_with_events(unit_id, status_id, status_params)
+    |> without_events()
   end
+
+  @typedoc "An actual status mutation committed for the application or removal's holder."
+  @type status_event() :: {atom(), :apply | :removed}
+
+  @doc "Applies a status and returns its committed lifecycle mutations, including partial failures."
+  @spec apply_status_with_events(unit_type(), integer(), atom(), StatusEntry.status_params()) ::
+          {:ok, [status_event()]} | {:error, term(), [status_event()]}
+  def apply_status_with_events(unit_type, unit_id, status_id, status_params) do
+    result =
+      case Registry.get_definition(status_id) do
+        nil ->
+          Logger.warning("Unknown status effect: #{status_id}")
+          {:error, :unknown_status}
+
+        definition ->
+          apply_known_status(unit_type, unit_id, status_id, status_params, definition)
+      end
+
+    event_result(result)
+  end
+
+  defp event_result(:ok), do: {:ok, []}
+  defp event_result({:error, reason}), do: {:error, reason, []}
+  defp event_result(result), do: result
+
+  defp without_events({:ok, _events}), do: :ok
+  defp without_events({:error, reason, _events}), do: {:error, reason}
 
   defp apply_known_status(unit_type, unit_id, status_id, status_params, definition) do
     with :ok <- ensure_eligible_target(unit_type, definition),
@@ -201,7 +223,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
           )
 
         active ->
-          remove_statuses(unit_type, unit_id, active)
+          remove_statuses_with_events(unit_type, unit_id, active, status_params)
       end
     end
   end
@@ -922,8 +944,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   """
   @spec remove_status(unit_type(), integer(), atom(), [remove_option()]) :: :ok
   def remove_status(unit_type, unit_id, status_id, opts \\ []) do
-    removed? = remove_status_without_refresh(unit_type, unit_id, status_id)
-    maybe_refresh_owner(unit_type, unit_id, removed?, opts)
+    {:ok, _events} = remove_status_with_events(unit_type, unit_id, status_id, opts)
+    :ok
+  end
+
+  @doc "Removes a status through its normal lifecycle and returns actual committed mutations."
+  @spec remove_status_with_events(unit_type(), integer(), atom(), [remove_option()]) ::
+          {:ok, [status_event()]}
+  def remove_status_with_events(unit_type, unit_id, status_id, opts) do
+    events = remove_status_events(unit_type, unit_id, status_id)
+    maybe_refresh_owner(unit_type, unit_id, events != [], opts)
+    {:ok, events}
   end
 
   @doc """
@@ -1021,55 +1052,69 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   """
   @spec remove_statuses(unit_type(), integer(), [atom()], [remove_option()]) :: :ok
   def remove_statuses(unit_type, unit_id, status_ids, opts \\ []) do
-    removed? =
-      Enum.reduce(status_ids, false, fn status_id, removed? ->
-        remove_status_without_refresh(unit_type, unit_id, status_id) or removed?
-      end)
-
-    maybe_refresh_owner(unit_type, unit_id, removed?, opts)
+    unit_type
+    |> remove_statuses_with_events(unit_id, status_ids, opts)
+    |> without_events()
   end
 
-  defp remove_status_without_refresh(unit_type, unit_id, status_id) do
+  defp remove_statuses_with_events(unit_type, unit_id, status_ids, opts) do
+    events = Enum.flat_map(status_ids, &remove_status_events(unit_type, unit_id, &1))
+
+    maybe_refresh_owner(unit_type, unit_id, events != [], opts)
+    {:ok, events}
+  end
+
+  defp remove_status_without_refresh(unit_type, unit_id, status_id),
+    do: remove_status_events(unit_type, unit_id, status_id) != []
+
+  defp remove_status_events(unit_type, unit_id, status_id) do
     if MapSet.member?(Registry.statuses_implementing(:on_end_request), status_id),
-      do: request_end(unit_type, unit_id, status_id),
-      else: end_status(unit_type, unit_id, status_id)
+      do: request_end_events(unit_type, unit_id, status_id),
+      else: end_status_events(unit_type, unit_id, status_id)
   end
 
-  defp end_status(unit_type, unit_id, status_id) do
-    active? =
-      not is_nil(Registry.get_definition(status_id)) and
-        not is_nil(StatusStorage.get_status(unit_type, unit_id, status_id))
+  defp end_status_events(unit_type, unit_id, status_id) do
+    case {Registry.get_definition(status_id),
+          StatusStorage.get_status(unit_type, unit_id, status_id)} do
+      {%{module: module}, %StatusEntry{} = instance} ->
+        context = end_context(unit_type, unit_id, instance)
+        module.on_expire({unit_type, unit_id}, instance, context)
+        StatusStorage.remove_status(unit_type, unit_id, status_id)
+        chained = end_on_end_events(unit_type, unit_id, status_id)
+        StatusDisplay.on_removed(unit_type, unit_id, status_id, instance)
+        notify_unit_status_removed(unit_type, unit_id, status_id)
+        recheck_touch_on_end(unit_type, unit_id, status_id)
+        [{status_id, :removed} | chained]
 
-    with_active_status(unit_type, unit_id, status_id, fn module, instance, context ->
-      module.on_expire({unit_type, unit_id}, instance, context)
-      StatusStorage.remove_status(unit_type, unit_id, status_id)
-      end_on_end(unit_type, unit_id, status_id, &remove_status_without_refresh/3)
-      StatusDisplay.on_removed(unit_type, unit_id, status_id, instance)
-      notify_unit_status_removed(unit_type, unit_id, status_id)
-      recheck_touch_on_end(unit_type, unit_id, status_id)
-      :ok
-    end)
+      _absent ->
+        []
+    end
+  end
 
-    active?
+  defp end_on_end_events(unit_type, unit_id, status_id) do
+    %{end_on_end: chained} = Registry.get_definition(status_id)
+
+    chained
+    |> Enum.reject(&infinite_endure?(StatusStorage.get_status(unit_type, unit_id, &1)))
+    |> Enum.flat_map(&remove_status_events(unit_type, unit_id, &1))
   end
 
   # A status deciding how it ends (`on_end_request/3`): its outcome is stored
   # only over the entry it was asked about, asking again after a lost race.
-  # Returns whether the status ended.
-  defp request_end(unit_type, unit_id, status_id) do
+  defp request_end_events(unit_type, unit_id, status_id) do
     %{module: module} = Registry.get_definition(status_id)
 
     case StatusStorage.get_status(unit_type, unit_id, status_id) do
       nil ->
-        false
+        []
 
       instance ->
         context = end_context(unit_type, unit_id, instance)
         outcome = module.on_end_request({unit_type, unit_id}, instance, context)
 
         case store_end_outcome(outcome, unit_type, unit_id, status_id, instance) do
-          :lost_race -> request_end(unit_type, unit_id, status_id)
-          :kept -> false
+          :lost_race -> request_end_events(unit_type, unit_id, status_id)
+          :kept -> []
           :ended -> finish_requested_end(module, unit_type, unit_id, instance, context, outcome)
         end
     end
@@ -1092,12 +1137,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   defp finish_requested_end(module, unit_type, unit_id, instance, context, {:end, after_end}) do
     module.on_expire({unit_type, unit_id}, instance, context)
-    end_on_end(unit_type, unit_id, instance.type, &remove_status_without_refresh/3)
+    chained = end_on_end_events(unit_type, unit_id, instance.type)
     StatusDisplay.on_removed(unit_type, unit_id, instance.type, instance)
     notify_unit_status_removed(unit_type, unit_id, instance.type)
     recheck_touch_on_end(unit_type, unit_id, instance.type)
     after_end.()
-    true
+    [{instance.type, :removed} | chained]
   end
 
   @doc """
@@ -1965,10 +2010,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       notify_mob_status_write(unit_type, unit_id, status_id, :removed)
 
       if StatusStorage.get_status(unit_type, unit_id, status_id) === stored_instance,
-        do: :current,
-        else: :superseded
+        do: {:current, [{status_id, :removed}]},
+        else: {:superseded, [{status_id, :removed}]}
     else
-      :current
+      {:current, []}
     end
   end
 
@@ -1988,14 +2033,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
         stored_instance
       )
     else
-      :superseded
+      {:superseded, []}
     end
   end
 
   defp reconcile_replaced_status_ids([], unit_type, unit_id, status_id, stored_instance) do
     if StatusStorage.get_status(unit_type, unit_id, status_id) === stored_instance,
-      do: :current,
-      else: :superseded
+      do: {:current, []},
+      else: {:superseded, []}
   end
 
   defp reconcile_replaced_status_ids(
@@ -2012,18 +2057,27 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       %StatusEntry{generation: generation}
       when is_integer(generation) and generation > stored_instance.generation ->
         discard_application(unit_type, unit_id, status_id, stored_instance)
-        :superseded
+        {:superseded, []}
 
       replaced_instance ->
-        expire_status_if_current(unit_type, unit_id, replaced_status_id, replaced_instance)
+        events =
+          expire_status_events_if_current(
+            unit_type,
+            unit_id,
+            replaced_status_id,
+            replaced_instance
+          )
 
-        reconcile_replaced_status_ids(
-          [replaced_status_id | rest],
-          unit_type,
-          unit_id,
-          status_id,
-          stored_instance
-        )
+        {outcome, later_events} =
+          reconcile_replaced_status_ids(
+            [replaced_status_id | rest],
+            unit_type,
+            unit_id,
+            status_id,
+            stored_instance
+          )
+
+        {outcome, events ++ later_events}
     end
   end
 
@@ -2077,8 +2131,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
         })
 
       refused ->
-        end_ended_on_start(unit_type, unit_id, status_id, definition)
-        overlap_result(refused)
+        {:ok, events} = end_ended_on_start(unit_type, unit_id, status_id, definition)
+        prepend_events(overlap_result(refused), events)
     end
   end
 
@@ -2122,11 +2176,37 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
           status_params
         )
 
+      {:end_only, status_ids} ->
+        remove_statuses_with_events(unit_type, unit_id, status_ids, status_params)
+
+      {:ok, new_instance, actions} ->
+        status_ids = Enum.map(actions, fn {:end_status, id} -> id end)
+        {:ok, events} = remove_statuses_with_events(unit_type, unit_id, status_ids, status_params)
+
+        unit_type
+        |> store_applied_status(
+          unit_id,
+          status_id,
+          duration,
+          definition,
+          {instance, held, incoming},
+          new_instance,
+          status_params
+        )
+        |> prepend_events(events)
+
       :remove ->
         :ok
 
       {:error, reason} ->
         {:error, reason}
+    end
+  end
+
+  defp prepend_events(result, events) do
+    case event_result(result) do
+      {:ok, committed} -> {:ok, events ++ committed}
+      {:error, reason, committed} -> {:error, reason, events ++ committed}
     end
   end
 
@@ -2169,7 +2249,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   # A refused application still ends what it ends on start.
   defp end_ended_on_start(unit_type, unit_id, status_id, definition) do
-    remove_statuses(unit_type, unit_id, List.delete(definition.end_on_start, status_id))
+    remove_statuses_with_events(
+      unit_type,
+      unit_id,
+      List.delete(definition.end_on_start, status_id),
+      []
+    )
   end
 
   # Inside the store's compare-and-swap the application meets what is current
@@ -2283,20 +2368,28 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
          definition,
          status_params
        ) do
-    with :current <-
-           reconcile_replaced_same_status(
-             unit_type,
-             unit_id,
-             status_id,
-             stored_instance,
-             prior_instance,
-             definition
-           ),
-         :current <-
-           reconcile_replaced_statuses(unit_type, unit_id, status_id, stored_instance, definition) do
-      finish_application(unit_type, unit_id, status_id, stored_instance, status_params)
+    {same_status, same_events} =
+      reconcile_replaced_same_status(
+        unit_type,
+        unit_id,
+        status_id,
+        stored_instance,
+        prior_instance,
+        definition
+      )
+
+    if same_status == :current do
+      {outcome, events} =
+        reconcile_replaced_statuses(unit_type, unit_id, status_id, stored_instance, definition)
+
+      result =
+        if outcome == :current,
+          do: finish_application(unit_type, unit_id, status_id, stored_instance, status_params),
+          else: :ok
+
+      prepend_events(result, same_events ++ events)
     else
-      :superseded -> :ok
+      {:ok, same_events}
     end
   end
 
@@ -2318,6 +2411,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
           maybe_refresh_owner(unit_type, unit_id, true,
             owner_refresh: Keyword.get(status_params, :owner_refresh, :auto)
           )
+
+          {:ok, [{status_id, :apply}]}
         else
           :ok
         end
@@ -2352,13 +2447,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   is active. Returns whether the captured entry was removed.
   """
   @spec expire_status_if_current(unit_type(), integer(), atom(), StatusEntry.t()) :: boolean()
-  def expire_status_if_current(unit_type, unit_id, status_id, instance) do
+  def expire_status_if_current(unit_type, unit_id, status_id, instance),
+    do: expire_status_events_if_current(unit_type, unit_id, status_id, instance) != []
+
+  defp expire_status_events_if_current(unit_type, unit_id, status_id, instance) do
     if StatusStorage.remove_status_if_current(unit_type, unit_id, status_id, instance) do
-      expire_status_entry(unit_type, unit_id, status_id, instance)
+      events = expire_status_entry(unit_type, unit_id, status_id, instance)
       notify_mob_status_write(unit_type, unit_id, status_id, :removed)
-      true
+      events
     else
-      false
+      []
     end
   end
 
@@ -2402,12 +2500,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
 
     module.on_expire({unit_type, unit_id}, instance, context)
-    end_on_end(unit_type, unit_id, status_id, &remove_status_without_refresh/3)
+    chained = end_on_end_events(unit_type, unit_id, status_id)
 
     if is_nil(StatusStorage.get_status(unit_type, unit_id, status_id)) do
       StatusDisplay.on_removed(unit_type, unit_id, status_id, instance)
       recheck_touch_on_end(unit_type, unit_id, status_id)
     end
+
+    [{status_id, :removed} | chained]
   end
 
   # An OnTouch status (Hiding, Cloaking, Chase Walk) ending on a player re-runs
@@ -2884,17 +2984,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       current ->
         current
     end)
-  end
-
-  defp with_active_status(unit_type, unit_id, status_id, fun) do
-    with definition when definition != nil <- Registry.get_definition(status_id),
-         instance when instance != nil <- StatusStorage.get_status(unit_type, unit_id, status_id) do
-      fun.(definition.module, instance, end_context(unit_type, unit_id, instance))
-    else
-      _ -> :ok
-    end
-
-    :ok
   end
 
   defp get_entity_info(unit_type, unit_id) do
