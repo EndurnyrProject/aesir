@@ -118,13 +118,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.DungeonLeverTest do
     gid = gid_for(castle.map)
     :ok = CastleStore.hydrate(%{castle.id => row(5)})
 
-    test_pid = self()
-
-    stub(PlayerSession, :script_apply, fn _pid, op ->
-      send(test_pid, {:script_apply, op})
-      {:ok, %PlayerState{character_id: 1, character_name: "TestMember", account_id: 100}}
-    end)
-
     ctx = build_ctx(castle.map, gid, char_id: 1, guild_id: 5)
     {:ok, pid} = start_interaction(ctx)
     ref = Process.monitor(pid)
@@ -215,7 +208,29 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.DungeonLeverTest do
     assert reason in [:normal, :noproc]
   end
 
-  defp start_interaction(ctx), do: Interaction.start(self(), DungeonLever, ctx)
+  defp start_interaction(ctx) do
+    test_pid = self()
+
+    stub(PlayerSession, :script_apply, fn _pid, op ->
+      send(test_pid, {:script_apply, op})
+
+      game_state =
+        case op do
+          {:set_temp_var, key, value} ->
+            %{
+              ctx.game_state
+              | temp_vars: Map.put(ctx.game_state.temp_vars, to_string(key), value)
+            }
+
+          _other ->
+            ctx.game_state
+        end
+
+      {:ok, game_state}
+    end)
+
+    Interaction.start(self(), DungeonLever, ctx)
+  end
 
   defp build_ctx(map, gid, opts \\ []) do
     %Ctx{

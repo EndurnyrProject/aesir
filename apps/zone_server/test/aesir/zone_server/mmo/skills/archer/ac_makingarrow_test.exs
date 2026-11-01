@@ -141,16 +141,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcMakingarrowTest do
       assert_receive {:DOWN, ^ref, :process, ^pid, _reason}
     end
 
-    test "an out-of-range choice crafts nothing",
+    test "an out-of-range choice disconnects without crafting",
          %{game_state: game_state, session_pid: session_pid} do
       {pid, ref} = start_dialog(game_state, session_pid)
 
       assert_receive {:send, _, {:npc_dialog, %NpcDialog{expect: :MENU}}}
+      session_ref = Process.monitor(session_pid)
       interact(pid, {:choice, 99})
 
-      assert_receive {:send, _, {:npc_dialog, %NpcDialog{expect: :CLOSE}}}
-      refute_received {:script_op, _}
+      assert_receive {:DOWN, ^session_ref, :process, ^session_pid, :normal}
       assert_receive {:DOWN, ^ref, :process, ^pid, :normal}
+      refute_received {:send, _, {:npc_dialog, %NpcDialog{expect: :CLOSE}}}
+      refute_received {:script_op, _}
     end
 
     test "cancel ends the interaction without crafting",
