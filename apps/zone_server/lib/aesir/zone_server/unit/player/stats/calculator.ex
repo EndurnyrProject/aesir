@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
   alias Aesir.ZoneServer.Unit.Player.DieCounter
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold
+  alias Aesir.ZoneServer.Unit.Player.Stats.StatusSelection
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
   alias Aesir.ZoneServer.Unit.Stats, as: UnitStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -76,6 +77,41 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
         ) :: Stats.t()
   def calculate_stats(%Stats{} = stats, player_id, equipped_items, map_name) do
     calculate_stats(stats, player_id, equipped_items, map_name, character_info(player_id))
+  end
+
+  @doc """
+  Recalculates only the channels selected by a committed status event.
+
+  Empty selections refresh live status modifiers without changing published
+  numeric fields. Partial selections retain unrelated fields and regeneration
+  generation. All/Base events perform the full equipment calculation.
+  """
+  @spec calculate_status_change(Stats.t(), integer(), atom(), :apply | :removed) :: Stats.t()
+  def calculate_status_change(%Stats{} = stats, player_id, status_id, event) do
+    selection =
+      StatusSelection.affected_fields(CalcFlags.for_event(status_id, event), GameMode.mode())
+
+    if selection.full? do
+      calculated = calculate_stats(stats, player_id)
+
+      if calculated.generation == stats.generation,
+        do: Stats.force_full_recalculation(calculated),
+        else: calculated
+    else
+      status_stats =
+        StatusSelection.project(stats, apply_status_effects(stats, player_id), selection)
+
+      calculated =
+        if MapSet.size(selection.combat) > 0 or MapSet.size(selection.derived) > 0 do
+          status_stats
+          |> calculate_derived_stats()
+          |> calculate_combat_stats(calculation_map(character_info(player_id)))
+        else
+          status_stats
+        end
+
+      StatusSelection.project(stats, calculated, selection)
+    end
   end
 
   defp calculate_stats(stats, player_id, equipped_items, map_name, character_info) do
