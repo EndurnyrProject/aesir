@@ -65,7 +65,13 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculations do
 
     flee = adjusted_flee + Stats.get_status_modifier(stats, :flee)
     rate = stats.modifiers |> Map.get(:status_effects, %{}) |> Map.get(:flee_rate, 0)
-    max(div(flee * (100 + rate), 100), 1)
+    flee = flee + div(flee * rate, 100)
+
+    blind_rate =
+      stats.modifiers |> Map.get(:status_effects, %{}) |> Map.get(:blind_accuracy_rate, 0)
+
+    flee = flee - div(flee * blind_rate, 100)
+    flee |> max(1) |> min(32_767)
   end
 
   @doc "Calculates player perfect dodge under the active ruleset."

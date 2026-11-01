@@ -36,8 +36,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
       assert {:ok, :sc_watk_element} = Resolver.resolve_status("SC_WATK_ELEMENT")
     end
 
-    test "maps the SC_INCAGI alias to :sc_increaseagi" do
-      assert {:ok, :sc_increaseagi} = Resolver.resolve_status("SC_INCAGI")
+    test "keeps flat AGI separate from Increase AGI and resolves the remaining stat buffs" do
+      assert {:ok, :sc_incagi} = Resolver.resolve_status("SC_INCAGI")
+      assert {:ok, :sc_increaseagi} = Resolver.resolve_status("SC_INCREASEAGI")
+      assert {:ok, :sc_incvit} = Resolver.resolve_status("SC_INCVIT")
+      assert {:ok, :sc_inchitrate} = Resolver.resolve_status("SC_INCHITRATE")
     end
 
     test "unknown status is an unknown_symbol error" do

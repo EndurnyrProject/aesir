@@ -4188,7 +4188,7 @@
   on_use: |-
     ctx = sc_start(ctx, :sc_incstr, 5400000, 8)
     ctx = sc_start(ctx, :sc_incdex, 5400000, 4)
-    ctx = sc_start(ctx, :sc_increaseagi, 5400000, 6)
+    ctx = sc_start(ctx, :sc_incagi, 5400000, 6)
     ctx = sc_start(ctx, :sc_atkpotion, 5400000, 32)
     ctx = sc_start(ctx, :sc_incflee, 5400000, 5)
     ctx
@@ -4197,6 +4197,12 @@
 - aegis_name: Internet_Cafe3
   id: 12284
   name: Internet Cafe3
+  on_use: |-
+    ctx = sc_start(ctx, :sc_incint, 5400000, 8)
+    ctx = sc_start(ctx, :sc_incvit, 5400000, 4)
+    ctx = sc_start(ctx, :sc_incdex, 5400000, 6)
+    ctx = sc_start(ctx, :sc_matkpotion, 5400000, 40)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Internet_Cafe4
@@ -4205,7 +4211,7 @@
   on_use: |-
     ctx = sc_start(ctx, :sc_incdex, 5400000, 8)
     ctx = sc_start(ctx, :sc_incluk, 5400000, 4)
-    ctx = sc_start(ctx, :sc_increaseagi, 5400000, 6)
+    ctx = sc_start(ctx, :sc_incagi, 5400000, 6)
     ctx = sc_start(ctx, :sc_atkpotion, 5400000, 24)
     ctx = sc_start(ctx, :sc_matkpotion, 5400000, 24)
     ctx
@@ -4635,7 +4641,7 @@
   on_use: |-
     ctx = sc_start(ctx, :sc_incstr, 180000, 2)
     ctx = sc_start(ctx, :sc_incint, 180000, 2)
-    ctx = sc_start(ctx, :sc_increaseagi, 180000, 2)
+    ctx = sc_start(ctx, :sc_incagi, 180000, 2)
     ctx
   type: usable
   weight: 100
@@ -4760,6 +4766,13 @@
   buy: 2
   id: 12354
   name: Buche De Noel
+  on_use: |-
+    ctx = specialeffect2(ctx, :angelus)
+    ctx = sc_start(ctx, :sc_incmhprate, 600000, 3)
+    ctx = sc_start(ctx, :sc_incmsprate, 600000, 3)
+    ctx = sc_start(ctx, :sc_inchitrate, 600000, 3)
+    ctx = sc_start(ctx, :sc_inccri, 600000, 7)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Xmas_Gift
@@ -9669,6 +9682,11 @@
   buy: 20
   id: 13830
   name: Stat Boost 1
+  on_use: |-
+    ctx = sc_start(ctx, :sc_incstr, 60000, 5)
+    ctx = sc_start(ctx, :sc_incagi, 60000, 5)
+    ctx = sc_start(ctx, :sc_incvit, 60000, 5)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Stat_Boost2
@@ -9686,12 +9704,22 @@
   buy: 20
   id: 13832
   name: Stat Boost 3
+  on_use: |-
+    ctx = sc_start(ctx, :sc_incagi, 60000, 5)
+    ctx = sc_start(ctx, :sc_incvit, 60000, 5)
+    ctx = sc_start(ctx, :sc_incdex, 60000, 5)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Stat_Boost4
   buy: 20
   id: 13833
   name: Stat Boost 4
+  on_use: |-
+    ctx = sc_start(ctx, :sc_incint, 60000, 5)
+    ctx = sc_start(ctx, :sc_incvit, 60000, 5)
+    ctx = sc_start(ctx, :sc_incdex, 60000, 5)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Dun_Tele_Scroll2_Box5

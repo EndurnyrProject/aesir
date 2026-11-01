@@ -151,8 +151,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
       assert :ok = Interpreter.apply_status(:player, player_id, :sc_blind, val1: 1, tick: 30_000)
 
       modifiers = Interpreter.get_all_modifiers(:player, player_id)
-      assert modifiers[:hit] == -25
-      assert modifiers[:flee] == -25
+      assert modifiers == %{blind_accuracy_rate: 25}
     end
 
     test "multiple statuses stack modifiers correctly", %{player_id: player_id} do
@@ -166,10 +165,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
       # Both statuses should contribute
       # From curse (rAthena: set to 0, not -999)
       assert modifiers[:luk] == 0
-      # From blind
-      assert modifiers[:hit] == -25
-      # From blind
-      assert modifiers[:flee] == -25
+      # Blind's percentage is consumed after the flat and rate accuracy bonuses.
+      assert modifiers[:blind_accuracy_rate] == 25
+      refute Map.has_key?(modifiers, :hit)
+      refute Map.has_key?(modifiers, :flee)
     end
   end
 

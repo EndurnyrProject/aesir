@@ -19,7 +19,15 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas do
 
   @typedoc "Already aggregated stat-derivation modifiers, not damage-stage rates."
   @type modifiers :: %{
-          optional(:def | :def_cut_rate | :mdef | :hit | :flee | :hom_aspd_rate) => integer()
+          optional(
+            :def
+            | :def_cut_rate
+            | :mdef
+            | :hit
+            | :flee
+            | :hom_aspd_rate
+            | :blind_accuracy_rate
+          ) => integer()
         }
 
   @typedoc "Captured numeric inputs with species eligibility resolved by the caller."
@@ -75,8 +83,12 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas do
     bounded_delay = stat_delay |> max(100) |> min(8_000)
     delay = div(bounded_delay * (1_000 - haste), 1_000) |> max(100) |> min(8_000)
 
+    blind_rate = Map.get(input.modifiers, :blind_accuracy_rate, 0)
+
     combat =
       Map.merge(combat, %{
+        hit: max(combat.hit - div(combat.hit * blind_rate, 100), 1),
+        flee: max(combat.flee - div(combat.flee * blind_rate, 100), 1),
         matk_min: combat.matk,
         matk_max: combat.matk,
         critical: 1 + div(input.effective.luk, 3),

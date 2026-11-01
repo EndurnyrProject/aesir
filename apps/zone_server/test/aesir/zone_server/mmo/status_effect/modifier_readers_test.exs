@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                # Stats.get_status_modifier/2 call sites + MobState.to_combatant
                :hit,
                :hit_rate,
+               :blind_accuracy_rate,
                :flee,
                :flee_rate,
                :atk,

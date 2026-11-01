@@ -134,6 +134,7 @@ sc_incallstatus	survives	survives
 sc_incatkrate	survives	survives
 sc_inccri	survives	survives
 sc_incdefrate	survives	survives
+sc_incagi	survives	survives
 sc_incdex	survives	survives
 sc_incflee	survives	survives
 sc_incflee2	survives	survives
@@ -147,6 +148,7 @@ sc_incmatkrate	survives	survives
 sc_incmhprate	survives	survives
 sc_incmsprate	survives	survives
 sc_incstr	survives	survives
+sc_incvit	survives	survives
 sc_increaseagi	ends	ends
 sc_increase_maxsp	ends	ends
 sc_infinity_drink	ends	absent

@@ -431,14 +431,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
     heal_matk_min = base_matk_min + wmatk_min
     heal_matk_max = base_matk_max + wmatk_max
 
-    hit =
+    status_hit = Stats.get_status_modifier(stats, :hit)
+
+    equipment_hit =
       stats
       |> PlayerCombatCalc.calculate_hit()
-      |> apply_rate(
-        Stats.get_equipment_modifier(stats, :hit_rate) +
-          Stats.get_status_modifier(stats, :hit_rate)
-      )
-      |> max(0)
+      |> Kernel.-(status_hit)
+      |> apply_rate(max(Stats.get_equipment_modifier(stats, :hit_rate), -100))
+
+    hit = equipment_hit + status_hit
+    hit = hit + div(hit * Stats.get_status_modifier(stats, :hit_rate), 100)
+    hit = hit - div(hit * Stats.get_status_modifier(stats, :blind_accuracy_rate), 100)
+    hit = hit |> max(1) |> min(32_767)
 
     combat_stats = %UnitStats.CombatStats{
       hit: hit,

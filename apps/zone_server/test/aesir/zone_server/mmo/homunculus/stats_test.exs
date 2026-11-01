@@ -4,6 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.StatsTest do
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Blind
+  alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Runtime
@@ -21,6 +23,22 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.StatsTest do
     assert derived.combat_stats.matk_min == expected_matk
     assert derived.combat_stats.matk_max == expected_matk
     assert Stats.recompute(derived) == derived
+  end
+
+  test "Blind reduces Homunculus HIT and FLEE by a quarter rather than 25 points" do
+    state = state(6_001, %{})
+    baseline = Stats.recompute(state)
+    modifiers = Blind.modifiers(%StatusEntry{type: :sc_blind}, %{})
+    blinded = Stats.recompute(state, modifiers)
+
+    assert blinded.combat_stats.hit ==
+             baseline.combat_stats.hit - div(baseline.combat_stats.hit * 25, 100)
+
+    assert blinded.combat_stats.flee ==
+             baseline.combat_stats.flee - div(baseline.combat_stats.flee * 25, 100)
+
+    assert Stats.recompute(blinded, modifiers) == blinded
+    assert Stats.recompute(blinded) == baseline
   end
 
   test "Divest percent cuts apply after the additive status bonuses" do
