@@ -237,6 +237,43 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
     Ref.equal?(left_root, right_root)
   end
 
+  @doc """
+  Returns whether a cash-party recipient passes visibility and party relations.
+
+  Spawn invincibility, GM invisibility and the caster's Voice of Siren exclude
+  even a self recipient. PvP/GvG no-party flags and battleground team differences
+  exclude other party members; guild relationships do not override that refusal.
+  Hiding and walls do not block this delivery. Status application retains its
+  own life/immunity checks.
+  """
+  @spec cash_party_recipient?(PlayerState.t(), PlayerState.t()) :: boolean()
+  def cash_party_recipient?(caster, target) do
+    reachable_ally?(:player, target) and not siren_recipient?(caster, target) and
+      cash_party_related?(caster, target)
+  end
+
+  defp cash_party_related?(%{character_id: id}, %{character_id: id}), do: true
+
+  defp cash_party_related?(caster, target) do
+    caster.party_id > 0 and caster.party_id == target.party_id and
+      not cash_party_disabled?(target.map_name) and
+      (not MapFlags.get(target.map_name, :battleground) or
+         caster.battleground_team_id == target.battleground_team_id)
+  end
+
+  defp cash_party_disabled?(map_name) do
+    (MapFlags.get(map_name, :pvp) and MapFlags.get(map_name, :pvp_noparty)) or
+      ((MapFlags.gvg?(map_name) or MapFlags.get(map_name, :gvg_te)) and
+         MapFlags.get(map_name, :gvg_noparty))
+  end
+
+  defp siren_recipient?(caster, target) do
+    case StatusStorage.get_status(:player, caster.character_id, :sc_voiceofsiren) do
+      %{val2: id} -> id == target.character_id
+      nil -> false
+    end
+  end
+
   @doc "Returns whether an explicit ground selector chooses a typed unit reference."
   @spec ground_selected?(Relationship.ground_selector(), Ref.t()) :: boolean()
   defdelegate ground_selected?(selector, target_ref), to: Relationship

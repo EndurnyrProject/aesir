@@ -70,6 +70,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           account_id: integer(),
           process_pid: pid() | nil,
           party_id: non_neg_integer(),
+          battleground_team_id: non_neg_integer(),
           guild_id: non_neg_integer(),
           pvp_point: integer(),
           pvp_won: non_neg_integer(),
@@ -385,6 +386,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # kept current by Party.Manager pushes (`characters.party_id` is the
     # source of truth; this mirrors it for the session's lifetime).
     party_id: 0,
+    # Runtime team identity; zero means no battleground team.
+    battleground_team_id: 0,
 
     # Guild membership (0 = none), sourced from the Character at spawn and
     # kept current by Guild.Manager pushes (`characters.guild_id` is the

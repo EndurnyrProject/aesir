@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PartyBuff do
   """
 
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.State, as: PartyState
@@ -56,6 +57,51 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PartyBuff do
     |> Enum.each(&apply_to_member(&1, caster, status, params, range, eligible?))
 
     :ok
+  end
+
+  @doc """
+  Applies a cash-party status to online, world-placed members, including the caster.
+
+  Missing parties have no recipients. Every member passes the same square-range
+  and targeting gates. Only the caster's committed events are returned for inline
+  reconciliation; other recipients receive their normal owner notifications.
+  The original skill invocation remains active throughout delivery.
+  """
+  @spec apply_cash(PlayerState.t(), atom(), keyword(), non_neg_integer()) ::
+          [StatusInterpreter.status_event()]
+  def apply_cash(caster, status, params, range) do
+    params = Keyword.merge(params, caster_id: caster.character_id, source_type: :player)
+
+    with true <- Unit.living?(caster),
+         {:ok, party} <- PartyManager.get(caster.party_id) do
+      party
+      |> PartyState.online_members()
+      |> Enum.flat_map(&apply_cash_member(&1.char_id, caster, status, params, range))
+    else
+      _no_recipients -> []
+    end
+  end
+
+  defp apply_cash_member(id, caster, status, params, range) do
+    with {:ok, {_module, %PlayerState{pending_map_load: nil} = member, _pid}} <-
+           UnitRegistry.get_unit(:player, id),
+         true <- member.map_name == caster.map_name,
+         true <-
+           range == 0 or Geometry.in_tile_range?(caster.x, caster.y, member.x, member.y, range),
+         true <- Targeting.cash_party_recipient?(caster, member) do
+      own? = id == caster.character_id
+      params = Keyword.put(params, :owner_refresh, if(own?, do: :defer, else: :notify))
+
+      events =
+        case StatusInterpreter.apply_status_with_events(:player, id, status, params) do
+          {:ok, events} -> events
+          {:error, _reason, events} -> events
+        end
+
+      if own?, do: events, else: []
+    else
+      _ineligible -> []
+    end
   end
 
   defp apply_to_member(member, caster, status, params, range, eligible?) do
