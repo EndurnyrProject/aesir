@@ -68,7 +68,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.HomunculusStatusTest do
     assert :ok = Interpreter.apply_status(:homunculus, gid, :sc_increaseagi, val1: 4, val2: 7)
     assert StatusStorage.has_status?(:homunculus, gid, :sc_increaseagi)
 
-    assert_eventually(fn -> PlayerSession.get_state(session.pid).homunculus.agi == 19 end)
+    assert_eventually(fn -> PlayerSession.get_state(session.pid).homunculus.agi == 18 end)
+    assert %{val1: 4, val2: 6} = StatusStorage.get_status(:homunculus, gid, :sc_increaseagi)
     entry = StatusStorage.get_status(:homunculus, gid, :sc_increaseagi)
     context = ContextBuilder.build_context(:homunculus, gid, nil, entry)
     homunculus = PlayerSession.get_state(session.pid).homunculus

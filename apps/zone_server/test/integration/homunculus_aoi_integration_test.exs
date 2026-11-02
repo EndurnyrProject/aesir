@@ -495,7 +495,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAoiIntegrationTest do
     |> Character.changeset(%{
       account_id: account.id,
       char_num: 0,
-      name: String.slice("#{prefix}#{suffix}", 0, 24),
+      name: "#{String.slice(prefix, 0, 3)}#{suffix}",
       class: 18,
       base_level: 50,
       job_level: 50,

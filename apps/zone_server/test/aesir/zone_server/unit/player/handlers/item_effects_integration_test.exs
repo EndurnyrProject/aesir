@@ -118,9 +118,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemEffectsIntegrationTest do
 
         test_pid = self()
 
-        stub(StatusInterpreter, :apply_status, fn :player, 1000, applied, _params ->
+        stub(StatusInterpreter, :apply_status_with_events, fn :player, 1000, applied, _params ->
           send(test_pid, {:status_applied, applied})
-          :ok
+          {:ok, []}
         end)
 
         expect(InventoryOps, :remove, fn 1000, inventory, @slot, 1 ->
