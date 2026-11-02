@@ -70,7 +70,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpAssumptioTest do
 
     assert {:ok, ^caster} = HpAssumptio.cast(caster, {:unit, @ally_id}, 1, definition())
 
-    assert_receive {:stats, :status_changed}
+    assert_receive {:stats, {:status_changed, :sc_assumptio, :apply}}
+    refute_receive {:stats, :status_changed}, 0
   end
 
   test "a player may target themself", %{caster: caster} do
