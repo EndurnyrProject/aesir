@@ -44,7 +44,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
   def refresh_concealment(%{game_state: player} = state) do
     reveal? = PlayerState.intravision?(player)
 
-    for {type, ids} <- [player: player.visible_players, mob: player.visible_mobs],
+    players = SpatialIndex.get_visible_players(player.character_id)
+
+    for {type, ids} <- [player: players, mob: player.visible_mobs],
         id <- ids || [],
         {type, id} != {:player, player.character_id} do
       refresh_concealed_unit(type, id, player.map_name, reveal?, state.connection_pid)

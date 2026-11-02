@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.IntravisionRefreshTest do
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
@@ -47,11 +48,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.IntravisionRefreshTest do
     player = %{player | visible_players: MapSet.new([concealed.character_id])}
     :ok = UnitRegistry.register_player(player, self())
     :ok = UnitRegistry.register_player(concealed, self())
+    :ok = SpatialIndex.update_visibility(player.character_id, concealed.character_id, true)
 
     :ok =
       StatusStorage.apply_status(:player, concealed.character_id, :sc_hiding, duration: 30_000)
 
     %{state: %SessionState{game_state: player, connection_pid: self()}, concealed: concealed}
+  end
+
+  test "a stationary observer refreshes a newly entered spatially visible player", %{
+    state: state,
+    concealed: concealed
+  } do
+    id = state.game_state.character_id
+    target_id = concealed.character_id
+    :ok = SpatialIndex.update_visibility(id, target_id, true)
+    state = %{state | game_state: %{state.game_state | visible_players: MapSet.new()}}
+
+    assert {:ok, events} =
+             Interpreter.apply_status_with_events(:player, id, :sc_intravision,
+               duration: 30_000,
+               owner_refresh: :defer
+             )
+
+    StatusManager.refresh_events(state, events)
+
+    assert_receive {:send, :world,
+                    {:unit_state_change, %UnitStateChange{unit_id: ^target_id, effect_state: 0}}}
   end
 
   test "intravision refresh is observer-only for existing and entering concealed units", %{
