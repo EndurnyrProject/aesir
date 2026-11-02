@@ -86,6 +86,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                :damage_multiplier,
                # PhysicalAttack.Renewal weapon component (renewal SC_WATK_ELEMENT)
                :watk_element_rate,
+               # PhysicalAttack.Renewal equipment component after cardfix, before EDP
+               :post_card_equip_atk,
                :def_bonus,
                :def_rate,
                :def2_rate,

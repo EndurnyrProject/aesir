@@ -46,6 +46,38 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
     assert classic(parts(), context) == 230
   end
 
+  test "Renewal post-card equipment ATK bypasses early elements cards and percent ATK but takes EDP" do
+    context =
+      neutral_context()
+      |> Map.merge(%{
+        weapon_element: 0.25,
+        attacker_cards: [100],
+        defender_cards: %{weapon: [25], status: []},
+        damage_multiplier: 0.5,
+        equipment_atk_rate: 100,
+        patk: 50,
+        skill_ratio: 200,
+        defense_mode: :simple,
+        defense: %{hard_def: 0, soft_def: 7, attacker_level: nil, ignore_soft_def?: false}
+      })
+
+    for hand <- [:right_hand, :left_hand] do
+      hit = %{parts() | hand: hand}
+
+      for {edp_level, bonus_damage} <- [{0, 120}, {5, 480}] do
+        base = Map.put(context, :edp_level, edp_level)
+        boosted = Map.put(base, :post_card_equip_atk, 40)
+        assert renewal(hit, boosted) - renewal(hit, base) == bonus_damage
+        assert classic(hit, boosted) == classic(hit, base)
+      end
+
+      excluded = Map.merge(context, %{edp_level: 5, skill_id: 149})
+
+      assert renewal(hit, Map.put(excluded, :post_card_equip_atk, 40)) - renewal(hit, excluded) ==
+               120
+    end
+  end
+
   test "Renewal equipment ATK rate is separate from cardfix and PAtk excludes mastery" do
     context =
       neutral_context()

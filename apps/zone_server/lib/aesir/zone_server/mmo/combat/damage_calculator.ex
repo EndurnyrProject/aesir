@@ -1314,6 +1314,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       skill_taken_rate: EquipmentBonuses.sub_skill_rate(defender, skill_id),
       flat_bonus:
         Map.get(attacker_modifiers, :damage_bonus, 0) + Map.get(attacker_modifiers, :atk_bonus, 0),
+      post_card_equip_atk: Map.get(attacker_modifiers, :post_card_equip_atk, 0),
       atk_rate: atk_percent_delta(attacker_type, skill_id, attacker_modifiers),
       status_skill_ratio: status_skill_ratio(attacker_modifiers, skill_id),
       damage_multiplier: Map.get(attacker_modifiers, :damage_multiplier, 0),

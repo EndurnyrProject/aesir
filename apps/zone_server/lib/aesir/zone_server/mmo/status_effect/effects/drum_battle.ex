@@ -2,8 +2,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DrumBattle do
   @moduledoc """
   Drum of the Battlefield (SC_DRUMBATTLE), keyed by the skill level in `val1`.
 
-  Renewal: ATK `15 + 5 * level` and DEF `15 * level`; the status ends the other
-  ensembles' statuses. Pre-renewal: the ensemble field grants weapon ATK
+  Renewal: live equipment ATK `15 + 5 * level`, added after card modifiers
+  and before EDP, plus DEF `15 * level`. ATK is not part of the cached stat
+  calculation. New starts capture those amounts in val2/val3; loaded starts
+  retain their saved values. The status ends the other ensembles' statuses.
+  Pre-renewal: the ensemble field grants weapon ATK
   `(level + 1) * 25` and DEF `(level + 1) * 2`, ends no other status and lasts
   60 seconds.
   """
@@ -13,7 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DrumBattle do
     no_dispel: true,
     no_clear_buff: false,
     properties: [:buff],
-    calc_flags: [:atk, :watk, :def],
+    flags: [:no_clearance, :no_banishing_buster],
+    calc_flags: [renewal: [:def], pre_renewal: [:watk, :def]],
     end_on_start: [
       renewal: [
         :sc_richmankim,
@@ -34,10 +38,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DrumBattle do
   alias Aesir.Commons.GameMode
 
   @impl true
-  def modifiers(%{val1: level}, _context) do
+  def on_apply(_target, instance, %{loaded: false}) do
     case GameMode.mode() do
-      :renewal -> %{atk: 15 + 5 * level, def: 15 * level}
-      :pre_renewal -> %{watk: (level + 1) * 25, def: (level + 1) * 2}
+      :renewal -> {:ok, %{instance | val2: 15 + 5 * instance.val1, val3: 15 * instance.val1}}
+      :pre_renewal -> {:ok, instance}
+    end
+  end
+
+  def on_apply(_target, instance, _context), do: {:ok, instance}
+
+  @impl true
+  def modifiers(instance, _context) do
+    case GameMode.mode() do
+      :renewal -> %{post_card_equip_atk: instance.val2, def: instance.val3}
+      :pre_renewal -> %{watk: (instance.val1 + 1) * 25, def: (instance.val1 + 1) * 2}
     end
   end
 end

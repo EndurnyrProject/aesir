@@ -13,10 +13,12 @@ defmodule Aesir.ZoneServer.Integration.EnsembleIntegrationTest do
   alias Aesir.Repo
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @map "ensemble_integration"
@@ -34,6 +36,7 @@ defmodule Aesir.ZoneServer.Integration.EnsembleIntegrationTest do
   setup do
     map_cache = EtsTable.table_for(:map_cache)
     :ets.insert(map_cache, {@map, MapData.new(@map, 200, 200)})
+    start_per_test_map(@map)
 
     on_exit(fn ->
       ClusterTestHelper.clear_all()
@@ -45,6 +48,9 @@ defmodule Aesir.ZoneServer.Integration.EnsembleIntegrationTest do
   test "a Bard and Dancer pair at the Bard's level and both become fatigued" do
     %{bard: bard, dancer: dancer, nearby: nearby, far: far} = start_full_party()
     baseline = get_player_state(nearby.pid).stats.combat_stats
+    target = start_mob_session(map_name: @map, position: {156, 150}, hp: 10_000, max_hp: 10_000)
+    on_exit(fn -> end_mob_session(target) end)
+    baseline_damage = weapon_damage(nearby, target)
 
     cast(bard, @drum, 5)
 
@@ -53,8 +59,10 @@ defmodule Aesir.ZoneServer.Integration.EnsembleIntegrationTest do
 
     assert eventually(fn ->
              stats = get_player_state(nearby.pid).stats.combat_stats
-             stats.atk == baseline.atk + 40 and stats.def == baseline.def + 75
+             stats.atk == baseline.atk and stats.def == baseline.def + 75
            end)
+
+    assert weapon_damage(nearby, target) > baseline_damage
 
     assert eventually(fn -> has_status?(bard, @fatigue) end)
     assert eventually(fn -> has_status?(dancer, @fatigue) end)
@@ -140,6 +148,19 @@ defmodule Aesir.ZoneServer.Integration.EnsembleIntegrationTest do
     refute has_status?(bard, :sc_drumbattle)
     refute has_status?(nearby, :sc_drumbattle)
     assert has_status?(bard, :sc_siegfried)
+  end
+
+  defp weapon_damage(player, target) do
+    :rand.seed(:exsss, {101, 103, 107})
+
+    assert {:ok, %{damage: damage}} =
+             DamageCalculator.calculate_damage(
+               PlayerState.to_combatant(get_player_state(player.pid)),
+               MobState.to_combatant(get_mob_state(target.pid)),
+               skip_crit: true
+             )
+
+    damage
   end
 
   defp start_full_party(ensembles \\ [@drum]) do

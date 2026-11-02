@@ -21,17 +21,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdDrumbattlefieldTest do
   end
 
   @tag game_mode: :renewal
-  test "Drum of the Battlefield adds flat ATK and DEF at every pinned level" do
+  test "Drum of the Battlefield adds live ATK without changing cached ATK and recalculates DEF" do
     for {level, expected_atk, expected_def} <- [{1, 20, 15}, {5, 40, 75}] do
-      modifiers =
-        DrumBattle.modifiers(%StatusEntry{type: :sc_drumbattle, val1: level, state: %{}}, %{})
+      {:ok, entry} =
+        DrumBattle.on_apply(
+          {:player, 1},
+          %StatusEntry{type: :sc_drumbattle, val1: level, state: %{}},
+          %{loaded: false}
+        )
 
-      assert modifiers == %{atk: expected_atk, def: expected_def}
+      modifiers = DrumBattle.modifiers(entry, %{})
+
+      assert modifiers == %{post_card_equip_atk: expected_atk, def: expected_def}
       refute Map.has_key?(modifiers, :atk_rate)
       refute Map.has_key?(modifiers, :def_rate)
 
-      assert combat_delta(%{str: 0, vit: 0}, modifiers) == {expected_atk, expected_def}
-      assert combat_delta(%{str: 100, vit: 100}, modifiers) == {expected_atk, expected_def}
+      assert combat_delta(%{str: 0, vit: 0}, modifiers) == {0, expected_def}
+      assert combat_delta(%{str: 100, vit: 100}, modifiers) == {0, expected_def}
     end
   end
 
@@ -41,7 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdDrumbattlefieldTest do
 
     assert metadata.duration == 180_000
     assert metadata.properties == [:buff]
-    assert metadata.calc_flags == [:atk, :watk, :def]
+    assert metadata.calc_flags == [:def]
 
     assert metadata.end_on_start == [
              :sc_richmankim,

@@ -69,10 +69,16 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
   """
   @type defender_cards :: %{weapon: [integer()], status: [integer()]} | nil
 
-  @typedoc "Captured modifier and defense values; implementations perform no lookups."
+  @typedoc """
+  Captured modifier and defense values; implementations perform no lookups.
+
+  `post_card_equip_atk` joins Renewal equipment ATK after its card modifiers
+  and before EDP, without contributing to the earlier percentage ATK part.
+  """
   @type context :: %{
           optional(:defense_mode) => :normal | :simple | :ignore | :soft_only,
           optional(:flat_bonus) => integer(),
+          optional(:post_card_equip_atk) => integer(),
           optional(:atk_rate) => integer(),
           optional(:status_skill_ratio) => integer(),
           optional(:post_defense_atk) => integer(),

@@ -75,8 +75,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
   end
 
   @doc """
-  Runs component cards, the summation, the skill ratio and defense, ending at the
-  reference post-defense minimum of 1.
+  Runs component cards, late equipment ATK, EDP, the summation, the skill ratio
+  and defense, ending at the reference post-defense minimum of 1.
   """
   @spec calculate_components(components(), PhysicalAttack.context()) :: integer()
   def calculate_components(components, context) do
@@ -90,7 +90,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
       |> edp_component(context)
 
     equipment =
-      components.flat_atk |> modified_component(context, :weapon) |> edp_component(context)
+      components.flat_atk
+      |> modified_component(context, :weapon)
+      |> Kernel.+(Map.get(context, :post_card_equip_atk, 0))
+      |> edp_component(context)
 
     percent_atk = PhysicalAttack.damage_multiplier(components.percent_atk, context)
 
