@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :def_rate,
     :def2_rate,
     :mdef,
+    :mdef_rate,
     :hit,
     :flee,
     :critical,

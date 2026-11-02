@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.ItemManagement.NoEquip
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Option
@@ -41,6 +42,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   @type extra_inputs :: %{
           optional(:character_info) => Rathena.character_info() | nil,
           optional(:map_name) => String.t() | nil,
+          optional(:temporary_card_id) => pos_integer() | nil,
           optional(:local_time) => NaiveDateTime.t()
         }
 
@@ -65,7 +67,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   so a level-up recompute refreshes level-gated bonuses without threading the
   inventory through every call site. An empty cache has nothing to refold, so
   that case preserves legacy modifier state while clearing derived equipment
-  proc and direct-status runtime maps.
+  proc and direct-status runtime maps. Supplying `:temporary_card_id`, including
+  `nil`, instead requests an authoritative fold even with no worn items, so
+  ending the temporary source clears its old contribution. Its catalog program
+  runs after worn scripts with zero refine and neutral hand context, without
+  host bonuses, worn-item restrictions, proc hosts or unequip cleanup.
   """
   @spec apply_equipment_modifiers(
           Stats.t(),
@@ -74,7 +80,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
         ) :: Stats.t()
   def apply_equipment_modifiers(stats, equipped_items \\ nil, extra_inputs \\ %{})
 
-  def apply_equipment_modifiers(%Stats{worn_items: []} = stats, nil, _extra_inputs) do
+  def apply_equipment_modifiers(%Stats{worn_items: []} = stats, nil, extra_inputs)
+      when not is_map_key(extra_inputs, :temporary_card_id) do
     %{
       stats
       | equip_autobonuses: %{},
@@ -189,7 +196,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   end
 
   defp fold_with_actives(stats, worn_items, active_inputs, worn_inputs) do
-    fold = fold_worn_items(worn_items, worn_inputs)
+    fold = fold_worn_items(worn_items, worn_inputs) |> fold_temporary_card(worn_inputs)
 
     active =
       retain_active_autobonuses(
@@ -200,6 +207,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
 
     {fold, active, evaluate_actives(active, fold.registrations, worn_items, active_inputs)}
   end
+
+  defp fold_temporary_card(fold, %{temporary_card_id: id} = inputs)
+       when is_integer(id) and id > 0 do
+    case Items.by_id(id) do
+      {:ok, %{on_equip: program}} when is_list(program) ->
+        inputs =
+          inputs
+          |> Map.put(:refine, 0)
+          |> Map.put(:learned_skills, fold.visible)
+          |> Map.drop([:lr_flag, :random_option])
+
+        result = EquipScript.evaluate(program, inputs)
+        %{fold | modifier_steps: [result.modifiers | fold.modifier_steps]}
+
+      _missing_program ->
+        fold
+    end
+  end
+
+  defp fold_temporary_card(fold, _inputs), do: fold
 
   # The active programs run before any worn script, so they see the learned
   # levels and the grants of the active programs before them only.

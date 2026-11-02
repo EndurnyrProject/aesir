@@ -115,19 +115,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
   end
 
   defp calculate_stats(stats, player_id, equipped_items, map_name, character_info) do
+    equipment_inputs =
+      Map.merge(
+        %{character_info: character_info, map_name: map_name},
+        temporary_card_input(player_id)
+      )
+
     stats
     |> apply_job_bonuses()
     |> apply_super_novice_bonus(character_info)
-    |> EquipmentFold.apply_equipment_modifiers(equipped_items, %{
-      character_info: character_info,
-      map_name: map_name
-    })
+    |> EquipmentFold.apply_equipment_modifiers(equipped_items, equipment_inputs)
     |> apply_status_effects(player_id)
     |> apply_passive_modifiers()
     |> calculate_derived_stats()
     |> calculate_combat_stats(map_name)
     |> advance_generation(player_id, map_name)
   end
+
+  defp temporary_card_input(player_id) when is_integer(player_id) do
+    card_id =
+      case StatusStorage.get_status(:player, player_id, :sc_itemscript) do
+        nil -> nil
+        entry -> entry.val1
+      end
+
+    %{temporary_card_id: card_id}
+  end
+
+  defp temporary_card_input(_player_id), do: %{}
 
   # The player's full recalculation (the one that restarts the equipment
   # regeneration intervals) happens when its inputs change: allocated stats,
@@ -519,7 +534,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
         ),
       mdef:
         override(
-          Stats.get_status_modifier(stats, :mdef) + Stats.get_equipment_modifier(stats, :mdef),
+          Stats.get_status_modifier(stats, :mdef) +
+            apply_rate(
+              Stats.get_equipment_modifier(stats, :mdef),
+              max(-100, Stats.get_equipment_modifier(stats, :mdef_rate))
+            ),
           stats,
           :mdef_override
         ),

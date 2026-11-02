@@ -1103,7 +1103,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   def get_race(%__MODULE__{}), do: Race.player_race()
 
   @impl Aesir.ZoneServer.Unit
-  def get_element(%__MODULE__{}), do: {:neutral, 1}
+  def get_element(%__MODULE__{stats: stats}), do: defense_element(stats)
 
   @impl Aesir.ZoneServer.Unit
   def is_boss?(%__MODULE__{}), do: false
@@ -1220,8 +1220,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   defp riding?(option) when is_integer(option), do: (option &&& @riding_option_bit) != 0
   defp riding?(_option), do: false
 
-  defp defense_element(%{modifiers: %{status_effects: %{} = status_effects}}) do
-    Map.get(status_effects, :element_override, {:neutral, 1})
+  defp defense_element(%{modifiers: %{status_effects: %{} = status_effects} = modifiers}) do
+    equipment_element = modifiers |> Map.get(:equipment, %{}) |> Map.get(:def_ele, :neutral)
+    Map.get(status_effects, :element_override, {equipment_element, 1})
   end
 
   defp defense_element(_stats), do: {:neutral, 1}

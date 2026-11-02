@@ -167,7 +167,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandler do
          ) do
       {:reply, :ok, applied} ->
         persist_option(char_id, new_option)
-        committed = commit_option(applied, new_option)
+
+        committed =
+          applied
+          |> commit_option(new_option)
+          |> StatusManager.recalculate_after_status_change()
+
         MessageRouter.send_to(committed.connection_pid, %MountResult{result: :MOUNT_OK})
         {:noreply, committed}
 
@@ -192,7 +197,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandler do
 
     {:reply, :ok, removed} = StatusManager.handle_remove_status(@status_id, dismounting_state)
     persist_option(char_id, new_option)
-    commit_option(removed, new_option)
+
+    removed
+    |> commit_option(new_option)
+    |> StatusManager.recalculate_after_status_change()
   end
 
   # `stats.riding` is a denormalized copy of the `:riding` option bit, kept on
@@ -213,7 +221,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandler do
   defp apply_riding_status(%{game_state: game_state} = state) do
     case StatusManager.handle_apply_status(@status_id, [val1: cavalier_level(game_state)], state) do
       {:reply, :ok, applied} ->
-        applied
+        StatusManager.recalculate_after_status_change(applied)
 
       {:reply, {:error, reason}, _unchanged} ->
         Logger.warning(

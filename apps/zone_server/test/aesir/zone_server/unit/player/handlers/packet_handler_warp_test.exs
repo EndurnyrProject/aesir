@@ -12,6 +12,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerWarpTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.TestEtsSetup
+
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.MapLoaded
   alias Aesir.ZoneServer.Npc.Warp
@@ -19,7 +21,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerWarpTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
+
   setup :set_mimic_from_context
+  setup :setup_ets_tables
 
   setup do
     Mimic.copy(Warps)
@@ -114,6 +119,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerWarpTest do
   defp pending_warp_state(map, x, y) do
     character(map, x, y)
     |> PlayerState.new()
+    |> then(fn player ->
+      %{player | stats: Calculator.calculate_stats(player.stats, player.character_id, nil, map)}
+    end)
     |> Map.put(:pending_map_load, :warp)
   end
 

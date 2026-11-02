@@ -4,8 +4,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.IntravisionRefreshTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.UnitSpawn
   alias Aesir.Net.UnitStateChange
+  alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -14,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.IntravisionRefreshTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
@@ -103,7 +106,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.IntravisionRefreshTest do
     id = state.game_state.character_id
     target_id = concealed.character_id
     player = state.game_state
-    equipped = put_in(player.stats.modifiers.equipment[:intravision], 1)
+
+    gear = [
+      %InventoryItem{
+        id: 1,
+        nameid: 2221,
+        card0: 4198,
+        equip: EquipLocation.location_bit(:head_top)
+      }
+    ]
+
+    equipped = %{player | stats: Calculator.calculate_stats(player.stats, id, gear)}
     equipped_state = StateCommit.commit(state, equipped)
 
     assert_receive {:send, :world,
@@ -119,7 +132,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.IntravisionRefreshTest do
     refute_receive {:send, :world, {:unit_state_change, _}}, 0
 
     player = both.game_state
-    without_equipment = put_in(player.stats.modifiers.equipment[:intravision], 0)
+    without_equipment = %{player | stats: Calculator.calculate_stats(player.stats, id, [])}
     status_only = StateCommit.commit(both, without_equipment)
     assert PlayerState.intravision?(status_only.game_state)
     refute_receive {:send, :world, {:unit_state_change, _}}, 0
@@ -134,7 +147,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.IntravisionRefreshTest do
                     {:unit_state_change, %UnitStateChange{unit_id: ^target_id, effect_state: 2}}}
 
     player = ended.game_state
-    equipped = put_in(player.stats.modifiers.equipment[:intravision], 1)
+    equipped = %{player | stats: Calculator.calculate_stats(player.stats, id, gear)}
     equipped_state = StateCommit.commit(ended, equipped)
     assert_receive {:send, :world, {:unit_state_change, %UnitStateChange{effect_state: 0}}}
 
@@ -158,7 +171,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.IntravisionRefreshTest do
     final =
       StateCommit.commit(
         equipment_only,
-        put_in(player.stats.modifiers.equipment[:intravision], 0)
+        %{player | stats: Calculator.calculate_stats(player.stats, id, [])}
       )
 
     refute PlayerState.intravision?(final.game_state)

@@ -103,6 +103,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bdefrate" => :def_rate,
     "bdef2rate" => :def2_rate,
     "bmdef" => :mdef,
+    "bmdefrate" => :mdef_rate,
     "bhit" => :hit,
     "bflee" => :flee,
     "bcritical" => :critical,
@@ -199,7 +200,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
                                       :near_atk_def,
                                       :critical_def,
                                       :long_atk_def,
-                                      :misc_atk_def
+                                      :misc_atk_def,
+                                      :mdef_rate
                                     ])
   @ammunition_excluded_families [
     :subele,
