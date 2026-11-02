@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Integration.ConsumableSkillWaveTest do
 
   @moduletag :capture_log
 
+  alias Aesir.Commons.ClusterTestHelper
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
@@ -40,7 +41,7 @@ defmodule Aesir.ZoneServer.Integration.ConsumableSkillWaveTest do
     assert {:ok, _} = PartyManager.add_member(party.party_id, ally_character)
     assert {:ok, _} = PartyManager.add_member(party.party_id, far_character)
     assert {:ok, _} = PartyManager.add_member(party.party_id, protected_character)
-    on_exit(fn -> PartyManager.disband(party.party_id, "test finished") end)
+    on_exit(fn -> ClusterTestHelper.clear_all() end)
 
     for id <- [606, 14_588, 14_589, 14_590, 12_311] do
       assert {:ok, _} =
@@ -134,7 +135,10 @@ defmodule Aesir.ZoneServer.Integration.ConsumableSkillWaveTest do
     assert %SkillCastFailed{skill_id: 693} = assert_packet_sent(SkillCastFailed)
     state = get_player_state(caster.pid)
     cooldown = state.skill_cooldowns[693]
-    assert cooldown >= before + 300_000 and cooldown <= after_cast + 300_000
+
+    assert cooldown >= before + 300_000 and cooldown <= after_cast + 300_000,
+           "cooldown=#{inspect(cooldown)}, before=#{before}, after=#{after_cast}"
+
     assert state.stats.generation == baseline.generation
     assert state.stats.combat_stats.flee == baseline.combat_stats.flee
     refute StatusStorage.has_status?(:player, character.id, :sc_partyflee)

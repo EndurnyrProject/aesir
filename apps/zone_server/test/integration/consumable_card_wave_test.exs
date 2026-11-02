@@ -54,14 +54,16 @@ defmodule Aesir.ZoneServer.Integration.ConsumableCardWaveTest do
     assert baseline.modifiers.equipment.hit == 100
     assert [%{id: worn_id}] = baseline.worn_items
     assert worn_id == weapon.id
-    normal_damage = mob_hit(mob, player)
+    normal_damage = weapon_skill_hit(mob, player)
     flush_packets()
 
     use_item(player, 14_598)
     assert PlayerState.get_element(get_player_state(player.pid)) == {:ghost, 1}
     ghost = StatusStorage.get_status(:player, id, :sc_itemscript)
-    ghost_damage = mob_hit(mob, player)
-    assert ghost_damage > 0 and ghost_damage < normal_damage
+    ghost_damage = weapon_skill_hit(mob, player)
+
+    assert ghost_damage > 0 and ghost_damage < normal_damage,
+           "expected Ghostring to reduce a positive hit, normal=#{normal_damage}, ghost=#{ghost_damage}"
 
     assert [%StatusChange{efst: 302, on: true, val1: 0, val2: 0, val3: 0}] =
              collect_packets_of_type(StatusChange)
@@ -138,10 +140,19 @@ defmodule Aesir.ZoneServer.Integration.ConsumableCardWaveTest do
     assert Persistence.load_inventory(character.id) == []
   end
 
-  defp mob_hit(mob, player) do
+  defp weapon_skill_hit(mob, player) do
     before_hp = get_player_state(player.pid).stats.current_state.hp
     :rand.seed(:exsss, {101, 103, 107})
-    assert :ok = Combat.execute_mob_attack(get_mob_state(mob.pid), player.character.id)
+
+    assert :ok =
+             Combat.execute_skill_attack(get_mob_state(mob.pid), {:player, player.character.id},
+               skill_id: 5,
+               skill_level: 1,
+               skill_ratio: 130,
+               hit_rate_bonus_pct: 5,
+               skip_crit: true
+             )
+
     assert eventually(fn -> get_player_state(player.pid).stats.current_state.hp < before_hp end)
     before_hp - get_player_state(player.pid).stats.current_state.hp
   end

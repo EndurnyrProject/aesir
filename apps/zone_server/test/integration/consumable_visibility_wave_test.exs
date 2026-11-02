@@ -59,8 +59,8 @@ defmodule Aesir.ZoneServer.Integration.ConsumableVisibilityWaveTest do
     hide = Option.id(:hide)
 
     assert eventually(fn ->
-             MapSet.member?(get_player_state(observer.pid).visible_players, target) and
-               MapSet.member?(get_player_state(plain.pid).visible_players, target)
+             SpatialIndex.can_see?(observer_id, target) and
+               SpatialIndex.can_see?(plain.character.id, target)
            end)
 
     assert :ok =
