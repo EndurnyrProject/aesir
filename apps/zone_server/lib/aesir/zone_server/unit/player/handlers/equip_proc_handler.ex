@@ -72,6 +72,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
     end
   end
 
+  @doc "Reconciles changed inventory-derived status inputs without rebuilding unchanged equipment."
+  @spec reconcile_inventory_change(SessionState.t()) :: {:noreply, SessionState.t()}
+  def reconcile_inventory_change(%{game_state: %{stats: stats}} = state) do
+    if state.applied_equip_statuses == stats.equip_statuses and
+         state.applied_card_unequip_effects == stats.card_unequip_effects do
+      {:noreply, state}
+    else
+      reconcile_statuses(state)
+    end
+  end
+
   @spec reconcile_statuses(SessionState.t()) :: {:noreply, SessionState.t()}
   def reconcile_statuses(%{game_state: game_state} = state) do
     character_id = game_state.character_id

@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
@@ -29,6 +30,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
   setup do
     Aesir.TestEtsSetup.setup_ets_tables(%{})
     :ok
+  end
+
+  test "an unchanged inventory notification preserves cached flee while explicit rebuilds still run" do
+    state = state_with_equip_statuses(%{})
+    :ok = UnitRegistry.register_player(state.game_state, self())
+    :ok = StatusStorage.apply_status(:player, 1, :sc_partyflee, val1: 5)
+    baseline = state.game_state.stats
+    assert {:noreply, unchanged} = PlayerSession.handle_info(:inventory_changed, state)
+    assert unchanged.game_state.stats == baseline
+    assert {:noreply, rebuilt} = EquipProcHandler.reconcile_statuses(unchanged)
+    assert rebuilt.game_state.stats.combat_stats.flee == baseline.combat_stats.flee + 50
+
+    changed = put_in(unchanged.game_state.stats.equip_statuses, %{sc_summer: {:infinite, 1}})
+    assert {:noreply, reconciled} = EquipProcHandler.reconcile_inventory_change(changed)
+    assert reconciled.applied_equip_statuses == %{sc_summer: {:infinite, 1}}
+    assert StatusStorage.has_status?(:player, 1, :sc_summer)
   end
 
   test "activation installs the generation before one stat calculation and sync" do

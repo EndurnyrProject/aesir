@@ -864,7 +864,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   # this player's quest-icon bubbles.
   @impl true
   def handle_info(:inventory_changed, state) do
-    {:noreply, state} = EquipProcHandler.reconcile_statuses(state)
+    {:noreply, state} = EquipProcHandler.reconcile_inventory_change(state)
     QuestInfoView.request_refresh()
     {:noreply, state}
   end
