@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Intravision do
     id: :sc_intravision,
     no_dispel: true,
     no_clear_buff: false,
+    flags: [:no_clearance, :no_banishing_buster],
     properties: [:buff],
     icon: :clairvoyance
 
