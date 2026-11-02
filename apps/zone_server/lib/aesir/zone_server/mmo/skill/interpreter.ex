@@ -975,7 +975,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:error, atom(), PlayerState.t(), :before_start | :after_start}
   def begin_item_cast(%PlayerState{} = caster, skill_id, level, target, on_ready, keep?)
       when is_integer(level) and level > 0 and is_function(on_ready, 1) and is_boolean(keep?) do
-    with {:ok, definition} <- fetch_definition(skill_id) do
+    with {:ok, definition} <- fetch_item_definition(skill_id, level) do
       early = CastTime.early(definition, level, Caster.Player.cast_stats(caster, skill_id))
       caster = Caster.apply_cast_reactions(caster, early.reactions)
       begin_item_stages(caster, definition, level, target, early, on_ready, keep?)
@@ -1060,6 +1060,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
+  defp fetch_item_definition(skill_id, level) do
+    with {:ok, definition} <- fetch_definition(skill_id) do
+      cooldown = definition.cooldown
+      extra_levels = max(level - length(cooldown), 0)
+
+      padded =
+        case List.last(cooldown) do
+          nil -> cooldown
+          duration -> cooldown ++ List.duplicate(duration, extra_levels)
+        end
+
+      {:ok, %{definition | cooldown: padded}}
+    end
+  end
+
   defp item_skill(skill_id, level, keep?),
     do: %{skill_id: skill_id, level: level, keep_requirement?: keep?}
 
@@ -1110,7 +1125,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   def complete_item_cast(%PlayerState{} = caster, skill_id, level, target, true) do
     now = System.monotonic_time(:millisecond)
 
-    with {:ok, definition} <- fetch_definition(skill_id),
+    with {:ok, definition} <- fetch_item_definition(skill_id, level),
          :ok <- check_placement(caster, definition, target),
          {:ok, module} <- validate_item_cast(caster, target, level, definition),
          :ok <- check_castend_target(caster, target, definition),
@@ -1133,7 +1148,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   def complete_item_cast(%PlayerState{} = caster, skill_id, level, target, false) do
     now = System.monotonic_time(:millisecond)
 
-    with {:ok, definition} <- fetch_definition(skill_id),
+    with {:ok, definition} <- fetch_item_definition(skill_id, level),
          :ok <- check_placement(caster, definition, target),
          {:ok, module} <- validate_item_cast(caster, target, level, definition),
          :ok <- check_castend_target(caster, target, definition) do

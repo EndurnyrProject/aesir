@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.ItemAuthorizedLevelTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
+  alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SkillRequest
@@ -70,6 +71,50 @@ defmodule Aesir.ZoneServer.Mmo.Skill.ItemAuthorizedLevelTest do
     stub(Catalog, :active_module_for, fn :test_item_authorized_level -> {:ok, AuthorizedSkill} end)
 
     %{player: player}
+  end
+
+  test "item script staging preserves the trusted over-max level before client selection", %{
+    player: player
+  } do
+    state = %SessionState{game_state: player, connection_pid: self()}
+
+    assert {{:ok, ^player}, staged} =
+             ScriptEffectHandler.apply_op({:stage_item_skill, 693, 5}, state)
+
+    assert staged.pending_item_skill == %{skill_id: 693, level: 5, keep_requirement?: false}
+
+    for level <- [0, -1] do
+      assert {{:error, :invalid_level}, ^state} =
+               ScriptEffectHandler.apply_op({:stage_item_skill, 693, level}, state)
+    end
+
+    assert {:error, :invalid_level} = Interpreter.preflight_skill(player, 693, 5)
+  end
+
+  test "trusted over-max item casts keep scalar cooldowns with either requirement policy", %{
+    player: player
+  } do
+    {:ok, definition} = Catalog.by_id(693)
+    stub(Catalog, :by_id, fn 693 -> {:ok, %{definition | cooldown: [300_000]}} end)
+
+    for keep? <- [false, true] do
+      before = System.monotonic_time(:millisecond)
+
+      assert {:instant, cast} =
+               Interpreter.begin_item_cast(
+                 player,
+                 693,
+                 5,
+                 :self,
+                 fn caster -> {:ok, caster} end,
+                 keep?
+               )
+
+      after_cast = System.monotonic_time(:millisecond)
+      assert is_integer(cast.skill_cooldowns[693])
+      assert cast.skill_cooldowns[693] >= before + 300_000
+      assert cast.skill_cooldowns[693] <= after_cast + 300_000
+    end
   end
 
   test "trusted item casts retain levels beyond metadata maximum", %{player: player} do

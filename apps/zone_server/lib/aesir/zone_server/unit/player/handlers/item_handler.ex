@@ -294,7 +294,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
 
   defp validate_item_skill({id, level, keep?}) when is_boolean(keep?) do
     case Catalog.by_id(id) do
-      {:ok, definition} when is_integer(level) and level > 0 and level <= definition.max_level ->
+      {:ok, _definition} when is_integer(level) and level > 0 ->
         :ok
 
       {:ok, _definition} ->

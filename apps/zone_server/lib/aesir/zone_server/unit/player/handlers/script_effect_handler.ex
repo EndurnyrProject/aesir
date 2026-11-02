@@ -755,7 +755,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   defp stage_item_skill(skill_id, level, item, keep?, %{game_state: gs} = state) do
     case Catalog.by_id(skill_id) do
-      {:ok, definition} when is_integer(level) and level > 0 and level <= definition.max_level ->
+      {:ok, definition} when is_integer(level) and level > 0 ->
         Broadcast.to_player(gs.character_id, %ItemSkillReady{
           skill_id: skill_id,
           level: level,
