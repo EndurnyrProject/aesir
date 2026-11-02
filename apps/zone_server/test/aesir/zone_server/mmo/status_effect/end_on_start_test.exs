@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.EndOnStartTest do
     :sc_adoramus,
     :sc_ghostweapon,
     :sc_gn_cartboost,
+    :sc_kaite,
     :sc_magneticfield,
     :sc_merc_quicken,
     :sc_onehand,

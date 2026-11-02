@@ -2460,7 +2460,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # onlookers 100 ms later, sent by the skill module itself.
   defp broadcast_skill_effect(_game_state, @auto_counter, _level, _target), do: :ok
 
-  defp broadcast_skill_effect(_game_state, 473, _level, _target), do: :ok
+  # These skills display their own per-recipient effect and result.
+  defp broadcast_skill_effect(_game_state, skill_id, _level, _target)
+       when skill_id in [473, 689, 690, 691, 693],
+       do: :ok
 
   # A no-damage cast shows the skill's effect; a damage cast's visuals are its hits.
   defp broadcast_skill_effect(game_state, skill_id, level, target) do

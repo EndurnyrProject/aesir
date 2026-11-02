@@ -62,6 +62,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   and IsNpc flags and its Splash damage flag. TargetHidden lets the skill reach
   a Hiding target; IsNpc and Splash change how a splash recipient's skill use is
   checked. They are mode-keyable and never inferred from other fields.
+  `ignore_hovering` preserves the mode-specific IgnoreHovering flag for
+  recipients carrying the Hovering status.
 
   `damage_kind` is the skill DB `Type` (`:none` when the DB sets none) and
   `damage_type` its `NoDamage` damage flag, both exactly as each mode's DB
@@ -204,6 +206,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             cast_cancel: true,
             target_hidden: false,
             is_npc: false,
+            ignore_hovering: false,
             damage_splash: false,
             allow_when_hidden: false,
             active_instance: 0,
@@ -273,6 +276,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           cast_cancel: boolean(),
           target_hidden: boolean(),
           is_npc: boolean(),
+          ignore_hovering: boolean(),
           damage_splash: boolean(),
           allow_when_hidden: boolean(),
           active_instance: non_neg_integer(),
@@ -350,6 +354,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     cast_cancel: :boolean,
     target_hidden: :boolean,
     is_npc: :boolean,
+    ignore_hovering: :boolean,
     damage_splash: :boolean,
     allow_when_hidden: :boolean,
     active_instance: {:integer, {:gte, 0}},
@@ -411,6 +416,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     cast_cancel: true,
     target_hidden: false,
     is_npc: false,
+    ignore_hovering: false,
     damage_splash: false,
     allow_when_hidden: false,
     active_instance: 0,
@@ -469,6 +475,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     :cast_cancel,
     :target_hidden,
     :is_npc,
+    :ignore_hovering,
     :damage_splash,
     :allow_when_hidden,
     :active_instance,

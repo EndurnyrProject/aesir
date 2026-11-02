@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusWriteClassificationTest do
       :remove_current_status_and_notify,
     {@interpreter, :restart_status_if_current, :replace_status_if_current} =>
       :restart_status_if_current,
-    {@interpreter, :end_status, :remove_status} => :end_status,
+    {@interpreter, :end_status_events, :remove_status} => :end_status_events,
     {@interpreter, :store_end_outcome, :replace_status_if_current} => :silent_keep,
     {@interpreter, :store_end_outcome, :remove_status_if_current} => :finish_requested_end,
     {@interpreter, :end_removed_unit_statuses, :clear_unit_statuses} => :silent_teardown,
@@ -29,8 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusWriteClassificationTest do
     {@interpreter, :store_applied_status, :apply_status_with_entry} => :finish_application,
     {@interpreter, :rollback_application, :remove_status_if_current} => :silent_unstarted,
     {@interpreter, :discard_application, :remove_status_if_current} => :silent_unstarted,
-    {@interpreter, :expire_status_if_current, :remove_status_if_current} =>
-      :expire_status_if_current,
+    {@interpreter, :expire_status_events_if_current, :remove_status_if_current} =>
+      :expire_status_events_if_current,
     {@interpreter, :apply_committed_action_result, :replace_status_if_current} =>
       :apply_committed_action_result,
     {@interpreter, :store_movement_changes_if_current, :replace_status_if_current} =>

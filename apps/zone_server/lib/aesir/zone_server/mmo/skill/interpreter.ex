@@ -1152,23 +1152,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   defp run_item_effect(module, caster, target, level, definition, now) do
-    skill_id = definition.id
+    caster = pace_item_cast(caster, module, definition.id, definition, level, now)
 
     case run_unconditional(module, caster, target, level, definition, :item, false) do
       {:ok, caster} ->
-        {:ok, pace_item_cast(caster, module, skill_id, definition, level, now)}
-        |> retain_menu_requirements(false)
+        retain_menu_requirements({:ok, caster}, false)
 
       {:local_effects, caster, effects} ->
-        {:local_effects, pace_item_cast(caster, module, skill_id, definition, level, now),
-         effects}
+        {:local_effects, caster, effects}
 
       {:failed, caster, reason} ->
-        {:failed, pace_item_cast(caster, module, skill_id, definition, level, now), reason}
+        {:failed, caster, reason}
 
       {:skipped, caster, _reason} ->
-        {:ok, pace_item_cast(caster, module, skill_id, definition, level, now)}
-        |> retain_menu_requirements(false)
+        retain_menu_requirements({:ok, caster}, false)
 
       error ->
         error

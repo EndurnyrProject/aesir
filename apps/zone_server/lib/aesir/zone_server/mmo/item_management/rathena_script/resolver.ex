@@ -123,6 +123,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   end
 
   @statuses %{
+    "SC_PARTYFLEE" => :sc_partyflee,
     "SC_BLESSING" => :sc_blessing,
     "SC_CARTBOOST" => :sc_cartboost,
     "SC_MAXOVERTHRUST" => :sc_maxoverthrust,

@@ -130,7 +130,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.GuildAuraTest do
 
     {:ok, _} = tick(aura_instance())
 
-    assert_receive {:stats, :status_changed}
+    assert_receive {:stats, {:status_changed, :sc_gd_leadership, :apply}}
+    refute_receive {:stats, {:status_changed, _, _}}, 0
+    refute_receive {:stats, :status_changed}, 0
   end
 
   test "the source definition is permanent - an idle master keeps emitting" do
