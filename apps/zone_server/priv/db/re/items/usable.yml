@@ -819,6 +819,8 @@
   buy: 1500
   id: 606
   name: Aloevera
+  no_use_sitting: true
+  on_use: 'itemskill(ctx, 473, level: 1)'
   type: delay_consume
   weight: 100
 - aegis_name: Yggdrasilberry
@@ -859,28 +861,28 @@
   buy: 150
   id: 612
   name: Mini Furnace
-  on_use: 'produce(ctx, 21)'
+  on_use: produce(ctx, 21)
   type: usable
   weight: 200
 - aegis_name: Iron_Hammer
   buy: 1000
   id: 613
   name: Iron Hammer
-  on_use: 'produce(ctx, 1)'
+  on_use: produce(ctx, 1)
   type: usable
   weight: 200
 - aegis_name: Golden_Hammer
   buy: 3000
   id: 614
   name: Golden Hammer
-  on_use: 'produce(ctx, 2)'
+  on_use: produce(ctx, 2)
   type: usable
   weight: 300
 - aegis_name: Oridecon_Hammer
   buy: 5000
   id: 615
   name: Oridecon Hammer
-  on_use: 'produce(ctx, 3)'
+  on_use: produce(ctx, 3)
   type: usable
   weight: 400
 - aegis_name: Old_Card_Album
@@ -907,144 +909,168 @@
   buy: 1000
   id: 619
   name: Unripe Apple
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Orange_Juice
   buy: 1500
   id: 620
   name: Orange Juice
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Bitter_Herb
   buy: 20
   id: 621
   name: Bitter Herb
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Rainbow_Carrot
   buy: 2500
   id: 622
   name: Rainbow Carrot
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Earthworm_The_Dude
   buy: 4000
   id: 623
   name: Earthworm the Dude
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Rotten_Fish
   buy: 2500
   id: 624
   name: Rotten Fish
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Lusty_Iron
   buy: 100
   id: 625
   name: Rusty Iron
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Monster_Juice
   buy: 1500
   id: 626
   name: Monster Juice
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Sweet_Milk
   buy: 7000
   id: 627
   name: Sweet Milk
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Well_Dried_Bone
   buy: 10000
   id: 628
   name: Well-Dried Bone
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Singing_Flower
   buy: 300
   id: 629
   name: Singing Flower
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Dew_Laden_Moss
   buy: 10
   id: 630
   name: Dew Laden Moss
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Deadly_Noxious_Herb
   buy: 20
   id: 631
   name: Deadly Noxious Herb
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Fatty_Chubby_Earthworm
   buy: 5000
   id: 632
   name: Fatty Chubby Earthworm
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Baked_Yam
   buy: 20
   id: 633
   name: Sweet Potato
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Tropical_Banana
   buy: 20
   id: 634
   name: Tropical Banana
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Horror_Of_Tribe
   buy: 300
   id: 635
   name: Orc Trophy
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: No_Recipient
   buy: 100
   id: 636
   name: No Recipient
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Old_Broom
   buy: 350
   id: 637
   name: Old Broom
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Silver_Knife_Of_Chaste
   buy: 12000
   id: 638
   name: Silver Knife of Chastity
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Armlet_Of_Obedience
   buy: 18000
   id: 639
   name: Armlet of Obedience
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Shining_Stone
   buy: 3000
   id: 640
   name: Shining Stone
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Contracts_In_Shadow
   buy: 100
   id: 641
   name: Contract in Shadow
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Book_Of_Devil
   buy: 1800
   id: 642
   name: Book of the Devil
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Pet_Incubator
@@ -1135,18 +1161,21 @@
   buy: 500
   id: 659
   name: Her Heart
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Prohibition_Red_Candle
   buy: 20000
   id: 660
   name: Forbidden Red Candle
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Sway_Apron
   buy: 20000
   id: 661
   name: Soft Apron
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Inspector_Certificate
@@ -1194,6 +1223,7 @@
 - aegis_name: Handsei
   id: 668
   name: Red Envelope
+  on_use: set_zeny(ctx, (zeny(ctx) + Enum.random(1000..10000)))
   type: usable
   weight: 20
 - aegis_name: Rice_Cake_Soup
@@ -1289,6 +1319,7 @@
   buy: 1000
   id: 686
   name: Level 3 Earth Spike
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 90, level: 3)'
   type: delay_consume
   weight: 10
@@ -1296,6 +1327,7 @@
   buy: 2000
   id: 687
   name: Level 5 Earth Spike
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 90, level: 5)'
   type: delay_consume
   weight: 10
@@ -1303,6 +1335,7 @@
   buy: 1000
   id: 688
   name: Level 3 Cold Bolt
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 14, level: 3)'
   type: delay_consume
   weight: 10
@@ -1310,6 +1343,7 @@
   buy: 2000
   id: 689
   name: Level 5 Cold Bolt
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 14, level: 5)'
   type: delay_consume
   weight: 10
@@ -1317,6 +1351,7 @@
   buy: 1000
   id: 690
   name: Level 3 Fire Bolt
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 19, level: 3)'
   type: delay_consume
   weight: 10
@@ -1324,6 +1359,7 @@
   buy: 2000
   id: 691
   name: Level 5 Fire Bolt
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 19, level: 5)'
   type: delay_consume
   weight: 10
@@ -1331,6 +1367,7 @@
   buy: 1000
   id: 692
   name: Level 3 Lightening Bolt
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 20, level: 3)'
   type: delay_consume
   weight: 10
@@ -1338,6 +1375,7 @@
   buy: 2000
   id: 693
   name: Level 5 Lightening Bolt
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 20, level: 5)'
   type: delay_consume
   weight: 10
@@ -1345,6 +1383,7 @@
   buy: 1000
   id: 694
   name: Level 3 Soul Strike
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 13, level: 3)'
   type: delay_consume
   weight: 10
@@ -1352,6 +1391,7 @@
   buy: 2000
   id: 695
   name: Level 5 Soul Strike
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 13, level: 5)'
   type: delay_consume
   weight: 10
@@ -1359,6 +1399,7 @@
   buy: 1000
   id: 696
   name: Level 1 Fire Ball
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 17, level: 1)'
   type: delay_consume
   weight: 10
@@ -1366,6 +1407,7 @@
   buy: 2000
   id: 697
   name: Level 5 Fire Ball
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 17, level: 5)'
   type: delay_consume
   weight: 10
@@ -1373,6 +1415,7 @@
   buy: 1000
   id: 698
   name: Level 1 Fire Wall
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 18, level: 1)'
   type: delay_consume
   weight: 10
@@ -1380,6 +1423,7 @@
   buy: 2000
   id: 699
   name: Level 5 Fire Wall
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 18, level: 5)'
   type: delay_consume
   weight: 10
@@ -1387,6 +1431,7 @@
   buy: 1000
   id: 700
   name: Level 1 Frost Diver
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 15, level: 1)'
   type: delay_consume
   weight: 10
@@ -1560,6 +1605,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: sc_start(ctx, :sc_jexpboost, 1800000, 50)
   type: usable
   weight: 10
@@ -1570,6 +1616,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 111, level: 5)'
   type: delay_consume
   weight: 10
@@ -1580,6 +1627,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: |-
     ctx = specialeffect2(ctx, :magicalatthit)
     ctx = sc_start(ctx, :sc_inccri, 300000, 30)
@@ -1593,6 +1641,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   type: usable
   weight: 10
 - aegis_name: E_Glittering_Doll_B
@@ -1606,6 +1655,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: |-
     ctx = sc_start(ctx, :sc_increase_maxsp, 1800000, 10)
     ctx = sc_start(ctx, :sc_spcost_rate, 1800000, 10)
@@ -1619,6 +1669,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: |-
     ctx = specialeffect2(ctx, :guard)
     ctx = sc_start(ctx, :sc_def_rate, 1800000, 3)
@@ -1956,6 +2007,14 @@
   buy: 1500
   id: 11515
   name: Coconut
+  on_use: |-
+    ctx = item_heal(ctx, hp: 300..400)
+    ctx = if (getequipid(ctx, 5) == 15385) do
+      warp(ctx, "dali", 113, 82)
+    else
+      ctx
+    end
+    ctx
   type: healing
   weight: 120
 - aegis_name: Asai_Fruit
@@ -2294,6 +2353,14 @@
   buy: 10
   id: 11563
   name: Hot Tea
+  on_use: |-
+    ctx = item_heal(ctx, sp: 100)
+    ctx = if (getequipid(ctx, 5) == 15385) do
+      warp(ctx, "xmas", 233, 296)
+    else
+      ctx
+    end
+    ctx
   type: usable
   weight: 20
 - aegis_name: Sweet_Canape
@@ -2917,6 +2984,7 @@
 - aegis_name: Moon_Cookie
   id: 11702
   name: Moon Cookie
+  no_use_sitting: true
   on_use: 'unitskilluseid(ctx, 34, level: 7)'
   type: healing
   weight: 300
@@ -2999,6 +3067,7 @@
   buy: 2000
   id: 12000
   name: Level 5 Frost Diver
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 15, level: 5)'
   type: delay_consume
   weight: 10
@@ -3006,6 +3075,7 @@
   buy: 2000
   id: 12001
   name: Level 3 Heal
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 28, level: 3)'
   type: delay_consume
   weight: 10
@@ -3013,6 +3083,7 @@
   buy: 2000
   id: 12002
   name: Level 5 Heal
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 28, level: 5)'
   type: delay_consume
   weight: 10
@@ -3182,6 +3253,7 @@
   buy: 1000
   id: 12027
   name: Giggling Box
+  no_use_sitting: true
   on_use: |-
     ctx = percent_heal(ctx, hp: 9)
     ctx = sc_start(ctx, :sc_curse, 30000, 0, 3000, 0)
@@ -3192,6 +3264,7 @@
   buy: 1000
   id: 12028
   name: Box of Thunder
+  no_use_sitting: true
   on_use: sc_start(ctx, :sc_speedup0, 20000, 25)
   type: usable
   weight: 200
@@ -3199,6 +3272,7 @@
   buy: 1000
   id: 12029
   name: Box of Gloom
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 45, level: 1)'
   type: delay_consume
   weight: 200
@@ -3206,6 +3280,7 @@
   buy: 1000
   id: 12030
   name: Box of Resentment
+  no_use_sitting: true
   on_use: sc_start(ctx, :sc_atkpotion, 60000, 20)
   type: usable
   weight: 200
@@ -3213,6 +3288,7 @@
   buy: 1000
   id: 12031
   name: Box of Drowsiness
+  no_use_sitting: true
   on_use: sc_start(ctx, :sc_matkpotion, 60000, 20)
   type: usable
   weight: 200
@@ -3220,6 +3296,7 @@
   buy: 1000
   id: 12032
   name: Box of Storms
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 492, level: 2)'
   type: delay_consume
   weight: 200
@@ -3227,12 +3304,15 @@
   buy: 1000
   id: 12033
   name: Box of Sunlight
+  no_use_sitting: true
+  on_use: sc_start(ctx, :sc_intravision, 30000, 0)
   type: usable
   weight: 200
 - aegis_name: Painting_Box
   buy: 1000
   id: 12034
   name: Box of Panting
+  no_use_sitting: true
   on_use: |-
     ctx = percent_heal(ctx, sp: 9)
     ctx = sc_start(ctx, :sc_silence, 30000, 0, 3000, 0)
@@ -4015,24 +4095,28 @@
   buy: 2
   id: 12118
   name: Fireproof Potion
+  on_use: sc_start(ctx, :sc_armor_element_fire, 1200000, [-15, 0, 20, 0])
   type: usable
   weight: 10
 - aegis_name: Resist_Water
   buy: 2
   id: 12119
   name: Coldproof Potion
+  on_use: sc_start(ctx, :sc_armor_element_water, 1200000, [20, 0, 0, -15])
   type: usable
   weight: 10
 - aegis_name: Resist_Earth
   buy: 2
   id: 12120
   name: Earthproof Potion
+  on_use: sc_start(ctx, :sc_armor_element_earth, 1200000, [0, 20, -15, 0])
   type: usable
   weight: 10
 - aegis_name: Resist_Wind
   buy: 2
   id: 12121
   name: Thunderproof Potion
+  on_use: sc_start(ctx, :sc_armor_element_wind, 1200000, [0, -15, 0, 20])
   type: usable
   weight: 10
 - aegis_name: Sesame_Pastry
@@ -4828,6 +4912,11 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
+  on_use: |-
+    ctx = skilleffect(ctx, 34, 0)
+    ctx = sc_start(ctx, :sc_blessing, 240000, 10)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Inc_Agi_10_Scroll
@@ -4837,6 +4926,16 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
+  on_use: |-
+    if (hp(ctx) > 15) do
+      ctx = skilleffect(ctx, 29, 0)
+      ctx = sc_start(ctx, :sc_increaseagi, 240000, 10)
+      ctx = heal(ctx, hp: -15)
+      ctx
+    else
+      ctx
+    end
   type: usable
   weight: 10
 - aegis_name: Aspersio_5_Scroll
@@ -4846,6 +4945,16 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
+  on_use: |-
+    if (count_item(ctx, 523) > 0) do
+      ctx = skilleffect(ctx, 68, 0)
+      ctx = sc_start(ctx, :sc_aspersio, 180000, 5)
+      ctx = delitem(ctx, 523, 1)
+      ctx
+    else
+      ctx
+    end
   type: usable
   weight: 10
 - aegis_name: Assumptio_5_Scroll
@@ -4855,6 +4964,11 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
+  on_use: |-
+    ctx = sc_start(ctx, :sc_assumptio, 100000, 5)
+    ctx = skilleffect(ctx, 361, 0)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Wind_Walk_10_Scroll
@@ -4864,6 +4978,11 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
+  on_use: |-
+    ctx = skilleffect(ctx, 383, 0)
+    ctx = sc_start(ctx, :sc_windwalk, 250000, 10)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Adrenaline_Scroll
@@ -4873,6 +4992,17 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
+  on_use: |-
+    ctx = set_local(ctx, :type, getiteminfo(ctx, getequipid(ctx, 9), 11))
+    ctx = if (((get_local(ctx, :type, 0) == 6) or (get_local(ctx, :type, 0) == 7)) or (get_local(ctx, :type, 0) == 8)) do
+      ctx = skilleffect(ctx, 111, 0)
+      ctx = sc_start(ctx, :sc_adrenaline, 150000, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: usable
   weight: 10
 - aegis_name: Megaphone_
@@ -4896,6 +5026,7 @@
   buy: 20
   id: 12225
   name: Sweet Candy Cane
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Examination1
@@ -5013,12 +5144,19 @@
   buy: 20
   id: 12235
   name: Chocolate Strawberry
+  no_use_sitting: true
+  on_use: |-
+    ctx = percent_heal(ctx, sp: 5)
+    ctx = skilleffect(ctx, 34, 0)
+    ctx = sc_start(ctx, :sc_blessing, 240000, 5)
+    ctx
   type: usable
   weight: 100
 - aegis_name: Choco_Tart
   buy: 20
   id: 12236
   name: Chocolate Tart
+  no_use_sitting: true
   on_use: |-
     ctx = percent_heal(ctx, hp: 5)
     ctx = itemskill(ctx, 33, level: 5)
@@ -5028,6 +5166,7 @@
 - aegis_name: Choco_Lump
   id: 12237
   name: Junky Chocolate
+  no_use_sitting: true
   on_use: |-
     ctx = percent_heal(ctx, sp: 5)
     ctx = sc_start(ctx, :sc_poison, 18000, 0)
@@ -5359,6 +5498,10 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_use: |-
+    ctx = sc_start(ctx, :sc_increase_maxhp, 3600000, [5, 10, 0, 0])
+    ctx = percent_heal(ctx, hp: 10)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Gold_Pill_2
@@ -5368,6 +5511,10 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_use: |-
+    ctx = sc_start(ctx, :sc_increase_maxsp, 3600000, [5, 10, 0, 0])
+    ctx = percent_heal(ctx, sp: 10)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Mimic_Scroll
@@ -5400,6 +5547,7 @@
 - aegis_name: Undead_Element_Scroll
   id: 12279
   name: Undead Elemental Scroll
+  on_use: sc_start(ctx, :sc_armor_resist, 300000, [20, 20, 20, 20])
   type: usable
   weight: 10
 - aegis_name: Holy_Element_Scroll
@@ -5434,7 +5582,7 @@
   on_use: |-
     ctx = sc_start(ctx, :sc_incstr, 5400000, 8)
     ctx = sc_start(ctx, :sc_incdex, 5400000, 4)
-    ctx = sc_start(ctx, :sc_increaseagi, 5400000, 6)
+    ctx = sc_start(ctx, :sc_incagi, 5400000, 6)
     ctx = sc_start(ctx, :sc_atkpotion, 5400000, 32)
     ctx = sc_start(ctx, :sc_incflee, 5400000, 5)
     ctx
@@ -5443,6 +5591,12 @@
 - aegis_name: Internet_Cafe3
   id: 12284
   name: Internet Cafe3
+  on_use: |-
+    ctx = sc_start(ctx, :sc_incint, 5400000, 8)
+    ctx = sc_start(ctx, :sc_incvit, 5400000, 4)
+    ctx = sc_start(ctx, :sc_incdex, 5400000, 6)
+    ctx = sc_start(ctx, :sc_matkpotion, 5400000, 40)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Internet_Cafe4
@@ -5451,7 +5605,7 @@
   on_use: |-
     ctx = sc_start(ctx, :sc_incdex, 5400000, 8)
     ctx = sc_start(ctx, :sc_incluk, 5400000, 4)
-    ctx = sc_start(ctx, :sc_increaseagi, 5400000, 6)
+    ctx = sc_start(ctx, :sc_incagi, 5400000, 6)
     ctx = sc_start(ctx, :sc_atkpotion, 5400000, 24)
     ctx = sc_start(ctx, :sc_matkpotion, 5400000, 24)
     ctx
@@ -5491,12 +5645,24 @@
   buy: 10
   id: 12290
   name: Mysterious Can Magic Powder
+  no_use_sitting: true
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 5)
+    ctx = skilleffect(ctx, 34, 0)
+    ctx = sc_start(ctx, :sc_blessing, 120000, 5)
+    ctx
   type: usable
   weight: 100
 - aegis_name: Mysterious_PET_Bottle
   buy: 10
   id: 12291
   name: Mysterious PET Bottle
+  no_use_sitting: true
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 5)
+    ctx = skilleffect(ctx, 29, 0)
+    ctx = sc_start(ctx, :sc_increaseagi, 120000, 5)
+    ctx
   type: usable
   weight: 100
 - aegis_name: Unripe_Fruit
@@ -5570,6 +5736,7 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_use: sc_start(ctx, :sc_commonsc_resist, 3600000, 10)
   type: usable
   weight: 10
 - aegis_name: Wild_Rose_Scroll
@@ -5661,6 +5828,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: sc_start(ctx, :sc_fleefood, 300000, 10)
   type: usable
   weight: 50
@@ -5670,6 +5838,8 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
+  on_use: 'itemskill(ctx, 693, level: 5)'
   type: delay_consume
   weight: 100
 - aegis_name: Thick_Manual50
@@ -5684,6 +5854,7 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: ctx
   type: usable
 - aegis_name: Noive_Box
@@ -5766,6 +5937,7 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 26, level: 1)'
   type: delay_consume
 - aegis_name: N_Butterfly_Wing
@@ -5775,6 +5947,7 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 26, level: 3)'
   type: delay_consume
 - aegis_name: N_Magnifier
@@ -5784,6 +5957,7 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 40, level: 1)'
   type: delay_consume
 - aegis_name: J_Firecracker
@@ -5880,7 +6054,7 @@
   on_use: |-
     ctx = sc_start(ctx, :sc_incstr, 180000, 2)
     ctx = sc_start(ctx, :sc_incint, 180000, 2)
-    ctx = sc_start(ctx, :sc_increaseagi, 180000, 2)
+    ctx = sc_start(ctx, :sc_incagi, 180000, 2)
     ctx
   type: usable
   weight: 100
@@ -5897,6 +6071,7 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  no_use_sitting: true
   type: usable
   weight: 10
 - aegis_name: Special_Alloy_Trap_Box
@@ -5909,21 +6084,37 @@
 - aegis_name: Manuk's_Opportunity
   id: 12342
   name: Manuk's Opportunity
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion_berserk)
+    ctx = sc_start(ctx, :sc_manu_atk, 600000, 10)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Manuk's_Courage
   id: 12343
   name: Manuk's Courage
+  on_use: |-
+    ctx = specialeffect2(ctx, :guard)
+    ctx = sc_start(ctx, :sc_manu_def, 600000, 10)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Pinguicula's_fruit_Jam
   id: 12344
   name: Pinguicula's Fruit Jam
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion_berserk)
+    ctx = sc_start(ctx, :sc_spl_atk, 600000, 10)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Luciola's_Honey_Jam
   id: 12345
   name: Luciola's Honey Jam
+  on_use: |-
+    ctx = specialeffect2(ctx, :guard)
+    ctx = sc_start(ctx, :sc_spl_def, 600000, 10)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Unripe_Acorn
@@ -5934,21 +6125,36 @@
 - aegis_name: Acorn_Jelly
   id: 12347
   name: Acorn Jelly
+  no_use_sitting: true
   type: delay_consume
 - aegis_name: Manuk's_Faith
   id: 12348
   name: Manuk's Faith
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion_berserk)
+    ctx = sc_start(ctx, :sc_manu_matk, 600000, 10)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Cornus'_Tears
   id: 12349
   name: Cornus' Tears
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion_berserk)
+    ctx = sc_start(ctx, :sc_spl_matk, 600000, 10)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Angeling_Potion
   buy: 20
   id: 12350
   name: Angeling Potion
+  no_use_sitting: true
+  on_use: |-
+    ctx = skilleffect(ctx, 34, 0)
+    ctx = sc_start(ctx, :sc_blessing, 120000, 5)
+    ctx = itemskill(ctx, 33, level: 5)
+    ctx
   type: delay_consume
   weight: 100
 - aegis_name: Shout_Megaphone
@@ -5961,12 +6167,14 @@
 - aegis_name: Dun_Tele_Scroll3_fr
   id: 12352
   name: Dungeon Teleport Scroll 3
+  on_use: ItemDialogs.stage(ctx, :cash_dungeon, [3])
   type: usable
   weight: 10
 - aegis_name: Tiny_Waterbottle
   buy: 800
   id: 12353
   name: Small Bottle
+  on_use: sc_start(ctx, :sc_waterweapon, 90000, 1)
   type: usable
   weight: 10
 - aegis_name: Buche_De_Noel
@@ -5999,18 +6207,21 @@
   buy: 20
   id: 12358
   name: Fan Of Wind
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Very_Soft_Plant
   buy: 20
   id: 12359
   name: Very Soft Plant
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Very_Red_Juice
   buy: 20
   id: 12360
   name: Very Red Juice
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Delicious_Shaved_Ice
@@ -6019,11 +6230,13 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   type: usable
 - aegis_name: Kuloren
   buy: 20
   id: 12362
   name: Kuloren
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Fit_Pipe
@@ -6032,41 +6245,48 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   type: usable
 - aegis_name: Staff_Of_Leader
   buy: 20
   id: 12364
   name: Staff Of Leader
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Charming_Lotus
   buy: 20
   id: 12365
   name: Charming Lotus
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Gril_Doll
   buy: 20
   id: 12366
   name: Girl's Doll
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Luxury_Whisky_Bottle
   buy: 20
   id: 12367
   name: Luxury Whisky Bottle
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Splendid_Mirror
   buy: 20
   id: 12368
   name: Splendid Mirror
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Oilpalm_Coconut
   buy: 20
   id: 12369
   name: Oilpalm Coconut
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Gril's_Naivety
@@ -6075,40 +6295,50 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   type: usable
 - aegis_name: Magical_Lithography
   buy: 20
   id: 12371
   name: Magical Lithography
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Hell_Contract
   buy: 20
   id: 12372
   name: Hell Contract
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Boy's_Naivety
   buy: 20
   id: 12373
   name: Boy's Pure Heart
+  no_use_sitting: true
   type: usable
   weight: 10
 - aegis_name: Flaming_Ice
   buy: 20
   id: 12374
   name: Ice Fireworks
+  no_use_sitting: true
   type: usable
   weight: 50
 - aegis_name: Acaraje
   id: 12375
   name: Akaraje
+  on_use: |-
+    ctx = specialeffect2(ctx, :steal)
+    ctx = sc_start(ctx, :sc_acaraje, 1200000, [10, 5, 0, 0])
+    ctx
   type: usable
   weight: 80
 - aegis_name: Mysterious_Can2
   buy: 10
   id: 12376
   name: Mysterious Can2
+  no_use_sitting: true
   on_use: |-
     ctx = percent_heal(ctx, hp: 3)
     ctx = itemskill(ctx, 75, level: 2)
@@ -6119,6 +6349,7 @@
   buy: 10
   id: 12377
   name: Mysterious PET Bottle2
+  no_use_sitting: true
   on_use: |-
     ctx = percent_heal(ctx, sp: 3)
     ctx = itemskill(ctx, 74, level: 1)
@@ -6206,6 +6437,7 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  no_use_sitting: true
   type: delay_consume
   weight: 10
 - aegis_name: Runstone_Storm
@@ -6215,6 +6447,7 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  no_use_sitting: true
   type: delay_consume
   weight: 10
 - aegis_name: Runstone_Millennium
@@ -6224,6 +6457,7 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  no_use_sitting: true
   type: delay_consume
   weight: 10
 - aegis_name: Lucky_Egg_C
@@ -6284,12 +6518,50 @@
   buy: 20
   id: 12396
   name: Gift Box?
+  no_use_sitting: true
   type: delay_consume
   weight: 10
 - aegis_name: Fools_Day_Box2
   buy: 20
   id: 12397
   name: Gift Box?
+  no_use_sitting: true
+  on_use: |-
+    ctx = set_local(ctx, :rnd, Enum.random(1..9))
+    ctx = if (get_local(ctx, :rnd, 0) == 1) do
+      itemskill(ctx, 53, level: 1)
+    else
+      if (get_local(ctx, :rnd, 0) == 2) do
+        itemskill(ctx, 151, level: 1)
+      else
+        if (get_local(ctx, :rnd, 0) == 3) do
+          itemskill(ctx, 318, level: 1)
+        else
+          if (get_local(ctx, :rnd, 0) == 4) do
+            itemskill(ctx, 326, level: 1)
+          else
+            if (get_local(ctx, :rnd, 0) == 5) do
+              give_item(ctx, 909, 1)
+            else
+              if (get_local(ctx, :rnd, 0) == 6) do
+                itemskill(ctx, 24, level: 1)
+              else
+                if (get_local(ctx, :rnd, 0) == 7) do
+                  specialeffect2(ctx, :beginasura)
+                else
+                  if (get_local(ctx, :rnd, 0) == 8) do
+                    specialeffect2(ctx, :mvp)
+                  else
+                    specialeffect2(ctx, :curseattack)
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+    ctx
   type: delay_consume
   weight: 10
 - aegis_name: PCBang_Gift_Box
@@ -6307,6 +6579,7 @@
   buy: 20
   id: 12399
   name: Castle Treasure Box
+  on_use: set_zeny(ctx, (zeny(ctx) + Enum.random(50000..100000)))
   type: usable
   weight: 1000
 - aegis_name: Water_Of_Blessing_
@@ -6358,6 +6631,11 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 30, sp: 30)
+    ctx = skilleffect(ctx, 34, 0)
+    ctx = sc_start(ctx, :sc_blessing, 140000, 5)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Psychic_ArmorS
@@ -6367,6 +6645,10 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :energycoat)
+    ctx = sc_start(ctx, :sc_elementalchange, 10000, [1, 8, 1, 0])
+    ctx
   type: usable
   weight: 10
 - aegis_name: PCBang_Coupon_Box
@@ -6418,6 +6700,11 @@
   buy: 20
   id: 12414
   name: Guarana Candy
+  on_use: |-
+    ctx = sc_start(ctx, :sc_aspdpotion0, 1800000, 0)
+    ctx = sc_start(ctx, :sc_increaseagi, 140000, 5)
+    ctx = skilleffect(ctx, 29, 0)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Siege_Teleport_Scroll2
@@ -6426,6 +6713,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   type: usable
   weight: 10
 - aegis_name: Lucky_Egg_C3
@@ -6483,36 +6771,60 @@
   buy: 100
   id: 12422
   name: HP Increase Potion (Small)
+  on_use: |-
+    ctx = sc_start(ctx, :sc_promote_health_reserch, 500000, [1, 1, 0, 0])
+    ctx = percent_heal(ctx, hp: 1)
+    ctx
   type: usable
   weight: 20
 - aegis_name: HP_Increase_PotionM
   buy: 100
   id: 12423
   name: HP Increase Potion (Medium)
+  on_use: |-
+    ctx = sc_start(ctx, :sc_promote_health_reserch, 500000, [1, 2, 0, 0])
+    ctx = percent_heal(ctx, hp: 2)
+    ctx
   type: usable
   weight: 40
 - aegis_name: HP_Increase_PotionL
   buy: 100
   id: 12424
   name: HP Increase Potion (Large)
+  on_use: |-
+    ctx = sc_start(ctx, :sc_promote_health_reserch, 500000, [1, 3, 0, 0])
+    ctx = percent_heal(ctx, hp: 5)
+    ctx
   type: usable
   weight: 80
 - aegis_name: SP_Increase_PotionS
   buy: 100
   id: 12425
   name: SP Increase Potion (Small)
+  on_use: |-
+    ctx = sc_start(ctx, :sc_energy_drink_reserch, 500000, [1, 1, 0, 0])
+    ctx = percent_heal(ctx, sp: 2)
+    ctx
   type: usable
   weight: 20
 - aegis_name: SP_Increase_PotionM
   buy: 100
   id: 12426
   name: SP Increase Potion (Medium)
+  on_use: |-
+    ctx = sc_start(ctx, :sc_energy_drink_reserch, 500000, [1, 2, 0, 0])
+    ctx = percent_heal(ctx, sp: 4)
+    ctx
   type: usable
   weight: 40
 - aegis_name: SP_Increase_PotionL
   buy: 100
   id: 12427
   name: SP Increase Potion (Large)
+  on_use: |-
+    ctx = sc_start(ctx, :sc_energy_drink_reserch, 500000, [1, 3, 0, 0])
+    ctx = percent_heal(ctx, sp: 8)
+    ctx
   type: usable
   weight: 80
 - aegis_name: Enrich_White_PotionZ
@@ -6570,6 +6882,10 @@
   buy: 10
   id: 12436
   name: Vitata 500
+  on_use: |-
+    ctx = sc_start(ctx, :sc_vitata_500, 500000, [20, 5, 0, 0])
+    ctx = item_heal(ctx, sp: 200)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Enrich_Celermine_Juice
@@ -6620,6 +6936,7 @@
 - aegis_name: F_Dun_Tele_Scroll1
   id: 12444
   name: WoE Telport Scroll
+  on_use: ItemDialogs.stage(ctx, :cash_siege_tele, [])
   type: usable
   weight: 10
 - aegis_name: F_Str_Dish10_
@@ -6723,11 +7040,19 @@
 - aegis_name: F_Med_Life_Potion
   id: 12459
   name: F Med Life Potion
+  on_use: |-
+    ctx = specialeffect2(ctx, :heal3)
+    ctx = sc_start(ctx, :sc_l_lifepotion, 600000, [-7, 4, 0, 0])
+    ctx
   type: usable
   weight: 10
 - aegis_name: F_Small_Life_Potion
   id: 12460
   name: F Small Life Potion
+  on_use: |-
+    ctx = specialeffect2(ctx, :heal3)
+    ctx = sc_start(ctx, :sc_s_lifepotion, 600000, [-5, 5, 0, 0])
+    ctx
   type: usable
   weight: 10
 - aegis_name: F_Regeneration_Potion
@@ -6831,6 +7156,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: get_group_item(ctx, :rwc_parti_box)
   type: usable
   weight: 10
@@ -6841,6 +7167,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: get_group_item(ctx, :rwc_final_comp_box)
   type: usable
   weight: 10
@@ -7116,6 +7443,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: ItemDialogs.stage(ctx, :cash_city, [1])
   type: usable
   weight: 10
 - aegis_name: E_WOB_Schwaltz
@@ -7124,6 +7452,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: ItemDialogs.stage(ctx, :cash_city, [2])
   type: usable
   weight: 10
 - aegis_name: E_WOB_Rachel
@@ -7132,6 +7461,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: ItemDialogs.stage(ctx, :cash_city, [3])
   type: usable
   weight: 10
 - aegis_name: E_WOB_Local
@@ -7140,6 +7470,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: ItemDialogs.stage(ctx, :cash_city, [5])
   type: usable
   weight: 10
 - aegis_name: E_Siege_Teleport_Scroll
@@ -7180,6 +7511,10 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :heal3)
+    ctx = sc_start(ctx, :sc_l_lifepotion, 600000, [-7, 4, 0, 0])
+    ctx
   type: usable
   weight: 10
 - aegis_name: E_Small_Life_Potion
@@ -7188,6 +7523,10 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :heal3)
+    ctx = sc_start(ctx, :sc_s_lifepotion, 600000, [-5, 5, 0, 0])
+    ctx
   type: usable
   weight: 10
 - aegis_name: E_Regeneration_Potion
@@ -8645,18 +8984,21 @@
 - aegis_name: Lucky_Cookie01
   id: 12706
   name: Lucky Cookie
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 75, level: 5)'
   type: delay_consume
   weight: 100
 - aegis_name: Lucky_Cookie02
   id: 12707
   name: Lucky Cookie
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 74, level: 1)'
   type: delay_consume
   weight: 100
 - aegis_name: Lucky_Cookie03
   id: 12708
   name: Lucky Cookie
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 66, level: 3)'
   type: delay_consume
   weight: 100
@@ -8770,6 +9112,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   type: usable
   weight: 10
 - aegis_name: Runstone_Rhydo
@@ -8779,6 +9122,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   type: usable
   weight: 10
 - aegis_name: Runstone_Verkana
@@ -8788,6 +9132,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   type: usable
   weight: 10
 - aegis_name: Runstone_Isia
@@ -8797,6 +9142,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   type: usable
   weight: 10
 - aegis_name: Runstone_Asir
@@ -8806,6 +9152,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   type: usable
   weight: 10
 - aegis_name: Runstone_Urj
@@ -8815,6 +9162,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   type: usable
   weight: 10
 - aegis_name: Runstone_Turisus
@@ -8824,6 +9172,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   type: usable
   weight: 10
 - aegis_name: Runstone_Pertz
@@ -8833,6 +9182,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   type: usable
   weight: 10
 - aegis_name: Runstone_Hagalas
@@ -8842,6 +9192,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   type: usable
   weight: 10
 - aegis_name: Runstone_Quality
@@ -9077,7 +9428,7 @@
   buy: 20
   id: 12763
   name: Bubble Gum Red
-  on_use: sc_start(ctx, :sc_increaseagi, 1200000, 10)
+  on_use: sc_start(ctx, :sc_incagi, 1200000, 10)
   type: usable
   weight: 10
 - aegis_name: Fools_Day_Box_Tw
@@ -9767,11 +10118,21 @@
 - aegis_name: Golden_Potion_RG
   id: 12858
   name: RG Golden Potion
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 100, sp: 100)
+    ctx = sc_start(ctx, :sc_kyrie, 100000, 10)
+    ctx = skilleffect(ctx, 73, 0)
+    ctx
   type: usable
   weight: 30
 - aegis_name: Mommy_Day_Cake
   id: 12860
   name: Mommy Day Cake
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 50, sp: 50)
+    ctx = skilleffect(ctx, 361, 0)
+    ctx = sc_start(ctx, :sc_assumptio, 100000, 5)
+    ctx
   type: usable
   weight: 200
 - aegis_name: Treasure_Box_Scroll2
@@ -10672,6 +11033,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: ItemDialogs.stage(ctx, :cash_tele, [1])
   type: usable
   weight: 10
 - aegis_name: Teleport_Scroll2
@@ -10681,6 +11043,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: ItemDialogs.stage(ctx, :cash_tele, [2])
   type: usable
   weight: 10
 - aegis_name: Teleport_Scroll3
@@ -10690,6 +11053,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: ItemDialogs.stage(ctx, :cash_tele, [3])
   type: usable
   weight: 10
 - aegis_name: Teleport_Scroll4
@@ -10699,6 +11063,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: ItemDialogs.stage(ctx, :cash_tele, [4])
   type: usable
   weight: 10
 - aegis_name: Teleport_Scroll5
@@ -10708,6 +11073,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: ItemDialogs.stage(ctx, :cash_tele, [5])
   type: usable
   weight: 10
 - aegis_name: Teleport_Scroll6
@@ -10717,6 +11083,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: ItemDialogs.stage(ctx, :cash_tele, [6])
   type: usable
   weight: 10
 - aegis_name: Pet_Egg_Scroll_Box6
@@ -19783,6 +20150,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: set_zeny(ctx, (zeny(ctx) + Enum.random(1000..77777)))
   type: usable
   weight: 10
 - aegis_name: Light_Center_Pot
@@ -19946,6 +20314,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: 'unitskilluseid(ctx, 108, level: 1)'
   type: usable
   weight: 10
@@ -20000,6 +20369,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: ItemDialogs.stage(ctx, :cash_dungeon, [1])
   type: usable
   weight: 10
 - aegis_name: PVP_Tele_Scroll
@@ -20018,6 +20388,7 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 1013, level: 1)'
   type: delay_consume
   weight: 10
@@ -20046,6 +20417,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: sc_start(ctx, :sc_expboost, 1800000, 25)
   type: usable
   weight: 10
@@ -20065,6 +20437,10 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :heal3)
+    ctx = sc_start(ctx, :sc_s_lifepotion, 600000, [-5, 5, 0, 0])
+    ctx
   type: usable
   weight: 10
 - aegis_name: Med_Life_Potion
@@ -20073,6 +20449,10 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :heal3)
+    ctx = sc_start(ctx, :sc_l_lifepotion, 600000, [-7, 4, 0, 0])
+    ctx
   type: usable
   weight: 10
 - aegis_name: Abrasive
@@ -20117,6 +20497,10 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :cloaking)
+    ctx = sc_start(ctx, :sc_elementalchange, 1800000, [1, 7, 1, 0])
+    ctx
   type: usable
   weight: 10
 - aegis_name: Holy_Armor_S
@@ -20125,6 +20509,10 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :benedictio)
+    ctx = sc_start(ctx, :sc_elementalchange, 1800000, [1, 6, 1, 0])
+    ctx
   type: usable
   weight: 10
 - aegis_name: S_Def_Potion
@@ -20592,6 +20980,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: ItemDialogs.stage(ctx, :cash_dungeon, [2])
   type: usable
   weight: 10
 - aegis_name: WOB_Rune
@@ -20600,6 +20989,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: ItemDialogs.stage(ctx, :cash_city, [1])
   type: usable
   weight: 10
 - aegis_name: WOB_Schwaltz
@@ -20608,6 +20998,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: ItemDialogs.stage(ctx, :cash_city, [2])
   type: usable
   weight: 10
 - aegis_name: WOB_Rachel
@@ -20616,6 +21007,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: ItemDialogs.stage(ctx, :cash_city, [3])
   type: usable
   weight: 10
 - aegis_name: WOB_Local
@@ -20624,6 +21016,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: ItemDialogs.stage(ctx, :cash_city, [4])
   type: usable
   weight: 10
 - aegis_name: Spark_Candy
@@ -20644,6 +21037,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 108, level: 1)'
   type: delay_consume
   weight: 10
@@ -20654,6 +21048,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: 'itemskill(ctx, 689, level: 10)'
   type: delay_consume
   weight: 10
 - aegis_name: Pty_Inc_Agi_Scroll
@@ -20663,6 +21058,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: 'itemskill(ctx, 690, level: 10)'
   type: delay_consume
   weight: 10
 - aegis_name: Pty_Assumptio_Scroll
@@ -20672,6 +21068,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: 'itemskill(ctx, 691, level: 5)'
   type: delay_consume
   weight: 10
 - aegis_name: Siege_Teleport_Scroll
@@ -20680,6 +21077,8 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
+  on_use: ItemDialogs.stage(ctx, :cash_siege_tele, [])
   type: usable
   weight: 10
 - aegis_name: Job_Manual50
@@ -20688,6 +21087,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: sc_start(ctx, :sc_jexpboost, 1800000, 50)
   type: usable
   weight: 10
@@ -20697,6 +21097,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 366, level: 10)'
   type: delay_consume
   weight: 10
@@ -20706,6 +21107,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 92, level: 5)'
   type: delay_consume
   weight: 10
@@ -20737,6 +21139,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: sc_start(ctx, :sc_itemscript, 180000, [4121, 248, 0, 0])
   type: usable
   weight: 10
 - aegis_name: GhostringS
@@ -20745,6 +21148,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: sc_start(ctx, :sc_itemscript, 60000, [4047, 302, 0, 0])
   type: usable
   weight: 10
 - aegis_name: Greed_Scroll_C
@@ -20753,6 +21157,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 1013, level: 1)'
   type: delay_consume
   weight: 10
@@ -20820,6 +21225,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: sc_start(ctx, :sc_jexpboost, 1800000, 25)
   type: usable
   weight: 10
@@ -21406,6 +21812,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: 'percent_heal(ctx, hp: 10)'
   type: healing
   weight: 10
@@ -21416,6 +21823,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: sc_start(ctx, :sc_lifeinsurance, 1800000, 0)
   type: usable
   weight: 10
@@ -21426,6 +21834,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   type: usable
   weight: 10
 - aegis_name: DF_Blessing_10_Scroll
@@ -21435,6 +21844,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 34, level: 10)'
   type: delay_consume
   weight: 10
@@ -21445,6 +21855,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: 'itemskill(ctx, 29, level: 10)'
   type: delay_consume
   weight: 10
@@ -21455,6 +21866,11 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :heal3)
+    ctx = sc_start(ctx, :sc_s_lifepotion, 600000, [-5, 5, 0, 0])
+    ctx
   type: usable
   weight: 10
 - aegis_name: DF_Vit_Dish10
@@ -21463,6 +21879,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: sc_start(ctx, :sc_vitfood, 1800000, 10)
   type: usable
   weight: 10
@@ -21472,6 +21889,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: sc_start(ctx, :sc_lukfood, 1800000, 10)
   type: usable
   weight: 10
@@ -21481,6 +21899,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: sc_start(ctx, :sc_dexfood, 1800000, 10)
   type: usable
   weight: 10
@@ -21490,6 +21909,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: sc_start(ctx, :sc_intfood, 1800000, 10)
   type: usable
   weight: 10
@@ -21499,6 +21919,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: sc_start(ctx, :sc_agifood, 1800000, 10)
   type: usable
   weight: 10
@@ -21508,6 +21929,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: sc_start(ctx, :sc_strfood, 1800000, 10)
   type: usable
   weight: 10
@@ -21518,6 +21940,8 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
+  on_use: sc_start(ctx, :sc_itemscript, 60000, [4047, 302, 0, 0])
   type: usable
   weight: 10
 - aegis_name: DF_Tyr's_Blessing
@@ -21527,6 +21951,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: |-
     ctx = sc_start(ctx, :sc_fleefood, 300000, 30)
     ctx = sc_start(ctx, :sc_hitfood, 300000, 30)
@@ -21542,6 +21967,11 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :benedictio)
+    ctx = sc_start(ctx, :sc_elementalchange, 1800000, [1, 6, 1, 0])
+    ctx
   type: usable
   weight: 10
 - aegis_name: DF_Red_Booster
@@ -21551,6 +21981,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   type: usable
   weight: 10
 - aegis_name: DF_Med_Life_Potion
@@ -21559,6 +21990,10 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :heal3)
+    ctx = sc_start(ctx, :sc_l_lifepotion, 600000, [-7, 4, 0, 0])
+    ctx
   type: usable
   weight: 10
 - aegis_name: UltimateCook_S
@@ -21567,6 +22002,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: |-
     ctx = specialeffect2(ctx, :bash3d)
     ctx = sc_start(ctx, :sc_ultimatecook, 1800000, 10)
@@ -21579,6 +22015,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   on_use: |-
     ctx = specialeffect2(ctx, :bash3d)
     ctx = sc_start(ctx, :sc_ultimatecook, 1800000, 10)
@@ -32205,6 +32642,7 @@
   buy: 10
   id: 22515
   name: Twisted Key of Time
+  on_use: 'itemskill(ctx, 677, level: 2)'
   type: delay_consume
   weight: 300
 - aegis_name: Dark_Red_Clot
@@ -32949,6 +33387,24 @@
   buy: 10
   id: 22670
   name: Invitation of Darkness
+  on_use: |-
+    ctx = set_local(ctx, :rnd, Enum.random(1..3))
+    ctx = if (get_local(ctx, :rnd, 0) == 1) do
+      ctx = specialeffect2(ctx, :devil)
+      ctx = warp(ctx, "niflheim", 193, 186)
+      ctx
+    else
+      if (get_local(ctx, :rnd, 0) == 2) do
+        ctx = heal(ctx, hp: -500, sp: -1000)
+        ctx = sc_start(ctx, :sc_stun, 3000, 0)
+        ctx
+      else
+        ctx = specialeffect2(ctx, :devil)
+        ctx = warp(ctx, "niflheim", 347, 255)
+        ctx
+      end
+    end
+    ctx
   type: usable
   weight: 10
 - aegis_name: MarchGiftBox_
@@ -33490,16 +33946,29 @@
 - aegis_name: G_Mysterious_Water
   id: 22816
   name: True Mysterious Life Potion
+  no_use_sitting: true
   type: usable
   weight: 10
 - aegis_name: G_Small_Life_Potion
   id: 22817
   name: True Small Life Potion
+  no_use_sitting: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :heal3)
+    ctx = sc_start(ctx, :sc_s_lifepotion, 3600000, [-5, 5, 0, 0])
+    ctx = sc_start(ctx, :sc_speedup0, 600000, 25)
+    ctx
   type: usable
   weight: 10
 - aegis_name: G_Med_Life_Potion
   id: 22818
   name: True Medium Life Potion
+  no_use_sitting: true
+  on_use: |-
+    ctx = specialeffect2(ctx, :heal3)
+    ctx = sc_start(ctx, :sc_l_lifepotion, 3600000, [-7, 4, 0, 0])
+    ctx = sc_start(ctx, :sc_speedup0, 600000, 25)
+    ctx
   type: usable
   weight: 10
 - aegis_name: G_Almighty
@@ -33521,6 +33990,7 @@
 - aegis_name: G_ASPD_Potion
   id: 22820
   name: True Enhanced ASPD Potion
+  no_use_sitting: true
   on_use: |-
     ctx = sc_start(ctx, :sc_atthaste_cash, 3600000, 3)
     ctx = sc_start(ctx, :sc_speedup0, 600000, 25)
@@ -33530,6 +34000,7 @@
 - aegis_name: G_Red_Booster
   id: 22821
   name: True Red Booster
+  no_use_sitting: true
   on_use: |-
     ctx = specialeffect2(ctx, :potion_berserk)
     ctx = sc_start(ctx, :sc_2011rwc_scroll, 3600000, 0)
@@ -33831,6 +34302,10 @@
 - aegis_name: Shabby_Purse
   id: 22876
   name: Old Money Pocket
+  on_use: |-
+    ctx = specialeffect2(ctx, :steal)
+    ctx = set_zeny(ctx, (zeny(ctx) + Enum.random(100..1000)))
+    ctx
   type: usable
 - aegis_name: Binding_Rope
   buy: 10
@@ -34678,6 +35153,7 @@
 - aegis_name: Mont_Blanc_Cake
   id: 23045
   name: Mont Blanc
+  no_use_sitting: true
   on_use: |-
     ctx = percent_heal(ctx, hp: 20, sp: 20)
     ctx = itemskill(ctx, 45, level: 5)
@@ -35457,6 +35933,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  no_use_sitting: true
   type: usable
   weight: 10
 - aegis_name: New_Hat_Scroll2
@@ -35751,6 +36228,7 @@
   buy: 2500
   id: 23257
   name: Old Tree's Dew
+  no_use_sitting: true
   on_use: ctx
   type: usable
   weight: 50
@@ -35758,6 +36236,7 @@
   buy: 2500
   id: 23258
   name: Stinky Rotten Meat
+  no_use_sitting: true
   on_use: ctx
   type: usable
   weight: 50
@@ -36377,6 +36856,7 @@
   equip_level_min: 100
   id: 23360
   name: Psychotropic
+  no_use_sitting: true
   type: delay_consume
   weight: 10
 - aegis_name: Serum
@@ -36435,21 +36915,37 @@
 - aegis_name: Fire_Armor_S
   id: 23374
   name: Fire Armor Scroll
+  on_use: |-
+    ctx = specialeffect2(ctx, :firehit)
+    ctx = sc_start(ctx, :sc_elementalchange, 1800000, [1, 3, 1, 0])
+    ctx
   type: usable
   weight: 10
 - aegis_name: Cold_Armor_S
   id: 23375
   name: Water Armor Scroll
+  on_use: |-
+    ctx = specialeffect2(ctx, :coldhit)
+    ctx = sc_start(ctx, :sc_elementalchange, 1800000, [1, 1, 1, 0])
+    ctx
   type: usable
   weight: 10
 - aegis_name: Wind_Armor_S
   id: 23376
   name: Wind Armor Scroll
+  on_use: |-
+    ctx = specialeffect2(ctx, :windhit)
+    ctx = sc_start(ctx, :sc_elementalchange, 1800000, [1, 4, 1, 0])
+    ctx
   type: usable
   weight: 10
 - aegis_name: Earth_Armor_S
   id: 23377
   name: Earth Armor Scroll
+  on_use: |-
+    ctx = specialeffect2(ctx, :earthhit)
+    ctx = sc_start(ctx, :sc_elementalchange, 1800000, [1, 2, 1, 0])
+    ctx
   type: usable
   weight: 10
 - aegis_name: General_Scroll
@@ -38326,21 +38822,25 @@
 - aegis_name: G_Small_Mana_Potion
   id: 100005
   name: True Small Mana Potion
+  no_use_sitting: true
   type: usable
   weight: 10
 - aegis_name: G_M_DEFScroll
   id: 100006
   name: True Shining Defense Scroll
+  no_use_sitting: true
   type: usable
   weight: 10
 - aegis_name: G_Limit_Power_Booster
   id: 100007
   name: True Limited Power Booster
+  no_use_sitting: true
   type: usable
   weight: 10
 - aegis_name: G_Infinity_Drink
   id: 100008
   name: True Infinity Drink
+  no_use_sitting: true
   on_use: |-
     ctx = specialeffect2(ctx, :potion_berserk)
     ctx = sc_start(ctx, :sc_infinity_drink, 3600000, 0)
@@ -38705,6 +39205,7 @@
 - aegis_name: DishSet05
   id: 100075
   name: Level 5 Dishes
+  no_use_sitting: true
   on_use: |-
     ctx = sc_start(ctx, :sc_strfood, 600000, 5)
     ctx = sc_start(ctx, :sc_agifood, 600000, 5)
@@ -38719,6 +39220,7 @@
 - aegis_name: DishSet06
   id: 100076
   name: Level 6 Dishes
+  no_use_sitting: true
   on_use: |-
     ctx = sc_start(ctx, :sc_strfood, 600000, 6)
     ctx = sc_start(ctx, :sc_agifood, 600000, 6)
@@ -38733,6 +39235,7 @@
 - aegis_name: DishSet07
   id: 100077
   name: Level 7 Dishes
+  no_use_sitting: true
   on_use: |-
     ctx = sc_start(ctx, :sc_strfood, 600000, 7)
     ctx = sc_start(ctx, :sc_agifood, 600000, 7)
@@ -38747,6 +39250,7 @@
 - aegis_name: DishSet08
   id: 100078
   name: Level 8 Dishes
+  no_use_sitting: true
   on_use: |-
     ctx = sc_start(ctx, :sc_strfood, 600000, 8)
     ctx = sc_start(ctx, :sc_agifood, 600000, 8)
@@ -38761,6 +39265,7 @@
 - aegis_name: DishSet09
   id: 100079
   name: Level 9 Dishes
+  no_use_sitting: true
   on_use: |-
     ctx = sc_start(ctx, :sc_strfood, 600000, 9)
     ctx = sc_start(ctx, :sc_agifood, 600000, 9)
@@ -38775,6 +39280,7 @@
 - aegis_name: DishSet10
   id: 100080
   name: Level 10 Dishes
+  no_use_sitting: true
   on_use: |-
     ctx = sc_start(ctx, :sc_strfood, 600000, 10)
     ctx = sc_start(ctx, :sc_agifood, 600000, 10)
@@ -39440,6 +39946,7 @@
 - aegis_name: G_Tyrs_Blessing
   id: 100316
   name: True Tyr's Blessing
+  no_use_sitting: true
   on_use: |-
     ctx = sc_start(ctx, :sc_fleefood, 3600000, 30)
     ctx = sc_start(ctx, :sc_hitfood, 3600000, 30)
@@ -39452,6 +39959,7 @@
 - aegis_name: G_Mental_Potion
   id: 100317
   name: True Mental Potion
+  no_use_sitting: true
   on_use: |-
     ctx = specialeffect2(ctx, :spellbreaker)
     ctx = sc_start(ctx, :sc_mental_potion, 3600000, 10)
@@ -42683,6 +43191,11 @@
 - aegis_name: Dogyeonju
   id: 101394
   name: Azalea Wine
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 10)
+    ctx = skilleffect(ctx, 29, 0)
+    ctx = sc_start(ctx, :sc_increaseagi, 60000, 3)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Enchant_Ticket_3
@@ -44582,6 +45095,8 @@
 - aegis_name: Maya_Scroll_TW
   id: 102404
   name: Maya Purple Scroll (Egg)
+  no_use_sitting: true
+  on_use: sc_start(ctx, :sc_intravision, 60000, 0)
   type: usable
   weight: 10
 - aegis_name: Hero_Weapon_Box_TH2
@@ -45593,10 +46108,12 @@
 - aegis_name: aegis_103218
   id: 103218
   name: Angel's Song
+  no_use_sitting: true
   type: usable
 - aegis_name: aegis_103219
   id: 103219
   name: Clock Lubricant
+  no_use_sitting: true
   type: usable
 - aegis_name: aegis_103234
   id: 103234

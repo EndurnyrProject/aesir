@@ -793,6 +793,7 @@
   id: 606
   name: Aloevera
   no_use_sitting: true
+  on_use: 'itemskill(ctx, 473, level: 1)'
   type: delay_consume
   weight: 100
 - aegis_name: Yggdrasilberry
@@ -1959,6 +1960,7 @@
   id: 12033
   name: Box of Sunlight
   no_use_sitting: true
+  on_use: sc_start(ctx, :sc_intravision, 30000, 0)
   type: usable
   weight: 200
 - aegis_name: Painting_Box
@@ -4466,6 +4468,7 @@
   no_guild_storage: true
   no_trade: true
   no_use_sitting: true
+  on_use: 'itemskill(ctx, 693, level: 1)'
   type: delay_consume
   weight: 100
 - aegis_name: Thick_Manual50
@@ -14463,6 +14466,7 @@
   name: Party Blessing 10 Scroll
   no_guild_storage: true
   no_trade: true
+  on_use: 'itemskill(ctx, 689, level: 10)'
   type: delay_consume
   weight: 10
 - aegis_name: Pty_Inc_Agi_Scroll
@@ -14471,6 +14475,7 @@
   name: Party Increase Agi 10 Scroll
   no_guild_storage: true
   no_trade: true
+  on_use: 'itemskill(ctx, 690, level: 10)'
   type: delay_consume
   weight: 10
 - aegis_name: Pty_Assumptio_Scroll
@@ -14479,6 +14484,7 @@
   name: Party Assumptio 5 Scroll
   no_guild_storage: true
   no_trade: true
+  on_use: 'itemskill(ctx, 691, level: 5)'
   type: delay_consume
   weight: 10
 - aegis_name: Siege_Teleport_Scroll
@@ -14545,6 +14551,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: sc_start(ctx, :sc_itemscript, 180000, [4121, 248, 0, 0])
   type: usable
   weight: 10
 - aegis_name: GhostringS
@@ -14553,6 +14560,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: sc_start(ctx, :sc_itemscript, 60000, [4047, 302, 0, 0])
   type: usable
   weight: 10
 - aegis_name: Greed_Scroll_C
@@ -14588,6 +14596,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: sc_start(ctx, :sc_itemscript, 180000, [4302, 368, 0, 0])
   type: usable
   weight: 10
 - aegis_name: MistressS
@@ -14596,6 +14605,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: sc_start(ctx, :sc_itemscript, 180000, [4132, 369, 0, 0])
   type: usable
   weight: 10
 - aegis_name: Orc_HeroS
@@ -14604,6 +14614,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: sc_start(ctx, :sc_itemscript, 60000, [4143, 370, 0, 0])
   type: usable
   weight: 10
 - aegis_name: Orc_LoadS
@@ -14612,6 +14623,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: sc_start(ctx, :sc_itemscript, 180000, [4135, 371, 0, 0])
   type: usable
   weight: 10
 - aegis_name: Job_Manual25

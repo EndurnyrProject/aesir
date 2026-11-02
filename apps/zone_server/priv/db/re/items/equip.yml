@@ -3685,7 +3685,7 @@
   locations:
     - right_hand
   name: Azoth
-  on_equip: 'bonus(ctx, :class_change, 300)'
+  on_equip: bonus(ctx, :class_change, 300)
   range: 1
   refineable: true
   subtype: dagger
@@ -4481,6 +4481,7 @@
   locations:
     - both_hand
   name: Wild Beast Claw
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, if((refine(ctx) >= 9), do: 2, else: 1), 100)'
   range: 1
   refineable: true
   slots: 1
@@ -4527,6 +4528,10 @@
   locations:
     - both_hand
   name: Drill Katar
+  on_equip: |-
+    ctx = bonus(ctx, :hit, 30)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 476}, 1, 150)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -4550,6 +4555,7 @@
   locations:
     - both_hand
   name: Blood Tears
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 665}, if((refine(ctx) >= 9), do: 2, else: 1), 30)'
   range: 1
   refineable: true
   slots: 2
@@ -4908,6 +4914,14 @@
   locations:
     - both_hand
   name: Chakram
+  on_equip: |-
+    if (skill_lv(ctx, 134) == 10) do
+      ctx = bonus(ctx, :hit, 10)
+      ctx = bonus(ctx, {:skill_atk, 406}, 20)
+      ctx
+    else
+      ctx
+    end
   range: 1
   refineable: true
   slots: 2
@@ -5129,6 +5143,7 @@
   locations:
     - both_hand
   name: Blood Tears
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 665}, if((refine(ctx) >= 9), do: 2, else: 1), 30)'
   range: 1
   refineable: true
   slots: 3
@@ -5498,6 +5513,31 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 75)
+    ctx = bonus(ctx, {:addrace, :player_human}, 75)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, pow((min(14, refine(ctx)) - 4), 2))
+      ctx = bonus(ctx, {:addrace, :player_human}, pow((min(14, refine(ctx)) - 4), 2))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, :aspd_rate, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, :aspd_rate, 5)
+      ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 1, 50)
+      ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 673, trigger_skill: 42}, 2, 200)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: one_handed_axe
@@ -6029,6 +6069,33 @@
   locations:
     - right_hand
   name: Lesser Guild Member's Cleaver
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (20 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (20 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 673, trigger_skill: 42}, 1, 100)
+      ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 673, trigger_skill: 230}, 1, 100)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: one_handed_axe
@@ -6187,6 +6254,30 @@
   locations:
     - right_hand
   name: Grinder Axe
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, :vit, 3)
+    ctx = bonus(ctx, {:skill_atk, 490}, div(base_level(ctx), 10))
+    ctx = if (skill_lv(ctx, 490) == 10) do
+      bonus(ctx, :atk, 25)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :atk_rate, 5)
+      ctx = bonus(ctx, :heal_power, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :varcast_rate, -7)
+      ctx = bonus(ctx, :aspd_rate, 7)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -7192,6 +7283,31 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 70)
+    ctx = bonus(ctx, {:addrace, :player_human}, 70)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 25)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 25)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, pow((min(14, refine(ctx)) - 3), 2))
+      ctx = bonus(ctx, {:addrace, :player_human}, pow((min(14, refine(ctx)) - 3), 2))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 1, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 1, 100)
+      ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 673, trigger_skill: 42}, 2, 200)
+      ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 673, trigger_skill: 485}, 2, 200)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: two_handed_axe
@@ -7354,6 +7470,16 @@
   locations:
     - both_hand
   name: Giant Axe
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 485}, 15)
+    ctx = if (stat(ctx, :str) >= 95) do
+      ctx = bonus(ctx, :hit, 10)
+      ctx = bonus(ctx, :aspd_rate, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -8272,6 +8398,38 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 95)
+    ctx = bonus(ctx, {:addrace, :player_human}, 95)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, pow((min(14, refine(ctx)) - 4), 2))
+      ctx = bonus(ctx, {:addrace, :player_human}, pow((min(14, refine(ctx)) - 4), 2))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, :aspd_rate, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      ctx = if job_is(ctx, :base_job, :knight) do
+        auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 673, trigger_skill: 56}, 2, 200)
+      else
+        if job_is(ctx, :base_job, :crusader) do
+          auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 367}, 5, 100)
+        else
+          ctx
+        end
+      end
+      ctx = bonus(ctx, :aspd_rate, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 3
   refineable: true
   subtype: one_handed_spear
@@ -9624,6 +9782,13 @@
   locations:
     - both_hand
   name: Ivory Lance
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 2)
+    ctx = bonus(ctx, :aspd_rate, 3)
+    ctx = bonus(ctx, {:add_eff, :sc_bleeding}, 300)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 1, 30)
+    ctx = grant_skill(ctx, 58, 5)
+    ctx
   range: 3
   refineable: true
   slots: 1
@@ -9699,6 +9864,35 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 70)
+    ctx = bonus(ctx, {:addrace, :player_human}, 70)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 25)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 25)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, pow((min(14, refine(ctx)) - 4), 2))
+      ctx = bonus(ctx, {:addrace, :player_human}, pow((min(14, refine(ctx)) - 4), 2))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      if job_is(ctx, :base_job, :knight) do
+        auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 673, trigger_skill: 56}, 2, 200)
+      else
+        if job_is(ctx, :base_job, :crusader) do
+          auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 367}, 5, 200)
+        else
+          ctx
+        end
+      end
+    else
+      ctx
+    end
+    ctx
   range: 3
   refineable: true
   subtype: two_handed_spear
@@ -13151,6 +13345,19 @@
     - right_hand
   magic_attack: 170
   name: Lich's Bone Wand
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, :dex, 1)
+    ctx = set(ctx, :atk_ele, :undead)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 677}, 5, (10 + refine(ctx)))
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :matk_rate, 3)
+      ctx = bonus(ctx, :max_sp, 300)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -13806,6 +14013,20 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, :dex, 1)
+    ctx = set(ctx, :atk_ele, :undead)
+    ctx = bonus(ctx, :matk_rate, 20)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 677}, 5, (10 + refine(ctx)))
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :matk_rate, 3)
+      ctx = bonus(ctx, :max_sp, 300)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -16933,6 +17154,11 @@
   locations:
     - right_hand
   name: Horn of Hillslion
+  on_equip: |-
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 1, 30)
+    ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 266, trigger_skill: 370}, 1, 100)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 261}, 5, 10)
+    ctx
   range: 1
   refineable: true
   slots: 3
@@ -18424,6 +18650,11 @@
   locations:
     - right_hand
   name: Bass Guitar
+  on_equip: |-
+    ctx = bonus(ctx, :sp_gain_value, 3)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 91}, 3, 30)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 667}, 2, 100)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -19684,6 +19915,11 @@
   locations:
     - right_hand
   name: Sea Witch's Foot
+  on_equip: |-
+    ctx = bonus(ctx, :sp_gain_value, 5)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 88}, 3, 50)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 663}, 2, 100)
+    ctx
   range: 2
   refineable: true
   slots: 1
@@ -39281,6 +39517,11 @@
   locations:
     - both_accessory
   name: Cursed Hand
+  on_equip: |-
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 1, 30)
+    ctx = bonus(ctx, :hit, 10)
+    ctx = bonus(ctx, :hp_regen, 20)
+    ctx
   slots: 1
   type: armor
   weight: 50
@@ -45100,6 +45341,14 @@
   locations:
     - both_accessory
   name: Pendant of Chaos
+  on_equip: |-
+    ctx = bonus(ctx, {:addclass, :all}, 6)
+    ctx = bonus(ctx, {:subele, :shadow}, 5)
+    ctx = bonus(ctx, {:res_eff, :sc_confusion}, 10000)
+    ctx = bonus(ctx, {:add_eff, :sc_confusion}, 500)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 667}, 2, 30)
+    ctx = bonus(ctx, :int, -5)
+    ctx
   type: armor
   weight: 100
 - aegis_name: Pendant_Of_Maelstorm
@@ -58340,6 +58589,12 @@
   locations:
     - head_top
   name: RJC Katusa Flower
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 91}, (15 + equip_item(ctx, :refine, 9)))
+    ctx = bonus(ctx, {:skill_atk, 90}, (15 + equip_item(ctx, :refine, 9)))
+    ctx = bonus(ctx, {:skill_varcast_rate, 91}, -25)
+    ctx = bonus(ctx, {:skill_varcast_rate, 90}, -25)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -60956,6 +61211,18 @@
   locations:
     - head_top
   name: Drooping Morocc Minion
+  on_equip: |-
+    ctx = bonus(ctx, :sp_gain_value, 2)
+    ctx = bonus(ctx, :magic_sp_gain_value, 2)
+    ctx = if (refine(ctx) > 8) do
+      ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 673}, 3, 5)
+      ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 3, 5)
+      ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 665}, 2, 5)
+      ctx
+    else
+      auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 673}, 2, 2)
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -63063,6 +63330,7 @@
   locations:
     - head_top
   name: Splash Hat
+  on_equip: 'autobonus(ctx, %{primary: [], trigger: :attack, secondary: [{:status_start, :sc_windweapon, 180000, 1}], battle_flag: 849}, 3, 180000)'
   refineable: true
   slots: 1
   type: armor
@@ -66170,6 +66438,26 @@
   locations:
     - head_mid
   name: Noble Mask
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 368}, (base_level(ctx) * 2))
+    ctx = bonus(ctx, {:skill_variable_cast, 367}, -2000)
+    ctx = bonus(ctx, {:skill_variable_cast, 255}, -2000)
+    ctx = if (base_level(ctx) > 149) do
+      ctx = bonus(ctx, :max_hp_rate, 3)
+      ctx = bonus(ctx, :aspd_rate, 3)
+      ctx
+    else
+      if (base_level(ctx) > 99) do
+        ctx = bonus(ctx, :max_hp_rate, 2)
+        ctx = bonus(ctx, :aspd_rate, 2)
+        ctx
+      else
+        ctx = bonus(ctx, :max_hp_rate, 1)
+        ctx = bonus(ctx, :aspd_rate, 1)
+        ctx
+      end
+    end
+    ctx
   type: armor
   view: 1409
   weight: 200
@@ -68339,6 +68627,12 @@
   locations:
     - right_hand
   name: Ivory Knife
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 2)
+    ctx = bonus(ctx, :aspd_rate, 3)
+    ctx = bonus(ctx, {:add_eff, :sc_bleeding}, 300)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 1, 30)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -68445,6 +68739,28 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 75)
+    ctx = bonus(ctx, {:addrace, :player_human}, 75)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 76}, 1, 20)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, pow((min(14, refine(ctx)) - 4), 2))
+      ctx = bonus(ctx, {:addrace, :player_human}, pow((min(14, refine(ctx)) - 4), 2))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      auto_cast(ctx, %{force: 1, flag: 0, trigger: :on_skill, skill_id: 665, trigger_skill: 214}, 1, 250)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: dagger
@@ -69675,6 +69991,12 @@
   locations:
     - right_hand
   name: Ivory Knife
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 2)
+    ctx = bonus(ctx, :aspd_rate, 3)
+    ctx = bonus(ctx, {:add_eff, :sc_bleeding}, 300)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 1, 30)
+    ctx
   refineable: true
   slots: 3
   subtype: dagger
@@ -73721,6 +74043,34 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 75)
+    ctx = bonus(ctx, {:addrace, :player_human}, 75)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, pow((min(14, refine(ctx)) - 4), 2))
+      ctx = bonus(ctx, {:addrace, :player_human}, pow((min(14, refine(ctx)) - 4), 2))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 6) do
+      bonus(ctx, :aspd_rate, 5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, :aspd_rate, 5)
+      ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 673, trigger_skill: 5}, 2, 200)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: one_handed_sword
@@ -74973,6 +75323,25 @@
   locations:
     - right_hand
   name: Sealed Maximum Sword
+  on_equip: |-
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 14}, 5, 100)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = if (refine(ctx) >= 10) do
+        bonus(ctx, :aspd, 1)
+      else
+        ctx
+      end
+      ctx = bonus(ctx, :atk, if((refine(ctx) >= 10), do: (65 + 45), else: 65))
+      ctx
+    else
+      ctx
+    end
+    ctx = if (if((refine(ctx) >= 7), do: if((refine(ctx) >= 10), do: ((-1000 + 500) + 500), else: (-1000 + 500)), else: -1000) != 0) do
+      bonus(ctx, :max_hp, if((refine(ctx) >= 7), do: if((refine(ctx) >= 10), do: ((-1000 + 500) + 500), else: (-1000 + 500)), else: -1000))
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -75288,6 +75657,18 @@
   locations:
     - right_hand
   name: God's Sword
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 5)
+    ctx = bonus(ctx, :critical, 50)
+    ctx = bonus(ctx, :perfect_dodge, 200)
+    ctx = bonus(ctx, {:addrace, :demon}, 30)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 379}, if((skill_lv(ctx, 379) > 3), do: skill_lv(ctx, 379), else: 3), (1 + refine(ctx)))
+    ctx = if (refine(ctx) >= 8) do
+      grant_skill(ctx, 379, 3)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -75940,6 +76321,15 @@
   locations:
     - armor
   name: Bone Plate
+  on_equip: |-
+    ctx = bonus(ctx, :str, 1)
+    ctx = bonus(ctx, :mdef, 3)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 10)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 10)
+    ctx = bonus(ctx, {:ignore_def_race, :brute}, 10)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 665}, 1, 10)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -76499,6 +76889,17 @@
   locations:
     - armor
   name: Golden Rod Robe
+  on_equip: |-
+    ctx = set(ctx, :def_ele, :wind)
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, {:skill_variable_cast, 85}, -3000)
+    ctx = if (stat(ctx, :int) >= 120) do
+      bonus(ctx, :int, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: armor
   weight: 500
@@ -76518,6 +76919,17 @@
   locations:
     - armor
   name: Aqua Robe
+  on_equip: |-
+    ctx = set(ctx, :def_ele, :water)
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, {:skill_variable_cast, 89}, -3000)
+    ctx = if (stat(ctx, :int) >= 120) do
+      bonus(ctx, :int, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: armor
   weight: 500
@@ -76537,6 +76949,17 @@
   locations:
     - armor
   name: Crimson Robe
+  on_equip: |-
+    ctx = set(ctx, :def_ele, :fire)
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, {:skill_variable_cast, 83}, -3000)
+    ctx = if (stat(ctx, :int) >= 120) do
+      bonus(ctx, :int, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: armor
   weight: 500
@@ -76556,6 +76979,17 @@
   locations:
     - armor
   name: Forest Robe
+  on_equip: |-
+    ctx = set(ctx, :def_ele, :earth)
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, {:skill_variable_cast, 91}, -3000)
+    ctx = if (stat(ctx, :int) >= 120) do
+      bonus(ctx, :int, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: armor
   weight: 500
@@ -76804,6 +77238,10 @@
   locations:
     - armor
   name: Sapha's Cloth
+  on_equip: |-
+    ctx = bonus(ctx, :luk, 3)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 406}, max(skill_lv(ctx, 406), 1), 20)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -80339,6 +80777,12 @@
   locations:
     - armor
   name: YSF01 Plate
+  on_equip: |-
+    if (if((stat(ctx, :str) >= 125), do: (if((refine(ctx) >= 13), do: 11, else: if((refine(ctx) >= 11), do: 7, else: if((refine(ctx) >= 8), do: 5, else: 0))) + refine(ctx)), else: if((refine(ctx) >= 13), do: 11, else: if((refine(ctx) >= 11), do: 7, else: if((refine(ctx) >= 8), do: 5, else: 0)))) != 0) do
+      bonus(ctx, :atk_rate, if((stat(ctx, :str) >= 125), do: (if((refine(ctx) >= 13), do: 11, else: if((refine(ctx) >= 11), do: 7, else: if((refine(ctx) >= 8), do: 5, else: 0))) + refine(ctx)), else: if((refine(ctx) >= 13), do: 11, else: if((refine(ctx) >= 11), do: 7, else: if((refine(ctx) >= 8), do: 5, else: 0)))))
+    else
+      ctx
+    end
   refineable: true
   slots: 1
   type: armor
@@ -85529,6 +85973,83 @@
   locations:
     - head_top
   name: Flaward's Hat
+  on_equip: |-
+    if job_is(ctx, :base_job, :blacksmith) do
+      ctx = bonus(ctx, :atk, (2 * div(stat(ctx, :str), 9)))
+      ctx = bonus(ctx, :matk, (2 * div(stat(ctx, :int), 9)))
+      ctx = if (refine(ctx) >= 7) do
+        ctx = bonus(ctx, :def, 10)
+        ctx = bonus(ctx, :mdef, 15)
+        ctx = bonus(ctx, {:skill_atk, 42}, 30)
+        ctx = if (refine(ctx) >= 8) do
+          ctx = bonus(ctx, :delay_rate, -10)
+          ctx = bonus(ctx, :critical, 10)
+          ctx = grant_skill(ctx, 1013, 1)
+          ctx = bonus(ctx, {:skill_cooldown, 1013}, 5000)
+          ctx = if (refine(ctx) >= 9) do
+            ctx = bonus(ctx, {:skill_cooldown, 1013}, -2000)
+            ctx = bonus(ctx, {:skill_atk, 485}, 30)
+            ctx = if (refine(ctx) >= 10) do
+              ctx = bonus(ctx, :all_stats, 2)
+              ctx = bonus(ctx, :max_hp_rate, 3)
+              ctx = bonus(ctx, :max_sp_rate, 3)
+              ctx
+            else
+              ctx
+            end
+            ctx
+          else
+            ctx
+          end
+          ctx
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      if job_is(ctx, :base_job, :alchemist) do
+        ctx = bonus(ctx, :atk, (2 * div(stat(ctx, :str), 9)))
+        ctx = bonus(ctx, :matk, (2 * div(stat(ctx, :int), 9)))
+        ctx = if (refine(ctx) >= 7) do
+          ctx = bonus(ctx, :def, 10)
+          ctx = bonus(ctx, :mdef, 15)
+          ctx = bonus(ctx, {:skill_atk, 230}, 20)
+          ctx = bonus(ctx, {:skill_atk, 229}, 40)
+          ctx = if (refine(ctx) >= 8) do
+            ctx = bonus(ctx, :delay_rate, -10)
+            ctx = bonus(ctx, {:skill_use_sp, 490}, 5)
+            ctx = if (refine(ctx) >= 9) do
+              ctx = bonus(ctx, {:skill_cooldown, 490}, -300)
+              ctx = bonus(ctx, :long_atk_rate, 10)
+              ctx = if (refine(ctx) >= 10) do
+                ctx = bonus(ctx, :all_stats, 2)
+                ctx = bonus(ctx, :max_hp_rate, 3)
+                ctx = bonus(ctx, :max_sp_rate, 3)
+                ctx
+              else
+                ctx
+              end
+              ctx
+            else
+              ctx
+            end
+            ctx
+          else
+            ctx
+          end
+          ctx
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+    end
   refineable: true
   slots: 1
   type: armor
@@ -85542,6 +86063,80 @@
   locations:
     - head_top
   name: Germes's Horn
+  on_equip: |-
+    if job_is(ctx, :base_job, :assassin) do
+      ctx = bonus(ctx, :atk, (2 * div(stat(ctx, :str), 9)))
+      ctx = bonus(ctx, :matk, (2 * div(stat(ctx, :int), 9)))
+      ctx = if (refine(ctx) >= 7) do
+        ctx = bonus(ctx, :def, 10)
+        ctx = bonus(ctx, :mdef, 15)
+        ctx = bonus(ctx, {:skill_atk, 137}, 20)
+        ctx = if (refine(ctx) >= 8) do
+          ctx = bonus(ctx, :delay_rate, -10)
+          ctx = bonus(ctx, {:skill_use_sp, 378}, 10)
+          ctx = if (refine(ctx) >= 9) do
+            ctx = bonus(ctx, :critical, 10)
+            ctx = bonus(ctx, :crit_atk_rate, 10)
+            ctx = if (refine(ctx) >= 10) do
+              ctx = bonus(ctx, :all_stats, 2)
+              ctx = bonus(ctx, :max_hp_rate, 3)
+              ctx = bonus(ctx, :max_sp_rate, 3)
+              ctx
+            else
+              ctx
+            end
+            ctx
+          else
+            ctx
+          end
+          ctx
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      if job_is(ctx, :base_job, :rogue) do
+        ctx = bonus(ctx, :atk, (2 * div(stat(ctx, :str), 9)))
+        ctx = bonus(ctx, :matk, (2 * div(stat(ctx, :int), 9)))
+        ctx = if (refine(ctx) >= 7) do
+          ctx = bonus(ctx, :def, 10)
+          ctx = bonus(ctx, :mdef, 15)
+          ctx = bonus(ctx, {:magic_atk_ele, :neutral}, 5)
+          ctx = if (refine(ctx) >= 8) do
+            ctx = bonus(ctx, :matk, 30)
+            ctx = bonus(ctx, :delay_rate, -10)
+            ctx = if (refine(ctx) >= 9) do
+              ctx = bonus(ctx, :flee, 30)
+              ctx = bonus(ctx, {:magic_atk_ele, :neutral}, 10)
+              ctx = if (refine(ctx) >= 10) do
+                ctx = bonus(ctx, :all_stats, 2)
+                ctx = bonus(ctx, :max_hp_rate, 3)
+                ctx = bonus(ctx, :max_sp_rate, 3)
+                ctx
+              else
+                ctx
+              end
+              ctx
+            else
+              ctx
+            end
+            ctx
+          else
+            ctx
+          end
+          ctx
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+    end
   refineable: true
   slots: 1
   type: armor
@@ -85808,6 +86403,54 @@
   locations:
     - head_top
   name: Shao Kahn's Helmet (OSM)
+  on_equip: |-
+    ctx = bonus(ctx, :str, 3)
+    ctx = bonus(ctx, :luk, 3)
+    ctx = bonus(ctx, :atk, 10)
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = bonus(ctx, {:skill_atk, 485}, 5)
+    ctx = bonus(ctx, {:skill_atk, 42}, 5)
+    ctx = if (skill_lv(ctx, 111) == 5) do
+      auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 110}, 3, 70)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :def, 15)
+      ctx = bonus(ctx, {:skill_atk, 485}, 10)
+      ctx = bonus(ctx, {:skill_atk, 42}, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 8) do
+      ctx = bonus(ctx, :flee, 15)
+      ctx = bonus(ctx, {:skill_atk, 485}, 15)
+      ctx = bonus(ctx, {:skill_atk, 42}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :atk, 15)
+      ctx = bonus(ctx, {:skill_atk, 485}, 20)
+      ctx = bonus(ctx, {:skill_atk, 42}, 20)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, :atk_rate, 5)
+      ctx = bonus(ctx, {:skill_atk, 153}, 30)
+      ctx = bonus(ctx, {:add_monster_drop, 529}, 500)
+      ctx = bonus(ctx, {:add_monster_drop, 530}, 500)
+      ctx = bonus(ctx, {:add_item_heal, 529}, 200)
+      ctx = bonus(ctx, {:add_item_heal, 530}, 200)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -93105,6 +93748,36 @@
   locations:
     - head_top
   name: Ancient Gold Ornament
+  on_equip: |-
+    ctx = if (base_level(ctx) >= 150) do
+      bonus(ctx, :all_stats, 2)
+    else
+      ctx
+    end
+    ctx = if ((job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :merchant)) || job_is(ctx, :base_class, :thief)) do
+      bonus(ctx, {:addclass, :all}, 8)
+    else
+      ctx
+    end
+    ctx = if (job_is(ctx, :base_class, :mage) || job_is(ctx, :base_class, :acolyte)) do
+      ctx = bonus(ctx, :matk_rate, 8)
+      ctx = bonus(ctx, :heal_power, 7)
+      ctx
+    else
+      ctx
+    end
+    ctx = if job_is(ctx, :base_class, :archer) do
+      ctx = bonus(ctx, :dex, 3)
+      ctx = if (equip_item(ctx, :view, 9) == 11) do
+        bonus(ctx, :long_atk_rate, 10)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -93201,6 +93874,19 @@
     - head_mid
     - head_top
   name: Wunderkammer
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 136}, 1, 30)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 250}, 5, 20)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 25}, 1, 20)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 254}, 5, 5)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 406}, 5, 5)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 261}, 5, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 270}, 5, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 73}, 5, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 45}, 5, 5)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 92}, 3, 5)
+    ctx
   slots: 1
   type: armor
   view: 743
@@ -96843,6 +97529,16 @@
   locations:
     - head_top
   name: Ancient Civil Man
+  on_equip: |-
+    ctx = bonus(ctx, :int, 3)
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, :luk, 1)
+    ctx = if (equip_item(ctx, :view, 9) == 15) do
+      bonus(ctx, :varcast_rate, -3)
+    else
+      ctx
+    end
+    ctx
   type: armor
   view: 846
   weight: 500
@@ -100942,6 +101638,18 @@
   locations:
     - head_top
   name: Yggdrasil Herald Crown
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 5)
+    ctx = bonus(ctx, :max_hp, 100)
+    ctx = bonus(ctx, :max_sp, 50)
+    ctx = if ((max(refine(ctx), 7) - 7) != 0) do
+      ctx = bonus(ctx, :max_hp_rate, (max(refine(ctx), 7) - 7))
+      ctx = bonus(ctx, :varcast_rate, (0 - (max(refine(ctx), 7) - 7)))
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -102488,6 +103196,12 @@
     - head_low
     - head_top
   name: Queen Scaraba Helmet
+  on_equip: |-
+    ctx = bonus(ctx, :def_rate, -50)
+    ctx = bonus(ctx, :mdef_rate, -50)
+    ctx = bonus(ctx, {:subrace, :insect}, refine(ctx))
+    ctx = auto_cast(ctx, %{force: 1, flag: 851, trigger: :attack, skill_id: 667}, 2, (10 + (refine(ctx) * 5)))
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -123266,6 +123980,18 @@
   locations:
     - garment
   name: YSF01 Manteau
+  on_equip: |-
+    ctx = if (refine(ctx) >= 8) do
+      bonus(ctx, :atk, 20)
+    else
+      ctx
+    end
+    ctx = if (if((stat(ctx, :vit) >= 125), do: (if((refine(ctx) >= 8), do: if((refine(ctx) >= 11), do: if((refine(ctx) >= 13), do: (-3 + -4), else: -3), else: 0), else: 0) + -10), else: if((refine(ctx) >= 8), do: if((refine(ctx) >= 11), do: if((refine(ctx) >= 13), do: (-3 + -4), else: -3), else: 0), else: 0)) != 0) do
+      bonus(ctx, :delay_rate, if((stat(ctx, :vit) >= 125), do: (if((refine(ctx) >= 8), do: if((refine(ctx) >= 11), do: if((refine(ctx) >= 13), do: (-3 + -4), else: -3), else: 0), else: 0) + -10), else: if((refine(ctx) >= 8), do: if((refine(ctx) >= 11), do: if((refine(ctx) >= 13), do: (-3 + -4), else: -3), else: 0), else: 0)))
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -124278,6 +125004,19 @@
   locations:
     - garment
   name: Illusion Goibne Spaulders
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 2)
+    ctx = bonus(ctx, :vit, 1)
+    ctx = if (if((refine(ctx) >= 7), do: if((refine(ctx) >= 9), do: (5 + 10), else: 5), else: 0) != 0) do
+      ctx = bonus(ctx, {:addele, :water}, if((refine(ctx) >= 7), do: if((refine(ctx) >= 9), do: (5 + 10), else: 5), else: 0))
+      ctx = bonus(ctx, {:addele, :wind}, if((refine(ctx) >= 7), do: if((refine(ctx) >= 9), do: (5 + 10), else: 5), else: 0))
+      ctx = bonus(ctx, {:addele, :earth}, if((refine(ctx) >= 7), do: if((refine(ctx) >= 9), do: (5 + 10), else: 5), else: 0))
+      ctx = bonus(ctx, {:addele, :fire}, if((refine(ctx) >= 7), do: if((refine(ctx) >= 9), do: (5 + 10), else: 5), else: 0))
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -125689,6 +126428,10 @@
   locations:
     - both_hand
   name: Kogarasumaru
+  on_equip: |-
+    ctx = bonus(ctx, :crit_atk_rate, (refine(ctx) * 2))
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 1, 50)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -125951,6 +126694,33 @@
   locations:
     - both_hand
   name: Onimaru
+  on_equip: |-
+    ctx = bonus(ctx, :atk, min(120, stat(ctx, :str)))
+    ctx = if (stat(ctx, :str) > 119) do
+      bonus(ctx, :atk, 160)
+    else
+      if (stat(ctx, :str) > 107) do
+        bonus(ctx, :atk, 80)
+      else
+        if (stat(ctx, :str) > 94) do
+          bonus(ctx, :atk, 40)
+        else
+          ctx
+        end
+      end
+    end
+    ctx = if (refine(ctx) > 6) do
+      bonus(ctx, :unbreakable_weapon, 1)
+    else
+      ctx
+    end
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 677}, 4, 100)
+    ctx = if (refine(ctx) > 8) do
+      auto_cast(ctx, %{force: 1, flag: 0, trigger: :on_skill, skill_id: 113, trigger_skill: 359}, 5, 100)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -126318,6 +127088,38 @@
   locations:
     - both_hand
   name: Onimaru Sword
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (2 * div(min(base_level(ctx), 120), 3)))
+    ctx = if (base_level(ctx) >= 95) do
+      ctx = bonus(ctx, :atk, 55)
+      ctx = if (base_level(ctx) >= 108) do
+        ctx = bonus(ctx, :atk, 95)
+        ctx = if (base_level(ctx) >= 120) do
+          bonus(ctx, :atk, 175)
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 8) do
+      ctx = bonus(ctx, :unbreakable_weapon, 1)
+      ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 677}, 2, 20)
+      ctx = if (refine(ctx) >= 11) do
+        auto_cast(ctx, %{force: 1, flag: 0, trigger: :on_skill, skill_id: 486, trigger_skill: 359}, 5, 1000)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -129810,6 +130612,24 @@
   locations:
     - shoes
   name: YSF01 Greave
+  on_equip: |-
+    ctx = if (refine(ctx) >= 8) do
+      ctx = bonus(ctx, :aspd_rate, 8)
+      ctx = if (refine(ctx) >= 11) do
+        bonus(ctx, :aspd, 1)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx = if (if((stat(ctx, :luk) >= 125), do: (if((refine(ctx) >= 8), do: if((refine(ctx) >= 11), do: if((refine(ctx) >= 13), do: 10, else: 0), else: 0), else: 0) + 30), else: if((refine(ctx) >= 8), do: if((refine(ctx) >= 11), do: if((refine(ctx) >= 13), do: 10, else: 0), else: 0), else: 0)) != 0) do
+      bonus(ctx, :crit_atk_rate, if((stat(ctx, :luk) >= 125), do: (if((refine(ctx) >= 8), do: if((refine(ctx) >= 11), do: if((refine(ctx) >= 13), do: 10, else: 0), else: 0), else: 0) + 30), else: if((refine(ctx) >= 8), do: if((refine(ctx) >= 11), do: if((refine(ctx) >= 13), do: 10, else: 0), else: 0), else: 0)))
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -132002,6 +132822,10 @@
   locations:
     - shadow_right_accessory
   name: Magical Earring (Shadow)
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, :varcast_rate, if(((0 - bool(ctx, (refine(ctx) >= 7))) != 0), do: 2, else: 1))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Magical_Weapon
@@ -137607,6 +138431,23 @@
   locations:
     - shadow_weapon
   name: Infinity Shadow Weapon
+  on_equip: |-
+    ctx = bonus(ctx, :atk, refine(ctx))
+    ctx = bonus(ctx, :matk, refine(ctx))
+    ctx = if (div(refine(ctx), 3) != 0) do
+      ctx = bonus(ctx, {:addsize, :all}, div(refine(ctx), 3))
+      ctx = bonus(ctx, {:magic_addsize, :all}, div(refine(ctx), 3))
+      ctx = bonus(ctx, {:subsize, :all}, div(refine(ctx), 3))
+      ctx = if (refine(ctx) >= 10) do
+        bonus(ctx, :no_size_fix, 1)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: Rebeginer_Armor_S
@@ -141772,6 +142613,24 @@
   locations:
     - shadow_weapon
   name: Super Power Shadow Weapon
+  on_equip: |-
+    ctx = bonus(ctx, :atk, refine(ctx))
+    ctx = bonus(ctx, :matk, refine(ctx))
+    ctx = bonus(ctx, :long_atk_rate, 5)
+    ctx = bonus(ctx, :short_atk_rate, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :long_atk_rate, 5)
+      ctx = bonus(ctx, :short_atk_rate, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      grant_skill(ctx, 107, skill_lv(ctx, 384))
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Super_Power_Pendant
@@ -144146,6 +145005,25 @@
   locations:
     - shadow_weapon
   name: Creative Shadow Weapon
+  on_equip: |-
+    ctx = bonus(ctx, :atk, refine(ctx))
+    ctx = bonus(ctx, :matk, refine(ctx))
+    ctx = bonus(ctx, :crt, div(refine(ctx), 2))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :crit_rate, 2)
+      ctx = bonus(ctx, :hplus, 2)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, :crit_rate, 2)
+        ctx = bonus(ctx, :hplus, 2)
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Creative_Shield
@@ -144153,6 +145031,24 @@
   locations:
     - shadow_shield
   name: Creative Shadow Shield
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, :crt, div(refine(ctx), 2))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :crit_rate, 2)
+      ctx = bonus(ctx, :hplus, 2)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, :crit_rate, 2)
+        ctx = bonus(ctx, :hplus, 2)
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_R_Bearers_Shoes
@@ -144284,25 +145180,6 @@
   id: 24768
   locations:
     - shadow_weapon
-  on_equip: |-
-    ctx = bonus(ctx, :atk, refine(ctx))
-    ctx = bonus(ctx, :matk, refine(ctx))
-    ctx = bonus(ctx, :crt, div(refine(ctx), 2))
-    ctx = if (refine(ctx) >= 7) do
-      ctx = bonus(ctx, :crit_rate, 2)
-      ctx = bonus(ctx, :hplus, 2)
-      ctx = if (refine(ctx) >= 9) do
-        ctx = bonus(ctx, :crit_rate, 2)
-        ctx = bonus(ctx, :hplus, 2)
-        ctx
-      else
-        ctx
-      end
-      ctx
-    else
-      ctx
-    end
-    ctx
   name: Mega Blitz Shadow Weapon
   on_equip: |-
     ctx = bonus(ctx, :atk, refine(ctx))
@@ -144310,24 +145187,6 @@
     ctx = bonus(ctx, :aspd_rate, 5)
     ctx = bonus(ctx, :delay_rate, (0 - div(refine(ctx), 2)))
     ctx = if (refine(ctx) >= 7) do
-  on_equip: |-
-    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
-    ctx = bonus(ctx, :crt, div(refine(ctx), 2))
-    ctx = if (refine(ctx) >= 7) do
-      ctx = bonus(ctx, :crit_rate, 2)
-      ctx = bonus(ctx, :hplus, 2)
-      ctx = if (refine(ctx) >= 9) do
-        ctx = bonus(ctx, :crit_rate, 2)
-        ctx = bonus(ctx, :hplus, 2)
-        ctx
-      else
-        ctx
-      end
-      ctx
-    else
-      ctx
-    end
-    ctx
       ctx = bonus(ctx, :aspd_rate, 5)
       ctx = bonus(ctx, :aspd, 1)
       ctx = if (refine(ctx) >= 9) do
@@ -150912,6 +151771,33 @@
   locations:
     - both_hand
   name: Lesser Guild Member's Two-Handed Axe
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (25 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (25 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 10)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 10)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 1, 100)
+      ctx = bonus(ctx, :aspd_rate, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      autobonus(ctx, %{primary: [{:bonus, :break_weapon_rate, 10000}], trigger: {:on_skill, 113}, secondary: [], battle_flag: 0}, (10 + (refine(ctx) - 10)), 20000)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: two_handed_axe
@@ -151108,6 +151994,7 @@
     - right_hand
   magic_attack: 200
   name: Maxi Spanner
+  on_equip: bonus(ctx, {:skill_atk, 485}, 30)
   range: 1
   refineable: true
   slots: 1
@@ -158117,6 +159004,7 @@
     - right_hand
   magic_attack: 120
   name: Judgement Slasher
+  on_equip: bonus(ctx, {:skill_atk, 406}, 30)
   range: 1
   refineable: true
   slots: 1
@@ -158140,6 +159028,7 @@
     - right_hand
   magic_attack: 120
   name: Repent Slasher
+  on_equip: bonus(ctx, {:skill_atk, 379}, 30)
   range: 1
   refineable: true
   slots: 1
@@ -170578,6 +171467,7 @@
     - right_hand
   magic_attack: 130
   name: Estal
+  on_equip: bonus(ctx, {:skill_atk, 490}, 30)
   range: 1
   refineable: true
   slots: 1
@@ -170952,6 +171842,34 @@
   locations:
     - head_top
   name: Kukulkan Skull
+  on_equip: |-
+    ctx = bonus(ctx, :vit, 2)
+    ctx = bonus(ctx, {:subrace, :all}, 3)
+    ctx = bonus(ctx, :max_sp_rate, -10)
+    ctx = bonus(ctx, {:subrace, :demi_human}, min(10, refine(ctx)))
+    ctx = bonus(ctx, {:subrace, :player_human}, min(10, refine(ctx)))
+    ctx = bonus(ctx, {:subrace, :player_doram}, min(10, refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :max_hp_rate, 5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :short_weapon_damage_return, 10)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      bonus(ctx, :aspd, 1)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 13) do
+      autobonus(ctx, %{primary: [{:bonus, {:magic_sub_def_ele, :all}, 40}, {:bonus, {:magic_sub_def_ele, :neutral}, -40}], trigger: :when_hit, secondary: [], battle_flag: 338}, 50, 3000)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -171090,34 +172008,6 @@
   slots: 1
   type: armor
   view: 547
-  on_equip: |-
-    ctx = bonus(ctx, :vit, 2)
-    ctx = bonus(ctx, {:subrace, :all}, 3)
-    ctx = bonus(ctx, :max_sp_rate, -10)
-    ctx = bonus(ctx, {:subrace, :demi_human}, min(10, refine(ctx)))
-    ctx = bonus(ctx, {:subrace, :player_human}, min(10, refine(ctx)))
-    ctx = bonus(ctx, {:subrace, :player_doram}, min(10, refine(ctx)))
-    ctx = if (refine(ctx) >= 7) do
-      bonus(ctx, :max_hp_rate, 5)
-    else
-      ctx
-    end
-    ctx = if (refine(ctx) >= 9) do
-      bonus(ctx, :short_weapon_damage_return, 10)
-    else
-      ctx
-    end
-    ctx = if (refine(ctx) >= 11) do
-      bonus(ctx, :aspd, 1)
-    else
-      ctx
-    end
-    ctx = if (refine(ctx) >= 13) do
-      autobonus(ctx, %{primary: [{:bonus, {:magic_sub_def_ele, :all}, 40}, {:bonus, {:magic_sub_def_ele, :neutral}, -40}], trigger: :when_hit, secondary: [], battle_flag: 338}, 50, 3000)
-    else
-      ctx
-    end
-    ctx
   weight: 100
 - aegis_name: Fallen_Angel_feather
   armor_level: 1
@@ -177551,6 +178441,22 @@
   locations:
     - head_top
   name: Germes Horn
+  on_equip: |-
+    ctx = bonus(ctx, :str, 3)
+    ctx = bonus(ctx, :int, 3)
+    ctx = bonus(ctx, :delay_rate, -5)
+    ctx = bonus(ctx, :long_atk_rate, refine(ctx))
+    ctx = if (refine(ctx) >= 5) do
+      bonus(ctx, {:skill_atk, 406}, 20)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :delay_rate, -7)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -177575,6 +178481,22 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :str, 3)
+    ctx = bonus(ctx, :int, 3)
+    ctx = bonus(ctx, :delay_rate, -5)
+    ctx = bonus(ctx, :long_atk_rate, refine(ctx))
+    ctx = if (refine(ctx) >= 5) do
+      bonus(ctx, {:skill_atk, 406}, 20)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :delay_rate, -7)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -178974,6 +179896,24 @@
   locations:
     - head_top
   name: Tiger Glasses
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 5)
+    ctx = bonus(ctx, :flee, 10)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 10)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 10)
+    ctx = bonus(ctx, {:ignore_def_race, :brute}, 10)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 10)
+    ctx = if (refine(ctx) >= 7) do
+      auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 665}, 1, 20)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 261}, 5, 80)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -179747,6 +180687,42 @@
   locations:
     - head_top
   name: Flaward Hat
+  on_equip: |-
+    ctx = bonus(ctx, :str, 3)
+    ctx = bonus(ctx, :int, 3)
+    ctx = bonus(ctx, :atk, div(stat(ctx, :str), 9))
+    ctx = if (refine(ctx) >= 5) do
+      ctx = bonus(ctx, :fixed_cast, -200)
+      ctx = if (refine(ctx) >= 7) do
+        ctx = bonus(ctx, {:skill_atk, 230}, 20)
+        ctx = bonus(ctx, {:skill_atk, 490}, 20)
+        ctx = if (refine(ctx) >= 9) do
+          ctx = bonus(ctx, {:skill_use_sp_rate, 490}, 5)
+          ctx = bonus(ctx, {:skill_cooldown, 490}, -100)
+          ctx = if (refine(ctx) >= 11) do
+            ctx = bonus(ctx, :long_atk_rate, 10)
+            ctx = if (refine(ctx) >= 12) do
+              bonus(ctx, :fixed_cast, -300)
+            else
+              ctx
+            end
+            ctx
+          else
+            ctx
+          end
+          ctx
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -179766,6 +180742,42 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :str, 3)
+    ctx = bonus(ctx, :int, 3)
+    ctx = bonus(ctx, :atk, div(stat(ctx, :str), 9))
+    ctx = if (refine(ctx) >= 5) do
+      ctx = bonus(ctx, :fixed_cast, -200)
+      ctx = if (refine(ctx) >= 7) do
+        ctx = bonus(ctx, {:skill_atk, 230}, 20)
+        ctx = bonus(ctx, {:skill_atk, 490}, 20)
+        ctx = if (refine(ctx) >= 9) do
+          ctx = bonus(ctx, {:skill_use_sp_rate, 490}, 5)
+          ctx = bonus(ctx, {:skill_cooldown, 490}, -100)
+          ctx = if (refine(ctx) >= 11) do
+            ctx = bonus(ctx, :long_atk_rate, 10)
+            ctx = if (refine(ctx) >= 12) do
+              bonus(ctx, :fixed_cast, -300)
+            else
+              ctx
+            end
+            ctx
+          else
+            ctx
+          end
+          ctx
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -181578,6 +182590,21 @@
   locations:
     - head_top
   name: Herosria Hat of Sun God
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 8)
+    ctx = bonus(ctx, :near_atk_def, 5)
+    ctx = bonus(ctx, :long_atk_def, 5)
+    ctx = bonus(ctx, {:magic_sub_def_ele, :all}, 5)
+    ctx = bonus(ctx, :short_atk_rate, -10)
+    ctx = bonus(ctx, :long_atk_rate, -10)
+    ctx = bonus(ctx, {:magic_atk_ele, :all}, -10)
+    ctx = bonus(ctx, {:subrace, :player_human}, 10)
+    ctx = bonus(ctx, {:subrace, :player_doram}, 10)
+    ctx = bonus(ctx, {:addrace, :player_human}, -10)
+    ctx = bonus(ctx, {:addrace, :player_doram}, -10)
+    ctx = bonus(ctx, {:magic_addrace, :player_human}, -10)
+    ctx = bonus(ctx, {:magic_addrace, :player_doram}, -10)
+    ctx
   type: armor
   view: 138
   weight: 3000
@@ -181716,21 +182743,6 @@
   id: 401303
   locations:
     - costume_head_top
-  on_equip: |-
-    ctx = bonus(ctx, :mdef, 8)
-    ctx = bonus(ctx, :near_atk_def, 5)
-    ctx = bonus(ctx, :long_atk_def, 5)
-    ctx = bonus(ctx, {:magic_sub_def_ele, :all}, 5)
-    ctx = bonus(ctx, :short_atk_rate, -10)
-    ctx = bonus(ctx, :long_atk_rate, -10)
-    ctx = bonus(ctx, {:magic_atk_ele, :all}, -10)
-    ctx = bonus(ctx, {:subrace, :player_human}, 10)
-    ctx = bonus(ctx, {:subrace, :player_doram}, 10)
-    ctx = bonus(ctx, {:addrace, :player_human}, -10)
-    ctx = bonus(ctx, {:addrace, :player_doram}, -10)
-    ctx = bonus(ctx, {:magic_addrace, :player_human}, -10)
-    ctx = bonus(ctx, {:magic_addrace, :player_doram}, -10)
-    ctx
   name: Costume Ruck Keeper
   type: armor
   view: 2822
@@ -201825,6 +202837,26 @@
   locations:
     - shoes
   name: Regeneration Thoughtform Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = bonus(ctx, :max_hp_rate, 20)
+    ctx = bonus(ctx, :max_sp_rate, 20)
+    ctx = bonus(ctx, {:skill_varcast_rate, 406}, -100)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :aspd_rate, 10)
+      ctx = bonus(ctx, :delay_rate, -15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :aspd_rate, 10)
+      ctx = bonus(ctx, :delay_rate, -15)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: armor
   weight: 200
@@ -201836,6 +202868,26 @@
   locations:
     - shoes
   name: Regeneration Thoughtform Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = bonus(ctx, :max_hp_rate, 20)
+    ctx = bonus(ctx, :max_sp_rate, 20)
+    ctx = bonus(ctx, {:skill_varcast_rate, 406}, -100)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :aspd_rate, 10)
+      ctx = bonus(ctx, :delay_rate, -15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :aspd_rate, 10)
+      ctx = bonus(ctx, :delay_rate, -15)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -205005,6 +206057,42 @@
   locations:
     - shoes
   name: Enforcer Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, 3)
+    ctx = bonus(ctx, :max_sp_rate, 3)
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = grant_skill(ctx, 114, 1)
+    ctx = bonus(ctx, {:skill_use_sp, 406}, 8)
+    ctx = if (refine(ctx) >= 5) do
+      ctx = bonus(ctx, :max_hp_rate, 7)
+      ctx = bonus(ctx, :max_sp_rate, 7)
+      ctx = bonus(ctx, {:skill_atk, 406}, base_level(ctx))
+      ctx = if (refine(ctx) >= 7) do
+        ctx = bonus(ctx, :max_hp_rate, 10)
+        ctx = bonus(ctx, :max_sp_rate, 10)
+        ctx = if (refine(ctx) >= 9) do
+          ctx = bonus(ctx, :atk_rate, (4 * skill_lv(ctx, 52)))
+          ctx = bonus(ctx, {:skill_varcast_rate, 406}, (-5 * skill_lv(ctx, 135)))
+          ctx = if (refine(ctx) >= 12) do
+            ctx = bonus(ctx, {:skill_atk, 406}, (30 * skill_lv(ctx, 139)))
+            ctx = bonus(ctx, {:ignore_def_race, :all}, (5 * skill_lv(ctx, 378)))
+            ctx
+          else
+            ctx
+          end
+          ctx
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: armor
   weight: 400
@@ -205024,6 +206112,42 @@
   locations:
     - shoes
   name: Enforcer Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, 3)
+    ctx = bonus(ctx, :max_sp_rate, 3)
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = grant_skill(ctx, 114, 1)
+    ctx = bonus(ctx, {:skill_use_sp, 406}, 8)
+    ctx = if (refine(ctx) >= 5) do
+      ctx = bonus(ctx, :max_hp_rate, 7)
+      ctx = bonus(ctx, :max_sp_rate, 7)
+      ctx = bonus(ctx, {:skill_atk, 406}, base_level(ctx))
+      ctx = if (refine(ctx) >= 7) do
+        ctx = bonus(ctx, :max_hp_rate, 10)
+        ctx = bonus(ctx, :max_sp_rate, 10)
+        ctx = if (refine(ctx) >= 9) do
+          ctx = bonus(ctx, :atk_rate, (4 * skill_lv(ctx, 52)))
+          ctx = bonus(ctx, {:skill_varcast_rate, 406}, (-5 * skill_lv(ctx, 135)))
+          ctx = if (refine(ctx) >= 12) do
+            ctx = bonus(ctx, {:skill_atk, 406}, (30 * skill_lv(ctx, 139)))
+            ctx = bonus(ctx, {:ignore_def_race, :all}, (5 * skill_lv(ctx, 378)))
+            ctx
+          else
+            ctx
+          end
+          ctx
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -205047,6 +206171,42 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, 3)
+    ctx = bonus(ctx, :max_sp_rate, 3)
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = grant_skill(ctx, 114, 1)
+    ctx = bonus(ctx, {:skill_use_sp, 406}, 8)
+    ctx = if (refine(ctx) >= 5) do
+      ctx = bonus(ctx, :max_hp_rate, 7)
+      ctx = bonus(ctx, :max_sp_rate, 7)
+      ctx = bonus(ctx, {:skill_atk, 406}, base_level(ctx))
+      ctx = if (refine(ctx) >= 7) do
+        ctx = bonus(ctx, :max_hp_rate, 10)
+        ctx = bonus(ctx, :max_sp_rate, 10)
+        ctx = if (refine(ctx) >= 9) do
+          ctx = bonus(ctx, :atk_rate, (4 * skill_lv(ctx, 52)))
+          ctx = bonus(ctx, {:skill_varcast_rate, 406}, (-5 * skill_lv(ctx, 135)))
+          ctx = if (refine(ctx) >= 12) do
+            ctx = bonus(ctx, {:skill_atk, 406}, (30 * skill_lv(ctx, 139)))
+            ctx = bonus(ctx, {:ignore_def_race, :all}, (5 * skill_lv(ctx, 378)))
+            ctx
+          else
+            ctx
+          end
+          ctx
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: armor
   weight: 400
@@ -214950,6 +216110,10 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :varcast_rate, -7)
+    ctx = bonus(ctx, :hplus, 2)
+    ctx
   slots: 1
   type: armor
   weight: 500
@@ -215088,10 +216252,6 @@
     - both_accessory
   name: Heroic Token (Arch Mage)
   on_equip: |-
-  on_equip: |-
-    ctx = bonus(ctx, :varcast_rate, -7)
-    ctx = bonus(ctx, :hplus, 2)
-    ctx
     ctx = bonus(ctx, :matk_rate, 10)
     ctx = bonus(ctx, :atk_rate, 10)
     ctx = bonus(ctx, :varcast_rate, -10)
@@ -217498,6 +218658,18 @@
   locations:
     - both_accessory
   name: Assassin Amulet
+  on_equip: |-
+    ctx = bonus(ctx, :max_sp, 20)
+    ctx = bonus(ctx, :critical, (3 + skill_lv(ctx, 135)))
+    ctx = bonus(ctx, :atk, skill_lv(ctx, 376))
+    ctx = bonus(ctx, :flee, (-5 * skill_lv(ctx, 376)))
+    ctx = bonus(ctx, :hit, (-5 * skill_lv(ctx, 135)))
+    ctx = bonus(ctx, :aspd_rate, skill_lv(ctx, 379))
+    ctx = bonus(ctx, :max_hp_rate, skill_lv(ctx, 379))
+    ctx = bonus(ctx, {:skill_atk, 136}, (5 * skill_lv(ctx, 376)))
+    ctx = bonus(ctx, {:skill_atk, 137}, (5 * skill_lv(ctx, 135)))
+    ctx = bonus(ctx, {:skill_atk, 406}, (5 * skill_lv(ctx, 379)))
+    ctx
   slots: 1
   type: armor
   weight: 400
@@ -217519,6 +218691,18 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :max_sp, 20)
+    ctx = bonus(ctx, :critical, (3 + skill_lv(ctx, 135)))
+    ctx = bonus(ctx, :atk, skill_lv(ctx, 376))
+    ctx = bonus(ctx, :flee, (-5 * skill_lv(ctx, 376)))
+    ctx = bonus(ctx, :hit, (-5 * skill_lv(ctx, 135)))
+    ctx = bonus(ctx, :aspd_rate, skill_lv(ctx, 379))
+    ctx = bonus(ctx, :max_hp_rate, skill_lv(ctx, 379))
+    ctx = bonus(ctx, {:skill_atk, 136}, (5 * skill_lv(ctx, 376)))
+    ctx = bonus(ctx, {:skill_atk, 137}, (5 * skill_lv(ctx, 135)))
+    ctx = bonus(ctx, {:skill_atk, 406}, (5 * skill_lv(ctx, 379)))
+    ctx
   slots: 1
   type: armor
   weight: 400
@@ -219176,6 +220360,16 @@
   locations:
     - both_accessory
   name: Chemical Glove
+  on_equip: |-
+    ctx = bonus(ctx, :hit, 20)
+    ctx = bonus(ctx, :aspd_rate, (5 + div(skill_lv(ctx, 226), 2)))
+    ctx = bonus(ctx, :atk, (5 * div(skill_lv(ctx, 226), 2)))
+    ctx = bonus(ctx, :max_hp_rate, (2 * div(skill_lv(ctx, 226), 2)))
+    ctx = bonus(ctx, {:skill_use_sp, 490}, div(skill_lv(ctx, 226), 2))
+    ctx = bonus(ctx, {:add_item_group_heal, :chemical_glove_roc}, 100)
+    ctx = bonus(ctx, {:skill_atk, 490}, (20 * div(base_level(ctx), 20)))
+    ctx = bonus(ctx, {:skill_atk, 230}, (30 * div(base_level(ctx), 20)))
+    ctx
   slots: 1
   type: armor
   weight: 100
@@ -219197,6 +220391,16 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :hit, 20)
+    ctx = bonus(ctx, :aspd_rate, (5 + div(skill_lv(ctx, 226), 2)))
+    ctx = bonus(ctx, :atk, (5 * div(skill_lv(ctx, 226), 2)))
+    ctx = bonus(ctx, :max_hp_rate, (2 * div(skill_lv(ctx, 226), 2)))
+    ctx = bonus(ctx, {:skill_use_sp, 490}, div(skill_lv(ctx, 226), 2))
+    ctx = bonus(ctx, {:add_item_group_heal, :chemical_glove_roc}, 100)
+    ctx = bonus(ctx, {:skill_atk, 490}, (20 * div(base_level(ctx), 20)))
+    ctx = bonus(ctx, {:skill_atk, 230}, (30 * div(base_level(ctx), 20)))
+    ctx
   slots: 1
   type: armor
   weight: 100
@@ -221901,6 +223105,21 @@
   locations:
     - right_hand
   name: Infinity Blade
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 20)
+    ctx = bonus(ctx, :critical, 50)
+    ctx = bonus(ctx, :perfect_dodge, 200)
+    ctx = bonus(ctx, {:addrace, :demon}, 50)
+    ctx = bonus(ctx, {:addrace, :undead}, 50)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 379}, max(skill_lv(ctx, 379), 3), (100 + (30 * refine(ctx))))
+    ctx = if (refine(ctx) >= 8) do
+      ctx = grant_skill(ctx, 379, 5)
+      ctx = bonus(ctx, :no_size_fix, 1)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -223614,6 +224833,31 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:magic_atk_ele, :fire}, 3)
+    ctx = bonus(ctx, :atk_rate, 3)
+    ctx = if (refine(ctx) != 0) do
+      ctx = bonus(ctx, :atk, (refine(ctx) * 2))
+      ctx = bonus(ctx, :matk, (refine(ctx) * 2))
+      ctx
+    else
+      ctx
+    end
+    ctx = bonus(ctx, :atk, (div(min(base_level(ctx), 180), 15) * 3))
+    ctx = bonus(ctx, :matk, (div(min(base_level(ctx), 180), 15) * 3))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, {:magic_atk_ele, :fire}, skill_lv(ctx, 225))
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addsize, :all}, 10)
+      ctx = bonus(ctx, {:magic_addsize, :all}, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -226021,6 +227265,33 @@
   locations:
     - right_hand
   name: Intermediate Guild Member's Cleaver
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (20 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (20 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 673, trigger_skill: 42}, 1, 100)
+      ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 673, trigger_skill: 230}, 1, 100)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -226591,6 +227862,30 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :matk_rate, 3)
+    ctx = bonus(ctx, :atk_rate, 3)
+    ctx = bonus(ctx, {:magic_atk_ele, :holy}, 3)
+    ctx = if (refine(ctx) != 0) do
+      ctx = bonus(ctx, :atk, (refine(ctx) * 2))
+      ctx = bonus(ctx, :matk, (refine(ctx) * 2))
+      ctx
+    else
+      ctx
+    end
+    ctx = bonus(ctx, :atk, (div(min(base_level(ctx), 180), 15) * 3))
+    ctx = bonus(ctx, :matk, (div(min(base_level(ctx), 180), 15) * 3))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, {:magic_atk_ele, :holy}, skill_lv(ctx, 248))
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :long_atk_rate, 10)
+    else
+      ctx
+    end
+    ctx
   range: 3
   refineable: true
   slots: 2
@@ -227781,6 +229076,10 @@
     - right_hand
   magic_attack: 140
   name: Military Law Book
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 10)
+    ctx = bonus(ctx, :reduce_damage_return, (10 * refine(ctx)))
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -227919,10 +229218,6 @@
   attack: 170
   classes:
     - fourth
-  on_equip: |-
-    ctx = bonus(ctx, :all_stats, 10)
-    ctx = bonus(ctx, :reduce_damage_return, (10 * refine(ctx)))
-    ctx
   equip_level_min: 210
   id: 540025
   jobs:
@@ -228583,6 +229878,17 @@
     - right_hand
   magic_attack: 200
   name: Book of Thoth
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = grant_skill(ctx, 48, 10)
+    ctx = bonus(ctx, {:skill_fixed_cast, 19}, 10000)
+    ctx = bonus(ctx, {:skill_fixed_cast, 14}, 10000)
+    ctx = bonus(ctx, {:skill_fixed_cast, 20}, 10000)
+    ctx = bonus(ctx, {:skill_atk, 19}, (25 * refine(ctx)))
+    ctx = bonus(ctx, {:skill_atk, 14}, (25 * refine(ctx)))
+    ctx = bonus(ctx, {:skill_atk, 20}, (25 * refine(ctx)))
+    ctx = bonus(ctx, {:skill_atk, 90}, (25 * refine(ctx)))
+    ctx
   range: 3
   refineable: true
   slots: 1
@@ -237176,6 +238482,22 @@
   locations:
     - right_hand
   name: Orc Mace
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (40 * div(refine(ctx), 3)))
+    ctx = if (refine(ctx) >= 6) do
+      ctx = bonus(ctx, {:addrace, :all}, 10)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, {:addrace, :all}, 15)
+        ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 486}, 5, 50)
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -239215,6 +240537,33 @@
   locations:
     - both_hand
   name: Intermediate Guild Member's Two-Handed Axe
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (25 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (25 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 10)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 10)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 1, 100)
+      ctx = bonus(ctx, :aspd_rate, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      autobonus(ctx, %{primary: [{:bonus, :break_weapon_rate, 10000}], trigger: {:on_skill, 113}, secondary: [], battle_flag: 0}, (10 + (refine(ctx) - 10)), 20000)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1

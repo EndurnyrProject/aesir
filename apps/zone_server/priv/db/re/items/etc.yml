@@ -5470,6 +5470,11 @@
   locations:
     - armor
   name: Tao Gunka Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, 100)
+    ctx = bonus(ctx, :def_rate, -50)
+    ctx = bonus(ctx, :mdef_rate, -50)
+    ctx
   type: card
   weight: 10
 - aegis_name: Whisper_Boss_Card
@@ -5705,7 +5710,7 @@
   locations:
     - both_accessory
   name: Hylozoist Card
-  on_equip: 'bonus(ctx, :class_change, 100)'
+  on_equip: bonus(ctx, :class_change, 100)
   type: card
   weight: 10
 - aegis_name: High_Orc_Card
@@ -6994,6 +6999,15 @@
   locations:
     - right_hand
   name: Sword Guardian Card
+  on_equip: |-
+    if ((equip_item(ctx, :view, 9) == 2) || (equip_item(ctx, :view, 9) == 3)) do
+      ctx = bonus(ctx, :hit, 5)
+      ctx = bonus(ctx, :critical, 5)
+      ctx = bonus(ctx, {:skill_atk, 62}, 25)
+      ctx
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Bow_Guardian_Card
@@ -7002,6 +7016,15 @@
   locations:
     - right_hand
   name: Bow Guardian Card
+  on_equip: |-
+    if (equip_item(ctx, :view, 9) == 11) do
+      ctx = bonus(ctx, :hit, 5)
+      ctx = bonus(ctx, :critical, 5)
+      ctx = bonus(ctx, {:skill_atk, 47}, 50)
+      ctx
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Salamander_Card
@@ -7174,6 +7197,15 @@
   locations:
     - right_hand
   name: Necromancer Card
+  on_equip: |-
+    if ((equip_item(ctx, :view, 9) == 10) || (equip_item(ctx, :view, 9) == 23)) do
+      ctx = bonus(ctx, :int, 1)
+      ctx = bonus(ctx, {:ignore_mdef_class, :normal}, 2)
+      ctx = bonus(ctx, {:ignore_mdef_class, :boss}, 2)
+      ctx
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Fallen_Bishop_Card
@@ -7486,6 +7518,24 @@
   locations:
     - right_hand
   name: Fanat Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 10)
+    ctx = if (equip_item(ctx, :view, 9) == 3) do
+      ctx = if (refine(ctx) >= 10) do
+        bonus(ctx, :aspd, 1)
+      else
+        ctx
+      end
+      ctx = if (refine(ctx) >= 14) do
+        bonus(ctx, :aspd, 1)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Beholder_Master_Card
@@ -7494,6 +7544,24 @@
   locations:
     - right_hand
   name: Beholder Master Card
+  on_equip: |-
+    ctx = bonus(ctx, :long_atk_rate, 3)
+    ctx = if (equip_item(ctx, :view, 9) == 11) do
+      ctx = if (refine(ctx) >= 10) do
+        bonus(ctx, :aspd, 1)
+      else
+        ctx
+      end
+      ctx = if (refine(ctx) >= 14) do
+        bonus(ctx, :aspd, 1)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Heavy_Metaling_Card
@@ -7792,6 +7860,11 @@
   locations:
     - armor
   name: Sealed Tao Gunka Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, if((refine(ctx) > 14), do: 75, else: 50))
+    ctx = bonus(ctx, :def_rate, -50)
+    ctx = bonus(ctx, :mdef_rate, -50)
+    ctx
   type: card
   weight: 10
 - aegis_name: Sealed_TurtleG_Card
@@ -8172,6 +8245,13 @@
   locations:
     - garment
   name: Kraken Card
+  on_equip: |-
+    ctx = bonus(ctx, :flee, 10)
+    ctx = grant_skill(ctx, 51, 1)
+    ctx = grant_skill(ctx, 214, 1)
+    ctx = auto_cast(ctx, %{force: 1, flag: 0, trigger: :on_skill, skill_id: 665, trigger_skill: 214}, 1, 250)
+    ctx
+  on_unequip: status_end(ctx, :sc_hiding)
   type: card
   weight: 10
 - aegis_name: Odd_Coelacanth_Card
@@ -8486,6 +8566,14 @@
   locations:
     - right_hand
   name: Enhanced Necromancer Card
+  on_equip: |-
+    if ((equip_item(ctx, :view, 9) == 10) || (equip_item(ctx, :view, 9) == 23)) do
+      ctx = bonus(ctx, :int, 1)
+      ctx = bonus(ctx, {:ignore_mdef_class, :all}, (2 + div(refine(ctx), 4)))
+      ctx
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Manny_Card
@@ -8629,6 +8717,10 @@
   locations:
     - armor
   name: Stalker Gertie Card
+  on_equip: |-
+    ctx = bonus(ctx, :hit, if((stat(ctx, :luk) >= 110), do: 40, else: 20))
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 476}, 1, 100)
+    ctx
   type: card
   weight: 10
 - aegis_name: Paladin_Card
@@ -8753,6 +8845,12 @@
   locations:
     - right_hand
   name: General Daehyon Card
+  on_equip: |-
+    if ((equip_item(ctx, :view, 9) == 2) || (equip_item(ctx, :view, 9) == 3)) do
+      bonus(ctx, :atk, 100)
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Soheon_Card
@@ -8761,6 +8859,24 @@
   locations:
     - right_hand
   name: Armed Guard Soheon Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 10)
+    ctx = if (equip_item(ctx, :view, 9) == 1) do
+      ctx = if (refine(ctx) >= 10) do
+        bonus(ctx, :aspd, 1)
+      else
+        ctx
+      end
+      ctx = if (refine(ctx) >= 14) do
+        bonus(ctx, :aspd, 1)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Gioia_Card
@@ -8806,6 +8922,14 @@
   locations:
     - right_hand
   name: Warrior Lola Card
+  on_equip: |-
+    if (equip_item(ctx, :view, 9) == 8) do
+      ctx = bonus(ctx, :atk, (20 + refine(ctx)))
+      ctx = bonus(ctx, :critical, (10 + refine(ctx)))
+      ctx
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Kades_Card
@@ -8946,6 +9070,10 @@
   locations:
     - armor
   name: Bakonawa Card
+  on_equip: |-
+    ctx = bonus(ctx, :str, 4)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 665}, 4, 20)
+    ctx
   type: card
   weight: 10
 - aegis_name: Buwaya_Card
@@ -9125,6 +9253,29 @@
   locations:
     - right_hand
   name: Faithful Manager Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 5)
+    ctx = bonus(ctx, :matk, 5)
+    ctx = if (equip_item(ctx, :view, 9) == 15) do
+      ctx = if (refine(ctx) >= 10) do
+        ctx = bonus(ctx, :atk, 20)
+        ctx = bonus(ctx, :matk, 20)
+        ctx
+      else
+        ctx
+      end
+      ctx = if (refine(ctx) >= 14) do
+        ctx = bonus(ctx, :atk, 20)
+        ctx = bonus(ctx, :matk, 20)
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: White_Knightage_Card
@@ -9237,6 +9388,7 @@
   locations:
     - shoes
   name: Nightmare Timer Keeper Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 677}, 2, 30)'
   type: card
   weight: 10
 - aegis_name: Owl_Viscount_Card
@@ -26466,6 +26618,10 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :neutral)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 673}, 1, 3)
+    ctx
   subtype: kunai
   type: ammo
   weight: 20
@@ -30029,6 +30185,10 @@
   locations:
     - right_hand
   name: Celine Kimi Card
+  on_equip: |-
+    ctx = bonus(ctx, :matk_rate, 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 338, trigger: :attack, skill_id: 673}, 1, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: AmdaraisH_Card_J
@@ -31351,6 +31511,10 @@
   locations:
     - right_hand
   name: Payon Soldier Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, if((((equip_item(ctx, :view, 9) == 4) || (equip_item(ctx, :view, 9) == 5)) && (refine(ctx) >= 10)), do: if((refine(ctx) >= 14), do: ((5 + 20) + 20), else: (5 + 20)), else: 5))
+    ctx = bonus(ctx, :matk, if((((equip_item(ctx, :view, 9) == 4) || (equip_item(ctx, :view, 9) == 5)) && (refine(ctx) >= 10)), do: if((refine(ctx) >= 14), do: ((5 + 20) + 20), else: (5 + 20)), else: 5))
+    ctx
   type: card
   weight: 10
 - aegis_name: Cowraiders1_Card
@@ -31726,6 +31890,14 @@
   locations:
     - armor
   name: Sealed Stalker Card
+  on_equip: |-
+    if (refine(ctx) < 15) do
+      ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 476}, 1, 1)
+      ctx = bonus(ctx, :hit, if((stat(ctx, :luk) >= 110), do: 20, else: 10))
+      ctx
+    else
+      bonus(ctx, :hit, if((stat(ctx, :luk) >= 110), do: 30, else: 15))
+    end
   type: card
   weight: 10
 - aegis_name: SLD_Paladin_Card
@@ -31757,6 +31929,20 @@
   locations:
     - right_hand
   name: Sealed General Daehyon Card
+  on_equip: |-
+    if (refine(ctx) < 15) do
+      if ((equip_item(ctx, :view, 9) == 2) || (equip_item(ctx, :view, 9) == 3)) do
+        bonus(ctx, :atk, 50)
+      else
+        ctx
+      end
+    else
+      if ((equip_item(ctx, :view, 9) == 2) || (equip_item(ctx, :view, 9) == 3)) do
+        bonus(ctx, :atk, 75)
+      else
+        ctx
+      end
+    end
   type: card
   weight: 10
 - aegis_name: SLD_Gioia_Card
@@ -32039,6 +32225,11 @@
   locations:
     - right_hand
   name: Ju Card
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 19}, ((10 + if((equip_item(ctx, :view, 9) == 15), do: 20, else: 0)) + if((refine(ctx) >= 14), do: 20, else: 0)))
+    ctx = bonus(ctx, {:skill_atk, 14}, ((10 + if((equip_item(ctx, :view, 9) == 15), do: 20, else: 0)) + if((refine(ctx) >= 14), do: 20, else: 0)))
+    ctx = bonus(ctx, {:skill_atk, 20}, ((10 + if((equip_item(ctx, :view, 9) == 15), do: 20, else: 0)) + if((refine(ctx) >= 14), do: 20, else: 0)))
+    ctx
   type: card
   weight: 10
 - aegis_name: Dy_Card
@@ -32148,6 +32339,19 @@
   locations:
     - garment
   name: Haunted Obsidian Card
+  on_equip: |-
+    if (div(stat(ctx, :agi), 10) != 0) do
+      ctx = bonus(ctx, :flee, (3 * div(stat(ctx, :agi), 10)))
+      ctx = bonus(ctx, :aspd_rate, div(stat(ctx, :agi), 10))
+      ctx = if (stat(ctx, :agi) >= 120) do
+        bonus(ctx, :aspd, 1)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Ancient_Trijoint_Card
@@ -32168,6 +32372,19 @@
   locations:
     - garment
   name: Ancient Stalactic Golem Card
+  on_equip: |-
+    if (div(stat(ctx, :vit), 10) != 0) do
+      ctx = bonus(ctx, :aspd_rate, div(stat(ctx, :vit), 10))
+      ctx = bonus(ctx, :max_hp, (150 * div(stat(ctx, :vit), 10)))
+      ctx = if (stat(ctx, :vit) >= 120) do
+        bonus(ctx, :delay_rate, -3)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Ancient_Megalith_Card
@@ -32486,6 +32703,11 @@
     - head_mid
     - head_top
   name: Grim Reaper Ankou Card
+  on_equip: |-
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 677}, 3, (1 + refine(ctx)))
+    ctx = autobonus(ctx, %{primary: [{:bonus, :atk_rate, 25}, {:bonus, :matk_rate, 25}], trigger: :when_hit, secondary: [], battle_flag: 851}, (1 + refine(ctx)), 10000)
+    ctx = autobonus(ctx, %{primary: [], trigger: {:on_skill, 142}, secondary: [], battle_flag: 0}, 1000, 5000)
+    ctx
   type: card
   weight: 10
 - aegis_name: LivingDeath_Card
@@ -33138,6 +33360,12 @@
   locations:
     - shoes
   name: Ancient Wootan Defender Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, 10)
+    ctx = bonus(ctx, :max_sp_rate, 10)
+    ctx = bonus(ctx, {:skill_atk, 379}, 50)
+    ctx = bonus(ctx, {:skill_atk, 406}, 50)
+    ctx
   type: card
   weight: 10
 - aegis_name: C_Himel_Card
@@ -35576,11 +35804,23 @@
 - aegis_name: Energy_Drop6
   id: 29233
   name: Energy (Magic)
+  on_equip: |-
+    ctx = bonus(ctx, :no_cast_cancel, 1)
+    ctx = bonus(ctx, :varcast_rate, 15)
+    ctx = bonus(ctx, :mdef, if((equip_item(ctx, :refine, 3) < 5), do: 0, else: equip_item(ctx, :refine, 3)))
+    ctx = bonus(ctx, :max_sp_rate, if((equip_item(ctx, :refine, 3) < 5), do: 0, else: equip_item(ctx, :refine, 3)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Energy_Drop7
   id: 29234
   name: Energy (Fatal Blow)
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (3 + (equip_item(ctx, :refine, 3) * 5)))
+    ctx = bonus(ctx, :critical, (5 + if((equip_item(ctx, :refine, 3) < 5), do: 0, else: equip_item(ctx, :refine, 3))))
+    ctx = bonus(ctx, :perfect_dodge, ((4 + if((equip_item(ctx, :refine, 3) < 5), do: 0, else: equip_item(ctx, :refine, 3))) * 10))
+    ctx = bonus(ctx, :luk, (3 * equip_item(ctx, :refine, 3)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Dodge1_J
@@ -36435,6 +36675,7 @@
 - aegis_name: Ranger_Middle
   id: 29429
   name: Sniper Stone (Middle)
+  on_equip: bonus(ctx, {:skill_fixed_cast, 382}, -500)
   subtype: enchant
   type: card
 - aegis_name: Ranger_Bottom
@@ -36457,6 +36698,7 @@
 - aegis_name: Sorcerer_Middle
   id: 29433
   name: Professor Stone (Middle)
+  on_equip: bonus(ctx, {:skill_fixed_cast, 482}, -400)
   subtype: enchant
   type: card
 - aegis_name: Sorcerer_Bottom
@@ -36678,6 +36920,7 @@
 - aegis_name: Mechanic_Bottom
   id: 29483
   name: Whitesmith Stone (Bottom)
+  on_equip: bonus(ctx, {:skill_atk, 485}, 20)
   subtype: enchant
   type: card
 - aegis_name: Mechanic_Robe
@@ -37586,61 +37829,121 @@
 - aegis_name: Time_Jewely_Str_1
   id: 29672
   name: Temporal Jewel (STR) Lv 1
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (2 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :hit, (3 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :atk_rate, div(equip_item(ctx, :refine, 6), 5))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Time_Jewely_Str_2
   id: 29673
   name: Temporal Jewel (STR) Lv 2
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (4 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :hit, (5 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :atk_rate, (2 * div(equip_item(ctx, :refine, 6), 5)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Time_Jewely_Str_3
   id: 29674
   name: Temporal Jewel (STR) Lv 3
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (7 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :hit, (7 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :atk_rate, (3 * div(equip_item(ctx, :refine, 6), 5)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Time_Jewely_Agi_1
   id: 29675
   name: Temporal Jewel (AGI) Lv 1
+  on_equip: |-
+    ctx = bonus(ctx, :aspd_rate, div(equip_item(ctx, :refine, 6), 2))
+    ctx = bonus(ctx, :flee, (4 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :aspd, div(equip_item(ctx, :refine, 6), 5))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Time_Jewely_Agi_2
   id: 29676
   name: Temporal Jewel (AGI) Lv 2
+  on_equip: |-
+    ctx = bonus(ctx, :aspd_rate, (3 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :flee, (5 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :aspd, div(equip_item(ctx, :refine, 6), 5))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Time_Jewely_Agi_3
   id: 29677
   name: Temporal Jewel (AGI) Lv 3
+  on_equip: |-
+    ctx = bonus(ctx, :aspd_rate, (5 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :flee, (7 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :aspd, div(equip_item(ctx, :refine, 6), 5))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Time_Jewely_Vit_1
   id: 29678
   name: Temporal Jewel (VIT) Lv 1
+  on_equip: |-
+    ctx = bonus(ctx, :def, (5 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :max_hp, (200 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :max_hp_rate, div(equip_item(ctx, :refine, 6), 5))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Time_Jewely_Vit_2
   id: 29679
   name: Temporal Jewel (VIT) Lv 2
+  on_equip: |-
+    ctx = bonus(ctx, :def, (7 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :max_hp, (300 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :max_hp_rate, (2 * div(equip_item(ctx, :refine, 6), 5)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Time_Jewely_Vit_3
   id: 29680
   name: Temporal Jewel (VIT) Lv 3
+  on_equip: |-
+    ctx = bonus(ctx, :def, (10 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :max_hp, (500 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :max_hp_rate, (3 * div(equip_item(ctx, :refine, 6), 5)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Time_Jewely_Int_1
   id: 29681
   name: Temporal Jewel (INT) Lv 1
+  on_equip: |-
+    ctx = bonus(ctx, :heal_power, div(equip_item(ctx, :refine, 6), 2))
+    ctx = bonus(ctx, :matk, (2 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :matk_rate, div(equip_item(ctx, :refine, 6), 5))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Time_Jewely_Int_2
   id: 29682
   name: Temporal Jewel (INT) Lv 2
+  on_equip: |-
+    ctx = bonus(ctx, :heal_power, (3 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :matk, (4 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :matk_rate, (2 * div(equip_item(ctx, :refine, 6), 5)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Time_Jewely_Int_3
   id: 29683
   name: Temporal Jewel (INT) Lv 3
+  on_equip: |-
+    ctx = bonus(ctx, :heal_power, (5 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :matk, (7 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :matk_rate, (3 * div(equip_item(ctx, :refine, 6), 5)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Time_Jewely_Dex_1
@@ -37661,36 +37964,55 @@
 - aegis_name: Time_Jewely_Luk_1
   id: 29687
   name: Temporal Jewel (LUK) Lv 1
+  on_equip: |-
+    ctx = bonus(ctx, :crit_atk_rate, (3 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :critical, div(equip_item(ctx, :refine, 6), 2))
+    ctx = bonus(ctx, :atk_rate, div(equip_item(ctx, :refine, 6), 5))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Time_Jewely_Luk_2
   id: 29688
   name: Temporal Jewel (LUK) Lv 2
+  on_equip: |-
+    ctx = bonus(ctx, :crit_atk_rate, (6 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :critical, (2 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :atk_rate, (2 * div(equip_item(ctx, :refine, 6), 5)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Time_Jewely_Luk_3
   id: 29689
   name: Temporal Jewel (LUK) Lv 3
+  on_equip: |-
+    ctx = bonus(ctx, :crit_atk_rate, (9 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :critical, (3 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :atk_rate, (3 * div(equip_item(ctx, :refine, 6), 5)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Wepon_Property_Fire
   id: 29690
   name: Fire Attribute (Weapon)
+  on_equip: status_start(ctx, :sc_fireweapon, 180000, 1)
   subtype: enchant
   type: card
 - aegis_name: Wepon_Property_Water
   id: 29691
   name: Water Attribute (Weapon)
+  on_equip: status_start(ctx, :sc_waterweapon, 180000, 1)
   subtype: enchant
   type: card
 - aegis_name: Wepon_Property_Wind
   id: 29692
   name: Wind Attribute (Weapon)
+  on_equip: status_start(ctx, :sc_windweapon, 180000, 1)
   subtype: enchant
   type: card
 - aegis_name: Wepon_Property_Ground
   id: 29693
   name: Earth Attribute (Weapon)
+  on_equip: status_start(ctx, :sc_earthweapon, 180000, 1)
   subtype: enchant
   type: card
 - aegis_name: Wepon_Property_Darkness
@@ -37924,6 +38246,15 @@
   locations:
     - right_hand
   name: Lola Card
+  on_equip: |-
+    if (equip_item(ctx, :view, 9) == 8) do
+      ctx = bonus(ctx, :hit, (-10 - refine(ctx)))
+      ctx = bonus(ctx, :critical, (10 + refine(ctx)))
+      ctx = bonus(ctx, :crit_atk_rate, (10 + refine(ctx)))
+      ctx
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Elvira_Card_J
@@ -38330,6 +38661,23 @@
   locations:
     - right_hand
   name: Spectrum Plasma Card
+  on_equip: |-
+    ctx = if ((equip_item(ctx, :view, 9) == 10) || (equip_item(ctx, :view, 9) == 23)) do
+      bonus(ctx, {:magic_atk_ele, :ghost}, 10)
+    else
+      ctx
+    end
+    ctx = if (equip_item(ctx, :refine, 9) >= 10) do
+      bonus(ctx, {:magic_atk_ele, :ghost}, 10)
+    else
+      ctx
+    end
+    ctx = if (equip_item(ctx, :refine, 9) >= 14) do
+      bonus(ctx, {:magic_atk_ele, :ghost}, 10)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Plasma_Arch_Card
@@ -38337,6 +38685,23 @@
   locations:
     - right_hand
   name: Arch Plasma Card
+  on_equip: |-
+    ctx = if ((equip_item(ctx, :view, 9) == 10) || (equip_item(ctx, :view, 9) == 23)) do
+      bonus(ctx, {:magic_atk_ele, :wind}, 10)
+    else
+      ctx
+    end
+    ctx = if (equip_item(ctx, :refine, 9) >= 10) do
+      bonus(ctx, {:magic_atk_ele, :wind}, 10)
+    else
+      ctx
+    end
+    ctx = if (equip_item(ctx, :refine, 9) >= 14) do
+      bonus(ctx, {:magic_atk_ele, :wind}, 10)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Holy_Frus_Card
@@ -38344,6 +38709,23 @@
   locations:
     - right_hand
   name: Holy Frus Card
+  on_equip: |-
+    ctx = if ((equip_item(ctx, :view, 9) == 10) || (equip_item(ctx, :view, 9) == 23)) do
+      bonus(ctx, {:magic_atk_ele, :holy}, 10)
+    else
+      ctx
+    end
+    ctx = if (equip_item(ctx, :refine, 9) >= 10) do
+      bonus(ctx, {:magic_atk_ele, :holy}, 10)
+    else
+      ctx
+    end
+    ctx = if (equip_item(ctx, :refine, 9) >= 14) do
+      bonus(ctx, {:magic_atk_ele, :holy}, 10)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Holy_Skogul_Card
@@ -38528,6 +38910,14 @@
   locations:
     - right_hand
   name: Senior Assistant Bot Card
+  on_equip: |-
+    ctx = if ((equip_item(ctx, :view, 9) == 4) || (equip_item(ctx, :view, 9) == 5)) do
+      bonus(ctx, :long_atk_rate, 10)
+    else
+      ctx
+    end
+    ctx = bonus(ctx, :long_atk_rate, (2 * div(refine(ctx), 2)))
+    ctx
   type: card
   weight: 10
 - aegis_name: Dry_Rafflesia_Card
@@ -38560,6 +38950,19 @@
   locations:
     - right_hand
   name: Senior Special Alnoldi Card
+  on_equip: |-
+    ctx = if (equip_item(ctx, :view, 9) == 3) do
+      bonus(ctx, :short_atk_rate, 10)
+    else
+      ctx
+    end
+    ctx = bonus(ctx, :short_atk_rate, refine(ctx))
+    ctx = if (refine(ctx) >= 11) do
+      bonus(ctx, :unbreakable_weapon, 1)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Beta_Scissore_Ng_Card
@@ -38643,6 +39046,14 @@
   locations:
     - right_hand
   name: Senior Papila Ruba Card
+  on_equip: |-
+    ctx = if (equip_item(ctx, :view, 9) == 3) do
+      bonus(ctx, :crit_atk_rate, 20)
+    else
+      ctx
+    end
+    ctx = bonus(ctx, :crit_atk_rate, (2 * div(refine(ctx), 2)))
+    ctx
   type: card
   weight: 10
 - aegis_name: Papila_Cae_Card
@@ -38663,6 +39074,25 @@
   locations:
     - right_hand
   name: Senior Papila Cae Card
+  on_equip: |-
+    ctx = if ((equip_item(ctx, :view, 9) == 13) || (equip_item(ctx, :view, 9) == 14)) do
+      bonus(ctx, :matk, 20)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, :varcast_rate, -10)
+      ctx = bonus(ctx, :matk, 20)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 13) do
+      bonus(ctx, :matk, 20)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Aries_Card
@@ -38762,6 +39192,23 @@
   locations:
     - right_hand
   name: Red Pitaya Card
+  on_equip: |-
+    ctx = if ((equip_item(ctx, :view, 9) == 10) || (equip_item(ctx, :view, 9) == 23)) do
+      bonus(ctx, {:magic_atk_ele, :fire}, 10)
+    else
+      ctx
+    end
+    ctx = if (equip_item(ctx, :refine, 9) >= 10) do
+      bonus(ctx, {:magic_atk_ele, :fire}, 10)
+    else
+      ctx
+    end
+    ctx = if (equip_item(ctx, :refine, 9) >= 14) do
+      bonus(ctx, {:magic_atk_ele, :fire}, 10)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Pitaya_Boss_Card
@@ -38822,6 +39269,23 @@
   locations:
     - right_hand
   name: Spell Addicted Plaga Card
+  on_equip: |-
+    ctx = if ((equip_item(ctx, :view, 9) == 10) || (equip_item(ctx, :view, 9) == 23)) do
+      bonus(ctx, {:magic_atk_ele, :neutral}, 10)
+    else
+      ctx
+    end
+    ctx = if (equip_item(ctx, :refine, 9) >= 10) do
+      bonus(ctx, {:magic_atk_ele, :neutral}, 10)
+    else
+      ctx
+    end
+    ctx = if (equip_item(ctx, :refine, 9) >= 14) do
+      bonus(ctx, {:magic_atk_ele, :neutral}, 10)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Sanare3_Card
@@ -38907,6 +39371,23 @@
   locations:
     - right_hand
   name: Blue Pitaya Card
+  on_equip: |-
+    ctx = if ((equip_item(ctx, :view, 9) == 10) || (equip_item(ctx, :view, 9) == 23)) do
+      bonus(ctx, {:magic_atk_ele, :water}, 10)
+    else
+      ctx
+    end
+    ctx = if (equip_item(ctx, :refine, 9) >= 10) do
+      bonus(ctx, {:magic_atk_ele, :water}, 10)
+    else
+      ctx
+    end
+    ctx = if (equip_item(ctx, :refine, 9) >= 14) do
+      bonus(ctx, {:magic_atk_ele, :water}, 10)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Pitaya_G_Card
@@ -39371,6 +39852,16 @@
   locations:
     - right_hand
   name: Grave Worm Card
+  on_equip: |-
+    if ((equip_item(ctx, :view, 9) == 10) || (equip_item(ctx, :view, 9) == 23)) do
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, (10 + (2 * div(refine(ctx), 4))))
+      ctx = bonus(ctx, {:ignore_mdef_race, :player_human}, (-10 - (2 * div(refine(ctx), 4))))
+      ctx = bonus(ctx, {:ignore_mdef_race, :player_doram}, (-10 - (2 * div(refine(ctx), 4))))
+      ctx = bonus(ctx, {:subrace, {:all, 593}}, (0 - (2 * div(refine(ctx), 4))))
+      ctx
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: MD_Airboat_Card3
@@ -39440,6 +39931,14 @@
   locations:
     - right_hand
   name: Unidentified Creature card
+  on_equip: |-
+    if (equip_item(ctx, :view, 9) == 3) do
+      ctx = bonus(ctx, :short_atk_rate, (10 + div(refine(ctx), 2)))
+      ctx = bonus(ctx, :aspd, 1)
+      ctx
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: MD_Geffen_Archi_Card
@@ -39577,6 +40076,11 @@
   locations:
     - right_hand
   name: Arena Ju Card
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 20}, if((refine(ctx) >= 14), do: (if((equip_item(ctx, :view, 9) == 15), do: (15 + 20), else: 15) + 30), else: if((equip_item(ctx, :view, 9) == 15), do: (15 + 20), else: 15)))
+    ctx = bonus(ctx, {:skill_atk, 19}, if((refine(ctx) >= 14), do: (if((equip_item(ctx, :view, 9) == 15), do: (15 + 20), else: 15) + 30), else: if((equip_item(ctx, :view, 9) == 15), do: (15 + 20), else: 15)))
+    ctx = bonus(ctx, {:skill_atk, 14}, if((refine(ctx) >= 14), do: (if((equip_item(ctx, :view, 9) == 15), do: (15 + 20), else: 15) + 30), else: if((equip_item(ctx, :view, 9) == 15), do: (15 + 20), else: 15)))
+    ctx
   type: card
   weight: 10
 - aegis_name: MD_Geffen_Fei_Card
@@ -39782,6 +40286,15 @@
   locations:
     - shoes
   name: Sealed Shiny Teddy Bear Card
+  on_equip: |-
+    ctx = bonus(ctx, :sp_cost_rate, 15)
+    ctx = bonus(ctx, {:magic_atk_ele, :holy}, (2 * equip_item(ctx, :refine, 2)))
+    ctx = if (equip_item(ctx, :refine, 2) >= 15) do
+      bonus(ctx, {:magic_atk_ele, :holy}, 7)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: SLD_Grave_Amon_Ra_Card
@@ -39837,6 +40350,12 @@
   locations:
     - right_hand
   name: Hot Molar Card
+  on_equip: |-
+    if (equip_item(ctx, :view, 9) == 16) do
+      bonus(ctx, :short_atk_rate, (10 + div(refine(ctx), 2)))
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: EP18_Volcaring_Card
@@ -39888,6 +40407,24 @@
   locations:
     - right_hand
   name: Ashring Card
+  on_equip: |-
+    if ((equip_item(ctx, :view, 9) == 10) || (equip_item(ctx, :view, 9) == 23)) do
+      ctx = bonus(ctx, {:magic_atk_ele, :shadow}, 10)
+      ctx = if (equip_item(ctx, :refine, 9) >= 10) do
+        ctx = bonus(ctx, {:magic_atk_ele, :shadow}, 10)
+        ctx = if (equip_item(ctx, :refine, 9) >= 14) do
+          bonus(ctx, {:magic_atk_ele, :shadow}, 10)
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: EP18_Grey_Wolf_Card
@@ -40227,8 +40764,6 @@
     - head_mid
     - head_top
   name: Grote Card
-  type: card
-  weight: 10
   on_equip: |-
     ctx = bonus(ctx, :varcast_rate, (5 - refine(ctx)))
     ctx = if (refine(ctx) >= 9) do
@@ -40244,6 +40779,8 @@
       ctx
     end
     ctx
+  type: card
+  weight: 10
 - aegis_name: Pierrotzoist_Card
   id: 300247
   locations:
@@ -40485,6 +41022,20 @@
   locations:
     - right_hand
   name: Rekenber Guard Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk_rate, 5)
+    ctx = if (((equip_item(ctx, :view, 9) == 2) || (equip_item(ctx, :view, 9) == 3)) || (equip_item(ctx, :view, 9) == 1)) do
+      ctx = bonus(ctx, :short_atk_rate, (10 + (2 * div(refine(ctx), 3))))
+      ctx = if (base_level(ctx) >= 200) do
+        bonus(ctx, :short_atk_rate, (3 * div(refine(ctx), 3)))
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Reken_H_Guard_Card
@@ -40492,6 +41043,20 @@
   locations:
     - right_hand
   name: Rekenber Senior Guard Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk_rate, 5)
+    ctx = if ((equip_item(ctx, :view, 9) == 4) || (equip_item(ctx, :view, 9) == 5)) do
+      ctx = bonus(ctx, :long_atk_rate, (10 + (2 * div(refine(ctx), 3))))
+      ctx = if (base_level(ctx) >= 200) do
+        bonus(ctx, :long_atk_rate, (3 * div(refine(ctx), 3)))
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Regen_Scientist_Card
@@ -40499,6 +41064,20 @@
   locations:
     - right_hand
   name: Regenschirm Scientist Card
+  on_equip: |-
+    ctx = bonus(ctx, :matk_rate, 5)
+    ctx = if (equip_item(ctx, :view, 9) == 23) do
+      ctx = bonus(ctx, {:magic_atk_ele, :all}, (10 + (2 * div(refine(ctx), 3))))
+      ctx = if (base_level(ctx) >= 200) do
+        bonus(ctx, {:magic_atk_ele, :all}, (3 * div(refine(ctx), 3)))
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Unknown_Swordman_Card
@@ -41355,6 +41934,12 @@
   locations:
     - shoes
   name: Sealed Ancient Wootan Defender Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, 5)
+    ctx = bonus(ctx, :max_sp_rate, 5)
+    ctx = bonus(ctx, {:skill_atk, 379}, 15)
+    ctx = bonus(ctx, {:skill_atk, 406}, 15)
+    ctx
   type: card
   weight: 10
 - aegis_name: SLD_Ktullanux_Card_J
@@ -42141,6 +42726,20 @@
   locations:
     - right_hand
   name: Burning Night Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk_rate, 5)
+    ctx = if ((equip_item(ctx, :view, 9) == 6) || (equip_item(ctx, :view, 9) == 7)) do
+      ctx = bonus(ctx, :long_atk_rate, ((2 * div(refine(ctx), 3)) + 10))
+      ctx = if (base_level(ctx) >= 200) do
+        bonus(ctx, :long_atk_rate, (3 * div(refine(ctx), 3)))
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Dedsera_Card
@@ -42148,6 +42747,19 @@
   locations:
     - right_hand
   name: Deadsera Card
+  on_equip: |-
+    ctx = bonus(ctx, :matk_rate, 5)
+    ctx = if (equip_item(ctx, :view, 9) == 10) do
+      bonus(ctx, {:magic_atk_ele, :all}, (10 + (2 * div(refine(ctx), 3))))
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 200) do
+      bonus(ctx, {:magic_atk_ele, :all}, (3 * div(refine(ctx), 3)))
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Hardrock_Titan_Card
@@ -42210,6 +42822,20 @@
   locations:
     - right_hand
   name: Punch Bug Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk_rate, 5)
+    ctx = if (equip_item(ctx, :view, 9) == 12) do
+      ctx = bonus(ctx, :short_atk_rate, (10 + (2 * div(refine(ctx), 3))))
+      ctx = if (base_level(ctx) >= 200) do
+        bonus(ctx, :short_atk_rate, (3 * div(refine(ctx), 3)))
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Aferde_Card
@@ -42621,6 +43247,18 @@
   locations:
     - right_hand
   name: Rebellion Elena Volkova Card
+  on_equip: |-
+    ctx = bonus(ctx, :short_atk_rate, 10)
+    ctx = bonus(ctx, {:addsize, :small}, 15)
+    ctx = bonus(ctx, {:addsize, :large}, 15)
+    ctx = if ((((((((((((equip_item(ctx, :view, 9) == 3) || (equip_item(ctx, :view, 9) == 5)) || (equip_item(ctx, :view, 9) == 23)) || (equip_item(ctx, :view, 9) == 7)) || (equip_item(ctx, :view, 9) == 16)) || (equip_item(ctx, :view, 9) == 11)) || (equip_item(ctx, :view, 9) == 22)) || (equip_item(ctx, :view, 9) == 17)) || (equip_item(ctx, :view, 9) == 18)) || (equip_item(ctx, :view, 9) == 19)) || (equip_item(ctx, :view, 9) == 20)) || (equip_item(ctx, :view, 9) == 21)) do
+      ctx = bonus(ctx, {:subsize, :small}, 7)
+      ctx = bonus(ctx, {:subsize, :large}, 7)
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Lookie_Card
@@ -42635,6 +43273,20 @@
   locations:
     - right_hand
   name: Rebellion Lookie Card
+  on_equip: |-
+    ctx = bonus(ctx, :short_atk_rate, 10)
+    ctx = bonus(ctx, {:addrace, :formless}, 15)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 15)
+    ctx = bonus(ctx, {:addrace, :player_human}, 15)
+    ctx = if ((((((((((((equip_item(ctx, :view, 9) == 3) || (equip_item(ctx, :view, 9) == 5)) || (equip_item(ctx, :view, 9) == 23)) || (equip_item(ctx, :view, 9) == 7)) || (equip_item(ctx, :view, 9) == 16)) || (equip_item(ctx, :view, 9) == 11)) || (equip_item(ctx, :view, 9) == 22)) || (equip_item(ctx, :view, 9) == 17)) || (equip_item(ctx, :view, 9) == 18)) || (equip_item(ctx, :view, 9) == 19)) || (equip_item(ctx, :view, 9) == 20)) || (equip_item(ctx, :view, 9) == 21)) do
+      ctx = bonus(ctx, {:subrace, :formless}, 7)
+      ctx = bonus(ctx, {:subrace, :demi_human}, 7)
+      ctx = bonus(ctx, {:subrace, :player_human}, 7)
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Est_Card
@@ -42649,6 +43301,18 @@
   locations:
     - right_hand
   name: Rebellion Est Loveroy Card
+  on_equip: |-
+    ctx = bonus(ctx, :long_atk_rate, 10)
+    ctx = bonus(ctx, {:addsize, :small}, 15)
+    ctx = bonus(ctx, {:addsize, :large}, 15)
+    ctx = if ((((((((((((equip_item(ctx, :view, 9) == 3) || (equip_item(ctx, :view, 9) == 5)) || (equip_item(ctx, :view, 9) == 23)) || (equip_item(ctx, :view, 9) == 7)) || (equip_item(ctx, :view, 9) == 16)) || (equip_item(ctx, :view, 9) == 11)) || (equip_item(ctx, :view, 9) == 22)) || (equip_item(ctx, :view, 9) == 17)) || (equip_item(ctx, :view, 9) == 18)) || (equip_item(ctx, :view, 9) == 19)) || (equip_item(ctx, :view, 9) == 20)) || (equip_item(ctx, :view, 9) == 21)) do
+      ctx = bonus(ctx, {:subsize, :small}, 7)
+      ctx = bonus(ctx, {:subsize, :large}, 7)
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Gony_Card
@@ -42663,6 +43327,20 @@
   locations:
     - right_hand
   name: Rebellion Gony Card
+  on_equip: |-
+    ctx = bonus(ctx, :long_atk_rate, 10)
+    ctx = bonus(ctx, {:addrace, :formless}, 15)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 15)
+    ctx = bonus(ctx, {:addrace, :player_human}, 15)
+    ctx = if ((((((((((((equip_item(ctx, :view, 9) == 3) || (equip_item(ctx, :view, 9) == 5)) || (equip_item(ctx, :view, 9) == 23)) || (equip_item(ctx, :view, 9) == 7)) || (equip_item(ctx, :view, 9) == 16)) || (equip_item(ctx, :view, 9) == 11)) || (equip_item(ctx, :view, 9) == 22)) || (equip_item(ctx, :view, 9) == 17)) || (equip_item(ctx, :view, 9) == 18)) || (equip_item(ctx, :view, 9) == 19)) || (equip_item(ctx, :view, 9) == 20)) || (equip_item(ctx, :view, 9) == 21)) do
+      ctx = bonus(ctx, {:subrace, :formless}, 7)
+      ctx = bonus(ctx, {:subrace, :demi_human}, 7)
+      ctx = bonus(ctx, {:subrace, :player_human}, 7)
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Tes_Card
@@ -42677,6 +43355,18 @@
   locations:
     - right_hand
   name: Secret Wing Philopontes Card
+  on_equip: |-
+    ctx = bonus(ctx, {:magic_atk_ele, :all}, 10)
+    ctx = bonus(ctx, {:magic_addsize, :small}, 15)
+    ctx = bonus(ctx, {:magic_addsize, :large}, 15)
+    ctx = if ((((((((((((equip_item(ctx, :view, 9) == 3) || (equip_item(ctx, :view, 9) == 5)) || (equip_item(ctx, :view, 9) == 23)) || (equip_item(ctx, :view, 9) == 7)) || (equip_item(ctx, :view, 9) == 16)) || (equip_item(ctx, :view, 9) == 11)) || (equip_item(ctx, :view, 9) == 22)) || (equip_item(ctx, :view, 9) == 17)) || (equip_item(ctx, :view, 9) == 18)) || (equip_item(ctx, :view, 9) == 19)) || (equip_item(ctx, :view, 9) == 20)) || (equip_item(ctx, :view, 9) == 21)) do
+      ctx = bonus(ctx, {:subsize, :small}, 7)
+      ctx = bonus(ctx, {:subsize, :large}, 7)
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Leizi_Card
@@ -42691,6 +43381,20 @@
   locations:
     - right_hand
   name: Secret Wing Leizi Card
+  on_equip: |-
+    ctx = bonus(ctx, {:magic_atk_ele, :all}, 10)
+    ctx = bonus(ctx, {:magic_addrace, :formless}, 15)
+    ctx = bonus(ctx, {:magic_addrace, :demi_human}, 15)
+    ctx = bonus(ctx, {:magic_addrace, :player_human}, 15)
+    ctx = if ((((((((((((equip_item(ctx, :view, 9) == 3) || (equip_item(ctx, :view, 9) == 5)) || (equip_item(ctx, :view, 9) == 23)) || (equip_item(ctx, :view, 9) == 7)) || (equip_item(ctx, :view, 9) == 16)) || (equip_item(ctx, :view, 9) == 11)) || (equip_item(ctx, :view, 9) == 22)) || (equip_item(ctx, :view, 9) == 17)) || (equip_item(ctx, :view, 9) == 18)) || (equip_item(ctx, :view, 9) == 19)) || (equip_item(ctx, :view, 9) == 20)) || (equip_item(ctx, :view, 9) == 21)) do
+      ctx = bonus(ctx, {:subrace, :formless}, 7)
+      ctx = bonus(ctx, {:subrace, :demi_human}, 7)
+      ctx = bonus(ctx, {:subrace, :player_human}, 7)
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: L_Leizi_Card
@@ -44535,6 +45239,7 @@
 - aegis_name: Mechanic_Middle2
   id: 310005
   name: Whitesmith Stone II (Middle)
+  on_equip: bonus(ctx, {:skill_atk, 485}, 15)
   subtype: enchant
   type: card
 - aegis_name: Mechanic_Bottom2
@@ -45604,8 +46309,6 @@
 - aegis_name: Automatic_Orb97
   id: 310178
   name: Automatic Modification Orb(Mirror Counter)
-  subtype: enchant
-  type: card
   on_equip: |-
     if (refine(ctx) >= 11) do
       bonus(ctx, :reduce_damage_return, 7)
@@ -45616,11 +46319,11 @@
         bonus(ctx, :reduce_damage_return, 2)
       end
     end
+  subtype: enchant
+  type: card
 - aegis_name: Automatic_Orb98
   id: 310179
   name: Automatic Modification Orb(Reflection Reject)
-  subtype: enchant
-  type: card
   on_equip: |-
     if (refine(ctx) >= 11) do
       bonus(ctx, :reduce_damage_return, 9)
@@ -45631,6 +46334,8 @@
         bonus(ctx, :reduce_damage_return, 3)
       end
     end
+  subtype: enchant
+  type: card
 - aegis_name: Warlock_Robe2
   id: 310180
   name: Warlock Stone II (Garment)
@@ -45693,6 +46398,7 @@
 - aegis_name: Assassincross_Bottom2
   id: 310189
   name: Assassin Cross Stone II (Lower)
+  on_equip: bonus(ctx, {:addsize, :all}, (2 * skill_lv(ctx, 376)))
   subtype: enchant
   type: card
 - aegis_name: Assassincross_Middle2
@@ -45704,6 +46410,7 @@
 - aegis_name: Assassincross_Top2
   id: 310191
   name: Assassin Cross Stone II (Upper)
+  on_equip: bonus(ctx, :delay_rate, (0 - skill_lv(ctx, 379)))
   subtype: enchant
   type: card
 - aegis_name: Extreme
@@ -46204,11 +46911,13 @@
 - aegis_name: Genetic_Middle2
   id: 310263
   name: Creator Stone II (Middle)
+  on_equip: bonus(ctx, {:skill_atk, 490}, 25)
   subtype: enchant
   type: card
 - aegis_name: Genetic_Bottom2
   id: 310264
   name: Creator Stone II (Bottom)
+  on_equip: bonus(ctx, :long_atk_rate, div(skill_lv(ctx, 490), 2))
   subtype: enchant
   type: card
 - aegis_name: WanderMins_Robe2
@@ -48340,8 +49049,6 @@
 - aegis_name: Wolf_Orb_R_Reject_1
   id: 310511
   name: Wolf Orb (Reflection Reject) Level 1
-  subtype: enchant
-  type: card
   on_equip: |-
     ctx = bonus(ctx, :reduce_damage_return, 2)
     ctx = if (refine(ctx) >= 7) do
@@ -48362,11 +49069,11 @@
       ctx
     end
     ctx
+  subtype: enchant
+  type: card
 - aegis_name: Wolf_Orb_R_Reject_2
   id: 310512
   name: Wolf Orb (Reflection Reject) Level 2
-  subtype: enchant
-  type: card
   on_equip: |-
     ctx = bonus(ctx, :reduce_damage_return, 3)
     ctx = if (refine(ctx) >= 7) do
@@ -48387,11 +49094,11 @@
       ctx
     end
     ctx
+  subtype: enchant
+  type: card
 - aegis_name: Wolf_Orb_R_Reject_3
   id: 310513
   name: Wolf Orb (Reflection Reject) Level 3
-  subtype: enchant
-  type: card
   on_equip: |-
     ctx = bonus(ctx, :reduce_damage_return, 4)
     ctx = if (refine(ctx) >= 7) do
@@ -48412,6 +49119,8 @@
       ctx
     end
     ctx
+  subtype: enchant
+  type: card
 - aegis_name: Wolf_Orb_Force
   id: 310514
   name: Wolf Orb (Power Force)
@@ -49260,8 +49969,6 @@
 - aegis_name: Wolf_Orb_M_Counter_1
   id: 310585
   name: Wolf Orb (Mirror Counter) Level 1
-  subtype: enchant
-  type: card
   on_equip: |-
     ctx = bonus(ctx, :reduce_damage_return, 2)
     ctx = if (refine(ctx) >= 7) do
@@ -49282,11 +49989,11 @@
       ctx
     end
     ctx
+  subtype: enchant
+  type: card
 - aegis_name: Wolf_Orb_M_Counter_2
   id: 310586
   name: Wolf Orb (Mirror Counter) Level 2
-  subtype: enchant
-  type: card
   on_equip: |-
     ctx = bonus(ctx, :reduce_damage_return, 3)
     ctx = if (refine(ctx) >= 7) do
@@ -49307,11 +50014,11 @@
       ctx
     end
     ctx
+  subtype: enchant
+  type: card
 - aegis_name: Wolf_Orb_M_Counter_3
   id: 310587
   name: Wolf Orb (Mirror Counter) Level 3
-  subtype: enchant
-  type: card
   on_equip: |-
     ctx = bonus(ctx, :reduce_damage_return, 4)
     ctx = if (refine(ctx) >= 7) do
@@ -49332,6 +50039,8 @@
       ctx
     end
     ctx
+  subtype: enchant
+  type: card
 - aegis_name: Wolf_Orb_Hp_1
   id: 310588
   name: Wolf Orb (Vital) Level 1
@@ -50719,36 +51428,36 @@
 - aegis_name: Star_Of_Spirit3
   id: 310724
   name: Star of Spirit Lv3
-  subtype: enchant
-  type: card
   on_equip: |-
     ctx = bonus(ctx, :heal_power, 10)
     ctx = bonus(ctx, :max_sp_rate, 5)
     ctx = bonus(ctx, :hplus, 1)
     ctx = bonus(ctx, :sp_regen, 15)
     ctx
+  subtype: enchant
+  type: card
 - aegis_name: Star_Of_Spirit4
   id: 310725
   name: Star of Spirit Lv4
-  subtype: enchant
-  type: card
   on_equip: |-
     ctx = bonus(ctx, :heal_power, 10)
     ctx = bonus(ctx, :max_sp_rate, 7)
     ctx = bonus(ctx, :hplus, 3)
     ctx = bonus(ctx, :sp_regen, 15)
     ctx
+  subtype: enchant
+  type: card
 - aegis_name: Star_Of_Spirit5
   id: 310726
   name: Star of Spirit Lv5
-  subtype: enchant
-  type: card
   on_equip: |-
     ctx = bonus(ctx, :heal_power, 15)
     ctx = bonus(ctx, :max_sp_rate, 10)
     ctx = bonus(ctx, :hplus, 5)
     ctx = bonus(ctx, :sp_regen, 20)
     ctx
+  subtype: enchant
+  type: card
 - aegis_name: Nebula_Of_FS1
   id: 310727
   name: Nebula of Fighting Spirit Lv1
@@ -53257,15 +53966,15 @@
 - aegis_name: HPLUS_Lv1
   id: 311090
   name: H.PLUS Lv1
+  on_equip: bonus(ctx, :hplus, 1)
   subtype: enchant
   type: card
-  on_equip: bonus(ctx, :hplus, 1)
 - aegis_name: HPLUS_Lv2
   id: 311091
   name: H.PLUS Lv2
+  on_equip: bonus(ctx, :hplus, 2)
   subtype: enchant
   type: card
-  on_equip: bonus(ctx, :hplus, 2)
 - aegis_name: Ice_F_Orb_Str
   id: 311092
   name: Ice Magic Orb (STR)
@@ -53569,8 +54278,6 @@
 - aegis_name: Ice_F_Orb_R_Reject
   id: 311103
   name: Ice Magic Orb (Reject Reflection)
-  subtype: enchant
-  type: card
   on_equip: |-
     ctx = bonus(ctx, :reduce_damage_return, 4)
     ctx = if (refine(ctx) >= 7) do
@@ -53591,6 +54298,8 @@
       ctx
     end
     ctx
+  subtype: enchant
+  type: card
 - aegis_name: Ice_F_Orb_Force
   id: 311104
   name: Ice Magic Orb (Power Force)
@@ -53813,8 +54522,6 @@
 - aegis_name: Ice_F_Orb_M_Counter
   id: 311112
   name: Ice Magic Orb (Mirror Counter)
-  subtype: enchant
-  type: card
   on_equip: |-
     ctx = bonus(ctx, :reduce_damage_return, 4)
     ctx = if (refine(ctx) >= 7) do
@@ -53835,6 +54542,8 @@
       ctx
     end
     ctx
+  subtype: enchant
+  type: card
 - aegis_name: Ice_F_Orb_Hp
   id: 311113
   name: Ice Magic Orb (Stamina)
@@ -55254,61 +55963,260 @@
 - aegis_name: Glacier_F_Orb_150
   id: 311342
   name: Glacier Magic Orb (ATK)
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (20 * div(refine(ctx), 3)))
+    ctx = bonus(ctx, :long_atk_rate, (5 * div(refine(ctx), 3)))
+    ctx = bonus(ctx, :short_atk_rate, (5 * div(refine(ctx), 3)))
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :atk_rate, 10)
+      ctx = if (refine(ctx) >= 11) do
+        ctx = bonus(ctx, :patk, 5)
+        ctx = if ((((((((((((equip_item(ctx, :view, 9) == 3) || (equip_item(ctx, :view, 9) == 5)) || (equip_item(ctx, :view, 9) == 23)) || (equip_item(ctx, :view, 9) == 7)) || (equip_item(ctx, :view, 9) == 16)) || (equip_item(ctx, :view, 9) == 11)) || (equip_item(ctx, :view, 9) == 22)) || (equip_item(ctx, :view, 9) == 17)) || (equip_item(ctx, :view, 9) == 18)) || (equip_item(ctx, :view, 9) == 19)) || (equip_item(ctx, :view, 9) == 20)) || (equip_item(ctx, :view, 9) == 21)) do
+          ctx = bonus(ctx, :long_atk_rate, 10)
+          ctx = bonus(ctx, :short_atk_rate, 10)
+          ctx
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Glacier_F_Orb_151
   id: 311343
   name: Glacier Magic Orb (MATK)
+  on_equip: |-
+    ctx = bonus(ctx, :matk, (20 * div(refine(ctx), 3)))
+    ctx = bonus(ctx, {:magic_atk_ele, :all}, (5 * div(refine(ctx), 3)))
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :matk_rate, 10)
+      ctx = if (refine(ctx) >= 11) do
+        ctx = bonus(ctx, :smatk, 5)
+        ctx = if ((((((((((((equip_item(ctx, :view, 9) == 3) || (equip_item(ctx, :view, 9) == 5)) || (equip_item(ctx, :view, 9) == 23)) || (equip_item(ctx, :view, 9) == 7)) || (equip_item(ctx, :view, 9) == 16)) || (equip_item(ctx, :view, 9) == 11)) || (equip_item(ctx, :view, 9) == 22)) || (equip_item(ctx, :view, 9) == 17)) || (equip_item(ctx, :view, 9) == 18)) || (equip_item(ctx, :view, 9) == 19)) || (equip_item(ctx, :view, 9) == 20)) || (equip_item(ctx, :view, 9) == 21)) do
+          bonus(ctx, {:magic_atk_ele, :all}, 10)
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Glacier_F_Orb_152
   id: 311344
   name: Glacier Magic Orb (CRI)
+  on_equip: |-
+    ctx = bonus(ctx, :critical, (4 * div(refine(ctx), 3)))
+    ctx = bonus(ctx, :crit_atk_rate, (5 * div(refine(ctx), 3)))
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :crit_atk_rate, 10)
+      ctx = if (refine(ctx) >= 11) do
+        ctx = bonus(ctx, :crit_rate, 5)
+        ctx = if ((((((((((((equip_item(ctx, :view, 9) == 3) || (equip_item(ctx, :view, 9) == 5)) || (equip_item(ctx, :view, 9) == 23)) || (equip_item(ctx, :view, 9) == 7)) || (equip_item(ctx, :view, 9) == 16)) || (equip_item(ctx, :view, 9) == 11)) || (equip_item(ctx, :view, 9) == 22)) || (equip_item(ctx, :view, 9) == 17)) || (equip_item(ctx, :view, 9) == 18)) || (equip_item(ctx, :view, 9) == 19)) || (equip_item(ctx, :view, 9) == 20)) || (equip_item(ctx, :view, 9) == 21)) do
+          bonus(ctx, :crit_atk_rate, 10)
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Glacier_F_Orb_153
   id: 311345
   name: Glacier Magic Orb (Variable Casting)
+  on_equip: |-
+    ctx = bonus(ctx, :varcast_rate, -7)
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :varcast_rate, -8)
+      ctx = if ((((((((((((equip_item(ctx, :view, 9) == 3) || (equip_item(ctx, :view, 9) == 5)) || (equip_item(ctx, :view, 9) == 23)) || (equip_item(ctx, :view, 9) == 7)) || (equip_item(ctx, :view, 9) == 16)) || (equip_item(ctx, :view, 9) == 11)) || (equip_item(ctx, :view, 9) == 22)) || (equip_item(ctx, :view, 9) == 17)) || (equip_item(ctx, :view, 9) == 18)) || (equip_item(ctx, :view, 9) == 19)) || (equip_item(ctx, :view, 9) == 20)) || (equip_item(ctx, :view, 9) == 21)) do
+        bonus(ctx, :varcast_rate, -5)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Glacier_F_Orb_154
   id: 311346
   name: Glacier Magic Orb (Attack Speed)
+  on_equip: |-
+    ctx = bonus(ctx, :aspd_rate, 7)
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :aspd_rate, 8)
+      ctx = if ((((((((((((equip_item(ctx, :view, 9) == 3) || (equip_item(ctx, :view, 9) == 5)) || (equip_item(ctx, :view, 9) == 23)) || (equip_item(ctx, :view, 9) == 7)) || (equip_item(ctx, :view, 9) == 16)) || (equip_item(ctx, :view, 9) == 11)) || (equip_item(ctx, :view, 9) == 22)) || (equip_item(ctx, :view, 9) == 17)) || (equip_item(ctx, :view, 9) == 18)) || (equip_item(ctx, :view, 9) == 19)) || (equip_item(ctx, :view, 9) == 20)) || (equip_item(ctx, :view, 9) == 21)) do
+        bonus(ctx, :aspd, 1)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Glacier_F_Orb_155
   id: 311347
   name: Glacier Magic Orb (Skill Delay)
+  on_equip: |-
+    ctx = bonus(ctx, :delay_rate, -7)
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :delay_rate, -8)
+      ctx = if ((((((((((((equip_item(ctx, :view, 9) == 3) || (equip_item(ctx, :view, 9) == 5)) || (equip_item(ctx, :view, 9) == 23)) || (equip_item(ctx, :view, 9) == 7)) || (equip_item(ctx, :view, 9) == 16)) || (equip_item(ctx, :view, 9) == 11)) || (equip_item(ctx, :view, 9) == 22)) || (equip_item(ctx, :view, 9) == 17)) || (equip_item(ctx, :view, 9) == 18)) || (equip_item(ctx, :view, 9) == 19)) || (equip_item(ctx, :view, 9) == 20)) || (equip_item(ctx, :view, 9) == 21)) do
+        bonus(ctx, :delay_rate, -5)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Glacier_F_Orb_156
   id: 311348
   name: Glacier Magic Orb (Physical-Race)
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :all}, 10)
+    ctx = bonus(ctx, {:addrace, :player_human}, -10)
+    ctx = bonus(ctx, {:addrace, :player_doram}, -10)
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :all}, 10)
+      ctx = bonus(ctx, {:addrace, :player_human}, -10)
+      ctx = bonus(ctx, {:addrace, :player_doram}, -10)
+      ctx = if ((((((((((((equip_item(ctx, :view, 9) == 3) || (equip_item(ctx, :view, 9) == 5)) || (equip_item(ctx, :view, 9) == 23)) || (equip_item(ctx, :view, 9) == 7)) || (equip_item(ctx, :view, 9) == 16)) || (equip_item(ctx, :view, 9) == 11)) || (equip_item(ctx, :view, 9) == 22)) || (equip_item(ctx, :view, 9) == 17)) || (equip_item(ctx, :view, 9) == 18)) || (equip_item(ctx, :view, 9) == 19)) || (equip_item(ctx, :view, 9) == 20)) || (equip_item(ctx, :view, 9) == 21)) do
+        ctx = bonus(ctx, {:addrace, :all}, 15)
+        ctx = bonus(ctx, {:addrace, :player_human}, -15)
+        ctx = bonus(ctx, {:addrace, :player_doram}, -15)
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Glacier_F_Orb_157
   id: 311349
   name: Glacier Magic Orb (Magical-Race)
+  on_equip: |-
+    ctx = bonus(ctx, {:magic_addrace, :all}, 10)
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:magic_addrace, :all}, 10)
+      ctx = if ((((((((((((equip_item(ctx, :view, 9) == 3) || (equip_item(ctx, :view, 9) == 5)) || (equip_item(ctx, :view, 9) == 23)) || (equip_item(ctx, :view, 9) == 7)) || (equip_item(ctx, :view, 9) == 16)) || (equip_item(ctx, :view, 9) == 11)) || (equip_item(ctx, :view, 9) == 22)) || (equip_item(ctx, :view, 9) == 17)) || (equip_item(ctx, :view, 9) == 18)) || (equip_item(ctx, :view, 9) == 19)) || (equip_item(ctx, :view, 9) == 20)) || (equip_item(ctx, :view, 9) == 21)) do
+        bonus(ctx, {:magic_addrace, :all}, 15)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Glacier_F_Orb_158
   id: 311350
   name: Glacier Magic Orb (Physical-Size)
+  on_equip: |-
+    ctx = bonus(ctx, {:addsize, :all}, 10)
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addsize, :all}, 10)
+      ctx = if ((((((((((((equip_item(ctx, :view, 9) == 3) || (equip_item(ctx, :view, 9) == 5)) || (equip_item(ctx, :view, 9) == 23)) || (equip_item(ctx, :view, 9) == 7)) || (equip_item(ctx, :view, 9) == 16)) || (equip_item(ctx, :view, 9) == 11)) || (equip_item(ctx, :view, 9) == 22)) || (equip_item(ctx, :view, 9) == 17)) || (equip_item(ctx, :view, 9) == 18)) || (equip_item(ctx, :view, 9) == 19)) || (equip_item(ctx, :view, 9) == 20)) || (equip_item(ctx, :view, 9) == 21)) do
+        bonus(ctx, {:addsize, :all}, 15)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Glacier_F_Orb_159
   id: 311351
   name: Glacier Magic Orb (Magical-Size)
+  on_equip: |-
+    ctx = bonus(ctx, {:magic_addsize, :all}, 10)
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:magic_addsize, :all}, 10)
+      ctx = if ((((((((((((equip_item(ctx, :view, 9) == 3) || (equip_item(ctx, :view, 9) == 5)) || (equip_item(ctx, :view, 9) == 23)) || (equip_item(ctx, :view, 9) == 7)) || (equip_item(ctx, :view, 9) == 16)) || (equip_item(ctx, :view, 9) == 11)) || (equip_item(ctx, :view, 9) == 22)) || (equip_item(ctx, :view, 9) == 17)) || (equip_item(ctx, :view, 9) == 18)) || (equip_item(ctx, :view, 9) == 19)) || (equip_item(ctx, :view, 9) == 20)) || (equip_item(ctx, :view, 9) == 21)) do
+        bonus(ctx, {:magic_addsize, :all}, 15)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Glacier_F_Orb_160
   id: 311352
   name: Glacier Magic Orb (Physical-Element)
+  on_equip: |-
+    ctx = bonus(ctx, {:addele, :all}, 10)
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addele, :all}, 10)
+      ctx = if ((((((((((((equip_item(ctx, :view, 9) == 3) || (equip_item(ctx, :view, 9) == 5)) || (equip_item(ctx, :view, 9) == 23)) || (equip_item(ctx, :view, 9) == 7)) || (equip_item(ctx, :view, 9) == 16)) || (equip_item(ctx, :view, 9) == 11)) || (equip_item(ctx, :view, 9) == 22)) || (equip_item(ctx, :view, 9) == 17)) || (equip_item(ctx, :view, 9) == 18)) || (equip_item(ctx, :view, 9) == 19)) || (equip_item(ctx, :view, 9) == 20)) || (equip_item(ctx, :view, 9) == 21)) do
+        bonus(ctx, {:addele, :all}, 15)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Glacier_F_Orb_161
   id: 311353
   name: Glacier Magic Orb (Magical-Element)
+  on_equip: |-
+    ctx = bonus(ctx, {:magic_addele, :all}, 10)
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:magic_addele, :all}, 10)
+      ctx = if ((((((((((((equip_item(ctx, :view, 9) == 3) || (equip_item(ctx, :view, 9) == 5)) || (equip_item(ctx, :view, 9) == 23)) || (equip_item(ctx, :view, 9) == 7)) || (equip_item(ctx, :view, 9) == 16)) || (equip_item(ctx, :view, 9) == 11)) || (equip_item(ctx, :view, 9) == 22)) || (equip_item(ctx, :view, 9) == 17)) || (equip_item(ctx, :view, 9) == 18)) || (equip_item(ctx, :view, 9) == 19)) || (equip_item(ctx, :view, 9) == 20)) || (equip_item(ctx, :view, 9) == 21)) do
+        bonus(ctx, {:magic_addele, :all}, 15)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Critical_Robe_D
@@ -66821,101 +67729,201 @@
 - aegis_name: Yorscalp_Str1
   id: 313406
   name: Strength of Yorscalp 1Lv
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (3 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :patk, div(equip_item(ctx, :refine, 6), 4))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Yorscalp_Str2
   id: 313407
   name: Strength of Yorscalp 2Lv
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (5 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :patk, (2 * div(equip_item(ctx, :refine, 6), 4)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Yorscalp_Str3
   id: 313408
   name: Strength of Yorscalp 3Lv
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (10 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :patk, (3 * div(equip_item(ctx, :refine, 6), 4)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Yorscalp_Str4
   id: 313409
   name: Strength of Yorscalp 4Lv
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (15 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :patk, (5 * div(equip_item(ctx, :refine, 6), 4)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Yorscalp_Int1
   id: 313410
   name: Intelligence of Yorscalp 1Lv
+  on_equip: |-
+    ctx = bonus(ctx, :matk, (3 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :smatk, div(equip_item(ctx, :refine, 6), 4))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Yorscalp_Int2
   id: 313411
   name: Intelligence of Yorscalp 2Lv
+  on_equip: |-
+    ctx = bonus(ctx, :matk, (5 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :smatk, (2 * div(equip_item(ctx, :refine, 6), 4)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Yorscalp_Int3
   id: 313412
   name: Intelligence of Yorscalp 3Lv
+  on_equip: |-
+    ctx = bonus(ctx, :matk, (10 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :smatk, (3 * div(equip_item(ctx, :refine, 6), 4)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Yorscalp_Int4
   id: 313413
   name: Intelligence of Yorscalp 4Lv
+  on_equip: |-
+    ctx = bonus(ctx, :matk, (15 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :smatk, (5 * div(equip_item(ctx, :refine, 6), 4)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Yorscalp_Smart1
   id: 313414
   name: Smart of Yorscalp 1Lv
+  on_equip: |-
+    ctx = bonus(ctx, :matk, (3 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :atk, (3 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :delay_rate, (0 - div(equip_item(ctx, :refine, 6), 4)))
+    ctx = bonus(ctx, :varcast_rate, (0 - div(equip_item(ctx, :refine, 6), 4)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Yorscalp_Smart3
   id: 313415
   name: Smart of Yorscalp 3Lv
+  on_equip: |-
+    ctx = bonus(ctx, :matk, (10 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :atk, (10 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :delay_rate, (-3 * div(equip_item(ctx, :refine, 6), 4)))
+    ctx = bonus(ctx, :varcast_rate, (-3 * div(equip_item(ctx, :refine, 6), 4)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Yorscalp_Smart2
   id: 313416
   name: Smart of Yorscalp 2Lv
+  on_equip: |-
+    ctx = bonus(ctx, :matk, (5 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :atk, (5 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :delay_rate, (-2 * div(equip_item(ctx, :refine, 6), 4)))
+    ctx = bonus(ctx, :varcast_rate, (-2 * div(equip_item(ctx, :refine, 6), 4)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Yorscalp_Smart4
   id: 313417
   name: Smart of Yorscalp 4Lv
+  on_equip: |-
+    ctx = bonus(ctx, :matk, (15 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :atk, (15 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :delay_rate, (-4 * div(equip_item(ctx, :refine, 6), 4)))
+    ctx = bonus(ctx, :varcast_rate, (-4 * div(equip_item(ctx, :refine, 6), 4)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Yorscalp_Speed1
   id: 313418
   name: Speed of Yorscalp 1Lv
+  on_equip: |-
+    ctx = bonus(ctx, :matk, (3 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :atk, (3 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :delay_rate, (0 - div(equip_item(ctx, :refine, 6), 4)))
+    ctx = bonus(ctx, :aspd_rate, div(equip_item(ctx, :refine, 6), 4))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Yorscalp_Speed2
   id: 313419
   name: Speed of Yorscalp 2Lv
+  on_equip: |-
+    ctx = bonus(ctx, :matk, (5 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :atk, (5 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :delay_rate, (-2 * div(equip_item(ctx, :refine, 6), 4)))
+    ctx = bonus(ctx, :aspd_rate, (2 * div(equip_item(ctx, :refine, 6), 4)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Yorscalp_Speed3
   id: 313420
   name: Speed of Yorscalp 3Lv
+  on_equip: |-
+    ctx = bonus(ctx, :matk, (10 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :atk, (10 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :delay_rate, (-3 * div(equip_item(ctx, :refine, 6), 4)))
+    ctx = bonus(ctx, :aspd_rate, (3 * div(equip_item(ctx, :refine, 6), 4)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Yorscalp_Speed4
   id: 313421
   name: Speed of Yorscalp 4Lv
+  on_equip: |-
+    ctx = bonus(ctx, :matk, (15 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :atk, (15 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :delay_rate, (-4 * div(equip_item(ctx, :refine, 6), 4)))
+    ctx = bonus(ctx, :aspd_rate, (4 * div(equip_item(ctx, :refine, 6), 4)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Yorscalp_Def1
   id: 313422
   name: Defense of Yorscalp 1Lv
+  on_equip: |-
+    ctx = bonus(ctx, :mres, (5 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :res, (5 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :max_hp_rate, div(equip_item(ctx, :refine, 6), 4))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Yorscalp_Def2
   id: 313423
   name: Defense of Yorscalp 2Lv
+  on_equip: |-
+    ctx = bonus(ctx, :mres, (10 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :res, (10 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :max_hp_rate, (2 * div(equip_item(ctx, :refine, 6), 4)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Yorscalp_Def3
   id: 313424
   name: Defense of Yorscalp 3Lv
+  on_equip: |-
+    ctx = bonus(ctx, :mres, (20 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :res, (20 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :max_hp_rate, (3 * div(equip_item(ctx, :refine, 6), 4)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Yorscalp_Def4
   id: 313425
   name: Defense of Yorscalp 4Lv
+  on_equip: |-
+    ctx = bonus(ctx, :mres, (25 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :res, (25 * div(equip_item(ctx, :refine, 6), 2)))
+    ctx = bonus(ctx, :max_hp_rate, (5 * div(equip_item(ctx, :refine, 6), 4)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Arbiter_Warrant
