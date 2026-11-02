@@ -160,6 +160,7 @@ sc_infinity_drink	ends	absent
 sc_intfood	ends	ends
 sc_int_scroll	survives	absent
 sc_intoabyss	ends	ends
+sc_itemscript	ends	ends
 sc_intravision	ends	ends
 sc_itemboost	survives	survives
 sc_jexpboost	survives	survives

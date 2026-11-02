@@ -59,6 +59,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   and Akaraje statuses, filling the unused last two values with zero. Other two-value
   statuses remain rejected until their complete parameter semantics are implemented.
   Elemental Change also accepts an element constant in its second value.
+  Temporary card scripts accept a card ID and a validated `EFST_*` icon (or
+  numeric icon ID), using the same four-value DSL and optional rate/flag tail.
 
   ## Script-local assignments
 
@@ -198,8 +200,25 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
     end
   end
 
+  defp render_command("sc_start2", [
+         {:name, "SC_ITEMSCRIPT"} = status,
+         ticks,
+         card,
+         {:name, icon} | opts
+       ])
+       when length(opts) <= 2 do
+    case Resolver.resolve_status_icon(icon) do
+      {:ok, id} ->
+        render_command("sc_start4", [status, ticks, card, {:int, id}, {:int, 0}, {:int, 0} | opts])
+
+      {:error, reason} ->
+        unsupported(reason)
+    end
+  end
+
   defp render_command("sc_start2", [{:name, name} = status, ticks, val1, val2 | opts])
        when name in [
+              "SC_ITEMSCRIPT",
               "SC_PROMOTE_HEALTH_RESERCH",
               "SC_ENERGY_DRINK_RESERCH",
               "SC_INCREASE_MAXHP",

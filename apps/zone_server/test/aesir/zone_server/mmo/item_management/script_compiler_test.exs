@@ -24,8 +24,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompilerTest do
     Mimic.copy(StatusInterpreter)
 
     stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
-    stub(StatusInterpreter, :apply_status, fn _, _, _, _ -> :ok end)
-    stub(StatusInterpreter, :remove_status, fn _, _, _ -> :ok end)
+    stub(StatusInterpreter, :apply_status_with_events, fn _, _, _, _ -> {:ok, []} end)
+    stub(StatusInterpreter, :remove_status_with_events, fn _, _, _, _ -> {:ok, []} end)
 
     :ok
   end
@@ -108,9 +108,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompilerTest do
   test "a conditional multi-line on_use compiles and dispatches the right branch" do
     test_pid = self()
 
-    expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_blessing, params ->
+    expect(StatusInterpreter, :apply_status_with_events, fn :player, 1, :sc_blessing, params ->
       send(test_pid, {:applied, params})
-      :ok
+      {:ok, [{:sc_blessing, :apply}]}
     end)
 
     source = """

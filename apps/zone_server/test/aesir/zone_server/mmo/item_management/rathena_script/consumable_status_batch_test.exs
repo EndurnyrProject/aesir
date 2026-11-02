@@ -13,7 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ConsumableStatusBatc
       assert source =~ "percent_heal(ctx, sp: 10)"
     end
 
-    assert {:error, {:unsupported, _}} =
+    assert {:ok, "sc_start(ctx, :sc_itemscript, 180000, [4121, 0, 0, 0])"} =
              Transpiler.transpile("sc_start2 SC_ITEMSCRIPT,180000,4121,0;")
   end
 

@@ -10,7 +10,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay do
   Three independent rAthena display mechanisms are covered:
 
     - **EFST icon bar** — `StatusChange` (apply/remove), driven by `Definition.icon`;
-      an entry started with `StatusEntry.no_icon_flag/0` shows none.
+      an entry started with `StatusEntry.no_icon_flag/0` shows none. Temporary
+      card scripts instead emit their own instance-selected icon with zero values.
     - **Sprite ailment state** — `UnitStateChange`, the unit's aggregate
       `opt1`/`opt2`/`option`/`opt3` over all active statuses.
     - **One-shot effect** — `Unit.SpecialEffect`, fired when a status declares
@@ -20,6 +21,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay do
   raises or blocks gameplay. An atom that fails to resolve to a wire id is
   skipped with a warning.
   """
+
+  import Bitwise, only: [band: 2, bor: 2]
 
   require Logger
 
@@ -39,6 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay do
   alias Aesir.ZoneServer.Unit.Concealment
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.SpecialEffect
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @typedoc "Aggregate sprite-state ids for a unit, as carried in `UnitSpawn`."
   @type spawn_state :: %{
@@ -177,42 +181,69 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay do
   def active_icons(unit_type, unit_id) do
     unit_type
     |> StatusStorage.get_unit_statuses(unit_id)
-    |> Enum.reject(&StatusEntry.no_icon?/1)
     |> Enum.flat_map(fn instance ->
-      case Registry.get_definition(instance.type) do
-        %{icon: icon} when not is_nil(icon) ->
-          List.wrap(icon_message(unit_id, icon, instance, true))
+      definition = Registry.get_definition(instance.type)
 
-        _ ->
-          []
+      case status_icon(unit_type, definition, instance) do
+        nil -> []
+        icon -> List.wrap(icon_message(unit_id, icon, instance, true))
       end
     end)
   end
 
-  defp broadcast_icon(_unit_type, _unit_id, %{icon: nil}, _instance, _on), do: :ok
-  defp broadcast_icon(_unit_type, _unit_id, nil, _instance, _on), do: :ok
+  defp status_icon(:player, _definition, %StatusEntry{type: :sc_itemscript, val2: icon}),
+    do: icon
 
-  defp broadcast_icon(unit_type, unit_id, %{icon: icon}, instance, on) do
-    if StatusEntry.no_icon?(instance),
-      do: :ok,
-      else: send_icon(unit_type, unit_id, icon, instance, on)
+  defp status_icon(_unit_type, _definition, %StatusEntry{type: :sc_itemscript}), do: nil
+  defp status_icon(_unit_type, nil, _instance), do: nil
+
+  defp status_icon(_unit_type, %{icon: icon}, instance) do
+    if StatusEntry.no_icon?(instance), do: nil, else: icon
+  end
+
+  defp broadcast_icon(unit_type, unit_id, definition, instance, on) do
+    case status_icon(unit_type, definition, instance) do
+      nil -> :ok
+      icon -> send_icon(unit_type, unit_id, icon, instance, on)
+    end
   end
 
   defp send_icon(unit_type, unit_id, icon, instance, on) do
     case icon_message(unit_id, icon, instance, on) do
       nil -> :ok
-      message -> broadcast_area(unit_type, unit_id, message)
+      message -> deliver_icon(unit_type, unit_id, instance, message)
+    end
+  end
+
+  defp deliver_icon(:player, unit_id, %StatusEntry{type: :sc_itemscript}, message) do
+    if invisible_player?(unit_id),
+      do: Broadcast.to_player(unit_id, message),
+      else: broadcast_area(:player, unit_id, message)
+  end
+
+  defp deliver_icon(unit_type, unit_id, _instance, message),
+    do: broadcast_area(unit_type, unit_id, message)
+
+  defp invisible_player?(unit_id) do
+    case UnitRegistry.get_unit(:player, unit_id) do
+      {:ok, {_module, player, _pid}} ->
+        options = bor(player.option || 0, spawn_state(:player, unit_id).effect_state)
+        band(options, Option.id(:invisible)) != 0
+
+      _missing ->
+        false
     end
   end
 
   defp icon_message(unit_id, icon, instance, on) do
-    case Efst.id(icon) do
+    case icon_id(icon) do
       nil ->
         Logger.warning("StatusDisplay: unknown icon atom #{inspect(icon)}, skipping")
         nil
 
       efst ->
         {total_ms, remain_ms} = timers(instance)
+        {val1, val2, val3} = display_values(instance)
 
         %StatusChange{
           unit_id: unit_id,
@@ -220,12 +251,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay do
           on: on,
           total_ms: total_ms,
           remain_ms: remain_ms,
-          val1: instance.val1,
-          val2: instance.val2,
-          val3: instance.val3
+          val1: val1,
+          val2: val2,
+          val3: val3
         }
     end
   end
+
+  defp icon_id(icon) when is_integer(icon), do: icon
+  defp icon_id(icon), do: Efst.id(icon)
+
+  defp display_values(%StatusEntry{type: :sc_itemscript}), do: {0, 0, 0}
+  defp display_values(instance), do: {instance.val1, instance.val2, instance.val3}
 
   defp broadcast_aggregate_if_opt(unit_type, unit_id, definition) do
     if opt_bearing?(definition), do: broadcast_state(unit_type, unit_id), else: :ok

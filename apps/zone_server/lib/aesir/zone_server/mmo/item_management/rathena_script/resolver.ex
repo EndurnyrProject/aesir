@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   alias Aesir.ZoneServer.Mmo.AutoTriggerFlag
   alias Aesir.ZoneServer.Mmo.BattleFlag
   alias Aesir.ZoneServer.Mmo.EffectId
+  alias Aesir.ZoneServer.Mmo.Efst
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CatalogNotLoadedError
@@ -124,6 +125,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
 
   @statuses %{
     "SC_PARTYFLEE" => :sc_partyflee,
+    "SC_ITEMSCRIPT" => :sc_itemscript,
     "SC_BLESSING" => :sc_blessing,
     "SC_CARTBOOST" => :sc_cartboost,
     "SC_MAXOVERTHRUST" => :sc_maxoverthrust,
@@ -702,6 +704,21 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   end
 
   def resolve_effect(symbol) when is_binary(symbol), do: unknown(symbol)
+
+  @doc "Resolves a known `EFST_*` icon constant to its generated numeric identifier."
+  @spec resolve_status_icon(String.t()) :: {:ok, non_neg_integer()} | error()
+  def resolve_status_icon("EFST_" <> name = symbol) do
+    Code.ensure_loaded(Efst)
+
+    with {:ok, atom} <- existing_atom(name),
+         id when is_integer(id) and id >= 0 <- Efst.id(atom) do
+      {:ok, id}
+    else
+      _ -> unknown(symbol)
+    end
+  end
+
+  def resolve_status_icon(symbol) when is_binary(symbol), do: unknown(symbol)
 
   @doc "Resolves an `IG_*` constant to a known item-group key."
   @spec resolve_item_group(String.t()) :: {:ok, atom()} | error()

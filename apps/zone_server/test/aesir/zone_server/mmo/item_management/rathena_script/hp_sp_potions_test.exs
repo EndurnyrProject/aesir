@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.HpSpPotionsTest do
 
     for script <- [
           prefix <> ",10000,2,123;",
-          "sc_start2 SC_ITEMSCRIPT,180000,4121,0;",
+          "sc_start2 SC_UNKNOWN_CARD_STATUS,180000,4121,0;",
           "sc_start2 SC_PROMOTE_HEALTH_RESERCH,500000,1,Hp;"
         ] do
       assert {:error, {:unsupported, _}} = Transpiler.transpile(script)
