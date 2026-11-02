@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.Tarot do
   The Emperium and battlefield-class monsters are refused. Pre-renewal additionally refuses Basilica holders;
   renewal's Sun grants a marker preventing further cards for thirty seconds.
   Unit mutations remain in the target's session and statuses use normal resistance.
+  After the effects, the selected card is shown on the target, or on the caster
+  for Lovers. Wheel's extra draws apply effects without showing additional cards.
   """
 
   alias Aesir.Commons.GameMode
@@ -27,7 +29,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.Tarot do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.Resource
+  alias Aesir.ZoneServer.Unit.SpecialEffect
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  @card_effects %{
+    fool: :tarotcard1,
+    magician: :tarotcard2,
+    high_priestess: :tarotcard3,
+    chariot: :tarotcard4,
+    strength: :tarotcard5,
+    lovers: :tarotcard6,
+    wheel_of_fortune: :tarotcard7,
+    hanged_man: :tarotcard8,
+    death: :tarotcard9,
+    temperance: :tarotcard10,
+    devil: :tarotcard11,
+    tower: :tarotcard12,
+    star: :tarotcard13,
+    sun: :tarotcard14
+  }
 
   @doc "Refuses protected targets, rolls success, and plays one card."
   @spec play(struct(), Ref.t(), pos_integer()) ::
@@ -38,6 +58,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.Tarot do
          true <- Formulas.tarot_success?(level, &TarotDeck.roll/1) do
       card = TarotDeck.draw()
       apply(card, caster, target, level)
+      source = if card == :lovers, do: caster_ref(caster), else: target
+      SpecialEffect.play(source, Map.fetch!(@card_effects, card))
       {:ok, card}
     else
       true -> {:error, :immune}
