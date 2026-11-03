@@ -18,10 +18,13 @@
 # - mismatches > 0: the first three diverging runs are printed with both logs.
 # - error_outcomes: entry points where BOTH versions raised. Usually a harness gap
 #   (an unmodelled read returning the wrong shape) that hides the paths behind it.
-#   Rerun with NPC_HARNESS_DEBUG=1 to print the exception messages, then add a
-#   `call/2` clause to `H.Core` for the missing read.
+#   Rerun with NPC_HARNESS_DEBUG=1 to print the exception message and stack trace,
+#   then add a `call/2` clause to `H.Core` for the missing read. Adding
+#   NPC_HARNESS_STRICT=1 as well makes the first unmodelled ctx-first call raise and
+#   print its name (effects such as `mes` show up too, so read past them).
 # - distinct_paths: a quest NPC stuck at 1-2 paths means a gate is never passed;
-#   check which read guards it.
+#   check which read guards it. Class-quest NPCs are commonly gated on `checkre`,
+#   `eaclass` or `gettime`, which are modelled below.
 #
 # How the model works:
 #
@@ -157,6 +160,15 @@ defmodule H.Core do
   def call(:checkweight, [_ctx | args]), do: pick({:checkweight, args}, [true, false])
   def call(:can_change_job?, [_ctx | args]), do: pick({:ccj, args}, [true, false])
 
+  # Renewal/classic switch: 1 in renewal, 0 otherwise.
+  def call(:checkre, [_ctx | args]), do: pick({:checkre, args}, [0, 1])
+
+  # Class bitmask; includes the baby flag (2_097_152) and the upper-class bits.
+  def call(:eaclass, [_ctx]), do: pick(:eaclass, [0, 1, 768, 1_048_576, 2_097_152, 1_049_344])
+
+  # Time components: hour values cover every day/night gate in the corpus.
+  def call(:gettime, [_ctx, type]), do: pick({:gettime, type}, [0, 5, 12, 18, 21, 23])
+
   def call(name, [_ctx]) when name in [:checkcart, :checkfalcon, :checkriding],
     do: pick(name, [true, false])
 
@@ -165,7 +177,17 @@ defmodule H.Core do
 
   def call(:fclearjobvar, [ctx | args]), do: {log(ctx, {:fclearjobvar, args}), nil}
 
-  def call(name, [%Ctx{} = ctx | args]), do: log(ctx, {name, args})
+  # Value-returning global functions: the generated call keeps the `{ctx, value}` shape.
+  def call(:fsexmes, [ctx, options]) when is_list(options),
+    do: {log(ctx, {:fsexmes, options}), Enum.at(options, call(:sex, [ctx]), 0)}
+
+  def call(name, [%Ctx{} = ctx | args]) do
+    if System.get_env("NPC_HARNESS_STRICT"),
+      do: raise("unhandled ctx-first call #{name}/#{length(args) + 1}")
+
+    log(ctx, {name, args})
+  end
+
   def call(name, args), do: raise("unhandled #{name}/#{length(args)} #{inspect(args)}")
 
   def rathena(:concat, [a, b]), do: to_string(a) <> to_string(b)
@@ -372,7 +394,11 @@ run = fn mod, entry, seed ->
     {:ok, Enum.reverse(result.log)}
   rescue
     e ->
-      if debug?, do: IO.puts("#{inspect(mod)} #{inspect(entry)}: #{Exception.message(e)}")
+      if debug? do
+        IO.puts("#{inspect(mod)} #{inspect(entry)}: #{Exception.message(e)}")
+        IO.puts(Exception.format(:error, e, __STACKTRACE__))
+      end
+
       {:error, e.__struct__}
   catch
     kind, value -> {:caught, kind, value}
