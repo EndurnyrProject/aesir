@@ -35,7 +35,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKienna do
   alias Aesir.ZoneServer.Script.Rathena
 
   @doc "Runs the exercise for the Kienna placement suffix in `args`; always ends the script."
-  @spec call(Ctx.t(), [term()]) :: {Ctx.t(), term()} | no_return()
+  @spec call(Ctx.t(), [term()]) :: no_return()
   def call(ctx, args) do
     kienna = Rathena.concat("Kienna#", Enum.at(args, 0, 0))
 
