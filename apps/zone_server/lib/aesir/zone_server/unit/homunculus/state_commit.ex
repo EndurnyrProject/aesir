@@ -219,6 +219,19 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
   end
 
   @doc """
+  Stores a Homunculus whose world presence `Movement.swap_positions/3` has
+  already published (Castling). Replaces the aggregate and marks the private
+  view dirty without synchronizing presence again.
+  """
+  @spec commit_swapped(SessionState.t(), HomunculusState.t()) :: SessionState.t()
+  def commit_swapped(
+        %SessionState{homunculus_runtime: %Runtime{} = runtime} = session,
+        %HomunculusState{lifecycle: :active} = homunculus
+      ) do
+    %{session | homunculus: homunculus, homunculus_runtime: %{runtime | private_dirty: true}}
+  end
+
+  @doc """
   Copies the owner's current walk speed onto the Homunculus, as each of its
   stat recalculations does; pre-renewal Homunculus walk speed starts from it
   (`Stats.walk_speed/3`).

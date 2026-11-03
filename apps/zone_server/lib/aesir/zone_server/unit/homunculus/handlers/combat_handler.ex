@@ -158,15 +158,12 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
     case basic_attack(session, gid, target_ref) do
       {:ok, updated} -> {:noreply, updated}
       {:error, _reason, unchanged} -> {:noreply, unchanged}
-      {:stop, _reason, _state} = stop -> stop
     end
   end
 
   @doc "Executes one validated basic attack and exposes its production failure reason."
   @spec basic_attack(SessionState.t(), pos_integer(), tuple()) ::
-          {:ok, SessionState.t()}
-          | {:error, atom(), SessionState.t()}
-          | {:stop, term(), SessionState.t()}
+          {:ok, SessionState.t()} | {:error, atom(), SessionState.t()}
   def basic_attack(%SessionState{} = session, gid, target_ref) do
     now_ms = System.monotonic_time(:millisecond)
 
@@ -180,7 +177,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
       attacking = %{homunculus | action_state: :attacking, target: target_ref}
       session = StateCommit.commit(session, attacking)
 
-      finish_basic_attack(result, session, gid)
+      {:ok, finish_attack(session, gid)}
     else
       false ->
         reason =
@@ -193,18 +190,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
       {:error, reason} ->
         {:error, normalize_attack_error(reason, target_ref), session}
     end
-  end
-
-  defp finish_basic_attack({:local_effects, effects}, session, gid) do
-    case effects |> apply_local_effects(session) |> finish_attack(gid) do
-      {:noreply, updated} -> {:ok, updated}
-      {:stop, _reason, _state} = stop -> stop
-    end
-  end
-
-  defp finish_basic_attack(_delivered, session, gid) do
-    {:noreply, updated} = finish_attack({:noreply, session}, gid)
-    {:ok, updated}
   end
 
   defp normalize_attack_error(:not_found, {:mob, _id}), do: :mob_unavailable
@@ -223,26 +208,14 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
     end
   end
 
-  defp apply_local_effects(effects, session) do
-    Enum.reduce_while(effects, {:noreply, session}, fn
-      {:homunculus, event}, {:noreply, current} ->
-        case handle(event, current) do
-          {:noreply, updated} -> {:cont, {:noreply, updated}}
-          {:stop, _reason, _state} = stop -> {:halt, stop}
-        end
-    end)
-  end
-
-  defp finish_attack({:stop, _reason, _session} = stop, _gid), do: stop
-
-  defp finish_attack({:noreply, session}, gid) do
+  defp finish_attack(session, gid) do
     case active_homunculus(session, gid) do
       {:ok, homunculus} ->
         idle = %{homunculus | action_state: :idle, target: nil}
-        {:noreply, StateCommit.commit(session, idle)}
+        StateCommit.commit(session, idle)
 
       {:error, :stale_target} ->
-        {:noreply, session}
+        session
     end
   end
 

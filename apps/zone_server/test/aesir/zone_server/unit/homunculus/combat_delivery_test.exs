@@ -318,11 +318,11 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
     assert %{hp: 1, sp: 1} = PlayerSession.get_state(session.pid).homunculus
   end
 
-  test "same-owner coma is applied as an aggregate-local effect", %{session: session, gid: gid} do
+  test "same-owner coma queues on the owner's own mailbox", %{session: session, gid: gid} do
     :sys.replace_state(session.pid, fn current ->
       current = StateCommit.commit(current, %{current.homunculus | hp: 800, sp: 150})
 
-      assert {:local_effects, [effect]} =
+      assert :ok =
                DamageApplication.apply_unit_damage(
                  :homunculus,
                  self(),
@@ -332,7 +332,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
                  {:mob, 2_001}
                )
 
-      {:noreply, current} = CommandHandler.local_effect(effect, current)
+      assert %{hp: 800, sp: 150} = current.homunculus
       current
     end)
 
@@ -375,7 +375,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
              UnitRegistry.get_unit(:homunculus, gid)
   end
 
-  test "aggregate-local coma does not alter an active HP-zero Homunculus", %{
+  test "same-owner coma does not alter an active HP-zero Homunculus", %{
     session: session,
     gid: gid
   } do
@@ -390,7 +390,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
         | homunculus: %{current.homunculus | hp: 0, sp: 150, action_state: :idle}
       }
 
-      assert {:local_effects, [effect]} =
+      assert :ok =
                DamageApplication.apply_unit_damage(
                  :homunculus,
                  self(),
@@ -400,7 +400,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
                  {:mob, 2_001}
                )
 
-      assert {:noreply, ^current} = CommandHandler.local_effect(effect, current)
       current
     end)
 

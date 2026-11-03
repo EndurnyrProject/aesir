@@ -10,8 +10,9 @@ defmodule Aesir.ZoneServer.Unit.SessionHygieneTest do
       deferred-skill seam replaced the per-skill session clauses with one generic
       `{:skill, {:deferred, module, payload}}` dispatch, so no skill module is
       named in either session;
-    * the source guard permits only `Homunculus.StateCommit` to replace the
-      aggregate's nested `homunculus` field directly.
+    * each companion aggregate nested in `SessionState` (`@companion_fields`)
+      may be replaced directly only by its own `StateCommit`; every other module
+      goes through that commit path so world presence stays synchronized.
   """
 
   use ExUnit.Case, async: false
@@ -55,18 +56,15 @@ defmodule Aesir.ZoneServer.Unit.SessionHygieneTest do
                          Path.join(__DIR__, "../../../../lib/aesir/zone_server/**/*.ex")
                        )
 
-  @homunculus_state_commit_source Path.join(
-                                    __DIR__,
-                                    "../../../../lib/aesir/zone_server/unit/homunculus/state_commit.ex"
-                                  )
+  # Companion aggregates nested in `SessionState`, each with the one source file
+  # allowed to replace the field directly. Future companions (pet, mercenary)
+  # add one entry here.
+  @companion_fields %{
+    homunculus: "unit/homunculus/state_commit.ex"
+  }
 
-  @homunculus_replacement_patterns [
-    ~r/%\{\s*[^}]*\|\s*[^}]*\bhomunculus\s*:/s,
-    ~r/%SessionState\s*\{[^}]*\bhomunculus\s*:/s,
-    ~r/Map\.(?:put|replace|replace!|update|update!)\s*\([^)]*,\s*:homunculus\s*,/s,
-    ~r/(?:put_in|update_in)\s*\([^,]*\.homunculus(?:\.\w+)*\s*,/s,
-    ~r/(?:put_in|update_in)\s*\([^,]*,\s*\[\s*:homunculus(?:\s*,[^\]]+)*\]\s*,/s
-  ]
+  @map_writers [:put, :replace, :replace!, :update, :update!]
+  @path_writers [:put_in, :update_in]
 
   setup :verify_on_exit!
   setup :set_mimic_from_context
@@ -107,30 +105,120 @@ defmodule Aesir.ZoneServer.Unit.SessionHygieneTest do
     end
 
     test "recognizes the guarded direct replacement forms" do
-      [struct_update, session_construction, map_replacement, dot_path_update, key_path_update] =
-        @homunculus_replacement_patterns
+      assert replaces_field?("%{session | other: value, homunculus: value}", :homunculus)
+      assert replaces_field?("%SessionState{other: value, homunculus: value}", :homunculus)
+      assert replaces_field?("%Player.SessionState{homunculus: value}", :homunculus)
 
-      assert Regex.match?(struct_update, "%{session | other: value, homunculus: value}")
-      assert Regex.match?(session_construction, "%SessionState{other: value, homunculus: value}")
-
-      for function <- ["put", "replace", "replace!", "update", "update!"] do
-        assert Regex.match?(map_replacement, "Map.#{function}(session, :homunculus, value)")
+      for function <- @map_writers do
+        assert replaces_field?("Map.#{function}(session, :homunculus, value)", :homunculus)
       end
 
-      assert Regex.match?(dot_path_update, "put_in(session.homunculus, value)")
-      assert Regex.match?(dot_path_update, "update_in(session.homunculus.hp, & &1)")
-      assert Regex.match?(key_path_update, "put_in(session, [:homunculus], value)")
-      assert Regex.match?(key_path_update, "update_in(session, [:homunculus, :hp], & &1)")
+      assert replaces_field?("put_in(session.homunculus, value)", :homunculus)
+      assert replaces_field?("update_in(session.homunculus.hp, & &1)", :homunculus)
+      assert replaces_field?("put_in(session, [:homunculus], value)", :homunculus)
+      assert replaces_field?("update_in(session, [:homunculus, :hp], & &1)", :homunculus)
+
+      refute replaces_field?("%{homunculus: value}", :homunculus)
+      refute replaces_field?("session.homunculus.hp", :homunculus)
+      refute replaces_field?("%{session | homunculus_runtime: value}", :homunculus)
+      refute replaces_field?("Map.get(session, :homunculus)", :homunculus)
+      refute replaces_field?("put_in(session.other.homunculus, value)", :homunculus)
+      refute replaces_field?("def f(%SessionState{homunculus: h} = s), do: s", :homunculus)
+      refute replaces_field?("%SessionState{homunculus: h} = session", :homunculus)
+      refute replaces_field?("x |> Map.put(:entity_type, :homunculus)", :homunculus)
+      assert replaces_field?("struct(session, homunculus: value)", :homunculus)
+      assert replaces_field?("session |> Map.put(:homunculus, value)", :homunculus)
+      assert replaces_field?("Map.merge(session, %{homunculus: value})", :homunculus)
     end
 
-    test "Homunculus StateCommit is the only guarded direct replacement path" do
-      assert [@homunculus_state_commit_source] ==
-               Enum.filter(@zone_server_sources, fn path ->
-                 source = File.read!(path)
-                 Enum.any?(@homunculus_replacement_patterns, &Regex.match?(&1, source))
-               end)
+    test "each companion StateCommit is the only direct replacement path of its field" do
+      sources = Enum.map(@zone_server_sources, &{&1, Code.string_to_quoted!(File.read!(&1))})
+
+      for {field, commit_source} <- @companion_fields do
+        writers =
+          for {path, ast} <- sources, replaces_field?(ast, field), do: Path.expand(path)
+
+        assert [
+                 Path.expand(
+                   Path.join("../../../../lib/aesir/zone_server", commit_source),
+                   __DIR__
+                 )
+               ] ==
+                 writers,
+               "only #{commit_source} may replace SessionState.#{field} directly"
+      end
     end
   end
+
+  # Source-level guard. Pipes are resolved and pattern positions (function
+  # heads, `=`/`<-`/`->` left sides) blanked before scanning, so only
+  # expression-position writes count.
+  defp replaces_field?(source, field) when is_binary(source),
+    do: replaces_field?(Code.string_to_quoted!(source), field)
+
+  defp replaces_field?(ast, field) do
+    {_ast, found?} =
+      ast
+      |> Macro.prewalk(&normalize/1)
+      |> Macro.prewalk(false, fn
+        node, true -> {node, true}
+        node, false -> {node, direct_replacement?(node, field)}
+      end)
+
+    found?
+  end
+
+  defp normalize({:|>, _, [lhs, {call, meta, args}]}) when is_list(args),
+    do: {call, meta, [lhs | args]}
+
+  defp normalize({definer, meta, [_head, body]}) when definer in [:def, :defp],
+    do: {definer, meta, [:__pattern__, body]}
+
+  defp normalize({op, meta, [_lhs, rhs]}) when op in [:=, :<-],
+    do: {op, meta, [:__pattern__, rhs]}
+
+  defp normalize({:->, meta, [_lhs, rhs]}), do: {:->, meta, [[:__pattern__], rhs]}
+  defp normalize(node), do: node
+
+  # `%{session | field: _}`
+  defp direct_replacement?({:%{}, _, [{:|, _, [_map, updates]}]}, field),
+    do: has_field?(updates, field)
+
+  # `%SessionState{field: _}` (any alias ending in SessionState)
+  defp direct_replacement?({:%, _, [{:__aliases__, _, parts}, {:%{}, _, fields}]}, field),
+    do: List.last(parts) == :SessionState and has_field?(fields, field)
+
+  # `struct(session, field: _)` and `struct!/2`
+  defp direct_replacement?({fun, _, [_session, fields]}, field) when fun in [:struct, :struct!],
+    do: has_field?(fields, field)
+
+  # `Map.put(session, :field, _)` and the other map writers, `Map.merge(session, %{field: _})`
+  defp direct_replacement?({{:., _, [{:__aliases__, _, [:Map]}, fun]}, _, [_, key | _]}, field),
+    do: (fun in @map_writers and key == field) or (fun == :merge and has_field?(key, field))
+
+  # `put_in(session.field..., _)` and `put_in(session, [:field | _], _)`
+  defp direct_replacement?({fun, _, [path, _value]}, field) when fun in @path_writers,
+    do: field_path?(path, field)
+
+  defp direct_replacement?({fun, _, [_data, keys, _value]}, field) when fun in @path_writers,
+    do: field_path?(keys, field)
+
+  defp direct_replacement?(_node, _field), do: false
+
+  defp has_field?({:%{}, _, fields}, field), do: has_field?(fields, field)
+
+  defp has_field?(fields, field) when is_list(fields),
+    do: Keyword.keyword?(fields) and Keyword.has_key?(fields, field)
+
+  defp has_field?(_other, _field), do: false
+
+  defp field_path?([key | _], field), do: key == field
+
+  defp field_path?({{:., _, [{_, _, context}, key]}, _, []}, field) when is_atom(context),
+    do: key == field
+
+  defp field_path?({{:., _, [inner, _key]}, _, []}, field), do: field_path?(inner, field)
+  defp field_path?(_path, _field), do: false
 
   describe "handle_cast catch-all" do
     test "an unknown cast to a live mob session logs and keeps it alive" do

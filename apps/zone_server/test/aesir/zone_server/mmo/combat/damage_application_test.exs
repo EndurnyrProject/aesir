@@ -571,8 +571,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
              )
   end
 
-  test "same-owner Homunculus coma is returned as a local effect" do
-    assert {:local_effects, [effect]} =
+  test "same-owner Homunculus coma is cast to the owner's own mailbox" do
+    assert :ok =
              DamageApplication.apply_unit_damage(
                :homunculus,
                self(),
@@ -582,8 +582,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
                {:mob, 20}
              )
 
-    assert {:homunculus, {:apply_coma, 25, {:mob, 20}, %{damage_broken: %{statuses: []}}}} =
-             effect
+    assert_receive {:"$gen_cast",
+                    {:homunculus,
+                     {:apply_coma, 25, {:mob, 20}, %{damage_broken: %{statuses: []}}}}}
   end
 
   test "zero prepared coma damage still comas the owner without a post-damage hook" do

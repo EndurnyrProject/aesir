@@ -905,9 +905,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   defp apply_magic_damage(target_type, target_pid, target_id, damage, hit_info, attacker) do
     attacker_ref = if attacker, do: damage_source(attacker, target_type)
 
-    target_type
-    |> DamageApplication.apply_unit_damage(target_pid, target_id, damage, hit_info, attacker_ref)
-    |> DamageApplication.forward_local_effects()
+    DamageApplication.apply_unit_damage(
+      target_type,
+      target_pid,
+      target_id,
+      damage,
+      hit_info,
+      attacker_ref
+    )
   end
 
   defp magic_result(target_state, damages, coma_decision, prior_damage \\ 0) do
@@ -934,18 +939,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
        )
        when target_type != :skill_unit do
     Knockback.skill(attacker, target, skill_id, result, knockback_options(opts))
-  end
-
-  defp maybe_apply_magic_knockback(
-         {:local_effects, _effects},
-         attacker,
-         target,
-         target_type,
-         skill_id,
-         result,
-         opts
-       ) do
-    maybe_apply_magic_knockback(:ok, attacker, target, target_type, skill_id, result, opts)
   end
 
   defp maybe_apply_magic_knockback(
@@ -1292,11 +1285,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
 
     delivery =
-      target_type
-      |> DamageApplication.apply_unit_damage(target_pid, target_id, damage, hit_info, source)
-      |> DamageApplication.forward_local_effects()
+      DamageApplication.apply_unit_damage(
+        target_type,
+        target_pid,
+        target_id,
+        damage,
+        hit_info,
+        source
+      )
 
-    if delivery == :ok or match?({:local_effects, _effects}, delivery) do
+    if delivery == :ok do
       OnHitEffects.attack_stage(hit_info, damage)
 
       run_additional_effect(
@@ -1344,7 +1342,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   end
 
   defp magic_delivery_result(:ok, target_ref), do: {:ok, target_ref}
-  defp magic_delivery_result({:local_effects, _effects}, target_ref), do: {:ok, target_ref}
   defp magic_delivery_result(delivery, _target_ref), do: delivery
 
   defp delivered_attack_result({:ok, ref}, report, opts),
@@ -1357,8 +1354,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
 
   defp successful_delivery(:ok, _delivery), do: :ok
   defp successful_delivery(_delivery, :ok), do: :ok
-  defp successful_delivery({:local_effects, _effects} = delivery, _current), do: delivery
-  defp successful_delivery(_previous, {:local_effects, _effects} = delivery), do: delivery
   defp successful_delivery(_previous, delivery), do: delivery
 
   # Delivers a reflected hit to the caster's owning session. Unlike an ordinary
@@ -1497,9 +1492,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
 
         hit_info = Map.put(hit_info, :proc, proc)
 
-        unit_type
-        |> DamageApplication.apply_unit_damage(owner_pid, unit_id, damage, hit_info, source)
-        |> DamageApplication.forward_local_effects()
+        DamageApplication.apply_unit_damage(
+          unit_type,
+          owner_pid,
+          unit_id,
+          damage,
+          hit_info,
+          source
+        )
 
         hit_info
 
@@ -1573,7 +1573,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         other -> other
       end
 
-    if delivery == :ok or match?({:local_effects, _effects}, delivery) do
+    if delivery == :ok do
       OnHitEffects.attack_stage(prepared_hit_info, damage)
 
       run_additional_effect(

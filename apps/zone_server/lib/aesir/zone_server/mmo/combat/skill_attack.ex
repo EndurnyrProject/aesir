@@ -1337,11 +1337,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       DamageApplication.broadcast_nearby(target, packet)
 
       delivery =
-        target_type
-        |> DamageApplication.apply_unit_damage(target_pid, target_id, damage, hit_info, source)
-        |> DamageApplication.forward_local_effects()
+        DamageApplication.apply_unit_damage(
+          target_type,
+          target_pid,
+          target_id,
+          damage,
+          hit_info,
+          source
+        )
 
-      if delivered?(delivery), do: OnHitEffects.after_hit(hit_info, damage)
+      if delivery == :ok, do: OnHitEffects.after_hit(hit_info, damage)
 
       hit = connected_hit(damage, hit_info, divisions, immediate?)
       result = logical_skill_result(hit, target_state, coma?)
@@ -1882,11 +1887,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     DamageApplication.broadcast_nearby(target, packet)
 
     delivery =
-      target_type
-      |> DamageApplication.apply_unit_damage(target_pid, target.unit_id, damage, hit_info, source)
-      |> DamageApplication.forward_local_effects()
+      DamageApplication.apply_unit_damage(
+        target_type,
+        target_pid,
+        target.unit_id,
+        damage,
+        hit_info,
+        source
+      )
 
-    if delivered?(delivery) do
+    if delivery == :ok do
       event = EquipProcDispatch.hit_event(hit_info, damage)
 
       OnHitEffects.after_hit(attacker, target, event,
@@ -1911,8 +1921,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     EquipProcDispatch.dispatch_delivered(delivery, hit_info, damage)
     connected_hit(damage, hit_info, divisions, immediate?)
   end
-
-  defp delivered?(delivery), do: delivery == :ok or match?({:local_effects, _effects}, delivery)
 
   defp flag_type(:physical), do: :weapon
   defp flag_type(:misc), do: :misc

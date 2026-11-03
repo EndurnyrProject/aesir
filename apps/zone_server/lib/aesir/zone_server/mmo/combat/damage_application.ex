@@ -461,8 +461,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   here. Packet-producing paths pass hit information returned by
   `prepare_unit_damage/5`, which prevents applying the same modifier twice.
   """
-  @type local_effect :: {:homunculus, tuple()}
-  @type delivery_result :: :ok | {:local_effects, [local_effect()]} | {:error, atom()}
+  @type delivery_result :: :ok | {:error, atom()}
 
   @spec apply_unit_damage(
           :player | :mob | :homunculus | :skill_unit,
@@ -485,24 +484,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     delivery =
       deliver_unit_damage(target_type, target_pid, target_id, final_damage, hit_info, attacker)
 
-    post_delivery =
-      after_damage_taken(delivery, target_type, target_id, final_damage, hit_info, attacker)
-
-    merge_local_effects(delivery, post_delivery)
-  end
-
-  @doc """
-  Hands a delivery's same-session effects to the owning session as the ordinary
-  messages a different owner would have received, for attack paths that cannot
-  return them to their caller. Returns `delivery` unchanged.
-  """
-  @spec forward_local_effects(delivery_result()) :: delivery_result()
-  def forward_local_effects({:local_effects, effects} = delivery) do
-    Enum.each(effects, &GenServer.cast(self(), &1))
+    after_damage_taken(delivery, target_type, target_id, final_damage, hit_info, attacker)
     delivery
   end
-
-  def forward_local_effects(delivery), do: delivery
 
   # The settled hit's equipment-proc event rides to the recipient's own handler
   # as `:proc_event`; the attack path dispatches the attacker's side itself.
@@ -538,7 +522,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     Map.put(hit_info, :walk_delay?, walk_delay?)
   end
 
-  @doc "Builds aggregate-local Homunculus damage without sending to its owner process."
+  @doc "Builds the Homunculus damage message a skill stages for settlement by its owner."
   @spec local_damage_effect(Ref.t(), integer(), map(), Ref.t() | nil) :: tuple()
   def local_damage_effect({:homunculus, world_gid} = target_ref, damage, hit_info, attacker)
       when is_integer(damage) and damage >= 0 do
@@ -557,7 +541,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     end
   end
 
-  @doc "Builds aggregate-local Homunculus healing without sending to its owner process."
+  @doc "Builds the Homunculus heal message a skill stages for settlement by its owner."
   @spec local_heal_effect(Ref.t(), heal_amount(), Ref.t() | nil) :: tuple()
   def local_heal_effect({:homunculus, _world_gid} = target_ref, amount, source) do
     if Ref.valid?(target_ref) and (is_nil(source) or Ref.valid?(source)) do
@@ -660,7 +644,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   def apply_heal(:homunculus, unit_id, amount, source) do
     case UnitRegistry.get_unit(:homunculus, unit_id) do
       {:ok, {_module, _state, pid}} when is_pid(pid) ->
-        ensure_external_owner!(pid)
         GenServer.cast(pid, {:homunculus, {:apply_heal, unit_id, amount, typed_source(source)}})
 
       {:error, :not_found} ->
@@ -956,9 +939,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
           coma?: reflected_coma?(holder, type, state)
         }
 
-        type
-        |> apply_unit_damage(pid, attacker_id, owed, counter_hit, holder)
-        |> forward_local_effects()
+        apply_unit_damage(type, pid, attacker_id, owed, counter_hit, holder)
 
       {:error, _reason} ->
         :ok
@@ -1336,19 +1317,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     )
   end
 
-  defp deliver_unit_damage(:homunculus, target_pid, target_id, damage, hit_info, attacker)
-       when target_pid == self() do
-    effect =
-      local_damage_effect(
-        {:homunculus, target_id},
-        damage,
-        hit_info,
-        typed_attacker(attacker)
-      )
-
-    {:local_effects, [effect]}
-  end
-
+  # The owner's own hits on its Homunculus cast to self like any other
+  # sender's: the message settles after the current handler returns.
   defp deliver_unit_damage(:homunculus, target_pid, target_id, damage, hit_info, attacker) do
     GenServer.cast(
       target_pid,
@@ -1410,11 +1380,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     MobSession.apply_coma(target_pid, typed_attacker(attacker), hit_info)
   end
 
-  defp deliver_coma(:homunculus, target_pid, target_id, hit_info, attacker)
-       when target_pid == self() do
-    {:local_effects, [homunculus_coma(target_id, hit_info, attacker)]}
-  end
-
   defp deliver_coma(:homunculus, target_pid, target_id, hit_info, attacker) do
     GenServer.cast(target_pid, homunculus_coma(target_id, hit_info, attacker))
   end
@@ -1441,21 +1406,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   defp note_kill_attack_type(target_pid, attacker, bf, skill_id) do
     MobSession.note_hit_type(target_pid, attacker, bf, skill_id)
   end
-
-  defp merge_local_effects({:error, _reason} = error, :ok), do: error
-  defp merge_local_effects(:ok, :ok), do: :ok
-  defp merge_local_effects({:local_effects, effects}, :ok), do: {:local_effects, effects}
-  defp merge_local_effects(:ok, {:local_effects, effects}), do: {:local_effects, effects}
-
-  defp merge_local_effects({:local_effects, first}, {:local_effects, second}),
-    do: {:local_effects, first ++ second}
-
-  defp ensure_external_owner!(pid) when pid == self() do
-    raise ArgumentError,
-          "aggregate-local Homunculus healing must use local_heal_effect/3"
-  end
-
-  defp ensure_external_owner!(_pid), do: :ok
 
   defp reflection_target(nil), do: nil
   defp reflection_target(attacker_id) when is_integer(attacker_id), do: attacker_id

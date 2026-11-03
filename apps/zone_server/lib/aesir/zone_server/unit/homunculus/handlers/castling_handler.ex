@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastlingHandler do
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
+  alias Aesir.ZoneServer.Unit.Homunculus.StateCommit
   alias Aesir.ZoneServer.Unit.Mob.Attackers
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Movement
@@ -57,14 +58,11 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastlingHandler do
           session = MovementHandler.cancel(session)
           Clock.cancel(session.homunculus_runtime.cast_timer_ref)
           reconciled_owner = PlayerMovementHandler.handle_visibility_update(swapped_owner)
-          runtime = %{session.homunculus_runtime | cast_timer_ref: nil, private_dirty: true}
+          runtime = %{session.homunculus_runtime | cast_timer_ref: nil}
 
           updated =
-            struct(session,
-              game_state: reconciled_owner,
-              homunculus: swapped_homunculus,
-              homunculus_runtime: runtime
-            )
+            %{session | game_state: reconciled_owner, homunculus_runtime: runtime}
+            |> StateCommit.commit_swapped(swapped_homunculus)
 
           redirect_attacker(owner, gid)
           {:noreply, updated}

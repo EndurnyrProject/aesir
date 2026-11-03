@@ -504,8 +504,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   end
 
   @doc "Executes one collision-safe Homunculus basic attack against a typed target."
-  @spec execute_homunculus_attack(struct(), Ref.t()) ::
-          DamageApplication.delivery_result() | {:error, atom()}
+  @spec execute_homunculus_attack(struct(), Ref.t()) :: DamageApplication.delivery_result()
   def execute_homunculus_attack(homunculus_state, target_ref) do
     attacker = homunculus_state.__struct__.to_combatant(homunculus_state)
 
@@ -1631,37 +1630,29 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         source
       )
 
-    if delivered?(delivery), do: OnHitEffects.after_hit(hit_info, damage)
+    if delivery == :ok, do: OnHitEffects.after_hit(hit_info, damage)
 
-    proc_effects =
-      :homunculus
-      |> StatusInterpreter.on_dealt_damage(attacker.unit_id, %{
-        target: {target_type, target.unit_id},
-        damage: damage,
-        element: attacker.weapon.element,
-        primary_basic_weapon_hit?: true
-      })
-      |> Enum.map(&homunculus_proc_effect/1)
+    :homunculus
+    |> StatusInterpreter.on_dealt_damage(attacker.unit_id, %{
+      target: {target_type, target.unit_id},
+      damage: damage,
+      element: attacker.weapon.element,
+      primary_basic_weapon_hit?: true
+    })
+    |> Enum.each(&homunculus_proc_effect/1)
 
-    append_local_effects(delivery, proc_effects)
+    delivery
   end
 
-  defp delivered?(delivery), do: delivery == :ok or match?({:local_effects, _effects}, delivery)
-
-  # A drain (Bloodlust) heal, which Frenzy does not stop.
-  defp homunculus_proc_effect({:local_heal, target, amount, source}) do
-    DamageApplication.local_heal_effect(target, {:passive, amount}, source)
+  # A drain (Bloodlust) heal, which Frenzy does not stop; it queues behind the
+  # hit on the owner's own mailbox.
+  defp homunculus_proc_effect({:local_heal, {:homunculus, gid}, amount, source}) do
+    DamageApplication.apply_heal(:homunculus, gid, {:passive, amount}, source)
   end
 
   defp homunculus_proc_effect(follow_up) do
     raise ArgumentError, "unsupported Homunculus dealt-damage follow-up: #{inspect(follow_up)}"
   end
-
-  defp append_local_effects(delivery, []), do: delivery
-  defp append_local_effects(:ok, effects), do: {:local_effects, effects}
-
-  defp append_local_effects({:local_effects, current}, effects),
-    do: {:local_effects, current ++ effects}
 
   defp typed_mob_target(target_id) when is_integer(target_id), do: {:player, target_id}
   defp typed_mob_target(target_ref), do: target_ref

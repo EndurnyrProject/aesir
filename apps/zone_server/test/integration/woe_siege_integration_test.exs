@@ -367,13 +367,15 @@ defmodule Aesir.ZoneServer.Integration.WoeSiegeIntegrationTest do
     character
   end
 
+  # Account userids are capped at 23 characters; the name part is shortened so
+  # the unique suffix never pushes the id over the limit.
   defp account_fixture(userid) do
     unique = System.unique_integer([:positive])
 
     {:ok, account} =
       %Account{}
       |> Account.changeset(%{
-        userid: "woe_#{userid}_#{unique}",
+        userid: "woe_#{String.slice(userid, 0, 8)}_#{unique}",
         user_pass: "password",
         sex: "M",
         email: "woe_#{unique}@example.com"

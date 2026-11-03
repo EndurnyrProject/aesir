@@ -605,7 +605,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
     assert StatusStorage.has_status?(:player, 61, :sc_aeterna)
   end
 
-  test "same-owner Homunculus settlement and prepared returns remain local effects" do
+  test "same-owner Homunculus settlement and prepared returns are cast to the owner" do
     homunculus = %HomunculusState{
       id: 62,
       world_gid: 62,
@@ -626,7 +626,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
     target = register_player(64, @castle_map, %{short_weapon_damage_return: 30})
     :ok = StatusInterpreter.apply_status(:homunculus, 62, :sc_aeterna)
 
-    assert {:local_effects, [{:homunculus, {:apply_damage, 62, 160, prepared, {:player, 64}}}]} =
+    assert :ok =
              DamageApplication.apply_unit_damage(
                :homunculus,
                self(),
@@ -636,13 +636,17 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
                {:player, 64}
              )
 
+    assert_receive {:"$gen_cast",
+                    {:homunculus, {:apply_damage, 62, 160, prepared, {:player, 64}}}}
+
     assert prepared.pre_delivery_prepared?
     refute StatusStorage.has_status?(:homunculus, 62, :sc_aeterna)
     :ok = StatusInterpreter.apply_status(:homunculus, 62, :sc_aeterna)
     expect_damage(target.pid, 80, {:homunculus, 62})
 
-    assert {:local_effects, [{:homunculus, {:apply_damage, 62, 24, returned, {:player, 64}}}]} =
-             deliver(target, 100, ordinary_hit(), {:homunculus, 62})
+    assert :ok = deliver(target, 100, ordinary_hit(), {:homunculus, 62})
+
+    assert_receive {:"$gen_cast", {:homunculus, {:apply_damage, 62, 24, returned, {:player, 64}}}}
 
     assert returned.pre_delivery_prepared?
     assert returned.reflected
