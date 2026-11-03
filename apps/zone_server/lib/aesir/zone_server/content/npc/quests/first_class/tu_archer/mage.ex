@@ -1,0 +1,69 @@
+defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.Mage do
+  @moduledoc """
+  Prontera Mage who scoffs at the new guild master and dreams of joining a famous guild.
+
+  ## Credits
+
+  - Original from rAthena, authors and Contributors
+    - Jukka (fix up)
+    - Lupus
+    - L0ne_W0lf
+    - SinSloth
+    - Capuche
+    - Euphy
+    - Kisuka
+
+  ## Adaptation
+
+  - Transpiled by mix aesir.import.npcs from rAthena script
+  - LLM-assisted Elixir refactor reviewed by Cλstor
+  """
+
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "prontera",
+        x: 144,
+        y: 301,
+        dir: 5,
+        sprite: 123,
+        name: "Mage",
+        scope: :shared,
+        unique_name: "Mage#tu"
+      }
+    ]
+
+  alias Aesir.ZoneServer.Script.Ctx
+
+  @impl true
+  @spec on_talk(Ctx.t()) :: Ctx.t()
+  def on_talk(ctx) do
+    ctx
+    |> mes("[Mage]")
+    |> mes("Did you see that")
+    |> mes("new guild master?")
+    |> mes("Talk about getting")
+    |> mes("on your soapbox!")
+    |> next()
+    |> emotion(:hng)
+    |> mes("[Mage]")
+    |> mes("Doesn't he know that there")
+    |> mes("are a lot of famous guilds around nowadays? Why would anyone want")
+    |> mes("to join his small no-name guild?")
+    |> next()
+    |> mes("[Mage]")
+    |> mes("Now, if I become a Wizard,")
+    |> mes(
+      "I'm going to join the best guild around. Casting spells to help the strongest Knights and the most powerful Priests would make me"
+    )
+    |> mes("look really cool!")
+    |> next()
+    |> mes("[Mage]")
+    |> mes("Bwahahah!")
+    |> mes("Just thinking")
+    |> mes("about it makes")
+    |> mes("me so excited!")
+    |> close()
+  end
+end
