@@ -21498,6 +21498,1404 @@
       }
     ]
   },
+  "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
+    "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/acolyte_skills/cleric.ex",
+    "source_hash": "faee2e15034bba927df6ba7e9e0e2fa4cd3e875e182b71c2ce405b24476a3ef3",
+    "spawns": [
+      {
+        "name": "Cleric",
+        "scope": "shared",
+        "x": 173,
+        "y": 23,
+        "map": "prt_church",
+        "dir": 4,
+        "sprite": 79
+      }
+    ]
+  },
+  "quests/skills/alchemist_skills.txt|script|Alchemist#qsk_al|lhz_in01:218:141": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AlchemistSkills.Alchemist",
+    "output_hash": "bee9e3c4f513fff6525957484c9db75ed0be5bc7984241fa3a775fdb2b101a57",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/alchemist_skills/alchemist.ex",
+    "source_hash": "e0997aea0e23966937db89b624c6b33acd51dbb1a5b42e7e613cc927bf36b3e8",
+    "spawns": [
+      {
+        "name": "Alchemist",
+        "scope": "shared",
+        "x": 218,
+        "y": 141,
+        "map": "lhz_in01",
+        "dir": 7,
+        "sprite": 98,
+        "unique_name": "Alchemist#qsk_al"
+      }
+    ]
+  },
+  "quests/skills/alchemist_skills.txt|script|Beninne#qsk_al|lhz_in03:109:31": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AlchemistSkills.Beninne",
+    "output_hash": "b2cfa333980da7d4bc529b9b96b9b92a284a703d3c837c236fb7a59a725b37ea",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/alchemist_skills/beninne.ex",
+    "source_hash": "2d6562aca2cb01ba29dada173a966a9a68af63f8ff1e235c1b0aa3e985b3d6e1",
+    "spawns": [
+      {
+        "name": "Beninne",
+        "scope": "shared",
+        "x": 109,
+        "y": 31,
+        "map": "lhz_in03",
+        "dir": 5,
+        "sprite": 90,
+        "unique_name": "Beninne#qsk_al"
+      }
+    ]
+  },
+  "quests/skills/alchemist_skills.txt|script|Broncher#qsk_al|lhz_in02:278:273": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AlchemistSkills.Broncher",
+    "output_hash": "60407c9c156d0d646ac9466c1e5c82745ec8e672f1a1990f47aeb36531fb11d1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/alchemist_skills/broncher.ex",
+    "source_hash": "f08ba6d521a9444ac153a64d5ac1dfc03105cfa8799034975c5a3427dfafbb6b",
+    "spawns": [
+      {
+        "name": "Broncher",
+        "scope": "shared",
+        "x": 278,
+        "y": 273,
+        "map": "lhz_in02",
+        "dir": 3,
+        "sprite": 709,
+        "unique_name": "Broncher#qsk_al"
+      }
+    ]
+  },
+  "quests/skills/alchemist_skills.txt|script|Degas#qsk_al|yuno_in04:27:107": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AlchemistSkills.Degas",
+    "output_hash": "de8fb89158cb35e36bf70b58dfd9fd69ac9025f6a0c3b91bfa599370170b5fdc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/alchemist_skills/degas.ex",
+    "source_hash": "e6c5b33ca282c9a3eee1d3bd1e3bcae698490feddff31c604fae676481e1f302",
+    "spawns": [
+      {
+        "name": "Degas",
+        "scope": "shared",
+        "x": 27,
+        "y": 107,
+        "map": "yuno_in04",
+        "dir": 4,
+        "sprite": 748,
+        "unique_name": "Degas#qsk_al"
+      }
+    ]
+  },
+  "quests/skills/alchemist_skills.txt|script|Irache#qsk_al|yuno_in04:22:107": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AlchemistSkills.Irache",
+    "output_hash": "122b02e81573ea9f2a8d7bafdf5512642bdcdf15704ec6d992bb7154c775cdfc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/alchemist_skills/irache.ex",
+    "source_hash": "8163e8d1ebfe3cdfd9bc7a0d5fdbf9aa69aa311f12a257f987dc1ee9533768ee",
+    "spawns": [
+      {
+        "name": "Irache",
+        "scope": "shared",
+        "x": 22,
+        "y": 107,
+        "map": "yuno_in04",
+        "dir": 5,
+        "sprite": 740,
+        "unique_name": "Irache#qsk_al"
+      }
+    ]
+  },
+  "quests/skills/alchemist_skills.txt|script|Kellasus#qsk_al|lhz_in01:224:140": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AlchemistSkills.Kellasus",
+    "output_hash": "6f8040e41c1c2c0d24173d01d92fcd03e62afe8c7993991a781c13c17c6cf4e1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/alchemist_skills/kellasus.ex",
+    "source_hash": "aa960ccda1bddbe6c7bcacf05103287a0550ede7b4b3829635194c8ffdeb67ba",
+    "spawns": [
+      {
+        "name": "Kellasus",
+        "scope": "shared",
+        "x": 224,
+        "y": 140,
+        "map": "lhz_in01",
+        "dir": 3,
+        "sprite": 57,
+        "unique_name": "Kellasus#qsk_al"
+      }
+    ]
+  },
+  "quests/skills/alchemist_skills.txt|script|Keshibien#qsk_al|lhz_in01:204:138": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AlchemistSkills.Keshibien",
+    "output_hash": "55759ccafa0ca93a6e03857063907e8742a2bb9d5e43ee14c3e758ed92459493",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/alchemist_skills/keshibien.ex",
+    "source_hash": "97b90bdd413a6738ea04c2aae1e744a3826c9860def4c96627b124cb2b1de82a",
+    "spawns": [
+      {
+        "name": "Keshibien",
+        "scope": "shared",
+        "x": 204,
+        "y": 138,
+        "map": "lhz_in01",
+        "dir": 5,
+        "sprite": 750,
+        "unique_name": "Keshibien#qsk_al"
+      }
+    ]
+  },
+  "quests/skills/alchemist_skills.txt|script|Koring#qsk_al|lhz_in03:106:34": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AlchemistSkills.Koring",
+    "output_hash": "ffa45a77cb07ac275370f23ff8c7acd5891de31e4b20156a363626446f5ba02c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/alchemist_skills/koring.ex",
+    "source_hash": "1826e1cf1af84e38667e550d6944356f2a6577fd6f3754bf29694ed0bd43bdf3",
+    "spawns": [
+      {
+        "name": "Koring",
+        "scope": "shared",
+        "x": 106,
+        "y": 34,
+        "map": "lhz_in03",
+        "dir": 3,
+        "sprite": 706,
+        "unique_name": "Koring#qsk_al"
+      }
+    ]
+  },
+  "quests/skills/alchemist_skills.txt|script|Nannan#qsk_al|lighthalzen:226:210": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AlchemistSkills.Nannan",
+    "output_hash": "5830e17dac032077efdd29463e319d699d841b80270b21718efc5a4718591118",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/alchemist_skills/nannan.ex",
+    "source_hash": "d6d42a6571dfadb040cc0a165e6dcc8a749d67c89703eda6d2b82dc83fbff042",
+    "spawns": [
+      {
+        "name": "Nannan",
+        "scope": "shared",
+        "x": 226,
+        "y": 210,
+        "map": "lighthalzen",
+        "dir": 3,
+        "sprite": 86,
+        "unique_name": "Nannan#qsk_al"
+      }
+    ]
+  },
+  "quests/skills/alchemist_skills.txt|script|Pile of Books#qsk_al|yuno_in04:33:106": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AlchemistSkills.PileOfBooks",
+    "output_hash": "76412b67220f85e55a6dec10345b5ed42280eee9bb05965481421b2dc492ae1a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/alchemist_skills/pile_of_books.ex",
+    "source_hash": "8293dd82b1420e4f225ef469c86c8454a3341b6c2ae2c8576874c390ab3e1578",
+    "spawns": [
+      {
+        "name": "Pile of Books",
+        "scope": "shared",
+        "x": 33,
+        "y": 106,
+        "map": "yuno_in04",
+        "dir": 4,
+        "sprite": 111,
+        "unique_name": "Pile of Books#qsk_al"
+      }
+    ]
+  },
+  "quests/skills/alchemist_skills.txt|script|Pisruik#qsk_al|yuno_in04:33:108": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AlchemistSkills.Pisruik",
+    "output_hash": "f396f220d2ecf6966400b08c5337a825743d1b141c2e38453d56995f62ee850f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/alchemist_skills/pisruik.ex",
+    "source_hash": "bb7fe92006039c81368728ffd24f0471a96c710386bdeaf8d439cfdc2d390d27",
+    "spawns": [
+      {
+        "name": "Pisruik",
+        "scope": "shared",
+        "x": 33,
+        "y": 108,
+        "map": "yuno_in04",
+        "dir": 4,
+        "sprite": 883,
+        "unique_name": "Pisruik#qsk_al"
+      }
+    ]
+  },
+  "quests/skills/alchemist_skills.txt|script|Skrajjad#qsk_al|lhz_in01:225:122": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AlchemistSkills.Skrajjad",
+    "output_hash": "3cb45fc51faec6cac72b798058bf526ffee089c3199ee3f81edd658c2049f668",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/alchemist_skills/skrajjad.ex",
+    "source_hash": "a30809f1d209386594d4dbe6d57f98fad503cc24d29ba2dae580e6a664fec756",
+    "spawns": [
+      {
+        "name": "Skrajjad",
+        "scope": "shared",
+        "x": 225,
+        "y": 122,
+        "map": "lhz_in01",
+        "dir": 5,
+        "sprite": 754,
+        "unique_name": "Skrajjad#qsk_al"
+      }
+    ]
+  },
+  "quests/skills/archer_skills.txt|script|Jason|payon:103:63": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.ArcherSkills.Jason",
+    "output_hash": "1691786f3fa484d007ae95785e21b2c45ee5327286d594a310382da446ef2028",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/archer_skills/jason.ex",
+    "source_hash": "4fedd15dfc763ce7bb2c4a5cd3c0304b06fec8bca4bf97518de30009b327b5c0",
+    "spawns": [
+      {
+        "name": "Jason",
+        "scope": "shared",
+        "x": 103,
+        "y": 63,
+        "map": "payon",
+        "dir": 3,
+        "sprite": 88,
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/skills/archer_skills.txt|script|Roberto|moc_ruins:118:99": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.ArcherSkills.Roberto",
+    "output_hash": "bd68759b11b27a193acc28d390840a4f9185d624d4f5ad3a381f8292c31d47ae",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/archer_skills/roberto.ex",
+    "source_hash": "ecf8be3c79ef3c9f07eb713e2b23b028f7aa31931474d33fb028714a13db38a1",
+    "spawns": [
+      {
+        "name": "Roberto",
+        "scope": "shared",
+        "x": 118,
+        "y": 99,
+        "map": "moc_ruins",
+        "dir": 5,
+        "sprite": 88
+      }
+    ]
+  },
+  "quests/skills/assassin_skills.txt|script|Assassin#realgirl|in_moc_16:23:27": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AssassinSkills.Assassin2327",
+    "output_hash": "0c5052c8830f423d62ccb5cea9bbe115d552cb5d16e8dbbafc8ae31fd7a57aee",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/assassin_skills/assassin_23_27.ex",
+    "source_hash": "4fbcece6483549c2b2e4eec530122f980e7dcbd5a2046f21c1c94760ab9ad299",
+    "spawns": [
+      {
+        "name": "Assassin",
+        "scope": "shared",
+        "x": 23,
+        "y": 27,
+        "map": "in_moc_16",
+        "dir": 5,
+        "sprite": 885,
+        "unique_name": "Assassin#realgirl"
+      }
+    ]
+  },
+  "quests/skills/assassin_skills.txt|script|Assassin#realman|in_moc_16:14:27": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AssassinSkills.Assassin",
+    "output_hash": "422575e3abd47ed2b81c2a56ef9b1337f7ff4996d7fe5baca0339526b2703916",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/assassin_skills/assassin.ex",
+    "source_hash": "c764d8d7bd3f9ac9dc90d2b54987e5020dbb775bdbe10203eb6a1472a617c41f",
+    "spawns": [
+      {
+        "name": "Assassin",
+        "scope": "shared",
+        "x": 14,
+        "y": 27,
+        "map": "in_moc_16",
+        "dir": 5,
+        "sprite": 884,
+        "unique_name": "Assassin#realman"
+      }
+    ]
+  },
+  "quests/skills/assassin_skills.txt|script|Old Coffin#qsk_as2|in_sphinx2:212:267": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AssassinSkills.OldCoffin212267",
+    "output_hash": "df42a6e3accfa0907b4ae088edf358a61f57e7b31639ea3cff71d99ae6acc675",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/assassin_skills/old_coffin_212_267.ex",
+    "source_hash": "39543bc39373f7c0d0525b3c7c318d27632354a0c97b1eb0c609b0d6f8eca2b9",
+    "spawns": []
+  },
+  "quests/skills/assassin_skills.txt|script|Old Coffin#qsk_as|in_sphinx2:259:213": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AssassinSkills.OldCoffin",
+    "output_hash": "1eb08577083271326adcc63fc36200e90bf704f993cd8108a504b21ae6a8a9e0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/assassin_skills/old_coffin.ex",
+    "source_hash": "d33c472918da6ed4de1eae64a18dd718e2c71c2ad2d103a6d3b3bc86e6d44f2c",
+    "spawns": []
+  },
+  "quests/skills/assassin_skills.txt|script|Stone Statue#qsk_as2|in_sphinx2:13:146": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AssassinSkills.StoneStatue13146",
+    "output_hash": "9b639f961041210edf89646cc29aece972c950f029d1d4b46ce3113c00e760c0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/assassin_skills/stone_statue_13_146.ex",
+    "source_hash": "c33afa78bb37a31e04bdccf21c596132bbf1fda0bb8633e9a1c5daef59c4b3c5",
+    "spawns": []
+  },
+  "quests/skills/assassin_skills.txt|script|Stone Statue#qsk_as|in_sphinx2:13:163": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AssassinSkills.StoneStatue",
+    "output_hash": "c25c746befb3da29d1393c32ebd1e74e1b99744e4db4d3c4550faa7ded4d0148",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/assassin_skills/stone_statue.ex",
+    "source_hash": "d00ab0c62b2f0f7ceee80942ed35861a852cf74cc8fd5216d1f132c75913dd08",
+    "spawns": []
+  },
+  "quests/skills/assassin_skills.txt|script|¡¡#crypt|moc_pryd04:85:96": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AssassinSkills.Npc",
+    "output_hash": "a35bb3c3fa755ff912470c3a4c714996d81a8defad6368363b2840addb28960a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/assassin_skills/npc.ex",
+    "source_hash": "8bbaf671006916065996a762985515ad60900ae4eac81f3c273039e715329a24",
+    "spawns": []
+  },
+  "quests/skills/bard_skills.txt|function|F_BardSkillYhelle|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Functions.FBardskillyhelle",
+    "output_hash": "1e6d2fdcc0040f9fdee44b93aa7bca2c848461f703703f10837d4fbfef8b4541",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_bardskillyhelle.ex",
+    "source_hash": "2660395df9873760688b057bf443dcca4a656691e3f4592499110560d2fe92e9",
+    "spawns": []
+  },
+  "quests/skills/bard_skills.txt|script|Bartender#bard_qskill|morocc_in:166:76": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.BardSkills.Bartender",
+    "output_hash": "beebca5557890c7ce3dca5c00adfc3ff138451d677aebb51e7a9f931dd3a0f0b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/bard_skills/bartender.ex",
+    "source_hash": "2f1a5f9edd1e17a505cae6ccb895c9cd9c7d46f69aed7a5dce0eb5abaf522240",
+    "spawns": [
+      {
+        "name": "Bartender",
+        "scope": "shared",
+        "x": 166,
+        "y": 76,
+        "map": "morocc_in",
+        "dir": 7,
+        "sprite": 46,
+        "unique_name": "Bartender#bard_qskill"
+      }
+    ]
+  },
+  "quests/skills/bard_skills.txt|script|Customer#bard_skill01|morocc_in:178:73": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.BardSkills.Customer",
+    "output_hash": "4396182f95315c226aaf1fb776a5994f59859bbb00d1cbd168ac88cf0d68ed2d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/bard_skills/customer.ex",
+    "source_hash": "97edc8a7bb291e112a0ecaf914e8e31437fcbc7ef8da93bfa6f95ff598ff62e1",
+    "spawns": [
+      {
+        "name": "Customer",
+        "scope": "shared",
+        "x": 178,
+        "y": 73,
+        "map": "morocc_in",
+        "dir": 3,
+        "sprite": 54,
+        "unique_name": "Customer#bard_skill01"
+      }
+    ]
+  },
+  "quests/skills/bard_skills.txt|script|Customer#bard_skill02|morocc_in:175:70": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.BardSkills.Customer17570",
+    "output_hash": "4973c8923975adddbc5a900cc72cfa0510d57bb4a9fdfe8bb66bc5e84c3a1e3c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/bard_skills/customer_175_70.ex",
+    "source_hash": "3d0fbadf5239cbb7165c879829c4c8ce2f1b51bef29a8ce05e26dd6b41fcb32e",
+    "spawns": [
+      {
+        "name": "Customer",
+        "scope": "shared",
+        "x": 175,
+        "y": 70,
+        "map": "morocc_in",
+        "dir": 7,
+        "sprite": 50,
+        "unique_name": "Customer#bard_skill02"
+      }
+    ]
+  },
+  "quests/skills/bard_skills.txt|script|Spiteful-Looking Bard#bs|morocc_in:169:72": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.BardSkills.SpitefulLookingBard",
+    "output_hash": "5290931e7e2a02d2f7805394ac62aed539d1d43deca37f8b61f1fd54118fdbaa",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/bard_skills/spiteful_looking_bard.ex",
+    "source_hash": "302eb3dbf7447c2e8fbb0dcb63cc15e5c760cf51c6be07357b70d3702fdd00bc",
+    "spawns": [
+      {
+        "name": "Spiteful-Looking Bard",
+        "scope": "shared",
+        "x": 169,
+        "y": 72,
+        "map": "morocc_in",
+        "dir": 7,
+        "sprite": 741,
+        "unique_name": "Spiteful-Looking Bard#bs",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/skills/bard_skills.txt|script|Yhelle#bard_chick1|niflheim:239:70": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.BardSkills.Yhelle",
+    "output_hash": "b53fcdb9c5947790e44666344cf57c183f9e48e7102f19f087f478b8b1b50e66",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/bard_skills/yhelle.ex",
+    "source_hash": "376ddd903cab7182aaa2796de6627e28ee98b3906092399399b3968edfcc8392",
+    "spawns": [
+      {
+        "name": "Yhelle",
+        "scope": "shared",
+        "x": 239,
+        "y": 70,
+        "map": "niflheim",
+        "dir": 1,
+        "sprite": 800,
+        "unique_name": "Yhelle#bard_chick1",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/skills/bard_skills.txt|script|Yhelle#bard_chick2|niflheim:185:205": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.BardSkills.Yhelle185205",
+    "output_hash": "74a23f0a19f757e4644b4768a5f4ef629c0854a14ab2c17337531e2a76087275",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/bard_skills/yhelle_185_205.ex",
+    "source_hash": "e35d275af699ed6e29b396e3671bd837dbcddb936f5247ba60de8ad9f3e247b3",
+    "spawns": [
+      {
+        "name": "Yhelle",
+        "scope": "shared",
+        "x": 185,
+        "y": 205,
+        "map": "niflheim",
+        "dir": 3,
+        "sprite": 800,
+        "unique_name": "Yhelle#bard_chick2",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/skills/bard_skills.txt|script|Yhelle#bard_chick3|niflheim:85:203": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.BardSkills.Yhelle85203",
+    "output_hash": "638ecd61af01dba2274130bf15b385a0085e2b9e6e8105ce01384548cdd74ad6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/bard_skills/yhelle_85_203.ex",
+    "source_hash": "d52efab05afb56f8a13290f164f0a4e6d872458bfa365b705f94f0ee2d13c3dd",
+    "spawns": [
+      {
+        "name": "Yhelle",
+        "scope": "shared",
+        "x": 85,
+        "y": 203,
+        "map": "niflheim",
+        "dir": 5,
+        "sprite": 800,
+        "unique_name": "Yhelle#bard_chick3",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/skills/bard_skills.txt|script|Yhelle#bard_chick4|niflheim:149:81": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.BardSkills.Yhelle14981",
+    "output_hash": "9c94b0542ca3c6f4048aaaeab87c6066cd622b96171b87804d187f894cfe20bb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/bard_skills/yhelle_149_81.ex",
+    "source_hash": "336fce873234a427bfa58199fc0274c83d0924363236361c4be9af3138906e8f",
+    "spawns": [
+      {
+        "name": "Yhelle",
+        "scope": "shared",
+        "x": 149,
+        "y": 81,
+        "map": "niflheim",
+        "dir": 7,
+        "sprite": 800,
+        "unique_name": "Yhelle#bard_chick4",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/skills/bard_skills.txt|script|Yhelle#bard_chick5|niflheim:209:144": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.BardSkills.Yhelle209144",
+    "output_hash": "88ff5d65df1dc8a0f2efd6b16f18983d83cbf2bd4434c41af99564e063b01d74",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/bard_skills/yhelle_209_144.ex",
+    "source_hash": "30d08d0c7efdf31a4a005749b0b75fa42dec4286df59236e64d7df254c44adbd",
+    "spawns": [
+      {
+        "name": "Yhelle",
+        "scope": "shared",
+        "x": 209,
+        "y": 144,
+        "map": "niflheim",
+        "dir": 3,
+        "sprite": 800,
+        "unique_name": "Yhelle#bard_chick5",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/skills/bard_skills.txt|script|Young Man#bard_q1|prontera:174:328": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.BardSkills.YoungMan",
+    "output_hash": "ba822808e6bccabaabaf856d524c0673f1ba0d39e29dba500eda91bbcfa0ac8e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/bard_skills/young_man.ex",
+    "source_hash": "3e6eb1576a29bac4a5f6959cbeb9504bf307b7ff33f6d6fa1dd30cfe480de192",
+    "spawns": [
+      {
+        "name": "Young Man",
+        "scope": "shared",
+        "x": 174,
+        "y": 328,
+        "map": "prontera",
+        "dir": 3,
+        "sprite": 89,
+        "unique_name": "Young Man#bard_q1",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/skills/blacksmith_skills.txt|script|Akkie#qsk_bs|geffen:178:72": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.BlacksmithSkills.Akkie",
+    "output_hash": "76ca674f80fc453dbcfe11d96c894f313a95d860a334f6e74d62205860b1ed4b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/blacksmith_skills/akkie.ex",
+    "source_hash": "87b94553d48033aadc1de5c7e9967984061e52071c38c7c6db1e68a1e266a740",
+    "spawns": [
+      {
+        "name": "Akkie",
+        "scope": "shared",
+        "x": 178,
+        "y": 72,
+        "map": "geffen",
+        "dir": 3,
+        "sprite": 726,
+        "unique_name": "Akkie#qsk_bs"
+      }
+    ]
+  },
+  "quests/skills/blacksmith_skills.txt|script|Goodman#qsk_bs|geffen:172:52": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.BlacksmithSkills.Goodman",
+    "output_hash": "69b79cfca831c8a261769f32d22535e6add650e82c6d078b4029de3f8c6b9f16",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/blacksmith_skills/goodman.ex",
+    "source_hash": "b0d94b622c64f04a8f2a7efaa441388f49990486465b82318aac73ccbe635180",
+    "spawns": [
+      {
+        "name": "Goodman",
+        "scope": "shared",
+        "x": 172,
+        "y": 52,
+        "map": "geffen",
+        "dir": 1,
+        "sprite": 826,
+        "unique_name": "Goodman#qsk_bs"
+      }
+    ]
+  },
+  "quests/skills/crusader_skills.txt|script|Ford#11|geffen:110:117": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.CrusaderSkills.Ford",
+    "output_hash": "5410a035f21ab684c4ee4c3d78badf8d9b09d2ebdd34d2cffd3662b553208591",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/crusader_skills/ford.ex",
+    "source_hash": "89315116ee7d051d640b87b1c0d65c59ab12da12431153514d2c69d29676a362",
+    "spawns": [
+      {
+        "name": "Ford",
+        "scope": "shared",
+        "x": 110,
+        "y": 117,
+        "map": "geffen",
+        "dir": 3,
+        "sprite": 752,
+        "unique_name": "Ford#11"
+      }
+    ]
+  },
+  "quests/skills/crusader_skills.txt|script|Pastor#1011|prt_church:87:127": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.CrusaderSkills.Pastor",
+    "output_hash": "fc77b89aa96e025f5a4a98435f819470154ecb2b97b5f6ba42f3bb59d6483e0d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/crusader_skills/pastor.ex",
+    "source_hash": "76028749ca985f9e7c87af84c2d77890705e59995e208b39497e662c58e3d043",
+    "spawns": [
+      {
+        "name": "Pastor",
+        "scope": "shared",
+        "x": 87,
+        "y": 127,
+        "map": "prt_church",
+        "dir": 3,
+        "sprite": 755,
+        "unique_name": "Pastor#1011"
+      }
+    ]
+  },
+  "quests/skills/crusader_skills.txt|script|Soldier#277|gef_fild13:297:242": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.CrusaderSkills.Soldier",
+    "output_hash": "8ce42fc6a34903b9149ede4cd013e0c2eee91791d1114195121299793d8e2269",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/crusader_skills/soldier.ex",
+    "source_hash": "d9fa6e0e8513b5203d6fb7dbe2d28701cd648e31f86fbbf90e5c05b032142df7",
+    "spawns": [
+      {
+        "name": "Soldier",
+        "scope": "shared",
+        "x": 297,
+        "y": 242,
+        "map": "gef_fild13",
+        "dir": 3,
+        "sprite": 751,
+        "unique_name": "Soldier#277"
+      }
+    ]
+  },
+  "quests/skills/dancer_skills.txt|script|Aelle#qsk_dan02|prontera:183:333": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.DancerSkills.Aelle",
+    "output_hash": "b47d40e917394a058c982233e5e1ab06c371230cd0d8de43448dcbffd0ad1cb6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/dancer_skills/aelle.ex",
+    "source_hash": "2e22460316294e24986869072a2069adbfae8d065de5022716677f055ea1ea50",
+    "spawns": [
+      {
+        "name": "Aelle",
+        "scope": "shared",
+        "x": 183,
+        "y": 333,
+        "map": "prontera",
+        "dir": 1,
+        "sprite": 79,
+        "unique_name": "Aelle#qsk_dan02"
+      }
+    ]
+  },
+  "quests/skills/dancer_skills.txt|script|Canell#qsk_dan01|comodo:204:172": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.DancerSkills.Canell",
+    "output_hash": "44c373e06fac80440af6855913e116cef144d62a8b156bb94c446b8b28db1719",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/dancer_skills/canell.ex",
+    "source_hash": "4bd277f791ec2e74beb958e6c677c720fcfec908bbbf46fc7288a3fe5f9bc8e5",
+    "spawns": [
+      {
+        "name": "Canell",
+        "scope": "shared",
+        "x": 204,
+        "y": 172,
+        "map": "comodo",
+        "dir": 5,
+        "sprite": 724,
+        "unique_name": "Canell#qsk_dan01"
+      }
+    ]
+  },
+  "quests/skills/hunter_skills.txt|script|Arpesto|pay_arche:109:169": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.HunterSkills.Arpesto",
+    "output_hash": "df68a1b0cb2065276a4c5ce743eaa877e247e59d93174175f0b0b278b80c9ea7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/hunter_skills/arpesto.ex",
+    "source_hash": "75df83abf25f3b05a254875bd302dde46b0cafe0c7c77d61507c0474218eaa2b",
+    "spawns": [
+      {
+        "name": "Arpesto",
+        "scope": "shared",
+        "x": 109,
+        "y": 169,
+        "map": "pay_arche",
+        "dir": 3,
+        "sprite": 712
+      }
+    ]
+  },
+  "quests/skills/knight_skills.txt|script|#tour|prontera:69:351": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.KnightSkills.Npc",
+    "output_hash": "826c119a3b80fe6918c9fa0685dd74a5a28ccd3cd3cfe97674792c23c5f91d8c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/knight_skills/npc.ex",
+    "source_hash": "b7ca4fca40aff7d7f05195a9911566db10a1d25bd6d310795c28a86786cf2ce0",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 69,
+        "y": 351,
+        "map": "prontera",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#tour",
+        "trigger": [
+          5,
+          5
+        ]
+      }
+    ]
+  },
+  "quests/skills/knight_skills.txt|script|Grand Master|prontera:72:352": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.KnightSkills.GrandMaster",
+    "output_hash": "c1e595b2d6ce0f99bd2bf81878cfc77783e110d069c629454f377f99480ccc2b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/knight_skills/grand_master.ex",
+    "source_hash": "9f1e1005886d158598576742425ba1d3aa2f4eb801d9dc4e1a8b8f938958746d",
+    "spawns": [
+      {
+        "name": "Grand Master",
+        "scope": "shared",
+        "x": 72,
+        "y": 352,
+        "map": "prontera",
+        "dir": 7,
+        "sprite": 733
+      }
+    ]
+  },
+  "quests/skills/knight_skills.txt|script|Knight#drake|prontera:73:357": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.KnightSkills.Knight73357",
+    "output_hash": "d69ee3ef1ac4443710c988f8555d4c99fe9cc964093713f9794d917fb9c80f70",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/knight_skills/knight_73_357.ex",
+    "source_hash": "9cc82fcc7cb020f82d9dfdef0a7a3b6064e1a41a721ca562866ead605cfb7bc0",
+    "spawns": [
+      {
+        "name": "Knight",
+        "scope": "shared",
+        "x": 73,
+        "y": 357,
+        "map": "prontera",
+        "dir": 5,
+        "sprite": 734,
+        "unique_name": "Knight#drake"
+      }
+    ]
+  },
+  "quests/skills/knight_skills.txt|script|Knight#gattack|prontera:66:358": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.KnightSkills.Knight66358",
+    "output_hash": "030d8204f27b56e7194256d09688486b5f80858ea52731acdca7db26a483248c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/knight_skills/knight_66_358.ex",
+    "source_hash": "2b800a396a8a003e616f6ba57489fa7c938b0db5d4be8bfa1cf0c312864313dd",
+    "spawns": [
+      {
+        "name": "Knight",
+        "scope": "shared",
+        "x": 66,
+        "y": 358,
+        "map": "prontera",
+        "dir": 5,
+        "sprite": 733,
+        "unique_name": "Knight#gattack"
+      }
+    ]
+  },
+  "quests/skills/knight_skills.txt|script|Knight#kabuto|prt_in:85:99": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.KnightSkills.Knight",
+    "output_hash": "bc14dd261e7febca37ee94086bab62a2a3ce81023d1888151e5c02f60805b8f9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/knight_skills/knight.ex",
+    "source_hash": "7eabf0adaf74e8d2fb5284409868969c4df8ace45d1f5d3cdbb5453b96171e9d",
+    "spawns": [
+      {
+        "name": "Knight",
+        "scope": "shared",
+        "x": 85,
+        "y": 99,
+        "map": "prt_in",
+        "dir": 3,
+        "sprite": 734,
+        "unique_name": "Knight#kabuto"
+      }
+    ]
+  },
+  "quests/skills/knight_skills.txt|script|Knight#sasword|prontera:78:357": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.KnightSkills.Knight78357",
+    "output_hash": "b6247f2d2e70815e97ea5bdf8d3348efcdf80a6d69e252b069e26f98ba0029be",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/knight_skills/knight_78_357.ex",
+    "source_hash": "de6e779a0b4e3b1aef5af4429c1496ca9f50ff72f416e1a42e6b6113c80b1e05",
+    "spawns": [
+      {
+        "name": "Knight",
+        "scope": "shared",
+        "x": 78,
+        "y": 357,
+        "map": "prontera",
+        "dir": 3,
+        "sprite": 734,
+        "unique_name": "Knight#sasword"
+      }
+    ]
+  },
+  "quests/skills/knight_skills.txt|script|Knight#zabii|prontera:78:354": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.KnightSkills.Knight78354",
+    "output_hash": "3b82f76a12f68ce73d542958c1fc40b0b614074f385f996fc1ece17a59e65a23",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/knight_skills/knight_78_354.ex",
+    "source_hash": "487a8247a807ad94931153e09af1356bfc55a9628487ea1b3c2f73d0d486d1b0",
+    "spawns": [
+      {
+        "name": "Knight",
+        "scope": "shared",
+        "x": 78,
+        "y": 354,
+        "map": "prontera",
+        "dir": 3,
+        "sprite": 734,
+        "unique_name": "Knight#zabii"
+      }
+    ]
+  },
+  "quests/skills/mage_skills.txt|script|Great Wizard|geffen_in:151:119": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.MageSkills.GreatWizard",
+    "output_hash": "91549df7d3a8abecf64321084421f7e9b58b89e771dfa7e9aa751bbf368e02a0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/mage_skills/great_wizard.ex",
+    "source_hash": "d6ffc820fa81098a3d4276169107156e813659c0f3268052fa700e6fb950a5fb",
+    "spawns": [
+      {
+        "name": "Great Wizard",
+        "scope": "shared",
+        "x": 151,
+        "y": 119,
+        "map": "geffen_in",
+        "dir": 4,
+        "sprite": 64
+      }
+    ]
+  },
+  "quests/skills/merchant_skills.txt|floating|::Gershaun_alberta|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.GershaunAlberta",
+    "output_hash": "eeef898c0e317bee3c90af5607f15dfd82e6b488f32363fbc4bce1da88db5121",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/gershaun_alberta.ex",
+    "source_hash": "47da09e30b87dd036375c8c6746f6fbbd6020cf34149cd2edf0beb0e49d66be5",
+    "spawns": []
+  },
+  "quests/skills/merchant_skills.txt|script|Charlron|alberta:119:221": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.MerchantSkills.Charlron",
+    "output_hash": "8a0dd540d097a57bf4a87ceb09af979075e782ef2687765233309531e559daaa",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/merchant_skills/charlron.ex",
+    "source_hash": "0b14577c1c77d4ea52458802d791c3d40590141c28349870ac92d0e4f9ec277f",
+    "spawns": [
+      {
+        "name": "Charlron",
+        "scope": "shared",
+        "x": 119,
+        "y": 221,
+        "map": "alberta",
+        "dir": 6,
+        "sprite": 107
+      }
+    ]
+  },
+  "quests/skills/merchant_skills.txt|script|Necko|alberta:83:96": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.MerchantSkills.Necko",
+    "output_hash": "d8c0bcd2fa74f9fc168baea6606a5cecd968d8a86f22426b3909275a53755f90",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/merchant_skills/necko.ex",
+    "source_hash": "c8e5cdf67f093b0db64c353151cff96212d9172334f53bf4ab2aec33916bddd6",
+    "spawns": [
+      {
+        "name": "Necko",
+        "scope": "shared",
+        "x": 83,
+        "y": 96,
+        "map": "alberta",
+        "dir": 5,
+        "sprite": 98,
+        "trigger": [
+          7,
+          7
+        ]
+      }
+    ]
+  },
+  "quests/skills/monk_skills.txt|script|Apprentice Monk#qsk_mo|prt_monk:270:198": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.MonkSkills.ApprenticeMonk",
+    "output_hash": "b6d57e976ba6244dffedffb8779a87b45b4895411080036027840e94a23217c2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/monk_skills/apprentice_monk.ex",
+    "source_hash": "d15d18a33d37bb2ac110a04e459722f87576eddcca86bd31e2522db90c21686f",
+    "spawns": [
+      {
+        "name": "Apprentice Monk",
+        "scope": "shared",
+        "x": 270,
+        "y": 198,
+        "map": "prt_monk",
+        "dir": 3,
+        "sprite": 753,
+        "unique_name": "Apprentice Monk#qsk_mo"
+      }
+    ]
+  },
+  "quests/skills/monk_skills.txt|script|Monk#qsk_mo|monk_test:316:69": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.MonkSkills.Monk",
+    "output_hash": "2151d025c01b8a398903d7eae7fe905773bc25259f9a2d03b086338386569084",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/monk_skills/monk.ex",
+    "source_hash": "b489678858849f330e54f69dc1f51e29e8cdd44adf08a780fef263be9b732e00",
+    "spawns": [
+      {
+        "name": "Monk",
+        "scope": "shared",
+        "x": 316,
+        "y": 69,
+        "map": "monk_test",
+        "dir": 5,
+        "sprite": 823,
+        "unique_name": "Monk#qsk_mo"
+      }
+    ]
+  },
+  "quests/skills/novice_skills.txt|script|Chivalry Member|prt_in:73:87": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.NoviceSkills.ChivalryMember",
+    "output_hash": "673a072e976d12124dd59b1d543733341d664f871d7ab1d8d341764ac88822db",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/novice_skills/chivalry_member.ex",
+    "source_hash": "80a35b0317cb9a47ceb2ceeb1e367cd267321b4d8a837a8ef3a6ded9aa35bd3f",
+    "spawns": [
+      {
+        "name": "Chivalry Member",
+        "scope": "shared",
+        "x": 73,
+        "y": 87,
+        "map": "prt_in",
+        "dir": 4,
+        "sprite": 65
+      }
+    ]
+  },
+  "quests/skills/novice_skills.txt|script|Nami|prt_in:234:133": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.NoviceSkills.Nami",
+    "output_hash": "7357cc2fd1dbba2d14cb78ce0ebb3898048bb927e815f58b85634336d78ef83e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/novice_skills/nami.ex",
+    "source_hash": "35e29357d037b82066d5a97d18ab80d0ec92c7166f794bc467fc1ff9d88e08f1",
+    "spawns": [
+      {
+        "name": "Nami",
+        "scope": "shared",
+        "x": 234,
+        "y": 133,
+        "map": "prt_in",
+        "dir": 4,
+        "sprite": 66
+      }
+    ]
+  },
+  "quests/skills/novice_skills.txt|script|Nursing Instructor|prt_castle:175:146": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.NoviceSkills.NursingInstructor",
+    "output_hash": "1ae1f6d00ca87709f5271d682df3b7382dc44afdd5f88999306e064264122c1c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/novice_skills/nursing_instructor.ex",
+    "source_hash": "10f56f548173905c4d6ca530dba9c19bd998dff981222e3ae84e5ab060a7a193",
+    "spawns": [
+      {
+        "name": "Nursing Instructor",
+        "scope": "shared",
+        "x": 175,
+        "y": 146,
+        "map": "prt_castle",
+        "dir": 4,
+        "sprite": 50
+      }
+    ]
+  },
+  "quests/skills/priest_skills.txt|script|Sister Linus|prt_church:111:112": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.PriestSkills.SisterLinus",
+    "output_hash": "b3f9746c574144de0da5739179e03e505c46027e0014a8e08faa8297c2ae8156",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/priest_skills/sister_linus.ex",
+    "source_hash": "7647cc1ab9c157e8af1de1cac9789434652a61704ac574ce636d23bfd21e4867",
+    "spawns": [
+      {
+        "name": "Sister Linus",
+        "scope": "shared",
+        "x": 111,
+        "y": 112,
+        "map": "prt_church",
+        "dir": 1,
+        "sprite": 79
+      }
+    ]
+  },
+  "quests/skills/rogue_skills.txt|function|F_Kienna|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Functions.FKienna",
+    "output_hash": "ad8cd1ff9a0050fdd2e0f73ac5262ef1e1e4dfe10b060e5bb4b2c61ab5e7888e",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_kienna.ex",
+    "source_hash": "6477388995b9f042dbb9019f0aa097ddd528f291faa76f2c45d0d8dfde01852d",
+    "spawns": []
+  },
+  "quests/skills/rogue_skills.txt|script|#1st5min|prt_are01:135:135": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.Npc135135",
+    "output_hash": "1a58eaec31801b970751e95799494d13cd396029bab637b17761d3f44c86db25",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/rogue_skills/npc_135_135.ex",
+    "source_hash": "79eae2a7317c1d3a4a60553804b5828cacda5612cb61d23625a66867ef54b528",
+    "spawns": []
+  },
+  "quests/skills/rogue_skills.txt|script|#1stmove|prt_are01:135:135": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.Npc0",
+    "output_hash": "cd7d307c10338f90183aca0dcb6685ba2504931ed17ae71ca0ff9bb8685274eb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/rogue_skills/npc_0.ex",
+    "source_hash": "d198b41620d1314bbf1778521c921a21451765e6170532aef921b7ecd6b1277f",
+    "spawns": []
+  },
+  "quests/skills/rogue_skills.txt|script|#1strecog|prt_are01:150:150": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.Npc150150",
+    "output_hash": "dcc36567f1853a970801ce02e34065b40cb37c3ff0dc8a76042775864163cd73",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/rogue_skills/npc_150_150.ex",
+    "source_hash": "b185a5935fe5bed59b085a1824558f8d3a53246adc9bbd3047622f6608f246e8",
+    "spawns": []
+  },
+  "quests/skills/rogue_skills.txt|script|#killershow01|in_rogue:359:177": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.Npc",
+    "output_hash": "6262d2b057155680d1bd9522c5462be514b9d9f5c2e641f3a41c0543c68ead5a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/rogue_skills/npc.ex",
+    "source_hash": "e8089ee777c17c6ee9027234ebfac71ee797b820abe7713041633acfe4726c9a",
+    "spawns": []
+  },
+  "quests/skills/rogue_skills.txt|script|Haijara Greg#rogueguild|in_rogue:355:179": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.HaijaraGreg",
+    "output_hash": "530899bdbc3c0e40893448b3688f642fde72c12f845462dc6f555e18c25faa0d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/rogue_skills/haijara_greg.ex",
+    "source_hash": "73461291be9b2d1783de580d8ea2488f7a9daacc64646f1e2f98f617b24487e7",
+    "spawns": [
+      {
+        "name": "Haijara Greg",
+        "scope": "shared",
+        "x": 355,
+        "y": 179,
+        "map": "in_rogue",
+        "dir": 0,
+        "sprite": 46,
+        "unique_name": "Haijara Greg#rogueguild"
+      }
+    ]
+  },
+  "quests/skills/rogue_skills.txt|script|Jay Greg#rogueguild|in_rogue:181:114": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.JayGreg",
+    "output_hash": "77e195bb1f9f2333e6e3534a04dffa97608d3568d9c0a2daeb5e5935cca842e7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/rogue_skills/jay_greg.ex",
+    "source_hash": "6c06dd7a5d0c1c834138b9b0b7ca9cf0e7de82ad8f9a571197a9f03bca10ba51",
+    "spawns": [
+      {
+        "name": "Jay Greg",
+        "scope": "shared",
+        "x": 181,
+        "y": 114,
+        "map": "in_rogue",
+        "dir": 3,
+        "sprite": 85,
+        "unique_name": "Jay Greg#rogueguild"
+      }
+    ]
+  },
+  "quests/skills/rogue_skills.txt|script|Kienna#1st|prt_are01:149:162": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.Kienna",
+    "output_hash": "6a8f716a1e3581d3743311dadffe24b50c398d52f5ff26169902790fc40357bc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/rogue_skills/kienna.ex",
+    "source_hash": "9e4c3307771d2226fff6282117f92d4ee3ee04e45de56e5d74116c4886321c01",
+    "spawns": [
+      {
+        "name": "Kienna",
+        "scope": "shared",
+        "x": 149,
+        "y": 162,
+        "map": "prt_are01",
+        "dir": 0,
+        "sprite": 700,
+        "unique_name": "Kienna#1st",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "Kienna",
+        "scope": "shared",
+        "x": 136,
+        "y": 150,
+        "map": "prt_are01",
+        "dir": 0,
+        "sprite": 700,
+        "unique_name": "Kienna#2nd",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "Kienna",
+        "scope": "shared",
+        "x": 150,
+        "y": 138,
+        "map": "prt_are01",
+        "dir": 0,
+        "sprite": 700,
+        "unique_name": "Kienna#3rd",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "Kienna",
+        "scope": "shared",
+        "x": 163,
+        "y": 147,
+        "map": "prt_are01",
+        "dir": 0,
+        "sprite": 700,
+        "unique_name": "Kienna#4th",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "Kienna",
+        "scope": "shared",
+        "x": 134,
+        "y": 140,
+        "map": "prt_are01",
+        "dir": 0,
+        "sprite": 700,
+        "unique_name": "Kienna#5th",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "Kienna",
+        "scope": "shared",
+        "x": 161,
+        "y": 140,
+        "map": "prt_are01",
+        "dir": 0,
+        "sprite": 700,
+        "unique_name": "Kienna#6th",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "Kienna",
+        "scope": "shared",
+        "x": 161,
+        "y": 160,
+        "map": "prt_are01",
+        "dir": 0,
+        "sprite": 700,
+        "unique_name": "Kienna#7th",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "Kienna",
+        "scope": "shared",
+        "x": 138,
+        "y": 159,
+        "map": "prt_are01",
+        "dir": 0,
+        "sprite": 700,
+        "unique_name": "Kienna#8th",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/skills/rogue_skills.txt|script|Killer#Rogueguild|in_rogue:357:174": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.Killer",
+    "output_hash": "fda8020eb63de1a578080a9d391d8c3706c46b523c0888e9d74cf38d3d8c63e4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/rogue_skills/killer.ex",
+    "source_hash": "4360273c60bc7009219b24868ed856a3a9eac6d1d0ea10678177e635ca9c3329",
+    "spawns": [
+      {
+        "name": "Killer",
+        "scope": "shared",
+        "x": 357,
+        "y": 174,
+        "map": "in_rogue",
+        "dir": 2,
+        "sprite": 705,
+        "unique_name": "Killer#Rogueguild",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/skills/rogue_skills.txt|script|Louis Greg#rogueguild|in_rogue:152:29": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.LouisGreg",
+    "output_hash": "ec3457594f751e3326645551bc357af464cc972668ee2bf88d5536554fd935b6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/rogue_skills/louis_greg.ex",
+    "source_hash": "3b7c7ed5a014210bbc1834bb1d866b942b8508e37d9ef5ae54cd2cd7c90d08d3",
+    "spawns": [
+      {
+        "name": "Louis Greg",
+        "scope": "shared",
+        "x": 152,
+        "y": 29,
+        "map": "in_rogue",
+        "dir": 0,
+        "sprite": 84,
+        "unique_name": "Louis Greg#rogueguild"
+      }
+    ]
+  },
+  "quests/skills/rogue_skills.txt|script|Thor Greg#rogueguild|in_rogue:268:125": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.ThorGreg",
+    "output_hash": "7cf8eec32d60b1e0eb54ff61a1d00ad73687f109517c15000fb209943621f469",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/rogue_skills/thor_greg.ex",
+    "source_hash": "5012cc35677fc2176bbdf1afc0b74995c10608fa2d4b825cd3337a83c6865933",
+    "spawns": [
+      {
+        "name": "Thor Greg",
+        "scope": "shared",
+        "x": 268,
+        "y": 125,
+        "map": "in_rogue",
+        "dir": 2,
+        "sprite": 86,
+        "unique_name": "Thor Greg#rogueguild"
+      }
+    ]
+  },
+  "quests/skills/rogue_skills.txt|script|Waiting Room#rogue10|in_rogue:88:119": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.WaitingRoom",
+    "output_hash": "05572eba91d558d62faf95a52e0cf70bf96ad3f8347dcb90ddfb478c08c84d4d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/rogue_skills/waiting_room.ex",
+    "source_hash": "6b853e89b8c3731260644f8db03dd6cfb71d095e2f655752d842ff603839aa20",
+    "spawns": [
+      {
+        "name": "Waiting Room",
+        "scope": "shared",
+        "x": 88,
+        "y": 119,
+        "map": "in_rogue",
+        "dir": 3,
+        "sprite": 828,
+        "unique_name": "Waiting Room#rogue10"
+      }
+    ]
+  },
+  "quests/skills/sage_skills.txt|script|Mischna|yuno_in03:176:24": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.SageSkills.Mischna",
+    "output_hash": "f47389a9e81f2ca0532707a4eccb6fd8f8c3db4a0faa9c2d1efafed068de3526",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/sage_skills/mischna.ex",
+    "source_hash": "76de57e68dab954c7121f71470ed3e5e3308c19f3ec0de391c21c9f439b81fce",
+    "spawns": [
+      {
+        "name": "Mischna",
+        "scope": "shared",
+        "x": 176,
+        "y": 24,
+        "map": "yuno_in03",
+        "dir": 3,
+        "sprite": 755
+      }
+    ]
+  },
+  "quests/skills/swordman_skills.txt|floating|::KnightDeThomas|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Knightdethomas",
+    "output_hash": "bd617bff0d27626d78af7e2307d50678274ebe80d5a12b7f7fc1ffb41bf0aed7",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/knightdethomas.ex",
+    "source_hash": "52b553cdb7c5e904bd0d849a582d20defbe708f88c836cf340ac1f9a998ab8e4",
+    "spawns": []
+  },
+  "quests/skills/swordman_skills.txt|script|Juan|prt_in:94:57": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.SwordmanSkills.Juan",
+    "output_hash": "49def53121e09673160112375cc06f44094767bdc7fd2433ca35f54e89834c0a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/swordman_skills/juan.ex",
+    "source_hash": "8d954dac4b2a0a1f6734984d260e25e2b9e1550df712b9cea9fed856de75f334",
+    "spawns": [
+      {
+        "name": "Juan",
+        "scope": "shared",
+        "x": 94,
+        "y": 57,
+        "map": "prt_in",
+        "dir": 3,
+        "sprite": 85,
+        "trigger": [
+          4,
+          4
+        ]
+      }
+    ]
+  },
+  "quests/skills/swordman_skills.txt|script|Leon Von Frich|prt_in:75:88": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.SwordmanSkills.LeonVonFrich",
+    "output_hash": "b1930f21db4d89aca5d36542cb5ec4295caa99864f8a57e33ac3e608901c46fa",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/swordman_skills/leon_von_frich.ex",
+    "source_hash": "36b3d7764d619a58da75b361f963e29ed6ef7081e08e01cd6b0f30ef6c7f22de",
+    "spawns": [
+      {
+        "name": "Leon Von Frich",
+        "scope": "shared",
+        "x": 75,
+        "y": 88,
+        "map": "prt_in",
+        "dir": 5,
+        "sprite": 85,
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/skills/thief_skills.txt|script|Alcouskou|moc_prydb1:154:128": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.ThiefSkills.Alcouskou",
+    "output_hash": "894bb54f3014f0fa3dcbc473eeeaefc81919badac3606bbb90b903d58b395792",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/thief_skills/alcouskou.ex",
+    "source_hash": "2cc33e7ad373485a16d8bb1044891de300d958c3469ca4d23205bef8e7d0ab51",
+    "spawns": [
+      {
+        "name": "Alcouskou",
+        "scope": "shared",
+        "x": 154,
+        "y": 128,
+        "map": "moc_prydb1",
+        "dir": 4,
+        "sprite": 118
+      }
+    ]
+  },
+  "quests/skills/thief_skills.txt|script|Bag Seller|payon:91:77": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.ThiefSkills.BagSeller",
+    "output_hash": "7f9bee30f27228abdfd193280777b6e5245f1b6d78ebaab086fb9dc25e77a369",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/thief_skills/bag_seller.ex",
+    "source_hash": "55cc624bf6cdf5a2bd1925769695351e8aaf1b46d70be636cfa89f63f0da6154",
+    "spawns": [
+      {
+        "name": "Bag Seller",
+        "scope": "shared",
+        "x": 91,
+        "y": 77,
+        "map": "payon",
+        "dir": 3,
+        "sprite": 99
+      }
+    ]
+  },
+  "quests/skills/wizard_skills.txt|script|Meow#q_wiz|gef_tower:115:36": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.WizardSkills.Meow",
+    "output_hash": "10ec468213162234c5e65fcdfb291657d9041b0ecc6d76c3f1eebf9b82f8f1c9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/wizard_skills/meow.ex",
+    "source_hash": "d52b2b5e6c8dd3e03c1edbc8cef27a56c18f47626044f885189049090e395330",
+    "spawns": [
+      {
+        "name": "Meow",
+        "scope": "shared",
+        "x": 115,
+        "y": 36,
+        "map": "gef_tower",
+        "dir": 4,
+        "sprite": 876,
+        "unique_name": "Meow#q_wiz"
+      }
+    ]
+  },
+  "quests/skills/wizard_skills.txt|script|Simon Mayace#q_wiz|prt_in:82:98": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.WizardSkills.SimonMayace",
+    "output_hash": "4173374308c288f31e2b733d76ccc8067fa1fd399b85234d1f1d69c409a5bd37",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/skills/wizard_skills/simon_mayace.ex",
+    "source_hash": "11b3d87f06cb6b340efc5f422447be0d410cbb8ddc5bc454393a86b0bef9d605",
+    "spawns": [
+      {
+        "name": "Simon Mayace",
+        "scope": "shared",
+        "x": 82,
+        "y": 98,
+        "map": "prt_in",
+        "dir": 3,
+        "sprite": 46,
+        "unique_name": "Simon Mayace#q_wiz"
+      }
+    ]
+  },
   "re/cities/comodo.txt|script|Adventurer#pa0829_01|cmd_fild07:50:271": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Comodo.Adventurer",
     "output_hash": "5213a5fee700c495335ae96ef6ca1596bce22f3a73e1c4d838ddd49e0b198ab3",
