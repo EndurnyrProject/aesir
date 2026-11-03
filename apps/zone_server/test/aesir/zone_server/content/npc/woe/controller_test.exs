@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.ControllerTest do
     :ok
   end
 
-  test "keeps the hidden controller registered without an Emperium-break event" do
+  test "registers the controller with OnInit as its only event" do
     assert [{Controller, placement}] = Registry.by_name("WoeController")
     assert is_integer(Registry.entity_id(placement))
     assert Controller.events() == ["OnInit"]

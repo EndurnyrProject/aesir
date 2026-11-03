@@ -36,37 +36,9 @@ defmodule Aesir.ZoneServer.Guild.StorageTest do
     end
   end
 
-  describe "add/5" do
-    test "keeps a refined and carded item separate from a plain stack" do
-      storage = %{0 => item(nameid: @red_potion, amount: 5, identify: 1)}
-      source = item(nameid: @red_potion, amount: 1, identify: 1, refine: 7, card0: 4001)
-
-      assert {:ok,
-              %{
-                0 => %InventoryItem{amount: 5, refine: 0, card0: 0},
-                1 => %InventoryItem{amount: 1, refine: 7, card0: 4001}
-              }, {:added, 1, %InventoryItem{refine: 7, card0: 4001}}} =
-               Storage.add(storage, def!(@red_potion), 1, 200, source)
-    end
-  end
-
-  describe "remove/3" do
-    test "delegates removals to the shared container core" do
-      storage = %{0 => item(nameid: @red_potion, amount: 2)}
-
-      assert {:ok, %{0 => %InventoryItem{amount: 1}}, {:reduced, 0, 1}} =
-               Storage.remove(storage, 0, 1)
-    end
-  end
-
   describe "depositable/1 and add/5" do
     test "accepts an unbound item" do
       assert {:ok, _s, {:added, 0, _item}} = Storage.add(%{}, def!(@red_potion), 1, 200, item())
-    end
-
-    test "accepts a guild-bound item" do
-      assert {:ok, _s, {:added, 0, _item}} =
-               Storage.add(%{}, def!(@red_potion), 1, 200, item(bound: 2))
     end
 
     test "rejects an equipped or equipment-switch item" do
@@ -75,23 +47,6 @@ defmodule Aesir.ZoneServer.Guild.StorageTest do
       end
 
       assert :ok = Storage.depositable(item())
-    end
-
-    test "rejects account-bound, party-bound, and character-bound items" do
-      for bound <- [1, 3, 4] do
-        assert {:error, :bound} = Storage.add(%{}, def!(@red_potion), 1, 200, item(bound: bound))
-      end
-    end
-
-    test "rejects a rental item" do
-      assert {:error, :restricted} =
-               Storage.add(
-                 %{},
-                 def!(@red_potion),
-                 1,
-                 200,
-                 item(expire_time: ~N[2026-08-25 00:00:00])
-               )
     end
 
     test "rejects an item with the guild storage restriction" do

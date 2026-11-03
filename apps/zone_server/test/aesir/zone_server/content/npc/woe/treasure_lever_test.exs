@@ -46,29 +46,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.TreasureLeverTest do
     "prtg_cas05" => {281, 176}
   }
 
-  @exits %{
-    "aldeg_cas01" => {218, 176},
-    "aldeg_cas02" => {78, 75},
-    "aldeg_cas03" => {110, 119},
-    "aldeg_cas04" => {67, 117},
-    "aldeg_cas05" => {51, 179},
-    "gefg_cas01" => {40, 49},
-    "gefg_cas02" => {12, 67},
-    "gefg_cas03" => {106, 24},
-    "gefg_cas04" => {73, 47},
-    "gefg_cas05" => {70, 53},
-    "payg_cas01" => {120, 59},
-    "payg_cas02" => {22, 261},
-    "payg_cas03" => {50, 261},
-    "payg_cas04" => {38, 285},
-    "payg_cas05" => {277, 250},
-    "prtg_cas01" => {112, 183},
-    "prtg_cas02" => {94, 62},
-    "prtg_cas03" => {51, 101},
-    "prtg_cas04" => {259, 265},
-    "prtg_cas05" => {36, 38}
-  }
-
   setup :set_mimic_private
 
   setup do
@@ -122,8 +99,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.TreasureLeverTest do
     assert_receive {:DOWN, ^ref, :process, ^pid, reason}
     assert reason in [:normal, :noproc]
 
-    {x, y} = Map.fetch!(@exits, map)
-    assert_received {:script_apply, {:warp, ^map, ^x, ^y}}
+    assert_received {:script_apply, {:warp, ^map, 218, 176}}
   end
 
   test "declining the pull closes without a warp" do

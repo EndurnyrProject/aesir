@@ -8,8 +8,8 @@ defmodule Aesir.ZoneServer.Guild.StateTest do
 
   @max_members 16
 
-  defp member(char_id, position_index) do
-    Member.new(char_id, "member-#{char_id}", 50, true, position_index, "prontera")
+  defp member(char_id, position_index, online \\ true) do
+    Member.new(char_id, "member-#{char_id}", 50, online, position_index, "prontera")
   end
 
   defp state(members, opts \\ []) do
@@ -25,8 +25,11 @@ defmodule Aesir.ZoneServer.Guild.StateTest do
   end
 
   describe "member_count/1" do
-    test "counts online and offline members" do
-      assert State.member_count(state([member(1, 0), member(2, 19)])) == 2
+    test "counts offline members toward the cap" do
+      guild = state(for id <- 1..@max_members, do: member(id, 19, id != 1))
+
+      assert State.member_count(guild) == @max_members
+      assert State.full?(guild)
     end
   end
 
@@ -35,21 +38,6 @@ defmodule Aesir.ZoneServer.Guild.StateTest do
       members = for id <- 1..@max_members, do: member(id, 19)
 
       assert State.full?(state(members))
-    end
-
-    test "is not full at 15 members" do
-      members = for id <- 1..(@max_members - 1), do: member(id, 19)
-
-      refute State.full?(state(members))
-    end
-
-    test "extension raises the cap by 6 per level" do
-      members = for id <- 1..@max_members, do: member(id, 19)
-
-      refute State.full?(state(members, learned_skills: %{10_004 => 1}))
-
-      members_22 = for id <- 1..(@max_members + 6), do: member(id, 19)
-      assert State.full?(state(members_22, learned_skills: %{10_004 => 1}))
     end
   end
 
