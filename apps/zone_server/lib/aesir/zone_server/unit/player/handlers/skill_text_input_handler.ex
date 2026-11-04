@@ -105,18 +105,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler do
 
   defp handle_outcome(state, _pending, {:cancel, true}), do: {:noreply, state}
 
-  defp handle_outcome(state, pending, {:text, text}) do
-    if valid_text?(text) do
-      SkillHandler.complete_cast_with_input(
-        state,
-        pending.skill_id,
-        pending.level,
-        pending.target,
-        text
-      )
-    else
-      {:noreply, state}
-    end
+  defp handle_outcome(state, pending, {kind, text})
+       when kind in [:text, :raw_text] and is_binary(text) do
+    text =
+      text
+      |> binary_part(0, min(byte_size(text), @max_utf8_bytes))
+      |> :binary.split(<<0>>)
+      |> hd()
+
+    game_state = %{state.game_state | skill_message: text}
+
+    SkillHandler.complete_cast_with_input(
+      %{state | game_state: game_state},
+      pending.skill_id,
+      pending.level,
+      pending.target,
+      text
+    )
   end
 
   defp handle_outcome(state, _pending, _invalid), do: {:noreply, state}
@@ -146,13 +151,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler do
         Map.put(state, :pending_skill_text_input, nil)
     end
   end
-
-  defp valid_text?(text) when is_binary(text) do
-    byte_size(text) in 1..@max_utf8_bytes and String.valid?(text) and
-      not Regex.match?(~r/[\p{Cc}\p{Zl}\p{Zp}]/u, text)
-  end
-
-  defp valid_text?(_text), do: false
 
   defp next_request_id do
     request_id = :erlang.unique_integer([:positive, :monotonic])

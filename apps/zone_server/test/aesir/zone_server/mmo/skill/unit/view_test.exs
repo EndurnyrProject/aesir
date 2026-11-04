@@ -54,6 +54,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ViewTest do
            } = View.group(group, cells, {1_000, 10_000})
   end
 
+  test "includes Scribble text in spawn state and snapshots without exposing trap messages" do
+    group = %Group{
+      group_id: 1,
+      skill_id: 220,
+      skill_name: :rg_graffiti,
+      center: {100, 100},
+      state: %{message: "Hello Prontera"}
+    }
+
+    assert %{message: "Hello Prontera"} = View.group(group, [])
+    assert %{groups: [%{message: "Hello Prontera"}]} = View.snapshot([{group, []}], 123)
+
+    trap = %{group | skill_id: 125, skill_name: :ht_talkiebox}
+    assert %{message: ""} = View.group(trap, [])
+  end
+
   test "maps typed trap phases to wire phases" do
     group = %Group{
       group_id: 9,

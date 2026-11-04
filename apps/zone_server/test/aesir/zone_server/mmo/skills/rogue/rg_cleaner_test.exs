@@ -33,18 +33,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCleanerTest do
     :ok
   end
 
-  test "Remover clears nearby Scribble and Piece units without persisting" do
+  test "Remover clears nearby Scribble units without persisting" do
     assert {:ok, definition} = Catalog.by_id(222)
 
     assert {:ok, scribble} = Unit.place(caster(), :rg_graffiti, 1, {155, 155})
-    assert {:ok, piece} = Unit.place(caster(), :rg_flaggraffiti, 5, {145, 145})
-    assert {:ok, outside} = Unit.place(caster(), :rg_flaggraffiti, 5, {156, 150})
+    assert {:ok, outside} = Unit.place(caster(), :rg_graffiti, 1, {156, 150})
 
     {x, y} = @target
     assert {:ok, _caster} = RgCleaner.cast(caster(), {:ground, x, y}, 1, definition)
 
     assert :error = Unit.fetch(scribble.group_id)
-    assert :error = Unit.fetch(piece.group_id)
     assert {:ok, ^outside} = Unit.fetch(outside.group_id)
     assert [^outside] = Storage.all()
   end

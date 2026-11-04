@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCleaner do
   @moduledoc """
   Remover (RG_CLEANER), an instantaneous ground-unit sweep.
 
-  Both modes clear Scribble and Piece units within 5 cells for 5 SP.
+  Both modes clear Scribble units within 5 cells for 5 SP.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCleaner do
 
   @impl Active
   def cast(caster, {:ground, x, y}, _level, _definition) do
-    Unit.destroy_in_range(caster.map_name, {x, y}, 5, [:rg_graffiti, :rg_flaggraffiti])
+    Unit.destroy_in_range(caster.map_name, {x, y}, 5, [:rg_graffiti])
     {:ok, caster}
   end
 end

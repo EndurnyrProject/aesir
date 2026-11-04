@@ -184,13 +184,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandlerTest do
     invalid_outcomes = [
       {:cancel, true},
       {:cancel, false},
-      {:text, ""},
-      {:text, String.duplicate("a", 80)},
-      {:text, <<255>>},
-      {:text, "nul\0byte"},
-      {:text, "line\nbreak"},
-      {:text, "line\u2028break"},
-      {:text, "control\tchar"},
       nil
     ]
 
@@ -199,6 +192,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandlerTest do
       reply = %SkillTextInputReply{request_id: 42, outcome: outcome}
       assert {:noreply, cleared} = SkillTextInputHandler.handle_reply(reply, staged)
       assert cleared.pending_skill_text_input == nil
+    end
+  end
+
+  test "accepts byte input, preserving control bytes and applying the reference buffer limit" do
+    for {outcome, expected} <- [
+          {{:text, ""}, ""},
+          {{:text, "line\nbreak"}, "line\nbreak"},
+          {{:raw_text, <<255, 1, 0, 2>>}, <<255, 1>>},
+          {{:text, String.duplicate("a", 80)}, String.duplicate("a", 79)}
+        ] do
+      staged = %{state() | pending_skill_text_input: pending_request(42)}
+
+      expect(SkillHandler, :complete_cast_with_input, fn cleared, 9_001, 1, _, ^expected ->
+        assert cleared.game_state.skill_message == expected
+        {:noreply, cleared}
+      end)
+
+      reply = %SkillTextInputReply{request_id: 42, outcome: outcome}
+      assert {:noreply, _completed} = SkillTextInputHandler.handle_reply(reply, staged)
     end
   end
 
@@ -294,7 +306,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandlerTest do
              )
 
     assert rejected.pending_skill_text_input == nil
-    assert rejected.game_state == initial.game_state
+    assert rejected.game_state == %{initial.game_state | skill_message: "hello"}
   end
 
   test "PlayerSession routes the staged-input timeout inside the session writer" do

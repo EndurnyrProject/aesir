@@ -42,11 +42,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.GraffitiTest do
     assert stored.group_id == group.group_id
   end
 
-  test "Piece places a ground unit" do
-    assert {:ok, group} = Unit.place(caster(), :rg_flaggraffiti, 5, @center)
-    assert group.skill_name == :rg_flaggraffiti
-    assert [stored] = Storage.all()
-    assert stored.group_id == group.group_id
+  test "Scribble stores supplied text when placed" do
+    assert {:ok, definition} = Catalog.by_id(220)
+
+    assert {:ok, _caster} =
+             RgGraffiti.cast_with_input(caster(), {:ground, 150, 150}, 1, definition, "Hello")
+
+    assert [%{skill_name: :rg_graffiti, state: %{message: "Hello"}}] = Storage.all()
   end
 
   test "Scribble refuses a second unit anywhere on the same map" do

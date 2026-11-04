@@ -294,25 +294,25 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
   end
 
   describe "direct/item/auto/mob bypass entry points" do
-    test "every non-input entry point refuses and neither spends nor places" do
+    test "non-interactive casts use the saved player message or the non-player fallback" do
       caster = start_caster(id: 98_540, position: {150, 150})
-      game_state = PlayerSession.get_state(caster.pid).game_state
-      target = {:ground, 151, 150}
 
-      assert {:error, :skill_input_required} = Interpreter.cast(game_state, @skill_id, 1, target)
+      game_state = %{
+        PlayerSession.get_state(caster.pid).game_state
+        | skill_message: "previous text"
+      }
 
-      assert {:error, :skill_input_required} =
-               Interpreter.item_cast(game_state, @skill_id, 1, target)
-
-      assert {:error, :skill_input_required, _caster} =
-               Interpreter.auto_cast(game_state, @skill_id, 1, target)
+      assert {:ok, _} = Interpreter.cast(game_state, @skill_id, 1, {:ground, 151, 150})
+      assert {:ok, _} = Interpreter.item_cast(game_state, @skill_id, 1, {:ground, 149, 150})
+      assert {:ok, _} = Interpreter.auto_cast(game_state, @skill_id, 1, {:ground, 150, 151})
 
       mob = spawn_test_mob(@map, {160, 160})
-
       row = %{skill: "HT_TALKIEBOX", skill_id: @skill_id, level: 1, target: :self, emotion: nil}
-      assert {:error, :skill_input_required} = Executor.execute(get_mob_state(mob.pid), row)
+      assert :ok = Executor.execute(get_mob_state(mob.pid), row)
 
-      assert Storage.all() == []
+      groups = Enum.filter(Storage.all(), &(&1.skill_name == :ht_talkiebox))
+      assert Enum.count(groups, &(&1.state.message == "previous text")) == 3
+      assert Enum.count(groups, &(&1.state.message == "Boo!")) == 1
     end
   end
 

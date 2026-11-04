@@ -31,7 +31,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.View do
       created_tick: to_server_tick(group.created_at, clock),
       expires_tick: to_server_tick(group.expires_at, clock),
       cells: cells |> Enum.sort_by(& &1.cell_id) |> Enum.map(&cell/1),
-      phase: phase(group.state)
+      phase: phase(group.state),
+      message: message(group)
     }
   end
 
@@ -73,6 +74,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.View do
       flags: cell.flags
     }
   end
+
+  defp message(%Group{skill_name: :rg_graffiti, state: %{message: message}}), do: message
+  defp message(%Group{}), do: ""
 
   defp phase(%{portal: true, opened: false}), do: :SKILL_UNIT_PHASE_OPENING
   defp phase(%{trap: %TrapState{phase: :used}}), do: :SKILL_UNIT_PHASE_USED

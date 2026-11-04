@@ -1,33 +1,45 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgFlaggraffiti do
   @moduledoc """
-  Piece (RG_FLAGGRAFFITI), a persistent ground marker.
+  Piece (RG_FLAGGRAFFITI).
 
-  Both modes place a 3-minute marker for 10 SP.
+  Both modes spend 10 SP and show cast feedback without placing a ground unit.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 221,
     name: :rg_flaggraffiti,
-    requires: [:player_state],
     display_name: "Piece",
     max_level: 5,
     target_type: :ground,
     damage_type: :no_damage,
-    unit_duration: [180_000, 180_000, 180_000, 180_000, 180_000],
     sp_cost: [10, 10, 10, 10, 10],
     damage_kind: :none
 
-  alias Aesir.ZoneServer.Mmo.Skill.Ground
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.Commons.Utils.ServerTick
+  alias Aesir.Net.GroundSkill
+  alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Caster
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Unit.Broadcast
 
-  @behaviour Ground
+  @behaviour Active
 
-  @impl Ground
-  @spec on_place(Group.t()) :: {:ok, Ground.placement()}
-  def on_place(%Group{center: center}) do
-    {:ok, %{cells: [center], state: %{}, interval: 1_000, duration: 180_000}}
+  @impl Active
+  @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:skipped, Active.caster(), :unimplemented}
+  def cast(caster, {:ground, x, y}, level, definition) do
+    adapter = Caster.for(caster)
+
+    packet = %GroundSkill{
+      skill_id: definition.id,
+      src_id: adapter.id(caster),
+      level: level,
+      x: x,
+      y: y,
+      server_tick: ServerTick.now()
+    }
+
+    Broadcast.to_in_range(caster.map_name, x, y, Config.view_range(), packet)
+    {:skipped, caster, :unimplemented}
   end
-
-  @impl Ground
-  @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()}
-  def on_interval(%Group{} = group, _now), do: {:ok, group}
 end

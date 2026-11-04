@@ -387,7 +387,7 @@ message HelloAck {
 message SkillTextInputRequest {
   uint64 request_id = 1;
   uint32 skill_id = 2;
-  uint32 max_utf8_bytes = 3; // Maximum UTF-8 byte length accepted for text.
+  uint32 max_utf8_bytes = 3; // Maximum bytes retained; excess and bytes after NUL are discarded.
 }
 
 // Client -> server reply for the pending request_id. Cancel abandons it without text.
@@ -395,8 +395,9 @@ message SkillTextInputReply {
   uint64 request_id = 1;
 
   oneof outcome {
-    string text = 2;
+    string text = 2; // UTF-8 input; retained for existing clients.
     bool cancel = 3;
+    bytes raw_text = 4; // Byte input, including non-UTF-8 legacy text.
   }
 }
 
@@ -880,6 +881,7 @@ message ChatRequest {
 message ChatMessage {
   uint32 gid = 1;
   string message = 2;
+  bytes raw_message = 3; // Talkie Box bytes, when present; otherwise use message.
 }
 
 // Client -> server, emote/emoticon request (replaces RO CZ_REQ_EMOTION 0x00bf).
@@ -2485,6 +2487,7 @@ message SkillUnitGroupState {
   uint64 expires_tick = 9;
   repeated SkillUnitCellState cells = 10;
   SkillUnitPhase phase = 11;
+  bytes message = 12; // Scribble bytes; empty for other skill units.
 }
 
 // Server -> client, an authoritative replacement for the observer's complete

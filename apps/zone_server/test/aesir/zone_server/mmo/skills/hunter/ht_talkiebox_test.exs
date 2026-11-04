@@ -57,29 +57,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
   defp armed, do: group(%{trap: trap(), message: "hi"}, expires_at: 600_000)
 
   describe "cast/4" do
-    test "always requires the staged text-input reply" do
-      caster = %PlayerState{character_id: @caster_id}
-
-      assert {:error, :skill_input_required} =
-               HtTalkiebox.cast(caster, {:ground, 50, 50}, 1, HtTalkiebox.definition())
-
-      assert {:error, :skill_input_required} =
-               HtTalkiebox.cast(caster, :self, 1, HtTalkiebox.definition())
-
-      mob_caster = %{instance_id: 4000}
-
-      assert {:error, :skill_input_required} =
-               HtTalkiebox.cast(mob_caster, {:ground, 50, 50}, 1, HtTalkiebox.definition())
-    end
-
-    test "cast_with_origin delegates to cast/4 regardless of origin (item/auto/mob/direct)" do
-      caster = %PlayerState{character_id: @caster_id}
+    test "uses the player's saved text or the non-player fallback" do
+      caster = %PlayerState{character_id: @caster_id, skill_message: "shop title"}
+      mob = mob(4_000)
       definition = HtTalkiebox.definition()
 
-      for origin <- [:direct, :item, :auto, :mob, :normal] do
-        assert {:error, :skill_input_required} =
-                 HtTalkiebox.cast_with_origin(caster, {:ground, 50, 50}, 1, definition, origin)
-      end
+      expect(SkillUnit, :place, fn ^caster, :ht_talkiebox, 1, {50, 50}, opts ->
+        assert opts[:state].message == "shop title"
+        {:ok, %Group{group_id: 1, skill_name: :ht_talkiebox}}
+      end)
+
+      expect(SkillUnit, :place, fn ^mob, :ht_talkiebox, 1, {50, 50}, opts ->
+        assert opts[:state].message == "Boo!"
+        {:ok, %Group{group_id: 2, skill_name: :ht_talkiebox}}
+      end)
+
+      assert {:ok, ^caster} = HtTalkiebox.cast(caster, {:ground, 50, 50}, 1, definition)
+      assert {:ok, ^mob} = HtTalkiebox.cast(mob, {:ground, 50, 50}, 1, definition)
+      assert {:error, :invalid_target} = HtTalkiebox.cast(caster, :self, 1, definition)
     end
   end
 
@@ -213,12 +208,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
       end)
 
       expect(Broadcast, :to_in_range, fn "prontera", 50, 50, _range, packet ->
-        assert %ChatMessage{gid: 777, message: "hello there"} = packet
+        assert %ChatMessage{gid: 777, message: "hello there", raw_message: "hello there"} = packet
         :ok
       end)
 
       assert {:ok, %Group{} = updated} = HtTalkiebox.on_interval(used_group, 0)
       assert updated.state.message == nil
+    end
+
+    test "delivers non-UTF-8 Talkie Box text in the raw byte field" do
+      used_group = group(%{trap: trap(:used), message: <<255, 1>>}, visibility: :public)
+
+      stub(Storage, :get_cells_by_group, fn 1 ->
+        [%Cell{cell_id: 777, group_id: 1, map_name: "prontera", x: 50, y: 50}]
+      end)
+
+      expect(Broadcast, :to_in_range, fn "prontera", 50, 50, _range, packet ->
+        assert %ChatMessage{gid: 777, message: "", raw_message: <<255, 1>>} = packet
+        :ok
+      end)
+
+      assert {:ok, _updated} = HtTalkiebox.on_interval(used_group, 0)
     end
 
     test "defers the announcement until the used cell is materialized" do

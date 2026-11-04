@@ -3,9 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkiebox do
   Talkie Box (HT_TALKIEBOX), a single-cell trap that speaks its
   caster-supplied text.
 
-  Placement requires the client's staged text-input reply (`cast_with_input/5`);
-  every other cast entry point (`cast/4`, hit by direct/item/auto/mob attempts)
-  refuses with `:skill_input_required` and places no group. Not claymore
+  Player casts reuse the latest skill or shop text when no input is supplied;
+  mob casts use "Boo!". Not claymore
   spendable and not a harmful trap: the first player or homunculus within one
   cell other than its caster sets it off (monsters never do), friend or foe.
 
@@ -44,6 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkiebox do
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -53,9 +53,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkiebox do
   @used_duration 5_000
 
   @impl Active
-  @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          {:error, :skill_input_required}
-  def cast(_caster, _target, _level, _definition), do: {:error, :skill_input_required}
+  @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, Active.caster()} | {:error, atom()}
+  def cast(caster, target, level, definition),
+    do: cast_with_origin(caster, target, level, definition, :direct)
+
+  @impl Active
+  @spec cast_with_origin(Active.caster(), Active.target(), pos_integer(), Definition.t(), atom()) ::
+          {:ok, Active.caster()} | {:error, atom()}
+  def cast_with_origin(%PlayerState{} = caster, {:ground, x, y}, level, definition, origin),
+    do: place(caster, {x, y}, level, definition, caster.skill_message, origin)
+
+  def cast_with_origin(%MobState{} = caster, {:ground, x, y}, level, definition, origin),
+    do: place(caster, {x, y}, level, definition, "Boo!", origin)
+
+  def cast_with_origin(_caster, _target, _level, _definition, _origin),
+    do: {:error, :invalid_target}
 
   @impl Active
   @spec cast_with_input(
@@ -63,14 +76,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkiebox do
           Active.target(),
           pos_integer(),
           Definition.t(),
-          String.t()
+          binary()
         ) ::
           {:ok, PlayerState.t()} | {:error, atom()}
-  def cast_with_input(%PlayerState{} = caster, {:ground, x, y}, level, definition, text) do
-    paid_return? = Map.has_key?(caster, :character_id) and definition.item_cost != []
+  def cast_with_input(%PlayerState{} = caster, {:ground, x, y}, level, definition, text),
+    do: place(caster, {x, y}, level, definition, text, :normal)
+
+  def cast_with_input(_caster, _target, _level, _definition, _text), do: {:error, :invalid_target}
+
+  defp place(caster, {x, y}, level, definition, text, origin) do
+    paid_return? =
+      origin == :normal and match?(%PlayerState{}, caster) and definition.item_cost != []
 
     case SkillUnit.place(caster, definition.name, level, {x, y},
-           origin: :normal,
+           origin: origin,
            state: %{paid_return?: paid_return?, message: text}
          ) do
       {:ok, _group} ->
@@ -80,8 +99,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkiebox do
         if SkillUnit.paid_refusal?(reason), do: {:ok, caster}, else: {:error, reason}
     end
   end
-
-  def cast_with_input(_caster, _target, _level, _definition, _text), do: {:error, :invalid_target}
 
   @impl Ground
   @spec on_place(Group.t()) :: {:ok, Ground.placement()}
@@ -145,7 +162,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkiebox do
     case Storage.get_cells_by_group(group.group_id) do
       [%Cell{cell_id: cell_id} | _] ->
         {cx, cy} = group.center
-        packet = %ChatMessage{gid: cell_id, message: message}
+
+        packet = %ChatMessage{
+          gid: cell_id,
+          message: if(String.valid?(message), do: message, else: ""),
+          raw_message: message
+        }
+
         Broadcast.to_in_range(group.map_name, cx, cy, Config.view_range(), packet)
 
         {:ok, %{group | state: %{group.state | message: nil}}}

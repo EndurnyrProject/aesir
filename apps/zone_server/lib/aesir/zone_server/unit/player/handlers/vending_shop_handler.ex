@@ -159,6 +159,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingShopHandler do
   @spec open_shop(SessionState.t(), String.t(), [Vending.entry()]) ::
           {:ok, SessionState.t()} | {:error, atom()}
   def open_shop(%SessionState{game_state: game_state} = state, title, entries) do
+    original_title = title
+
     with true <- state.vending_setup != nil,
          :ok <- check_room_permission(game_state),
          :ok <- UseRestrictions.vending_location(game_state),
@@ -184,7 +186,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingShopHandler do
         sale_sequence: 0
       }
 
-      opened = %{game_state | vending_shop: shop}
+      raw_title = binary_part(original_title, 0, min(byte_size(original_title), 79))
+      opened = %{game_state | vending_shop: shop, skill_message: raw_title}
       state = cancel_setup(state, :opened)
       state = StateCommit.commit(state, opened)
       Registry.put(opened.character_id, self(), shop)
