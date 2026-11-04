@@ -172,6 +172,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker do
     end
   end
 
+  @doc "Whether `status_id` stops its holder's attack when it starts (StopAttacking)."
+  @spec stops_attacking?(atom()) :: boolean()
+  def stops_attacking?(status_id),
+    do: status_id in Registry.statuses_with_flag(:stop_attacking)
+
   @race_immunities ~w(plant demon dragon angel formless insect fish beast)a
   @element_immunities ~w(fire water earth wind poison holy shadow ghost undead)a
 
