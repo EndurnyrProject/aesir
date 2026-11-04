@@ -178,6 +178,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastConditions do
     end
   end
 
+  # An attack skill aimed at its caster fails like any non-enemy target
+  # (`battle_check_target` with `BCT_ENEMY` refuses `src == target`).
+  defp check_default_target(_game_state, :self, %{target_type: :target_enemy}),
+    do: {:error, :invalid_target}
+
   # A target that cannot be resolved falls through so `check_range` reports it
   # as `:target_not_found`. A skill-unit cell (Ice Wall, etc.) is accepted
   # without a `Targeting.validate_enemy` call: `unit_type_of/1` only reports

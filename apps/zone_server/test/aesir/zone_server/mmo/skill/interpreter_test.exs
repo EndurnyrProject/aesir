@@ -1033,7 +1033,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       combo = Combo.open(Combo.new(), :quadruple, 9_999_999_999)
       gs = %{game_state(100, %{6 => 1}) | combo: combo}
 
-      assert {:ok, caster} = Interpreter.item_cast(gs, 6, 1, :self)
+      assert {:ok, caster} = Interpreter.item_cast(gs, 6, 1, {:unit, 2_000})
       assert caster.combo == combo
     end
 
@@ -1622,6 +1622,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     gs = game_state(100, %{6 => 1})
     assert {:error, :invalid_target} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
+  end
+
+  test "an enemy skill aimed at the caster is rejected as :invalid_target" do
+    stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(9)} end)
+
+    gs = game_state(100, %{6 => 1})
+    assert {:error, :invalid_target} = Interpreter.cast(gs, 6, 1, :self)
   end
 
   test "an enemy skill rejects a player target when a mob shares its ID" do
