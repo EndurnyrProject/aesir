@@ -399,11 +399,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         if early.reactions == [],
           do: {:error, reason},
           else: {:error, reason, caster}
-
-      # A performance has no damage cast and no cast-end requirement, so the
-      # paid refusals do not reach it; pass any other outcome through.
-      other ->
-        other
     end
   end
 
