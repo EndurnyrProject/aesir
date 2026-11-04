@@ -5,37 +5,34 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   Storage reads remain direct, while registration, callback updates, explicit
   state changes, and teardown pass through this process so the primary row and
   every secondary index change as one ordered operation.
+
+  The process owns the public API, the tick, the movement passes (`appear`,
+  `remove`, `step`, `trigger`) and the unit lifecycle events; the mutations
+  themselves live in `Registration`, `GroupLifecycle`, `Traps`, `WaterBall`,
+  `TrapTransition`, `Cells` and `Publisher`, all of which run in this process.
   """
 
   use GenServer
 
   require Logger
 
-  alias Aesir.Commons.Utils.ServerTick
-  alias Aesir.Net.SkillUnitDespawn
-  alias Aesir.Net.SkillUnitSpawn
-  alias Aesir.Net.SkillUnitUpdate
-  alias Aesir.ZoneServer.Config
-  alias Aesir.ZoneServer.Map.Cell, as: MapCell
-  alias Aesir.ZoneServer.Map.Coordinator
-  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
-  alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Cells
   alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Id
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.PlacementCheck
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.GroupLifecycle
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Handler
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Publisher
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Registration
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapCombat
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Traps
   alias Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.View
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.WaterBall
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
-  alias Aesir.ZoneServer.Unit.Broadcast
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Lifecycle.Event
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -44,9 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @tick_interval 100
-  @sprung_trap_lifetime 1_500
   @safetywall_skill_id 12
-  @venom_dust_skill_id 140
 
   @type server :: GenServer.server()
   @type mover :: {atom(), integer()}
@@ -327,7 +322,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   @impl true
   def init(opts) do
     :ok = Lifecycle.subscribe()
-    :ok = reconcile_terrain()
+    :ok = Cells.reconcile_indexes()
 
     state = %{
       clock: Keyword.get(opts, :clock, &__MODULE__.default_clock/0),
@@ -345,34 +340,30 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   @impl true
   def handle_call({:register, group}, _from, state) do
-    with :ok <- ensure_not_reiterated(group),
-         {:ok, group} <- apply_exclusive_family(group, state.clock.()),
-         {:ok, group} <- add_venom_dust_metadata(group),
-         {:ok, group} <- apply_land_protector(group),
-         {:ok, group} <- schedule_group(group, state.rng),
-         {:ok, group} <- register_group(group) do
-      if Storage.get(group.group_id) do
-        FieldSupport.place(group, group.cells)
-        publish_spawn(group)
-      end
+    case Registration.register(group, state.clock.(), state.rng) do
+      {:ok, group} ->
+        if Storage.get(group.group_id) do
+          FieldSupport.place(group, group.cells)
+          Publisher.spawn(group)
+        end
 
-      {:reply, :ok, state}
-    else
+        {:reply, :ok, state}
+
       {:error, _reason} = error ->
         {:reply, error, state}
     end
   end
 
   def handle_call({:reveal_traps, map_name, x, y, range}, _from, state) do
-    {:reply, reveal_traps_now(map_name, x, y, range), state}
+    {:reply, Traps.reveal(map_name, x, y, range), state}
   end
 
   def handle_call({:reclaim_trap, owner, map_name, x, y}, _from, state) do
-    {:reply, reclaim_trap_now(owner, map_name, x, y), state}
+    {:reply, Traps.reclaim(owner, map_name, x, y), state}
   end
 
   def handle_call({:spring_trap, map_name, x, y}, _from, state) do
-    {:reply, spring_trap_now(map_name, x, y, state.clock.()), state}
+    {:reply, Traps.spring(map_name, x, y, state.clock.()), state}
   end
 
   def handle_call({:update_state, group_id, new_state}, _from, state) do
@@ -393,7 +384,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   def handle_call({:remove_cells, group_id, cells}, _from, state) do
-    if group = Storage.get(group_id), do: remove_group_cells(group, MapSet.new(cells))
+    if group = Storage.get(group_id), do: GroupLifecycle.remove_cells(group, MapSet.new(cells))
     {:reply, :ok, state}
   end
 
@@ -406,16 +397,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     |> Enum.each(fn group ->
       cond do
         Group.follows_caster?(group) and MapSet.member?(area, group.center) ->
-          cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_DESTROYED)
+          GroupLifecycle.cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_DESTROYED)
 
         Group.follows_caster?(group) ->
           :ok
 
-        ranged_single_unit?(group) ->
-          remove_ranged_single_unit(group, area)
+        GroupLifecycle.ranged_single_unit?(group) ->
+          GroupLifecycle.remove_ranged_single_unit(group, area)
 
         true ->
-          remove_group_cells(group, area)
+          GroupLifecycle.remove_cells(group, area)
       end
     end)
 
@@ -429,42 +420,30 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   def handle_call({:destroy, group_id}, _from, state) do
     if group = Storage.get(group_id),
-      do: cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
+      do: GroupLifecycle.cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
 
     {:reply, :ok, state}
   end
 
   def handle_call({:targetable_cell, cell_id}, _from, state) do
-    {:reply, fetch_targetable_cell(cell_id), state}
+    {:reply, Cells.fetch_targetable(cell_id), state}
   end
 
   def handle_call({:damage_targetable_cell, cell_id, amount, source}, _from, state) do
     result =
-      with {:ok, _cell} <- fetch_targetable_cell(cell_id) do
-        damage_cell_now(cell_id, amount, source, :damage)
+      with {:ok, _cell} <- Cells.fetch_targetable(cell_id) do
+        GroupLifecycle.damage_cell(cell_id, amount, source, :damage)
       end
 
     {:reply, result, state}
   end
 
   def handle_call({:snapshot_for, observer_id, map_name, x, y, range}, _from, state) do
-    groups =
-      map_name
-      |> Storage.get_visible_groups_in_range(x, y, range)
-      |> Enum.filter(&(eligible_recipients(&1, [observer_id]) != []))
-
-    snapshot =
-      groups
-      |> Enum.map(&{&1, Storage.get_cells_by_group(&1.group_id)})
-      |> View.snapshot(ServerTick.now())
-
-    Broadcast.to_player(observer_id, snapshot)
-    :ok = Storage.replace_observer_groups(observer_id, Enum.map(groups, & &1.group_id))
-    {:reply, MapSet.new(groups, & &1.group_id), state}
+    {:reply, Publisher.snapshot_for(observer_id, map_name, x, y, range), state}
   end
 
   def handle_call({:sync_view, observer_id, enter_ids, leave_ids}, _from, state) do
-    {:reply, sync_observer_view(observer_id, enter_ids, leave_ids), state}
+    {:reply, Publisher.sync_view(observer_id, enter_ids, leave_ids), state}
   end
 
   def handle_call({:clear_observer, observer_id}, _from, state) do
@@ -473,8 +452,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   def handle_call({:register_water_ball_sequence, group, cells}, _from, state) do
-    result = register_water_ball_sequence_now(group, cells)
-    {:reply, result, state}
+    {:reply, WaterBall.register_sequence(group, cells), state}
   end
 
   def handle_call({:trigger, group_id, mover, callback}, _from, state) do
@@ -514,7 +492,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   @impl true
   def handle_cast({:destroy, group_id}, state) do
     if group = Storage.get(group_id),
-      do: cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
+      do: GroupLifecycle.cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
 
     {:noreply, state}
   end
@@ -522,7 +500,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   def handle_cast({:follow_caster, group_id, map_name, cell}, state) do
     case Storage.get(group_id) do
       %Group{map_name: ^map_name, center: center} = group when center != cell ->
-        move_group(group, cell)
+        GroupLifecycle.move(group, cell)
 
       _ ->
         :ok
@@ -533,10 +511,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   def handle_cast({:displace_cell, cell_id, {x, y, map_name}, destination}, state) do
     with {:ok, %Cell{x: ^x, y: ^y, map_name: ^map_name, group_id: group_id} = cell} <-
-           fetch_targetable_cell(cell_id),
+           Cells.fetch_targetable(cell_id),
          false <- Cell.knockback_immune?(cell),
          %Group{cells: [{^x, ^y}]} = group <- Storage.get(group_id) do
-      move_group(group, destination)
+      GroupLifecycle.move(group, destination)
     end
 
     {:noreply, state}
@@ -598,7 +576,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp apply_lifecycle_policy(%Group{lifecycle_policy: policy} = group, relation) do
     case Map.fetch!(policy, policy_field(relation)) do
-      :expire -> cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_LIFECYCLE)
+      :expire -> GroupLifecycle.cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_LIFECYCLE)
       :skip_action -> :ok
     end
   end
@@ -621,7 +599,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     fields =
       for %Group{unit_range: range} = group <- Storage.all(),
           is_integer(range) and unit_pass?(group, now),
-          {:ok, module} <- [handler_for(group)],
+          {:ok, module} <- [Handler.for_group(group)],
           do: {group, module}
 
     case fields do
@@ -634,7 +612,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
             fields,
             state.ticksets,
             now,
-            &invoke/3,
+            &Handler.invoke/3,
             &run_manager_command(&1, now),
             &prepare_unit_cell/3
           )
@@ -652,19 +630,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
         group
 
       :expire ->
-        cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_DESTROYED)
+        GroupLifecycle.cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_DESTROYED)
         nil
 
       :used ->
-        used = transition_trap(group, :used, now + @sprung_trap_lifetime)
-
-        case persist_trap_update(group, used) do
-          :ok ->
+        case Traps.mark_used(group, now) do
+          {:ok, used} ->
             used
 
           {:error, reason} ->
-            log_callback_error(group, :trap_durability, reason)
-            cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
+            Handler.log_error(group, :trap_durability, reason)
+            GroupLifecycle.cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
             nil
         end
     end
@@ -680,9 +656,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp finish_unit_pass({group, module, outcome}) do
     case outcome do
-      :ok -> persist_unit_pass(group, module)
-      :expire -> if Storage.get(group.group_id), do: cleanup(group, module)
-      {:failed, callback, reason} -> callback_failed(group, callback, reason, module)
+      :ok ->
+        persist_unit_pass(group, module)
+
+      :expire ->
+        if Storage.get(group.group_id), do: GroupLifecycle.cleanup(group, module)
+
+      {:failed, callback, reason} ->
+        GroupLifecycle.callback_failed(group, callback, reason, module)
     end
   end
 
@@ -697,9 +678,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
         :ok
 
       %Group{} = stored ->
-        case persist_callback_update(stored, group) do
+        case GroupLifecycle.persist_callback_update(stored, group) do
           :ok -> :ok
-          {:error, reason} -> callback_failed(stored, :on_unit_hit, reason, module)
+          {:error, reason} -> GroupLifecycle.callback_failed(stored, :on_unit_hit, reason, module)
         end
     end
   end
@@ -707,65 +688,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp run_interval(%Group{} = group, now, unit_available?) do
     case lifecycle_action(group, unit_available?) do
       :continue -> run_sequence_interval(group, now)
-      :expire -> cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_LIFECYCLE)
+      :expire -> GroupLifecycle.cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_LIFECYCLE)
       :skip_action -> Storage.update(%{group | next_tick_at: now + group.interval})
     end
   end
 
-  defp run_sequence_interval(%Group{state: %{water_ball_sequence: true}} = group, now) do
-    if Storage.get_cells_by_group(group.group_id) == [] do
-      cleanup(group)
-    else
-      dispatch_sequence_interval(group, now)
-    end
-  end
+  defp run_sequence_interval(%Group{state: %{water_ball_sequence: true}} = group, now),
+    do: WaterBall.run_interval(group, now)
 
   defp run_sequence_interval(group, now), do: run_interval_callback(group, now)
 
-  defp dispatch_sequence_interval(group, now) do
-    case handler_for(group) do
-      {:ok, module} -> invoke_sequence_interval(module, group, now)
-      :error -> callback_failed(group, :on_interval, :missing_handler, nil)
-    end
-  end
-
-  defp invoke_sequence_interval(module, group, now) do
-    case invoke(module, :on_interval, [group, now]) do
-      {:ok, {:ok, %Group{group_id: group_id} = updated}} when group_id == group.group_id ->
-        advance_sequence(updated, now, module)
-
-      {:ok, {:ok, %Group{group_id: group_id}}} ->
-        callback_failed(group, :on_interval, {:foreign_group_id, group_id}, module)
-
-      {:ok, {:expire, %Group{group_id: group_id} = updated}} when group_id == group.group_id ->
-        cleanup(updated, module)
-
-      {:ok, {:expire, %Group{group_id: group_id}}} ->
-        callback_failed(group, :on_interval, {:foreign_group_id, group_id}, module)
-
-      {:ok, result} ->
-        callback_failed(group, :on_interval, {:invalid_return, result}, module)
-
-      {:error, reason} ->
-        callback_failed(group, :on_interval, reason, module)
-    end
-  end
-
-  defp advance_sequence(%Group{state: %{water_ball_fired: false}} = group, now, _module) do
-    Storage.update(%{group | next_tick_at: now + group.interval})
-  end
-
-  defp advance_sequence(group, now, module) do
-    case claim_next_sequence_cell(group) do
-      {:ok, group} -> update_after_interval(group, now, module)
-      :empty -> cleanup(group, module)
-    end
-  end
-
   defp run_interval_callback(group, now) do
-    case handler_for(group) do
+    case Handler.for_group(group) do
       {:ok, module} -> invoke_interval(module, group, now)
-      :error -> callback_failed(group, :on_interval, :missing_handler, nil)
+      :error -> GroupLifecycle.callback_failed(group, :on_interval, :missing_handler, nil)
     end
   end
 
@@ -819,9 +755,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp unit_available?(_unit_type, _unit_id, _map_name), do: false
 
   @doc """
-  The default pass interval, rAthena's `SKILLUNITTIMER_INTERVAL`: how often
-  every unit cell acts. A unit striking faster than this strikes several times
-  per pass.
+  The default pass interval: how often every unit cell acts. A unit striking
+  faster than this strikes several times per pass.
   """
   @spec tick_interval() :: pos_integer()
   def tick_interval, do: @tick_interval
@@ -844,35 +779,35 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     do: unit_available?(unit_type, unit_id, map_name)
 
   defp invoke_interval(module, group, now) do
-    case invoke(module, :on_interval, [group, now]) do
+    case Handler.invoke(module, :on_interval, [group, now]) do
       {:ok, {:ok, %Group{group_id: group_id} = updated}} when group_id == group.group_id ->
-        update_after_interval(updated, now, module)
+        GroupLifecycle.update_after_interval(updated, now, module)
 
       {:ok, {:ok, %Group{group_id: group_id} = updated, {:remove_cells, cells}}}
       when group_id == group.group_id and is_list(cells) ->
-        update_and_drop_cells(updated, cells, now, module)
+        GroupLifecycle.update_and_drop_cells(updated, cells, now, module)
 
       {:ok, {:ok, %Group{group_id: group_id}}} ->
-        callback_failed(group, :on_interval, {:foreign_group_id, group_id}, module)
+        GroupLifecycle.callback_failed(group, :on_interval, {:foreign_group_id, group_id}, module)
 
       {:ok, {:expire, %Group{group_id: group_id} = updated}} when group_id == group.group_id ->
-        cleanup(updated, module)
+        GroupLifecycle.cleanup(updated, module)
 
       {:ok, {:expire, %Group{group_id: group_id}}} ->
-        callback_failed(group, :on_interval, {:foreign_group_id, group_id}, module)
+        GroupLifecycle.callback_failed(group, :on_interval, {:foreign_group_id, group_id}, module)
 
       {:ok, result} ->
-        callback_failed(group, :on_interval, {:invalid_return, result}, module)
+        GroupLifecycle.callback_failed(group, :on_interval, {:invalid_return, result}, module)
 
       {:error, reason} ->
-        callback_failed(group, :on_interval, reason, module)
+        GroupLifecycle.callback_failed(group, :on_interval, reason, module)
     end
   end
 
   defp expire_if_live(%Group{group_id: group_id}, now, unit_available?) do
     case Storage.get(group_id) do
       %Group{expires_at: expires_at} = group when is_integer(expires_at) and expires_at <= now ->
-        expire_naturally(group, now, unit_available?)
+        Traps.expire_naturally(group, now, unit_available?)
 
       _group ->
         :ok
@@ -883,7 +818,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   # unit whether or not it targets it; a timer unit waits for its timer.
   defp appear_on(%Group{} = group, mover, cell) do
     cond do
-      not triggerable?(group) or not Trigger.acts_on_appearance?(group) -> :ok
+      not Traps.triggerable?(group) or not Trigger.acts_on_appearance?(group) -> :ok
       FieldSupport.dissonant?(group, cell) -> FieldSupport.dissonance_step(group, mover)
       Trigger.timer_unit?(group) -> :ok
       true -> run_trigger(group, mover, :on_touch)
@@ -894,7 +829,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   # cell for good: the handler's `on_out`, then the field's `onleft`.
   defp remove_from(%Group{} = group, mover, cell) do
     cond do
-      not triggerable?(group) ->
+      not Traps.triggerable?(group) ->
         :ok
 
       FieldSupport.dissonant?(group, cell) ->
@@ -904,7 +839,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
         :ok
 
       true ->
-        FieldSupport.leave(group, mover, &run_out_callback(group, handler_or_nil(group), &1))
+        FieldSupport.leave(
+          group,
+          mover,
+          &GroupLifecycle.run_out_callback(group, Handler.or_nil(group), &1)
+        )
     end
   end
 
@@ -913,7 +852,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp run_trigger(%Group{} = group, mover, :on_touch) do
     cond do
       not FieldSupport.target?(group, mover) -> :skipped
-      not triggerable?(group) or suppressed_touch?(group, mover, :on_touch) -> :skipped
+      not Traps.triggerable?(group) or suppressed_touch?(group, mover, :on_touch) -> :skipped
       true -> run_live_trigger(group, mover, :on_touch)
     end
   end
@@ -933,7 +872,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp step_groups(map_name, x, y) do
     map_name
     |> Storage.get_groups_at_cell(x, y)
-    |> Enum.filter(&triggerable?/1)
+    |> Enum.filter(&Traps.triggerable?/1)
   end
 
   # Stepping off a cell: a target leaves it (the handler's `on_out` once the
@@ -951,7 +890,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
       FieldSupport.target?(group, mover) ->
         if new_map != group.map_name or {new_x, new_y} not in group.cells,
-          do: run_out_callback(group, handler_or_nil(group), mover)
+          do: GroupLifecycle.run_out_callback(group, Handler.or_nil(group), mover)
 
         if FieldSupport.onout(group, mover) == :left, do: [{group.skill_id, group}], else: []
 
@@ -995,7 +934,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp run_live_trigger(%Group{} = group, mover, :on_touch) do
-    with {:ok, module} <- handler_for(group),
+    with {:ok, module} <- Handler.for_group(group),
          true <- function_exported?(module, :on_touch, 2) do
       case invoke_trigger(group, mover, :on_touch, module) do
         {:ok, updated} -> FieldSupport.onplace(updated, mover)
@@ -1005,29 +944,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       _ -> FieldSupport.onplace(group, mover)
     end
   end
-
-  defp handler_or_nil(%Group{} = group) do
-    case handler_for(group) do
-      {:ok, module} -> module
-      :error -> nil
-    end
-  end
-
-  defp run_out_callback(%Group{} = group, module, mover) do
-    if module && function_exported?(module, :on_out, 2),
-      do: apply_out_result(group, invoke(module, :on_out, [group, mover]))
-
-    :ok
-  end
-
-  defp apply_out_result(group, {:ok, {:ok, %Group{group_id: group_id} = updated}})
-       when group_id == group.group_id do
-    if Storage.get(group_id), do: persist_callback_update(group, updated)
-    :ok
-  end
-
-  defp apply_out_result(_group, {:ok, _result}), do: :ok
-  defp apply_out_result(group, {:error, reason}), do: log_callback_error(group, :on_out, reason)
 
   # A magic field's cell left under Land Protector (a RangedSingleUnit field
   # whose centre survived) acts on nobody stepping onto it.
@@ -1042,42 +958,39 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp invoke_trigger(group, mover, callback, module) do
-    case invoke(module, callback, [group, mover]) do
+    case Handler.invoke(module, callback, [group, mover]) do
       {:ok, {:ok, %Group{group_id: group_id} = updated}} when group_id == group.group_id ->
-        case persist_callback_update(group, updated) do
+        case GroupLifecycle.persist_callback_update(group, updated) do
           :ok ->
             {:ok, updated}
 
           {:error, reason} ->
-            callback_failed(group, callback, reason, module)
+            GroupLifecycle.callback_failed(group, callback, reason, module)
             :ended
         end
 
       {:ok, {:ok, %Group{group_id: group_id}}} ->
-        callback_failed(group, callback, {:foreign_group_id, group_id}, module)
+        GroupLifecycle.callback_failed(group, callback, {:foreign_group_id, group_id}, module)
         :ended
 
       {:ok, :expire} ->
-        cleanup(group, module)
+        GroupLifecycle.cleanup(group, module)
         :ended
 
       {:ok, result} ->
-        callback_failed(group, callback, {:invalid_return, result}, module)
+        GroupLifecycle.callback_failed(group, callback, {:invalid_return, result}, module)
         :ended
 
       {:error, reason} ->
-        callback_failed(group, callback, reason, module)
+        GroupLifecycle.callback_failed(group, callback, reason, module)
         :ended
     end
   end
 
   # Returns the groups the command changed, as stored; a group whose last cell
   # it removed comes back without cells.
-  defp run_manager_command({:spend_traps, map_name, {x, y}, radius}, now) do
-    map_name
-    |> groups_in_area(x, y, radius)
-    |> Enum.flat_map(&spend_trap(&1, now))
-  end
+  defp run_manager_command({:spend_traps, map_name, {x, y}, radius}, now),
+    do: Traps.spend_in_area(map_name, x, y, radius, now)
 
   defp run_manager_command({:remove_cells, group_id, cells}, _now) do
     case Storage.get(group_id) do
@@ -1085,128 +998,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
         []
 
       %Group{} = live ->
-        :ok = remove_group_cells(live, MapSet.new(cells))
+        :ok = GroupLifecycle.remove_cells(live, MapSet.new(cells))
         [Storage.get(group_id) || %{live | cells: []}]
     end
   end
-
-  defp spend_trap(%Group{} = group, now) do
-    case trap_state(group) do
-      {:ok, %TrapState{phase: :armed, claymore_spendable?: true}} ->
-        used = transition_trap(group, :used, sprung_expiry(group, now))
-
-        case persist_trap_update(group, used) do
-          :ok ->
-            [used]
-
-          {:error, reason} ->
-            log_spend_trap_failure(group, reason)
-            []
-        end
-
-      _ineligible ->
-        []
-    end
-  end
-
-  # A sprung trap lingers as a used trap, never past its own lifetime.
-  defp sprung_expiry(%Group{expires_at: expires_at}, now) when is_integer(expires_at),
-    do: min(now + @sprung_trap_lifetime, expires_at)
-
-  defp sprung_expiry(%Group{}, now), do: now + @sprung_trap_lifetime
-
-  defp log_spend_trap_failure(group, reason) do
-    Logger.error(
-      "Skill.Unit.Manager spend_traps failed group_id=#{group.group_id}: #{inspect(reason)}"
-    )
-  end
-
-  defp cleanup(%Group{} = group) do
-    module =
-      case handler_for(group) do
-        {:ok, handler} -> handler
-        :error -> nil
-      end
-
-    cleanup(group, module, :SKILL_UNIT_DESPAWN_REASON_EXPIRED)
-  end
-
-  defp cleanup_with_reason(%Group{} = group, despawn_reason) do
-    module =
-      case handler_for(group) do
-        {:ok, handler} -> handler
-        :error -> nil
-      end
-
-    cleanup(group, module, despawn_reason)
-  end
-
-  defp cleanup(%Group{} = group, module) do
-    cleanup(group, module, :SKILL_UNIT_DESPAWN_REASON_EXPIRED)
-  end
-
-  defp cleanup(%Group{group_id: group_id} = group, module, despawn_reason) do
-    FieldSupport.overlap_removed(group, group.cells)
-    FieldSupport.out(group, group.cells, &run_out_callback(group, module, &1))
-    cells = Storage.get_cells_by_group(group_id)
-    Enum.each(cells, &remove_cell_indexes/1)
-
-    if module && function_exported?(module, :on_expire, 1) do
-      case invoke(module, :on_expire, [group]) do
-        {:ok, :ok} -> :ok
-        {:ok, result} -> log_callback_error(group, :on_expire, {:invalid_return, result})
-        {:error, reason} -> log_callback_error(group, :on_expire, reason)
-      end
-    end
-
-    Storage.delete(group_id)
-    publish_group_despawn(group, Enum.map(cells, & &1.cell_id), despawn_reason)
-  end
-
-  # Per-caster family exclusivity (rAthena skill_unitsetting,
-  # src/map/skill.cpp:5883-5907): placing a member of an exclusive family clears
-  # the caster's existing member first, and only the caster's - other casters'
-  # fields are untouched. Placing any member over a replaced group that opted
-  # into inherit_family_duration carries that group's *remaining* duration into
-  # the new one, so a recast (or a Land Protector placed over an element field)
-  # never refreshes it.
-  defp apply_exclusive_family(%Group{lifecycle_policy: %{exclusive_family: nil}} = group, _now),
-    do: {:ok, group}
-
-  defp apply_exclusive_family(%Group{} = group, now) do
-    case family_groups(group) do
-      [] ->
-        {:ok, group}
-
-      [replaced | _] = groups ->
-        Enum.each(groups, &cleanup_with_reason(&1, :SKILL_UNIT_DESPAWN_REASON_CANCELED))
-        {:ok, inherit_family_duration(group, replaced, now)}
-    end
-  end
-
-  # The cast already checked its placement, but another caster may have placed
-  # a reiterated unit since; registrations run one at a time here, so the
-  # second of two racing placements is refused as the source's serial cast end
-  # would refuse it.
-  defp ensure_not_reiterated(%Group{} = group) do
-    with {:ok, definition} <- Catalog.by_id(group.skill_id),
-         true <-
-           PlacementCheck.reiteration_blocked?(
-             definition,
-             group.caster_type,
-             group.map_name,
-             group.center
-           ) do
-      {:error, :unit_placement_refused}
-    else
-      _placeable -> :ok
-    end
-  end
-
-  defp add_venom_dust_metadata(%Group{skill_id: @venom_dust_skill_id} = group),
-    do: {:ok, %{group | state: Map.put(group.state, :removed_by_fire_rain, true)}}
-
-  defp add_venom_dust_metadata(%Group{} = group), do: {:ok, group}
 
   defp absorb_safetywall_hit_now(group_id, damage) do
     case Storage.get(group_id) do
@@ -1221,7 +1016,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
         hits_remaining = hits - 1
 
         if hits_remaining <= 0 or (shield_hp && shield_hp - damage <= 0) do
-          cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
+          GroupLifecycle.cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
           {:block, :remove}
         else
           state = %{
@@ -1236,1354 +1031,5 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
   end
 
-  defp family_groups(%Group{lifecycle_policy: %{exclusive_family: family}} = group) do
-    group.caster_type
-    |> Storage.get_groups_by_caster(group.caster_id)
-    |> Enum.filter(
-      &(&1.group_id != group.group_id and &1.lifecycle_policy.exclusive_family == family)
-    )
-    |> Enum.sort_by(&{&1.created_at, &1.group_id})
-  end
-
-  # Keyed on the *replaced* group's policy only: whatever replaces an element
-  # field inherits its remaining duration, including Land Protector. The trio
-  # opt in (a recast never refreshes); Land Protector does not, so placing an
-  # element field over an existing Land Protector still gets a fresh duration.
-  defp inherit_family_duration(
-         %Group{} = group,
-         %Group{lifecycle_policy: %{inherit_family_duration: true}, expires_at: expires_at},
-         now
-       )
-       when expires_at > now,
-       do: %{group | expires_at: expires_at}
-
-  defp inherit_family_duration(%Group{} = group, %Group{}, _now), do: group
-
-  # Land Protector's central placement rules: a Land Protector group destroys
-  # overlapping foreign cells per cell (mutually with an existing Land
-  # Protector), and any other placement drops candidate cells that fall on a
-  # Land Protector. A RangedSingleUnit field goes whole only when its centre
-  # cell is covered and otherwise keeps its covered cells beside the new Land
-  # Protector cell. A group reduced to zero cells fails registration with
-  # `:land_protector`.
-  defp apply_land_protector(%Group{} = group) do
-    cond do
-      Group.land_protector?(group) -> sweep_protected_overlap(group)
-      Group.ignores_land_protector?(group) -> {:ok, group}
-      true -> drop_protected_cells(group)
-    end
-  end
-
-  defp drop_protected_cells(%Group{cells: []} = group), do: {:ok, group}
-
-  defp drop_protected_cells(%Group{} = group) do
-    case Enum.reject(group.cells, fn {x, y} -> Storage.land_protected?(group.map_name, x, y) end) do
-      [] -> {:error, :land_protector}
-      cells -> {:ok, %{group | cells: cells}}
-    end
-  end
-
-  defp sweep_protected_overlap(%Group{} = group) do
-    {kept, removals} =
-      Enum.reduce(group.cells, {[], %{}}, fn {x, y} = cell, {kept, removals} ->
-        overlapping =
-          group.map_name
-          |> Storage.get_groups_at_cell(x, y)
-          |> Enum.reject(&Group.ignores_land_protector?/1)
-
-        removals = Enum.reduce(overlapping, removals, &mark_removal(&2, &1, cell))
-
-        if Enum.any?(overlapping, &Group.land_protector?/1),
-          do: {kept, removals},
-          else: {[cell | kept], removals}
-      end)
-
-    Enum.each(removals, fn {victim_id, cells} ->
-      if victim = Storage.get(victim_id), do: remove_group_cells(victim, MapSet.new(cells))
-    end)
-
-    case kept do
-      [] -> {:error, :land_protector}
-      kept -> {:ok, %{group | cells: Enum.reverse(kept)}}
-    end
-  end
-
-  defp mark_removal(removals, %Group{} = victim, cell) do
-    cond do
-      not ranged_single_unit?(victim) ->
-        Map.update(removals, victim.group_id, [cell], &[cell | &1])
-
-      centre_unit_in?(victim, MapSet.new([cell])) ->
-        Map.put(removals, victim.group_id, victim.cells)
-
-      true ->
-        removals
-    end
-  end
-
-  # A RangedSingleUnit field goes whole when its centre cell is removed and
-  # keeps every other cell. A centre cell that was never laid (a wall, Land
-  # Protector at placement) leaves the field unremovable this way.
-  defp remove_ranged_single_unit(%Group{} = group, area) do
-    if centre_unit_in?(group, area),
-      do: cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_DESTROYED),
-      else: :ok
-  end
-
-  defp centre_unit_in?(%Group{center: center, cells: cells}, area),
-    do: MapSet.member?(area, center) and center in cells
-
-  defp ranged_single_unit?(%Group{skill_id: skill_id}) do
-    case Catalog.by_id(skill_id) do
-      {:ok, definition} -> definition.ranged_single_unit
-      :error -> false
-    end
-  end
-
-  defp remove_group_cells(%Group{} = group, coordinates) do
-    case Enum.split_with(group.cells, &MapSet.member?(coordinates, &1)) do
-      {[], _survivors} -> :ok
-      {_removed, []} -> cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_DESTROYED)
-      {removed, _survivors} -> shrink_group(group, removed)
-    end
-  end
-
-  defp shrink_group(%Group{} = group, removed) do
-    coordinates = MapSet.new(removed)
-
-    module =
-      case handler_for(group) do
-        {:ok, module} -> module
-        :error -> nil
-      end
-
-    FieldSupport.overlap_removed(group, removed)
-    FieldSupport.out(group, removed, &run_out_callback(group, module, &1))
-
-    cells =
-      group.group_id
-      |> Storage.get_cells_by_group()
-      |> Enum.filter(&MapSet.member?(coordinates, {&1.x, &1.y}))
-
-    Enum.each(cells, &remove_cell/1)
-
-    Storage.remove_cells(group, removed)
-
-    publish_cells_despawn(group, Enum.map(cells, & &1.cell_id))
-  end
-
-  # Shifts every cell by the caster's displacement, keeping cell IDs. Each
-  # cell's terrain and target indexes follow it; occupants of vacated cells
-  # leave the field and occupants of newly covered cells are placed on it. A
-  # cell crossing into another map block becomes that block's newest unit.
-  defp move_group(%Group{center: {cx, cy}} = group, {x, y} = center) do
-    shift = fn {cell_x, cell_y} -> {cell_x + x - cx, cell_y + y - cy} end
-
-    moved = %{
-      group
-      | center: center,
-        origin: center,
-        cells: Enum.map(group.cells, shift),
-        cell_entries: Map.new(group.cells, &moved_entry(group, &1, shift.(&1)))
-    }
-
-    vacated = group.cells -- moved.cells
-
-    module =
-      case handler_for(group) do
-        {:ok, module} -> module
-        :error -> nil
-      end
-
-    FieldSupport.overlap_removed(group, vacated)
-    FieldSupport.out(group, vacated, &run_out_callback(group, module, &1))
-    :ok = Storage.update(moved)
-    group.group_id |> Storage.get_cells_by_group() |> Enum.each(&move_cell(&1, shift))
-    FieldSupport.place(moved, moved.cells -- group.cells)
-    publish_move(moved)
-  end
-
-  defp moved_entry(group, {old_x, old_y} = old, {new_x, new_y} = new) do
-    if SpatialIndex.block(old_x, old_y) == SpatialIndex.block(new_x, new_y),
-      do: {new, Group.block_entry(group, old)},
-      else: {new, System.unique_integer([:monotonic, :positive])}
-  end
-
-  defp move_cell(%Cell{} = cell, shift) do
-    :ok = remove_cell_indexes(cell)
-    {x, y} = shift.({cell.x, cell.y})
-    moved = %{cell | x: x, y: y}
-    :ok = Storage.update_cell(moved)
-    :ok = commit_terrain(moved)
-    :ok = register_target(moved)
-  end
-
-  # Observers who already know the group get the move; players newly in view
-  # of the new center get a spawn; earlier observers now out of view lose it,
-  # exactly as if they had walked away from it.
-  defp publish_move(%Group{visibility: :none}), do: :ok
-
-  defp publish_move(%Group{group_id: group_id} = group) do
-    cells = Storage.get_cells_by_group(group_id)
-    previous = group_id |> Storage.take_group_observers() |> MapSet.new()
-
-    recipients =
-      group |> players_in_range() |> then(&eligible_recipients(group, &1)) |> MapSet.new()
-
-    move = View.move(group, cells, ServerTick.now())
-    spawn = %SkillUnitSpawn{group: View.group(group, cells)}
-
-    Enum.each(recipients, fn player_id ->
-      Broadcast.to_player(player_id, if(player_id in previous, do: move, else: spawn))
-      Storage.add_observer_group(player_id, group_id)
-    end)
-
-    left_view = %SkillUnitDespawn{
-      group_id: group_id,
-      cell_ids: cells |> Enum.map(& &1.cell_id) |> Enum.sort(),
-      reason: :SKILL_UNIT_DESPAWN_REASON_LEFT_VIEW,
-      server_tick: ServerTick.now()
-    }
-
-    previous
-    |> MapSet.difference(recipients)
-    |> Enum.each(&Broadcast.to_player(&1, left_view))
-  end
-
-  defp damage_cell_now(_cell_id, amount, _source, _reason)
-       when not is_integer(amount) or amount <= 0,
-       do: {:error, :invalid_damage}
-
-  defp damage_cell_now(cell_id, amount, nil, reason),
-    do: damage_cell_now_valid(cell_id, amount, nil, reason)
-
-  defp damage_cell_now(cell_id, amount, {source_type, source_id} = source, reason)
-       when source_type in [:player, :mob, :homunculus, :npc] and is_integer(source_id) and
-              source_id >= 0 do
-    damage_cell_now_valid(cell_id, amount, source, reason)
-  end
-
-  defp damage_cell_now(_cell_id, _amount, _source, _reason), do: {:error, :invalid_source}
-
-  defp damage_cell_now_valid(cell_id, amount, source, reason) do
-    case Storage.get_cell(cell_id) do
-      nil ->
-        {:error, :not_found}
-
-      %Cell{state: %{trap_target: true}} = cell ->
-        damage_trap_cell(cell, amount, source, reason)
-
-      %Cell{max_hp: 0} ->
-        {:error, :not_destructible}
-
-      %Cell{hp: hp} = cell when amount < hp ->
-        updated = %{cell | hp: hp - amount}
-        :ok = Storage.update_cell(updated)
-        publish_update(updated, -amount, source, reason)
-        {:ok, updated}
-
-      %Cell{hp: hp} = cell ->
-        updated = %{cell | hp: 0}
-        :ok = remove_cell(cell)
-        publish_update(updated, -hp, source, reason)
-        publish_despawn(cell, :SKILL_UNIT_DESPAWN_REASON_DESTROYED)
-        expire_if_empty(cell.group_id)
-        {:destroyed, cell}
-    end
-  end
-
-  defp damage_trap_cell(cell, amount, source, reason) do
-    case TrapCombat.damage_mode(cell) do
-      :ignore ->
-        {:ok, cell}
-
-      :durability ->
-        updated = %{cell | hp: max(cell.hp - amount, 0)}
-        :ok = Storage.update_cell(updated)
-        publish_update(updated, -min(amount, cell.hp), source, reason)
-        {:ok, updated}
-    end
-  end
-
-  # Destroying a group's last cell must expire the group immediately, matching
-  # the structural-removal path (`remove_group_cells`); otherwise the empty
-  # group lingers until the next interval tick reaps it.
-  defp expire_if_empty(group_id) do
-    with [] <- Storage.get_cells_by_group(group_id),
-         %Group{} = group <- Storage.get(group_id) do
-      cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_DESTROYED)
-    else
-      _ -> :ok
-    end
-  end
-
-  defp fetch_targetable_cell(cell_id) do
-    case Storage.get_cell(cell_id) do
-      %Cell{state: %{trap_target: true}} = cell ->
-        if Cell.flag?(cell, :targetable) and TrapCombat.targetable?(cell),
-          do: {:ok, cell},
-          else: {:error, :not_targetable}
-
-      %Cell{} = cell when cell.hp > 0 ->
-        if Cell.flag?(cell, :targetable), do: {:ok, cell}, else: {:error, :not_targetable}
-
-      _ ->
-        {:error, :not_found}
-    end
-  end
-
-  defp remove_cell(%Cell{} = cell) do
-    :ok = remove_cell_indexes(cell)
-    :ok = Storage.delete_cell(cell.cell_id)
-  end
-
-  defp remove_cell_indexes(%Cell{} = cell) do
-    :ok = remove_terrain(cell)
-    :ok = remove_target(cell)
-  end
-
-  defp publish_spawn(%Group{visibility: :none}), do: :ok
-
-  defp publish_spawn(%Group{visibility: :public} = group) do
-    packet = %SkillUnitSpawn{group: View.group(group, Storage.get_cells_by_group(group.group_id))}
-    {x, y} = group.center
-    publish(group.map_name, x, y, packet)
-  end
-
-  defp publish_spawn(%Group{visibility: :party_only} = group) do
-    packet = %SkillUnitSpawn{group: View.group(group, Storage.get_cells_by_group(group.group_id))}
-    publish_to_eligible_players(group, packet, true)
-  end
-
-  defp publish_tracked_spawn(%Group{visibility: :none}), do: :ok
-
-  defp publish_tracked_spawn(%Group{visibility: :public} = group) do
-    packet = %SkillUnitSpawn{group: View.group(group, Storage.get_cells_by_group(group.group_id))}
-    {x, y} = group.center
-    :ok = publish(group.map_name, x, y, packet)
-    Enum.each(players_in_range(group), &Storage.add_observer_group(&1, group.group_id))
-    :ok
-  end
-
-  defp publish_tracked_spawn(%Group{visibility: :party_only} = group) do
-    packet = %SkillUnitSpawn{group: View.group(group, Storage.get_cells_by_group(group.group_id))}
-    publish_to_eligible_players(group, packet, true)
-  end
-
-  defp publish_update(%Cell{} = cell, hp_delta, source, reason) do
-    case Storage.get(cell.group_id) do
-      %Group{} = group ->
-        {source_type, source_id} = source_fields(source)
-
-        packet = %SkillUnitUpdate{
-          group_id: group.group_id,
-          cell_id: cell.cell_id,
-          hp: cell.hp,
-          max_hp: cell.max_hp,
-          hp_delta: hp_delta,
-          source_type: source_type,
-          source_id: source_id,
-          reason: update_reason(reason),
-          server_tick: ServerTick.now()
-        }
-
-        publish_by_visibility(group, cell.x, cell.y, packet)
-
-      _ ->
-        :ok
-    end
-  end
-
-  defp publish_despawn(%Cell{} = cell, reason) do
-    case Storage.get(cell.group_id) do
-      %Group{} = group ->
-        packet = %SkillUnitDespawn{
-          group_id: cell.group_id,
-          cell_ids: [cell.cell_id],
-          reason: reason,
-          server_tick: ServerTick.now()
-        }
-
-        publish_by_visibility(group, cell.x, cell.y, packet)
-
-      _ ->
-        :ok
-    end
-  end
-
-  defp publish_cells_despawn(%Group{} = group, cell_ids) do
-    if cell_ids != [] do
-      packet = %SkillUnitDespawn{
-        group_id: group.group_id,
-        cell_ids: Enum.sort(cell_ids),
-        reason: :SKILL_UNIT_DESPAWN_REASON_DESTROYED,
-        server_tick: ServerTick.now()
-      }
-
-      {x, y} = group.center
-      publish_by_visibility(group, x, y, packet)
-    end
-
-    :ok
-  end
-
-  defp publish_group_despawn(%Group{} = group, cell_ids, reason) do
-    packet = %SkillUnitDespawn{
-      group_id: group.group_id,
-      cell_ids: Enum.sort(cell_ids),
-      reason: reason,
-      server_tick: ServerTick.now()
-    }
-
-    observers = Storage.take_group_observers(group.group_id)
-    in_range = players_in_range(group)
-
-    case group.visibility do
-      :none ->
-        :ok
-
-      :public ->
-        {x, y} = group.center
-        :ok = publish(group.map_name, x, y, packet)
-
-        observers
-        |> Enum.uniq()
-        |> Kernel.--(in_range)
-        |> Enum.each(&Broadcast.to_player(&1, packet))
-
-      :party_only ->
-        group
-        |> eligible_recipients(in_range)
-        |> Enum.concat(observers)
-        |> Enum.uniq()
-        |> Enum.each(&Broadcast.to_player(&1, packet))
-    end
-
-    :ok
-  end
-
-  defp publish(map_name, x, y, packet),
-    do: Broadcast.to_in_range(map_name, x, y, Config.view_range(), packet)
-
-  defp sync_observer_view(observer_id, enter_ids, leave_ids) do
-    leave_ids = leave_ids |> MapSet.new() |> MapSet.to_list() |> Enum.sort()
-
-    enter_ids =
-      enter_ids
-      |> MapSet.new()
-      |> MapSet.difference(MapSet.new(leave_ids))
-      |> MapSet.to_list()
-      |> Enum.sort()
-
-    observer_groups = Storage.get_observer_groups(observer_id)
-
-    Enum.each(enter_ids, fn group_id ->
-      if not MapSet.member?(observer_groups, group_id),
-        do: enter_observer_view(observer_id, group_id)
-    end)
-
-    Enum.each(leave_ids, fn group_id ->
-      if MapSet.member?(observer_groups, group_id), do: leave_observer_view(observer_id, group_id)
-    end)
-
-    Storage.get_observer_groups(observer_id)
-  end
-
-  defp enter_observer_view(observer_id, group_id) do
-    case Storage.get(group_id) do
-      %Group{} = group ->
-        if eligible_recipients(group, [observer_id]) != [] do
-          packet = %SkillUnitSpawn{group: View.group(group, Storage.get_cells_by_group(group_id))}
-          Broadcast.to_player(observer_id, packet)
-          Storage.add_observer_group(observer_id, group_id)
-        end
-
-      _ ->
-        :ok
-    end
-  end
-
-  defp leave_observer_view(observer_id, group_id) do
-    case Storage.get(group_id) do
-      %Group{} = group ->
-        if Group.materialized?(group) do
-          cell_ids =
-            group_id
-            |> Storage.get_cells_by_group()
-            |> Enum.map(& &1.cell_id)
-            |> Enum.sort()
-
-          Broadcast.to_player(observer_id, %SkillUnitDespawn{
-            group_id: group_id,
-            cell_ids: cell_ids,
-            reason: :SKILL_UNIT_DESPAWN_REASON_LEFT_VIEW,
-            server_tick: ServerTick.now()
-          })
-        end
-
-      _ ->
-        :ok
-    end
-
-    Storage.remove_observer_group(observer_id, group_id)
-  end
-
-  defp publish_by_visibility(%Group{visibility: :none}, _x, _y, _packet), do: :ok
-
-  defp publish_by_visibility(%Group{visibility: :public} = group, x, y, packet),
-    do: publish(group.map_name, x, y, packet)
-
-  defp publish_by_visibility(%Group{visibility: :party_only} = group, x, y, packet) do
-    group.map_name
-    |> SpatialIndex.get_players_in_range(x, y, Config.view_range())
-    |> then(&eligible_recipients(group, &1))
-    |> Enum.each(&Broadcast.to_player(&1, packet))
-  end
-
-  defp publish_to_eligible_players(%Group{} = group, packet, track?) do
-    group
-    |> players_in_range()
-    |> then(&eligible_recipients(group, &1))
-    |> Enum.each(fn player_id ->
-      Broadcast.to_player(player_id, packet)
-      if track?, do: Storage.add_observer_group(player_id, group.group_id)
-    end)
-
-    :ok
-  end
-
-  defp players_in_range(%Group{map_name: map_name, center: {x, y}}) do
-    SpatialIndex.get_players_in_range(map_name, x, y, Config.view_range())
-  end
-
-  defp eligible_recipients(%Group{visibility: :public}, player_ids), do: player_ids
-  defp eligible_recipients(%Group{visibility: :none}, _player_ids), do: []
-
-  defp eligible_recipients(%Group{visibility: :party_only} = group, player_ids) do
-    player_ids
-    |> Enum.uniq()
-    |> Enum.filter(fn player_id ->
-      observer_party_id =
-        case UnitRegistry.get_unit(:player, player_id) do
-          {:ok, {_module, %PlayerState{party_id: party_id}, _pid}} -> party_id
-          {:error, :not_found} -> nil
-        end
-
-      Group.visible_to?(group, player_id, observer_party_id)
-    end)
-  end
-
-  defp source_fields({:player, source_id}), do: {:SKILL_UNIT_OWNER_TYPE_PLAYER, source_id}
-
-  defp source_fields({:homunculus, world_gid}) do
-    case UnitRegistry.get_unit(:homunculus, world_gid) do
-      {:ok, {_module, %HomunculusState{owner_character_id: owner_id}, _pid}} ->
-        {:SKILL_UNIT_OWNER_TYPE_PLAYER, owner_id}
-
-      {:error, :not_found} ->
-        raise ArgumentError, "Homunculus skill-unit damage source unavailable"
-    end
-  end
-
-  defp source_fields({:mob, source_id}), do: {:SKILL_UNIT_OWNER_TYPE_MOB, source_id}
-  defp source_fields({:npc, source_id}), do: {:SKILL_UNIT_OWNER_TYPE_NPC, source_id}
-  defp source_fields(nil), do: {:SKILL_UNIT_OWNER_TYPE_UNSPECIFIED, 0}
-  defp update_reason(:damage), do: :SKILL_UNIT_UPDATE_REASON_DAMAGE
-  defp update_reason(:decay), do: :SKILL_UNIT_UPDATE_REASON_DECAY
-
-  defp triggerable?(%Group{} = group) do
-    case trap_state(group) do
-      {:ok, %TrapState{phase: :armed}} ->
-        true
-
-      {:ok, %TrapState{}} ->
-        false
-
-      {:error, :unsupported_trap} ->
-        true
-
-      {:error, :invalid_trap_state} ->
-        Logger.error("Skill.Unit.Manager rejected invalid trap state group_id=#{group.group_id}")
-        false
-    end
-  end
-
-  defp persist_callback_update(%Group{} = original, %Group{} = updated) do
-    case {trap_state(original), trap_state(updated)} do
-      {{:ok, %TrapState{}}, {:ok, %TrapState{}}} -> persist_trap_update(original, updated)
-      {{:error, :unsupported_trap}, {:error, :unsupported_trap}} -> Storage.update(updated)
-      _invalid -> {:error, :invalid_trap_state}
-    end
-  end
-
-  defp persist_trap_update(%Group{} = original, %Group{} = updated) do
-    with {:ok, %TrapState{}} <- trap_state(updated) do
-      case {Group.materialized?(original), Group.materialized?(updated)} do
-        {false, false} ->
-          Storage.update(updated)
-
-        {false, true} ->
-          materialize_trap_update(original, updated)
-
-        {true, true} ->
-          persist_visible_trap_update(original, updated)
-
-        {true, false} ->
-          {:error, :invalid_trap_transition}
-      end
-    end
-  end
-
-  defp materialize_trap_update(%Group{} = original, %Group{} = updated) do
-    case Storage.get_cells_by_group(original.group_id) do
-      [] ->
-        :ok = Storage.update(updated)
-
-        case materialize_visible_cells(updated, []) do
-          {:ok, _cells} ->
-            publish_tracked_spawn(updated)
-
-          {:error, _reason} = error ->
-            rollback_trap_materialization(original)
-            error
-        end
-
-      [_cell | _cells] ->
-        {:error, :already_materialized}
-    end
-  end
-
-  defp persist_visible_trap_update(%Group{} = original, %Group{} = updated) do
-    case Storage.get_cells_by_group(original.group_id) do
-      [] ->
-        {:error, :not_materialized}
-
-      cells ->
-        :ok = Storage.update(updated)
-
-        if trap_view_changed?(original, updated) do
-          publish_group_replacement(updated, cells)
-        end
-
-        :ok
-    end
-  end
-
-  defp trap_view_changed?(original, updated) do
-    original.expires_at != updated.expires_at or
-      original.state.trap.phase != updated.state.trap.phase
-  end
-
-  defp publish_group_replacement(%Group{} = group, cells) do
-    cell_ids = cells |> Enum.map(& &1.cell_id) |> Enum.sort()
-
-    despawn = %SkillUnitDespawn{
-      group_id: group.group_id,
-      cell_ids: cell_ids,
-      reason: :SKILL_UNIT_DESPAWN_REASON_DESTROYED,
-      server_tick: ServerTick.now()
-    }
-
-    spawn = %SkillUnitSpawn{group: View.group(group, cells)}
-    {x, y} = group.center
-    observers = Storage.take_group_observers(group.group_id)
-    in_range = SpatialIndex.get_players_in_range(group.map_name, x, y, Config.view_range())
-
-    case group.visibility do
-      :none ->
-        :ok
-
-      :public ->
-        :ok = publish(group.map_name, x, y, despawn)
-        :ok = publish(group.map_name, x, y, spawn)
-
-        observers
-        |> Enum.uniq()
-        |> Kernel.--(in_range)
-        |> Enum.each(fn player_id ->
-          Broadcast.to_player(player_id, despawn)
-          Broadcast.to_player(player_id, spawn)
-        end)
-
-        Enum.each(in_range, &Storage.add_observer_group(&1, group.group_id))
-
-      :party_only ->
-        eligible = eligible_recipients(group, in_range)
-
-        observers
-        |> Enum.reject(&(&1 in eligible))
-        |> Enum.uniq()
-        |> Enum.each(&Broadcast.to_player(&1, despawn))
-
-        Enum.each(eligible, fn player_id ->
-          Broadcast.to_player(player_id, despawn)
-          Broadcast.to_player(player_id, spawn)
-          Storage.add_observer_group(player_id, group.group_id)
-        end)
-    end
-
-    :ok
-  end
-
-  defp transition_trap(%Group{state: %{trap: %TrapState{} = trap}} = group, phase, expires_at) do
-    %{group | expires_at: expires_at, state: %{group.state | trap: %{trap | phase: phase}}}
-  end
-
-  defp expire_naturally(%Group{} = group, now, unit_available?) do
-    case trap_state(group) do
-      {:ok, %TrapState{phase: :armed, natural_expiry: :become_used}} ->
-        used = transition_trap(group, :used, now + @sprung_trap_lifetime)
-
-        :ok = log_natural_expiry_callback_failure(run_natural_expiry_callback(group), group)
-
-        case persist_trap_update(group, used) do
-          :ok ->
-            :ok
-
-          {:error, reason} ->
-            Logger.error(
-              "Skill.Unit.Manager natural trap transition failed group_id=#{group.group_id}: #{inspect(reason)}"
-            )
-
-            cleanup(group)
-        end
-
-      {:ok, %TrapState{phase: phase} = trap} when phase in [:armed, :spent] ->
-        maybe_drop_expired_trap(group, trap, unit_available?)
-        cleanup(group)
-
-      {:ok, %TrapState{}} ->
-        cleanup(group)
-
-      {:error, :unsupported_trap} ->
-        cleanup(group)
-
-      {:error, :invalid_trap_state} ->
-        Logger.error("Skill.Unit.Manager expiring invalid trap state group_id=#{group.group_id}")
-        cleanup(group)
-    end
-  end
-
-  defp run_natural_expiry_callback(%Group{} = group) do
-    case handler_for(group) do
-      {:ok, module} -> invoke_natural_expiry_callback(module, group)
-      :error -> :ok
-    end
-  end
-
-  defp log_natural_expiry_callback_failure(:ok, _group), do: :ok
-
-  defp log_natural_expiry_callback_failure({:error, reason}, group) do
-    log_callback_error(group, :on_natural_expiry, reason)
-  end
-
-  defp invoke_natural_expiry_callback(module, group) do
-    if function_exported?(module, :on_natural_expiry, 1) do
-      case invoke(module, :on_natural_expiry, [group]) do
-        {:ok, :ok} -> :ok
-        {:ok, {:error, reason}} -> {:error, {:returned_error, reason}}
-        {:ok, result} -> {:error, {:invalid_natural_expiry_return, result}}
-        {:error, reason} -> {:error, {:natural_expiry_callback_failed, reason}}
-      end
-    else
-      :ok
-    end
-  end
-
-  defp maybe_drop_expired_trap(
-         %Group{caster_type: :player, caster_id: caster_id} = group,
-         %TrapState{return_item_on_expiry?: true, reclaim_item_id: item_id},
-         unit_available?
-       )
-       when is_integer(item_id) and item_id > 0 do
-    if unit_available?.(:player, caster_id, group.map_name) and TrapCombat.intact?(group) do
-      {x, y} = group.center
-      Coordinator.drop_items(group.map_name, [{item_id, 1, x, y, true}], x, y)
-    end
-  end
-
-  defp maybe_drop_expired_trap(_group, _trap, _unit_available?), do: :ok
-
-  defp spring_trap_now(map_name, x, y, now) do
-    groups = map_name |> Storage.get_groups_at_cell(x, y) |> Enum.sort_by(& &1.group_id)
-
-    case select_trap(groups, &spring_eligibility/1) do
-      {:ok, %Group{} = group} ->
-        expires_at = now + @sprung_trap_lifetime
-        sprung = group |> transition_trap(:sprung, expires_at) |> Map.put(:visibility, :public)
-
-        case persist_trap_update(group, sprung) do
-          :ok -> {:ok, %{group_id: group.group_id, expires_at: expires_at}}
-          {:error, _reason} = error -> error
-        end
-
-      {:error, _reason} = error ->
-        error
-    end
-  end
-
-  defp reclaim_trap_now(owner, map_name, x, y) do
-    groups = map_name |> Storage.get_groups_at_cell(x, y) |> Enum.sort_by(& &1.group_id)
-
-    case select_trap(groups, &reclaim_eligibility(&1, owner)) do
-      {:ok, %Group{state: %{trap: %TrapState{phase: :armed, reclaim_item_id: item_id}}} = group} ->
-        cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
-        {:ok, %{group_id: group.group_id, item_id: item_id}}
-
-      {:ok, %Group{} = group} ->
-        cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
-        {:ok, %{group_id: group.group_id, item_id: nil}}
-
-      {:error, _reason} = error ->
-        error
-    end
-  end
-
-  defp reveal_traps_now(map_name, x, y, range) do
-    with {:ok, groups} <- hidden_supported_traps(map_name, x, y, range) do
-      groups
-      |> Enum.reduce_while({:ok, []}, &reveal_trap_step/2)
-      |> case do
-        {:ok, transitions} -> {:ok, publish_revealed_traps(transitions)}
-        error -> error
-      end
-    end
-  end
-
-  defp publish_revealed_traps(transitions) do
-    transitions = Enum.reverse(transitions)
-    Enum.each(transitions, fn {_original, visible} -> publish_revealed_trap(visible) end)
-    Enum.map(transitions, fn {_original, visible} -> visible.group_id end)
-  end
-
-  defp reveal_trap_step(group, {:ok, transitions}) do
-    case reveal_trap(group) do
-      {:ok, visible} ->
-        {:cont, {:ok, [{group, visible} | transitions]}}
-
-      {:error, _reason} = error ->
-        rollback_revealed_traps(transitions)
-        {:halt, error}
-    end
-  end
-
-  defp rollback_revealed_traps(transitions) do
-    Enum.each(transitions, fn {original, _visible} ->
-      if Group.materialized?(original) do
-        Storage.update(original)
-      else
-        rollback_trap_materialization(original)
-      end
-    end)
-  end
-
-  defp hidden_supported_traps(map_name, x, y, range) do
-    map_name
-    |> groups_in_area(x, y, range)
-    |> Enum.reduce_while({:ok, []}, fn group, {:ok, groups} = result ->
-      if Group.public?(group),
-        do: {:cont, result},
-        else: classify_hidden_trap(group, groups)
-    end)
-    |> case do
-      {:ok, groups} -> {:ok, Enum.reverse(groups)}
-      error -> error
-    end
-  end
-
-  defp classify_hidden_trap(group, groups) do
-    case trap_state(group) do
-      {:ok, %TrapState{phase: :armed}} -> {:cont, {:ok, [group | groups]}}
-      {:ok, %TrapState{}} -> {:cont, {:ok, groups}}
-      {:error, :unsupported_trap} -> {:cont, {:ok, groups}}
-      {:error, :invalid_trap_state} = error -> {:halt, error}
-    end
-  end
-
-  defp groups_in_area(map_name, x, y, range) do
-    groups =
-      for cell_x <- (x - range)..(x + range),
-          cell_y <- (y - range)..(y + range),
-          group <- Storage.get_groups_at_cell(map_name, cell_x, cell_y),
-          uniq: true,
-          do: group
-
-    Enum.sort_by(groups, & &1.group_id)
-  end
-
-  defp reveal_trap(%Group{} = group) do
-    visible = %{group | visibility: :public}
-
-    case Storage.get_cells_by_group(group.group_id) do
-      [] ->
-        :ok = Storage.update(visible)
-
-        case materialize_visible_cells(visible, []) do
-          {:ok, _cells} ->
-            {:ok, visible}
-
-          {:error, _reason} = error ->
-            rollback_trap_materialization(group)
-            error
-        end
-
-      [_cell | _cells] ->
-        :ok = Storage.update(visible)
-        {:ok, visible}
-    end
-  end
-
-  defp publish_revealed_trap(%Group{} = group) do
-    packet = %SkillUnitSpawn{group: View.group(group, Storage.get_cells_by_group(group.group_id))}
-
-    tracked = fn player_id ->
-      MapSet.member?(Storage.get_observer_groups(player_id), group.group_id)
-    end
-
-    group
-    |> players_in_range()
-    |> then(&eligible_recipients(group, &1))
-    |> Enum.reject(tracked)
-    |> Enum.each(fn player_id ->
-      Broadcast.to_player(player_id, packet)
-      Storage.add_observer_group(player_id, group.group_id)
-    end)
-
-    :ok
-  end
-
-  defp rollback_trap_materialization(%Group{} = original) do
-    original.group_id
-    |> Storage.get_cells_by_group()
-    |> Enum.each(&remove_cell/1)
-
-    Storage.update(original)
-  end
-
-  defp select_trap([], _eligibility), do: {:error, :not_found}
-
-  defp select_trap(groups, eligibility) do
-    results = Enum.map(groups, &{&1, eligibility.(&1)})
-
-    case Enum.find(results, fn {_group, result} -> result == :eligible end) do
-      {group, :eligible} ->
-        {:ok, group}
-
-      nil ->
-        {_group, {:error, reason}} =
-          Enum.find(results, fn {_group, result} -> result != {:error, :unsupported_trap} end) ||
-            hd(results)
-
-        {:error, reason}
-    end
-  end
-
-  defp spring_eligibility(%Group{} = group) do
-    case trap_state(group) do
-      {:ok, %TrapState{phase: :armed}} -> :eligible
-      {:ok, %TrapState{}} -> {:error, :already_spent}
-      {:error, _reason} = error -> error
-    end
-  end
-
-  defp reclaim_eligibility(%Group{} = group, owner) do
-    case trap_state(group) do
-      {:ok, %TrapState{}} ->
-        # The reference allows the owner's traps everywhere and any trap on a Vs
-        # map; a trap past its armed phase is still removed, just without
-        # returning an item.
-        if reclaim_allowed?(group, owner), do: :eligible, else: {:error, :not_owner}
-
-      {:error, _reason} = error ->
-        error
-    end
-  end
-
-  defp reclaim_allowed?(%Group{} = group, owner) do
-    {group.caster_type, group.caster_id} == owner or MapFlags.versus?(group.map_name)
-  end
-
-  defp trap_state(%Group{state: %{trap: %TrapState{} = trap}}) do
-    case TrapState.new(Map.from_struct(trap)) do
-      {:ok, valid} -> {:ok, valid}
-      {:error, :invalid_trap_state} = error -> error
-    end
-  end
-
-  defp trap_state(%Group{state: state}) do
-    if Map.has_key?(state, :trap),
-      do: {:error, :invalid_trap_state},
-      else: {:error, :unsupported_trap}
-  end
-
-  defp register_invisible_group(%Group{} = group) do
-    :ok = remove_replaced_group(group.group_id)
-    :ok = Storage.insert(group)
-    {:ok, group}
-  end
-
-  defp register_water_ball_sequence_now(%Group{visibility: :none} = group, cells) do
-    with {:ok, _group} <- register_invisible_group(group),
-         {:ok, cell_count} <- materialize_water_ball_cells(group, cells),
-         true <- cell_count > 0 do
-      {:ok, group}
-    else
-      false ->
-        :ok = Storage.delete(group.group_id)
-        {:error, :no_water_source}
-
-      {:error, _reason} = error ->
-        rollback_visible_cells(group.group_id)
-        error
-    end
-  end
-
-  defp register_water_ball_sequence_now(_group, _cells), do: {:error, :visible_sequence}
-
-  defp materialize_water_ball_cells(group, cells) do
-    cells
-    |> Enum.with_index()
-    |> Enum.reduce_while({:ok, 0}, fn {{x, y}, sequence_index}, {:ok, cell_count} ->
-      case materialize_water_ball_cell(group, x, y, sequence_index) do
-        {:ok, _cell} -> {:cont, {:ok, cell_count + 1}}
-        :skip -> {:cont, {:ok, cell_count}}
-        {:error, _reason} = error -> {:halt, error}
-      end
-    end)
-  end
-
-  defp materialize_water_ball_cell(group, x, y, sequence_index) do
-    with :ok <- consume_water_source(MapCell.water_source(group.map_name, x, y)) do
-      create_water_ball_cell(group, x, y, sequence_index)
-    end
-  end
-
-  defp consume_water_source(%MapCell.WaterSource{origin: :base}), do: :ok
-
-  defp consume_water_source(%MapCell.WaterSource{origin: :skill_unit, cell_id: source_id}) do
-    with %Cell{} = source <- Storage.get_cell(source_id),
-         %Group{} = owner <- Storage.get(source.group_id) do
-      remove_group_cells(owner, MapSet.new([{source.x, source.y}]))
-      :ok
-    else
-      nil -> :skip
-    end
-  end
-
-  defp consume_water_source(%MapCell.WaterSource{origin: :water_ball}), do: :skip
-  defp consume_water_source(nil), do: :skip
-
-  defp create_water_ball_cell(group, x, y, sequence_index) do
-    with {:ok, cell_id} <- Id.allocate(),
-         {:ok, cell} <-
-           Cell.new(%{
-             cell_id: cell_id,
-             group_id: group.group_id,
-             map_name: group.map_name,
-             x: x,
-             y: y,
-             flags: [:consumable_water],
-             state: %{water_ball_token: true, water_ball_sequence_index: sequence_index}
-           }),
-         :ok <- Storage.insert_cell(cell),
-         :ok <- commit_terrain(cell) do
-      {:ok, cell}
-    end
-  end
-
-  defp claim_next_sequence_cell(%Group{} = group) do
-    case Enum.min_by(
-           Storage.get_cells_by_group(group.group_id),
-           &water_ball_sequence_index/1,
-           fn -> nil end
-         ) do
-      %Cell{} = cell ->
-        :ok = remove_cell(cell)
-        {:ok, group}
-
-      nil ->
-        :empty
-    end
-  end
-
-  defp water_ball_sequence_index(%Cell{state: %{water_ball_sequence_index: sequence_index}}),
-    do: sequence_index
-
-  defp register_group(%Group{} = group) do
-    if Group.materialized?(group),
-      do: register_visible_group(group),
-      else: register_invisible_group(group)
-  end
-
-  defp register_visible_group(%Group{} = group) do
-    :ok = remove_replaced_group(group.group_id)
-    :ok = Storage.insert(group)
-
-    case materialize_visible_cells(group, []) do
-      {:ok, _cells} ->
-        {:ok, group}
-
-      {:error, _reason} = error ->
-        rollback_visible_cells(group.group_id)
-        error
-    end
-  end
-
-  defp schedule_group(%Group{} = group, rng) do
-    with {:ok, module} <- handler_for(group),
-         true <- function_exported?(module, :schedule, 2) do
-      case invoke(module, :schedule, [group, rng]) do
-        {:ok, {:ok, %Group{group_id: group_id} = scheduled}} when group_id == group.group_id ->
-          {:ok, scheduled}
-
-        {:ok, {:ok, %Group{group_id: group_id}}} ->
-          {:error, {:schedule_foreign_group_id, group_id}}
-
-        {:ok, result} ->
-          {:error, {:invalid_schedule_return, result}}
-
-        {:error, reason} ->
-          {:error, {:schedule_failed, reason}}
-      end
-    else
-      :error -> {:ok, group}
-      false -> {:ok, group}
-    end
-  end
-
-  defp materialize_visible_cells(%Group{cells: cells} = group, stored) do
-    Enum.reduce_while(cells, {:ok, stored, Id.first()}, fn {x, y}, {:ok, stored, start} ->
-      with {:ok, cell_id} <- Id.allocate(start: start),
-           :ok <- ensure_cell_available(group, x, y),
-           {:ok, cell} <-
-             Cell.new(
-               %{
-                 cell_id: cell_id,
-                 group_id: group.group_id,
-                 map_name: group.map_name,
-                 x: x,
-                 y: y
-               }
-               |> Map.merge(cell_attrs(group, {x, y}))
-               |> Map.put(:flags, [
-                 :visible | List.wrap(Map.get(cell_attrs(group, {x, y}), :flags))
-               ])
-             ),
-           :ok <- Storage.insert_cell(cell),
-           :ok <- commit_terrain(cell),
-           :ok <- register_target(cell) do
-        {:cont, {:ok, [cell | stored], cell_id + 1}}
-      else
-        {:error, _reason} = error -> {:halt, error}
-      end
-    end)
-    |> case do
-      {:ok, stored, _start} -> {:ok, Enum.reverse(stored)}
-      error -> error
-    end
-  end
-
-  defp rollback_visible_cells(group_id) do
-    group_id |> Storage.get_cells_by_group() |> Enum.each(&remove_cell_indexes/1)
-    :ok = Storage.delete(group_id)
-  end
-
-  defp update_and_drop_cells(%Group{group_id: group_id} = updated, cells, now, module) do
-    update_after_interval(updated, now, module)
-    if live = Storage.get(group_id), do: remove_group_cells(live, MapSet.new(cells))
-    :ok
-  end
-
-  defp update_after_interval(%Group{} = updated, now, module) do
-    updated = %{updated | next_tick_at: now + updated.interval}
-    decay_cells(updated)
-
-    case Storage.get(updated.group_id) do
-      nil ->
-        :ok
-
-      %Group{} = live ->
-        if Group.materialized?(updated) and Storage.get_cells_by_group(live.group_id) == [] do
-          cleanup(live, module, :SKILL_UNIT_DESPAWN_REASON_DESTROYED)
-        else
-          Storage.update(updated)
-
-          publish_opening_transition(live, updated)
-        end
-    end
-  end
-
-  defp publish_opening_transition(live, updated) do
-    if Map.get(updated.state, :portal, false) and
-         Map.get(live.state, :opened, false) != Map.get(updated.state, :opened, false) do
-      publish_group_replacement(updated, Storage.get_cells_by_group(updated.group_id))
-    end
-  end
-
-  defp decay_cells(%Group{state: %{cell_decay: amount}} = group)
-       when is_integer(amount) and amount > 0 do
-    group.group_id
-    |> Storage.get_cells_by_group()
-    |> Enum.each(&damage_cell_now(&1.cell_id, amount, nil, :decay))
-  end
-
-  defp decay_cells(_group), do: :ok
-
-  defp cell_attrs(%Group{state: state} = group, cell) do
-    defaults = TrapCombat.cell_attrs(group)
-    attrs = state |> Map.get(:cell_attrs, %{}) |> Map.get(cell, %{})
-
-    Map.merge(defaults, attrs)
-    |> Map.put(:state, Map.merge(Map.get(defaults, :state, %{}), Map.get(attrs, :state, %{})))
-  end
-
-  defp ensure_cell_available(%Group{} = group, x, y) do
-    if exclusive_terrain?(group) and MapCell.exclusive_contribution?(group.map_name, x, y) do
-      {:error, :exclusive_terrain_overlap}
-    else
-      :ok
-    end
-  end
-
-  defp exclusive_terrain?(%Group{state: %{exclusive_terrain: true}}), do: true
-  defp exclusive_terrain?(_group), do: false
-
-  defp remove_replaced_group(group_id) do
-    case Storage.get(group_id) do
-      nil ->
-        :ok
-
-      group ->
-        module =
-          case handler_for(group) do
-            {:ok, module} -> module
-            :error -> nil
-          end
-
-        FieldSupport.overlap_removed(group, group.cells)
-        FieldSupport.out(group, group.cells, &run_out_callback(group, module, &1))
-        cells = Storage.get_cells_by_group(group_id)
-        Enum.each(cells, &remove_cell_indexes/1)
-        :ok = Storage.delete(group_id)
-
-        publish_group_despawn(
-          group,
-          Enum.map(cells, & &1.cell_id),
-          :SKILL_UNIT_DESPAWN_REASON_CANCELED
-        )
-    end
-  end
-
-  defp callback_failed(group, callback, reason, module) do
-    log_callback_error(group, callback, reason)
-    cleanup(group, module)
-  end
-
-  defp log_callback_error(group, callback, reason) do
-    Logger.error(
-      "Skill.Unit.Manager callback=#{callback} failed skill=#{group.skill_name} " <>
-        "group_id=#{group.group_id}: #{inspect(reason)}"
-    )
-  end
-
-  # A manager callback is a direct timer-driven invocation of the group's skill
-  # and caster; the autocast flag of the cast that placed the group stays in
-  # that cast's process.
-  defp invoke(module, callback, args) do
-    group = hd(args)
-
-    result =
-      Origin.with_skill(group.skill_name, {group.caster_type, group.caster_id}, fn ->
-        apply(module, callback, args)
-      end)
-
-    {:ok, result}
-  rescue
-    error -> {:error, {error, __STACKTRACE__}}
-  catch
-    kind, reason -> {:error, {kind, reason, __STACKTRACE__}}
-  end
-
   defp default_server, do: ProcessTree.get({__MODULE__, :server}) || __MODULE__
-
-  defp reconcile_terrain do
-    cells =
-      Storage.all()
-      |> Enum.flat_map(&Storage.get_cells_by_group(&1.group_id))
-      |> Enum.filter(&terrain_cell?/1)
-
-    Enum.each(cells, &commit_terrain/1)
-
-    Storage.all()
-    |> Enum.flat_map(&Storage.get_cells_by_group(&1.group_id))
-    |> Enum.each(&register_target/1)
-
-    :ok = MapCell.prune_source_kind(:skill_unit, Enum.map(cells, & &1.cell_id))
-
-    :ok
-  end
-
-  defp commit_terrain(%Cell{} = cell) do
-    traits = terrain_traits(cell)
-
-    case traits do
-      [] -> :ok
-      _ -> MapCell.put(cell.map_name, cell.x, cell.y, terrain_source(cell), cell.cell_id, traits)
-    end
-  end
-
-  defp register_target(%Cell{} = cell) do
-    if Cell.flag?(cell, :targetable) and TrapCombat.targetable?(cell) do
-      :ok = UnitRegistry.register_skill_unit(cell, self())
-      SpatialIndex.add_skill_unit(cell)
-    else
-      :ok
-    end
-  end
-
-  defp remove_target(%Cell{} = cell) do
-    if Cell.flag?(cell, :targetable) do
-      :ok = UnitRegistry.unregister_skill_unit(cell.cell_id)
-      SpatialIndex.remove_skill_unit(cell.cell_id)
-    else
-      :ok
-    end
-  end
-
-  defp remove_terrain(%Cell{} = cell),
-    do: MapCell.delete_source(terrain_source(cell), cell.cell_id)
-
-  defp terrain_source(%Cell{state: %{terrain_source: source}}) when is_atom(source), do: source
-  defp terrain_source(_cell), do: :skill_unit
-
-  defp terrain_cell?(cell), do: terrain_traits(cell) != []
-
-  defp terrain_traits(cell) do
-    []
-    |> maybe_put(:blocks_movement, Cell.flag?(cell, :blocks_movement))
-    |> maybe_put(:blocks_projectiles, Cell.flag?(cell, :blocks_projectiles))
-    |> maybe_put(:icewall, Cell.flag?(cell, :icewall))
-    |> maybe_put(:exclusive, exclusive_terrain_cell?(cell))
-    |> maybe_put(
-      :consumable_water,
-      Cell.flag?(cell, :consumable_water),
-      consumable_water_source(cell)
-    )
-  end
-
-  defp consumable_water_source(%Cell{state: %{water_ball_token: true}, cell_id: cell_id}),
-    do: {:water_ball, cell_id}
-
-  defp consumable_water_source(%Cell{cell_id: cell_id}), do: cell_id
-
-  defp exclusive_terrain_cell?(%Cell{state: %{exclusive_terrain: true}}), do: true
-  defp exclusive_terrain_cell?(_cell), do: false
-
-  defp maybe_put(traits, _key, false), do: traits
-  defp maybe_put(traits, key, true), do: Keyword.put(traits, key, true)
-  defp maybe_put(traits, key, true, value), do: Keyword.put(traits, key, value)
-  defp maybe_put(traits, _key, false, _value), do: traits
-
-  defp handler_for(%Group{handler: handler}) when not is_nil(handler), do: {:ok, handler}
-  defp handler_for(%Group{skill_name: skill_name}), do: Catalog.ground_module_for(skill_name)
 end
