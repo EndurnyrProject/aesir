@@ -13,8 +13,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     `on_event` entry points catch it and return the ctx, so every entry
     honors its `Ctx.t()` contract; a global function's `call/2` does not
     catch, so its `close`/`end` still ends the calling script. Tail-position
-    throws are rewritten back into plain returns. `close2`/`close3` flush
-    the CLOSE frame and continue.
+    throws are rewritten back into plain returns. `close2` flushes the
+    CLOSE frame and continues; `close3` flushes it, clears the displayed
+    cutin and ends the script like `close`.
   - Top-level labels split the body into segments. `goto`/`menu` targets
     become private functions that end by throwing `{:script_end, ctx}` or
     fall through by tail-calling the next segment, which makes `goto` safe
@@ -875,9 +876,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp emit_stmt({:cmd, "close2", _}, _env), do: {["ctx = close(ctx)"], :cont}
 
-  # `close3` also clears any displayed cutin alongside the dialog window.
+  # `close3` closes like `close` and also clears any displayed cutin, so the
+  # script ends here too.
   defp emit_stmt({:cmd, "close3", _}, _env),
-    do: {["ctx = close(ctx)", ~s[ctx = cutin(ctx, "", 255)]], :cont}
+    do: {["ctx = close(ctx)", ~s[ctx = cutin(ctx, "", 255)], @script_end], :stop}
 
   defp emit_stmt({:cmd, select, args}, env) when select in ["select", "prompt"] do
     {pre, args} = hoist_all(args, env)

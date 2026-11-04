@@ -472,15 +472,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ "Enum.at(get_local(ctx, :list, []), 1, 0)"
   end
 
-  test "close3 flushes the CLOSE frame and clears any displayed cutin" do
+  test "close3 flushes the CLOSE frame, clears the cutin and ends the script" do
     src =
       gen!("""
       mes "bye";
       close3;
+      mes "unreachable";
       end;
       """)
 
     assert src =~ ~S{|> close() |> cutin("", 255)}
+    refute src =~ "unreachable"
   end
 
   test "deletearray forms: wipe, tail truncate, and shifting delete" do
@@ -1134,7 +1136,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       gen!(
         """
         mes "bye";
-        close3;
+        close2;
         """,
         kind: :function,
         module: "Aesir.ZoneServer.Content.Npc.Functions.FEnd",
@@ -1218,15 +1220,18 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert [{_module, _}] = Code.compile_string(src)
   end
 
-  test "emotion maps to the self-form DSL op; a target arg is dropped" do
+  test "emotion maps to the self-form op, or to the targeted form with a unit id" do
     src =
       gen!("""
       emotion ET_MONEY;
-      emotion ET_MONEY, getcharid(3);
+      emotion ET_DELIGHT, getnpcid(0, "Child with Cat#cook");
+      emotion ET_FRET, getcharid(3);
       close;
       """)
 
-    assert Regex.scan(~r/emotion\(:money\)/, src) |> length() == 2
+    assert src =~ "emotion(ctx, :money)"
+    assert src =~ ~S|emotion(ctx, :delight, getnpcid(ctx, "Child with Cat#cook"))|
+    assert src =~ "emotion(:fret, getcharid(ctx, 3))"
     refute src =~ "todo(ctx, :emotion"
   end
 

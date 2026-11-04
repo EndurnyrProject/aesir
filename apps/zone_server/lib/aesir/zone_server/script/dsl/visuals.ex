@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.SpecialEffect
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
   Returns the attached player's current look value for a rAthena look type
@@ -335,7 +336,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
 
   @doc """
   Shows an emote bubble over the NPC running the script (rAthena `emotion`,
-  self-anchored form — the targeted second-`gid` form is deferred).
+  self-anchored form).
 
   Purely cosmetic, so the context is returned unchanged and a detached ctx (no
   `npc_gid` to originate the emote from) is a silent no-op rather than a halt —
@@ -347,6 +348,28 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
 
   def emotion(%Ctx{npc_gid: gid} = ctx, emote) do
     Emote.show({:npc, gid}, emote)
+    ctx
+  end
+
+  @doc """
+  Shows an emote bubble over the unit `target_id` (rAthena `emotion
+  <emote>, <target_id>`), which is how a script makes another NPC or a player
+  emote — usually with a `getnpcid/2` id.
+
+  The id is resolved through `UnitRegistry`; an id that no registered unit owns
+  is treated as an NPC placement, since placed NPCs are not units. Like the
+  self-anchored form this is cosmetic and best-effort: an unknown target sends
+  nothing and never halts the script.
+  """
+  @spec emotion(Ctx.t(), atom() | non_neg_integer(), non_neg_integer()) :: Ctx.t()
+  def emotion(%Ctx{status: {:error, _}} = ctx, _emote, _target_id), do: ctx
+
+  def emotion(%Ctx{} = ctx, emote, target_id) when is_integer(target_id) do
+    case UnitRegistry.unit_type_for(target_id) do
+      {:ok, unit_type} -> Emote.show({unit_type, target_id}, emote)
+      {:error, :not_found} -> Emote.show({:npc, target_id}, emote)
+    end
+
     ctx
   end
 

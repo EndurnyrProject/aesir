@@ -777,6 +777,45 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
   end
 
+  describe "emotion/3" do
+    test "shows the emote over the unit that owns the target id" do
+      test_pid = self()
+
+      stub(UnitRegistry, :unit_type_for, fn 2_000 -> {:ok, :player} end)
+
+      expect(Emote, :show, fn {:player, 2_000}, :delight ->
+        send(test_pid, :shown)
+        :ok
+      end)
+
+      ctx = build_ctx()
+
+      assert Dsl.emotion(ctx, :delight, 2_000) == ctx
+      assert_received :shown
+    end
+
+    test "treats an id that no registered unit owns as an NPC placement" do
+      test_pid = self()
+
+      stub(UnitRegistry, :unit_type_for, fn 4_000 -> {:error, :not_found} end)
+
+      expect(Emote, :show, fn {:npc, 4_000}, :fret ->
+        send(test_pid, :shown)
+        :ok
+      end)
+
+      ctx = build_ctx()
+
+      assert Dsl.emotion(ctx, :fret, 4_000) == ctx
+      assert_received :shown
+    end
+
+    test "is a no-op on an errored ctx" do
+      ctx = %{build_ctx() | status: {:error, :boom}}
+      assert Dsl.emotion(ctx, :fret, 4_000) == ctx
+    end
+  end
+
   describe "sc_end/2" do
     test "removes the status and returns ctx unchanged" do
       test_pid = self()

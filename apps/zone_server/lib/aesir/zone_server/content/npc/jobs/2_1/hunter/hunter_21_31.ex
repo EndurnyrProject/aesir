@@ -81,8 +81,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Hunter2131 do
         "Begin test."
       ])
 
+    if choice == 4 do
+      begin_first_test(ctx)
+    else
+      answer_from(ctx, choice, :first)
+    end
+  end
+
+  defp begin_first_test(ctx) do
     ctx
-    |> answer_from(choice, :first)
     |> mes("[Hunter Guildmaster]")
     |> mes(
       "Well, your arrows are probably still being made, so you can use mine to take the test."
@@ -116,9 +123,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Hunter2131 do
         "Begin test."
       ])
 
+    if choice == 4 do
+      continue_retry_briefing(ctx)
+    else
+      answer_from(ctx, choice, :retry)
+    end
+  end
+
+  defp continue_retry_briefing(ctx) do
     {ctx, confirm} =
       ctx
-      |> answer_from(choice, :retry)
+      |> answer_from(4, :retry)
       |> mes("[Hunter Guildmaster]")
       |> mes(
         "Eh? Why don't I give you any Silver Arrows? Well, you shouldn't expect to get anything when you didn't even bring the materials."
@@ -153,7 +168,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Hunter2131 do
     end
   end
 
-  defp answer_from(ctx, 1, briefing) do
+  defp answer_from(ctx, 1, _briefing) do
     ctx
     |> mes("[Hunter Guildmaster]")
     |> mes(
@@ -166,10 +181,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Hunter2131 do
     )
     |> close()
     |> cutin("", 255)
-    |> answer_from(2, briefing)
   end
 
-  defp answer_from(ctx, 2, briefing) do
+  defp answer_from(ctx, 2, _briefing) do
     ctx
     |> mes("[Hunter Guildmaster]")
     |> mes(
@@ -182,10 +196,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Hunter2131 do
     )
     |> close()
     |> cutin("", 255)
-    |> answer_from(3, briefing)
   end
 
-  defp answer_from(ctx, 3, briefing) do
+  defp answer_from(ctx, 3, _briefing) do
     ctx
     |> mes("[Hunter Guildmaster]")
     |> mes(
@@ -203,7 +216,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Hunter2131 do
     )
     |> close()
     |> cutin("", 255)
-    |> answer_from(4, briefing)
   end
 
   defp answer_from(ctx, 4, :first) do

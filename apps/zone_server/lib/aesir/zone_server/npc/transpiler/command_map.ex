@@ -23,7 +23,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     each type (`:int`, `:string`, `:item`, `:status`, `:emote`, `:effect`,
     `:equip_slot`, `:skill`) tells the codegen how to render/resolve the argument. A call
     with more arguments than declared types is truncated to the declared arity
-    (trailing/optional buildin args, e.g. `emotion`'s target, are dropped).
+    (trailing/optional buildin args, e.g. `setnpcdisplay`'s size, are dropped).
   - `%{shape: :nullary, dsl: name}` — a no-argument effect (`nude`) → `name(ctx)`;
     any trailing rAthena arg (e.g. the optional char id) is dropped.
   - `%{shape: :heal, dsl: name}` — `heal <hp>,<sp>` → `name(ctx, hp: _, sp: _)`.
@@ -215,7 +215,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "percentheal" => %{shape: :heal, dsl: "percent_heal"},
     "sc_start" => %{dsl: "sc_start", args: [:status, :int, :int]},
     "sc_end" => %{dsl: "sc_end", args: [:status]},
-    "emotion" => %{dsl: "emotion", args: [:emote]},
+    "emotion" => %{dsl: "emotion", args: [:emote, :int]},
     "specialeffect" => %{dsl: "specialeffect", args: [:effect]},
     "specialeffect2" => %{dsl: "specialeffect2", args: [:effect]},
     "cutin" => %{dsl: "cutin", args: [:string, :int]},

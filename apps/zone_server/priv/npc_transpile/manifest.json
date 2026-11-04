@@ -20674,6 +20674,51 @@
       }
     ]
   },
+  "quests/cooking_quest.txt|floating|Charles Orleans#cook_|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.CharlesOrleans",
+    "output_hash": "668eb01adb6facbbb35cf0089b628976d29bbf2827416aa80b4c3981c86f4270",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/charles_orleans.ex",
+    "source_hash": "b7d99940c1795f936323d67c0bdca09e7e8894e33eaf623d80bd1dc25c03a2b5",
+    "spawns": []
+  },
+  "quests/cooking_quest.txt|floating|Child with Cat#cook_|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.ChildWithCat",
+    "output_hash": "c64b8bd0bc7246ffe4d0fd6dfac9f3fd47c00d3686c40edef5083aae303acca2",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/child_with_cat.ex",
+    "source_hash": "8c694f7f3a39edfc894e54797e7ac6e2679ee9bf717441eb4391db2e3c79fba1",
+    "spawns": []
+  },
+  "quests/cooking_quest.txt|floating|Madeleine Chu#cook_|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.MadeleineChu",
+    "output_hash": "7172ceb314962eab0e1a23c57571ff750f46777b0857132a2f4259b5106d2361",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/madeleine_chu.ex",
+    "source_hash": "e89f513a0384fca13f8ec2a6f0edaa097c50a9df7a9589030c178f173f902378",
+    "spawns": []
+  },
+  "quests/cooking_quest.txt|floating|Wickebine#cook_|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Wickebine",
+    "output_hash": "e7359f94aee887cee1fd82ca4badc09dafc661b6b9421b3fbb797aecd85fd442",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/wickebine.ex",
+    "source_hash": "5665b74bb64d3ebe609cfa49fca8f385a31be2914671c7f7f152d3707a62f266",
+    "spawns": []
+  },
+  "quests/cooking_quest.txt|script|Servant|payon:209:127": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.CookingQuest.Servant",
+    "output_hash": "05513b7594a02f90519bd597ff54a97ee5d021dffc05dc42affa062acb5f04c6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/cooking_quest/servant.ex",
+    "source_hash": "115389340899d6bf8ef354c3c80c2657ba5a1f6d5b5065b51255f5051cddce2f",
+    "spawns": [
+      {
+        "name": "Servant",
+        "scope": "shared",
+        "x": 209,
+        "y": 127,
+        "map": "payon",
+        "dir": 3,
+        "sprite": 88
+      }
+    ]
+  },
   "quests/first_class/tu_acolyte.txt|script|#tu_monk|prt_monk:217:123": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.Npc",
     "output_hash": "4173d1a09f9c852ce67a043574911a95aaad70dc1689b9b4813b0c5a5b40062b",

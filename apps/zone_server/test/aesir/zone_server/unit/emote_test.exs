@@ -5,6 +5,8 @@ defmodule Aesir.ZoneServer.Unit.EmoteTest do
   import Mimic
 
   alias Aesir.Net.Emotion, as: EmotionMsg
+  alias Aesir.ZoneServer.Npc.Placement
+  alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Emote
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -71,6 +73,36 @@ defmodule Aesir.ZoneServer.Unit.EmoteTest do
       end)
 
       assert :ok = Emote.show({:player, 2_000}, :surprise)
+    end
+  end
+
+  describe "show/2 with an NPC source" do
+    test "falls back to the placement position for a non-unit NPC gid" do
+      test_pid = self()
+
+      stub(SpatialIndex, :get_unit_position, fn :npc, 4_000 -> {:error, :not_found} end)
+
+      stub(NpcRegistry, :module_for_unit, fn 4_000 ->
+        {:ok, {__MODULE__, %Placement{map: "prt_castle", x: 44, y: 30, sprite: 88}}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn map_name, x, y, _range, packet, _opts ->
+        send(test_pid, {:broadcast, map_name, x, y, packet})
+        :ok
+      end)
+
+      Emote.show({:npc, 4_000}, 3)
+
+      assert_received {:broadcast, "prt_castle", 44, 30, %EmotionMsg{gid: 4_000, type: 3}}
+    end
+
+    test "sends nothing when the gid is neither a unit nor a placement" do
+      reject(&Broadcast.to_in_range/6)
+
+      stub(SpatialIndex, :get_unit_position, fn :npc, 4_000 -> {:error, :not_found} end)
+      stub(NpcRegistry, :module_for_unit, fn 4_000 -> :error end)
+
+      assert :ok = Emote.show({:npc, 4_000}, 3)
     end
   end
 end

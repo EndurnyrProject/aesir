@@ -121,6 +121,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate soundeffectall(ctx, name, type), to: Visuals
   defdelegate navigateto(ctx, map, x, y, flag, hide_window, monster_id), to: Visuals
   defdelegate emotion(ctx, emote), to: Visuals
+  defdelegate emotion(ctx, emote, target_id), to: Visuals
   defdelegate nude(ctx), to: Visuals
 
   # -- Announce (Dsl.Announce) -----------------------------------------------
