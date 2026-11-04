@@ -24,11 +24,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.ScriptVitals
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
+  alias Aesir.ZoneServer.Unit.SpecialEffect
 
   @weapon_skill_ids 98..104
   @create_deadly_poison 407
   @pharmacy_skill_id 228
   @weapon_research_id 107
+  # Recipes whose result the reference shows with the Pharmacy effects (ZC_NOTIFY_EFFECT 5/6).
+  @pharmacy_effect_skill_ids [@pharmacy_skill_id, @create_deadly_poison]
   @oridecon_research_id 97
   @default_rng &:rand.uniform/1
 
@@ -127,7 +130,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
 
       if made > 0,
         do: add_product(produced, recipe, item_def, made, 0, nil),
-        else: {:ok, stage_all_failed(produced, recipe.product_id)}
+        else: {:ok, stage_all_failed(produced, recipe)}
     end
   end
 
@@ -310,7 +313,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
 
     if success?,
       do: add_product(caster, recipe, item_def, 1, crumbs, element),
-      else: {:ok, stage_result(caster, recipe.product_id, false)}
+      else: {:ok, stage_result(caster, recipe, false)}
   end
 
   defp add_product(caster, recipe, item_def, amount, crumbs, element) do
@@ -343,30 +346,43 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
             pending_inventory_notify: caster.pending_inventory_notify ++ [change]
         }
 
-        {:ok, stage_result(forged, recipe.product_id, true)}
+        {:ok, stage_result(forged, recipe, true)}
 
       {:error, reason} ->
         # The craft already succeeded and its materials are spent; the reference
         # still reports the production result and tells the client why the
         # product could not be carried.
-        {:ok,
-         stage_result(InventoryManager.stage_add_failure(caster, reason), recipe.product_id, true)}
+        {:ok, stage_result(InventoryManager.stage_add_failure(caster, reason), recipe, true)}
     end
   end
 
   # A batch shows the production as made before it learns nothing came of it:
   # a successful result, then a failed one.
-  defp stage_all_failed(caster, item_id) do
+  defp stage_all_failed(caster, recipe) do
+    play_result_effect(caster, recipe, true)
+    play_result_effect(caster, recipe, false)
+
     %{
       caster
       | pending_production_result: [
-          %{success: true, item_id: item_id},
-          %{success: false, item_id: item_id}
+          %{success: true, item_id: recipe.product_id},
+          %{success: false, item_id: recipe.product_id}
         ]
     }
   end
 
-  defp stage_result(caster, item_id, success?) do
-    %{caster | pending_production_result: %{success: success?, item_id: item_id}}
+  defp stage_result(caster, recipe, success?) do
+    play_result_effect(caster, recipe, success?)
+    %{caster | pending_production_result: %{success: success?, item_id: recipe.product_id}}
   end
+
+  # Pharmacy-style brews show their outcome on the caster, as Upgrade Weapon
+  # does with the refine effects; weapon forging has no mapped effect yet.
+  defp play_result_effect(caster, %Recipe{skill_id: skill_id}, success?)
+       when skill_id in @pharmacy_effect_skill_ids do
+    effect = if success?, do: :pharmacy_ok, else: :pharmacy_fail
+    SpecialEffect.play({:player, caster.character_id}, effect, :self)
+  end
+
+  defp play_result_effect(_caster, _recipe, _success?), do: :ok
 end

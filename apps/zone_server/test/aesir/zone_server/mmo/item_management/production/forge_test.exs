@@ -1,5 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
   use Aesir.DataCase, async: false
+  use Mimic
 
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
@@ -10,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.SpecialEffect
 
   @cdp_materials [937, 952, 939, 7033, 972, 657, 713]
 
@@ -245,6 +247,48 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
     assert ItemContainer.held_amount(failed.inventory, 1002) == 0
     assert ItemContainer.held_amount(failed.inventory, 501) == 0
     assert failed.pending_production_result == %{success: false, item_id: 501}
+  end
+
+  describe "result effect" do
+    test "a pharmacy brew shows its outcome on the caster", %{caster: caster} do
+      Application.put_env(:zone_server, :forge_rng, fn _upper -> 1 end)
+      char_id = caster.character_id
+      expect(SpecialEffect, :play, fn {:player, ^char_id}, :pharmacy_ok, :self -> :ok end)
+
+      caster = caster |> pharmacy_caster(10) |> Map.put(:inventory, inventory([{1002, 1}]))
+      assert {:ok, _brewed} = Forge.run(caster, pharmacy_recipe(), [])
+    end
+
+    test "a failed Create Deadly Poison shows the pharmacy failure", %{caster: caster} do
+      Application.put_env(:zone_server, :forge_rng, fn _upper -> 10_000 end)
+      char_id = caster.character_id
+      expect(SpecialEffect, :play, fn {:player, ^char_id}, :pharmacy_fail, :self -> :ok end)
+
+      caster = %{caster | inventory: inventory(Enum.map(@cdp_materials, &{&1, 1}))}
+      assert {:ok, _failed} = Forge.run_skill(caster, cdp_recipe(), 407)
+    end
+
+    test "a batch that makes nothing shows success then failure", %{caster: caster} do
+      Application.put_env(:zone_server, :forge_rng, fn
+        10_000 -> 10_000
+        _upper -> 1
+      end)
+
+      char_id = caster.character_id
+      expect(SpecialEffect, :play, fn {:player, ^char_id}, :pharmacy_ok, :self -> :ok end)
+      expect(SpecialEffect, :play, fn {:player, ^char_id}, :pharmacy_fail, :self -> :ok end)
+
+      caster = caster |> pharmacy_caster(1) |> Map.put(:inventory, inventory([{1002, 2}]))
+      assert {:ok, _failed} = Forge.run_batch(caster, pharmacy_recipe(), 2, 0)
+    end
+
+    test "weapon forging shows no production effect", %{caster: caster} do
+      :rand.seed(:exsss, {1, 1, 1})
+      reject(&SpecialEffect.play/3)
+
+      caster = %{caster | inventory: inventory([{998, 2}])}
+      assert {:ok, _forged} = Forge.run(caster, weapon_recipe(), [])
+    end
   end
 
   test "a full inventory spends the materials and reports the refused add", %{caster: caster} do
