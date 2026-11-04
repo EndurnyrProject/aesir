@@ -27,13 +27,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburn do
     sp_cost: [80, 90, 100, 110, 120],
     cooldown: [10_000, 10_000, 10_000, 10_000, 15_000]
 
+  alias Aesir.Net.SkillEffect
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.MagicAttack
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Resource
+  alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @behaviour Active
 
@@ -77,6 +81,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburn do
 
   defp drain(caster, target, level, definition) do
     with {:ok, sp} <- Resource.read(target, :sp) do
+      show_effect(caster, target, level, definition)
       if level == 5, do: burn(caster, target, sp * 2, definition)
       Resource.drain_sp_percent(target, 100)
       {:ok, caster}
@@ -93,6 +98,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburn do
   end
 
   defp backfire(caster, level, definition) do
+    show_effect(
+      caster,
+      {caster.__struct__.get_unit_type(caster), caster.__struct__.get_unit_id(caster)},
+      level,
+      definition
+    )
+
     if level == 5 do
       MagicAttack.execute_self_magic_attack(caster,
         skill_id: definition.id,
@@ -102,6 +114,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburn do
     end
 
     {:ok, empty_sp(caster)}
+  end
+
+  defp show_effect(caster, {type, id}, level, definition) do
+    caster_id = caster.__struct__.get_unit_id(caster)
+
+    position =
+      if id == caster_id and type == caster.__struct__.get_unit_type(caster),
+        do: {:ok, {caster.x, caster.y, caster.map_name}},
+        else: SpatialIndex.get_unit_position(type, id)
+
+    with {:ok, {x, y, map}} when is_integer(x) and is_integer(y) and is_binary(map) <- position do
+      Broadcast.to_in_range(map, x, y, Config.view_range(), %SkillEffect{
+        skill_id: definition.id,
+        level: level,
+        src_id: caster_id,
+        target_id: id,
+        result: 1
+      })
+    end
   end
 
   defp own_sp(%PlayerState{stats: %{current_state: %{sp: sp}}}), do: sp
