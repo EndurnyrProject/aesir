@@ -51,7 +51,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.BardQuest.Adventurer do
       |> mes("What is it?")
       |> next()
 
-    if sex(ctx) == get_char_var(ctx, :SEX_FEMALE, 0) do
+    if sex(ctx) == 0 do
       ctx =
         ctx
         |> emotion(:smile)

@@ -37,10 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.LittleKidInTown do
     ctx
     |> mes(
       Rathena.concat(
-        Rathena.concat(
-          "Hey ",
-          if(sex(ctx) == get_char_var(ctx, :SEX_MALE, 0), do: "bro", else: "sis")
-        ),
+        Rathena.concat("Hey ", if(sex(ctx) == 1, do: "bro", else: "sis")),
         ", look at that man!"
       )
     )

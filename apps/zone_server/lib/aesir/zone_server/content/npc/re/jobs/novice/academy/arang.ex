@@ -89,7 +89,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Arang do
                       Rathena.concat(
                         Rathena.concat(
                           "It's time to choose your job? How about Taekwon ",
-                          if(sex(ctx) == get_char_var(ctx, :SEX_MALE, 0), do: "boy", else: "girl")
+                          if(sex(ctx) == 1, do: "boy", else: "girl")
                         ),
                         "? You may be a nice adult like me."
                       )

@@ -540,7 +540,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildmaster14980 do
       |> mes("[Guildmaster]")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         mes(
           ctx,
           "But you must never reveal to her the Assassin side of your life. No matter what it takes."

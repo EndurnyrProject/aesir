@@ -58,7 +58,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Leimi do
 
   defp respond_to_assassin(ctx) do
     if base_job(ctx) == :assassin do
-      respond_to_assassin(ctx, sex(ctx) == get_char_var(ctx, :SEX_MALE, 0))
+      respond_to_assassin(ctx, sex(ctx) == 1)
     else
       ctx
     end

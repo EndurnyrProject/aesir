@@ -725,7 +725,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.SenseiMoohae do
   end
 
   defp mes_by_sex(ctx, male_line, female_line) do
-    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+    if sex(ctx) == 1 do
       mes(ctx, male_line)
     else
       mes(ctx, female_line)

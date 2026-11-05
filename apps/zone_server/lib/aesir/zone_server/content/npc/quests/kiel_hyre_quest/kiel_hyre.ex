@@ -907,7 +907,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.KielHyre do
 
   defp set_player_title(ctx) do
     cond do
-      sex(ctx) != get_char_var(ctx, :SEX_FEMALE, 0) ->
+      sex(ctx) == 1 ->
         set_local(ctx, :"KHTitle$", "Mr")
 
       getpartnerid(ctx) == 0 ->

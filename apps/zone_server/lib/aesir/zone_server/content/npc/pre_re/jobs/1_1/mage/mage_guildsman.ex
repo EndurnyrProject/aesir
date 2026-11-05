@@ -116,481 +116,478 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Mage.MageGuildsman do
       |> next()
       |> select(["I want to be a Mage.", "Tell me the Requirements.", "Pretty much nothing."])
 
-    ctx =
-      case v2 do
-        1 ->
-          ctx = mes(ctx, "[Mage Guildsman]")
+    case v2 do
+      1 ->
+        ctx = mes(ctx, "[Mage Guildsman]")
 
-          ctx =
-            if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:mage) do
-              ctx =
-                ctx
-                |> mes("Hey, haven't you realized? You're aleady a Mage, silly!")
-                |> next()
-                |> mes("[Mage Guildsman]")
-                |> mes(
-                  "One of these days you'll realize the power inside of you when you can make Fire with your mind!"
-                )
-                |> close()
-
-              throw({:script_end, ctx})
-            else
+        ctx =
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:mage) do
+            ctx =
               ctx
-            end
+              |> mes("Hey, haven't you realized? You're aleady a Mage, silly!")
+              |> next()
+              |> mes("[Mage Guildsman]")
+              |> mes(
+                "One of these days you'll realize the power inside of you when you can make Fire with your mind!"
+              )
+              |> close()
 
-          ctx =
-            if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
-              ctx =
-                ctx
-                |> mes(
-                  "Hey~ C'mon. Quit playing games. You can't be a Mage because you already have another Job."
-                )
-                |> close()
-
-              throw({:script_end, ctx})
-            else
-              ctx
-            end
-
-          ctx =
-            if get_char_var(ctx, :job_magician_q, 0) == 0 do
-              ctx = mes(ctx, "Wanna be a Mage, eh...?")
-
-              ctx =
-                if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                  mes(ctx, "Hey, look at you! You're kinda cute~! Not my type though...")
-                else
-                  ctx |> mes("Oooh, you're such a hot babe~!") |> mes("I like girls like you~")
-                end
-
-              {ctx, v3} =
-                ctx
-                |> next()
-                |> mes("[Mage Guildsman]")
-                |> mes(
-                  "Right, you said that you wanna be a Mage? Alright then, please sign the Mage Application."
-                )
-                |> next()
-                |> select(["Sign Up.", "Quit."])
-
-              ctx =
-                if v3 == 1 do
-                  ctx = mes(ctx, "[Mage Guildsman]")
-
-                  ctx =
-                    ctx
-                    |> mes(
-                      Rathena.concat(
-                        Rathena.concat(
-                          "Okay. Sign right there. Oh, you're very good at spelling. Alright. So your name is... ",
-                          char_name(ctx, 0)
-                        ),
-                        "."
-                      )
-                    )
-                    |> next()
-                    |> mes("[Mage Guildsman]")
-                    |> mes("Now it's time for")
-                    |> mes("me to give you the test.")
-
-                  v4 = Enum.random(0..3)
-
-                  ctx =
-                    case v4 do
-                      1 ->
-                        ctx
-                        |> mes("Make me a ^3355FFMixed Solution No. 1^000000")
-                        |> mes("and bring it back to me.")
-                        |> set_char_var(:job_magician_q, 1)
-
-                      2 ->
-                        ctx
-                        |> mes("Make me a ^3355FFMixed Solution No. 2^000000")
-                        |> mes("and bring it back to me.")
-                        |> set_char_var(:job_magician_q, 2)
-
-                      3 ->
-                        ctx
-                        |> mes("Make me a ^3355FFMixed Solution No. 3^000000")
-                        |> mes("and bring it back to me.")
-                        |> set_char_var(:job_magician_q, 3)
-
-                      _ ->
-                        ctx
-                        |> mes("Make me a ^3355FFMixed Solution No. 4^000000")
-                        |> mes("and bring it back to me.")
-                        |> set_char_var(:job_magician_q, 4)
-                    end
-
-                  ctx =
-                    ctx
-                    |> next()
-                    |> give_item(1092, 1)
-                    |> mes("[Mage Guildsman]")
-                    |> mes(
-                      "You can find the necessary ingredients inside the Guide Book in this Guild. So you better look up what you need before you go."
-                    )
-                    |> next()
-                    |> mes("[Mage Guildsman]")
-                    |> mes(
-                      "Once you collect all the ingredients you, use the machine in the center of the room to mix the solution. Good luck!"
-                    )
-                    |> close()
-
-                  throw({:script_end, ctx})
-                else
-                  ctx
-                end
-
-              ctx =
-                ctx
-                |> mes("[Mage Guildsman]")
-                |> mes(
-                  "Whaaaaat~?! Right after you tell me that you wanna become a Mage, you change your mind?! Be a bit more decisive!"
-                )
-                |> close()
-
-              throw({:script_end, ctx})
-            else
-              ctx
-            end
-
-          ctx = mes(ctx, "Yeah? Ready...?")
-          v5 = can_change_job?(ctx)
-
-          ctx =
-            if not Rathena.truthy?(v5) do
-              ctx =
-                ctx
-                |> mes("Oh, what a bummer. You haven't met the requirements yet.")
-                |> next()
-                |> mes("[Mage Guildsman]")
-                |> mes(
-                  "Go back and reach Novice Job level 9 first. Don't forget that you also have to learn all of the Basic Skills before you come back."
-                )
-                |> close()
-
-              throw({:script_end, ctx})
-            else
-              ctx
-            end
-
-          ctx = mes(ctx, Rathena.concat(Rathena.concat("", char_name(ctx, 0)), "'s test was..."))
-
-          ctx =
-            if get_char_var(ctx, :job_magician_q, 0) == 1 do
-              mes(ctx, "Making Mixed Solution No. 1.")
-            else
-              ctx =
-                if get_char_var(ctx, :job_magician_q, 0) == 2 do
-                  mes(ctx, "Making Mixed Solution No. 2.")
-                else
-                  ctx =
-                    if get_char_var(ctx, :job_magician_q, 0) == 3 do
-                      mes(ctx, "Making Mixed Solution No. 3.")
-                    else
-                      mes(ctx, "Making Mixed Solution No. 4.")
-                    end
-
-                  ctx
-                end
-
-              ctx
-            end
-
-          ctx =
+            throw({:script_end, ctx})
+          else
             ctx
-            |> next()
-            |> mes("[Mage Guildsman]")
-            |> mes("Okay, let me")
-            |> mes("check if you made your")
-            |> mes("solution accurately...")
-            |> next()
-            |> mes("[Mage Guildsman]")
+          end
 
-          ctx =
-            if count_item(ctx, 1071) == 0 and count_item(ctx, 1085) == 0 and
-                 count_item(ctx, 1086) == 0 and count_item(ctx, 1087) == 0 and
-                 count_item(ctx, 1090) == 0 do
-              ctx =
-                ctx
-                |> mes("Hey, where's the Solution")
-                |> mes("I asked for...? I can't check it if you don't show it to me, right?")
-                |> close()
-
-              throw({:script_end, ctx})
-            else
-              ctx =
-                if (get_char_var(ctx, :job_magician_q, 0) == 1 and count_item(ctx, 1071) == 0) or
-                     (get_char_var(ctx, :job_magician_q, 0) == 2 and count_item(ctx, 1085) == 0) or
-                     (get_char_var(ctx, :job_magician_q, 0) == 3 and count_item(ctx, 1086) == 0) or
-                     (get_char_var(ctx, :job_magician_q, 0) == 4 and count_item(ctx, 1087) == 0) do
-                  ctx =
-                    ctx
-                    |> mes("Wait.")
-                    |> mes("This isn't the")
-                    |> mes("Solution I asked for!")
-                    |> next()
-                    |> mes("[Mage Guildsman]")
-
-                  ctx =
-                    if get_char_var(ctx, :job_magician_q, 0) == 1 do
-                      mes(
-                        ctx,
-                        "You're supposed to make Mixed Solution No. 1 and bring it back to me. Now go and try it again."
-                      )
-                    else
-                      ctx =
-                        if get_char_var(ctx, :job_magician_q, 0) == 2 do
-                          mes(
-                            ctx,
-                            "You're supposed to make Mixed Solution No. 2 and bring it back to me. Now go and try it again."
-                          )
-                        else
-                          ctx =
-                            if get_char_var(ctx, :job_magician_q, 0) == 3 do
-                              mes(
-                                ctx,
-                                "You're supposed to make Mixed Solution No. 3 and bring it back to me. Now go and try it again."
-                              )
-                            else
-                              mes(
-                                ctx,
-                                "You're supposed to make Mixed Solution No. 4 and bring it back to me. Now go and try it again."
-                              )
-                            end
-
-                          ctx
-                        end
-
-                      ctx
-                    end
-
-                  ctx =
-                    if count_item(ctx, 1071) != 0 do
-                      delitem(ctx, 1071, 1)
-                    else
-                      ctx =
-                        if count_item(ctx, 1085) != 0 do
-                          delitem(ctx, 1085, 1)
-                        else
-                          ctx =
-                            if count_item(ctx, 1086) != 0 do
-                              delitem(ctx, 1086, 1)
-                            else
-                              ctx =
-                                if count_item(ctx, 1087) != 0 do
-                                  delitem(ctx, 1087, 1)
-                                else
-                                  delitem(ctx, 1090, 1)
-                                end
-
-                              ctx
-                            end
-
-                          ctx
-                        end
-
-                      ctx
-                    end
-
-                  ctx = close(ctx)
-                  throw({:script_end, ctx})
-                else
-                  ctx
-                end
-
+        ctx =
+          if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
+            ctx =
               ctx
-            end
+              |> mes(
+                "Hey~ C'mon. Quit playing games. You can't be a Mage because you already have another Job."
+              )
+              |> close()
 
-          ctx =
-            if count_item(ctx, 1071) != 0 do
-              delitem(ctx, 1071, 1)
-            else
-              ctx =
-                if count_item(ctx, 1085) != 0 do
-                  delitem(ctx, 1085, 1)
-                else
-                  ctx =
-                    if count_item(ctx, 1086) != 0 do
-                      delitem(ctx, 1086, 1)
-                    else
-                      ctx =
-                        if count_item(ctx, 1087) != 0 do
-                          delitem(ctx, 1087, 1)
-                        else
-                          delitem(ctx, 1090, 1)
-                        end
-
-                      ctx
-                    end
-
-                  ctx
-                end
-
-              ctx
-            end
-
-          {ctx, _} =
+            throw({:script_end, ctx})
+          else
             ctx
-            |> mes(
-              "Hmm. I can see that you tried really hard. For a beginner's attempt, this is really good."
-            )
-            |> mes("Great work!")
-            |> next()
-            |> mes("[Mage Guildsman]")
-            |> mes(
-              "Alright! I'm pleased to say that you've passed the Mage Test. I will transform you right away!"
-            )
-            |> next()
-            |> mes("[Mage Guildsman]")
-            |> mes("*Ahem*")
-            |> mes("Congratulations!")
-            |> mes("You are now a Mage!")
-            |> next()
-            |> set_local(:quest_id, 1005)
-            |> loop_3()
-            |> jobchange(:mage)
-            |> Aesir.ZoneServer.Content.Npc.Functions.FClearjobvar.call([])
+          end
 
-          ctx =
-            ctx
-            |> credit_zeny(50)
-            |> mes("[Mage Guildsman]")
-            |> mes("'Welcome to My World~'")
-            |> mes(
-              "Heh heh, I just wanted to say that. You know, it's a quote from a well-known movie~"
-            )
-            |> next()
-            |> mes("[Mage Guildsman]")
-            |> mes("Now that you're a Mage just like us, let's be friends, okay?")
-            |> close()
+        ctx =
+          if get_char_var(ctx, :job_magician_q, 0) == 0 do
+            ctx = mes(ctx, "Wanna be a Mage, eh...?")
 
-          throw({:script_end, ctx})
+            ctx =
+              if sex(ctx) == 1 do
+                mes(ctx, "Hey, look at you! You're kinda cute~! Not my type though...")
+              else
+                ctx |> mes("Oooh, you're such a hot babe~!") |> mes("I like girls like you~")
+              end
 
-        2 ->
-          ctx = ctx |> mes("[Mage Guildsman]") |> mes("Wanna be a Mage, eh?")
-
-          ctx =
-            if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-              mes(ctx, "For a cutie like you, I'd be happy to explain the requirements!")
-            else
-              mes(ctx, "I'd be happy to explain the requirements for a pretty girl like you!")
-            end
-
-          ctx =
-            ctx
-            |> next()
-            |> mes("[Mage Guildsman]")
-            |> mes(
-              "First of all, you have to reach Novice Job Level 10 and learn all of the Basic Skills. Then, you'll have to pass the Mage Test."
-            )
-            |> next()
-
-          ctx =
-            if get_char_var(ctx, :job_magician_q, 0) != 0 do
-              ctx = ctx |> mes("[Mage Guildsman]") |> mes("Your test is to")
-              v6 = get_char_var(ctx, :job_magician_q, 0)
-
-              ctx =
-                case v6 do
-                  1 ->
-                    ctx =
-                      ctx
-                      |> mes("make me a")
-                      |> mes("^3355FFMixed Solution No. 1^000000")
-                      |> mes("and bring it back to me.")
-
-                    ctx =
-                      if isbegin_quest(ctx, 1005) == 0 do
-                        setquest(ctx, 1005)
-                      else
-                        ctx
-                      end
-
-                    ctx
-
-                  2 ->
-                    ctx =
-                      ctx
-                      |> mes("make me a")
-                      |> mes("^3355FFMixed Solution No. 2^000000")
-                      |> mes("and bring it back to me.")
-
-                    ctx =
-                      if isbegin_quest(ctx, 1006) == 0 do
-                        setquest(ctx, 1006)
-                      else
-                        ctx
-                      end
-
-                    ctx
-
-                  3 ->
-                    ctx =
-                      ctx
-                      |> mes("make me a")
-                      |> mes("^3355FFMixed Solution No. 3^000000")
-                      |> mes("and bring it back to me.")
-
-                    ctx =
-                      if isbegin_quest(ctx, 1007) == 0 do
-                        setquest(ctx, 1007)
-                      else
-                        ctx
-                      end
-
-                    ctx
-
-                  _ ->
-                    ctx =
-                      ctx
-                      |> mes("make me a")
-                      |> mes("^3355FFMixed Solution No. 4^000000")
-                      |> mes("and bring it back to me.")
-
-                    ctx =
-                      if isbegin_quest(ctx, 1008) == 0 do
-                        setquest(ctx, 1008)
-                      else
-                        ctx
-                      end
-
-                    ctx
-                end
-
+            {ctx, v3} =
               ctx
               |> next()
               |> mes("[Mage Guildsman]")
               |> mes(
-                "You can look up the ingredients you'll need to make the Solution inside the Guide Book in this Guild."
+                "Right, you said that you wanna be a Mage? Alright then, please sign the Mage Application."
               )
-            else
+              |> next()
+              |> select(["Sign Up.", "Quit."])
+
+            ctx =
+              if v3 == 1 do
+                ctx = mes(ctx, "[Mage Guildsman]")
+
+                ctx =
+                  ctx
+                  |> mes(
+                    Rathena.concat(
+                      Rathena.concat(
+                        "Okay. Sign right there. Oh, you're very good at spelling. Alright. So your name is... ",
+                        char_name(ctx, 0)
+                      ),
+                      "."
+                    )
+                  )
+                  |> next()
+                  |> mes("[Mage Guildsman]")
+                  |> mes("Now it's time for")
+                  |> mes("me to give you the test.")
+
+                v4 = Enum.random(0..3)
+
+                ctx =
+                  case v4 do
+                    1 ->
+                      ctx
+                      |> mes("Make me a ^3355FFMixed Solution No. 1^000000")
+                      |> mes("and bring it back to me.")
+                      |> set_char_var(:job_magician_q, 1)
+
+                    2 ->
+                      ctx
+                      |> mes("Make me a ^3355FFMixed Solution No. 2^000000")
+                      |> mes("and bring it back to me.")
+                      |> set_char_var(:job_magician_q, 2)
+
+                    3 ->
+                      ctx
+                      |> mes("Make me a ^3355FFMixed Solution No. 3^000000")
+                      |> mes("and bring it back to me.")
+                      |> set_char_var(:job_magician_q, 3)
+
+                    _ ->
+                      ctx
+                      |> mes("Make me a ^3355FFMixed Solution No. 4^000000")
+                      |> mes("and bring it back to me.")
+                      |> set_char_var(:job_magician_q, 4)
+                  end
+
+                ctx =
+                  ctx
+                  |> next()
+                  |> give_item(1092, 1)
+                  |> mes("[Mage Guildsman]")
+                  |> mes(
+                    "You can find the necessary ingredients inside the Guide Book in this Guild. So you better look up what you need before you go."
+                  )
+                  |> next()
+                  |> mes("[Mage Guildsman]")
+                  |> mes(
+                    "Once you collect all the ingredients you, use the machine in the center of the room to mix the solution. Good luck!"
+                  )
+                  |> close()
+
+                throw({:script_end, ctx})
+              else
+                ctx
+              end
+
+            ctx =
               ctx
               |> mes("[Mage Guildsman]")
               |> mes(
-                "You will be informed as to which Mixed Solution you will need to create after signing the application form."
+                "Whaaaaat~?! Right after you tell me that you wanna become a Mage, you change your mind?! Be a bit more decisive!"
               )
-            end
+              |> close()
 
-          ctx =
+            throw({:script_end, ctx})
+          else
+            ctx
+          end
+
+        ctx = mes(ctx, "Yeah? Ready...?")
+        v5 = can_change_job?(ctx)
+
+        ctx =
+          if not Rathena.truthy?(v5) do
+            ctx =
+              ctx
+              |> mes("Oh, what a bummer. You haven't met the requirements yet.")
+              |> next()
+              |> mes("[Mage Guildsman]")
+              |> mes(
+                "Go back and reach Novice Job level 9 first. Don't forget that you also have to learn all of the Basic Skills before you come back."
+              )
+              |> close()
+
+            throw({:script_end, ctx})
+          else
+            ctx
+          end
+
+        ctx = mes(ctx, Rathena.concat(Rathena.concat("", char_name(ctx, 0)), "'s test was..."))
+
+        ctx =
+          if get_char_var(ctx, :job_magician_q, 0) == 1 do
+            mes(ctx, "Making Mixed Solution No. 1.")
+          else
+            ctx =
+              if get_char_var(ctx, :job_magician_q, 0) == 2 do
+                mes(ctx, "Making Mixed Solution No. 2.")
+              else
+                ctx =
+                  if get_char_var(ctx, :job_magician_q, 0) == 3 do
+                    mes(ctx, "Making Mixed Solution No. 3.")
+                  else
+                    mes(ctx, "Making Mixed Solution No. 4.")
+                  end
+
+                ctx
+              end
+
+            ctx
+          end
+
+        ctx =
+          ctx
+          |> next()
+          |> mes("[Mage Guildsman]")
+          |> mes("Okay, let me")
+          |> mes("check if you made your")
+          |> mes("solution accurately...")
+          |> next()
+          |> mes("[Mage Guildsman]")
+
+        ctx =
+          if count_item(ctx, 1071) == 0 and count_item(ctx, 1085) == 0 and
+               count_item(ctx, 1086) == 0 and count_item(ctx, 1087) == 0 and
+               count_item(ctx, 1090) == 0 do
+            ctx =
+              ctx
+              |> mes("Hey, where's the Solution")
+              |> mes("I asked for...? I can't check it if you don't show it to me, right?")
+              |> close()
+
+            throw({:script_end, ctx})
+          else
+            ctx =
+              if (get_char_var(ctx, :job_magician_q, 0) == 1 and count_item(ctx, 1071) == 0) or
+                   (get_char_var(ctx, :job_magician_q, 0) == 2 and count_item(ctx, 1085) == 0) or
+                   (get_char_var(ctx, :job_magician_q, 0) == 3 and count_item(ctx, 1086) == 0) or
+                   (get_char_var(ctx, :job_magician_q, 0) == 4 and count_item(ctx, 1087) == 0) do
+                ctx =
+                  ctx
+                  |> mes("Wait.")
+                  |> mes("This isn't the")
+                  |> mes("Solution I asked for!")
+                  |> next()
+                  |> mes("[Mage Guildsman]")
+
+                ctx =
+                  if get_char_var(ctx, :job_magician_q, 0) == 1 do
+                    mes(
+                      ctx,
+                      "You're supposed to make Mixed Solution No. 1 and bring it back to me. Now go and try it again."
+                    )
+                  else
+                    ctx =
+                      if get_char_var(ctx, :job_magician_q, 0) == 2 do
+                        mes(
+                          ctx,
+                          "You're supposed to make Mixed Solution No. 2 and bring it back to me. Now go and try it again."
+                        )
+                      else
+                        ctx =
+                          if get_char_var(ctx, :job_magician_q, 0) == 3 do
+                            mes(
+                              ctx,
+                              "You're supposed to make Mixed Solution No. 3 and bring it back to me. Now go and try it again."
+                            )
+                          else
+                            mes(
+                              ctx,
+                              "You're supposed to make Mixed Solution No. 4 and bring it back to me. Now go and try it again."
+                            )
+                          end
+
+                        ctx
+                      end
+
+                    ctx
+                  end
+
+                ctx =
+                  if count_item(ctx, 1071) != 0 do
+                    delitem(ctx, 1071, 1)
+                  else
+                    ctx =
+                      if count_item(ctx, 1085) != 0 do
+                        delitem(ctx, 1085, 1)
+                      else
+                        ctx =
+                          if count_item(ctx, 1086) != 0 do
+                            delitem(ctx, 1086, 1)
+                          else
+                            ctx =
+                              if count_item(ctx, 1087) != 0 do
+                                delitem(ctx, 1087, 1)
+                              else
+                                delitem(ctx, 1090, 1)
+                              end
+
+                            ctx
+                          end
+
+                        ctx
+                      end
+
+                    ctx
+                  end
+
+                ctx = close(ctx)
+                throw({:script_end, ctx})
+              else
+                ctx
+              end
+
+            ctx
+          end
+
+        ctx =
+          if count_item(ctx, 1071) != 0 do
+            delitem(ctx, 1071, 1)
+          else
+            ctx =
+              if count_item(ctx, 1085) != 0 do
+                delitem(ctx, 1085, 1)
+              else
+                ctx =
+                  if count_item(ctx, 1086) != 0 do
+                    delitem(ctx, 1086, 1)
+                  else
+                    ctx =
+                      if count_item(ctx, 1087) != 0 do
+                        delitem(ctx, 1087, 1)
+                      else
+                        delitem(ctx, 1090, 1)
+                      end
+
+                    ctx
+                  end
+
+                ctx
+              end
+
+            ctx
+          end
+
+        {ctx, _} =
+          ctx
+          |> mes(
+            "Hmm. I can see that you tried really hard. For a beginner's attempt, this is really good."
+          )
+          |> mes("Great work!")
+          |> next()
+          |> mes("[Mage Guildsman]")
+          |> mes(
+            "Alright! I'm pleased to say that you've passed the Mage Test. I will transform you right away!"
+          )
+          |> next()
+          |> mes("[Mage Guildsman]")
+          |> mes("*Ahem*")
+          |> mes("Congratulations!")
+          |> mes("You are now a Mage!")
+          |> next()
+          |> set_local(:quest_id, 1005)
+          |> loop_3()
+          |> jobchange(:mage)
+          |> Aesir.ZoneServer.Content.Npc.Functions.FClearjobvar.call([])
+
+        ctx =
+          ctx
+          |> credit_zeny(50)
+          |> mes("[Mage Guildsman]")
+          |> mes("'Welcome to My World~'")
+          |> mes(
+            "Heh heh, I just wanted to say that. You know, it's a quote from a well-known movie~"
+          )
+          |> next()
+          |> mes("[Mage Guildsman]")
+          |> mes("Now that you're a Mage just like us, let's be friends, okay?")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx = ctx |> mes("[Mage Guildsman]") |> mes("Wanna be a Mage, eh?")
+
+        ctx =
+          if sex(ctx) == 1 do
+            mes(ctx, "For a cutie like you, I'd be happy to explain the requirements!")
+          else
+            mes(ctx, "I'd be happy to explain the requirements for a pretty girl like you!")
+          end
+
+        ctx =
+          ctx
+          |> next()
+          |> mes("[Mage Guildsman]")
+          |> mes(
+            "First of all, you have to reach Novice Job Level 10 and learn all of the Basic Skills. Then, you'll have to pass the Mage Test."
+          )
+          |> next()
+
+        ctx =
+          if get_char_var(ctx, :job_magician_q, 0) != 0 do
+            ctx = ctx |> mes("[Mage Guildsman]") |> mes("Your test is to")
+            v6 = get_char_var(ctx, :job_magician_q, 0)
+
+            ctx =
+              case v6 do
+                1 ->
+                  ctx =
+                    ctx
+                    |> mes("make me a")
+                    |> mes("^3355FFMixed Solution No. 1^000000")
+                    |> mes("and bring it back to me.")
+
+                  ctx =
+                    if isbegin_quest(ctx, 1005) == 0 do
+                      setquest(ctx, 1005)
+                    else
+                      ctx
+                    end
+
+                  ctx
+
+                2 ->
+                  ctx =
+                    ctx
+                    |> mes("make me a")
+                    |> mes("^3355FFMixed Solution No. 2^000000")
+                    |> mes("and bring it back to me.")
+
+                  ctx =
+                    if isbegin_quest(ctx, 1006) == 0 do
+                      setquest(ctx, 1006)
+                    else
+                      ctx
+                    end
+
+                  ctx
+
+                3 ->
+                  ctx =
+                    ctx
+                    |> mes("make me a")
+                    |> mes("^3355FFMixed Solution No. 3^000000")
+                    |> mes("and bring it back to me.")
+
+                  ctx =
+                    if isbegin_quest(ctx, 1007) == 0 do
+                      setquest(ctx, 1007)
+                    else
+                      ctx
+                    end
+
+                  ctx
+
+                _ ->
+                  ctx =
+                    ctx
+                    |> mes("make me a")
+                    |> mes("^3355FFMixed Solution No. 4^000000")
+                    |> mes("and bring it back to me.")
+
+                  ctx =
+                    if isbegin_quest(ctx, 1008) == 0 do
+                      setquest(ctx, 1008)
+                    else
+                      ctx
+                    end
+
+                  ctx
+              end
+
             ctx
             |> next()
             |> mes("[Mage Guildsman]")
-            |> mes("Let me know when you are ready to become a Mage, alright?")
-            |> close()
+            |> mes(
+              "You can look up the ingredients you'll need to make the Solution inside the Guide Book in this Guild."
+            )
+          else
+            ctx
+            |> mes("[Mage Guildsman]")
+            |> mes(
+              "You will be informed as to which Mixed Solution you will need to create after signing the application form."
+            )
+          end
 
-          throw({:script_end, ctx})
-
-        3 ->
-          ctx = ctx |> mes("[Mage Guildsman]") |> mes("Nothing...?") |> close()
-          throw({:script_end, ctx})
-
-        _ ->
+        ctx =
           ctx
-      end
+          |> next()
+          |> mes("[Mage Guildsman]")
+          |> mes("Let me know when you are ready to become a Mage, alright?")
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx = ctx |> mes("[Mage Guildsman]") |> mes("Nothing...?") |> close()
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

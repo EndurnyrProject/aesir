@@ -199,7 +199,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.SupernoviceEx.Nudor do
         ctx = ctx |> next() |> mes("[Nudor]")
 
         ctx =
-          if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+          if sex(ctx) == 1 do
             mes(ctx, "Did you know? You're really handsome~")
           else
             mes(ctx, "I need to tell you, you are really... really~ beautiful.")

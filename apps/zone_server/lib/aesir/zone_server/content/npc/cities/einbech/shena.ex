@@ -76,7 +76,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbech.Shena do
           |> next()
 
         ctx =
-          if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+          if sex(ctx) == 1 do
             {ctx, _} = select(ctx, ["Excuse me, but I'm actually a guy."])
 
             ctx
@@ -111,7 +111,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbech.Shena do
           |> next()
 
         ctx =
-          if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+          if sex(ctx) == 1 do
             {ctx, _} = select(ctx, ["I told you, I'm a dude...!"])
 
             ctx

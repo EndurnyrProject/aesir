@@ -126,10 +126,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Aile do
     dance_q = get_char_var(ctx, :DANC_Q, 0)
 
     cond do
-      dance_q == 0 and sex(ctx) == get_char_var(ctx, :SEX_FEMALE, 0) ->
+      dance_q == 0 and sex(ctx) == 0 ->
         offer_application(ctx)
 
-      sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) ->
+      sex(ctx) == 1 ->
         turn_away_male(ctx)
 
       dance_q == 1 ->

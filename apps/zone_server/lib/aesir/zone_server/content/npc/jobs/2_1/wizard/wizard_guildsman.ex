@@ -106,7 +106,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.WizardGuildsman do
       |> next()
       |> mes("[Catherine]")
 
-    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+    if sex(ctx) == 1 do
       ctx
       |> mes("Well, If you intended to ask me on a date... I appreciate it...hohoho.")
       |> close()
@@ -322,7 +322,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.WizardGuildsman do
       |> mes("[Catherine]")
 
     ctx
-    |> scold_for_leaving(sex(ctx) == get_char_var(ctx, :SEX_MALE, 0))
+    |> scold_for_leaving(sex(ctx) == 1)
     |> next()
     |> mes("[Catherine]")
     |> mes("So, try harder this time...")

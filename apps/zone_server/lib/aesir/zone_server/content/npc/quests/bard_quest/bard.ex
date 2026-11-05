@@ -809,7 +809,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.BardQuest.Bard do
       |> mes("At Eleven I find out why.")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         mes(
           ctx,
           "At Twelve I see his new girlfriend?"
@@ -1265,7 +1265,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.BardQuest.Bard do
       |> mes("At Eleven I find out why.")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         mes(
           ctx,
           "At Twelve I see her new boyfriend?"
@@ -1852,7 +1852,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.BardQuest.Bard do
             ctx = mes(ctx, "[Errende]")
 
             ctx =
-              if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+              if sex(ctx) == 1 do
                 mes(ctx, "Heroic warrior,")
               else
                 mes(ctx, "My fair lady,")

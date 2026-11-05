@@ -314,7 +314,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.RogueGuildsman do
       |> mes("like you doin' here?")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         ctx |> mes("Oh, I get it now...") |> mes("The widdle boy wants")
       else
         ctx |> mes("Oh, I see...") |> mes("Lil' cutie wants ")

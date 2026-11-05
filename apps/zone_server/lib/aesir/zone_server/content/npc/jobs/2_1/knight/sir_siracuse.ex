@@ -629,5 +629,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.SirSiracuse do
     |> close()
   end
 
-  defp male?(ctx), do: sex(ctx) == get_char_var(ctx, :SEX_MALE, 0)
+  defp male?(ctx), do: sex(ctx) == 1
 end

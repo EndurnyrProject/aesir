@@ -281,7 +281,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.PsychicAdvisor do
       ctx
       |> mes("Um...")
       |> mes(
-        if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0),
+        if sex(ctx) == 1,
           do: "The girl that you",
           else: "The boy that you"
       )
@@ -322,7 +322,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.PsychicAdvisor do
       |> next()
       |> mes("[Psychic Advisor]")
       |> mes(
-        if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0),
+        if sex(ctx) == 1,
           do: "The girl that you",
           else: "The boy that you"
       )
@@ -356,7 +356,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.PsychicAdvisor do
       |> mes("What I meant to say was")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         mes(
           ctx,
           "^3355FFyou and the perfect woman will soon fall in love^000000. Yes, that's what I meant!"

@@ -79,8 +79,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
       |> next()
       |> select(["Read style book.", "Change hair style.", "How to get a coupon", "Stop."])
 
-    _ = v1
-
     case v1 do
       1 ->
         {ctx, v2} =
@@ -121,7 +119,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
               case v3 do
                 1 ->
                   ctx =
-                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                    if sex(ctx) == 1 do
                       ctx
                       |> mes("Oh my!!? 'Play Dead' cut?")
                       |> mes("This looks neat and relaxed.. So popular style.")
@@ -136,7 +134,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
 
                 2 ->
                   ctx =
-                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                    if sex(ctx) == 1 do
                       ctx
                       |> mes("Oh my!!? 'Two Handed Sword Mastery' cut?")
                       |> mes("You... You know the famous D..? He has exactly the same style!")
@@ -150,7 +148,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
 
                 3 ->
                   ctx =
-                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                    if sex(ctx) == 1 do
                       ctx
                       |> mes("Oh my!!? 'Napalm Beat' cut?")
                       |> mes("It has well arranges hair line that makes feel charisma.")
@@ -166,7 +164,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
 
                 4 ->
                   ctx =
-                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                    if sex(ctx) == 1 do
                       ctx
                       |> mes("Oh my!!? 'Double Strafe' cut?")
                       |> mes("Natural hair is shaking by wind.. Clean and good feeling.")
@@ -180,7 +178,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
 
                 5 ->
                   ctx =
-                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                    if sex(ctx) == 1 do
                       ctx
                       |> mes("Oh my!!? 'Angelus' cut?")
                       |> mes("Calm and piety feeling.. Not boring style.")
@@ -194,7 +192,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
 
                 6 ->
                   ctx =
-                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                    if sex(ctx) == 1 do
                       ctx
                       |> mes("Oh my!!? 'Push Cart' cut?")
                       |> mes("Big Kar is motivated for this style with a romance of a man.")
@@ -208,7 +206,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
 
                 7 ->
                   ctx =
-                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                    if sex(ctx) == 1 do
                       ctx |> mes("Oh my!!? 'Envenom' cut?") |> mes("Tough style makes addicted.")
                     else
                       ctx
@@ -221,7 +219,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
 
                 8 ->
                   ctx =
-                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                    if sex(ctx) == 1 do
                       ctx
                       |> mes("Oh my!!? 'Bowling Bash' cut?")
                       |> mes("This style makes a nice guy to challenge.")
@@ -236,7 +234,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
 
                 9 ->
                   ctx =
-                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                    if sex(ctx) == 1 do
                       ctx
                       |> mes("Oh my!!? 'Venom Dust' cut?")
                       |> mes("This style has special ending line that looks fatal.")
@@ -250,7 +248,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
 
                 10 ->
                   ctx =
-                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                    if sex(ctx) == 1 do
                       ctx
                       |> mes("Oh my!!? 'Turn Undead' cut?")
                       |> mes(
@@ -266,7 +264,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
 
                 11 ->
                   ctx =
-                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                    if sex(ctx) == 1 do
                       ctx
                       |> mes("Oh my!!? 'Dragonology' cut?")
                       |> mes("This style is intelligent style of mysterious dragon.")
@@ -280,7 +278,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
 
                 12 ->
                   ctx =
-                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                    if sex(ctx) == 1 do
                       ctx
                       |> mes("Oh my!!? 'Mace Mastery' cut?")
                       |> mes("Look fresh and look neat with wax treatment.")
@@ -294,7 +292,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
 
                 13 ->
                   ctx =
-                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                    if sex(ctx) == 1 do
                       ctx
                       |> mes("Oh my!!? 'Thunder Storm' cut?")
                       |> mes(
@@ -310,7 +308,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
 
                 14 ->
                   ctx =
-                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                    if sex(ctx) == 1 do
                       ctx
                       |> mes("Oh my!!? 'Encore' cut?")
                       |> mes("Rocker's favorite style.. Even the name itself..")
@@ -326,7 +324,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
 
                 15 ->
                   ctx =
-                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                    if sex(ctx) == 1 do
                       ctx |> mes("Oh my!!? 'Grimtooth' cut?") |> mes("The style with edge.")
                     else
                       ctx
@@ -339,7 +337,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
 
                 16 ->
                   ctx =
-                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                    if sex(ctx) == 1 do
                       ctx
                       |> mes("Oh my!!? 'Blitz Beat' cut?")
                       |> mes(
@@ -355,7 +353,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
 
                 17 ->
                   ctx =
-                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                    if sex(ctx) == 1 do
                       ctx
                       |> mes("Oh my!!? 'Find Ore' cut?")
                       |> mes(
@@ -371,7 +369,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
 
                 18 ->
                   ctx =
-                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                    if sex(ctx) == 1 do
                       ctx
                       |> mes("Oh my!!? 'Fire Pillar' cut?")
                       |> mes(
@@ -387,7 +385,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
 
                 19 ->
                   ctx =
-                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                    if sex(ctx) == 1 do
                       ctx
                       |> mes("Oh my!!? 'Guillotine Fist'")
                       |> mes("It is like one-shot style.. Like a real man. Right?")
@@ -648,7 +646,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
 
   defp s_l_cutin(ctx, args) do
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         ctx =
           if Enum.at(args, 0, 0) < 10 do
             cutin(ctx, Rathena.concat("hair_m_0", Enum.at(args, 0, 0)), 4)

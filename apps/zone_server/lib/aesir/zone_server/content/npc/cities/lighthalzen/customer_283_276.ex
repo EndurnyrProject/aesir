@@ -47,7 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Customer283276 do
       |> mes("[Sei]")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         ctx
         |> mes("Well, if he does,")
         |> mes("shouldn't he have")

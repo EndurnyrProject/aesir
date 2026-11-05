@@ -67,7 +67,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Jawaii.Employee2598 do
       |> mes("You look perfect")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         mes(ctx, "for your wife~")
       else
         mes(ctx, "with your husband~")
@@ -86,7 +86,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Jawaii.Employee2598 do
       |> mes("you're married, are you?")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         ctx
         |> next()
         |> mes("[Employee Buffy]")

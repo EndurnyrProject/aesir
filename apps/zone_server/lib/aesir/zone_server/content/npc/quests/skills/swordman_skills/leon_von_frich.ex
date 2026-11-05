@@ -166,7 +166,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.SwordmanSkills.LeonVonFrich
     {ctx, present} =
       ctx
       |> mes("[Leon]")
-      |> arm_comment(sex(ctx) == get_char_var(ctx, :SEX_FEMALE, 0))
+      |> arm_comment(sex(ctx) == 0)
       |> mes("In times of only useless and lazy youngsters,")
       |> mes("I'm glad I met someone strong like you.")
       |> next()

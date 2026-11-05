@@ -361,7 +361,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.FastidiousAlchemist do
       |> mes("misjudged you.")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         ctx
         |> mes("You might be a pretty boy,")
         |> mes("but I can tell you're smart")

@@ -208,7 +208,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.GloomyWizard do
         "Don't live dishonestly, or impolitely, or else one day you'll be caught in a spell you can't control, and BOOM, your dead!"
       )
 
-    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+    if sex(ctx) == 1 do
       ctx
       |> mes("If you don't want that to happen, then learn how to use spells properly!")
       |> next()

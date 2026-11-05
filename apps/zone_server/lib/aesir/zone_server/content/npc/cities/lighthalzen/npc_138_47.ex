@@ -32,7 +32,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Npc13847 do
   def on_talk(ctx), do: on_event("OnTouch_", ctx)
 
   defp photograph_assassin(ctx) do
-    if base_job(ctx) == :assassin and sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+    if base_job(ctx) == :assassin and sex(ctx) == 1 do
       ctx
       |> mes("^3355FF*Click*^000000")
       |> next()

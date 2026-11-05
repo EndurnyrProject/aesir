@@ -647,7 +647,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.SirGray do
   end
 
   defp bless_lovers(ctx) do
-    beloved = if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0), do: "her", else: "him"
+    beloved = if sex(ctx) == 1, do: "her", else: "him"
 
     ctx
     |> mes("[Sir Gray]")

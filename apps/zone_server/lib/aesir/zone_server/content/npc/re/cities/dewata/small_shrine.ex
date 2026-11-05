@@ -62,8 +62,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SmallShrine do
       |> next()
       |> select(["Make a donation.", "Make a wish.", "Walk away."])
 
-    _ = v1
-
     case v1 do
       1 ->
         {ctx, v2} =
@@ -237,7 +235,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SmallShrine do
                                           )
 
                                         ctx =
-                                          if (sex(ctx) == get_char_var(ctx, :SEX_FEMALE, 0) and
+                                          if (sex(ctx) == 0 and
                                                 Rathena.truthy?(
                                                   Rathena.compare(
                                                     get_local(ctx, :"wish$", ""),
@@ -248,7 +246,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SmallShrine do
                                                     )
                                                   )
                                                 )) or
-                                               (sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) and
+                                               (sex(ctx) == 1 and
                                                   Rathena.truthy?(
                                                     Rathena.compare(
                                                       get_local(ctx, :"wish$", ""),

@@ -197,7 +197,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.ArcherSkills.Roberto do
 
   defp warn_at_night(ctx) do
     ctx = mes(ctx, "[Roberto]")
-    title = if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0), do: "mister", else: "miss"
+    title = if sex(ctx) == 1, do: "mister", else: "miss"
 
     ctx
     |> mes("...hey #{title}.")

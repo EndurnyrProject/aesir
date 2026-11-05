@@ -85,7 +85,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.SuspiciousGuy do
   def on_talk(ctx), do: ctx
 
   defp greet_visitor(ctx) do
-    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+    if sex(ctx) == 1 do
       mes(
         ctx,
         "Hey there tough guy. You look smart enough to recognize a bargain when it's right in front of your eyes."
@@ -168,7 +168,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.SuspiciousGuy do
     ctx = mes(ctx, "[Suspicious Guy]")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         ctx
         |> mes(
           "What would a strong guy like you want a knife for? Those will just break under the force of your incredibly powerful swings!"
@@ -228,7 +228,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.SuspiciousGuy do
     ctx = mes(ctx, "[Suspicious Guy]")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         mes(ctx, "A Manteau? That's old news! You know what's the latest in protective armors?")
       else
         mes(
@@ -319,7 +319,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.SuspiciousGuy do
     ctx = mes(ctx, "[Suspicious Guy]")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         mes(
           ctx,
           "Ah duuuuuude~ You're breakin' my heart! I mean, at these prices, I'm practically performing charity!"

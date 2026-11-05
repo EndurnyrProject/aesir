@@ -122,7 +122,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lusa do
           end
 
         {ctx, v1} = select(ctx, String.split(get_local(ctx, :"menu$", ""), ":"))
-        _ = v1
 
         case v1 do
           1 ->
@@ -137,7 +136,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lusa do
               |> mes("[Lusa]")
 
             ctx =
-              if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+              if sex(ctx) == 1 do
                 mes(
                   ctx,
                   "Ya, know you remind me of my little brother, that varmint couldn't shoot the broadside of a barn.. at least not until I taught him."
@@ -546,8 +545,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lusa do
                                     "Why do combat training?",
                                     "Cancel"
                                   ])
-
-                                _ = v8
 
                                 case v8 do
                                   1 ->

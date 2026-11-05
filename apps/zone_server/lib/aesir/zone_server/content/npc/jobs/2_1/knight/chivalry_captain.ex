@@ -684,5 +684,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.ChivalryCaptain do
     |> mes("How are the tests?")
   end
 
-  defp male?(ctx), do: sex(ctx) == get_char_var(ctx, :SEX_MALE, 0)
+  defp male?(ctx), do: sex(ctx) == 1
 end

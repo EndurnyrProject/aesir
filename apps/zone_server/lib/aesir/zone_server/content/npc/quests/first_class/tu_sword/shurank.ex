@@ -96,7 +96,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuSword.Shurank do
     ctx = ctx |> mes("From your raiment,") |> mes("I see that you are")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         mes(ctx, "a man of the sword.")
       else
         mes(ctx, "a woman of the sword.")

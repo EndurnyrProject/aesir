@@ -44,10 +44,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CharlesOrleans do
         refuse_overburdened_player(ctx)
 
       Rathena.job_id(base_job(ctx)) == Rathena.job_id(:novice) ->
-        greet_novice(ctx, sex(ctx) == get_char_var(ctx, :SEX_MALE, 0))
+        greet_novice(ctx, sex(ctx) == 1)
 
       getequipid(ctx, 6) != 5026 ->
-        greet_visitor(ctx, sex(ctx) == get_char_var(ctx, :SEX_MALE, 0))
+        greet_visitor(ctx, sex(ctx) == 1)
 
       true ->
         discuss_cooking(ctx, get_char_var(ctx, :cooking_q, 0))

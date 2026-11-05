@@ -80,7 +80,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.Kid do
     ctx = mes(ctx, "[Kid]")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         ctx |> mes("Aren't you a warrior") |> mes("of the sun? I'm familiar")
       else
         ctx |> mes("Aren't you a warrior of") |> mes("the moon? I'm familiar")

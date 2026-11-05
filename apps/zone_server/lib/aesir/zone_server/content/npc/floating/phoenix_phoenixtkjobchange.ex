@@ -11,16 +11,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.PhoenixPhoenixtkjobchange do
     scope: :shared,
     spawn: [
       %{
-        map: "payon",
-        x: 157,
-        y: 141,
-        dir: 5,
-        sprite: 753,
-        name: "Phoenix",
-        scope: :pre_renewal,
-        unique_name: "Phoenix#TKJobChange"
-      },
-      %{
         map: "payon_in01",
         x: 62,
         y: 10,
@@ -28,6 +18,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.PhoenixPhoenixtkjobchange do
         sprite: 753,
         name: "Phoenix",
         scope: :renewal,
+        unique_name: "Phoenix#TKJobChange"
+      },
+      %{
+        map: "payon",
+        x: 157,
+        y: 141,
+        dir: 5,
+        sprite: 753,
+        name: "Phoenix",
+        scope: :pre_renewal,
         unique_name: "Phoenix#TKJobChange"
       }
     ]
@@ -364,7 +364,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.PhoenixPhoenixtkjobchange do
                 throw({:script_end, ctx})
 
               _ ->
-                ctx
+                throw({:script_end, ctx})
             end
 
           {ctx, v4} =
@@ -480,7 +480,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.PhoenixPhoenixtkjobchange do
                 ctx
 
               _ ->
-                ctx
+                throw({:script_end, ctx})
             end
 
           ctx =
@@ -555,7 +555,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.PhoenixPhoenixtkjobchange do
                 |> mes("title. Mm. In that case, you")
 
               ctx =
-                if sex(ctx) == get_char_var(ctx, :SEX_FEMALE, 0) do
+                if sex(ctx) == 0 do
                   mes(ctx, "are now a ^FF0000Taekwon Girl^000000.")
                 else
                   mes(ctx, "are now a ^FF0000Taekwon Boy^000000.")

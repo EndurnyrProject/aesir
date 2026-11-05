@@ -74,7 +74,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Amatsu.LegendaryTree do
       |> mes("be her position in the play?^000000")
       |> next()
 
-    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+    if sex(ctx) == 1 do
       ctx
       |> mes("^3355FFI would like to find")
       |> mes("a person who is talented")

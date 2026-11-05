@@ -199,7 +199,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Blacksmith.Guildsman do
     ctx = mes(ctx, "[Altiregen]")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_FEMALE, 0) do
+      if sex(ctx) == 0 do
         ctx |> mes("Oh~") |> mes("what a very") |> mes("pretty lady!")
       else
         ctx

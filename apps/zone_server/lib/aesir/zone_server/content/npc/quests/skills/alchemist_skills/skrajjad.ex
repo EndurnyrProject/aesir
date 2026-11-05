@@ -157,7 +157,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.AlchemistSkills.Skrajjad do
   end
 
   defp reassurance(ctx) do
-    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0),
+    if sex(ctx) == 1,
       do: "young lad. Now, don't worry...",
       else: "young lass. Now, don't worry..."
   end

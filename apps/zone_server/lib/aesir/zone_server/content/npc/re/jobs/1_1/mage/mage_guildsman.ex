@@ -112,156 +112,150 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Mage.MageGuildsman do
 
     ctx = mes(ctx, "[Mage Guildsman]")
 
-    ctx =
-      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
-        ctx =
-          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:mage) do
+    if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
+      ctx =
+        if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:mage) do
+          ctx
+          |> mes("Hey, haven't you realized? You're already a Mage, silly!")
+          |> mes(
+            "One of these days you'll realize the power inside of you when you can make Fire with your mind!"
+          )
+        else
+          mes(
+            ctx,
+            "Hey~ C'mon. Quit playing games. You can't be a Mage because you already have another Job."
+          )
+        end
+
+      ctx = close(ctx)
+      throw({:script_end, ctx})
+    else
+      {ctx, v2} =
+        ctx
+        |> mes("Hey?")
+        |> next()
+        |> select([
+          "I want to be a Mage",
+          "What are the requirements to be a Mage?",
+          "Nothing, thanks."
+        ])
+
+      case v2 do
+        1 ->
+          ctx =
             ctx
-            |> mes("Hey, haven't you realized? You're already a Mage, silly!")
-            |> mes(
-              "One of these days you'll realize the power inside of you when you can make Fire with your mind!"
-            )
-          else
+            |> mes("[Mage Guildsman]")
+            |> mes("Wanna be a Mage? Eh...")
+            |> next()
+            |> mes("[Mage Guildsman]")
+
+          ctx =
+            if sex(ctx) == 1 do
+              mes(ctx, "Hey, look at you! You're kinda cute~! Not my type though...")
+            else
+              ctx |> mes("Oooh, you're such a hot babe~!") |> mes("I like girls like you~")
+            end
+
+          {ctx, v3} =
+            ctx
+            |> mes("Right, you said that you wanna be a Mage?")
+            |> next()
+            |> select(["I want to be a Mage.", "Nothing, thanks."])
+
+          ctx =
+            if v3 == 2 do
+              ctx =
+                ctx
+                |> mes("[Mage Guildsman]")
+                |> mes(
+                  "Whaaaaat~?! Right after you tell me that you wanna become a Mage, you change your mind?! Be a bit more decisive!"
+                )
+                |> close()
+
+              throw({:script_end, ctx})
+            else
+              ctx
+            end
+
+          ctx = mes(ctx, "[Mage Guildsman]")
+          v4 = can_change_job?(ctx)
+
+          ctx =
+            if not Rathena.truthy?(v4) do
+              ctx =
+                ctx
+                |> mes("Oh, man your Basic Skill Level doesn't reach enough to be a Mage.")
+                |> mes("Go back and level up your Basic Skill.")
+                |> close()
+
+              throw({:script_end, ctx})
+            else
+              ctx
+            end
+
+          ctx =
             mes(
               ctx,
-              "Hey~ C'mon. Quit playing games. You can't be a Mage because you already have another Job."
+              "Alright.. sign the application form.... Wow~ you have good handwriting! Ahh, okay. That's enough."
             )
-          end
 
-        ctx = close(ctx)
-        throw({:script_end, ctx})
-      else
-        {ctx, v2} =
-          ctx
-          |> mes("Hey?")
-          |> next()
-          |> select([
-            "I want to be a Mage",
-            "What are the requirements to be a Mage?",
-            "Nothing, thanks."
-          ])
+          ctx =
+            ctx
+            |> mes(Rathena.concat(Rathena.concat("You are... ", char_name(ctx, 0)), "."))
+            |> next()
+            |> mes("[Mage Guildsman]")
+            |> mes(
+              "Hmm I can see that you've tried hard in your own way. Though it seems to be a little clumsy, but well I think it's okay!"
+            )
+            |> mes(
+              "Good! Always sticking to the basics is the best! I will transform you right away."
+            )
+            |> next()
+            |> mes("[Mage Guildsman]")
+            |> mes("Hahh..! You are now a Mage, one of our colleagues!")
+            |> mes("We welcome you to the Mage Guild, our new friend!")
+            |> next()
+            |> mes("[Mage Guildsman]")
+            |> mes("'Welcome to the Mage Guild~'")
+            |> mes("Congratulations on becoming a member of the Mage Guild! Go for it!")
+            |> jobchange(:mage)
+            |> give_item(1639, 1)
+            |> close()
 
-        ctx =
-          case v2 do
-            1 ->
-              ctx =
-                ctx
-                |> mes("[Mage Guildsman]")
-                |> mes("Wanna be a Mage? Eh...")
-                |> next()
-                |> mes("[Mage Guildsman]")
+          throw({:script_end, ctx})
 
-              ctx =
-                if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                  mes(ctx, "Hey, look at you! You're kinda cute~! Not my type though...")
-                else
-                  ctx |> mes("Oooh, you're such a hot babe~!") |> mes("I like girls like you~")
-                end
+        2 ->
+          ctx =
+            ctx
+            |> mes("[Mage Guildsman]")
+            |> mes("Wanna be a Mage, eh?")
+            |> mes("I'd be happy to explain the requirements for a pretty girl like you!")
+            |> next()
+            |> mes("[Mage Guildsman]")
+            |> mes(
+              "First of all, you have to reach Novice Job Level 10 and learn all of the Basic Skills."
+            )
+            |> next()
+            |> mes("[Mage Guildsman]")
+            |> mes(
+              "In the past, there was a complicated potion making test. Because of that, we'd lost an aplicant slowly."
+            )
+            |> mes("So, we decided to accept all aplicants who meet the basic requirements.")
+            |> next()
+            |> mes("[Mage Guildsman]")
+            |> mes("Don't hesitate. Just be a magician!")
+            |> close()
 
-              {ctx, v3} =
-                ctx
-                |> mes("Right, you said that you wanna be a Mage?")
-                |> next()
-                |> select(["I want to be a Mage.", "Nothing, thanks."])
+          throw({:script_end, ctx})
 
-              ctx =
-                if v3 == 2 do
-                  ctx =
-                    ctx
-                    |> mes("[Mage Guildsman]")
-                    |> mes(
-                      "Whaaaaat~?! Right after you tell me that you wanna become a Mage, you change your mind?! Be a bit more decisive!"
-                    )
-                    |> close()
+        3 ->
+          ctx = ctx |> mes("[Mage Guildsman]") |> mes("Nothing...?") |> close()
+          throw({:script_end, ctx})
 
-                  throw({:script_end, ctx})
-                else
-                  ctx
-                end
-
-              ctx = mes(ctx, "[Mage Guildsman]")
-              v4 = can_change_job?(ctx)
-
-              ctx =
-                if not Rathena.truthy?(v4) do
-                  ctx =
-                    ctx
-                    |> mes("Oh, man your Basic Skill Level doesn't reach enough to be a Mage.")
-                    |> mes("Go back and level up your Basic Skill.")
-                    |> close()
-
-                  throw({:script_end, ctx})
-                else
-                  ctx
-                end
-
-              ctx =
-                mes(
-                  ctx,
-                  "Alright.. sign the application form.... Wow~ you have good handwriting! Ahh, okay. That's enough."
-                )
-
-              ctx =
-                ctx
-                |> mes(Rathena.concat(Rathena.concat("You are... ", char_name(ctx, 0)), "."))
-                |> next()
-                |> mes("[Mage Guildsman]")
-                |> mes(
-                  "Hmm I can see that you've tried hard in your own way. Though it seems to be a little clumsy, but well I think it's okay!"
-                )
-                |> mes(
-                  "Good! Always sticking to the basics is the best! I will transform you right away."
-                )
-                |> next()
-                |> mes("[Mage Guildsman]")
-                |> mes("Hahh..! You are now a Mage, one of our colleagues!")
-                |> mes("We welcome you to the Mage Guild, our new friend!")
-                |> next()
-                |> mes("[Mage Guildsman]")
-                |> mes("'Welcome to the Mage Guild~'")
-                |> mes("Congratulations on becoming a member of the Mage Guild! Go for it!")
-                |> jobchange(:mage)
-                |> give_item(1639, 1)
-                |> close()
-
-              throw({:script_end, ctx})
-
-            2 ->
-              ctx =
-                ctx
-                |> mes("[Mage Guildsman]")
-                |> mes("Wanna be a Mage, eh?")
-                |> mes("I'd be happy to explain the requirements for a pretty girl like you!")
-                |> next()
-                |> mes("[Mage Guildsman]")
-                |> mes(
-                  "First of all, you have to reach Novice Job Level 10 and learn all of the Basic Skills."
-                )
-                |> next()
-                |> mes("[Mage Guildsman]")
-                |> mes(
-                  "In the past, there was a complicated potion making test. Because of that, we'd lost an aplicant slowly."
-                )
-                |> mes("So, we decided to accept all aplicants who meet the basic requirements.")
-                |> next()
-                |> mes("[Mage Guildsman]")
-                |> mes("Don't hesitate. Just be a magician!")
-                |> close()
-
-              throw({:script_end, ctx})
-
-            3 ->
-              ctx = ctx |> mes("[Mage Guildsman]") |> mes("Nothing...?") |> close()
-              throw({:script_end, ctx})
-
-            _ ->
-              ctx
-          end
-
-        ctx
+        _ ->
+          throw({:script_end, ctx})
       end
-
-    ctx
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

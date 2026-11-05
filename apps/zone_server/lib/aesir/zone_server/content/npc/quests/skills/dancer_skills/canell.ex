@@ -68,7 +68,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.DancerSkills.Canell do
   end
 
   defp greet_outsider(ctx) do
-    if sex(ctx) == get_char_var(ctx, :SEX_FEMALE, 0) do
+    if sex(ctx) == 0 do
       ctx
       |> mes("[Canell]")
       |> mes("Oh, what a cute")

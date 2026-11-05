@@ -777,7 +777,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Bard.WanderingBard do
     |> finish("job_bard_aiolo01")
   end
 
-  defp male?(ctx), do: sex(ctx) == get_char_var(ctx, :SEX_MALE, 0)
+  defp male?(ctx), do: sex(ctx) == 1
 
   # set_local is a no-op on a halted ctx, so the original read these locals as their defaults.
   defp local(%{status: {:error, _}}, _value, default), do: default

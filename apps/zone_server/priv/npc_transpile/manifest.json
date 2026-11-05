@@ -13266,26 +13266,26 @@
   },
   "jobs/1-1e/taekwon.txt|floating|Phoenix::PhoenixTKJobChange|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Floating.PhoenixPhoenixtkjobchange",
-    "output_hash": "002b7bb19ed7d0527942f8e295ba5563df6b67934b4589ef2673d9be49bff46f",
+    "output_hash": "9cb4f3e5b614855fe0e8ddbee4e944a8659f8fa9b741b6ea9c646ace030a724f",
     "output_path": "lib/aesir/zone_server/content/npc/floating/phoenix_phoenixtkjobchange.ex",
-    "source_hash": "40c54d40f6c007fc7d54ab2cfb79b5276fd76dec238745aa74b437ff8b34b5c0",
+    "source_hash": "574cf990f190e5fa18f0867cafec55555cb2393974538398d20ff8d191cc1cf1",
     "spawns": [
-      {
-        "name": "Phoenix",
-        "scope": "pre_renewal",
-        "x": 157,
-        "y": 141,
-        "map": "payon",
-        "dir": 5,
-        "sprite": 753,
-        "unique_name": "Phoenix#TKJobChange"
-      },
       {
         "name": "Phoenix",
         "scope": "renewal",
         "x": 62,
         "y": 10,
         "map": "payon_in01",
+        "dir": 5,
+        "sprite": 753,
+        "unique_name": "Phoenix#TKJobChange"
+      },
+      {
+        "name": "Phoenix",
+        "scope": "pre_renewal",
+        "x": 157,
+        "y": 141,
+        "map": "payon",
         "dir": 5,
         "sprite": 753,
         "unique_name": "Phoenix#TKJobChange"
@@ -15147,19 +15147,10 @@
   },
   "jobs/2-2/crusader.txt|floating|Man in Anguish_|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Floating.ManInAnguish",
-    "output_hash": "558d0afca649147a77d9556bed42a8c216818dc75bc67c6e74c07285f055c47f",
+    "output_hash": "af18cdbdd401e43bd2a6a539cf6db102247eb484d71fe015e80644b44cc63617",
     "output_path": "lib/aesir/zone_server/content/npc/floating/man_in_anguish.ex",
-    "source_hash": "d5b8c387e47c21316b270411bf404163c684c9711dd0697ac1d41591063d06ef",
+    "source_hash": "906e3bd05c4f064aea0391bdba10af90a24e11ff136b2876c6baa7f91da2535c",
     "spawns": [
-      {
-        "name": "Man in Anguish",
-        "scope": "pre_renewal",
-        "x": 164,
-        "y": 32,
-        "map": "prt_castle",
-        "dir": 1,
-        "sprite": 733
-      },
       {
         "name": "Man in Anguish",
         "scope": "renewal",
@@ -15167,6 +15158,15 @@
         "y": 94,
         "map": "prt_cas",
         "dir": 5,
+        "sprite": 733
+      },
+      {
+        "name": "Man in Anguish",
+        "scope": "pre_renewal",
+        "x": 164,
+        "y": 32,
+        "map": "prt_castle",
+        "dir": 1,
         "sprite": 733
       }
     ]
@@ -15199,19 +15199,10 @@
   },
   "jobs/2-2/crusader.txt|floating|Senior Crusader_|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Floating.SeniorCrusader",
-    "output_hash": "6fdf21362303b3d0d651ee56cf273dee0432f9d44b5b898a0a5ddec7c9943e12",
+    "output_hash": "0617190bb4a6a16fc80bdce3548bbfc4886a7de916061f272c068e282cfd9c64",
     "output_path": "lib/aesir/zone_server/content/npc/floating/senior_crusader.ex",
-    "source_hash": "b66393f52e5edff03ce1aba5c0ce4deda3cfe2432211dae8592f31fd8b3fbe73",
+    "source_hash": "03c0067527435c6be4495a3724af7469f9fb35eaced93b62a907289712d496f8",
     "spawns": [
-      {
-        "name": "Senior Crusader",
-        "scope": "pre_renewal",
-        "x": 45,
-        "y": 169,
-        "map": "prt_castle",
-        "dir": 5,
-        "sprite": 752
-      },
       {
         "name": "Senior Crusader",
         "scope": "renewal",
@@ -15219,6 +15210,15 @@
         "y": 75,
         "map": "prt_cas",
         "dir": 1,
+        "sprite": 752
+      },
+      {
+        "name": "Senior Crusader",
+        "scope": "pre_renewal",
+        "x": 45,
+        "y": 169,
+        "map": "prt_castle",
+        "dir": 5,
         "sprite": 752
       }
     ]
@@ -19228,7 +19228,7 @@
   },
   "pre-re/jobs/1-1/mage.txt|script|Mage Guildsman|geffen_in:164:124": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Mage.MageGuildsman",
-    "output_hash": "44ba6c66001de3ea974c86f15be777dfc2bdabb122c25dd74212cb67761b48ce",
+    "output_hash": "3b788d787302cdc7458510d9162147a3cd6669083f803c8309f11381d11c3654",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/mage/mage_guildsman.ex",
     "source_hash": "112fc8307ce766e096df2357ddc0f6ff93cc2bae6063771e7062deb0f350992e",
     "spawns": [
@@ -19736,7 +19736,7 @@
   },
   "pre-re/jobs/1-1/thief.txt|script|Thief Guide|moc_prydb1:39:129": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Thief.ThiefGuide",
-    "output_hash": "fb9d39d162d84af5d6f404d3c79124f4cf2b3cba8c1fecc671d4f4b7d24d32c4",
+    "output_hash": "1607960115196f523df1c42758d6ff3d88ede08fe26572ae546a1dd216a6327d",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/thief/thief_guide.ex",
     "source_hash": "00f0b76b3b1e4e25ff8499d7608a5b6591f233ad066ee04e7be07672f085757e",
     "spawns": [
@@ -24928,6 +24928,66 @@
       }
     ]
   },
+  "quests/monstertamers.txt|floating|::MonsterTamer_izlude|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.MonstertamerIzlude",
+    "output_hash": "a0b7296869f74446b1954c365b899c554cfc0463feba28991f63c7279259d0bc",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/monstertamer_izlude.ex",
+    "source_hash": "053b8131cbdb2683e34c7530c71d49dae7e2dd7a33c1939ab6f56ac753d56990",
+    "spawns": []
+  },
+  "quests/monstertamers.txt|script|Monster Tamer#alb|alberta_in:173:76": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Monstertamers.MonsterTamer",
+    "output_hash": "d6e848ac8a4929ab553856e1899dab25e0575355baedcc24910d9235e6c9e27b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/monstertamers/monster_tamer.ex",
+    "source_hash": "7ed6b5483971ddd5912b7616ea98cb792ea0056206d817742eb8e9b08ef00e30",
+    "spawns": [
+      {
+        "name": "Monster Tamer",
+        "scope": "shared",
+        "x": 173,
+        "y": 76,
+        "map": "alberta_in",
+        "dir": 4,
+        "sprite": 125,
+        "unique_name": "Monster Tamer#alb"
+      }
+    ]
+  },
+  "quests/monstertamers.txt|script|Monster Tamer#alde|aldeba_in:168:175": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Monstertamers.MonsterTamer168175",
+    "output_hash": "9eb7b9259098bf296b25e52d7f4334f3b78c408179e8b0f344713072dc2f796b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/monstertamers/monster_tamer_168_175.ex",
+    "source_hash": "659b089d1655cffbccb84d207b2e5e11e428d66ca75c99efd547f975643411b0",
+    "spawns": [
+      {
+        "name": "Monster Tamer",
+        "scope": "shared",
+        "x": 168,
+        "y": 175,
+        "map": "aldeba_in",
+        "dir": 4,
+        "sprite": 125,
+        "unique_name": "Monster Tamer#alde"
+      }
+    ]
+  },
+  "quests/monstertamers.txt|script|Munak's Grandma|comodo:112:182": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Monstertamers.MunakSGrandma",
+    "output_hash": "4356210f7945020d35e5558c8d59fbe829b313dc3f621b991175bb8105232fea",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/monstertamers/munak_s_grandma.ex",
+    "source_hash": "83886b229d42c09bc5b9bc9d5ae66e8663e1e6c1201c3be935c55d327b8678ea",
+    "spawns": [
+      {
+        "name": "Munak's Grandma",
+        "scope": "shared",
+        "x": 112,
+        "y": 182,
+        "map": "comodo",
+        "dir": 0,
+        "sprite": 103
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
@@ -26599,7 +26659,7 @@
   },
   "re/cities/dewata.txt|script|Little Kid in Town#dew|dewata:269:208": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.LittleKidInTown",
-    "output_hash": "14c085005add18f967d10adb6edc65225110a6623430c4d3f60de722da2a9668",
+    "output_hash": "b85102e28b91a5f978df1da15a2ac02609fdbe627c6fb4f2e9f5019b0f82333a",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/little_kid_in_town.ex",
     "source_hash": "2cc01ab5ad8fc832fb48b13b4434b4e9c8f6bdcd43c769409e085ba317d45124",
     "spawns": [
@@ -27034,7 +27094,7 @@
   },
   "re/cities/dewata.txt|script|Small Shrine#dew1|dewata:89:191": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SmallShrine",
-    "output_hash": "169ffe80fb474d58bc9f170ca1b1072eaf27674201f7dc142bb82c7455558bdf",
+    "output_hash": "036efe28de9fad8c21147f401efe2106af9f3fbd43b61fde80a256c7b2651b9e",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/small_shrine.ex",
     "source_hash": "22b3510be40cb01432e8d5d20f345a5fe51f6dd6586eba5265f8060d046f27ac",
     "spawns": [
@@ -31267,7 +31327,7 @@
   },
   "re/jobs/1-1/mage.txt|script|Mage Guildsman#mage|geffen_in:164:124": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Mage.MageGuildsman",
-    "output_hash": "85c790f8f2f27f55a7d48f8864c99149c2c8d796a585e17a48f1d066f8b2c31c",
+    "output_hash": "4cdeac1c8a5f9769fbd43ec2767c02bb7458fc3696353cf9d298dbb4619a1eeb",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/mage/mage_guildsman.ex",
     "source_hash": "185fb8f7863de75e174e048bc0174332dc491540be7af2b06a7a31b9e0806431",
     "spawns": [
@@ -31321,7 +31381,7 @@
   },
   "re/jobs/1-1/thief.txt|script|Thief Guide#thief|moc_prydb1:39:129": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Thief.ThiefGuide",
-    "output_hash": "6babb60de3775a7293ceaf74590f0c53a5a4dc44a81489b06677f81e80990984",
+    "output_hash": "8474d5d695fda20da3b5f6515f5184105c8b54dafbf026d45ad85a028abecb89",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/thief/thief_guide.ex",
     "source_hash": "468b40fa4c5fc9c4cc9db4fb37266a67158201881aaae68622bd5f12393cd7e4",
     "spawns": [
@@ -32985,7 +33045,7 @@
   },
   "re/jobs/novice/academy.txt|script|Arang#ac|iz_ac02:70:85": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Arang",
-    "output_hash": "68a954299dbcaedeb5218f31adc4e27d69d6f33bd8f602ba7def39e18081f86b",
+    "output_hash": "5ac04dfb4c43d43e4ced7e448be0e502038ff847df11291a9c89965e4b9d1535",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/arang.ex",
     "source_hash": "f01ebd63c81f84314935456539f85dc6c042840cc5781b6ccb96e15e447c4553",
     "spawns": [
@@ -35073,7 +35133,7 @@
   },
   "re/jobs/novice/academy.txt|script|Lusa#ac|iz_ac02:142:85": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lusa",
-    "output_hash": "8d73dca94c1d2e5575886e017b29a99cb85138d01f8231407013ed638dd81b77",
+    "output_hash": "16d5c9e7ad4a73982f46695012dc09ab91c5715562b46854dc10476cd96f2ac4",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/lusa.ex",
     "source_hash": "9a91ceddb138a95fd892d74f292549f859b133f1f6b8a488afb7ca25816c148e",
     "spawns": [
@@ -35621,7 +35681,7 @@
   },
   "re/jobs/novice/academy.txt|script|Otter Samssoon#ac|iz_ac01:69:36": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon",
-    "output_hash": "fabea5795d13e0e5672f2cd665bf112fe0e7543e74efa984382f374d09041c5f",
+    "output_hash": "7ca258563299f942fa973e46d7dec70a500e29346d79dda7bf4a5571bbb69a4b",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/otter_samssoon.ex",
     "source_hash": "9a8248a40816d9ef5c2b5fce8aa388e13ba397cfe00d608b7593e87abf1bbb6d",
     "spawns": [
@@ -38961,7 +39021,7 @@
   },
   "re/jobs/novice/supernovice_ex.txt|script|Nudor#sp2|airplane:33:47": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.SupernoviceEx.Nudor",
-    "output_hash": "cc04df6ce0c6b75c05eb2a8ad00a7f83fc51a3d13304351eb080f504192b96d1",
+    "output_hash": "0faef2ae96451da3672247e10999fb2cd812f3259d9930deb3e9d4f930dfed2a",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/supernovice_ex/nudor.ex",
     "source_hash": "217b21ed1815c48d42516d8468e8937594aee3f384836d4b68dc84a929a010a3",
     "spawns": [

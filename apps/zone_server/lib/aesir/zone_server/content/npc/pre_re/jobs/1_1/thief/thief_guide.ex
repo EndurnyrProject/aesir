@@ -82,7 +82,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Thief.ThiefGuide do
             ctx = mes(ctx, "[Thief Guide]")
 
             ctx =
-              if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+              if sex(ctx) == 1 do
                 mes(ctx, "Hey, dude.")
               else
                 mes(ctx, "Hey, baby~")
@@ -95,7 +95,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Thief.ThiefGuide do
           ctx = mes(ctx, "[Thief Guide]")
 
           ctx =
-            if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+            if sex(ctx) == 1 do
               mes(ctx, "Hey, dude.")
             else
               mes(ctx, "Hey, baby.")
@@ -428,7 +428,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Thief.ThiefGuide do
                   ctx
 
                 _ ->
-                  ctx
+                  throw({:script_end, ctx})
               end
 
             {ctx, v7} =
@@ -488,7 +488,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Thief.ThiefGuide do
                         throw({:script_end, ctx})
 
                       _ ->
-                        ctx
+                        throw({:script_end, ctx})
                     end
 
                   ctx
@@ -506,7 +506,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Thief.ThiefGuide do
                   throw({:script_end, ctx})
 
                 _ ->
-                  ctx
+                  throw({:script_end, ctx})
               end
 
             ctx
@@ -624,7 +624,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Thief.ThiefGuide do
               ctx
 
             _ ->
-              ctx
+              throw({:script_end, ctx})
           end
 
         ctx =

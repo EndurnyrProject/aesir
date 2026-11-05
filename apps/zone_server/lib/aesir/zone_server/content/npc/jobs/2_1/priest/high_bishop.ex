@@ -83,7 +83,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.HighBishop do
     end
   end
 
-  defp male?(ctx), do: sex(ctx) == get_char_var(ctx, :SEX_MALE, 0)
+  defp male?(ctx), do: sex(ctx) == 1
 
   defp priest_visit(ctx) do
     ctx = ctx |> mes("[Bishop Paul]") |> mes("Ah...")

@@ -106,7 +106,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.BardJet do
       |> next()
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         {ctx, _} = select(ctx, ["A joke, eh?"])
 
         ctx

@@ -11,15 +11,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.ManInAnguish do
     scope: :shared,
     spawn: [
       %{
-        map: "prt_castle",
-        x: 164,
-        y: 32,
-        dir: 1,
-        sprite: 733,
-        name: "Man in Anguish",
-        scope: :pre_renewal
-      },
-      %{
         map: "prt_cas",
         x: 238,
         y: 94,
@@ -27,6 +18,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.ManInAnguish do
         sprite: 733,
         name: "Man in Anguish",
         scope: :renewal
+      },
+      %{
+        map: "prt_castle",
+        x: 164,
+        y: 32,
+        dir: 1,
+        sprite: 733,
+        name: "Man in Anguish",
+        scope: :pre_renewal
       }
     ]
 
@@ -103,7 +103,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.ManInAnguish do
                 ctx = ctx |> mes("What is it...?") |> mes("Do you have business")
 
                 ctx =
-                  if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                  if sex(ctx) == 1 do
                     mes(ctx, "with me, man of the sword?")
                   else
                     mes(ctx, "with me, woman of the sword?")

@@ -88,7 +88,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Payon.Woman do
   end
 
   defp compliment_visitor(ctx) do
-    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+    if sex(ctx) == 1 do
       mes(
         ctx,
         "Whoa~! I just noticed those arms of yours look pretty solid. You look pretty strong, guy. Just how many monsters have you killed?!"

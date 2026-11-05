@@ -351,7 +351,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.GershaunAlberta do
     ctx = mes(ctx, "[Sushi King Gershaun]")
 
     insult =
-      if sex(ctx) == get_char_var(ctx, :SEX_FEMALE, 0), do: "Stupid girl!", else: "Stupid boy!"
+      if sex(ctx) == 0, do: "Stupid girl!", else: "Stupid boy!"
 
     ctx
     |> mes(insult)

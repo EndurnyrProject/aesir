@@ -64,7 +64,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.KafraEmployee do
     ctx = mes(ctx, "[Kafra Employee]")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         mes(ctx, "Hello, Mister Super Novice~")
       else
         mes(ctx, "Hello, Super Novice, Ma'am.")

@@ -71,8 +71,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.AlchemistSkills.Pisruik do
 
   # NOTE: SEX_FEMALE/SEX_MALE are read as char vars (unset = 0), so male?/1 is true for
   # female characters at runtime; transpiler quirk kept for behavior parity.
-  defp female?(ctx), do: sex(ctx) == get_char_var(ctx, :SEX_FEMALE, 0)
-  defp male?(ctx), do: sex(ctx) == get_char_var(ctx, :SEX_MALE, 0)
+  defp female?(ctx), do: sex(ctx) == 0
+  defp male?(ctx), do: sex(ctx) == 1
 
   defp quest_step(ctx, 0), do: first_meeting(ctx)
   defp quest_step(ctx, 1), do: second_meeting(ctx)

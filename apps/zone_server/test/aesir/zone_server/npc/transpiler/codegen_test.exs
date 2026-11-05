@@ -697,6 +697,16 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "get_char_var(ctx, :SKILL_PERM"
   end
 
+  test "renders the sex constants as literals instead of char-var reads" do
+    male = gen!("if (Sex == SEX_MALE) close;")
+    female = gen!("if (Sex == SEX_FEMALE) close;")
+
+    assert male =~ "sex(ctx) == 1"
+    assert female =~ "sex(ctx) == 0"
+    refute male =~ ":SEX_MALE"
+    refute female =~ ":SEX_FEMALE"
+  end
+
   test "npcskill emits calls for named and numeric skills" do
     named = gen!("npcskill \"AL_HEAL\",10,99,60;")
     numeric = gen!("npcskill 28,10,99,60;")

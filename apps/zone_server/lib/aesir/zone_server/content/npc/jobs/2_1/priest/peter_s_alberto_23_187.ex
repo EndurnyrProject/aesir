@@ -97,6 +97,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.PeterSAlberto23187 do
   end
 
   defp sibling_title(ctx) do
-    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0), do: "Brother", else: "Sister"
+    if sex(ctx) == 1, do: "Brother", else: "Sister"
   end
 end

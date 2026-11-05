@@ -190,7 +190,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Knightdethomas do
   end
 
   defp skill_audience(ctx) do
-    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0),
+    if sex(ctx) == 1,
       do: "For these swordsmen and knights, there is a wonderful skill.",
       else: "For these swordswomen and knights, there is a wonderful skill young lady."
   end

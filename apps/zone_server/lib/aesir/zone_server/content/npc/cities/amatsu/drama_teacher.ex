@@ -48,7 +48,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Amatsu.DramaTeacher do
       |> mes("legendary play, 'White Dryad.' ")
       |> next()
 
-    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+    if sex(ctx) == 1 do
       ask_for_actress(ctx)
     else
       encourage_actress(ctx)

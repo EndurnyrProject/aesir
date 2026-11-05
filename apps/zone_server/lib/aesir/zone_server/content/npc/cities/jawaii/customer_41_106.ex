@@ -55,7 +55,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Jawaii.Customer41106 do
       |> mes("[Cage]")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         ctx
         |> mes("I don't trust anybody!")
         |> mes("You're a fool for chaining")

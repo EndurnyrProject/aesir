@@ -11,15 +11,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SeniorCrusader do
     scope: :shared,
     spawn: [
       %{
-        map: "prt_castle",
-        x: 45,
-        y: 169,
-        dir: 5,
-        sprite: 752,
-        name: "Senior Crusader",
-        scope: :pre_renewal
-      },
-      %{
         map: "prt_cas",
         x: 251,
         y: 75,
@@ -27,6 +18,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SeniorCrusader do
         sprite: 752,
         name: "Senior Crusader",
         scope: :renewal
+      },
+      %{
+        map: "prt_castle",
+        x: 45,
+        y: 169,
+        dir: 5,
+        sprite: 752,
+        name: "Senior Crusader",
+        scope: :pre_renewal
       }
     ]
 
@@ -416,7 +416,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SeniorCrusader do
                     ctx = mes(ctx, "[Michael Halig]")
 
                     ctx =
-                      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                      if sex(ctx) == 1 do
                         mes(
                           ctx,
                           "If you, too, are a man of the sword, constantly train and prepare yourself. No one knows when the Holy War may begin."
@@ -641,7 +641,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SeniorCrusader do
                               |> mes("one of us!")
 
                             ctx =
-                              if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                              if sex(ctx) == 1 do
                                 mes(ctx, "...Brother.")
                               else
                                 mes(ctx, "...Comrade.")

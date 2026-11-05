@@ -72,7 +72,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Payon.Woman246158 do
   end
 
   defp greet_visitor(ctx) do
-    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+    if sex(ctx) == 1 do
       ctx
       |> mes("Ooh...!")
       |> mes("You've got")

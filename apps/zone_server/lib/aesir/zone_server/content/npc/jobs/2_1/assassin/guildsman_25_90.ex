@@ -179,7 +179,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildsman2590 do
     ctx = mes(ctx, "[Assassin 'Khai']")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         ctx
         |> mes("Huh. You must have a lot of self confidence to be a Thief nowadays.")
         |> next()

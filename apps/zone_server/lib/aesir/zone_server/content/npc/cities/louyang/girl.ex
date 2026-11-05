@@ -87,7 +87,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Louyang.Girl do
       |> next()
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         ctx
         |> mes("[Girl]")
         |> mes("And by sights...")

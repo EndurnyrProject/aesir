@@ -474,7 +474,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.BardQuest.Bard134111 do
       get_char_var(ctx, :gef_bard_q, 0) == 4 ->
         seek_original_lyrics(ctx)
 
-      sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) ->
+      sex(ctx) == 1 ->
         ctx
         |> mes("[Kino Kitty]")
         |> mes(

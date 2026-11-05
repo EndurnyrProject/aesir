@@ -303,7 +303,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.HunterGuildsman do
           |> next()
           |> mes("[Hunter Sherin]")
 
-        if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+        if sex(ctx) == 1 do
           ctx
           |> mes(
             "If you decide to become a Hunter, promise to come visit me. I want to see you as a Hunter. You would look great!!"

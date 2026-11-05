@@ -138,7 +138,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.AcolyteTu do
       |> mes("[Acolyte]")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         ctx
         |> mes("W-wait!")
         |> mes("Y-you're a man!")

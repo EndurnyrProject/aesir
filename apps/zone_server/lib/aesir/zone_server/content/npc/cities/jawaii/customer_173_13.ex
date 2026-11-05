@@ -133,7 +133,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Jawaii.Customer17313 do
       |> mes("Get outta my face!")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         ctx |> mes("You smell like,") |> mes("whupped boyfriend") |> mes("or something!")
       else
         ctx

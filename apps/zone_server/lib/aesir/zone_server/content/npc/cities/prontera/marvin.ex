@@ -73,7 +73,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.Marvin do
   end
 
   defp gendered_advice(ctx) do
-    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+    if sex(ctx) == 1 do
       "I can't help you much when it comes to the subject of talking to attractive women such as myself, but I can tell you a little more about skills that help in battle."
     else
       "I don't really have any advice for skills when it comes to talking to a cute guy, but I can let you in on what I know about skills that help in battle."

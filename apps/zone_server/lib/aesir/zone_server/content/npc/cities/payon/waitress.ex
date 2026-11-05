@@ -90,7 +90,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Payon.Waitress do
   end
 
   defp lament_loneliness(ctx) do
-    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+    if sex(ctx) == 1 do
       mes(
         ctx,
         "Where I can find the right person, a hot and Sexy hunk who can take me away from here? Um, hey mister, are you listening?"

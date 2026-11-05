@@ -149,7 +149,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.Waitress do
       |> next()
       |> mes("[Elenore]")
 
-    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+    if sex(ctx) == 1 do
       mes(
         ctx,
         "Tell me, have you ever heard of #{char_name(ctx, 0)}? He's supposed to be the suavest hero around!"
@@ -207,7 +207,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.Waitress do
       |> next()
       |> mes("[#{char_name(ctx, 0)}]")
 
-    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+    if sex(ctx) == 1 do
       ctx
       |> mes("Huh...?")
       |> mes("C-come again?")

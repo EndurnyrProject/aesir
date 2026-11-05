@@ -54,7 +54,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.Stacey do
       |> mes("[Stacey]")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         ctx |> mes("You look so...") |> mes("Rugged and manly~")
       else
         ctx |> mes("Oooh~!") |> mes("I'm so jealous!")
@@ -78,7 +78,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.Stacey do
       |> mes("[Stacey]")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         ctx
         |> mes("It's...")
         |> mes(

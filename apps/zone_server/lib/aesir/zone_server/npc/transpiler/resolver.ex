@@ -76,6 +76,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
   def constant("ITEMINFO_ARMORLEVEL"), do: {:ok, "19"}
   def constant("ITEMINFO_SUBTYPE"), do: {:ok, "20"}
 
+  # rAthena's character sex (`enum e_sex` in src/common/mmo.hpp), compared against
+  # the `sex` read in dialogue-wording gates such as `if (Sex == SEX_MALE)`.
+  def constant("SEX_FEMALE"), do: {:ok, "0"}
+  def constant("SEX_MALE"), do: {:ok, "1"}
+
   # The only monster-info selector currently used by the imported corpus.
   def constant("MOB_NAME"), do: {:ok, "1"}
 

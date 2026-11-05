@@ -116,7 +116,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21e.Stargladiator.Moohyun do
     ctx = mes(ctx, "[Moohyun]")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         mes(ctx, "Hey, Taekwon Boy!")
       else
         mes(ctx, "Hey, Taekwon Girl!")
@@ -460,7 +460,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21e.Stargladiator.Moohyun do
     ctx = ctx |> mes("[Moohyun]") |> mes("Dude...") |> mes("Whaddya want?")
 
     ctx =
-      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+      if sex(ctx) == 1 do
         ctx
         |> mes("You wanna join up")
         |> mes("with my martial arts")
