@@ -67,6 +67,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   - `%{shape: :areamonster}` — `areamonster "map",x1,y1,x2,y2,"name",id,
     amount{,"event"...}` → `summon_mob_area(ctx, mob_id: _, map: _, area: _,
     ...)`; the display name and the size/ai tail are dropped like `monster`.
+  - `%{shape: :getmapxy, dsl: name}` — `getmapxy(<map$>,<x>,<y>{,<type>})`
+    writes its three output variables from the position of the attached player
+    (`BL_PC`, the reference default) or of the running NPC (`BL_NPC`); see
+    "Output-variable buildins" below.
+  - `%{shape: :getpartymember, dsl: name}` — `getpartymember(<party id>{,<type>})`
+    publishes the `$@partymember*` snapshot and returns the member count;
+    see "Output-variable buildins" below.
   - `%{shape: :questinfo, dsl: name}` — `questinfo <Icon>{,<Mark Color>{,"<cond>"}}`
     (OnInit-only): the `QTYPE_*`/`QMARK_*` constants resolve to their client
     ints and a string-literal condition transpiles into a `(ctx -> boolean)`
@@ -89,6 +96,21 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     A `NAV_*` flag constant resolves to its service int, `hide_window` folds any
     nonzero to a boolean, and the optional `<char_id>` tail (target another
     character) is dropped.
+
+  ## Output-variable buildins
+
+  Two shapes write variables in place rather than through a `set`:
+
+  - `:getmapxy` requires its first three arguments to be plain variable
+    references (`getmapxy` refuses anything else in the reference) and its
+    optional type to be the `BL_PC`/`BL_NPC` constant or its ordinal; the
+    emitted code binds the read tuple and writes the three references in the
+    reference's order, so upstream's `getmapxy(.@m$,.@x,.@x,BL_NPC)` really
+    does overwrite x with y.
+  - `:getpartymember` supports the self-array forms: one argument (names) and a
+    literal type `0` (names) or `1` (character ids). Type `2` (account ids),
+    which Aesir's party snapshot does not carry, and the explicit destination
+    array argument stay stubs.
 
   ## Reads
 
@@ -223,6 +245,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "soundeffectall" => %{dsl: "soundeffectall", args: [:string, :int]},
     "progressbar" => %{dsl: "progressbar", args: [:string, :int]},
     "navigateto" => %{shape: :navigateto, dsl: "navigateto"},
+    "getmapxy" => %{shape: :getmapxy, dsl: "getmapxy"},
+    "getpartymember" => %{shape: :getpartymember, dsl: "getpartymember"},
     "consumeitem" => %{dsl: "consumeitem", args: [:item]},
     "nude" => %{shape: :nullary, dsl: "nude"},
     "viewpoint" => %{dsl: "viewpoint", args: [:int, :int, :int, :int, :int]},
@@ -371,6 +395,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "checkquest" => %{shape: :quest_check, dsl: "checkquest"},
     "questprogress" => %{shape: :quest_check, dsl: "questprogress"},
     "getpartnerid" => %{dsl: "getpartnerid", args: []},
+    "getcastledata" => %{dsl: "castle_data", args: [:string, :int]},
+    "gettimestr" => %{dsl: "gettimestr", args: [:string, :int]},
+    "is_guild_leader" => %{shape: :opt_read, dsl: "is_guild_leader"},
     "gettimetick" => %{dsl: "gettimetick", args: [:int]},
     "gettime" => %{dsl: "gettime", args: [:int]},
     "checkre" => %{dsl: "checkre", args: [:int]},

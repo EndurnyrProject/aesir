@@ -2,8 +2,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   @moduledoc """
   Pure-read buildins for the script DSL: player identity/progression/vitals,
   job lineage and class mapping, mount/cart/falcon checks, equipment and
-  refine inspection, item info, party leadership, NPC identity, time ticks,
-  and string formatting helpers.
+  refine inspection, item info, party leadership and membership snapshots,
+  NPC identity, time, and string formatting helpers.
 
   Reads return bare values (not a `Ctx`), so a detached ctx ends the script
   through `no_player!/2` (the `Ctx.halt/2` throw) — except the reads
@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl.Internal
   alias Aesir.ZoneServer.Script.Rathena
+  alias Aesir.ZoneServer.Script.Vars
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -712,6 +713,18 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   def vip_status(%Ctx{}, _type), do: 0
 
   @doc """
+  The server local time formatted with an strftime-style `format`
+  (rAthena `gettimestr`), truncated to `maxlen - 1` characters exactly as
+  `strftime` truncates to its buffer size. Pure read; the ctx is ignored.
+  """
+  @spec gettimestr(Ctx.t(), String.t(), non_neg_integer()) :: String.t()
+  def gettimestr(%Ctx{}, format, maxlen) when is_integer(maxlen) do
+    NaiveDateTime.local_now()
+    |> Calendar.strftime(format)
+    |> String.slice(0, max(maxlen - 1, 0))
+  end
+
+  @doc """
   The current time as an integer tick (rAthena `gettimetick`), by `type`:
   `2` the Unix epoch timestamp in seconds, `1` the seconds elapsed since
   local midnight (`0..86_399`, server local time as everywhere else),
@@ -739,6 +752,64 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   """
   @spec gettime(Ctx.t(), integer()) :: integer()
   def gettime(%Ctx{}, type), do: Rathena.gettime(NaiveDateTime.local_now(), type)
+
+  @doc """
+  The position of the attached player (`:player`) or of the running NPC
+  (`:npc`) as `{map_name, x, y}` (rAthena `getmapxy`). The transpiled form
+  writes the buildin's three output variables from this tuple. Ends the script
+  when the requested unit cannot be resolved.
+  """
+  @spec getmapxy(Ctx.t(), :player | :npc) :: {String.t(), integer(), integer()}
+  def getmapxy(%Ctx{game_state: nil} = ctx, :player), do: no_player!(ctx, "getmapxy/2")
+  def getmapxy(%Ctx{game_state: gs}, :player), do: {gs.map_name, gs.x, gs.y}
+
+  def getmapxy(%Ctx{} = ctx, :npc) do
+    with gid when is_integer(gid) <- ctx.npc_gid,
+         {:ok, {_module, placement}} <- NpcRegistry.module_for_unit(gid) do
+      {placement.map, placement.x, placement.y}
+    else
+      _missing -> no_player!(ctx, "getmapxy/2")
+    end
+  end
+
+  @typedoc """
+  Which `$@partymember*` array `getpartymember` fills: `:name` the member
+  names (`$@partymembername$`), `:char_id` the character ids
+  (`$@partymembercid`).
+  """
+  @type party_member_field :: :name | :char_id
+
+  @doc """
+  Publishes `party_id`'s members into the server temp variables (rAthena
+  `getpartymember`) and returns the member count. `$@partymembercount` always
+  carries the count; `field` selects the array `:name` (default) or
+  `:char_id`, which an unknown party leaves untouched (as the reference does)
+  and a known one overwrites in character-id order, so the array is
+  deterministic across calls.
+  """
+  @spec getpartymember(Ctx.t(), non_neg_integer(), party_member_field()) ::
+          {Ctx.t(), non_neg_integer()}
+  def getpartymember(%Ctx{} = ctx, party_id, field \\ :name) do
+    case PartyManager.get(party_id) do
+      {:ok, %PartyState{members: members}} ->
+        publish_partymembers(ctx, members, field)
+
+      {:error, _reason} ->
+        Vars.put_server_temp("partymembercount", 0)
+        {ctx, 0}
+    end
+  end
+
+  defp publish_partymembers(ctx, members, field) do
+    members = members |> Map.values() |> Enum.sort_by(& &1.char_id)
+    Vars.put_server_temp(partymember_key(field), Enum.map(members, &Map.fetch!(&1, field)))
+    Vars.put_server_temp("partymembercount", length(members))
+
+    {ctx, length(members)}
+  end
+
+  defp partymember_key(:name), do: "partymembername$"
+  defp partymember_key(:char_id), do: "partymembercid"
 
   @doc """
   The unit id (gid) of the NPC running the script (rAthena `getnpcid`, type-0

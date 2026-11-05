@@ -232,7 +232,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.Steward do
   end
 
   defp handle_owned_castle(ctx, castle_id, owner) do
-    if getcharid(ctx, 2) == owner and is_guild_leader(ctx, owner) do
+    if getcharid(ctx, 2) == owner and is_guild_leader(ctx, owner) == 1 do
       greet_master(ctx, castle_id)
     else
       refuse_not_master(ctx)

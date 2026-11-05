@@ -120,27 +120,89 @@ defmodule Aesir.ZoneServer.Script.DslCastleTest do
     end
   end
 
+  describe "castle_data/3" do
+    setup do
+      castle = first_castle()
+      :ok = CastleStore.hydrate(%{castle.id => row(7, %{economy: 12, defense: 3})})
+      {:ok, castle: castle}
+    end
+
+    test "reads the owner guild id and the economy counters by CD_ index", %{castle: castle} do
+      ctx = build_ctx()
+
+      assert Dsl.castle_data(ctx, castle.map, 1) == 7
+      assert Dsl.castle_data(ctx, castle.map, 2) == 12
+      assert Dsl.castle_data(ctx, castle.map, 3) == 3
+      assert Dsl.castle_data(ctx, castle.map, 4) == 0
+      assert Dsl.castle_data(ctx, castle.map, 5) == 0
+    end
+
+    test "reads 0 for the owner and the Kafra flag of an unowned castle", %{castle: castle} do
+      :ok = CastleStore.hydrate(%{castle.id => row(0)})
+
+      assert Dsl.castle_data(build_ctx(), castle.map, 1) == 0
+      assert Dsl.castle_data(build_ctx(), castle.map, 9) == 0
+    end
+
+    test "reads 1 for a hired Kafra and a filled guardian slot", %{castle: castle} do
+      :ok = CastleStore.put_kafra(castle.id, true)
+      :ok = CastleStore.put_guardians(castle.id, [0, 3])
+      ctx = build_ctx()
+
+      assert Dsl.castle_data(ctx, castle.map, 9) == 1
+      assert Dsl.castle_data(ctx, castle.map, 10) == 1
+      assert Dsl.castle_data(ctx, castle.map, 11) == 0
+      assert Dsl.castle_data(ctx, castle.map, 13) == 1
+      assert Dsl.castle_data(ctx, castle.map, 17) == 0
+    end
+
+    test "reads 0 for the unused timers, an unknown index and an unknown castle" do
+      ctx = build_ctx()
+
+      for index <- [0, 6, 7, 8, 18, 99] do
+        assert Dsl.castle_data(ctx, "aldeg_cas01", index) == 0
+      end
+
+      assert Dsl.castle_data(ctx, "prontera", 1) == 0
+    end
+  end
+
   describe "is_guild_leader/2" do
-    test "true for the guild's master char id" do
+    test "1 for the guild's master char id" do
       stub(GuildManager, :get, fn 5 ->
         {:ok, %GuildState{guild_id: 5, name: "G", master_char_id: 42}}
       end)
 
-      assert Dsl.is_guild_leader(build_ctx(char_id: 42), 5)
+      assert Dsl.is_guild_leader(build_ctx(char_id: 42), 5) == 1
     end
 
-    test "false for a non-master char id" do
+    test "0 for a non-master char id" do
       stub(GuildManager, :get, fn 5 ->
         {:ok, %GuildState{guild_id: 5, name: "G", master_char_id: 42}}
       end)
 
-      refute Dsl.is_guild_leader(build_ctx(char_id: 43), 5)
+      assert Dsl.is_guild_leader(build_ctx(char_id: 43), 5) == 0
     end
 
-    test "false when the guild is unknown" do
+    test "0 when the guild is unknown" do
       stub(GuildManager, :get, fn 999 -> {:error, :not_found} end)
 
-      refute Dsl.is_guild_leader(build_ctx(char_id: 42), 999)
+      assert Dsl.is_guild_leader(build_ctx(char_id: 42), 999) == 0
+    end
+
+    test "the nullary form reads the attached player's own guild" do
+      stub(GuildManager, :get, fn 5 ->
+        {:ok, %GuildState{guild_id: 5, name: "G", master_char_id: 42}}
+      end)
+
+      assert Dsl.is_guild_leader(build_ctx(char_id: 42, guild_id: 5)) == 1
+      assert Dsl.is_guild_leader(build_ctx(char_id: 43, guild_id: 5)) == 0
+    end
+
+    test "0 with no attached player" do
+      stub(GuildManager, :get, fn 0 -> {:error, :not_found} end)
+
+      assert Dsl.is_guild_leader(detached_ctx()) == 0
     end
   end
 

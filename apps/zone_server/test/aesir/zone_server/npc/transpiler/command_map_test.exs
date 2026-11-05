@@ -14,7 +14,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
              CommandMap.command("getitembound")
 
     assert {:ok, %{shape: :warp}} = CommandMap.command("warp")
-    assert :error = CommandMap.command("getpartymember")
+    assert {:ok, %{shape: :getmapxy}} = CommandMap.command("getmapxy")
+    assert {:ok, %{shape: :getpartymember}} = CommandMap.command("getpartymember")
   end
 
   test "reads and call reads" do
@@ -111,7 +112,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
   test "supported? covers commands and call reads" do
     assert CommandMap.supported?("getitem")
     assert CommandMap.supported?("countitem")
-    refute CommandMap.supported?("getmapxy")
+    refute CommandMap.supported?("setcastledata")
   end
 
   test "event and session buildins map to ref1/opt1/timer shapes" do
@@ -137,7 +138,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert {:ok, %{dsl: "give_item"}} = CommandMap.command("GetItem")
     assert {:ok, %{dsl: "count_item"}} = CommandMap.call_read("CountItem")
     assert CommandMap.supported?("Monster")
-    refute CommandMap.supported?("GetMapXY")
+    assert CommandMap.supported?("GetMapXY")
   end
 
   test "monster maps to the monster shape" do

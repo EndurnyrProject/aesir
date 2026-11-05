@@ -24,7 +24,9 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
+  alias Aesir.ZoneServer.Party.Member, as: PartyMember
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
@@ -683,6 +685,85 @@ defmodule Aesir.ZoneServer.Script.DslTest do
 
       assert {:script_end, %{status: {:error, :no_player}}} =
                catch_throw(Dsl.party_leader?(ctx, 7))
+    end
+  end
+
+  describe "getpartymember/2,3" do
+    setup :setup_ets_tables
+
+    setup do
+      stub(PartyManager, :get, fn
+        7 ->
+          {:ok,
+           %PartyState{
+             party_id: 7,
+             name: "p",
+             leader_char_id: 1,
+             exp_share: false,
+             item_pickup_share: false,
+             members: %{
+               2 => PartyMember.new(2, "Bob", 12, false),
+               1 => PartyMember.new(1, "Alice", 10, true)
+             }
+           }}
+
+        other ->
+          {:error, {:not_found, other}}
+      end)
+
+      :ok
+    end
+
+    test "publishes the member names and count and returns the count" do
+      {ctx, count} = Dsl.getpartymember(build_ctx(), 7)
+
+      assert count == 2
+      assert Dsl.get_server_temp_var(ctx, "partymembercount") == 2
+      assert Dsl.get_server_temp_var(ctx, "partymembername$") == ["Alice", "Bob"]
+      assert Dsl.get_server_temp_var(ctx, "partymembercid", nil) == nil
+    end
+
+    test "type 1 publishes the character ids instead of the names" do
+      {ctx, count} = Dsl.getpartymember(build_ctx(), 7, :char_id)
+
+      assert count == 2
+      assert Dsl.get_server_temp_var(ctx, "partymembercid") == [1, 2]
+    end
+
+    test "an unknown party sets the count to 0 and leaves the array untouched" do
+      {ctx, _count} = Dsl.getpartymember(build_ctx(), 7)
+      assert Dsl.get_server_temp_var(ctx, "partymembername$") == ["Alice", "Bob"]
+
+      {ctx, count} = Dsl.getpartymember(ctx, 999)
+
+      assert count == 0
+      assert Dsl.get_server_temp_var(ctx, "partymembercount") == 0
+      assert Dsl.get_server_temp_var(ctx, "partymembername$") == ["Alice", "Bob"]
+    end
+  end
+
+  describe "getmapxy/2" do
+    test "reads the attached player's map and coordinates" do
+      ctx = build_ctx()
+      ctx = %{ctx | game_state: %{ctx.game_state | map_name: "morocc", x: 12, y: 34}}
+
+      assert Dsl.getmapxy(ctx, :player) == {"morocc", 12, 34}
+    end
+
+    test "reads the running NPC's map and coordinates" do
+      stub(NpcRegistry, :module_for_unit, fn 7777 ->
+        {:ok, {__MODULE__, %{map: "payg_cas01", x: 87, y: 35}}}
+      end)
+
+      assert Dsl.getmapxy(%{build_ctx() | npc_gid: 7777}, :npc) == {"payg_cas01", 87, 35}
+    end
+
+    test "ends the script when the requested unit is not attached" do
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.getmapxy(build_ctx(), :npc))
+
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.getmapxy(%{build_ctx() | game_state: nil}, :player))
     end
   end
 

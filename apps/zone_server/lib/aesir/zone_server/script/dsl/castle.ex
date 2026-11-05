@@ -61,15 +61,43 @@ defmodule Aesir.ZoneServer.Script.Dsl.Castle do
   end
 
   @doc """
-  Whether the attached player leads guild `guild_id` (`false` for an unknown
-  guild).
+  A field of the castle at `map_name` (rAthena `getcastledata`, indexed by
+  the `CD_*` constant): `1` owner guild id, `2` economy, `3` defense, `4`
+  invested economy today, `5` invested defense today, `9` Kafra hired, and
+  `10`-`17` whether each guardian slot is filled. `6`-`8` are the reference's
+  unused castle timer fields (Aesir keeps no castle timer state) and read `0`,
+  as do an unknown castle map and an out-of-range index.
   """
-  @spec is_guild_leader(Ctx.t(), non_neg_integer()) :: boolean()
+  @spec castle_data(Ctx.t(), String.t(), integer()) :: non_neg_integer()
+  def castle_data(%Ctx{}, map_name, index) do
+    case CastleDb.by_map(map_name) do
+      {:ok, castle} -> castle_field(castle.id, index)
+      :error -> 0
+    end
+  end
+
+  @doc """
+  Whether the attached player leads their own guild (rAthena
+  `is_guild_leader`): `1` (leader) or `0` (not leader / no guild / detached
+  ctx).
+  """
+  @spec is_guild_leader(Ctx.t()) :: 0 | 1
+  # credo:disable-for-next-line Credo.Check.Readability.PredicateFunctionNames
+  def is_guild_leader(%Ctx{game_state: nil} = ctx), do: is_guild_leader(ctx, 0)
+
+  # credo:disable-for-next-line Credo.Check.Readability.PredicateFunctionNames
+  def is_guild_leader(%Ctx{game_state: gs} = ctx), do: is_guild_leader(ctx, gs.guild_id)
+
+  @doc """
+  Whether the attached player leads guild `guild_id` (`0` for an unknown
+  guild), matching rAthena's `1`/`0` result.
+  """
+  @spec is_guild_leader(Ctx.t(), non_neg_integer()) :: 0 | 1
   # credo:disable-for-next-line Credo.Check.Readability.PredicateFunctionNames
   def is_guild_leader(%Ctx{char_id: char_id}, guild_id) do
     case GuildManager.get(guild_id) do
-      {:ok, %GuildState{master_char_id: master_char_id}} -> master_char_id == char_id
-      {:error, :not_found} -> false
+      {:ok, %GuildState{master_char_id: ^char_id}} -> 1
+      _not_leader -> 0
     end
   end
 
@@ -190,4 +218,22 @@ defmodule Aesir.ZoneServer.Script.Dsl.Castle do
   @spec invested_field(Economy.kind()) :: :invested_economy | :invested_defense
   defp invested_field(:economy), do: :invested_economy
   defp invested_field(:defense), do: :invested_defense
+
+  @economy_fields %{2 => :economy, 3 => :defense, 4 => :invested_economy, 5 => :invested_defense}
+
+  defp castle_field(castle_id, 1), do: CastleStore.owner(castle_id) || 0
+
+  defp castle_field(castle_id, index) when is_map_key(@economy_fields, index) do
+    castle_id
+    |> CastleStore.economy()
+    |> Map.fetch!(Map.fetch!(@economy_fields, index))
+  end
+
+  defp castle_field(castle_id, 9), do: if(CastleStore.kafra?(castle_id), do: 1, else: 0)
+
+  defp castle_field(castle_id, index) when index in 10..17 do
+    if (index - 10) in CastleStore.guardians(castle_id), do: 1, else: 0
+  end
+
+  defp castle_field(_castle_id, _index), do: 0
 end

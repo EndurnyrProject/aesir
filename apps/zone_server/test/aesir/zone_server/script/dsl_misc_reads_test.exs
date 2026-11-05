@@ -195,6 +195,28 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
     end
   end
 
+  describe "gettimestr/3" do
+    test "formats the server local time with the strftime pattern" do
+      now = NaiveDateTime.local_now()
+
+      assert Dsl.gettimestr(ctx(), "%H%M", 5) == Calendar.strftime(now, "%H%M")
+      assert Dsl.gettimestr(ctx(), "%Y-%m-%d", 11) == Calendar.strftime(now, "%Y-%m-%d")
+    end
+
+    test "truncates to strftime's buffer size (maxlen - 1)" do
+      now = NaiveDateTime.local_now()
+      formatted = Calendar.strftime(now, "%Y-%m-%d")
+
+      assert Dsl.gettimestr(ctx(), "%Y-%m-%d", 5) == String.slice(formatted, 0, 4)
+      assert Dsl.gettimestr(ctx(), "%H%M", 1) == ""
+      assert Dsl.gettimestr(ctx(), "%H%M", 0) == ""
+    end
+
+    test "works detached" do
+      assert Dsl.gettimestr(%{ctx() | game_state: nil}, "%H%M", 5) =~ ~r/^\d{4}$/
+    end
+  end
+
   describe "gettimetick/2" do
     test "type 2 is the Unix epoch timestamp in seconds" do
       assert_in_delta Dsl.gettimetick(ctx(), 2), System.os_time(:second), 2

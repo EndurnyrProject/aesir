@@ -2119,6 +2119,88 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "Todo.call!(:is_party_leader"
   end
 
+  test "getmapxy writes its three output variables in the reference order" do
+    src =
+      gen!("""
+      getmapxy(.@m$,.@x,.@y,BL_NPC);
+      close;
+      """)
+
+    assert src =~ ~S|{v1, v2, v3} = getmapxy(ctx, :npc)|
+    assert src =~ ~S|set_local(:"m$", v1)|
+    assert src =~ ~S|set_local(:x, v2)|
+    assert src =~ ~S|set_local(:y, v3)|
+    refute src =~ "todo(:getmapxy"
+  end
+
+  test "getmapxy keeps the upstream same-variable call writing y last" do
+    src =
+      gen!("""
+      getmapxy(.@m$,.@x,.@x,BL_NPC);
+      close;
+      """)
+
+    [first, second] = Regex.scan(~r/set_local\(:x, (v\d+)\)/, src, capture: :all_but_first)
+    assert first != second
+    assert src =~ ~S|{v1, v2, v3} = getmapxy(ctx, :npc)|
+    assert src =~ ~S|set_local(:x, v3)|
+  end
+
+  test "getmapxy defaults to the attached player and rejects non-reference args" do
+    assert gen!("""
+           getmapxy(.@m$,.@x,.@y);
+           close;
+           """) =~ ~S|getmapxy(ctx, :player)|
+
+    assert gen!("""
+           getmapxy(.@m$,"x",.@y,BL_NPC);
+           close;
+           """) =~ "todo(:getmapxy"
+  end
+
+  test "getpartymember publishes the snapshot and pushes the count" do
+    src =
+      gen!("""
+      getpartymember(getcharid(1));
+      getpartymember getcharid(1), 1;
+      close;
+      """)
+
+    assert src =~ ~S|{ctx, _} = getpartymember(ctx, getcharid(ctx, 1))|
+    assert src =~ ~S|{ctx, _} = getpartymember(ctx, getcharid(ctx, 1), :char_id)|
+    refute src =~ "todo(:getpartymember"
+  end
+
+  test "getpartymember stubs the account-id array and the explicit array argument" do
+    assert gen!("""
+           getpartymember getcharid(1), 2;
+           close;
+           """) =~ "todo(:getpartymember"
+
+    assert gen!("""
+           getpartymember getcharid(1), 0, .@names$;
+           close;
+           """) =~ "todo(:getpartymember"
+  end
+
+  test "getcastledata, gettimestr and is_guild_leader are call reads" do
+    src =
+      gen!("""
+      if (GetCastleData("aldeg_cas01", 1) == getcharid(2))
+        mes atoi(gettimestr("%H%M", 5));
+      if (is_guild_leader(.@GID) == 1)
+        mes "leader";
+      close;
+      """)
+
+    assert src =~ ~S|castle_data(ctx, "aldeg_cas01", 1) == getcharid(ctx, 2)|
+    assert src =~ ~S|Rathena.atoi(gettimestr(ctx, "%H%M", 5))|
+    assert src =~ "is_guild_leader(ctx, get_local(ctx, :GID, 0)) == 1"
+    refute src =~ "Todo.call!(:GetCastleData"
+    refute src =~ "Todo.call!(:gettimestr"
+    refute src =~ "Todo.call!(:is_guild_leader"
+  end
+
   test "viewpoint maps to its DSL op with numeric args (color included)" do
     src =
       gen!("""

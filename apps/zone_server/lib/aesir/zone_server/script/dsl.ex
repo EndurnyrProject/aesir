@@ -429,6 +429,10 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate vip_status(ctx, type), to: Reads
   defdelegate gettimetick(ctx, type), to: Reads
   defdelegate gettime(ctx, type), to: Reads
+  defdelegate gettimestr(ctx, format, maxlen), to: Reads
+  defdelegate getmapxy(ctx, type), to: Reads
+  defdelegate getpartymember(ctx, party_id), to: Reads
+  defdelegate getpartymember(ctx, party_id, field), to: Reads
   defdelegate getnpcid(ctx), to: Reads
   defdelegate getnpcid(ctx, name), to: Reads
   defdelegate playerattached(ctx), to: Reads
@@ -446,6 +450,8 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate castle_owner(ctx, castle_id), to: Castle
   defdelegate castle_economy(ctx, castle_id), to: Castle
   defdelegate castle_invest_cost(ctx, castle_id, kind), to: Castle
+  defdelegate castle_data(ctx, map_name, index), to: Castle
+  defdelegate is_guild_leader(ctx), to: Castle
   defdelegate is_guild_leader(ctx, guild_id), to: Castle
   defdelegate castle_invest(ctx, castle_id, kind), to: Castle
   defdelegate castle_guardians(ctx, castle_id), to: Castle
