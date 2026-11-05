@@ -24894,6 +24894,40 @@
       }
     ]
   },
+  "quests/mage_solution.txt|script|Dollshoi|pay_arche:122:100": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.MageSolution.Dollshoi",
+    "output_hash": "44d19da7b808ec8fb1f72cb80d1ec3c1557fd5c4ace8c6e635fd29ec2f947341",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/mage_solution/dollshoi.ex",
+    "source_hash": "582035f080df67c533df23de234651ae4365964c5f580c831649cd04de56bdc8",
+    "spawns": [
+      {
+        "name": "Dollshoi",
+        "scope": "shared",
+        "x": 122,
+        "y": 100,
+        "map": "pay_arche",
+        "dir": 0,
+        "sprite": 88
+      }
+    ]
+  },
+  "quests/mage_solution.txt|script|Ponka-Hontas|moc_ruins:91:150": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.MageSolution.PonkaHontas",
+    "output_hash": "713ee985ca958962df9cccc700c1c7ec8de039457f68db8db665b753c490e536",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/mage_solution/ponka_hontas.ex",
+    "source_hash": "03b4bd6a6fdaea97cf0cbff4a3f5f7cde12eec4715ed54561aedde1e7fc3b540",
+    "spawns": [
+      {
+        "name": "Ponka-Hontas",
+        "scope": "shared",
+        "x": 91,
+        "y": 150,
+        "map": "moc_ruins",
+        "dir": 0,
+        "sprite": 93
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
