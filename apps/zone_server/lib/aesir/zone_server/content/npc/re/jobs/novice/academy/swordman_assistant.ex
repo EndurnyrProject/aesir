@@ -255,7 +255,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanAssistant 
           throw({:script_end, ctx})
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     ctx

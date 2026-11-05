@@ -45,24 +45,27 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKaftele do
                 |> mes("enough zeny for the Teleport")
                 |> mes("Service. The fee to teleport")
 
-              ctx
-              |> mes(
-                Rathena.concat(
+              ctx =
+                ctx
+                |> mes(
                   Rathena.concat(
                     Rathena.concat(
                       Rathena.concat(
-                        "to ",
-                        Enum.at(get_temp_var(ctx, :"wrpD$", []), get_local(ctx, :j, 0), "")
+                        Rathena.concat(
+                          "to ",
+                          Enum.at(get_temp_var(ctx, :"wrpD$", []), get_local(ctx, :j, 0), "")
+                        ),
+                        " is "
                       ),
-                      " is "
+                      Enum.at(get_temp_var(ctx, :wrpP, []), get_local(ctx, :j, 0), 0)
                     ),
-                    Enum.at(get_temp_var(ctx, :wrpP, []), get_local(ctx, :j, 0), 0)
-                  ),
-                  " zeny."
+                    " zeny."
+                  )
                 )
-              )
-              |> close()
-              |> cutin("", 255)
+                |> close()
+                |> cutin("", 255)
+
+              throw({:script_end, ctx})
             else
               ctx
             end

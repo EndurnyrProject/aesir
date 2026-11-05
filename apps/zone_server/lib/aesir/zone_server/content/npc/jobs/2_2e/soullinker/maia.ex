@@ -58,7 +58,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.Maia do
 
   @impl true
   @spec on_talk(Ctx.t()) :: Ctx.t()
-  def on_talk(ctx), do: ctx
+  # rAthena starts a click at the first label, so it runs this body too.
+  def on_talk(ctx), do: on_event("OnTouch_", ctx)
 
   defp guide_taekwon(ctx) do
     if job_level(ctx) < 40 do
@@ -173,7 +174,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.Maia do
       |> mes("[Maia]")
       |> mes("This Witherless Rose will")
       |> mes("wither away instead of you...")
-      |> specialeffect(:mappillar2)
+      |> specialeffect(:mappillar2, :area, "Maia#link2")
       |> next()
       |> mes("[Maia]")
       |> mes("This Witherless Rose will")

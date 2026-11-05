@@ -25,7 +25,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FCheckkafcode do
 
       ctx =
         if get_local(ctx, :code_, 0) != get_account_var(ctx, "#kafra_code", 0) do
-          ctx |> dispbottom("Wrong storage password.") |> close() |> cutin("", 255)
+          ctx = ctx |> dispbottom("Wrong storage password.") |> close() |> cutin("", 255)
+          throw({:script_end, ctx})
         else
           ctx
         end

@@ -154,7 +154,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Jawaii.Customer17313 do
     |> next()
     |> mes("[Bachewcca]")
     |> mes("^666666*Grrr...!*^000000")
-    |> specialeffect(:throwitem)
+    |> specialeffect(:throwitem, :area, "Customer#Bachewcca")
     |> close()
   end
 
@@ -181,7 +181,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Jawaii.Customer17313 do
       |> next()
       |> mes("[Bachewcca]")
       |> mes("^666666*Grunt!*^000000")
-      |> specialeffect(:talk_scream)
+      |> specialeffect(:talk_scream, :area, "Customer#Bachewcca")
       |> next()
       |> mes("[SoloHan]")
       |> mes("To...")

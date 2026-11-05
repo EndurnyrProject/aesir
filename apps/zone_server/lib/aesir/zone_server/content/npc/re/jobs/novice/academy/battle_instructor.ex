@@ -121,715 +121,703 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
             |> next()
             |> select(["Check requests", "Warp me to the Field", "End Conversation"])
 
-          ctx =
-            case v1 do
-              1 ->
-                {ctx, v2} =
-                  select(
-                    ctx,
-                    String.split(
+          _ = v1
+
+          case v1 do
+            1 ->
+              {ctx, v2} =
+                select(
+                  ctx,
+                  String.split(
+                    Rathena.concat(
                       Rathena.concat(
-                        Rathena.concat(
-                          "The most delicious in the world (1~3):Carrots are delicious (1~3):Fabre rolling clothes (4~6):Barrier!! (4~6):",
-                          if(base_level(ctx) < 7, do: "", else: "Buzzing~ (7~10)")
-                        ),
-                        ":Stop."
+                        "The most delicious in the world (1~3):Carrots are delicious (1~3):Fabre rolling clothes (4~6):Barrier!! (4~6):",
+                        if(base_level(ctx) < 7, do: "", else: "Buzzing~ (7~10)")
                       ),
-                      ":"
-                    )
+                      ":Stop."
+                    ),
+                    ":"
                   )
+                )
 
-                ctx =
-                  case v2 do
-                    1 ->
-                      ctx =
-                        if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
-                          ctx |> setquest(11338) |> completequest(11338)
-                        else
-                          ctx
-                        end
+              _ = v2
 
-                      ctx =
-                        if checkquest(ctx, 11339, :hunting) < 2 do
-                          ctx
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "^ff0000Poring^000000s are very cute monsters when you see them."
-                          )
-                          |> next()
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "They drop Jellopy which are regarded as a main cooking material in Criatura Academy so we always need to hunt Porings."
-                          )
-                          |> next()
-                        else
-                          ctx
-                        end
-
-                      {ctx, _} =
-                        s_l_quest(ctx, [
-                          11339,
-                          90,
-                          50,
-                          909,
-                          5,
-                          "Poring",
-                          "can easily be found",
-                          "Hunt",
-                          "Jellopies"
-                        ])
-
-                      ctx =
-                        if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
-                          ctx |> setquest(11338) |> completequest(11338)
-                        else
-                          ctx
-                        end
-
-                      ctx =
-                        if checkquest(ctx, 11340, :hunting) < 2 do
-                          ctx
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "^ff0000Lunatic^000000s are very cute animal that live near Prontera."
-                          )
-                          |> mes("Tender...Soft...Very cute... It is very cute........")
-                          |> next()
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "It always bring ^ff0000Carrot^000000s with it, so it is easy to get a delicious carrot by hunting them."
-                          )
-                          |> next()
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "A carrot has lots of fibrous cells and contains vitamin A and carotin so it is good for eyes!"
-                          )
-                          |> next()
-                        else
-                          ctx
-                        end
-
-                      {ctx, _} =
-                        s_l_quest(ctx, [
-                          11340,
-                          90,
-                          50,
-                          515,
-                          1,
-                          "Lunatic",
-                          "is easily found",
-                          "Catch",
-                          "Carrot"
-                        ])
-
-                      ctx =
-                        if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
-                          ctx |> setquest(11338) |> completequest(11338)
-                        else
-                          ctx
-                        end
-
-                      ctx =
-                        if checkquest(ctx, 11341, :hunting) < 2 do
-                          ctx
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "^ff0000Fabre^000000 is the most common bug which is usually seen in Rune-Midgarts Kingdom.."
-                          )
-                          |> mes("It is a worm but it is very popular because it looks cute.")
-                          |> next()
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "Most of the clothes provided by Criatura Academy are made from ^ff0000Fluff^000000 from Fabres. It makes very strong and warm fabric."
-                          )
-                          |> next()
-                        else
-                          ctx
-                        end
-
-                      {ctx, _} =
-                        s_l_quest(ctx, [
-                          11341,
-                          135,
-                          100,
-                          914,
-                          3,
-                          "Fabre",
-                          "is easily found",
-                          "Hunt",
-                          "Fluffs"
-                        ])
-
-                      ctx =
-                        if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
-                          ctx |> setquest(11338) |> completequest(11338)
-                        else
-                          ctx
-                        end
-
-                      ctx =
-                        if checkquest(ctx, 11344, :hunting) < 2 do
-                          ctx
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "^ff0000Pupa^000000 is the intermediate stage of a Fabre before transforming into a Creamy."
-                          )
-                          |> mes("The process of a larva turning into a buttefly is mysterious.")
-                          |> next()
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "As a Fabre transforms to a Creamy I hope that all Novices turn to be great adventurers! So ^ff0000Chrysalis^000000."
-                          )
-                          |> next()
-                        else
-                          ctx
-                        end
-
-                      {ctx, _} =
-                        s_l_quest(ctx, [
-                          11344,
-                          120,
-                          90,
-                          915,
-                          2,
-                          "Pupa",
-                          "is easily found",
-                          "Hunt",
-                          "Chrysalises"
-                        ])
-
-                      ctx =
-                        if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
-                          ctx |> setquest(11338) |> completequest(11338)
-                        else
-                          ctx
-                        end
-
-                      ctx =
-                        if checkquest(ctx, 11342, :hunting) < 2 do
-                          ctx
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "^ff0000Hornet^000000s are a group of bees that live near Prontera under control of the Queen bee Mistress."
-                          )
-                          |> mes(
-                            "Not aggressive... They only attack with their stingers when they are in danger."
-                          )
-                          |> next()
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "There is a study about using the poison extracted from their stingers to make an antidote in Criatura Academy."
-                          )
-                          |> next()
-                        else
-                          ctx
-                        end
-
-                      {ctx, _} =
-                        s_l_quest(ctx, [
-                          11342,
-                          200,
-                          175,
-                          939,
-                          3,
-                          "Hornet",
-                          "are found",
-                          "Hunt",
-                          "Bee Stings"
-                        ])
-
-                      ctx =
-                        ctx
-                        |> mes("[Battle Instructor Subino]")
-                        |> mes("You don't seem to be interested.")
-                        |> mes("Come back again if you change your mind.")
-                        |> close()
-
-                      throw({:script_end, ctx})
-
-                    2 ->
-                      ctx =
-                        if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
-                          ctx |> setquest(11338) |> completequest(11338)
-                        else
-                          ctx
-                        end
-
-                      ctx =
-                        if checkquest(ctx, 11340, :hunting) < 2 do
-                          ctx
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "^ff0000Lunatic^000000s are very cute animal that live near Prontera."
-                          )
-                          |> mes("Tender...Soft...Very cute... It is very cute........")
-                          |> next()
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "It always bring ^ff0000Carrot^000000s with it, so it is easy to get a delicious carrot by hunting them."
-                          )
-                          |> next()
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "A carrot has lots of fibrous cells and contains vitamin A and carotin so it is good for eyes!"
-                          )
-                          |> next()
-                        else
-                          ctx
-                        end
-
-                      {ctx, _} =
-                        s_l_quest(ctx, [
-                          11340,
-                          90,
-                          50,
-                          515,
-                          1,
-                          "Lunatic",
-                          "is easily found",
-                          "Catch",
-                          "Carrot"
-                        ])
-
-                      ctx =
-                        if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
-                          ctx |> setquest(11338) |> completequest(11338)
-                        else
-                          ctx
-                        end
-
-                      ctx =
-                        if checkquest(ctx, 11341, :hunting) < 2 do
-                          ctx
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "^ff0000Fabre^000000 is the most common bug which is usually seen in Rune-Midgarts Kingdom.."
-                          )
-                          |> mes("It is a worm but it is very popular because it looks cute.")
-                          |> next()
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "Most of the clothes provided by Criatura Academy are made from ^ff0000Fluff^000000 from Fabres. It makes very strong and warm fabric."
-                          )
-                          |> next()
-                        else
-                          ctx
-                        end
-
-                      {ctx, _} =
-                        s_l_quest(ctx, [
-                          11341,
-                          135,
-                          100,
-                          914,
-                          3,
-                          "Fabre",
-                          "is easily found",
-                          "Hunt",
-                          "Fluffs"
-                        ])
-
-                      ctx =
-                        if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
-                          ctx |> setquest(11338) |> completequest(11338)
-                        else
-                          ctx
-                        end
-
-                      ctx =
-                        if checkquest(ctx, 11344, :hunting) < 2 do
-                          ctx
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "^ff0000Pupa^000000 is the intermediate stage of a Fabre before transforming into a Creamy."
-                          )
-                          |> mes("The process of a larva turning into a buttefly is mysterious.")
-                          |> next()
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "As a Fabre transforms to a Creamy I hope that all Novices turn to be great adventurers! So ^ff0000Chrysalis^000000."
-                          )
-                          |> next()
-                        else
-                          ctx
-                        end
-
-                      {ctx, _} =
-                        s_l_quest(ctx, [
-                          11344,
-                          120,
-                          90,
-                          915,
-                          2,
-                          "Pupa",
-                          "is easily found",
-                          "Hunt",
-                          "Chrysalises"
-                        ])
-
-                      ctx =
-                        if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
-                          ctx |> setquest(11338) |> completequest(11338)
-                        else
-                          ctx
-                        end
-
-                      ctx =
-                        if checkquest(ctx, 11342, :hunting) < 2 do
-                          ctx
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "^ff0000Hornet^000000s are a group of bees that live near Prontera under control of the Queen bee Mistress."
-                          )
-                          |> mes(
-                            "Not aggressive... They only attack with their stingers when they are in danger."
-                          )
-                          |> next()
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "There is a study about using the poison extracted from their stingers to make an antidote in Criatura Academy."
-                          )
-                          |> next()
-                        else
-                          ctx
-                        end
-
-                      {ctx, _} =
-                        s_l_quest(ctx, [
-                          11342,
-                          200,
-                          175,
-                          939,
-                          3,
-                          "Hornet",
-                          "are found",
-                          "Hunt",
-                          "Bee Stings"
-                        ])
-
-                      ctx =
-                        ctx
-                        |> mes("[Battle Instructor Subino]")
-                        |> mes("You don't seem to be interested.")
-                        |> mes("Come back again if you change your mind.")
-                        |> close()
-
-                      throw({:script_end, ctx})
-
-                    3 ->
-                      ctx =
-                        if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
-                          ctx |> setquest(11338) |> completequest(11338)
-                        else
-                          ctx
-                        end
-
-                      ctx =
-                        if checkquest(ctx, 11341, :hunting) < 2 do
-                          ctx
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "^ff0000Fabre^000000 is the most common bug which is usually seen in Rune-Midgarts Kingdom.."
-                          )
-                          |> mes("It is a worm but it is very popular because it looks cute.")
-                          |> next()
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "Most of the clothes provided by Criatura Academy are made from ^ff0000Fluff^000000 from Fabres. It makes very strong and warm fabric."
-                          )
-                          |> next()
-                        else
-                          ctx
-                        end
-
-                      {ctx, _} =
-                        s_l_quest(ctx, [
-                          11341,
-                          135,
-                          100,
-                          914,
-                          3,
-                          "Fabre",
-                          "is easily found",
-                          "Hunt",
-                          "Fluffs"
-                        ])
-
-                      ctx =
-                        if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
-                          ctx |> setquest(11338) |> completequest(11338)
-                        else
-                          ctx
-                        end
-
-                      ctx =
-                        if checkquest(ctx, 11344, :hunting) < 2 do
-                          ctx
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "^ff0000Pupa^000000 is the intermediate stage of a Fabre before transforming into a Creamy."
-                          )
-                          |> mes("The process of a larva turning into a buttefly is mysterious.")
-                          |> next()
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "As a Fabre transforms to a Creamy I hope that all Novices turn to be great adventurers! So ^ff0000Chrysalis^000000."
-                          )
-                          |> next()
-                        else
-                          ctx
-                        end
-
-                      {ctx, _} =
-                        s_l_quest(ctx, [
-                          11344,
-                          120,
-                          90,
-                          915,
-                          2,
-                          "Pupa",
-                          "is easily found",
-                          "Hunt",
-                          "Chrysalises"
-                        ])
-
-                      ctx =
-                        if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
-                          ctx |> setquest(11338) |> completequest(11338)
-                        else
-                          ctx
-                        end
-
-                      ctx =
-                        if checkquest(ctx, 11342, :hunting) < 2 do
-                          ctx
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "^ff0000Hornet^000000s are a group of bees that live near Prontera under control of the Queen bee Mistress."
-                          )
-                          |> mes(
-                            "Not aggressive... They only attack with their stingers when they are in danger."
-                          )
-                          |> next()
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "There is a study about using the poison extracted from their stingers to make an antidote in Criatura Academy."
-                          )
-                          |> next()
-                        else
-                          ctx
-                        end
-
-                      {ctx, _} =
-                        s_l_quest(ctx, [
-                          11342,
-                          200,
-                          175,
-                          939,
-                          3,
-                          "Hornet",
-                          "are found",
-                          "Hunt",
-                          "Bee Stings"
-                        ])
-
-                      ctx =
-                        ctx
-                        |> mes("[Battle Instructor Subino]")
-                        |> mes("You don't seem to be interested.")
-                        |> mes("Come back again if you change your mind.")
-                        |> close()
-
-                      throw({:script_end, ctx})
-
-                    4 ->
-                      ctx =
-                        if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
-                          ctx |> setquest(11338) |> completequest(11338)
-                        else
-                          ctx
-                        end
-
-                      ctx =
-                        if checkquest(ctx, 11344, :hunting) < 2 do
-                          ctx
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "^ff0000Pupa^000000 is the intermediate stage of a Fabre before transforming into a Creamy."
-                          )
-                          |> mes("The process of a larva turning into a buttefly is mysterious.")
-                          |> next()
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "As a Fabre transforms to a Creamy I hope that all Novices turn to be great adventurers! So ^ff0000Chrysalis^000000."
-                          )
-                          |> next()
-                        else
-                          ctx
-                        end
-
-                      {ctx, _} =
-                        s_l_quest(ctx, [
-                          11344,
-                          120,
-                          90,
-                          915,
-                          2,
-                          "Pupa",
-                          "is easily found",
-                          "Hunt",
-                          "Chrysalises"
-                        ])
-
-                      ctx =
-                        if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
-                          ctx |> setquest(11338) |> completequest(11338)
-                        else
-                          ctx
-                        end
-
-                      ctx =
-                        if checkquest(ctx, 11342, :hunting) < 2 do
-                          ctx
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "^ff0000Hornet^000000s are a group of bees that live near Prontera under control of the Queen bee Mistress."
-                          )
-                          |> mes(
-                            "Not aggressive... They only attack with their stingers when they are in danger."
-                          )
-                          |> next()
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "There is a study about using the poison extracted from their stingers to make an antidote in Criatura Academy."
-                          )
-                          |> next()
-                        else
-                          ctx
-                        end
-
-                      {ctx, _} =
-                        s_l_quest(ctx, [
-                          11342,
-                          200,
-                          175,
-                          939,
-                          3,
-                          "Hornet",
-                          "are found",
-                          "Hunt",
-                          "Bee Stings"
-                        ])
-
-                      ctx =
-                        ctx
-                        |> mes("[Battle Instructor Subino]")
-                        |> mes("You don't seem to be interested.")
-                        |> mes("Come back again if you change your mind.")
-                        |> close()
-
-                      throw({:script_end, ctx})
-
-                    5 ->
-                      ctx =
-                        if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
-                          ctx |> setquest(11338) |> completequest(11338)
-                        else
-                          ctx
-                        end
-
-                      ctx =
-                        if checkquest(ctx, 11342, :hunting) < 2 do
-                          ctx
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "^ff0000Hornet^000000s are a group of bees that live near Prontera under control of the Queen bee Mistress."
-                          )
-                          |> mes(
-                            "Not aggressive... They only attack with their stingers when they are in danger."
-                          )
-                          |> next()
-                          |> mes("[Battle Instructor Subino]")
-                          |> mes(
-                            "There is a study about using the poison extracted from their stingers to make an antidote in Criatura Academy."
-                          )
-                          |> next()
-                        else
-                          ctx
-                        end
-
-                      {ctx, _} =
-                        s_l_quest(ctx, [
-                          11342,
-                          200,
-                          175,
-                          939,
-                          3,
-                          "Hornet",
-                          "are found",
-                          "Hunt",
-                          "Bee Stings"
-                        ])
-
-                      ctx =
-                        ctx
-                        |> mes("[Battle Instructor Subino]")
-                        |> mes("You don't seem to be interested.")
-                        |> mes("Come back again if you change your mind.")
-                        |> close()
-
-                      throw({:script_end, ctx})
-
-                    6 ->
-                      ctx =
-                        ctx
-                        |> mes("[Battle Instructor Subino]")
-                        |> mes("You don't seem to be interested.")
-                        |> mes("Come back again if you change your mind.")
-                        |> close()
-
-                      throw({:script_end, ctx})
-
-                    _ ->
+              case v2 do
+                1 ->
+                  ctx =
+                    if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
+                      ctx |> setquest(11338) |> completequest(11338)
+                    else
                       ctx
-                  end
+                    end
 
-                ctx =
-                  ctx
-                  |> mes("[Battle Instructor Subino]")
-                  |> mes("Ok, I'll send you to the West field of Izlude.")
-                  |> mes("Be sure you know how to get back.")
-                  |> close()
+                  ctx =
+                    if checkquest(ctx, 11339, :hunting) < 2 do
+                      ctx
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes("^ff0000Poring^000000s are very cute monsters when you see them.")
+                      |> next()
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "They drop Jellopy which are regarded as a main cooking material in Criatura Academy so we always need to hunt Porings."
+                      )
+                      |> next()
+                    else
+                      ctx
+                    end
 
-                ctx = warp(ctx, Rathena.concat("prt_fild", strnpcinfo(ctx, 2)), 344, 213)
-                throw({:script_end, ctx})
+                  {ctx, _} =
+                    s_l_quest(ctx, [
+                      11339,
+                      90,
+                      50,
+                      909,
+                      5,
+                      "Poring",
+                      "can easily be found",
+                      "Hunt",
+                      "Jellopies"
+                    ])
 
-              2 ->
-                ctx =
-                  ctx
-                  |> mes("[Battle Instructor Subino]")
-                  |> mes("Ok, I'll send you to the West field of Izlude.")
-                  |> mes("Be sure you know how to get back.")
-                  |> close()
+                  ctx =
+                    if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
+                      ctx |> setquest(11338) |> completequest(11338)
+                    else
+                      ctx
+                    end
 
-                ctx = warp(ctx, Rathena.concat("prt_fild", strnpcinfo(ctx, 2)), 344, 213)
-                throw({:script_end, ctx})
+                  ctx =
+                    if checkquest(ctx, 11340, :hunting) < 2 do
+                      ctx
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "^ff0000Lunatic^000000s are very cute animal that live near Prontera."
+                      )
+                      |> mes("Tender...Soft...Very cute... It is very cute........")
+                      |> next()
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "It always bring ^ff0000Carrot^000000s with it, so it is easy to get a delicious carrot by hunting them."
+                      )
+                      |> next()
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "A carrot has lots of fibrous cells and contains vitamin A and carotin so it is good for eyes!"
+                      )
+                      |> next()
+                    else
+                      ctx
+                    end
 
-              3 ->
-                ctx =
-                  ctx
-                  |> mes("[Battle Instructor Subino]")
-                  |> mes("You don't seem to be interested.")
-                  |> mes("Come back again if you change your mind.")
-                  |> close()
+                  {ctx, _} =
+                    s_l_quest(ctx, [
+                      11340,
+                      90,
+                      50,
+                      515,
+                      1,
+                      "Lunatic",
+                      "is easily found",
+                      "Catch",
+                      "Carrot"
+                    ])
 
-                throw({:script_end, ctx})
+                  ctx =
+                    if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
+                      ctx |> setquest(11338) |> completequest(11338)
+                    else
+                      ctx
+                    end
 
-              _ ->
+                  ctx =
+                    if checkquest(ctx, 11341, :hunting) < 2 do
+                      ctx
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "^ff0000Fabre^000000 is the most common bug which is usually seen in Rune-Midgarts Kingdom.."
+                      )
+                      |> mes("It is a worm but it is very popular because it looks cute.")
+                      |> next()
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "Most of the clothes provided by Criatura Academy are made from ^ff0000Fluff^000000 from Fabres. It makes very strong and warm fabric."
+                      )
+                      |> next()
+                    else
+                      ctx
+                    end
+
+                  {ctx, _} =
+                    s_l_quest(ctx, [
+                      11341,
+                      135,
+                      100,
+                      914,
+                      3,
+                      "Fabre",
+                      "is easily found",
+                      "Hunt",
+                      "Fluffs"
+                    ])
+
+                  ctx =
+                    if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
+                      ctx |> setquest(11338) |> completequest(11338)
+                    else
+                      ctx
+                    end
+
+                  ctx =
+                    if checkquest(ctx, 11344, :hunting) < 2 do
+                      ctx
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "^ff0000Pupa^000000 is the intermediate stage of a Fabre before transforming into a Creamy."
+                      )
+                      |> mes("The process of a larva turning into a buttefly is mysterious.")
+                      |> next()
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "As a Fabre transforms to a Creamy I hope that all Novices turn to be great adventurers! So ^ff0000Chrysalis^000000."
+                      )
+                      |> next()
+                    else
+                      ctx
+                    end
+
+                  {ctx, _} =
+                    s_l_quest(ctx, [
+                      11344,
+                      120,
+                      90,
+                      915,
+                      2,
+                      "Pupa",
+                      "is easily found",
+                      "Hunt",
+                      "Chrysalises"
+                    ])
+
+                  ctx =
+                    if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
+                      ctx |> setquest(11338) |> completequest(11338)
+                    else
+                      ctx
+                    end
+
+                  ctx =
+                    if checkquest(ctx, 11342, :hunting) < 2 do
+                      ctx
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "^ff0000Hornet^000000s are a group of bees that live near Prontera under control of the Queen bee Mistress."
+                      )
+                      |> mes(
+                        "Not aggressive... They only attack with their stingers when they are in danger."
+                      )
+                      |> next()
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "There is a study about using the poison extracted from their stingers to make an antidote in Criatura Academy."
+                      )
+                      |> next()
+                    else
+                      ctx
+                    end
+
+                  {ctx, _} =
+                    s_l_quest(ctx, [
+                      11342,
+                      200,
+                      175,
+                      939,
+                      3,
+                      "Hornet",
+                      "are found",
+                      "Hunt",
+                      "Bee Stings"
+                    ])
+
+                  ctx =
+                    ctx
+                    |> mes("[Battle Instructor Subino]")
+                    |> mes("You don't seem to be interested.")
+                    |> mes("Come back again if you change your mind.")
+                    |> close()
+
+                  throw({:script_end, ctx})
+
+                2 ->
+                  ctx =
+                    if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
+                      ctx |> setquest(11338) |> completequest(11338)
+                    else
+                      ctx
+                    end
+
+                  ctx =
+                    if checkquest(ctx, 11340, :hunting) < 2 do
+                      ctx
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "^ff0000Lunatic^000000s are very cute animal that live near Prontera."
+                      )
+                      |> mes("Tender...Soft...Very cute... It is very cute........")
+                      |> next()
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "It always bring ^ff0000Carrot^000000s with it, so it is easy to get a delicious carrot by hunting them."
+                      )
+                      |> next()
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "A carrot has lots of fibrous cells and contains vitamin A and carotin so it is good for eyes!"
+                      )
+                      |> next()
+                    else
+                      ctx
+                    end
+
+                  {ctx, _} =
+                    s_l_quest(ctx, [
+                      11340,
+                      90,
+                      50,
+                      515,
+                      1,
+                      "Lunatic",
+                      "is easily found",
+                      "Catch",
+                      "Carrot"
+                    ])
+
+                  ctx =
+                    if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
+                      ctx |> setquest(11338) |> completequest(11338)
+                    else
+                      ctx
+                    end
+
+                  ctx =
+                    if checkquest(ctx, 11341, :hunting) < 2 do
+                      ctx
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "^ff0000Fabre^000000 is the most common bug which is usually seen in Rune-Midgarts Kingdom.."
+                      )
+                      |> mes("It is a worm but it is very popular because it looks cute.")
+                      |> next()
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "Most of the clothes provided by Criatura Academy are made from ^ff0000Fluff^000000 from Fabres. It makes very strong and warm fabric."
+                      )
+                      |> next()
+                    else
+                      ctx
+                    end
+
+                  {ctx, _} =
+                    s_l_quest(ctx, [
+                      11341,
+                      135,
+                      100,
+                      914,
+                      3,
+                      "Fabre",
+                      "is easily found",
+                      "Hunt",
+                      "Fluffs"
+                    ])
+
+                  ctx =
+                    if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
+                      ctx |> setquest(11338) |> completequest(11338)
+                    else
+                      ctx
+                    end
+
+                  ctx =
+                    if checkquest(ctx, 11344, :hunting) < 2 do
+                      ctx
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "^ff0000Pupa^000000 is the intermediate stage of a Fabre before transforming into a Creamy."
+                      )
+                      |> mes("The process of a larva turning into a buttefly is mysterious.")
+                      |> next()
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "As a Fabre transforms to a Creamy I hope that all Novices turn to be great adventurers! So ^ff0000Chrysalis^000000."
+                      )
+                      |> next()
+                    else
+                      ctx
+                    end
+
+                  {ctx, _} =
+                    s_l_quest(ctx, [
+                      11344,
+                      120,
+                      90,
+                      915,
+                      2,
+                      "Pupa",
+                      "is easily found",
+                      "Hunt",
+                      "Chrysalises"
+                    ])
+
+                  ctx =
+                    if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
+                      ctx |> setquest(11338) |> completequest(11338)
+                    else
+                      ctx
+                    end
+
+                  ctx =
+                    if checkquest(ctx, 11342, :hunting) < 2 do
+                      ctx
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "^ff0000Hornet^000000s are a group of bees that live near Prontera under control of the Queen bee Mistress."
+                      )
+                      |> mes(
+                        "Not aggressive... They only attack with their stingers when they are in danger."
+                      )
+                      |> next()
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "There is a study about using the poison extracted from their stingers to make an antidote in Criatura Academy."
+                      )
+                      |> next()
+                    else
+                      ctx
+                    end
+
+                  {ctx, _} =
+                    s_l_quest(ctx, [
+                      11342,
+                      200,
+                      175,
+                      939,
+                      3,
+                      "Hornet",
+                      "are found",
+                      "Hunt",
+                      "Bee Stings"
+                    ])
+
+                  ctx =
+                    ctx
+                    |> mes("[Battle Instructor Subino]")
+                    |> mes("You don't seem to be interested.")
+                    |> mes("Come back again if you change your mind.")
+                    |> close()
+
+                  throw({:script_end, ctx})
+
+                3 ->
+                  ctx =
+                    if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
+                      ctx |> setquest(11338) |> completequest(11338)
+                    else
+                      ctx
+                    end
+
+                  ctx =
+                    if checkquest(ctx, 11341, :hunting) < 2 do
+                      ctx
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "^ff0000Fabre^000000 is the most common bug which is usually seen in Rune-Midgarts Kingdom.."
+                      )
+                      |> mes("It is a worm but it is very popular because it looks cute.")
+                      |> next()
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "Most of the clothes provided by Criatura Academy are made from ^ff0000Fluff^000000 from Fabres. It makes very strong and warm fabric."
+                      )
+                      |> next()
+                    else
+                      ctx
+                    end
+
+                  {ctx, _} =
+                    s_l_quest(ctx, [
+                      11341,
+                      135,
+                      100,
+                      914,
+                      3,
+                      "Fabre",
+                      "is easily found",
+                      "Hunt",
+                      "Fluffs"
+                    ])
+
+                  ctx =
+                    if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
+                      ctx |> setquest(11338) |> completequest(11338)
+                    else
+                      ctx
+                    end
+
+                  ctx =
+                    if checkquest(ctx, 11344, :hunting) < 2 do
+                      ctx
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "^ff0000Pupa^000000 is the intermediate stage of a Fabre before transforming into a Creamy."
+                      )
+                      |> mes("The process of a larva turning into a buttefly is mysterious.")
+                      |> next()
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "As a Fabre transforms to a Creamy I hope that all Novices turn to be great adventurers! So ^ff0000Chrysalis^000000."
+                      )
+                      |> next()
+                    else
+                      ctx
+                    end
+
+                  {ctx, _} =
+                    s_l_quest(ctx, [
+                      11344,
+                      120,
+                      90,
+                      915,
+                      2,
+                      "Pupa",
+                      "is easily found",
+                      "Hunt",
+                      "Chrysalises"
+                    ])
+
+                  ctx =
+                    if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
+                      ctx |> setquest(11338) |> completequest(11338)
+                    else
+                      ctx
+                    end
+
+                  ctx =
+                    if checkquest(ctx, 11342, :hunting) < 2 do
+                      ctx
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "^ff0000Hornet^000000s are a group of bees that live near Prontera under control of the Queen bee Mistress."
+                      )
+                      |> mes(
+                        "Not aggressive... They only attack with their stingers when they are in danger."
+                      )
+                      |> next()
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "There is a study about using the poison extracted from their stingers to make an antidote in Criatura Academy."
+                      )
+                      |> next()
+                    else
+                      ctx
+                    end
+
+                  {ctx, _} =
+                    s_l_quest(ctx, [
+                      11342,
+                      200,
+                      175,
+                      939,
+                      3,
+                      "Hornet",
+                      "are found",
+                      "Hunt",
+                      "Bee Stings"
+                    ])
+
+                  ctx =
+                    ctx
+                    |> mes("[Battle Instructor Subino]")
+                    |> mes("You don't seem to be interested.")
+                    |> mes("Come back again if you change your mind.")
+                    |> close()
+
+                  throw({:script_end, ctx})
+
+                4 ->
+                  ctx =
+                    if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
+                      ctx |> setquest(11338) |> completequest(11338)
+                    else
+                      ctx
+                    end
+
+                  ctx =
+                    if checkquest(ctx, 11344, :hunting) < 2 do
+                      ctx
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "^ff0000Pupa^000000 is the intermediate stage of a Fabre before transforming into a Creamy."
+                      )
+                      |> mes("The process of a larva turning into a buttefly is mysterious.")
+                      |> next()
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "As a Fabre transforms to a Creamy I hope that all Novices turn to be great adventurers! So ^ff0000Chrysalis^000000."
+                      )
+                      |> next()
+                    else
+                      ctx
+                    end
+
+                  {ctx, _} =
+                    s_l_quest(ctx, [
+                      11344,
+                      120,
+                      90,
+                      915,
+                      2,
+                      "Pupa",
+                      "is easily found",
+                      "Hunt",
+                      "Chrysalises"
+                    ])
+
+                  ctx =
+                    if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
+                      ctx |> setquest(11338) |> completequest(11338)
+                    else
+                      ctx
+                    end
+
+                  ctx =
+                    if checkquest(ctx, 11342, :hunting) < 2 do
+                      ctx
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "^ff0000Hornet^000000s are a group of bees that live near Prontera under control of the Queen bee Mistress."
+                      )
+                      |> mes(
+                        "Not aggressive... They only attack with their stingers when they are in danger."
+                      )
+                      |> next()
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "There is a study about using the poison extracted from their stingers to make an antidote in Criatura Academy."
+                      )
+                      |> next()
+                    else
+                      ctx
+                    end
+
+                  {ctx, _} =
+                    s_l_quest(ctx, [
+                      11342,
+                      200,
+                      175,
+                      939,
+                      3,
+                      "Hornet",
+                      "are found",
+                      "Hunt",
+                      "Bee Stings"
+                    ])
+
+                  ctx =
+                    ctx
+                    |> mes("[Battle Instructor Subino]")
+                    |> mes("You don't seem to be interested.")
+                    |> mes("Come back again if you change your mind.")
+                    |> close()
+
+                  throw({:script_end, ctx})
+
+                5 ->
+                  ctx =
+                    if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
+                      ctx |> setquest(11338) |> completequest(11338)
+                    else
+                      ctx
+                    end
+
+                  ctx =
+                    if checkquest(ctx, 11342, :hunting) < 2 do
+                      ctx
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "^ff0000Hornet^000000s are a group of bees that live near Prontera under control of the Queen bee Mistress."
+                      )
+                      |> mes(
+                        "Not aggressive... They only attack with their stingers when they are in danger."
+                      )
+                      |> next()
+                      |> mes("[Battle Instructor Subino]")
+                      |> mes(
+                        "There is a study about using the poison extracted from their stingers to make an antidote in Criatura Academy."
+                      )
+                      |> next()
+                    else
+                      ctx
+                    end
+
+                  {ctx, _} =
+                    s_l_quest(ctx, [
+                      11342,
+                      200,
+                      175,
+                      939,
+                      3,
+                      "Hornet",
+                      "are found",
+                      "Hunt",
+                      "Bee Stings"
+                    ])
+
+                  ctx =
+                    ctx
+                    |> mes("[Battle Instructor Subino]")
+                    |> mes("You don't seem to be interested.")
+                    |> mes("Come back again if you change your mind.")
+                    |> close()
+
+                  throw({:script_end, ctx})
+
+                6 ->
+                  ctx =
+                    ctx
+                    |> mes("[Battle Instructor Subino]")
+                    |> mes("You don't seem to be interested.")
+                    |> mes("Come back again if you change your mind.")
+                    |> close()
+
+                  throw({:script_end, ctx})
+
+                _ ->
+                  throw({:script_end, ctx})
+              end
+
+            2 ->
+              ctx =
                 ctx
-            end
+                |> mes("[Battle Instructor Subino]")
+                |> mes("Ok, I'll send you to the West field of Izlude.")
+                |> mes("Be sure you know how to get back.")
+                |> close()
 
-          ctx
+              ctx = warp(ctx, Rathena.concat("prt_fild", strnpcinfo(ctx, 2)), 344, 213)
+              throw({:script_end, ctx})
+
+            3 ->
+              ctx =
+                ctx
+                |> mes("[Battle Instructor Subino]")
+                |> mes("You don't seem to be interested.")
+                |> mes("Come back again if you change your mind.")
+                |> close()
+
+              throw({:script_end, ctx})
+
+            _ ->
+              throw({:script_end, ctx})
+          end
         else
           ctx
         end

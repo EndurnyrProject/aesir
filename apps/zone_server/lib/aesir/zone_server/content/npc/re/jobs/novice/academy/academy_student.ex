@@ -87,17 +87,26 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyStudent do
 
     ctx =
       if isbegin_quest(ctx, 7478) == 1 and not Rathena.truthy?(isbegin_quest(ctx, 7479)) do
-        ctx = specialeffect(ctx, :steal)
+        ctx =
+          specialeffect(
+            ctx,
+            :steal,
+            :area,
+            Rathena.concat("Cultivated Red Plant#", strnpcinfo(ctx, 2))
+          )
 
-        {ctx, v1} =
-          ctx
-          |> donpcevent(
+        ctx =
+          donpcevent(
+            ctx,
             Rathena.concat(
               Rathena.concat("Cultivated Red Plant#", strnpcinfo(ctx, 2)),
               "::OnDisable"
             )
           )
-          |> emotion(:surprise)
+
+        {ctx, v1} =
+          ctx
+          |> emotion(:surprise, playerattached(ctx))
           |> emotion(:smile)
           |> mes("[Lumin]")
           |> mes("Hey there Turtle")

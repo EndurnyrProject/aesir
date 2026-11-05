@@ -53,7 +53,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Npc do
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
-  def on_event("OnInit", ctx), do: ctx
+  # The reference stacks this label on the next one, so both run the same body.
+  def on_event("OnInit", ctx), do: on_event("OnHide", ctx)
   def on_event("OnHide", ctx), do: ctx |> specialeffect(:bash) |> disablenpc()
   def on_event("OnUnhide", ctx), do: ctx |> enablenpc() |> specialeffect(:summonslave)
 

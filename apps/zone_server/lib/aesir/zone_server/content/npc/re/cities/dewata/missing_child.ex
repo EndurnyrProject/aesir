@@ -28,7 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.MissingChild do
   def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
   @impl true
   def on_talk(ctx) do
-    ctx
+    ev_ontouch(ctx)
   end
 
   def ev_ontouch(ctx) do
@@ -55,10 +55,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.MissingChild do
       |> emotion(:profusely_sweat)
       |> next()
 
-    ctx
-    |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
-    |> mes("... ... ...")
-    |> emotion(:think)
-    |> close()
+    ctx =
+      ctx
+      |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
+      |> mes("... ... ...")
+
+    ctx |> emotion(:think, playerattached(ctx)) |> close()
   end
 end

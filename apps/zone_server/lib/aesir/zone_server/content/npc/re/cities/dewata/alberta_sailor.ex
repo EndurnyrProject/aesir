@@ -31,35 +31,34 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.AlbertaSailor do
       |> next()
       |> select(["Yes.", "No."])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx =
-            ctx
-            |> mes("[Alberta Sailor]")
-            |> mes("I hope you had a lot of fun on")
-            |> mes("your trip to ^8B4513Dewata^000000 Island.")
-            |> mes("Please come again!")
-            |> close()
-            |> warp("alberta", 192, 215)
+    _ = v1
 
-          throw({:script_end, ctx})
-
-        2 ->
-          ctx =
-            ctx
-            |> mes("[Alberta Sailor]")
-            |> mes("Have some more fun before you go.")
-            |> mes("^8B4513Dewata^000000 Island still has more to offer.")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+    case v1 do
+      1 ->
+        ctx =
           ctx
-      end
+          |> mes("[Alberta Sailor]")
+          |> mes("I hope you had a lot of fun on")
+          |> mes("your trip to ^8B4513Dewata^000000 Island.")
+          |> mes("Please come again!")
+          |> close()
+          |> warp("alberta", 192, 215)
 
-    ctx
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx =
+          ctx
+          |> mes("[Alberta Sailor]")
+          |> mes("Have some more fun before you go.")
+          |> mes("^8B4513Dewata^000000 Island still has more to offer.")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

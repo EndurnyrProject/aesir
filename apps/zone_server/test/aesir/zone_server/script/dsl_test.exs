@@ -235,6 +235,52 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       ctx = %{%{build_ctx() | npc_gid: 42} | status: {:error, :boom}}
       assert Dsl.specialeffect(ctx, :hit1) == ctx
     end
+
+    test "SELF sends only to the invoking player" do
+      test_pid = self()
+
+      expect(SpecialEffect, :play, fn {:npc, 42}, :hit1, {:player, 1} ->
+        send(test_pid, :played)
+        :ok
+      end)
+
+      ctx = %{build_ctx() | npc_gid: 42}
+
+      assert Dsl.specialeffect(ctx, :hit1, :self) == ctx
+      assert_received :played
+    end
+
+    test "a named NPC re-anchors the effect" do
+      test_pid = self()
+
+      stub(NpcRegistry, :by_name, fn
+        "Wall#kh" -> [{__MODULE__, %{map: "kh_school", x: 1, y: 2, unique_name: "Wall#kh"}}]
+        _other -> []
+      end)
+
+      stub(NpcRegistry, :entity_id, fn %{unique_name: name} -> :erlang.phash2(name) end)
+
+      expect(SpecialEffect, :play, fn {:npc, gid}, :readyportal2, :area ->
+        send(test_pid, {:played, gid})
+        :ok
+      end)
+
+      ctx = %{build_ctx() | npc_gid: 42}
+
+      assert Dsl.specialeffect(ctx, :readyportal2, :area, "Wall#kh") == ctx
+      assert_received {:played, gid}
+      assert gid == :erlang.phash2("Wall#kh")
+    end
+
+    test "an unknown NPC name fails the command and goes on" do
+      stub(NpcRegistry, :by_name, fn _name -> [] end)
+      reject(&SpecialEffect.play/3)
+
+      ctx = %{build_ctx() | npc_gid: 42}
+
+      assert %Ctx{status: :ok, failures: [{:specialeffect, {:unknown_npc, "Nobody"}}]} =
+               Dsl.specialeffect(ctx, :hit1, :area, "Nobody")
+    end
   end
 
   describe "viewpoint/6" do

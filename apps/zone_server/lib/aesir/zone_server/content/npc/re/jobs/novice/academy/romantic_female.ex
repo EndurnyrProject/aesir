@@ -62,39 +62,64 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RomanticFemale do
       }
     ]
 
+  alias Aesir.ZoneServer.Script.Rathena
+
   @impl true
   def on_talk(ctx) do
+    ctx =
+      ctx |> mes("[Romantic Female]") |> mes("Shout like this when I miss you, honey!!") |> next()
+
+    ctx =
+      ctx
+      |> emotion(:throb, getnpcid(ctx, Rathena.concat("Romantic Female#", strnpcinfo(ctx, 2))))
+      |> mes("[Romantic Female]")
+      |> mes("^0000cd[I miss you.]^000000")
+      |> next()
+      |> mes("[Romantic Female]")
+      |> mes("Then, you run towards me leaving everything behind,~ don't you?")
+      |> next()
+      |> mes("[Romantic Female]")
+      |> mes("I will definitely do as you call me!!")
+      |> next()
+      |> mes("[Romantic Female]")
+      |> mes("You are tired of sitting, aren't you?")
+      |> next()
+
+    ctx =
+      specialeffect(
+        ctx,
+        :heartcasting,
+        :area,
+        Rathena.concat("Romantic Female#", strnpcinfo(ctx, 2))
+      )
+
+    ctx =
+      ctx
+      |> emotion(:chup, getnpcid(ctx, Rathena.concat("Romantic Female#", strnpcinfo(ctx, 2))))
+      |> mes("[Romantic Female]")
+      |> mes("My sweetheart!!! I love you!!!")
+      |> next()
+      |> mes("[Romantic Male]")
+      |> mes("Yes, thank you for sharing your SP! You are also tired, aren't you?")
+      |> next()
+
+    ctx =
+      specialeffect(
+        ctx,
+        :heartcasting,
+        :area,
+        Rathena.concat("Romantic Male#", strnpcinfo(ctx, 2))
+      )
+
+    ctx =
+      ctx
+      |> emotion(:chupchup, getnpcid(ctx, Rathena.concat("Romantic Male#", strnpcinfo(ctx, 2))))
+      |> mes("[Romantic Male]")
+      |> mes("My sweetheart!! I love you!!!")
+      |> next()
+
     ctx
-    |> mes("[Romantic Female]")
-    |> mes("Shout like this when I miss you, honey!!")
-    |> next()
-    |> emotion(:throb)
-    |> mes("[Romantic Female]")
-    |> mes("^0000cd[I miss you.]^000000")
-    |> next()
-    |> mes("[Romantic Female]")
-    |> mes("Then, you run towards me leaving everything behind,~ don't you?")
-    |> next()
-    |> mes("[Romantic Female]")
-    |> mes("I will definitely do as you call me!!")
-    |> next()
-    |> mes("[Romantic Female]")
-    |> mes("You are tired of sitting, aren't you?")
-    |> next()
-    |> specialeffect(:heartcasting)
-    |> emotion(:chup)
-    |> mes("[Romantic Female]")
-    |> mes("My sweetheart!!! I love you!!!")
-    |> next()
-    |> mes("[Romantic Male]")
-    |> mes("Yes, thank you for sharing your SP! You are also tired, aren't you?")
-    |> next()
-    |> specialeffect(:heartcasting)
-    |> emotion(:chupchup)
-    |> mes("[Romantic Male]")
-    |> mes("My sweetheart!! I love you!!!")
-    |> next()
-    |> emotion(:throb)
+    |> emotion(:throb, getnpcid(ctx, Rathena.concat("Romantic Female#", strnpcinfo(ctx, 2))))
     |> mes("[Romantic Female]")
     |> mes("Kia~ You are Coolest!!!")
     |> close()

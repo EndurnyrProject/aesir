@@ -129,165 +129,163 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Locas do
       end
 
     {ctx, v3} = select(ctx, ["Refining Oridecon", "Refining Elunium", "Other questions."])
+    _ = v3
 
-    ctx =
-      case v3 do
-        1 ->
-          {ctx, v4} =
-            ctx
-            |> mes("[Locas]")
-            |> mes("Will you refine 5 Rough Oridecon to one Oridecon?")
-            |> next()
-            |> select(["Exchange 5 for 1", "Exchange all."])
-
-          if v4 == 1 do
-            if count_item(ctx, 756) > 4 do
-              ctx =
-                ctx
-                |> delitem(756, 5)
-                |> give_item(984, 1)
-                |> mes("[Locas]")
-                |> mes("Refined Rough Oridecon to Oridecon.")
-                |> close()
-
-              throw({:script_end, ctx})
-            else
-              ctx =
-                ctx
-                |> mes("[Locas]")
-                |> mes("Are you kidding me?")
-                |> mes("You should bring me 5 Rough Oridecon to refine for one Oridecon.")
-                |> close()
-
-              throw({:script_end, ctx})
-            end
-          else
-            if count_item(ctx, 756) > 4 do
-              ctx = set_local(ctx, :ston_max, div(count_item(ctx, 756), 5))
-              ctx = set_local(ctx, :ston_full, get_local(ctx, :ston_max, 0) * 5)
-              ctx = delitem(ctx, 756, get_local(ctx, :ston_full, 0))
-              ctx = ctx |> give_item(984, get_local(ctx, :ston_max, 0)) |> mes("[Locas]")
-
-              ctx =
-                ctx
-                |> mes(
-                  Rathena.concat(
-                    Rathena.concat(
-                      Rathena.concat(
-                        Rathena.concat("Refined ", get_local(ctx, :ston_full, 0)),
-                        " Rough Oridecon into "
-                      ),
-                      get_local(ctx, :ston_max, 0)
-                    ),
-                    " Oridecon. Thank you for your business."
-                  )
-                )
-                |> close()
-
-              throw({:script_end, ctx})
-            else
-              ctx =
-                ctx
-                |> mes("[Locas]")
-                |> mes("Are you kidding me?")
-                |> mes("You should bring me 5 Rough Oridecon to refine for one Oridecon.")
-                |> close()
-
-              throw({:script_end, ctx})
-            end
-          end
-
-        2 ->
-          {ctx, v5} =
-            ctx
-            |> mes("[Locas]")
-            |> mes("Will you refine 5 Rough Elunium to one Elunium?")
-            |> next()
-            |> select(["Exchange 5 for 1", "Exchange all."])
-
-          if v5 == 1 do
-            if count_item(ctx, 757) > 4 do
-              ctx =
-                ctx
-                |> delitem(757, 5)
-                |> give_item(985, 1)
-                |> mes("[Locas]")
-                |> mes("Refined Rough Elunium to Elunium.")
-                |> close()
-
-              throw({:script_end, ctx})
-            else
-              ctx =
-                ctx
-                |> mes("[Locas]")
-                |> mes("Are you kidding me?")
-                |> mes("You should bring me 5 Rough Elunium to refine for one Elunium.")
-                |> close()
-
-              throw({:script_end, ctx})
-            end
-          else
-            if count_item(ctx, 757) > 4 do
-              ctx = set_local(ctx, :ston_max, div(count_item(ctx, 757), 5))
-              ctx = set_local(ctx, :ston_full, get_local(ctx, :ston_max, 0) * 5)
-              ctx = delitem(ctx, 757, get_local(ctx, :ston_full, 0))
-              ctx = ctx |> give_item(985, get_local(ctx, :ston_max, 0)) |> mes("[Locas]")
-
-              ctx =
-                ctx
-                |> mes(
-                  Rathena.concat(
-                    Rathena.concat(
-                      Rathena.concat(
-                        Rathena.concat("Refined ", get_local(ctx, :ston_full, 0)),
-                        " Rough Elunium into "
-                      ),
-                      get_local(ctx, :ston_max, 0)
-                    ),
-                    " Elunium. Thank you for your business."
-                  )
-                )
-                |> close()
-
-              throw({:script_end, ctx})
-            else
-              ctx =
-                ctx
-                |> mes("[Locas]")
-                |> mes("Are you kidding me?")
-                |> mes("You should bring me 5 Rough Elunium to refine for one Elunium.")
-                |> close()
-
-              throw({:script_end, ctx})
-            end
-          end
-
-        3 ->
-          ctx =
-            ctx
-            |> mes("[Locas]")
-            |> mes("Do you have any questions about refining?")
-            |> next()
-            |> mes("[Locas]")
-            |> mes("Though I can't explain a lot.... What's your question?")
-            |> next()
-            |> loop_6()
-            |> mes("[Locas]")
-            |> mes("Thank you for your listening to a long story. This is all I can explain you.")
-            |> next()
-            |> mes("[Locas]")
-            |> mes(
-              "Regarding the levels of weapons and safety refining, consult with Mr. Tadde. He will kindly answer to you."
-            )
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+    case v3 do
+      1 ->
+        {ctx, v4} =
           ctx
-      end
+          |> mes("[Locas]")
+          |> mes("Will you refine 5 Rough Oridecon to one Oridecon?")
+          |> next()
+          |> select(["Exchange 5 for 1", "Exchange all."])
 
-    ctx
+        if v4 == 1 do
+          if count_item(ctx, 756) > 4 do
+            ctx =
+              ctx
+              |> delitem(756, 5)
+              |> give_item(984, 1)
+              |> mes("[Locas]")
+              |> mes("Refined Rough Oridecon to Oridecon.")
+              |> close()
+
+            throw({:script_end, ctx})
+          else
+            ctx =
+              ctx
+              |> mes("[Locas]")
+              |> mes("Are you kidding me?")
+              |> mes("You should bring me 5 Rough Oridecon to refine for one Oridecon.")
+              |> close()
+
+            throw({:script_end, ctx})
+          end
+        else
+          if count_item(ctx, 756) > 4 do
+            ctx = set_local(ctx, :ston_max, div(count_item(ctx, 756), 5))
+            ctx = set_local(ctx, :ston_full, get_local(ctx, :ston_max, 0) * 5)
+            ctx = delitem(ctx, 756, get_local(ctx, :ston_full, 0))
+            ctx = ctx |> give_item(984, get_local(ctx, :ston_max, 0)) |> mes("[Locas]")
+
+            ctx =
+              ctx
+              |> mes(
+                Rathena.concat(
+                  Rathena.concat(
+                    Rathena.concat(
+                      Rathena.concat("Refined ", get_local(ctx, :ston_full, 0)),
+                      " Rough Oridecon into "
+                    ),
+                    get_local(ctx, :ston_max, 0)
+                  ),
+                  " Oridecon. Thank you for your business."
+                )
+              )
+              |> close()
+
+            throw({:script_end, ctx})
+          else
+            ctx =
+              ctx
+              |> mes("[Locas]")
+              |> mes("Are you kidding me?")
+              |> mes("You should bring me 5 Rough Oridecon to refine for one Oridecon.")
+              |> close()
+
+            throw({:script_end, ctx})
+          end
+        end
+
+      2 ->
+        {ctx, v5} =
+          ctx
+          |> mes("[Locas]")
+          |> mes("Will you refine 5 Rough Elunium to one Elunium?")
+          |> next()
+          |> select(["Exchange 5 for 1", "Exchange all."])
+
+        if v5 == 1 do
+          if count_item(ctx, 757) > 4 do
+            ctx =
+              ctx
+              |> delitem(757, 5)
+              |> give_item(985, 1)
+              |> mes("[Locas]")
+              |> mes("Refined Rough Elunium to Elunium.")
+              |> close()
+
+            throw({:script_end, ctx})
+          else
+            ctx =
+              ctx
+              |> mes("[Locas]")
+              |> mes("Are you kidding me?")
+              |> mes("You should bring me 5 Rough Elunium to refine for one Elunium.")
+              |> close()
+
+            throw({:script_end, ctx})
+          end
+        else
+          if count_item(ctx, 757) > 4 do
+            ctx = set_local(ctx, :ston_max, div(count_item(ctx, 757), 5))
+            ctx = set_local(ctx, :ston_full, get_local(ctx, :ston_max, 0) * 5)
+            ctx = delitem(ctx, 757, get_local(ctx, :ston_full, 0))
+            ctx = ctx |> give_item(985, get_local(ctx, :ston_max, 0)) |> mes("[Locas]")
+
+            ctx =
+              ctx
+              |> mes(
+                Rathena.concat(
+                  Rathena.concat(
+                    Rathena.concat(
+                      Rathena.concat("Refined ", get_local(ctx, :ston_full, 0)),
+                      " Rough Elunium into "
+                    ),
+                    get_local(ctx, :ston_max, 0)
+                  ),
+                  " Elunium. Thank you for your business."
+                )
+              )
+              |> close()
+
+            throw({:script_end, ctx})
+          else
+            ctx =
+              ctx
+              |> mes("[Locas]")
+              |> mes("Are you kidding me?")
+              |> mes("You should bring me 5 Rough Elunium to refine for one Elunium.")
+              |> close()
+
+            throw({:script_end, ctx})
+          end
+        end
+
+      3 ->
+        ctx =
+          ctx
+          |> mes("[Locas]")
+          |> mes("Do you have any questions about refining?")
+          |> next()
+          |> mes("[Locas]")
+          |> mes("Though I can't explain a lot.... What's your question?")
+          |> next()
+          |> loop_6()
+          |> mes("[Locas]")
+          |> mes("Thank you for your listening to a long story. This is all I can explain you.")
+          |> next()
+          |> mes("[Locas]")
+          |> mes(
+            "Regarding the levels of weapons and safety refining, consult with Mr. Tadde. He will kindly answer to you."
+          )
+          |> close()
+
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end
@@ -398,7 +396,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Locas do
               ctx
 
             _ ->
-              ctx
+              throw({:script_end, ctx})
           end
 
         throw({:brk_3, ctx})
@@ -526,7 +524,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Locas do
               ctx
 
             _ ->
-              ctx
+              throw({:script_end, ctx})
           end
 
         throw({:brk_1, ctx})
@@ -647,7 +645,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Locas do
               ctx
 
             _ ->
-              ctx
+              throw({:script_end, ctx})
           end
 
         throw({:brk_8, ctx})
@@ -766,7 +764,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Locas do
               ctx
 
             _ ->
-              ctx
+              throw({:script_end, ctx})
           end
 
         throw({:brk_6, ctx})

@@ -244,7 +244,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "sc_start" => %{dsl: "sc_start", args: [:status, :int, :int]},
     "sc_end" => %{dsl: "sc_end", args: [:status]},
     "emotion" => %{dsl: "emotion", args: [:emote, :int]},
-    "specialeffect" => %{dsl: "specialeffect", args: [:effect]},
+    "specialeffect" => %{shape: :specialeffect, dsl: "specialeffect"},
     "specialeffect2" => %{dsl: "specialeffect2", args: [:effect]},
     "cutin" => %{dsl: "cutin", args: [:string, :int]},
     "soundeffect" => %{dsl: "soundeffect", args: [:string, :int]},

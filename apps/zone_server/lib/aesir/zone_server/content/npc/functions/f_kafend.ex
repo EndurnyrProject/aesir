@@ -56,6 +56,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafend do
       end
 
     ctx = ctx |> close() |> cutin("", 255)
-    {ctx, nil}
+    throw({:script_end, ctx})
   end
 end

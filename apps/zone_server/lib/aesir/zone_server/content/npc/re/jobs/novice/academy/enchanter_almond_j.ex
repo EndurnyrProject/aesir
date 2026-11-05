@@ -377,7 +377,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterAlmondJ d
           throw({:script_end, ctx})
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     ctx = set_local(ctx, :part, get_char_var(ctx, :EQI_HAND_R, 0))

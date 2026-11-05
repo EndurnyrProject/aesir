@@ -52,7 +52,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Supervisor do
 
   @impl true
   @spec on_talk(Ctx.t()) :: Ctx.t()
-  def on_talk(ctx), do: ctx
+  # rAthena starts a click at the first label, so it runs this body too.
+  def on_talk(ctx), do: on_event("OnTouch_", ctx)
 
   defp count_lap(ctx, lap) when lap >= 15 and lap <= 23 do
     ctx

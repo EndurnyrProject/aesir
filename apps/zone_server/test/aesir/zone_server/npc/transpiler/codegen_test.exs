@@ -733,6 +733,93 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ ~S{Todo.call!(:get_var}
   end
 
+  test "a body prefix before the first case runs after the value and before the tests" do
+    src =
+      gen!(
+        """
+        switch (select("Talk:Cancel")) {
+          mes "page";
+        case 1:
+          close;
+        }
+        """,
+        module: "Aesir.ZoneServer.Content.Npc.Payon.TestNpcSwitchPrelude"
+      )
+
+    assert src =~ ~r/\{ctx, \w+\} = select\(ctx, \["Talk", "Cancel"\]\)/
+    assert src =~ ~r/select\(ctx.*\n\s*ctx = mes\(ctx, "page"\)/s
+    assert src =~ ~r/mes\(ctx, "page"\).*\n\s*case \w+ do/s
+  end
+
+  test "a switch with no case labels runs its body and flow continues after it" do
+    src =
+      gen!(
+        """
+        switch (select("Talk:Cancel")) {
+          mes "body";
+          next;
+        }
+        mes "after";
+        close;
+        """,
+        module: "Aesir.ZoneServer.Content.Npc.Payon.TestNpcSwitchNoCases"
+      )
+
+    flat = String.replace(src, ~r/\s+/, " ")
+    assert flat =~ ~r/select\(ctx, \["Talk", "Cancel"\]\).*mes\("body"\)/
+    assert flat =~ ~r/next\(\).*mes\("after"\) |> close\(\)/
+    refute src =~ ~r/case \w+ do/
+  end
+
+  test "stacked labels with an empty body are aliases for the next body" do
+    src =
+      gen!(
+        """
+        end;
+
+        OnTimer300000:
+        OnTimer600000:
+        OnTimer900000:
+          donpcevent "Room::OnReset";
+          stopnpctimer;
+          end;
+        """,
+        module: "Aesir.ZoneServer.Content.Npc.Payon.TestNpcStackedTimers"
+      )
+
+    assert src =~ ~S|def on_event("OnTimer300000", ctx), do: ev_ontimer300000(ctx)|
+    assert src =~ ~r/def ev_ontimer300000\(ctx\) do\n\s*ev_ontimer600000\(ctx\)/
+    assert src =~ ~r/def ev_ontimer600000\(ctx\) do\n\s*ev_ontimer900000\(ctx\)/
+  end
+
+  test "a body that starts at an event label makes on_talk run that label" do
+    src =
+      gen!(
+        """
+        OnTouch:
+          mes "get away from me";
+          close;
+        """,
+        module: "Aesir.ZoneServer.Content.Npc.Payon.TestNpcLeadingTouch"
+      )
+
+    assert src =~ ~r/def on_talk\(ctx\) do\n\s*ev_ontouch\(ctx\)/
+  end
+
+  test "an effect id that is not an EF_* constant is skipped, not raised" do
+    src =
+      gen!(
+        """
+        specialeffect PF_FOGWALL;
+        close;
+        """,
+        module: "Aesir.ZoneServer.Content.Npc.Payon.TestNpcUnknownEffect"
+      )
+
+    assert src =~ "specialeffect(:pf_fogwall)"
+    refute src =~ "Todo.const!"
+  end
+
   test "On* labels wire to on_event/2 clauses; the macro derives events/0" do
     src =
       gen!(
@@ -1625,15 +1712,29 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "Todo.call!(:specialeffect"
   end
 
-  test "specialeffect drops the trailing send-target and named-NPC arguments" do
+  test "specialeffect keeps the send target and the named-NPC anchor" do
     src =
       gen!("""
       specialeffect EF_HIT1, AREA, "Some NPC";
+      specialeffect EF_HIT1, SELF;
+      specialeffect EF_HIT1, AREA;
       close;
       """)
 
-    assert src =~ "|> specialeffect(:hit1)"
-    refute src =~ "Some NPC"
+    assert src =~ ~S|specialeffect(:hit1, :area, "Some NPC")|
+    assert src =~ "specialeffect(:hit1, :self)"
+    assert src =~ "specialeffect(:hit1, :area)"
+    refute src =~ "Todo.call!(:specialeffect"
+  end
+
+  test "a specialeffect send target the DSL cannot express stays a stub" do
+    src =
+      gen!("""
+      specialeffect EF_HIT1, ALL_SAMEMAP;
+      close;
+      """)
+
+    assert src =~ "todo(:specialeffect"
   end
 
   test "getnpcid reads the running NPC's gid and a named NPC's gid" do

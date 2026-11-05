@@ -62,267 +62,262 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SmallShrine do
       |> next()
       |> select(["Make a donation.", "Make a wish.", "Walk away."])
 
-    ctx =
-      case v1 do
-        1 ->
-          {ctx, v2} =
+    _ = v1
+
+    case v1 do
+      1 ->
+        {ctx, v2} =
+          ctx
+          |> mes("Donation case says:")
+          |> mes("^FF00001,000 ~ 100,000 Zeny^000000")
+          |> mes("How much do you want to donate?")
+          |> next()
+          |> input(:int)
+
+        {_, v3} = Rathena.input_int(v2, 0, 100_000)
+        ctx = set_local(ctx, :input, v3)
+
+        ctx =
+          if get_local(ctx, :input, 0) < 1000 do
+            ctx = ctx |> mes("- Cancelled. -") |> close()
+            throw({:script_end, ctx})
+          else
+            ctx =
+              if get_local(ctx, :input, 0) <= 50000 do
+                set_local(ctx, :good_luck, Enum.random(1..10000))
+              else
+                set_local(ctx, :good_luck, Enum.random(1..5000))
+              end
+
             ctx
-            |> mes("Donation case says:")
-            |> mes("^FF00001,000 ~ 100,000 Zeny^000000")
-            |> mes("How much do you want to donate?")
-            |> next()
-            |> input(:int)
+          end
 
-          {_, v3} = Rathena.input_int(v2, 0, 100_000)
-          ctx = set_local(ctx, :input, v3)
-
-          ctx =
-            if get_local(ctx, :input, 0) < 1000 do
-              ctx = ctx |> mes("- Cancelled. -") |> close()
-              throw({:script_end, ctx})
-            else
-              ctx =
-                if get_local(ctx, :input, 0) <= 50000 do
-                  set_local(ctx, :good_luck, Enum.random(1..10000))
-                else
-                  set_local(ctx, :good_luck, Enum.random(1..5000))
-                end
-
-              ctx
-            end
-
-          ctx =
-            if get_local(ctx, :input, 0) > zeny(ctx) do
-              ctx = ctx |> mes("- Not enough Zeny. -") |> close()
-              throw({:script_end, ctx})
-            else
-              ctx
-            end
-
-          {ctx, v4} = ctx |> mes("What is your wish?") |> next() |> input(:string)
-
-          ctx =
+        ctx =
+          if get_local(ctx, :input, 0) > zeny(ctx) do
+            ctx = ctx |> mes("- Not enough Zeny. -") |> close()
+            throw({:script_end, ctx})
+          else
             ctx
-            |> set_local(:"wish$", v4)
-            |> set_local(:"wishes$", [
-              "Power",
-              "Strength",
-              "Faster",
-              "Speed",
-              "Quickness",
-              "Agility",
-              "Skillful Hands",
-              "Dex",
-              "Healthy",
-              "Fitness",
-              "Vital",
-              "Wisdom",
-              "Brain",
-              "Study",
-              "Int",
-              "1st place",
-              "Luck",
-              "Wealth",
-              "Items",
-              "Get Item",
-              "Goods",
-              "Lotto",
-              "Full Level",
-              "Level",
-              "LV",
-              "Lover",
-              "Girl friend",
-              "Boy friend"
-            ])
-            |> set_local(:index, [
-              1,
-              1,
-              2,
-              2,
-              2,
-              2,
-              4,
-              4,
-              8,
-              8,
-              8,
-              16,
-              16,
-              16,
-              16,
-              16,
-              32,
-              32,
-              32,
-              32,
-              32,
-              32,
-              64,
-              64,
-              64,
-              128,
-              128,
-              128
-            ])
+          end
 
-          ctx =
-            if get_local(ctx, :good_luck, 0) == 7 or get_local(ctx, :good_luck, 0) == 77 or
-                 get_local(ctx, :good_luck, 0) == 777 or get_local(ctx, :good_luck, 0) == 7777 do
-              set_local(ctx, :bonus, 1)
-            else
-              ctx
-            end
+        {ctx, v4} = ctx |> mes("What is your wish?") |> next() |> input(:string)
 
-          ctx = ctx |> set_local(:i, 0) |> loop_2()
+        ctx =
+          ctx
+          |> set_local(:"wish$", v4)
+          |> set_local(:"wishes$", [
+            "Power",
+            "Strength",
+            "Faster",
+            "Speed",
+            "Quickness",
+            "Agility",
+            "Skillful Hands",
+            "Dex",
+            "Healthy",
+            "Fitness",
+            "Vital",
+            "Wisdom",
+            "Brain",
+            "Study",
+            "Int",
+            "1st place",
+            "Luck",
+            "Wealth",
+            "Items",
+            "Get Item",
+            "Goods",
+            "Lotto",
+            "Full Level",
+            "Level",
+            "LV",
+            "Lover",
+            "Girl friend",
+            "Boy friend"
+          ])
+          |> set_local(:index, [
+            1,
+            1,
+            2,
+            2,
+            2,
+            2,
+            4,
+            4,
+            8,
+            8,
+            8,
+            16,
+            16,
+            16,
+            16,
+            16,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            64,
+            64,
+            64,
+            128,
+            128,
+            128
+          ])
 
-          {ctx, _} =
+        ctx =
+          if get_local(ctx, :good_luck, 0) == 7 or get_local(ctx, :good_luck, 0) == 77 or
+               get_local(ctx, :good_luck, 0) == 777 or get_local(ctx, :good_luck, 0) == 7777 do
+            set_local(ctx, :bonus, 1)
+          else
             ctx
-            |> mes(
-              Rathena.concat(
-                Rathena.concat("You make a wish for ^0000FF", get_local(ctx, :"wish$", "")),
-                "^000000 to the small shrine."
-              )
+          end
+
+        ctx = ctx |> set_local(:i, 0) |> loop_2()
+
+        {ctx, _} =
+          ctx
+          |> mes(
+            Rathena.concat(
+              Rathena.concat("You make a wish for ^0000FF", get_local(ctx, :"wish$", "")),
+              "^000000 to the small shrine."
             )
-            |> next()
-            |> s_l_wish([])
+          )
+          |> next()
+          |> s_l_wish([])
 
-          ctx = pay_zeny(ctx, get_local(ctx, :input, 0))
+        ctx = pay_zeny(ctx, get_local(ctx, :input, 0))
 
-          ctx =
-            if Rathena.truthy?(:erlang.band(get_local(ctx, :stat, 0), 1)) and
-                 Rathena.truthy?(get_local(ctx, :bonus, 0)) do
-              consumeitem(ctx, 12043)
-            else
-              ctx =
-                if Rathena.truthy?(:erlang.band(get_local(ctx, :stat, 0), 2)) and
-                     Rathena.truthy?(get_local(ctx, :bonus, 0)) do
-                  consumeitem(ctx, 12058)
-                else
-                  ctx =
-                    if Rathena.truthy?(:erlang.band(get_local(ctx, :stat, 0), 4)) and
-                         Rathena.truthy?(get_local(ctx, :bonus, 0)) do
-                      consumeitem(ctx, 12063)
-                    else
-                      ctx =
-                        if Rathena.truthy?(:erlang.band(get_local(ctx, :stat, 0), 8)) and
-                             Rathena.truthy?(get_local(ctx, :bonus, 0)) do
-                          consumeitem(ctx, 12053)
-                        else
-                          ctx =
-                            if Rathena.truthy?(:erlang.band(get_local(ctx, :stat, 0), 16)) and
-                                 Rathena.truthy?(get_local(ctx, :bonus, 0)) do
-                              consumeitem(ctx, 12048)
-                            else
-                              ctx =
-                                if Rathena.truthy?(:erlang.band(get_local(ctx, :stat, 0), 32)) and
-                                     Rathena.truthy?(get_local(ctx, :bonus, 0)) do
-                                  consumeitem(ctx, 12068)
-                                else
-                                  ctx =
-                                    if Rathena.truthy?(:erlang.band(get_local(ctx, :stat, 0), 64)) do
-                                      ctx
-                                      |> specialeffect2(:angel)
-                                      |> mes("- A celestial entity gives you a blessing. -")
-                                      |> next()
-                                    else
-                                      ctx =
-                                        if Rathena.truthy?(
-                                             :erlang.band(get_local(ctx, :stat, 0), 128)
-                                           ) do
-                                          ctx =
-                                            mes(
-                                              ctx,
-                                              "- The shrine envelops you in a loving aura. -"
-                                            )
+        ctx =
+          if Rathena.truthy?(:erlang.band(get_local(ctx, :stat, 0), 1)) and
+               Rathena.truthy?(get_local(ctx, :bonus, 0)) do
+            consumeitem(ctx, 12043)
+          else
+            ctx =
+              if Rathena.truthy?(:erlang.band(get_local(ctx, :stat, 0), 2)) and
+                   Rathena.truthy?(get_local(ctx, :bonus, 0)) do
+                consumeitem(ctx, 12058)
+              else
+                ctx =
+                  if Rathena.truthy?(:erlang.band(get_local(ctx, :stat, 0), 4)) and
+                       Rathena.truthy?(get_local(ctx, :bonus, 0)) do
+                    consumeitem(ctx, 12063)
+                  else
+                    ctx =
+                      if Rathena.truthy?(:erlang.band(get_local(ctx, :stat, 0), 8)) and
+                           Rathena.truthy?(get_local(ctx, :bonus, 0)) do
+                        consumeitem(ctx, 12053)
+                      else
+                        ctx =
+                          if Rathena.truthy?(:erlang.band(get_local(ctx, :stat, 0), 16)) and
+                               Rathena.truthy?(get_local(ctx, :bonus, 0)) do
+                            consumeitem(ctx, 12048)
+                          else
+                            ctx =
+                              if Rathena.truthy?(:erlang.band(get_local(ctx, :stat, 0), 32)) and
+                                   Rathena.truthy?(get_local(ctx, :bonus, 0)) do
+                                consumeitem(ctx, 12068)
+                              else
+                                ctx =
+                                  if Rathena.truthy?(:erlang.band(get_local(ctx, :stat, 0), 64)) do
+                                    ctx
+                                    |> specialeffect2(:angel)
+                                    |> mes("- A celestial entity gives you a blessing. -")
+                                    |> next()
+                                  else
+                                    ctx =
+                                      if Rathena.truthy?(
+                                           :erlang.band(get_local(ctx, :stat, 0), 128)
+                                         ) do
+                                        ctx =
+                                          mes(
+                                            ctx,
+                                            "- The shrine envelops you in a loving aura. -"
+                                          )
 
-                                          ctx =
-                                            if (sex(ctx) == get_char_var(ctx, :SEX_FEMALE, 0) and
+                                        ctx =
+                                          if (sex(ctx) == get_char_var(ctx, :SEX_FEMALE, 0) and
+                                                Rathena.truthy?(
+                                                  Rathena.compare(
+                                                    get_local(ctx, :"wish$", ""),
+                                                    Enum.at(
+                                                      get_local(ctx, :"wishes$", []),
+                                                      26,
+                                                      ""
+                                                    )
+                                                  )
+                                                )) or
+                                               (sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) and
                                                   Rathena.truthy?(
                                                     Rathena.compare(
                                                       get_local(ctx, :"wish$", ""),
                                                       Enum.at(
                                                         get_local(ctx, :"wishes$", []),
-                                                        26,
+                                                        27,
                                                         ""
                                                       )
                                                     )
-                                                  )) or
-                                                 (sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) and
-                                                    Rathena.truthy?(
-                                                      Rathena.compare(
-                                                        get_local(ctx, :"wish$", ""),
-                                                        Enum.at(
-                                                          get_local(ctx, :"wishes$", []),
-                                                          27,
-                                                          ""
-                                                        )
-                                                      )
-                                                    )) do
-                                              specialeffect2(ctx, :lightsphere)
-                                            else
-                                              ctx
-                                            end
+                                                  )) do
+                                            specialeffect2(ctx, :lightsphere)
+                                          else
+                                            ctx
+                                          end
 
-                                          next(ctx)
-                                        else
-                                          ctx
-                                        end
+                                        next(ctx)
+                                      else
+                                        ctx
+                                      end
 
-                                      ctx
-                                    end
+                                    ctx
+                                  end
 
-                                  ctx
-                                end
+                                ctx
+                              end
 
-                              ctx
-                            end
+                            ctx
+                          end
 
-                          ctx
-                        end
+                        ctx
+                      end
 
-                      ctx
-                    end
+                    ctx
+                  end
 
-                  ctx
-                end
+                ctx
+              end
 
-              ctx
-            end
-
-          ctx = ctx |> mes("It feels like this wish could come true.") |> close()
-          throw({:script_end, ctx})
-
-        2 ->
-          {ctx, v5} = ctx |> mes("What is your wish?") |> next() |> input(:string)
-          ctx = set_local(ctx, :"wish$", v5)
-
-          {ctx, _} =
             ctx
-            |> mes(
-              Rathena.concat(
-                Rathena.concat(
-                  "You have made your wish for ^0000FF",
-                  get_local(ctx, :"wish$", "")
-                ),
-                "^000000 to the small shrine."
-              )
-            )
-            |> next()
-            |> s_l_wish([])
+          end
 
-          ctx = ctx |> mes("It feels like this wish could come true.") |> close()
-          throw({:script_end, ctx})
+        ctx = ctx |> mes("It feels like this wish could come true.") |> close()
+        throw({:script_end, ctx})
 
-        3 ->
-          ctx = close(ctx)
-          throw({:script_end, ctx})
+      2 ->
+        {ctx, v5} = ctx |> mes("What is your wish?") |> next() |> input(:string)
+        ctx = set_local(ctx, :"wish$", v5)
 
-        _ ->
+        {ctx, _} =
           ctx
-      end
+          |> mes(
+            Rathena.concat(
+              Rathena.concat("You have made your wish for ^0000FF", get_local(ctx, :"wish$", "")),
+              "^000000 to the small shrine."
+            )
+          )
+          |> next()
+          |> s_l_wish([])
 
-    {ctx, _} = s_l_wish(ctx, [])
-    ctx
+        ctx = ctx |> mes("It feels like this wish could come true.") |> close()
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx = close(ctx)
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end
@@ -331,10 +326,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SmallShrine do
     ctx =
       ctx
       |> mes("Mysterious energy comes out from the shrine.")
-      |> specialeffect(:flasher)
-      |> specialeffect(:flasher)
-      |> specialeffect(:flasher)
-      |> specialeffect(:flasher)
+      |> specialeffect(:flasher, :area, "Small Shrine#dew1")
+      |> specialeffect(:flasher, :area, "Small Shrine#dew2")
+      |> specialeffect(:flasher, :area, "Small Shrine#dew3")
+      |> specialeffect(:flasher, :area, "Small Shrine#dew4")
       |> next()
       |> mes("You have received the shrine's blessing.")
       |> specialeffect2(:blessing)

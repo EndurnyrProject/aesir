@@ -58,28 +58,27 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.LazyYoungMan do
           |> next()
           |> select(["Give", "Do not give"])
 
-        ctx =
-          case v1 do
-            1 ->
-              ctx =
-                ctx
-                |> mes("[Lazy Young Man]")
-                |> mes("Really? For me?? I'll give you this in return... Thanks... Hehe~")
-                |> delitem(11534, 1)
-                |> get_group_item(:giftbox)
-                |> close()
+        _ = v1
 
-              throw({:script_end, ctx})
-
-            2 ->
-              ctx = ctx |> mes("[Lazy Young Man]") |> mes("So be it~ Ok...") |> close()
-              throw({:script_end, ctx})
-
-            _ ->
+        case v1 do
+          1 ->
+            ctx =
               ctx
-          end
+              |> mes("[Lazy Young Man]")
+              |> mes("Really? For me?? I'll give you this in return... Thanks... Hehe~")
+              |> delitem(11534, 1)
+              |> get_group_item(:giftbox)
+              |> close()
 
-        ctx
+            throw({:script_end, ctx})
+
+          2 ->
+            ctx = ctx |> mes("[Lazy Young Man]") |> mes("So be it~ Ok...") |> close()
+            throw({:script_end, ctx})
+
+          _ ->
+            throw({:script_end, ctx})
+        end
       else
         ctx
       end

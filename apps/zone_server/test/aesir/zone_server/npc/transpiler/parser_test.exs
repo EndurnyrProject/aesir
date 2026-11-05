@@ -103,7 +103,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ParserTest do
     end
 
     test "switch with fall-through case labels and default" do
-      assert {:ok, [{:switch, {:call, "select", _}, clauses}]} =
+      assert {:ok, [{:switch, {:call, "select", _}, clauses, []}]} =
                Parser.parse_body("""
                switch (select("A:B:C")) {
                case 1:
@@ -196,9 +196,18 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ParserTest do
                Parser.parse_body("x .@arr[.@i++];")
     end
 
-    test "dead statements before the first case are dropped" do
-      assert {:ok, [{:switch, _, [{[{:int, 1}], [{:cmd, "close", []}]}]}]} =
+    test "statements before the first case become the switch prefix" do
+      assert {:ok, [{:switch, _, [{[{:int, 1}], [{:cmd, "close", []}]}], prelude}]} =
                Parser.parse_body(~S|switch (select("A")) { mes "dead"; case 1: close; }|)
+
+      assert [{:cmd, "mes", [str: "dead"]}] = prelude
+    end
+
+    test "a switch with no case labels is all prefix" do
+      assert {:ok, [{:switch, _, [], prelude}]} =
+               Parser.parse_body(~S|switch (select("A:B")) { mes "body"; next; }|)
+
+      assert [{:cmd, "mes", [str: "body"]}, {:cmd, "next", []}] = prelude
     end
 
     test "a realistic full body parses end to end" do
@@ -222,7 +231,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ParserTest do
       """
 
       assert {:ok, stmts} = Parser.parse_body(body)
-      assert [{:cmd, "mes", _}, {:cmd, "mes", _}, {:cmd, "next", []}, {:switch, _, _}] = stmts
+      assert [{:cmd, "mes", _}, {:cmd, "mes", _}, {:cmd, "next", []}, {:switch, _, _, []}] = stmts
     end
   end
 end

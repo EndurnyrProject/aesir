@@ -33,48 +33,47 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SemangatSWife do
       |> next()
       |> select(["I think I saw him there..", "No I haven't.."])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx =
-            ctx
-            |> mes("[Semangat's Wife]")
-            |> mes("He ran away when")
-            |> mes("I was looking for him.")
-            |> mes("Should be somewhere, telling tall tales")
-            |> mes("to some travelers, like always.")
-            |> next()
-            |> mes("[Semangat's Wife]")
-            |> mes("I apologize")
-            |> mes("on behalf of my husband.")
-            |> mes("Please don't believe his foolish stories")
-            |> mes("saying he met with ^FF0000Monkeys and Snakes^000000, or")
-            |> mes("that he fought alongside a ^FF0000Cuttlefish^000000.")
-            |> next()
-            |> mes("[Semangat's Wife]")
-            |> mes("He has been living here")
-            |> mes("for entire life.")
-            |> mes("Yet, always find some travelers,")
-            |> mes("and who will listen to his made-up tales.")
-            |> close()
+    _ = v1
 
-          throw({:script_end, ctx})
-
-        2 ->
-          ctx =
-            ctx
-            |> mes("[Semangat's Wife]")
-            |> mes("Oh. Please let me know")
-            |> mes("if you ever see him around.")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+    case v1 do
+      1 ->
+        ctx =
           ctx
-      end
+          |> mes("[Semangat's Wife]")
+          |> mes("He ran away when")
+          |> mes("I was looking for him.")
+          |> mes("Should be somewhere, telling tall tales")
+          |> mes("to some travelers, like always.")
+          |> next()
+          |> mes("[Semangat's Wife]")
+          |> mes("I apologize")
+          |> mes("on behalf of my husband.")
+          |> mes("Please don't believe his foolish stories")
+          |> mes("saying he met with ^FF0000Monkeys and Snakes^000000, or")
+          |> mes("that he fought alongside a ^FF0000Cuttlefish^000000.")
+          |> next()
+          |> mes("[Semangat's Wife]")
+          |> mes("He has been living here")
+          |> mes("for entire life.")
+          |> mes("Yet, always find some travelers,")
+          |> mes("and who will listen to his made-up tales.")
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx =
+          ctx
+          |> mes("[Semangat's Wife]")
+          |> mes("Oh. Please let me know")
+          |> mes("if you ever see him around.")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

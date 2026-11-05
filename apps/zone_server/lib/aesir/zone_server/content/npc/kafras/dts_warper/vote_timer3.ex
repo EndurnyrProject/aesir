@@ -14,7 +14,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.VoteTimer3 do
   def on_event("OnTimer60000", ctx), do: ev_ontimer60000(ctx)
   @impl true
   def on_talk(ctx) do
-    ctx
+    ev_onenable(ctx)
   end
 
   def ev_onenable(ctx) do

@@ -144,7 +144,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Arang do
                   |> next()
                   |> mes("Suddenly, you see Arang's foot flying towards you.")
                   |> specialeffect2(:tripleattack)
-                  |> emotion(:kek)
+
+                ctx =
+                  ctx
+                  |> emotion(:kek, playerattached(ctx))
                   |> next()
                   |> cutin("", 255)
                   |> mes("All you see are stars...")
@@ -393,7 +396,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Arang do
           throw({:script_end, ctx})
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     loop_1(ctx)

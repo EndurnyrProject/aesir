@@ -105,7 +105,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Bijou69105 do
 
   @impl true
   @spec on_talk(Ctx.t()) :: Ctx.t()
-  def on_talk(ctx), do: ctx
+  # rAthena starts a click at the first label, so it runs this body too.
+  def on_talk(ctx), do: on_event("OnEnable", ctx)
 
   defp open_tiles_except(ctx, closed_tile) do
     Enum.reduce(@dance_tiles, ctx, fn

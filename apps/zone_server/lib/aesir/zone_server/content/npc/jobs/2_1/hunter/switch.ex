@@ -73,7 +73,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Switch do
 
   @impl true
   @spec on_talk(Ctx.t()) :: Ctx.t()
-  def on_talk(ctx), do: ctx
+  # rAthena starts a click at the first label, so it runs this body too.
+  def on_talk(ctx), do: on_event("OnTouch_", ctx)
 
   defp press_button(ctx, 1) do
     ctx

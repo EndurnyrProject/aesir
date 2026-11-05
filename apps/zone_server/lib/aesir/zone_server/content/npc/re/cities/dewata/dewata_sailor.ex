@@ -42,46 +42,44 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.DewataSailor do
       end
 
     {ctx, v1} = ctx |> next() |> select(["Yes!", "No."])
+    _ = v1
 
-    ctx =
-      case v1 do
-        1 ->
-          if zeny(ctx) >= get_local(ctx, :cost, 0) do
-            ctx =
-              ctx
-              |> mes("[Dewata Sailor]")
-              |> mes("^8B4513Dewata^000000 is a beautiful and peaceful island country.")
-              |> mes("Have a nice trip~")
-              |> close()
-
-            ctx = ctx |> pay_zeny(get_local(ctx, :cost, 0)) |> warp("dewata", 232, 53)
-            throw({:script_end, ctx})
-          else
-            ctx =
-              ctx
-              |> mes("[Dewata Sailor]")
-              |> mes("You don't have the dough, kid.")
-              |> mes("Come back when you have a bigger wallet.")
-              |> close()
-
-            throw({:script_end, ctx})
-          end
-
-        2 ->
+    case v1 do
+      1 ->
+        if zeny(ctx) >= get_local(ctx, :cost, 0) do
           ctx =
             ctx
             |> mes("[Dewata Sailor]")
-            |> mes("Let me know")
-            |> mes("when you're ready to travel~")
+            |> mes("^8B4513Dewata^000000 is a beautiful and peaceful island country.")
+            |> mes("Have a nice trip~")
+            |> close()
+
+          ctx = ctx |> pay_zeny(get_local(ctx, :cost, 0)) |> warp("dewata", 232, 53)
+          throw({:script_end, ctx})
+        else
+          ctx =
+            ctx
+            |> mes("[Dewata Sailor]")
+            |> mes("You don't have the dough, kid.")
+            |> mes("Come back when you have a bigger wallet.")
             |> close()
 
           throw({:script_end, ctx})
+        end
 
-        _ ->
+      2 ->
+        ctx =
           ctx
-      end
+          |> mes("[Dewata Sailor]")
+          |> mes("Let me know")
+          |> mes("when you're ready to travel~")
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

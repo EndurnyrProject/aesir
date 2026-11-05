@@ -95,17 +95,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Mom do
       |> mes("^0000cd[Come to me, honey~]^000000")
       |> next()
 
+    ctx = enablenpc(ctx, Rathena.concat("Etinifni#", strnpcinfo(ctx, 2)))
+
     ctx =
       ctx
-      |> enablenpc(Rathena.concat("Etinifni#", strnpcinfo(ctx, 2)))
-      |> specialeffect(:portal)
+      |> specialeffect(:portal, :area, Rathena.concat("Etinifni#", strnpcinfo(ctx, 2)))
       |> mes("[Etinifni]")
       |> mes("What's up? Where am I?")
       |> next()
       |> mes("[Mom]")
       |> mes("Here!")
       |> next()
-      |> emotion(:anger)
+
+    ctx =
+      ctx
+      |> emotion(:anger, getnpcid(ctx, Rathena.concat("Etinifni#", strnpcinfo(ctx, 2))))
       |> mes("[Etinifni]")
       |> mes("Ah... Again!! I have been out hunting Orcs.")
       |> next()
@@ -118,14 +122,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Mom do
       |> mes("[Mom]")
       |> mes("What? This moron?!")
       |> next()
-      |> emotion(:ohno)
+
+    ctx =
+      ctx
+      |> emotion(:ohno, getnpcid(ctx, Rathena.concat("Etinifni#", strnpcinfo(ctx, 2))))
       |> mes("[Etinifni]")
       |> mes("OK. I will do it.")
       |> next()
 
+    ctx = disablenpc(ctx, Rathena.concat("Etinifni#", strnpcinfo(ctx, 2)))
+
     ctx
-    |> disablenpc(Rathena.concat("Etinifni#", strnpcinfo(ctx, 2)))
-    |> emotion(:cry)
+    |> emotion(:cry, getnpcid(ctx, Rathena.concat("Dad#", strnpcinfo(ctx, 2))))
     |> mes("[Dad]")
     |> mes("I am sorry... Dad has no power over your mom.")
     |> close()

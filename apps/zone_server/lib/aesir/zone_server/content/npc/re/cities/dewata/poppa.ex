@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Poppa do
   def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
   @impl true
   def on_talk(ctx) do
-    ctx
+    ev_ontouch(ctx)
   end
 
   def ev_ontouch(ctx) do

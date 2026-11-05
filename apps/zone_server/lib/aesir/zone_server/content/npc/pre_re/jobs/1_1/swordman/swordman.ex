@@ -117,267 +117,266 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.Swordman do
       |> next()
       |> select(["Job Change", "About Swordman.", "About the Job requirements.", "Cancel."])
 
-    ctx =
-      case v2 do
-        1 ->
-          ctx =
-            if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:swordman) do
-              ctx =
-                ctx
-                |> mes("[Swordman]")
-                |> mes(
-                  "Job change? Muhahaha! But you're already a Swordman! Be proud and be strong!"
-                )
-                |> close()
+    _ = v2
 
-              throw({:script_end, ctx})
-            else
-              ctx =
-                if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
-                  ctx =
-                    ctx
-                    |> mes("[Swordman]")
-                    |> mes(
-                      "Haha! Oh boy. I'm flattered, but you already have another job! Still, I can't blame you..."
-                    )
-                    |> close()
-
-                  throw({:script_end, ctx})
-                else
-                  ctx
-                end
-
+    case v2 do
+      1 ->
+        ctx =
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:swordman) do
+            ctx =
               ctx
-            end
+              |> mes("[Swordman]")
+              |> mes(
+                "Job change? Muhahaha! But you're already a Swordman! Be proud and be strong!"
+              )
+              |> close()
 
-          ctx =
-            if get_char_var(ctx, :job_sword_q, 0) == 0 do
-              {ctx, v3} =
+            throw({:script_end, ctx})
+          else
+            ctx =
+              if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
+                ctx =
+                  ctx
+                  |> mes("[Swordman]")
+                  |> mes(
+                    "Haha! Oh boy. I'm flattered, but you already have another job! Still, I can't blame you..."
+                  )
+                  |> close()
+
+                throw({:script_end, ctx})
+              else
                 ctx
-                |> mes("[Swordman]")
-                |> mes("So you wish to become a proud Swordman? By all means, please sign up!")
-                |> next()
-                |> select(["Sign up.", "Cancel."])
+              end
 
-              ctx =
-                if v3 == 1 do
-                  {ctx, v4} =
+            ctx
+          end
+
+        ctx =
+          if get_char_var(ctx, :job_sword_q, 0) == 0 do
+            {ctx, v3} =
+              ctx
+              |> mes("[Swordman]")
+              |> mes("So you wish to become a proud Swordman? By all means, please sign up!")
+              |> next()
+              |> select(["Sign up.", "Cancel."])
+
+            ctx =
+              if v3 == 1 do
+                {ctx, v4} =
+                  ctx
+                  |> savepoint("izlude_in", 65, 165)
+                  |> set_char_var(:job_sword_q, 1)
+                  |> setquest(1014)
+                  |> mes("[Swordman]")
+                  |> mes("Ah, yes. Your application will be reviewed as soon as possible.")
+                  |> next()
+                  |> mes("[Swordman]")
+                  |> mes(
+                    "If you have already met the requirements, you can take an interview right now. Would you like to?"
+                  )
+                  |> next()
+                  |> select(["Yes.", "No."])
+
+                ctx =
+                  if v4 == 1 do
                     ctx
-                    |> savepoint("izlude_in", 65, 165)
-                    |> set_char_var(:job_sword_q, 1)
-                    |> setquest(1014)
                     |> mes("[Swordman]")
-                    |> mes("Ah, yes. Your application will be reviewed as soon as possible.")
+                    |> mes("Good, good.")
+                    |> mes("Now, let's see...")
                     |> next()
-                    |> mes("[Swordman]")
-                    |> mes(
-                      "If you have already met the requirements, you can take an interview right now. Would you like to?"
-                    )
-                    |> next()
-                    |> select(["Yes.", "No."])
-
-                  ctx =
-                    if v4 == 1 do
+                  else
+                    ctx =
                       ctx
                       |> mes("[Swordman]")
-                      |> mes("Good, good.")
-                      |> mes("Now, let's see...")
-                      |> next()
-                    else
-                      ctx =
-                        ctx
-                        |> mes("[Swordman]")
-                        |> mes(
-                          "Alright then. Feel free to come back whenever you are ready. All you have to do now is meet our requirements. Good luck to you."
-                        )
-                        |> close()
+                      |> mes(
+                        "Alright then. Feel free to come back whenever you are ready. All you have to do now is meet our requirements. Good luck to you."
+                      )
+                      |> close()
 
-                      throw({:script_end, ctx})
-                    end
+                    throw({:script_end, ctx})
+                  end
 
-                  ctx
-                else
-                  ctx =
-                    ctx
-                    |> mes("[Swordman]")
-                    |> mes(
-                      "Hm? Alright, come back whenever you change your mind. The world can always use another Swordman!"
-                    )
-                    |> close()
-
-                  throw({:script_end, ctx})
-                end
-
-              ctx
-            else
-              ctx
-            end
-
-          ctx = mes(ctx, "[Swordman]")
-          v5 = can_change_job?(ctx)
-
-          ctx =
-            if not Rathena.truthy?(v5) do
-              ctx =
                 ctx
-                |> mes(
-                  "Hm, you still haven't learned all of the Basic Skills. You need to do that before you can become a Swordman."
-                )
-                |> next()
-                |> mes("[Swordman]")
-                |> mes(
-                  "Check the requirements for job change again, and come back when you are ready."
-                )
-                |> close()
-
-              throw({:script_end, ctx})
-            else
-              ctx =
-                if get_char_var(ctx, :job_sword_q, 0) <= 3 do
-                  ctx =
-                    ctx
-                    |> mes(
-                      "Hm, you've learned all of the Basic Skills but didn't take the test yet. You must first pass the exam before you can change your job to Swordman."
-                    )
-                    |> next()
-                    |> mes("[Swordman]")
-                    |> mes(
-                      "Enter the room to my right so that you can take the test. You'll need to speak to my right so you can enter the examination area."
-                    )
-                    |> close()
-
-                  throw({:script_end, ctx})
-                else
-                  ctx =
-                    if get_char_var(ctx, :job_sword_q, 0) == 4 do
-                      ctx =
-                        ctx
-                        |> mes(
-                          "Hahaha! Congratulations! Now you are fully qualified to be a real Swordman! I will transform you right away!"
-                        )
-                        |> next()
-                        |> jobchange(:swordman)
-                        |> set_char_var(:job_sword_q, 0)
-                        |> completequest(1014)
-                        |> mes("[Swordman]")
-                        |> mes(
-                          "Once again, congratulations. I expect that you will be a good representative of the Swordman Association."
-                        )
-                        |> close()
-
-                      throw({:script_end, ctx})
-                    else
-                      ctx
-                    end
-
+              else
+                ctx =
                   ctx
-                end
-
-              ctx
-            end
-
-          ctx =
-            ctx
-            |> mes("[Swordman]")
-            |> mes("So you wish to know more about the mighty Swordman job? Well, then...")
-            |> next()
-            |> mes("[Swordman]")
-            |> mes(
-              "Amongst the First Class jobs, the Swordman is the best melee fighter for three reasons."
-            )
-            |> mes("There are 3 reasons why Swordy is the best to approch a fight!")
-            |> next()
-            |> mes("[Swordman]")
-            |> mes(
-              "First, Swordman has the benefit of additional HP. Second, Swordman generally have access to a wider selection fo weapons than the other First Class jobs."
-            )
-            |> next()
-            |> mes("[Swordman]")
-            |> mes(
-              "And third, most of the Swordman skills are crushing physical attacks! In my opinion, being a Swordman is the best job ever!"
-            )
-            |> close()
-
-          throw({:script_end, ctx})
-
-        2 ->
-          ctx =
-            ctx
-            |> mes("[Swordman]")
-            |> mes("So you wish to know more about the mighty Swordman job? Well, then...")
-            |> next()
-            |> mes("[Swordman]")
-            |> mes(
-              "Amongst the First Class jobs, the Swordman is the best melee fighter for three reasons."
-            )
-            |> mes("There are 3 reasons why Swordy is the best to approch a fight!")
-            |> next()
-            |> mes("[Swordman]")
-            |> mes(
-              "First, Swordman has the benefit of additional HP. Second, Swordman generally have access to a wider selection fo weapons than the other First Class jobs."
-            )
-            |> next()
-            |> mes("[Swordman]")
-            |> mes(
-              "And third, most of the Swordman skills are crushing physical attacks! In my opinion, being a Swordman is the best job ever!"
-            )
-            |> close()
-
-          throw({:script_end, ctx})
-
-        3 ->
-          ctx = ctx |> mes("[Swordman]") |> mes("Hmmm...")
-
-          ctx =
-            if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
-              ctx =
-                if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:swordman) do
-                  mes(
-                    ctx,
-                    "But there's no need to tell you the requirements. You've met them and already became a Swordman! Well, anyway..."
+                  |> mes("[Swordman]")
+                  |> mes(
+                    "Hm? Alright, come back whenever you change your mind. The world can always use another Swordman!"
                   )
-                else
-                  mes(
-                    ctx,
-                    "It's too late for you to become a Swordman. You already have another job. Still, there's no harm in telling you..."
-                  )
-                end
+                  |> close()
 
-              ctx
-            else
-              ctx
-            end
+                throw({:script_end, ctx})
+              end
 
-          ctx =
             ctx
-            |> next()
-            |> mes("[Swordman]")
-            |> mes(
-              "First, you must learn all 9 of the Basic Skills. If you can't complete this requirement, you won't be able to change to any job."
-            )
-            |> next()
-            |> mes("[Swordman]")
-            |> mes(
-              "Second, you must pass the Swordman Test. Inquire the Test Manager located in the waiting room of the Swordman Test."
-            )
-            |> next()
-            |> mes("[Swordman]")
-            |> mes(
-              "If you can complete these 2 requirements, you can change to a Swordman anytime you want."
-            )
-            |> close()
+          else
+            ctx
+          end
 
-          throw({:script_end, ctx})
+        ctx = mes(ctx, "[Swordman]")
+        v5 = can_change_job?(ctx)
 
-        4 ->
-          ctx = ctx |> mes("[Swordman]") |> mes("Ha ha ha!") |> mes("Ah, youth!") |> close()
-          throw({:script_end, ctx})
+        ctx =
+          if not Rathena.truthy?(v5) do
+            ctx =
+              ctx
+              |> mes(
+                "Hm, you still haven't learned all of the Basic Skills. You need to do that before you can become a Swordman."
+              )
+              |> next()
+              |> mes("[Swordman]")
+              |> mes(
+                "Check the requirements for job change again, and come back when you are ready."
+              )
+              |> close()
 
-        _ ->
+            throw({:script_end, ctx})
+          else
+            ctx =
+              if get_char_var(ctx, :job_sword_q, 0) <= 3 do
+                ctx =
+                  ctx
+                  |> mes(
+                    "Hm, you've learned all of the Basic Skills but didn't take the test yet. You must first pass the exam before you can change your job to Swordman."
+                  )
+                  |> next()
+                  |> mes("[Swordman]")
+                  |> mes(
+                    "Enter the room to my right so that you can take the test. You'll need to speak to my right so you can enter the examination area."
+                  )
+                  |> close()
+
+                throw({:script_end, ctx})
+              else
+                ctx =
+                  if get_char_var(ctx, :job_sword_q, 0) == 4 do
+                    ctx =
+                      ctx
+                      |> mes(
+                        "Hahaha! Congratulations! Now you are fully qualified to be a real Swordman! I will transform you right away!"
+                      )
+                      |> next()
+                      |> jobchange(:swordman)
+                      |> set_char_var(:job_sword_q, 0)
+                      |> completequest(1014)
+                      |> mes("[Swordman]")
+                      |> mes(
+                        "Once again, congratulations. I expect that you will be a good representative of the Swordman Association."
+                      )
+                      |> close()
+
+                    throw({:script_end, ctx})
+                  else
+                    ctx
+                  end
+
+                ctx
+              end
+
+            ctx
+          end
+
+        ctx =
           ctx
-      end
+          |> mes("[Swordman]")
+          |> mes("So you wish to know more about the mighty Swordman job? Well, then...")
+          |> next()
+          |> mes("[Swordman]")
+          |> mes(
+            "Amongst the First Class jobs, the Swordman is the best melee fighter for three reasons."
+          )
+          |> mes("There are 3 reasons why Swordy is the best to approch a fight!")
+          |> next()
+          |> mes("[Swordman]")
+          |> mes(
+            "First, Swordman has the benefit of additional HP. Second, Swordman generally have access to a wider selection fo weapons than the other First Class jobs."
+          )
+          |> next()
+          |> mes("[Swordman]")
+          |> mes(
+            "And third, most of the Swordman skills are crushing physical attacks! In my opinion, being a Swordman is the best job ever!"
+          )
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx =
+          ctx
+          |> mes("[Swordman]")
+          |> mes("So you wish to know more about the mighty Swordman job? Well, then...")
+          |> next()
+          |> mes("[Swordman]")
+          |> mes(
+            "Amongst the First Class jobs, the Swordman is the best melee fighter for three reasons."
+          )
+          |> mes("There are 3 reasons why Swordy is the best to approch a fight!")
+          |> next()
+          |> mes("[Swordman]")
+          |> mes(
+            "First, Swordman has the benefit of additional HP. Second, Swordman generally have access to a wider selection fo weapons than the other First Class jobs."
+          )
+          |> next()
+          |> mes("[Swordman]")
+          |> mes(
+            "And third, most of the Swordman skills are crushing physical attacks! In my opinion, being a Swordman is the best job ever!"
+          )
+          |> close()
+
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx = ctx |> mes("[Swordman]") |> mes("Hmmm...")
+
+        ctx =
+          if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
+            ctx =
+              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:swordman) do
+                mes(
+                  ctx,
+                  "But there's no need to tell you the requirements. You've met them and already became a Swordman! Well, anyway..."
+                )
+              else
+                mes(
+                  ctx,
+                  "It's too late for you to become a Swordman. You already have another job. Still, there's no harm in telling you..."
+                )
+              end
+
+            ctx
+          else
+            ctx
+          end
+
+        ctx =
+          ctx
+          |> next()
+          |> mes("[Swordman]")
+          |> mes(
+            "First, you must learn all 9 of the Basic Skills. If you can't complete this requirement, you won't be able to change to any job."
+          )
+          |> next()
+          |> mes("[Swordman]")
+          |> mes(
+            "Second, you must pass the Swordman Test. Inquire the Test Manager located in the waiting room of the Swordman Test."
+          )
+          |> next()
+          |> mes("[Swordman]")
+          |> mes(
+            "If you can complete these 2 requirements, you can change to a Swordman anytime you want."
+          )
+          |> close()
+
+        throw({:script_end, ctx})
+
+      4 ->
+        ctx = ctx |> mes("[Swordman]") |> mes("Ha ha ha!") |> mes("Ah, youth!") |> close()
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

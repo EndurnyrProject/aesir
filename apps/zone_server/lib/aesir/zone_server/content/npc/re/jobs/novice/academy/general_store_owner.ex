@@ -92,160 +92,159 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GeneralStoreOwner 
       |> next()
       |> select(["Novice Combination Book", "Combination Kit", "Cancel."])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx =
-            if Rathena.truthy?(isbegin_quest(ctx, 4269)) and
-                 Rathena.truthy?(isbegin_quest(ctx, 7478)) do
-              {ctx, v2} =
-                ctx
-                |> mes("[Querrie]")
-                |> mes("Have you been treated by the Therapist?")
-                |> mes("At the medical botany class, you may receive a guild book.")
-                |> next()
-                |> select(["Ah... is that so?", "I lost it."])
+    _ = v1
 
-              ctx =
-                if v2 == 1 do
-                  ctx =
-                    ctx
-                    |> mes("[Querrie]")
-                    |> mes("Later, buy a lot of the guild combination kits~~~")
-                    |> mes(
-                      "I am selling them at a jaw dropping price to students below base level 20."
-                    )
-                    |> close()
+    case v1 do
+      1 ->
+        ctx =
+          if Rathena.truthy?(isbegin_quest(ctx, 4269)) and
+               Rathena.truthy?(isbegin_quest(ctx, 7478)) do
+            {ctx, v2} =
+              ctx
+              |> mes("[Querrie]")
+              |> mes("Have you been treated by the Therapist?")
+              |> mes("At the medical botany class, you may receive a guild book.")
+              |> next()
+              |> select(["Ah... is that so?", "I lost it."])
 
-                  throw({:script_end, ctx})
-                else
-                  ctx
-                end
-
-              ctx |> mes("[Querrie]") |> mes("Say what?")
-            else
-              ctx |> mes("[Querrie]") |> mes("You mean the combination book.")
-            end
-
-          {ctx, v3} =
-            ctx |> mes("A book costs you 1000z.") |> next() |> select(["Buy", "Don't buy."])
-
-          ctx =
-            if v3 == 2 do
-              ctx |> mes("[Querrie]") |> mes("Use it next time.")
-            else
-              ctx =
-                if zeny(ctx) >= 1000 do
+            ctx =
+              if v2 == 1 do
+                ctx =
                   ctx
                   |> mes("[Querrie]")
-                  |> mes("Here you are.")
+                  |> mes("Later, buy a lot of the guild combination kits~~~")
                   |> mes(
-                    "This book is for the beginners. But it will allow you combine the useful tools together, if you use it correctly."
+                    "I am selling them at a jaw dropping price to students below base level 20."
                   )
-                  |> pay_zeny(1000)
-                  |> give_item(11058, 1)
-                else
-                  ctx
-                  |> mes("[Querrie]")
-                  |> mes("The book price is 1000 zeny.")
-                  |> mes("You seem to be short of zeny.")
-                end
+                  |> close()
 
-              ctx
-            end
+                throw({:script_end, ctx})
+              else
+                ctx
+              end
 
-          ctx = close(ctx)
-          throw({:script_end, ctx})
+            ctx |> mes("[Querrie]") |> mes("Say what?")
+          else
+            ctx |> mes("[Querrie]") |> mes("You mean the combination book.")
+          end
 
-        2 ->
-          ctx =
-            if base_level(ctx) <= 20 do
-              ctx
-              |> mes("[Querrie]")
-              |> mes("Breaking news! Special sale for you only!")
-              |> mes("One combination kit only for 30z!")
-              |> mes("How many do you need?")
-            else
-              ctx
-              |> mes("[Querrie]")
-              |> mes("No sales today.")
-              |> mes("One combination kit costs you 500z.")
-              |> mes("Tell me how many pieces you need?")
-            end
+        {ctx, v3} =
+          ctx |> mes("A book costs you 1000z.") |> next() |> select(["Buy", "Don't buy."])
 
-          {ctx, v4} = ctx |> next() |> input(:int)
-          ctx = set_local(ctx, :input, v4)
-
-          ctx =
-            if not Rathena.truthy?(get_local(ctx, :input, 0)) do
-              ctx =
+        ctx =
+          if v3 == 2 do
+            ctx |> mes("[Querrie]") |> mes("Use it next time.")
+          else
+            ctx =
+              if zeny(ctx) >= 1000 do
                 ctx
                 |> mes("[Querrie]")
-                |> mes("Well, you don't need to buy it now.")
-                |> mes("Use it next time.")
-                |> close()
-
-              throw({:script_end, ctx})
-            else
-              ctx
-            end
-
-          ctx =
-            if get_local(ctx, :input, 0) > 99 do
-              ctx =
+                |> mes("Here you are.")
+                |> mes(
+                  "This book is for the beginners. But it will allow you combine the useful tools together, if you use it correctly."
+                )
+                |> pay_zeny(1000)
+                |> give_item(11058, 1)
+              else
                 ctx
                 |> mes("[Querrie]")
-                |> mes("How many pieces do you need?")
-                |> mes("You can buy up to 99 at once.")
-                |> close()
+                |> mes("The book price is 1000 zeny.")
+                |> mes("You seem to be short of zeny.")
+              end
 
-              throw({:script_end, ctx})
-            else
-              ctx
-            end
-
-          ctx =
             ctx
-            |> set_local(
-              :cost,
-              get_local(ctx, :input, 0) * if(base_level(ctx) <= 20, do: 30, else: 500)
-            )
+          end
+
+        ctx = close(ctx)
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx =
+          if base_level(ctx) <= 20 do
+            ctx
             |> mes("[Querrie]")
+            |> mes("Breaking news! Special sale for you only!")
+            |> mes("One combination kit only for 30z!")
+            |> mes("How many do you need?")
+          else
+            ctx
+            |> mes("[Querrie]")
+            |> mes("No sales today.")
+            |> mes("One combination kit costs you 500z.")
+            |> mes("Tell me how many pieces you need?")
+          end
 
-          ctx =
-            mes(
-              ctx,
-              Rathena.concat(
-                Rathena.concat(
-                  Rathena.concat(get_local(ctx, :input, 0), " combination kits will cost you "),
-                  get_local(ctx, :cost, 0)
-                ),
-                ".... zeny."
-              )
-            )
+        {ctx, v4} = ctx |> next() |> input(:int)
+        ctx = set_local(ctx, :input, v4)
 
-          ctx =
-            if zeny(ctx) < get_local(ctx, :cost, 0) do
-              ctx = ctx |> mes("You look short of money for that amount.") |> close()
-              throw({:script_end, ctx})
-            else
+        ctx =
+          if not Rathena.truthy?(get_local(ctx, :input, 0)) do
+            ctx =
               ctx
-            end
+              |> mes("[Querrie]")
+              |> mes("Well, you don't need to buy it now.")
+              |> mes("Use it next time.")
+              |> close()
 
-          ctx = mes(ctx, "Thank you. Come back again.")
-          ctx = pay_zeny(ctx, get_local(ctx, :cost, 0))
-          ctx = ctx |> give_item(12849, get_local(ctx, :input, 0)) |> close()
-          throw({:script_end, ctx})
+            throw({:script_end, ctx})
+          else
+            ctx
+          end
 
-        3 ->
-          ctx = close(ctx)
-          throw({:script_end, ctx})
+        ctx =
+          if get_local(ctx, :input, 0) > 99 do
+            ctx =
+              ctx
+              |> mes("[Querrie]")
+              |> mes("How many pieces do you need?")
+              |> mes("You can buy up to 99 at once.")
+              |> close()
 
-        _ ->
+            throw({:script_end, ctx})
+          else
+            ctx
+          end
+
+        ctx =
           ctx
-      end
+          |> set_local(
+            :cost,
+            get_local(ctx, :input, 0) * if(base_level(ctx) <= 20, do: 30, else: 500)
+          )
+          |> mes("[Querrie]")
 
-    ctx
+        ctx =
+          mes(
+            ctx,
+            Rathena.concat(
+              Rathena.concat(
+                Rathena.concat(get_local(ctx, :input, 0), " combination kits will cost you "),
+                get_local(ctx, :cost, 0)
+              ),
+              ".... zeny."
+            )
+          )
+
+        ctx =
+          if zeny(ctx) < get_local(ctx, :cost, 0) do
+            ctx = ctx |> mes("You look short of money for that amount.") |> close()
+            throw({:script_end, ctx})
+          else
+            ctx
+          end
+
+        ctx = mes(ctx, "Thank you. Come back again.")
+        ctx = pay_zeny(ctx, get_local(ctx, :cost, 0))
+        ctx = ctx |> give_item(12849, get_local(ctx, :input, 0)) |> close()
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx = close(ctx)
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

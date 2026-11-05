@@ -25,8 +25,11 @@ defmodule Aesir.ZoneServer.Unit.SpecialEffect do
   """
   @type source_unit :: {Unit.unit_type(), integer()}
 
-  @typedoc "Who receives the effect: every in-range player, or only the source unit."
-  @type target :: :area | :self
+  @typedoc """
+  Who receives the effect: every in-range player, the source unit itself, or one
+  explicit player (rAthena's `SELF` on a block that is not the invoking player).
+  """
+  @type target :: :area | :self | {:player, integer()}
 
   @doc """
   Plays a one-shot `EF_*` effect originating from `source_unit`.
@@ -40,6 +43,7 @@ defmodule Aesir.ZoneServer.Unit.SpecialEffect do
   `target`:
     - `:area` (default) — broadcasts to every player in view range of the unit.
     - `:self` — sends only to the source unit (treated as a player char id).
+    - `{:player, char_id}` — sends only to that player, whoever the source is.
   """
   @spec play(source_unit(), atom() | integer(), target()) :: :ok
   def play(source_unit, effect, target \\ :area)
@@ -62,6 +66,10 @@ defmodule Aesir.ZoneServer.Unit.SpecialEffect do
 
   defp dispatch({:player, unit_id}, packet, :self) do
     Broadcast.to_player(unit_id, packet)
+  end
+
+  defp dispatch(_source_unit, packet, {:player, char_id}) do
+    Broadcast.to_player(char_id, packet)
   end
 
   defp dispatch({unit_type, unit_id}, packet, :area) do

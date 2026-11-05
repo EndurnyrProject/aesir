@@ -197,7 +197,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Manager do
 
   @impl true
   @spec on_talk(Ctx.t()) :: Ctx.t()
-  def on_talk(ctx), do: ctx
+  # rAthena starts a click at the first label, so it runs this body too.
+  def on_talk(ctx), do: on_event("OnInit", ctx)
 
   defp announce(ctx, message), do: mapannounce(ctx, "job_hunte", message, 1)
 

@@ -92,479 +92,461 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RefineryOwnerHan d
           isbegin_quest(ctx, 5156)
       )
 
-    ctx =
-      if get_local(ctx, :jerun_tutorial, 0) == 0 do
-        {ctx, v1} =
+    if get_local(ctx, :jerun_tutorial, 0) == 0 do
+      {ctx, v1} =
+        ctx
+        |> mes("[Refinery Owner Han]")
+        |> mes(
+          "Hello? My name is Han to lead the next generation of refining culture in Rune-Midgarts."
+        )
+        |> next()
+        |> mes("[Refinery Owner Han]")
+        |> mes(
+          "Entering this market lately, if I don't have old customers, it is not easy to operate. So, I do the advertising by myself."
+        )
+        |> next()
+        |> mes("[Refinery Owner Han]")
+        |> mes("Are you interested in ^3E86C3refining^000000 to make your items strong?")
+        |> next()
+        |> select(["I have no interest.", "refining? Is it edible?"])
+
+      ctx =
+        if v1 == 1 do
+          ctx =
+            ctx
+            |> emotion(:sorry)
+            |> mes("[Refinery Owner Han]")
+            |> mes("Ah, I am sorry. I caught a busy man.")
+            |> close()
+
+          throw({:script_end, ctx})
+        else
+          ctx
+        end
+
+      {ctx, _} =
+        ctx
+        |> mes("[Refinery Owner Han]")
+        |> mes(
+          "Refining means to strenghthen your equipments with  ^3E86C3rare metal^000000 obtainable from monsters and so on."
+        )
+        |> next()
+        |> mes("[Refinery Owner Han]")
+        |> mes(
+          "If weapons are refined, their attacking power increases. If shields are refined, their defensive power increasesand helps to reduce pain against monster's hits on you."
+        )
+        |> next()
+        |> mes("[Refinery Owner Han]")
+        |> mes("So you kind of get the jist of it right?")
+        |> next()
+        |> select(["Oh... refining..."])
+
+      {ctx, _} =
+        ctx
+        |> mes("[Refinery Owner Han]")
+        |> mes("Yes, that's it. Refining is good but it can get addicting.")
+        |> next()
+        |> mes("[Refinery Owner Han]")
+        |> mes(
+          "I don't usually do it, but will give you a special chance to experience refining."
+        )
+        |> next()
+        |> mes("[Refinery Owner Han]")
+        |> mes(
+          "Whatever 1st level weapon level can be used it doesn't matter! If you use the ^3E86C3refining machine Wagjak^000000 over there!!"
+        )
+        |> next()
+        |> mes("[Refinery Owner Han]")
+        |> mes("^I will give you ^FD4F02just! one refining service free of charge.^000000.")
+        |> next()
+        |> select(["Only once?"])
+
+      ctx =
+        ctx
+        |> setquest(5153)
+        |> mes("[Refinery Owner Han]")
+        |> mes(
+          "Hey I need to make a living you know! Don't go telling everyone I'm doing this for free ok?"
+        )
+        |> close()
+
+      throw({:script_end, ctx})
+    else
+      if get_local(ctx, :jerun_tutorial, 0) == 1 do
+        {ctx, v2} =
           ctx
           |> mes("[Refinery Owner Han]")
-          |> mes(
-            "Hello? My name is Han to lead the next generation of refining culture in Rune-Midgarts."
-          )
+          |> mes("You haven't used the refining machine Wagjak.")
           |> next()
-          |> mes("[Refinery Owner Han]")
-          |> mes(
-            "Entering this market lately, if I don't have old customers, it is not easy to operate. So, I do the advertising by myself."
-          )
-          |> next()
-          |> mes("[Refinery Owner Han]")
-          |> mes("Are you interested in ^3E86C3refining^000000 to make your items strong?")
-          |> next()
-          |> select(["I have no interest.", "refining? Is it edible?"])
+          |> select([
+            "Refining Machine Wagjak",
+            "Why is it called Wagjak?",
+            "Anything else I should know?",
+            "Cancel"
+          ])
 
-        ctx =
-          if v1 == 1 do
+        _ = v2
+
+        case v2 do
+          1 ->
             ctx =
               ctx
-              |> emotion(:sorry)
               |> mes("[Refinery Owner Han]")
-              |> mes("Ah, I am sorry. I caught a busy man.")
+              |> mes("The refining machine Wagjak is a machine I made after 8 years of research.")
+              |> next()
+              |> mes("[Refinery Owner Han]")
+              |> mes(
+                "I made it for more precious refining. It is my personal refining machine. Well, thanks to it, I have made several contracts."
+              )
+              |> close()
+
+            throw({:script_end, ctx})
+
+          2 ->
+            ctx =
+              ctx
+              |> mes("[Refinery Owner Han]")
+              |> mes(
+                "The name doesn't mean anything it's just a name. Wagjak! What a weird name right?"
+              )
+              |> close()
+
+            throw({:script_end, ctx})
+
+          3 ->
+            ctx =
+              ctx
+              |> mes("[Refinery Owner Han]")
+              |> mes("Absolutely!")
+              |> next()
+              |> mes("[Refinery Owner Han]")
+              |> mes(
+                "But I subscribe to the idea that seeing is believing... You know what I mean? Try it out yourself instead of asking questions."
+              )
+              |> close()
+
+            throw({:script_end, ctx})
+
+          4 ->
+            ctx = close(ctx)
+            throw({:script_end, ctx})
+
+          _ ->
+            throw({:script_end, ctx})
+        end
+      else
+        if get_local(ctx, :jerun_tutorial, 0) == 2 do
+          {ctx, _} =
+            ctx
+            |> mes("[Refinery Owner Han]")
+            |> mes(
+              "Ohoh... as you don't have a service coupon.. You may have already used Wagjak..."
+            )
+            |> next()
+            |> mes("[Refinery Owner Han]")
+            |> mes("I hope you have a brief understanding of refining.")
+            |> next()
+            |> select(["Anything else I should know?"])
+
+          ctx =
+            ctx
+            |> mes("[Refinery Owner Han]")
+            |> mes(
+              "Yes, yes, we have... Safety refining indications and refining price... such small things..."
+            )
+            |> next()
+            |> mes("[Refinery Owner Han]")
+            |> mes(
+              "For an explanation ^3E86C3weapon levels^000000 & ^3E86C3safety refining^000000..."
+            )
+            |> next()
+            |> setquest(5154)
+            |> mes("[Refinery Owner Han]")
+            |> mes("You can learn from ^3E86C3Mr. Taddae^000000 selling Phracon and Emveteracon")
+            |> close()
+
+          throw({:script_end, ctx})
+        else
+          if get_local(ctx, :jerun_tutorial, 0) == 3 do
+            ctx =
+              ctx
+              |> mes("[Refinery Owner Han]")
+              |> mes(
+                "I recommend you visit and listen to Mr. Tadde about weapon levels and safe refining."
+              )
               |> close()
 
             throw({:script_end, ctx})
           else
-            ctx
-          end
-
-        {ctx, _} =
-          ctx
-          |> mes("[Refinery Owner Han]")
-          |> mes(
-            "Refining means to strenghthen your equipments with  ^3E86C3rare metal^000000 obtainable from monsters and so on."
-          )
-          |> next()
-          |> mes("[Refinery Owner Han]")
-          |> mes(
-            "If weapons are refined, their attacking power increases. If shields are refined, their defensive power increasesand helps to reduce pain against monster's hits on you."
-          )
-          |> next()
-          |> mes("[Refinery Owner Han]")
-          |> mes("So you kind of get the jist of it right?")
-          |> next()
-          |> select(["Oh... refining..."])
-
-        {ctx, _} =
-          ctx
-          |> mes("[Refinery Owner Han]")
-          |> mes("Yes, that's it. Refining is good but it can get addicting.")
-          |> next()
-          |> mes("[Refinery Owner Han]")
-          |> mes(
-            "I don't usually do it, but will give you a special chance to experience refining."
-          )
-          |> next()
-          |> mes("[Refinery Owner Han]")
-          |> mes(
-            "Whatever 1st level weapon level can be used it doesn't matter! If you use the ^3E86C3refining machine Wagjak^000000 over there!!"
-          )
-          |> next()
-          |> mes("[Refinery Owner Han]")
-          |> mes("^I will give you ^FD4F02just! one refining service free of charge.^000000.")
-          |> next()
-          |> select(["Only once?"])
-
-        ctx =
-          ctx
-          |> setquest(5153)
-          |> mes("[Refinery Owner Han]")
-          |> mes(
-            "Hey I need to make a living you know! Don't go telling everyone I'm doing this for free ok?"
-          )
-          |> close()
-
-        throw({:script_end, ctx})
-      else
-        ctx =
-          if get_local(ctx, :jerun_tutorial, 0) == 1 do
-            {ctx, v2} =
-              ctx
-              |> mes("[Refinery Owner Han]")
-              |> mes("You haven't used the refining machine Wagjak.")
-              |> next()
-              |> select([
-                "Refining Machine Wagjak",
-                "Why is it called Wagjak?",
-                "Anything else I should know?",
-                "Cancel"
-              ])
-
-            ctx =
-              case v2 do
-                1 ->
-                  ctx =
-                    ctx
-                    |> mes("[Refinery Owner Han]")
-                    |> mes(
-                      "The refining machine Wagjak is a machine I made after 8 years of research."
-                    )
-                    |> next()
-                    |> mes("[Refinery Owner Han]")
-                    |> mes(
-                      "I made it for more precious refining. It is my personal refining machine. Well, thanks to it, I have made several contracts."
-                    )
-                    |> close()
-
-                  throw({:script_end, ctx})
-
-                2 ->
-                  ctx =
-                    ctx
-                    |> mes("[Refinery Owner Han]")
-                    |> mes(
-                      "The name doesn't mean anything it's just a name. Wagjak! What a weird name right?"
-                    )
-                    |> close()
-
-                  throw({:script_end, ctx})
-
-                3 ->
-                  ctx =
-                    ctx
-                    |> mes("[Refinery Owner Han]")
-                    |> mes("Absolutely!")
-                    |> next()
-                    |> mes("[Refinery Owner Han]")
-                    |> mes(
-                      "But I subscribe to the idea that seeing is believing... You know what I mean? Try it out yourself instead of asking questions."
-                    )
-                    |> close()
-
-                  throw({:script_end, ctx})
-
-                4 ->
-                  ctx = close(ctx)
-                  throw({:script_end, ctx})
-
-                _ ->
-                  ctx
-              end
-
-            ctx
-          else
-            if get_local(ctx, :jerun_tutorial, 0) == 2 do
+            if get_local(ctx, :jerun_tutorial, 0) == 4 do
               {ctx, _} =
                 ctx
                 |> mes("[Refinery Owner Han]")
+                |> mes("Did you get a good lesson? Did he explain it well enough?")
+                |> next()
+                |> mes("[Refinery Owner Han]")
                 |> mes(
-                  "Ohoh... as you don't have a service coupon.. You may have already used Wagjak..."
+                  "Just between us, there is a rumor that lots of employees complain about me."
                 )
                 |> next()
                 |> mes("[Refinery Owner Han]")
-                |> mes("I hope you have a brief understanding of refining.")
+                |> mes("I sent you there to monitor the situation.")
                 |> next()
-                |> select(["Anything else I should know?"])
+                |> select(["So?"])
+
+              {ctx, v3} =
+                ctx
+                |> mes("[Refinery Owner Han]")
+                |> mes(
+                  "I will adopt it in the performance rating. By the way, how was Mr. Tadde's lesson?"
+                )
+                |> next()
+                |> select(["It was excellent.", "It was just OK.", "It was so-so."])
+
+              ctx =
+                case v3 do
+                  1 ->
+                    ctx |> mes("[Refinery Owner Han]") |> mes("He did a good job...") |> next()
+
+                  2 ->
+                    ctx
+                    |> mes("[Refinery Owner Han]")
+                    |> mes("Hmm. Is that so? I see... I'll have to jot this down...")
+                    |> next()
+
+                  3 ->
+                    ctx =
+                      ctx
+                      |> mes("[Refinery Owner Han]")
+                      |> mes("Hmm.. It was like that... I see.")
+                      |> next()
+
+                    ctx
+
+                  _ ->
+                    throw({:script_end, ctx})
+                end
 
               ctx =
                 ctx
                 |> mes("[Refinery Owner Han]")
+                |> mes("Now! I'm done organizing..")
+                |> next()
+                |> mes("[Refinery Owner Han]")
                 |> mes(
-                  "Yes, yes, we have... Safety refining indications and refining price... such small things..."
+                  "Next is the explanation about ^3E86C3refining effect^000000 and ^3E86C3refining price^000000."
                 )
                 |> next()
                 |> mes("[Refinery Owner Han]")
                 |> mes(
-                  "For an explanation ^3E86C3weapon levels^000000 & ^3E86C3safety refining^000000..."
+                  "^3E86C3Mr. Locas^000000 is in charge with refinement with Oridecon gemstones."
                 )
                 |> next()
-                |> setquest(5154)
                 |> mes("[Refinery Owner Han]")
-                |> mes(
-                  "You can learn from ^3E86C3Mr. Taddae^000000 selling Phracon and Emveteracon"
-                )
+                |> mes("Go speak with Mr. Locas's about the refining effect and refining price.")
+                |> next()
+                |> setquest(5155)
+                |> mes("[Refinery Owner Han]")
+                |> mes("Ah!! I ask for your favor this time, either.")
                 |> close()
 
               throw({:script_end, ctx})
             else
-              if get_local(ctx, :jerun_tutorial, 0) == 3 do
+              if get_local(ctx, :jerun_tutorial, 0) == 5 do
                 ctx =
                   ctx
                   |> mes("[Refinery Owner Han]")
                   |> mes(
-                    "I recommend you visit and listen to Mr. Tadde about weapon levels and safe refining."
+                    "Go and see ^3E86C3Mr. Locas^000000 in charge with refining Oridecon stone for the refining effect and refining price."
                   )
                   |> close()
 
                 throw({:script_end, ctx})
               else
-                if get_local(ctx, :jerun_tutorial, 0) == 4 do
-                  {ctx, _} =
+                if get_local(ctx, :jerun_tutorial, 0) == 6 do
+                  {ctx, v4} =
                     ctx
                     |> mes("[Refinery Owner Han]")
                     |> mes("Did you get a good lesson? Did he explain it well enough?")
                     |> next()
-                    |> mes("[Refinery Owner Han]")
-                    |> mes(
-                      "Just between us, there is a rumor that lots of employees complain about me."
-                    )
-                    |> next()
-                    |> mes("[Refinery Owner Han]")
-                    |> mes("I sent you there to monitor the situation.")
-                    |> next()
-                    |> select(["So?"])
-
-                  {ctx, v3} =
-                    ctx
-                    |> mes("[Refinery Owner Han]")
-                    |> mes(
-                      "I will adopt it in the performance rating. By the way, how was Mr. Tadde's lesson?"
-                    )
-                    |> next()
-                    |> select(["It was excellent.", "It was just OK.", "It was so-so."])
+                    |> select(["He was good great.", "It was just OK.", "So-so.."])
 
                   ctx =
-                    case v3 do
+                    case v4 do
                       1 ->
                         ctx
                         |> mes("[Refinery Owner Han]")
-                        |> mes("He did a good job...")
+                        |> mes("Mr. Locas explained it to you well.")
                         |> next()
 
                       2 ->
-                        ctx
-                        |> mes("[Refinery Owner Han]")
-                        |> mes("Hmm. Is that so? I see... I'll have to jot this down...")
-                        |> next()
+                        ctx |> mes("[Refinery Owner Han]") |> mes("Just OK? Hmmm.") |> next()
 
                       3 ->
                         ctx =
                           ctx
                           |> mes("[Refinery Owner Han]")
-                          |> mes("Hmm.. It was like that... I see.")
+                          |> mes("Oh no.. You were not satisfied with his explanations...")
                           |> next()
 
                         ctx
 
                       _ ->
-                        ctx
+                        throw({:script_end, ctx})
+                    end
+
+                  {ctx, v5} =
+                    ctx
+                    |> mes("[Refinery Owner Han]")
+                    |> mes("I see. I will jot that down.")
+                    |> next()
+                    |> mes("[Refinery Owner Han]")
+                    |> mes(
+                      "By the way, I have finished all the explanations about refining. Any further questions?"
+                    )
+                    |> next()
+                    |> select(["No questions at all.", "I have some questions..."])
+
+                  ctx =
+                    if v5 == 1 do
+                      ctx
+                      |> mes("[Refinery Owner Han]")
+                      |> mes("I see.. But just in case...")
+                      |> next()
+                    else
+                      ctx
+                      |> mes("[Refinery Owner Han]")
+                      |> mes("Ah, is that so? Don't worry.")
+                      |> next()
                     end
 
                   ctx =
                     ctx
                     |> mes("[Refinery Owner Han]")
-                    |> mes("Now! I'm done organizing..")
-                    |> next()
-                    |> mes("[Refinery Owner Han]")
                     |> mes(
-                      "Next is the explanation about ^3E86C3refining effect^000000 and ^3E86C3refining price^000000."
+                      "If you have any further questions, come and see me. I will give you full explanations again."
                     )
                     |> next()
                     |> mes("[Refinery Owner Han]")
                     |> mes(
-                      "^3E86C3Mr. Locas^000000 is in charge with refinement with Oridecon gemstones."
+                      "And this is a compensation for your lesson. I hope to see you frequently in the future."
                     )
                     |> next()
-                    |> mes("[Refinery Owner Han]")
-                    |> mes(
-                      "Go speak with Mr. Locas's about the refining effect and refining price."
-                    )
-                    |> next()
-                    |> setquest(5155)
-                    |> mes("[Refinery Owner Han]")
-                    |> mes("Ah!! I ask for your favor this time, either.")
+                    |> setquest(5156)
+                    |> completequest(5156)
+
+                  ctx =
+                    if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
+                      getexp(ctx, 1200, 500)
+                    else
+                      ctx
+                    end
+
+                  ctx =
+                    ctx
+                    |> mes("Got a lesson about the refining and Kafra storage free coupon.")
+                    |> give_item(7059, 1)
                     |> close()
 
                   throw({:script_end, ctx})
                 else
-                  if get_local(ctx, :jerun_tutorial, 0) == 5 do
+                  if get_local(ctx, :jerun_tutorial, 0) == 8 do
+                    {ctx, v6} =
+                      ctx
+                      |> mes("[Refinery Owner Han]")
+                      |> mes("How are you doing?")
+                      |> next()
+                      |> select([
+                        "Hi!!",
+                        "How is the morale of the employees?",
+                        "Question is....",
+                        "Cancel"
+                      ])
+
+                    ctx =
+                      case v6 do
+                        1 ->
+                          ctx =
+                            ctx
+                            |> mes("[Refinery Owner Han]")
+                            |> mes(
+                              "How are you? Haven't seen you long time.. Please pay more frequent visits and do refining."
+                            )
+                            |> close()
+
+                          throw({:script_end, ctx})
+
+                        2 ->
+                          ctx =
+                            ctx
+                            |> mes("[Refinery Owner Han]")
+                            |> mes("Just as before, labor-management consensus have achieved.")
+                            |> next()
+                            |> mes("[Refinery Owner Han]")
+                            |> mes(
+                              "We understand the employees' complaints and prepared the resolutions."
+                            )
+                            |> next()
+                            |> mes("[Refinery Owner Han]")
+                            |> mes(
+                              "Perhaps from that reason, I can hear any other complaints from them."
+                            )
+                            |> close()
+
+                          throw({:script_end, ctx})
+
+                        3 ->
+                          ctx =
+                            ctx
+                            |> mes("[Refinery Owner Han]")
+                            |> mes("You have a question..")
+                            |> next()
+                            |> mes("[Refinery Owner Han]")
+                            |> mes("But I haven't told you anything in the beginning.")
+                            |> next()
+                            |> mes("[Refinery Owner Han]")
+                            |> mes(
+                              "It might be better for you to ask questions of the staff you met before."
+                            )
+                            |> next()
+                            |> mes("[Refinery Owner Han]")
+                            |> mes(
+                              "You can ask the explanations concerning ^FD4F02weapon levels^000000 and ^FD4F02saftey refining ^000000, to ^142CEBMr. Tadde^000000, concerning ^FD4F02refining price^000000 and ^FD4F02refining effect^000000, ^142CEBto Mr. Locas^000000."
+                            )
+                            |> next()
+                            |> mes("[Refinery Owner Han]")
+                            |> mes("He will give you kind answers.")
+                            |> close()
+
+                          throw({:script_end, ctx})
+
+                        4 ->
+                          ctx
+
+                        _ ->
+                          throw({:script_end, ctx})
+                      end
+
+                    ctx = close(ctx)
+                    throw({:script_end, ctx})
+                  else
                     ctx =
                       ctx
                       |> mes("[Refinery Owner Han]")
                       |> mes(
-                        "Go and see ^3E86C3Mr. Locas^000000 in charge with refining Oridecon stone for the refining effect and refining price."
+                        "Something strange must've happened. If this continues, please contact customer service."
                       )
                       |> close()
 
                     throw({:script_end, ctx})
-                  else
-                    if get_local(ctx, :jerun_tutorial, 0) == 6 do
-                      {ctx, v4} =
-                        ctx
-                        |> mes("[Refinery Owner Han]")
-                        |> mes("Did you get a good lesson? Did he explain it well enough?")
-                        |> next()
-                        |> select(["He was good great.", "It was just OK.", "So-so.."])
-
-                      ctx =
-                        case v4 do
-                          1 ->
-                            ctx
-                            |> mes("[Refinery Owner Han]")
-                            |> mes("Mr. Locas explained it to you well.")
-                            |> next()
-
-                          2 ->
-                            ctx |> mes("[Refinery Owner Han]") |> mes("Just OK? Hmmm.") |> next()
-
-                          3 ->
-                            ctx =
-                              ctx
-                              |> mes("[Refinery Owner Han]")
-                              |> mes("Oh no.. You were not satisfied with his explanations...")
-                              |> next()
-
-                            ctx
-
-                          _ ->
-                            ctx
-                        end
-
-                      {ctx, v5} =
-                        ctx
-                        |> mes("[Refinery Owner Han]")
-                        |> mes("I see. I will jot that down.")
-                        |> next()
-                        |> mes("[Refinery Owner Han]")
-                        |> mes(
-                          "By the way, I have finished all the explanations about refining. Any further questions?"
-                        )
-                        |> next()
-                        |> select(["No questions at all.", "I have some questions..."])
-
-                      ctx =
-                        if v5 == 1 do
-                          ctx
-                          |> mes("[Refinery Owner Han]")
-                          |> mes("I see.. But just in case...")
-                          |> next()
-                        else
-                          ctx
-                          |> mes("[Refinery Owner Han]")
-                          |> mes("Ah, is that so? Don't worry.")
-                          |> next()
-                        end
-
-                      ctx =
-                        ctx
-                        |> mes("[Refinery Owner Han]")
-                        |> mes(
-                          "If you have any further questions, come and see me. I will give you full explanations again."
-                        )
-                        |> next()
-                        |> mes("[Refinery Owner Han]")
-                        |> mes(
-                          "And this is a compensation for your lesson. I hope to see you frequently in the future."
-                        )
-                        |> next()
-                        |> setquest(5156)
-                        |> completequest(5156)
-
-                      ctx =
-                        if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
-                          getexp(ctx, 1200, 500)
-                        else
-                          ctx
-                        end
-
-                      ctx =
-                        ctx
-                        |> mes("Got a lesson about the refining and Kafra storage free coupon.")
-                        |> give_item(7059, 1)
-                        |> close()
-
-                      throw({:script_end, ctx})
-                    else
-                      if get_local(ctx, :jerun_tutorial, 0) == 8 do
-                        {ctx, v6} =
-                          ctx
-                          |> mes("[Refinery Owner Han]")
-                          |> mes("How are you doing?")
-                          |> next()
-                          |> select([
-                            "Hi!!",
-                            "How is the morale of the employees?",
-                            "Question is....",
-                            "Cancel"
-                          ])
-
-                        ctx =
-                          case v6 do
-                            1 ->
-                              ctx =
-                                ctx
-                                |> mes("[Refinery Owner Han]")
-                                |> mes(
-                                  "How are you? Haven't seen you long time.. Please pay more frequent visits and do refining."
-                                )
-                                |> close()
-
-                              throw({:script_end, ctx})
-
-                            2 ->
-                              ctx =
-                                ctx
-                                |> mes("[Refinery Owner Han]")
-                                |> mes(
-                                  "Just as before, labor-management consensus have achieved."
-                                )
-                                |> next()
-                                |> mes("[Refinery Owner Han]")
-                                |> mes(
-                                  "We understand the employees' complaints and prepared the resolutions."
-                                )
-                                |> next()
-                                |> mes("[Refinery Owner Han]")
-                                |> mes(
-                                  "Perhaps from that reason, I can hear any other complaints from them."
-                                )
-                                |> close()
-
-                              throw({:script_end, ctx})
-
-                            3 ->
-                              ctx =
-                                ctx
-                                |> mes("[Refinery Owner Han]")
-                                |> mes("You have a question..")
-                                |> next()
-                                |> mes("[Refinery Owner Han]")
-                                |> mes("But I haven't told you anything in the beginning.")
-                                |> next()
-                                |> mes("[Refinery Owner Han]")
-                                |> mes(
-                                  "It might be better for you to ask questions of the staff you met before."
-                                )
-                                |> next()
-                                |> mes("[Refinery Owner Han]")
-                                |> mes(
-                                  "You can ask the explanations concerning ^FD4F02weapon levels^000000 and ^FD4F02saftey refining ^000000, to ^142CEBMr. Tadde^000000, concerning ^FD4F02refining price^000000 and ^FD4F02refining effect^000000, ^142CEBto Mr. Locas^000000."
-                                )
-                                |> next()
-                                |> mes("[Refinery Owner Han]")
-                                |> mes("He will give you kind answers.")
-                                |> close()
-
-                              throw({:script_end, ctx})
-
-                            4 ->
-                              ctx
-
-                            _ ->
-                              ctx
-                          end
-
-                        ctx = close(ctx)
-                        throw({:script_end, ctx})
-                      else
-                        ctx =
-                          ctx
-                          |> mes("[Refinery Owner Han]")
-                          |> mes(
-                            "Something strange must've happened. If this continues, please contact customer service."
-                          )
-                          |> close()
-
-                        throw({:script_end, ctx})
-                      end
-                    end
                   end
                 end
               end
             end
           end
-
-        ctx
+        end
       end
-
-    ctx
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

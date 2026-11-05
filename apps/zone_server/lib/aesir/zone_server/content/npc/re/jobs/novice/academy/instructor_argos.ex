@@ -112,7 +112,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InstructorArgos do
 
       {ctx, _} =
         ctx
-        |> emotion(:huk)
+        |> emotion(:huk, playerattached(ctx))
         |> mes("[Instructor Argos]")
         |> mes("Dead?! Who....?")
         |> mes("me? Pu ha ha ha!!")

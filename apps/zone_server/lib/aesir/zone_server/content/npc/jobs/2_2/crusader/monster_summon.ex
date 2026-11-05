@@ -73,7 +73,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Crusader.MonsterSummon do
 
   @impl true
   @spec on_talk(Ctx.t()) :: Ctx.t()
-  def on_talk(ctx), do: ctx
+  # rAthena starts a click at the first label, so it runs this body too.
+  def on_talk(ctx), do: on_event("OnInit", ctx)
 
   defp summon_wave(ctx, monsters) do
     Enum.reduce(monsters, ctx, fn {mob_id, at}, ctx ->

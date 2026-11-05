@@ -91,14 +91,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Hyunmoo do
       |> next()
       |> select(["No.", "Yes."])
 
+    # The reference switches on `select("No.:Yes.") == 1` with no case labels, so the
+    # body below runs whichever answer was given and ends the script; the quit reward
+    # after it is unreachable.
     ctx
     |> mes("[Hyunmoo]")
-    |> mes(".....I figured as much....you don't have a spirit.")
-    |> announce_quit(", has quit his testing to become a monk.")
+    |> mes("Then move!")
     |> close()
-    |> set_char_var(:MONK_Q, 16)
-    |> changequest(3027, 3028)
-    |> warp("prt_monk", 194, 168)
   end
 
   defp explain_test(ctx) do

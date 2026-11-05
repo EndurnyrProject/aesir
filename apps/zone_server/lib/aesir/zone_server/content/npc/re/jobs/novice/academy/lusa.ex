@@ -122,225 +122,223 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lusa do
           end
 
         {ctx, v1} = select(ctx, String.split(get_local(ctx, :"menu$", ""), ":"))
+        _ = v1
 
-        ctx =
-          case v1 do
-            1 ->
-              ctx =
-                ctx
-                |> emotion(:throb)
-                |> mes("[Lusa]")
-                |> mes(
-                  "You're so cute! A ^ff0000Gunslinger^000000 who has true grit wield his weapons bringing justice in these wild times."
+        case v1 do
+          1 ->
+            ctx =
+              ctx
+              |> emotion(:throb)
+              |> mes("[Lusa]")
+              |> mes(
+                "You're so cute! A ^ff0000Gunslinger^000000 who has true grit wield his weapons bringing justice in these wild times."
+              )
+              |> next()
+              |> mes("[Lusa]")
+
+            ctx =
+              if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                mes(
+                  ctx,
+                  "Ya, know you remind me of my little brother, that varmint couldn't shoot the broadside of a barn.. at least not until I taught him."
                 )
-                |> next()
-                |> mes("[Lusa]")
-
-              ctx =
-                if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                  mes(
-                    ctx,
-                    "Ya, know you remind me of my little brother, that varmint couldn't shoot the broadside of a barn.. at least not until I taught him."
-                  )
-                else
-                  mes(
-                    ctx,
-                    "Ya, know you remind me of my little sister, that scamp couldn't shoot the broadside of barn.. At least not until I taught her."
-                  )
-                end
-
-              ctx =
-                ctx
-                |> next()
-                |> mes("[Lusa]")
-                |> mes(
-                  "Now y'all need to understand, guns aren't some little thing that you just swing at an animal, you don't wiggle those there fingers and shock them to death."
+              else
+                mes(
+                  ctx,
+                  "Ya, know you remind me of my little sister, that scamp couldn't shoot the broadside of barn.. At least not until I taught her."
                 )
-                |> next()
-                |> mes("[Lusa]")
-                |> mes(
-                  "No! You shoot things, which means ya need to aim straight. This takes a lot of ^ff0000dexterity^000000 on the part of the gunslinger."
-                )
-                |> next()
-                |> mes("[Lusa]")
-                |> mes(
-                  "Now before ya go running off shooting dem guns in the air, all high fallootin and dancing around. Ya need to understand that this isn't an easy job!"
-                )
-                |> next()
-                |> mes("[Lusa]")
-                |> mes(
-                  "Bullets cost zeny so you need to be sure that everything you shoot is worth the price! We attack at range so that nasty cur with the pig sticker doesn't rustle your jimmies!"
-                )
-                |> next()
-                |> mes("[Lusa]")
-                |> mes("Y'all understand?")
-                |> next()
-                |> loop_3()
-                |> mes("[Lusa]")
-                |> mes("Y'all can come back now if you gets any more questions.")
-                |> close()
-                |> cutin("", 255)
+              end
 
-              throw({:script_end, ctx})
+            ctx =
+              ctx
+              |> next()
+              |> mes("[Lusa]")
+              |> mes(
+                "Now y'all need to understand, guns aren't some little thing that you just swing at an animal, you don't wiggle those there fingers and shock them to death."
+              )
+              |> next()
+              |> mes("[Lusa]")
+              |> mes(
+                "No! You shoot things, which means ya need to aim straight. This takes a lot of ^ff0000dexterity^000000 on the part of the gunslinger."
+              )
+              |> next()
+              |> mes("[Lusa]")
+              |> mes(
+                "Now before ya go running off shooting dem guns in the air, all high fallootin and dancing around. Ya need to understand that this isn't an easy job!"
+              )
+              |> next()
+              |> mes("[Lusa]")
+              |> mes(
+                "Bullets cost zeny so you need to be sure that everything you shoot is worth the price! We attack at range so that nasty cur with the pig sticker doesn't rustle your jimmies!"
+              )
+              |> next()
+              |> mes("[Lusa]")
+              |> mes("Y'all understand?")
+              |> next()
+              |> loop_3()
+              |> mes("[Lusa]")
+              |> mes("Y'all can come back now if you gets any more questions.")
+              |> close()
+              |> cutin("", 255)
 
-            2 ->
-              {ctx, v3} =
-                ctx
-                |> mes("[Lusa]")
-                |> mes(
-                  "They tell me Criatura Academy is for the novices not yet decided what job to take."
-                )
-                |> next()
-                |> mes("[Lusa]")
-                |> mes("They hired me, gun and all, to show you how to be a gunslinger!")
-                |> next()
-                |> mes("[Lusa]")
-                |> mes("Would you like me to show you how?")
-                |> next()
-                |> select(["Yes mam!", "No, thanks."])
+            throw({:script_end, ctx})
 
-              ctx =
-                if v3 == 2 do
-                  ctx =
-                    ctx
-                    |> mes("[Lusa]")
-                    |> mes("Hrmm, you didn't look like you had the grit any how.")
-                    |> close()
-                    |> cutin("", 255)
+          2 ->
+            {ctx, v3} =
+              ctx
+              |> mes("[Lusa]")
+              |> mes(
+                "They tell me Criatura Academy is for the novices not yet decided what job to take."
+              )
+              |> next()
+              |> mes("[Lusa]")
+              |> mes("They hired me, gun and all, to show you how to be a gunslinger!")
+              |> next()
+              |> mes("[Lusa]")
+              |> mes("Would you like me to show you how?")
+              |> next()
+              |> select(["Yes mam!", "No, thanks."])
 
-                  throw({:script_end, ctx})
-                else
-                  ctx
-                end
-
-              ctx = mes(ctx, "[Lusa]")
-
-              ctx =
-                if Rathena.truthy?(isequippedcnt(ctx, [2941])) or
-                     Rathena.truthy?(count_item(ctx, 2941)) do
-                  mes(ctx, "Hey! What kind of con is this?! You already had a manual!")
-                else
-                  ctx
-                  |> give_item(2941, 1)
-                  |> mes(
-                    "Here take this manual, I ain't too good at that there book learnin' but I can answer your questions."
-                  )
-                end
-
-              ctx =
-                ctx
-                |> next()
-                |> mes("[Lusa]")
-                |> mes(
-                  "If you need the battle training, visit <NAVI>[Subino]<INFO>iz_ac01,59,83</INFO></NAVI>."
-                )
-                |> close()
-                |> cutin("", 255)
-
-              throw({:script_end, ctx})
-
-            3 ->
-              ctx =
-                if upper(ctx) == 2 do
-                  ctx =
-                    ctx
-                    |> emotion(:sexy)
-                    |> mes("[Lusa]")
-                    |> mes("Oh, sorry! Children cannot become Gunslingers!")
-                    |> next()
-                    |> mes("[Lusa]")
-                    |> mes("Perhaps you should talk to your parents about other professions.")
-                    |> close()
-                    |> cutin("", 255)
-
-                  throw({:script_end, ctx})
-                else
-                  ctx
-                end
-
-              ctx =
-                ctx
-                |> mes("[Lusa]")
-                |> mes("Are you going to learn to shoot as a gunslinger?")
-                |> next()
-
-              ctx =
-                if job_level(ctx) < 10 do
-                  ctx =
-                    ctx
-                    |> mes("[Lusa]")
-                    |> mes("Wooo doggy! You aren't ready for the big city yet!")
-                    |> next()
-                    |> mes("[Lusa]")
-                    |> mes(
-                      "Get to ^ff0000Job Level: ^0000ff10^000000 and come back here and I will help ya!"
-                    )
-                    |> close()
-                    |> cutin("", 255)
-
-                  throw({:script_end, ctx})
-                else
+            ctx =
+              if v3 == 2 do
+                ctx =
                   ctx
                   |> mes("[Lusa]")
-                  |> mes("Y'all ready to take the test to become a gunslinger?")
-                  |> next()
-                end
+                  |> mes("Hrmm, you didn't look like you had the grit any how.")
+                  |> close()
+                  |> cutin("", 255)
 
-              {ctx, v4} = select(ctx, ["Wait a moment.", "Send me."])
-
-              ctx =
-                if v4 == 1 do
-                  ctx =
-                    ctx
-                    |> cutin("aca_gung_02.bmp", 2)
-                    |> mes("[Lusa]")
-                    |> mes("When ya are ready, come to me!")
-                    |> close()
-                    |> cutin("", 255)
-
-                  throw({:script_end, ctx})
-                else
-                  ctx
-                end
-
-              ctx =
+                throw({:script_end, ctx})
+              else
                 ctx
-                |> mes("[Lusa]")
-                |> mes(
-                  "Okay then, you should find a^ff0000 Mr. Master Miller^000000 and ask him about the test."
-                )
-                |> next()
-                |> mes("[Lusa]")
-                |> mes(
-                  "Remember, if you find yourself in a hole, the first thing to do is stop digging!"
-                )
-                |> close()
-                |> warp("que_ng", 150, 167)
+              end
 
-              throw({:script_end, ctx})
+            ctx = mes(ctx, "[Lusa]")
 
-            4 ->
-              ctx =
+            ctx =
+              if Rathena.truthy?(isequippedcnt(ctx, [2941])) or
+                   Rathena.truthy?(count_item(ctx, 2941)) do
+                mes(ctx, "Hey! What kind of con is this?! You already had a manual!")
+              else
                 ctx
-                |> mes("[Lusa]")
-                |> mes("Y'all need help with that book?")
-                |> loop_5()
-                |> mes("[Lusa]")
-                |> mes("If ya need more questions you can always come back ta me.")
-                |> close()
-                |> cutin("", 255)
+                |> give_item(2941, 1)
+                |> mes(
+                  "Here take this manual, I ain't too good at that there book learnin' but I can answer your questions."
+                )
+              end
 
-              throw({:script_end, ctx})
-
-            5 ->
-              ctx = ctx |> close() |> cutin("", 255)
-              throw({:script_end, ctx})
-
-            _ ->
+            ctx =
               ctx
-          end
+              |> next()
+              |> mes("[Lusa]")
+              |> mes(
+                "If you need the battle training, visit <NAVI>[Subino]<INFO>iz_ac01,59,83</INFO></NAVI>."
+              )
+              |> close()
+              |> cutin("", 255)
 
-        ctx
+            throw({:script_end, ctx})
+
+          3 ->
+            ctx =
+              if upper(ctx) == 2 do
+                ctx =
+                  ctx
+                  |> emotion(:sexy)
+                  |> mes("[Lusa]")
+                  |> mes("Oh, sorry! Children cannot become Gunslingers!")
+                  |> next()
+                  |> mes("[Lusa]")
+                  |> mes("Perhaps you should talk to your parents about other professions.")
+                  |> close()
+                  |> cutin("", 255)
+
+                throw({:script_end, ctx})
+              else
+                ctx
+              end
+
+            ctx =
+              ctx
+              |> mes("[Lusa]")
+              |> mes("Are you going to learn to shoot as a gunslinger?")
+              |> next()
+
+            ctx =
+              if job_level(ctx) < 10 do
+                ctx =
+                  ctx
+                  |> mes("[Lusa]")
+                  |> mes("Wooo doggy! You aren't ready for the big city yet!")
+                  |> next()
+                  |> mes("[Lusa]")
+                  |> mes(
+                    "Get to ^ff0000Job Level: ^0000ff10^000000 and come back here and I will help ya!"
+                  )
+                  |> close()
+                  |> cutin("", 255)
+
+                throw({:script_end, ctx})
+              else
+                ctx
+                |> mes("[Lusa]")
+                |> mes("Y'all ready to take the test to become a gunslinger?")
+                |> next()
+              end
+
+            {ctx, v4} = select(ctx, ["Wait a moment.", "Send me."])
+
+            ctx =
+              if v4 == 1 do
+                ctx =
+                  ctx
+                  |> cutin("aca_gung_02.bmp", 2)
+                  |> mes("[Lusa]")
+                  |> mes("When ya are ready, come to me!")
+                  |> close()
+                  |> cutin("", 255)
+
+                throw({:script_end, ctx})
+              else
+                ctx
+              end
+
+            ctx =
+              ctx
+              |> mes("[Lusa]")
+              |> mes(
+                "Okay then, you should find a^ff0000 Mr. Master Miller^000000 and ask him about the test."
+              )
+              |> next()
+              |> mes("[Lusa]")
+              |> mes(
+                "Remember, if you find yourself in a hole, the first thing to do is stop digging!"
+              )
+              |> close()
+              |> warp("que_ng", 150, 167)
+
+            throw({:script_end, ctx})
+
+          4 ->
+            ctx =
+              ctx
+              |> mes("[Lusa]")
+              |> mes("Y'all need help with that book?")
+              |> loop_5()
+              |> mes("[Lusa]")
+              |> mes("If ya need more questions you can always come back ta me.")
+              |> close()
+              |> cutin("", 255)
+
+            throw({:script_end, ctx})
+
+          5 ->
+            ctx = ctx |> close() |> cutin("", 255)
+            throw({:script_end, ctx})
+
+          _ ->
+            throw({:script_end, ctx})
+        end
       else
         ctx =
           if Rathena.job_id(class(ctx)) == Rathena.job_id(:gunslinger) do
@@ -549,72 +547,71 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lusa do
                                     "Cancel"
                                   ])
 
-                                ctx =
-                                  case v8 do
-                                    1 ->
-                                      ctx =
-                                        ctx
-                                        |> mes("[Lusa]")
-                                        |> mes(
-                                          "Basic combat training can be performed until Base Level 20."
-                                        )
-                                        |> next()
-                                        |> mes("[Lusa]")
-                                        |> mes(
-                                          "You must've thought that the training would be pretty low because this is still the beginning."
-                                        )
-                                        |> close()
-                                        |> cutin("", 255)
+                                _ = v8
 
-                                      throw({:script_end, ctx})
-
-                                    2 ->
-                                      ctx =
-                                        ctx
-                                        |> mes("[Lusa]")
-                                        |> mes("Sorry! Did I not mention this?")
-                                        |> next()
-                                        |> mes("[Lusa]")
-                                        |> mes(
-                                          "You can choose any task you wish from the requests on my desk near the entrance."
-                                        )
-                                        |> close()
-                                        |> cutin("", 255)
-
-                                      throw({:script_end, ctx})
-
-                                    3 ->
-                                      ctx =
-                                        ctx
-                                        |> cutin("aca_gung_02.bmp", 2)
-                                        |> mes("[Lusa]")
-                                        |> mes(
-                                          "Right, ah, why? Well, The Gunslinger guild didn't have any combat training in the beginning."
-                                        )
-                                        |> next()
-                                        |> mes("[Lusa]")
-                                        |> mes(
-                                          "So they suddenly asked me to perform combat training for new recruits."
-                                        )
-                                        |> next()
-                                        |> mes("[Lusa]")
-                                        |> mes(
-                                          "This training is not mandatory if you do not want to do it."
-                                        )
-                                        |> close()
-                                        |> cutin("", 255)
-
-                                      throw({:script_end, ctx})
-
-                                    4 ->
-                                      ctx = ctx |> close() |> cutin("", 255)
-                                      throw({:script_end, ctx})
-
-                                    _ ->
+                                case v8 do
+                                  1 ->
+                                    ctx =
                                       ctx
-                                  end
+                                      |> mes("[Lusa]")
+                                      |> mes(
+                                        "Basic combat training can be performed until Base Level 20."
+                                      )
+                                      |> next()
+                                      |> mes("[Lusa]")
+                                      |> mes(
+                                        "You must've thought that the training would be pretty low because this is still the beginning."
+                                      )
+                                      |> close()
+                                      |> cutin("", 255)
 
-                                ctx
+                                    throw({:script_end, ctx})
+
+                                  2 ->
+                                    ctx =
+                                      ctx
+                                      |> mes("[Lusa]")
+                                      |> mes("Sorry! Did I not mention this?")
+                                      |> next()
+                                      |> mes("[Lusa]")
+                                      |> mes(
+                                        "You can choose any task you wish from the requests on my desk near the entrance."
+                                      )
+                                      |> close()
+                                      |> cutin("", 255)
+
+                                    throw({:script_end, ctx})
+
+                                  3 ->
+                                    ctx =
+                                      ctx
+                                      |> cutin("aca_gung_02.bmp", 2)
+                                      |> mes("[Lusa]")
+                                      |> mes(
+                                        "Right, ah, why? Well, The Gunslinger guild didn't have any combat training in the beginning."
+                                      )
+                                      |> next()
+                                      |> mes("[Lusa]")
+                                      |> mes(
+                                        "So they suddenly asked me to perform combat training for new recruits."
+                                      )
+                                      |> next()
+                                      |> mes("[Lusa]")
+                                      |> mes(
+                                        "This training is not mandatory if you do not want to do it."
+                                      )
+                                      |> close()
+                                      |> cutin("", 255)
+
+                                    throw({:script_end, ctx})
+
+                                  4 ->
+                                    ctx = ctx |> close() |> cutin("", 255)
+                                    throw({:script_end, ctx})
+
+                                  _ ->
+                                    throw({:script_end, ctx})
+                                end
                               else
                                 ctx
                               end
@@ -1346,7 +1343,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lusa do
           ctx
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     cutin(ctx, "aca_gung_01.bmp", 2)
@@ -1429,7 +1426,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lusa do
               ctx
 
             _ ->
-              ctx
+              throw({:script_end, ctx})
           end
 
         throw({:brk_5, ctx})
@@ -1516,7 +1513,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lusa do
           throw({:script_end, ctx})
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     ctx |> mes("[Lusa]") |> mes("Do you have any other questions?") |> next() |> loop_8()

@@ -112,22 +112,45 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.IzInt do
   end
 
   def ev_ontimer18000(ctx) do
-    ctx
-    |> mapannounce(
-      strnpcinfo(ctx, 4),
-      "[Tip] You can leave through the bluish warp gate.",
-      1,
-      16_711_680
+    ctx =
+      mapannounce(
+        ctx,
+        strnpcinfo(ctx, 4),
+        "[Tip] You can leave through the bluish warp gate.",
+        1,
+        16_711_680
+      )
+
+    emotion(
+      ctx,
+      :surprise,
+      getnpcid(
+        ctx,
+        Rathena.concat("#room_out", Rathena.replacestr(strnpcinfo(ctx, 4), "iz_int", ""))
+      )
     )
-    |> emotion(:surprise)
   end
 
   def ev_ontimer21000(ctx) do
-    emotion(ctx, :surprise)
+    emotion(
+      ctx,
+      :surprise,
+      getnpcid(
+        ctx,
+        Rathena.concat("#room_out", Rathena.replacestr(strnpcinfo(ctx, 4), "iz_int", ""))
+      )
+    )
   end
 
   def ev_ontimer24000(ctx) do
-    emotion(ctx, :surprise)
+    emotion(
+      ctx,
+      :surprise,
+      getnpcid(
+        ctx,
+        Rathena.concat("#room_out", Rathena.replacestr(strnpcinfo(ctx, 4), "iz_int", ""))
+      )
+    )
   end
 
   def ev_ontimer27000(ctx) do

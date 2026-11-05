@@ -45,7 +45,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.Timer do
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnEnable", ctx), do: initnpctimer(ctx)
   def on_event("OnDisable", ctx), do: stop_ceremony(ctx)
-  def on_event("OnTimer60000", ctx), do: ctx
+  # The reference stacks these labels on the next one, so they all run the same body.
+  def on_event("OnTimer60000", ctx), do: on_event("OnTimer120000", ctx)
 
   def on_event("OnTimer120000", ctx) do
     if getmapusers(ctx, "job_soul") == 0 do
@@ -55,8 +56,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.Timer do
     end
   end
 
-  def on_event("OnTimer180000", ctx), do: ctx
-  def on_event("OnTimer181000", ctx), do: ctx
+  # The reference stacks these labels on the next one, so they all run the same body.
+  def on_event("OnTimer180000", ctx), do: on_event("OnTimer182000", ctx)
+  def on_event("OnTimer181000", ctx), do: on_event("OnTimer182000", ctx)
   def on_event("OnTimer182000", ctx), do: mapwarp(ctx, "job_soul", "morocc", 157, 47)
 
   def on_event("OnTimer183000", ctx) do

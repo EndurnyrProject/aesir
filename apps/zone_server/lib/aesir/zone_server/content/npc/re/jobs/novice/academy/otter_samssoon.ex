@@ -79,578 +79,569 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
       |> next()
       |> select(["Read style book.", "Change hair style.", "How to get a coupon", "Stop."])
 
-    ctx =
-      case v1 do
-        1 ->
-          {ctx, v2} =
+    _ = v1
+
+    case v1 do
+      1 ->
+        {ctx, v2} =
+          ctx
+          |> mes("[Otter Samssoon]")
+          |> mes("Oh my~ I am sure any hair style will suit you! You really have a good style~")
+          |> mes("There are many styles so pick ^ff0000from page 1 to 19^000000.")
+          |> mes("If you want to stop, say 0.")
+          |> next()
+          |> input(:int)
+
+        ctx = set_local(ctx, :style, v2)
+
+        if get_local(ctx, :style, 0) > 19 do
+          ctx =
             ctx
             |> mes("[Otter Samssoon]")
-            |> mes("Oh my~ I am sure any hair style will suit you! You really have a good style~")
-            |> mes("There are many styles so pick ^ff0000from page 1 to 19^000000.")
-            |> mes("If you want to stop, say 0.")
-            |> next()
-            |> input(:int)
+            |> mes("Oh my!!? Honey~ You can use a coupon for the hair style in here~")
+            |> close()
 
-          ctx = set_local(ctx, :style, v2)
-
-          if get_local(ctx, :style, 0) > 19 do
+          throw({:script_end, ctx})
+        else
+          if not Rathena.truthy?(get_local(ctx, :style, 0)) do
             ctx =
               ctx
               |> mes("[Otter Samssoon]")
-              |> mes("Oh my!!? Honey~ You can use a coupon for the hair style in here~")
+              |> mes("Did you decide? Which style??")
+              |> mes("I want to touch your hair with my hands~ Honey~")
               |> close()
 
             throw({:script_end, ctx})
           else
-            if not Rathena.truthy?(get_local(ctx, :style, 0)) do
-              ctx =
-                ctx
-                |> mes("[Otter Samssoon]")
-                |> mes("Did you decide? Which style??")
-                |> mes("I want to touch your hair with my hands~ Honey~")
-                |> close()
+            {ctx, _} = s_l_cutin(ctx, [get_local(ctx, :style, 0)])
+            ctx = mes(ctx, "[Otter Samssoon]")
+            v3 = get_local(ctx, :style, 0)
 
-              throw({:script_end, ctx})
-            else
-              {ctx, _} = s_l_cutin(ctx, [get_local(ctx, :style, 0)])
-              ctx = mes(ctx, "[Otter Samssoon]")
-              v3 = get_local(ctx, :style, 0)
+            ctx =
+              case v3 do
+                1 ->
+                  ctx =
+                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                      ctx
+                      |> mes("Oh my!!? 'Play Dead' cut?")
+                      |> mes("This looks neat and relaxed.. So popular style.")
+                    else
+                      ctx
+                      |> mes("Oh my!!? 'First Aid' cut?")
+                      |> mes("This is and adorable style.")
+                      |> mes("I guess it looks good on you too!!")
+                    end
 
-              ctx =
-                case v3 do
-                  1 ->
-                    ctx =
-                      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                        ctx
-                        |> mes("Oh my!!? 'Play Dead' cut?")
-                        |> mes("This looks neat and relaxed.. So popular style.")
-                      else
-                        ctx
-                        |> mes("Oh my!!? 'First Aid' cut?")
-                        |> mes("This is and adorable style.")
-                        |> mes("I guess it looks good on you too!!")
-                      end
+                  ctx
 
-                    ctx
+                2 ->
+                  ctx =
+                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                      ctx
+                      |> mes("Oh my!!? 'Two Handed Sword Mastery' cut?")
+                      |> mes("You... You know the famous D..? He has exactly the same style!")
+                    else
+                      ctx
+                      |> mes("Oh my!!? 'Bash' cut?")
+                      |> mes("This style gives strong curls on both side hair.")
+                    end
 
-                  2 ->
-                    ctx =
-                      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                        ctx
-                        |> mes("Oh my!!? 'Two Handed Sword Mastery' cut?")
-                        |> mes("You... You know the famous D..? He has exactly the same style!")
-                      else
-                        ctx
-                        |> mes("Oh my!!? 'Bash' cut?")
-                        |> mes("This style gives strong curls on both side hair.")
-                      end
+                  ctx
 
-                    ctx
+                3 ->
+                  ctx =
+                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                      ctx
+                      |> mes("Oh my!!? 'Napalm Beat' cut?")
+                      |> mes("It has well arranges hair line that makes feel charisma.")
+                    else
+                      ctx
+                      |> mes("Oh my!!? 'Frost Diver' cut?")
+                      |> mes(
+                        "It is mysterious style that gives cold and warm feeling at the same time."
+                      )
+                    end
 
-                  3 ->
-                    ctx =
-                      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                        ctx
-                        |> mes("Oh my!!? 'Napalm Beat' cut?")
-                        |> mes("It has well arranges hair line that makes feel charisma.")
-                      else
-                        ctx
-                        |> mes("Oh my!!? 'Frost Diver' cut?")
-                        |> mes(
-                          "It is mysterious style that gives cold and warm feeling at the same time."
-                        )
-                      end
+                  ctx
 
-                    ctx
+                4 ->
+                  ctx =
+                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                      ctx
+                      |> mes("Oh my!!? 'Double Strafe' cut?")
+                      |> mes("Natural hair is shaking by wind.. Clean and good feeling.")
+                    else
+                      ctx
+                      |> mes("Oh my!!? 'Arrow Shower' cut?")
+                      |> mes("Cool and nice shaggy cut makes good style.")
+                    end
 
-                  4 ->
-                    ctx =
-                      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                        ctx
-                        |> mes("Oh my!!? 'Double Strafe' cut?")
-                        |> mes("Natural hair is shaking by wind.. Clean and good feeling.")
-                      else
-                        ctx
-                        |> mes("Oh my!!? 'Arrow Shower' cut?")
-                        |> mes("Cool and nice shaggy cut makes good style.")
-                      end
+                  ctx
 
-                    ctx
+                5 ->
+                  ctx =
+                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                      ctx
+                      |> mes("Oh my!!? 'Angelus' cut?")
+                      |> mes("Calm and piety feeling.. Not boring style.")
+                    else
+                      ctx
+                      |> mes("Oh my!!? 'Heal' cut?")
+                      |> mes("Feminine style give healing feeling.")
+                    end
 
-                  5 ->
-                    ctx =
-                      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                        ctx
-                        |> mes("Oh my!!? 'Angelus' cut?")
-                        |> mes("Calm and piety feeling.. Not boring style.")
-                      else
-                        ctx
-                        |> mes("Oh my!!? 'Heal' cut?")
-                        |> mes("Feminine style give healing feeling.")
-                      end
+                  ctx
 
-                    ctx
+                6 ->
+                  ctx =
+                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                      ctx
+                      |> mes("Oh my!!? 'Push Cart' cut?")
+                      |> mes("Big Kar is motivated for this style with a romance of a man.")
+                    else
+                      ctx
+                      |> mes("Oh my!!? 'Vending' cut?")
+                      |> mes("Royal ladies like this style. Make good money style.")
+                    end
 
-                  6 ->
-                    ctx =
-                      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                        ctx
-                        |> mes("Oh my!!? 'Push Cart' cut?")
-                        |> mes("Big Kar is motivated for this style with a romance of a man.")
-                      else
-                        ctx
-                        |> mes("Oh my!!? 'Vending' cut?")
-                        |> mes("Royal ladies like this style. Make good money style.")
-                      end
+                  ctx
 
-                    ctx
+                7 ->
+                  ctx =
+                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                      ctx |> mes("Oh my!!? 'Envenom' cut?") |> mes("Tough style makes addicted.")
+                    else
+                      ctx
+                      |> mes("Oh my!!? 'Double Attack' cut?")
+                      |> mes("Whoever will dash twice for this style.")
+                      |> mes("Ponytail is important.")
+                    end
 
-                  7 ->
-                    ctx =
-                      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                        ctx
-                        |> mes("Oh my!!? 'Envenom' cut?")
-                        |> mes("Tough style makes addicted.")
-                      else
-                        ctx
-                        |> mes("Oh my!!? 'Double Attack' cut?")
-                        |> mes("Whoever will dash twice for this style.")
-                        |> mes("Ponytail is important.")
-                      end
+                  ctx
 
-                    ctx
+                8 ->
+                  ctx =
+                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                      ctx
+                      |> mes("Oh my!!? 'Bowling Bash' cut?")
+                      |> mes("This style makes a nice guy to challenge.")
+                      |> mes("Just a giving a glance can steal the heart.")
+                    else
+                      ctx
+                      |> mes("Oh my!!? 'Gloria' cut?")
+                      |> mes("This style is ultimately gorgeous and graceful.")
+                    end
 
-                  8 ->
-                    ctx =
-                      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                        ctx
-                        |> mes("Oh my!!? 'Bowling Bash' cut?")
-                        |> mes("This style makes a nice guy to challenge.")
-                        |> mes("Just a giving a glance can steal the heart.")
-                      else
-                        ctx
-                        |> mes("Oh my!!? 'Gloria' cut?")
-                        |> mes("This style is ultimately gorgeous and graceful.")
-                      end
+                  ctx
 
-                    ctx
+                9 ->
+                  ctx =
+                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                      ctx
+                      |> mes("Oh my!!? 'Venom Dust' cut?")
+                      |> mes("This style has special ending line that looks fatal.")
+                    else
+                      ctx
+                      |> mes("Oh my!!? 'SP Recovery' cut?")
+                      |> mes("This style has neat cutting that inspires.")
+                    end
 
-                  9 ->
-                    ctx =
-                      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                        ctx
-                        |> mes("Oh my!!? 'Venom Dust' cut?")
-                        |> mes("This style has special ending line that looks fatal.")
-                      else
-                        ctx
-                        |> mes("Oh my!!? 'SP Recovery' cut?")
-                        |> mes("This style has neat cutting that inspires.")
-                      end
+                  ctx
 
-                    ctx
+                10 ->
+                  ctx =
+                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                      ctx
+                      |> mes("Oh my!!? 'Turn Undead' cut?")
+                      |> mes(
+                        "This style is like a cold city man who is strong enough to kill a monster."
+                      )
+                    else
+                      ctx
+                      |> mes("Oh my!!? 'Prepare Potion' cut?")
+                      |> mes("This style has a liquid medicine motive so it makes feel cure.")
+                    end
 
-                  10 ->
-                    ctx =
-                      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                        ctx
-                        |> mes("Oh my!!? 'Turn Undead' cut?")
-                        |> mes(
-                          "This style is like a cold city man who is strong enough to kill a monster."
-                        )
-                      else
-                        ctx
-                        |> mes("Oh my!!? 'Prepare Potion' cut?")
-                        |> mes("This style has a liquid medicine motive so it makes feel cure.")
-                      end
+                  ctx
 
-                    ctx
+                11 ->
+                  ctx =
+                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                      ctx
+                      |> mes("Oh my!!? 'Dragonology' cut?")
+                      |> mes("This style is intelligent style of mysterious dragon.")
+                    else
+                      ctx
+                      |> mes("Oh my!!? 'Grand Cross' cut?")
+                      |> mes("Well trimmed hair cut line gives trust.")
+                    end
 
-                  11 ->
-                    ctx =
-                      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                        ctx
-                        |> mes("Oh my!!? 'Dragonology' cut?")
-                        |> mes("This style is intelligent style of mysterious dragon.")
-                      else
-                        ctx
-                        |> mes("Oh my!!? 'Grand Cross' cut?")
-                        |> mes("Well trimmed hair cut line gives trust.")
-                      end
+                  ctx
 
-                    ctx
+                12 ->
+                  ctx =
+                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                      ctx
+                      |> mes("Oh my!!? 'Mace Mastery' cut?")
+                      |> mes("Look fresh and look neat with wax treatment.")
+                    else
+                      ctx
+                      |> mes("Oh my!!? 'Intimidate' cut?")
+                      |> mes("This style is very familiar.")
+                    end
 
-                  12 ->
-                    ctx =
-                      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                        ctx
-                        |> mes("Oh my!!? 'Mace Mastery' cut?")
-                        |> mes("Look fresh and look neat with wax treatment.")
-                      else
-                        ctx
-                        |> mes("Oh my!!? 'Intimidate' cut?")
-                        |> mes("This style is very familiar.")
-                      end
+                  ctx
 
-                    ctx
+                13 ->
+                  ctx =
+                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                      ctx
+                      |> mes("Oh my!!? 'Thunder Storm' cut?")
+                      |> mes(
+                        "This style has natural attractive perm which is like hitting by thunder storm."
+                      )
+                    else
+                      ctx
+                      |> mes("Oh my!!? 'Spiritual Sphere")
+                      |> mes("Calm and a little bit looks like a boy cut draw attention.")
+                    end
 
-                  13 ->
-                    ctx =
-                      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                        ctx
-                        |> mes("Oh my!!? 'Thunder Storm' cut?")
-                        |> mes(
-                          "This style has natural attractive perm which is like hitting by thunder storm."
-                        )
-                      else
-                        ctx
-                        |> mes("Oh my!!? 'Spiritual Sphere")
-                        |> mes("Calm and a little bit looks like a boy cut draw attention.")
-                      end
+                  ctx
 
-                    ctx
+                14 ->
+                  ctx =
+                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                      ctx
+                      |> mes("Oh my!!? 'Encore' cut?")
+                      |> mes("Rocker's favorite style.. Even the name itself..")
+                    else
+                      ctx
+                      |> mes("Oh my!!? 'Gypsy's Kiss' cut?")
+                      |> mes(
+                        "The hair.. Kind to everyone.. Neat and round hair line is very soft and charming."
+                      )
+                    end
 
-                  14 ->
-                    ctx =
-                      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                        ctx
-                        |> mes("Oh my!!? 'Encore' cut?")
-                        |> mes("Rocker's favorite style.. Even the name itself..")
-                      else
-                        ctx
-                        |> mes("Oh my!!? 'Gypsy's Kiss' cut?")
-                        |> mes(
-                          "The hair.. Kind to everyone.. Neat and round hair line is very soft and charming."
-                        )
-                      end
+                  ctx
 
-                    ctx
+                15 ->
+                  ctx =
+                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                      ctx |> mes("Oh my!!? 'Grimtooth' cut?") |> mes("The style with edge.")
+                    else
+                      ctx
+                      |> mes("Oh my!!? 'Counter Attack' cut?")
+                      |> mes("It is the style that looks cold and arrogant. Hard to talk to..")
+                      |> mes("But might be nice to boyfriend..?")
+                    end
 
-                  15 ->
-                    ctx =
-                      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                        ctx |> mes("Oh my!!? 'Grimtooth' cut?") |> mes("The style with edge.")
-                      else
-                        ctx
-                        |> mes("Oh my!!? 'Counter Attack' cut?")
-                        |> mes("It is the style that looks cold and arrogant. Hard to talk to..")
-                        |> mes("But might be nice to boyfriend..?")
-                      end
+                  ctx
 
-                    ctx
+                16 ->
+                  ctx =
+                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                      ctx
+                      |> mes("Oh my!!? 'Blitz Beat' cut?")
+                      |> mes(
+                        "It is the style my senior invented after he broke up with his girlfriends 5 times."
+                      )
+                    else
+                      ctx
+                      |> mes("Oh my!!? 'Anke Snare' cut?")
+                      |> mes("It is killing style.. No one can take eyes off!")
+                    end
 
-                  16 ->
-                    ctx =
-                      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                        ctx
-                        |> mes("Oh my!!? 'Blitz Beat' cut?")
-                        |> mes(
-                          "It is the style my senior invented after he broke up with his girlfriends 5 times."
-                        )
-                      else
-                        ctx
-                        |> mes("Oh my!!? 'Anke Snare' cut?")
-                        |> mes("It is killing style.. No one can take eyes off!")
-                      end
+                  ctx
 
-                    ctx
+                17 ->
+                  ctx =
+                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                      ctx
+                      |> mes("Oh my!!? 'Find Ore' cut?")
+                      |> mes(
+                        "This style seems to bring encounter or find unexpected things while walking on the street."
+                      )
+                    else
+                      ctx
+                      |> mes("Oh my!!? 'Hammer Fall' cut?")
+                      |> mes("Stunning hair with attraction.")
+                    end
 
-                  17 ->
-                    ctx =
-                      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                        ctx
-                        |> mes("Oh my!!? 'Find Ore' cut?")
-                        |> mes(
-                          "This style seems to bring encounter or find unexpected things while walking on the street."
-                        )
-                      else
-                        ctx
-                        |> mes("Oh my!!? 'Hammer Fall' cut?")
-                        |> mes("Stunning hair with attraction.")
-                      end
+                  ctx
 
-                    ctx
+                18 ->
+                  ctx =
+                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                      ctx
+                      |> mes("Oh my!!? 'Fire Pillar' cut?")
+                      |> mes(
+                        "Everyone used to have this hair style.. Which means that was a trend of an era."
+                      )
+                    else
+                      ctx
+                      |> mes("Oh my!!? 'Jupitel Thunder'")
+                      |> mes("Fresh style by giving light waves on both side hairs.")
+                    end
 
-                  18 ->
-                    ctx =
-                      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                        ctx
-                        |> mes("Oh my!!? 'Fire Pillar' cut?")
-                        |> mes(
-                          "Everyone used to have this hair style.. Which means that was a trend of an era."
-                        )
-                      else
-                        ctx
-                        |> mes("Oh my!!? 'Jupitel Thunder'")
-                        |> mes("Fresh style by giving light waves on both side hairs.")
-                      end
+                  ctx
 
-                    ctx
+                19 ->
+                  ctx =
+                    if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                      ctx
+                      |> mes("Oh my!!? 'Guillotine Fist'")
+                      |> mes("It is like one-shot style.. Like a real man. Right?")
+                    else
+                      ctx
+                      |> mes("Oh my!!? 'Whirlwind' cut?")
+                      |> mes("It is cool style which flows with wind. Lah, lah, lah, lah ~")
+                    end
 
-                  19 ->
-                    ctx =
-                      if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                        ctx
-                        |> mes("Oh my!!? 'Guillotine Fist'")
-                        |> mes("It is like one-shot style.. Like a real man. Right?")
-                      else
-                        ctx
-                        |> mes("Oh my!!? 'Whirlwind' cut?")
-                        |> mes("It is cool style which flows with wind. Lah, lah, lah, lah ~")
-                      end
+                  ctx
 
-                    ctx
+                _ ->
+                  ctx
+              end
 
-                  _ ->
-                    ctx
-                end
+            ctx = ctx |> close() |> cutin("", 255)
+            throw({:script_end, ctx})
+          end
+        end
 
-              ctx = ctx |> close() |> cutin("", 255)
-              throw({:script_end, ctx})
-            end
+      2 ->
+        ctx =
+          if not Rathena.truthy?(count_item(ctx, 6593)) do
+            ctx =
+              ctx
+              |> mes("[Otter Samssoon]")
+              |> mes("Come on.. Honey~")
+              |> mes("You should bring ^ff0000'Criatura Hair Coupon'^000000 for changing hair...")
+              |> close()
+
+            throw({:script_end, ctx})
+          else
+            ctx
           end
 
-        2 ->
-          ctx =
-            if not Rathena.truthy?(count_item(ctx, 6593)) do
-              ctx =
-                ctx
-                |> mes("[Otter Samssoon]")
-                |> mes("Come on.. Honey~")
-                |> mes(
-                  "You should bring ^ff0000'Criatura Hair Coupon'^000000 for changing hair..."
-                )
-                |> close()
+        {ctx, v4} =
+          ctx
+          |> mes("[Otter Samssoon]")
+          |> mes("Honey~ What style do you want?")
+          |> mes("You are totally my style. So I am very excited~~")
+          |> mes("Pick the style from page 1 to 19.")
+          |> next()
+          |> input(:int)
 
-              throw({:script_end, ctx})
-            else
+        ctx = set_local(ctx, :style, v4)
+
+        ctx =
+          if get_local(ctx, :style, 0) > 19 do
+            ctx =
               ctx
-            end
+              |> mes("[Otter Samssoon]")
+              |> mes("Come on.. Honey~ You can use a coupon for the hair style in here~")
+              |> close()
 
-          {ctx, v4} =
-            ctx
-            |> mes("[Otter Samssoon]")
-            |> mes("Honey~ What style do you want?")
-            |> mes("You are totally my style. So I am very excited~~")
-            |> mes("Pick the style from page 1 to 19.")
-            |> next()
-            |> input(:int)
+            throw({:script_end, ctx})
+          else
+            ctx =
+              if not Rathena.truthy?(get_local(ctx, :style, 0)) do
+                ctx =
+                  ctx |> mes("[Otter Samssoon]") |> mes("Oh my!!? You do not want to?") |> close()
 
-          ctx = set_local(ctx, :style, v4)
+                throw({:script_end, ctx})
+              else
+                ctx =
+                  if getlook(ctx, 1) == get_local(ctx, :style, 0) do
+                    ctx =
+                      ctx
+                      |> mes("[Otter Samssoon]")
+                      |> mes("Come on.. Honey~ That is the same style you have.")
+                      |> mes("Do you want to try something new?")
+                      |> close()
 
-          ctx =
-            if get_local(ctx, :style, 0) > 19 do
-              ctx =
-                ctx
-                |> mes("[Otter Samssoon]")
-                |> mes("Come on.. Honey~ You can use a coupon for the hair style in here~")
-                |> close()
-
-              throw({:script_end, ctx})
-            else
-              ctx =
-                if not Rathena.truthy?(get_local(ctx, :style, 0)) do
-                  ctx =
+                    throw({:script_end, ctx})
+                  else
                     ctx
-                    |> mes("[Otter Samssoon]")
-                    |> mes("Oh my!!? You do not want to?")
-                    |> close()
+                  end
 
-                  throw({:script_end, ctx})
-                else
-                  ctx =
-                    if getlook(ctx, 1) == get_local(ctx, :style, 0) do
+                ctx
+              end
+
+            ctx
+          end
+
+        {ctx, _} = s_l_cutin(ctx, [get_local(ctx, :style, 0)])
+        ctx = mes(ctx, "[Otter Samssoon]")
+
+        {ctx, v5} =
+          ctx
+          |> mes(Rathena.concat(Rathena.concat("Style (", get_local(ctx, :style, 0)), ")?"))
+          |> mes("It feels like this.. How is it?")
+          |> next()
+          |> select(["Good.", "No."])
+
+        ctx =
+          if v5 == 1 do
+            ctx =
+              if not Rathena.truthy?(getlook(ctx, 6)) do
+                {ctx, v6} =
+                  ctx
+                  |> mes("[Otter Samssoon]")
+                  |> mes("Right!")
+                  |> mes("Honey! What about dying hair as well?")
+                  |> mes("Dying hair also included in this service.")
+                  |> next()
+                  |> select([
+                    "Passionate Red",
+                    "Sweet Yellow",
+                    "Fatal Purple",
+                    "Glamourous Orange",
+                    "Comfortable Green",
+                    "Clear Blue",
+                    "Transparent White",
+                    "Dark Black",
+                    "Stop."
+                  ])
+
+                ctx =
+                  case v6 do
+                    1 ->
+                      set_local(ctx, :pallete, 8)
+
+                    2 ->
+                      set_local(ctx, :pallete, 1)
+
+                    3 ->
+                      set_local(ctx, :pallete, 2)
+
+                    4 ->
+                      set_local(ctx, :pallete, 3)
+
+                    5 ->
+                      set_local(ctx, :pallete, 4)
+
+                    6 ->
+                      set_local(ctx, :pallete, 5)
+
+                    7 ->
+                      set_local(ctx, :pallete, 6)
+
+                    8 ->
+                      set_local(ctx, :pallete, 7)
+
+                    9 ->
                       ctx =
                         ctx
                         |> mes("[Otter Samssoon]")
-                        |> mes("Come on.. Honey~ That is the same style you have.")
-                        |> mes("Do you want to try something new?")
+                        |> mes("No?")
+                        |> mes(
+                          "Do you need more time? If you want to keep the same color, then select the same one."
+                        )
                         |> close()
+                        |> cutin("", 255)
 
                       throw({:script_end, ctx})
-                    else
-                      ctx
-                    end
 
-                  ctx
-                end
+                    _ ->
+                      throw({:script_end, ctx})
+                  end
 
+                ctx
+              else
+                ctx
+              end
+
+            ctx =
               ctx
-            end
+              |> nude()
+              |> mes("[Otter Samssoon]")
+              |> mes("Relax, it is almost done~")
+              |> next()
+              |> mes("[Otter Samssoon]")
+              |> mes("- Sha sha shak shak shak -")
+              |> mes("- Chikak, crack, crack.. -")
+              |> mes("- Snap, snap, snap.. Crack -")
+              |> next()
+              |> delitem(6593, 1)
+              |> cutin("", 255)
+              |> mes("[Otter Samssoon]")
+              |> mes("Oh my! Oh my! Oh my!")
 
-          {ctx, _} = s_l_cutin(ctx, [get_local(ctx, :style, 0)])
-          ctx = mes(ctx, "[Otter Samssoon]")
-
-          {ctx, v5} =
-            ctx
-            |> mes(Rathena.concat(Rathena.concat("Style (", get_local(ctx, :style, 0)), ")?"))
-            |> mes("It feels like this.. How is it?")
-            |> next()
-            |> select(["Good.", "No."])
-
-          ctx =
-            if v5 == 1 do
-              ctx =
-                if not Rathena.truthy?(getlook(ctx, 6)) do
-                  {ctx, v6} =
-                    ctx
-                    |> mes("[Otter Samssoon]")
-                    |> mes("Right!")
-                    |> mes("Honey! What about dying hair as well?")
-                    |> mes("Dying hair also included in this service.")
-                    |> next()
-                    |> select([
-                      "Passionate Red",
-                      "Sweet Yellow",
-                      "Fatal Purple",
-                      "Glamourous Orange",
-                      "Comfortable Green",
-                      "Clear Blue",
-                      "Transparent White",
-                      "Dark Black",
-                      "Stop."
-                    ])
-
-                  ctx =
-                    case v6 do
-                      1 ->
-                        set_local(ctx, :pallete, 8)
-
-                      2 ->
-                        set_local(ctx, :pallete, 1)
-
-                      3 ->
-                        set_local(ctx, :pallete, 2)
-
-                      4 ->
-                        set_local(ctx, :pallete, 3)
-
-                      5 ->
-                        set_local(ctx, :pallete, 4)
-
-                      6 ->
-                        set_local(ctx, :pallete, 5)
-
-                      7 ->
-                        set_local(ctx, :pallete, 6)
-
-                      8 ->
-                        set_local(ctx, :pallete, 7)
-
-                      9 ->
-                        ctx =
-                          ctx
-                          |> mes("[Otter Samssoon]")
-                          |> mes("No?")
-                          |> mes(
-                            "Do you need more time? If you want to keep the same color, then select the same one."
-                          )
-                          |> close()
-                          |> cutin("", 255)
-
-                        throw({:script_end, ctx})
-
-                      _ ->
-                        ctx
-                    end
-
-                  ctx
-                else
-                  ctx
-                end
-
-              ctx =
-                ctx
-                |> nude()
-                |> mes("[Otter Samssoon]")
-                |> mes("Relax, it is almost done~")
-                |> next()
-                |> mes("[Otter Samssoon]")
-                |> mes("- Sha sha shak shak shak -")
-                |> mes("- Chikak, crack, crack.. -")
-                |> mes("- Snap, snap, snap.. Crack -")
-                |> next()
-                |> delitem(6593, 1)
-                |> cutin("", 255)
-                |> mes("[Otter Samssoon]")
-                |> mes("Oh my! Oh my! Oh my!")
-
-              ctx =
-                ctx
-                |> mes(
-                  Rathena.concat(
-                    Rathena.concat("This hair style no.(", get_local(ctx, :style, 0)),
-                    ") suits to you looks good~"
-                  )
+            ctx =
+              ctx
+              |> mes(
+                Rathena.concat(
+                  Rathena.concat("This hair style no.(", get_local(ctx, :style, 0)),
+                  ") suits to you looks good~"
                 )
-                |> mes("What do you think?")
+              )
+              |> mes("What do you think?")
 
-              ctx = setlook(ctx, 1, get_local(ctx, :style, 0))
+            ctx = setlook(ctx, 1, get_local(ctx, :style, 0))
 
-              ctx =
-                ctx
-                |> setlook(6, get_local(ctx, :pallete, 0))
-                |> next()
-                |> mes("[Otter Samssoon]")
-                |> mes("I want to take care of your style..")
-                |> mes("But I have no choice to select customers because I belong to here.")
-                |> next()
-                |> mes("[Otter Samssoon]")
-                |> mes("For changing to new style, ^ff0000Alberta or Lighthalzen^000000.")
-                |> mes("For dying hair, ^ff0000Prontera or Lighthalzen^000000.")
-                |> close()
-
-              throw({:script_end, ctx})
-            else
+            ctx =
               ctx
-            end
+              |> setlook(6, get_local(ctx, :pallete, 0))
+              |> next()
+              |> mes("[Otter Samssoon]")
+              |> mes("I want to take care of your style..")
+              |> mes("But I have no choice to select customers because I belong to here.")
+              |> next()
+              |> mes("[Otter Samssoon]")
+              |> mes("For changing to new style, ^ff0000Alberta or Lighthalzen^000000.")
+              |> mes("For dying hair, ^ff0000Prontera or Lighthalzen^000000.")
+              |> close()
 
-          ctx =
+            throw({:script_end, ctx})
+          else
             ctx
-            |> mes("[Otter Samssoon]")
-            |> mes("Honey~ You don't like it?")
-            |> mes("Ahem.. Do you want to read style book again?")
-            |> mes("Take your time and tell me when you decide~ Okay?~")
-            |> close()
+          end
 
-          throw({:script_end, ctx})
-
-        3 ->
-          ctx =
-            ctx
-            |> mes("[Otter Samssoon]")
-            |> mes(
-              "You can receive ^ff0000criatura hair coupon^000000 from ^ff0000academy receptionist for novice at academy front desk or eden group^000000"
-            )
-            |> next()
-            |> mes("[Otter Samssoon]")
-            |> mes("They don't give you for free.. Well..")
-            |> mes("The equipment you had received when you arrived at academy?")
-            |> mes("They change ^ff0000egg shell for novice^000000 to coupon?")
-            |> next()
-            |> mes("[Otter Samssoon]")
-            |> mes(
-              "This service has started since I came here. So.. No free service if you have no coupon~"
-            )
-            |> close()
-
-          throw({:script_end, ctx})
-
-        4 ->
-          ctx =
-            ctx
-            |> mes("[Otter Samssoon]")
-            |> mes("Oh my!!? Honey, you are not going to change hair?")
-            |> mes("You look nice now rough style.")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+        ctx =
           ctx
-      end
+          |> mes("[Otter Samssoon]")
+          |> mes("Honey~ You don't like it?")
+          |> mes("Ahem.. Do you want to read style book again?")
+          |> mes("Take your time and tell me when you decide~ Okay?~")
+          |> close()
 
-    {ctx, _} = s_l_cutin(ctx, [])
-    ctx
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx =
+          ctx
+          |> mes("[Otter Samssoon]")
+          |> mes(
+            "You can receive ^ff0000criatura hair coupon^000000 from ^ff0000academy receptionist for novice at academy front desk or eden group^000000"
+          )
+          |> next()
+          |> mes("[Otter Samssoon]")
+          |> mes("They don't give you for free.. Well..")
+          |> mes("The equipment you had received when you arrived at academy?")
+          |> mes("They change ^ff0000egg shell for novice^000000 to coupon?")
+          |> next()
+          |> mes("[Otter Samssoon]")
+          |> mes(
+            "This service has started since I came here. So.. No free service if you have no coupon~"
+          )
+          |> close()
+
+        throw({:script_end, ctx})
+
+      4 ->
+        ctx =
+          ctx
+          |> mes("[Otter Samssoon]")
+          |> mes("Oh my!!? Honey, you are not going to change hair?")
+          |> mes("You look nice now rough style.")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

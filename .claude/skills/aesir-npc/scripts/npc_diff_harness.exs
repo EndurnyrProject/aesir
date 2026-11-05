@@ -97,7 +97,17 @@ defmodule H.Core do
     c
   end
 
-  def log(ctx, entry), do: %{ctx | log: [entry | ctx.log]}
+  def log(ctx, entry), do: %{ctx | log: [normalize(entry) | ctx.log]}
+
+  # A logged callback (questinfo's condition fun) has a different identity in each
+  # module copy, so compare its shape, not the closure.
+  defp normalize(term) when is_function(term), do: :fun
+  defp normalize(term) when is_list(term), do: Enum.map(term, &normalize/1)
+
+  defp normalize(term) when is_tuple(term),
+    do: term |> Tuple.to_list() |> Enum.map(&normalize/1) |> List.to_tuple()
+
+  defp normalize(term), do: term
 
   def random(range), do: pick({:random, counter(:random)}, Enum.to_list(range))
 

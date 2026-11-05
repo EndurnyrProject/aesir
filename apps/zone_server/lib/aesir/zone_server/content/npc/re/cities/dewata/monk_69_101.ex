@@ -33,57 +33,56 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Monk69101 do
       |> next()
       |> select(["I see...", "Explain about Buddhas", "Ah, okay."])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx =
-            ctx |> mes("[Monk]") |> mes("You must feel the compassion of our Buddha!") |> close()
+    _ = v1
 
-          throw({:script_end, ctx})
+    case v1 do
+      1 ->
+        ctx =
+          ctx |> mes("[Monk]") |> mes("You must feel the compassion of our Buddha!") |> close()
 
-        2 ->
-          ctx =
-            ctx
-            |> mes("[Monk]")
-            |> mes(
-              "Buddha is our God from Dewata myth, he is the king of souls and also the leader of good Gods."
-            )
-            |> next()
-            |> mes("[Monk]")
-            |> mes(
-              "Buddha is the guardian of souls whom often described in traditional dance as fighting against the magician Rangda."
-            )
-            |> next()
-            |> mes("[Monk]")
-            |> mes(
-              "In Dewata we belive there are many deities protecting each island and tribal locale,"
-            )
-            |> next()
-            |> mes("[Monk]")
-            |> mes(
-              "so we do have different manifestations of the Buddha, usually described as a bear, tiger, dragon, snake, or lion"
-            )
-            |> next()
-            |> mes("[Monk]")
-            |> mes("Great Lion is one of famous Buddhas worshipped in Dewata.")
-            |> next()
-            |> mes("[Monk]")
-            |> mes(
-              "Hope this was good explanation for you. Let me know if you have anything else you want to know."
-            )
-            |> close()
+        throw({:script_end, ctx})
 
-          throw({:script_end, ctx})
-
-        3 ->
-          ctx = ctx |> mes("[Monk]") |> mes("Good day to you...") |> close()
-          throw({:script_end, ctx})
-
-        _ ->
+      2 ->
+        ctx =
           ctx
-      end
+          |> mes("[Monk]")
+          |> mes(
+            "Buddha is our God from Dewata myth, he is the king of souls and also the leader of good Gods."
+          )
+          |> next()
+          |> mes("[Monk]")
+          |> mes(
+            "Buddha is the guardian of souls whom often described in traditional dance as fighting against the magician Rangda."
+          )
+          |> next()
+          |> mes("[Monk]")
+          |> mes(
+            "In Dewata we belive there are many deities protecting each island and tribal locale,"
+          )
+          |> next()
+          |> mes("[Monk]")
+          |> mes(
+            "so we do have different manifestations of the Buddha, usually described as a bear, tiger, dragon, snake, or lion"
+          )
+          |> next()
+          |> mes("[Monk]")
+          |> mes("Great Lion is one of famous Buddhas worshipped in Dewata.")
+          |> next()
+          |> mes("[Monk]")
+          |> mes(
+            "Hope this was good explanation for you. Let me know if you have anything else you want to know."
+          )
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx = ctx |> mes("[Monk]") |> mes("Good day to you...") |> close()
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

@@ -233,7 +233,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CoolEventStaffVotingstaffcce do
                         ctx
 
                       _ ->
-                        ctx
+                        throw({:script_end, ctx})
                     end
 
                   ctx
@@ -342,7 +342,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CoolEventStaffVotingstaffcce do
                             ctx
 
                           _ ->
-                            ctx
+                            throw({:script_end, ctx})
                         end
 
                       ctx
@@ -433,7 +433,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CoolEventStaffVotingstaffcce do
                         ctx
 
                       _ ->
-                        ctx
+                        throw({:script_end, ctx})
                     end
 
                   ctx
@@ -505,7 +505,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CoolEventStaffVotingstaffcce do
                             ctx
 
                           _ ->
-                            ctx
+                            throw({:script_end, ctx})
                         end
 
                       ctx
@@ -605,7 +605,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CoolEventStaffVotingstaffcce do
                             ctx
 
                           _ ->
-                            ctx
+                            throw({:script_end, ctx})
                         end
 
                       ctx
@@ -655,7 +655,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CoolEventStaffVotingstaffcce do
           ctx
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     ctx |> close() |> cutin("zonda_01", 255)

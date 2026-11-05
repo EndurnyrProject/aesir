@@ -677,7 +677,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Verkhasel do
               ctx
 
             _ ->
-              ctx
+              throw({:script_end, ctx})
           end
 
         throw({:brk_1, ctx})

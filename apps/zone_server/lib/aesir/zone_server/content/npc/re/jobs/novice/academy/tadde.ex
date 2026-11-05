@@ -113,128 +113,127 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Tadde do
       |> next()
       |> select(["Phracon - 200 zeny.", "Emveretarcon - 1000 zeny.", "Ask for other metals."])
 
-    ctx =
-      case v3 do
-        1 ->
-          ctx =
-            ctx
-            |> mes("[Tadde]")
-            |> mes("How many would you like? Enter '0' if you want to end.")
-            |> next()
-            |> loop_6()
+    _ = v3
 
-          ctx = set_local(ctx, :sell, get_local(ctx, :amount, 0) * 200)
-          ctx = set_local(ctx, :item_weight, get_local(ctx, :amount, 0) * 200)
-
-          ctx =
-            if zeny(ctx) < get_local(ctx, :sell, 0) do
-              ctx =
-                ctx
-                |> mes("[Tadde]")
-                |> mes("Oh dear...my apologies, but you don't have enough money.")
-                |> mes("I'm sorry we can't give it to you cheaper...we're only a small business.")
-                |> close()
-
-              throw({:script_end, ctx})
-            else
-              ctx
-            end
-
-          ctx =
-            if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < get_local(ctx, :item_weight, 0) do
-              ctx =
-                ctx
-                |> mes("[Tadde]")
-                |> mes("Er...please sorts your inventory before you take these...")
-                |> close()
-
-              throw({:script_end, ctx})
-            else
-              ctx
-            end
-
-          ctx = pay_zeny(ctx, get_local(ctx, :sell, 0))
-
-          ctx =
-            ctx
-            |> give_item(1010, get_local(ctx, :amount, 0))
-            |> mes("[Tadde]")
-            |> mes("This is what you wanted. Thank you very much!")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        2 ->
-          ctx =
-            ctx
-            |> mes("[Tadde]")
-            |> mes("How many would you like? Enter '0' if you want to end.")
-            |> next()
-            |> loop_7()
-
-          ctx = set_local(ctx, :sell, get_local(ctx, :amount, 0) * 1000)
-          ctx = set_local(ctx, :item_weight, get_local(ctx, :amount, 0) * 200)
-
-          ctx =
-            if zeny(ctx) < get_local(ctx, :sell, 0) do
-              ctx =
-                ctx
-                |> mes("[Tadde]")
-                |> mes("Oh dear...my apologies, but you don't have enough money.")
-                |> mes("I'm sorry we can't give it to you cheaper...we're only a small business.")
-                |> close()
-
-              throw({:script_end, ctx})
-            else
-              ctx
-            end
-
-          ctx =
-            if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < get_local(ctx, :item_weight, 0) do
-              ctx =
-                ctx
-                |> mes("[Tadde]")
-                |> mes("Er...please sorts your inventory before you take these...")
-                |> close()
-
-              throw({:script_end, ctx})
-            else
-              ctx
-            end
-
-          ctx = give_item(ctx, 1011, get_local(ctx, :amount, 0))
-
-          ctx =
-            ctx
-            |> pay_zeny(get_local(ctx, :sell, 0))
-            |> mes("[Tadde]")
-            |> mes("This is what you wanted. Thank you very much!")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        3 ->
-          ctx =
-            ctx
-            |> mes("[Tadde]")
-            |> mes("Any questions about the weapon level and safety refining?")
-            |> loop_8()
-            |> mes("[Tadde]")
-            |> mes("This is all I can explain to you.")
-            |> next()
-            |> mes("[Tadde]")
-            |> mes(
-              "The explanations about the charge and effect of the safe refining will be covered by Mr. Locas."
-            )
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+    case v3 do
+      1 ->
+        ctx =
           ctx
-      end
+          |> mes("[Tadde]")
+          |> mes("How many would you like? Enter '0' if you want to end.")
+          |> next()
+          |> loop_6()
 
-    ctx
+        ctx = set_local(ctx, :sell, get_local(ctx, :amount, 0) * 200)
+        ctx = set_local(ctx, :item_weight, get_local(ctx, :amount, 0) * 200)
+
+        ctx =
+          if zeny(ctx) < get_local(ctx, :sell, 0) do
+            ctx =
+              ctx
+              |> mes("[Tadde]")
+              |> mes("Oh dear...my apologies, but you don't have enough money.")
+              |> mes("I'm sorry we can't give it to you cheaper...we're only a small business.")
+              |> close()
+
+            throw({:script_end, ctx})
+          else
+            ctx
+          end
+
+        ctx =
+          if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < get_local(ctx, :item_weight, 0) do
+            ctx =
+              ctx
+              |> mes("[Tadde]")
+              |> mes("Er...please sorts your inventory before you take these...")
+              |> close()
+
+            throw({:script_end, ctx})
+          else
+            ctx
+          end
+
+        ctx = pay_zeny(ctx, get_local(ctx, :sell, 0))
+
+        ctx =
+          ctx
+          |> give_item(1010, get_local(ctx, :amount, 0))
+          |> mes("[Tadde]")
+          |> mes("This is what you wanted. Thank you very much!")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx =
+          ctx
+          |> mes("[Tadde]")
+          |> mes("How many would you like? Enter '0' if you want to end.")
+          |> next()
+          |> loop_7()
+
+        ctx = set_local(ctx, :sell, get_local(ctx, :amount, 0) * 1000)
+        ctx = set_local(ctx, :item_weight, get_local(ctx, :amount, 0) * 200)
+
+        ctx =
+          if zeny(ctx) < get_local(ctx, :sell, 0) do
+            ctx =
+              ctx
+              |> mes("[Tadde]")
+              |> mes("Oh dear...my apologies, but you don't have enough money.")
+              |> mes("I'm sorry we can't give it to you cheaper...we're only a small business.")
+              |> close()
+
+            throw({:script_end, ctx})
+          else
+            ctx
+          end
+
+        ctx =
+          if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < get_local(ctx, :item_weight, 0) do
+            ctx =
+              ctx
+              |> mes("[Tadde]")
+              |> mes("Er...please sorts your inventory before you take these...")
+              |> close()
+
+            throw({:script_end, ctx})
+          else
+            ctx
+          end
+
+        ctx = give_item(ctx, 1011, get_local(ctx, :amount, 0))
+
+        ctx =
+          ctx
+          |> pay_zeny(get_local(ctx, :sell, 0))
+          |> mes("[Tadde]")
+          |> mes("This is what you wanted. Thank you very much!")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx =
+          ctx
+          |> mes("[Tadde]")
+          |> mes("Any questions about the weapon level and safety refining?")
+          |> loop_8()
+          |> mes("[Tadde]")
+          |> mes("This is all I can explain to you.")
+          |> next()
+          |> mes("[Tadde]")
+          |> mes(
+            "The explanations about the charge and effect of the safe refining will be covered by Mr. Locas."
+          )
+          |> close()
+
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end
@@ -340,7 +339,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Tadde do
               ctx
 
             _ ->
-              ctx
+              throw({:script_end, ctx})
           end
 
         throw({:brk_3, ctx})
@@ -399,7 +398,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Tadde do
               ctx
 
             _ ->
-              ctx
+              throw({:script_end, ctx})
           end
 
         throw({:brk_1, ctx})
@@ -585,7 +584,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Tadde do
               ctx
 
             _ ->
-              ctx
+              throw({:script_end, ctx})
           end
 
         throw({:brk_10, ctx})
@@ -643,7 +642,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Tadde do
               ctx
 
             _ ->
-              ctx
+              throw({:script_end, ctx})
           end
 
         throw({:brk_8, ctx})

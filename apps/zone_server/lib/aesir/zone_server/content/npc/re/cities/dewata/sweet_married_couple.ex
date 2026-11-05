@@ -27,24 +27,30 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SweetMarriedCouple do
   def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
   @impl true
   def on_talk(ctx) do
-    ctx
+    ev_ontouch(ctx)
   end
 
   def ev_ontouch(ctx) do
+    ctx =
+      ctx
+      |> mes("[Sweet Husband]")
+      |> mes("You are the most beautiful thing in the world baby~")
+      |> emotion(:chup)
+      |> next()
+      |> mes("[Sweet Wife]")
+      |> mes("Really? I'm that beautiful? I love you, honey~")
+
+    ctx =
+      ctx
+      |> emotion(:chupchup, getnpcid(ctx, "Sweet Married Couple#2"))
+      |> next()
+      |> mes("[Sweet Married Couple]")
+      |> mes("Hahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahaha")
+      |> mes("Hohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohoho")
+      |> emotion(:smile)
+
     ctx
-    |> mes("[Sweet Husband]")
-    |> mes("You are the most beautiful thing in the world baby~")
-    |> emotion(:chup)
-    |> next()
-    |> mes("[Sweet Wife]")
-    |> mes("Really? I'm that beautiful? I love you, honey~")
-    |> emotion(:chupchup)
-    |> next()
-    |> mes("[Sweet Married Couple]")
-    |> mes("Hahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahaha")
-    |> mes("Hohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohoho")
-    |> emotion(:smile)
-    |> emotion(:smile)
+    |> emotion(:smile, getnpcid(ctx, "Sweet Married Couple#2"))
     |> next()
     |> mes("Come on now, I'm growing tired of this. Let's go.")
     |> close()

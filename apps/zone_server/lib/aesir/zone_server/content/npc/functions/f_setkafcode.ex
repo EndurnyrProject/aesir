@@ -43,7 +43,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FSetkafcode do
             ctx
           end
 
-        ctx |> close() |> cutin("", 255)
+        ctx = ctx |> close() |> cutin("", 255)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -142,14 +143,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FSetkafcode do
             ctx
 
           _ ->
-            ctx
+            throw({:script_end, ctx})
         end
       catch
         :throw, {:brk_1, ctx} -> ctx
       end
 
-    {ctx, _} = ctx |> close() |> cutin("", 255) |> s_s_set([])
-    {ctx, nil}
+    ctx = ctx |> close() |> cutin("", 255)
+    throw({:script_end, ctx})
   end
 
   defp s_s_set(ctx, args) do

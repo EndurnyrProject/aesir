@@ -14,7 +14,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafcart do
   def call(ctx, args) do
     try do
       ctx =
-        if base_class(ctx) != :merchant do
+        if Rathena.job_id(base_class(ctx)) != Rathena.job_id(:merchant) do
           ctx =
             ctx
             |> mes("[Kafra Employee]")

@@ -27,20 +27,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Sipo do
   def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
   @impl true
   def on_talk(ctx) do
-    ctx
+    ev_ontouch(ctx)
   end
 
   def ev_ontouch(ctx) do
+    ctx =
+      ctx
+      |> mes("[Sipo]")
+      |> mes("Sarr won't find me here, right?")
+      |> next()
+      |> mes("[Sarr]")
+      |> mes("I found Siyak!! Come out come out!!")
+
+    ctx = emotion(ctx, :kik, getnpcid(ctx, "Sarr#dew"))
+    ctx = ctx |> emotion(:huk, getnpcid(ctx, "Siyak#dew")) |> emotion(:kik)
+
     ctx
-    |> mes("[Sipo]")
-    |> mes("Sarr won't find me here, right?")
-    |> next()
-    |> mes("[Sarr]")
-    |> mes("I found Siyak!! Come out come out!!")
-    |> emotion(:kik)
-    |> emotion(:huk)
-    |> emotion(:kik)
-    |> emotion(:huk)
+    |> emotion(:huk, playerattached(ctx))
     |> next()
     |> mes("[Sipo]")
     |> mes("Hehe~ Now Siyak is IT~ I'll just keep hiding in here.")

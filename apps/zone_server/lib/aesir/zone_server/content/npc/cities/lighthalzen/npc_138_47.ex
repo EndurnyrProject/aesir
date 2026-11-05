@@ -28,7 +28,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Npc13847 do
 
   @impl true
   @spec on_talk(Ctx.t()) :: Ctx.t()
-  def on_talk(ctx), do: ctx
+  # rAthena starts a click at the first label, so it runs this body too.
+  def on_talk(ctx), do: on_event("OnTouch_", ctx)
 
   defp photograph_assassin(ctx) do
     if base_job(ctx) == :assassin and sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do

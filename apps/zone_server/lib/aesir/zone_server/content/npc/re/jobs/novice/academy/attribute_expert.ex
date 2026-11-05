@@ -174,7 +174,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AttributeExpert do
               ctx
 
             _ ->
-              ctx
+              throw({:script_end, ctx})
           end
 
         throw({:brk_3, ctx})
@@ -268,158 +268,146 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AttributeExpert do
             |> loop_3()
 
           3 ->
-            ctx =
-              if not Rathena.truthy?(isbegin_quest(ctx, 2299)) do
-                ctx =
+            if not Rathena.truthy?(isbegin_quest(ctx, 2299)) do
+              ctx =
+                ctx
+                |> mes("[Attribute Expert]")
+                |> mes("Do you want to experience an attribute?")
+                |> next()
+                |> mes("[Attribute Expert]")
+                |> mes("All right, do you see those ^3131FFFire Eggs^000000 over there?")
+                |> mes("Go over there and smack one of them.")
+                |> mes("Don't worry about destroying it either.")
+                |> setquest(2299)
+                |> close()
+
+              throw({:script_end, ctx})
+            else
+              if isbegin_quest(ctx, 2299) == 1 do
+                {ctx, v4} =
                   ctx
                   |> mes("[Attribute Expert]")
-                  |> mes("Do you want to experience an attribute?")
+                  |> mes("How is it? Have you ever attacked to Fire Eggs?")
                   |> next()
-                  |> mes("[Attribute Expert]")
-                  |> mes("All right, do you see those ^3131FFFire Eggs^000000 over there?")
-                  |> mes("Go over there and smack one of them.")
-                  |> mes("Don't worry about destroying it either.")
-                  |> setquest(2299)
-                  |> close()
+                  |> select(["Yes", "No", "I want to quit."])
 
-                throw({:script_end, ctx})
-              else
-                ctx =
-                  if isbegin_quest(ctx, 2299) == 1 do
-                    {ctx, v4} =
+                _ = v4
+
+                case v4 do
+                  1 ->
+                    {ctx, v5} =
                       ctx
                       |> mes("[Attribute Expert]")
-                      |> mes("How is it? Have you ever attacked to Fire Eggs?")
+                      |> mes("How much damage did you give?")
                       |> next()
-                      |> select(["Yes", "No", "I want to quit."])
+                      |> input(:int)
+
+                    {_, v6} = Rathena.input_int(v5, 1, 100_000)
+                    ctx = set_local(ctx, :input, v6)
 
                     ctx =
-                      case v4 do
-                        1 ->
-                          {ctx, v5} =
+                      if get_local(ctx, :input, 0) < 10 do
+                        ctx = mes(ctx, "[Attribute Expert]")
+
+                        ctx
+                        |> mes(
+                          Rathena.concat(
+                            Rathena.concat("Oh man, ", get_local(ctx, :input, 0)),
+                            "! Are you even trying?"
+                          )
+                        )
+                        |> mes("You're barely hitting it.")
+                        |> next()
+                      else
+                        ctx =
+                          if get_local(ctx, :input, 0) > 9 and get_local(ctx, :input, 0) < 100_001 do
                             ctx
                             |> mes("[Attribute Expert]")
-                            |> mes("How much damage did you give?")
+                            |> mes("You are good I guess...")
                             |> next()
-                            |> input(:int)
-
-                          {_, v6} = Rathena.input_int(v5, 1, 100_000)
-                          ctx = set_local(ctx, :input, v6)
-
-                          ctx =
-                            if get_local(ctx, :input, 0) < 10 do
-                              ctx = mes(ctx, "[Attribute Expert]")
-
+                          else
+                            ctx =
                               ctx
-                              |> mes(
-                                Rathena.concat(
-                                  Rathena.concat("Oh man, ", get_local(ctx, :input, 0)),
-                                  "! Are you even trying?"
-                                )
-                              )
-                              |> mes("You're barely hitting it.")
-                              |> next()
-                            else
-                              ctx =
-                                if get_local(ctx, :input, 0) > 9 and
-                                     get_local(ctx, :input, 0) < 100_001 do
-                                  ctx
-                                  |> mes("[Attribute Expert]")
-                                  |> mes("You are good I guess...")
-                                  |> next()
-                                else
-                                  ctx =
-                                    ctx
-                                    |> mes("[Attribute Expert]")
-                                    |> mes("But wait that's impossible.")
-                                    |> close()
+                              |> mes("[Attribute Expert]")
+                              |> mes("But wait that's impossible.")
+                              |> close()
 
-                                  throw({:script_end, ctx})
-                                end
+                            throw({:script_end, ctx})
+                          end
 
-                              ctx
-                            end
-
-                          ctx =
-                            ctx
-                            |> mes("[Attribute Expert]")
-                            |> mes("All right. Class is over.")
-                            |> next()
-                            |> mes("[Attribute Expert]")
-                            |> mes(
-                              "I am not sure if you remember monsters with ^FF0000Fire^000000 are weak against ^0D6EF2Water^000000."
-                            )
-                            |> next()
-                            |> mes("[Attribute Expert]")
-                            |> mes(
-                              "I will give the ^0D6EF2Water^000000 attribute to you as a present."
-                            )
-                            |> mes(
-                              "If you attack the Fire Eggs again you should do more damage now."
-                            )
-                            |> next()
-                            |> mes("[Attribute Expert]")
-                            |> mes("There is only one more chance!")
-                            |> mes(
-                              "Hurry up, the attribute magic will be gone if you take more time thanks for joining to my class."
-                            )
-                            |> completequest(2299)
-
-                          ctx =
-                            if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
-                              getexp(ctx, 100, 20)
-                            else
-                              ctx
-                            end
-
-                          ctx = close(ctx)
-                          throw({:script_end, ctx})
-
-                        2 ->
-                          ctx =
-                            ctx
-                            |> mes("[Attribute Expert]")
-                            |> mes("Go and smack those eggs over there.")
-                            |> mes(
-                              "The egg of an ant is strong so don't worry about destroying them too much."
-                            )
-                            |> close()
-
-                          throw({:script_end, ctx})
-
-                        3 ->
-                          ctx =
-                            ctx
-                            |> mes("[Attribute Expert]")
-                            |> mes(
-                              "There is nothing I can do. But I will help you anytime if you need."
-                            )
-                            |> erasequest(2299)
-                            |> close()
-
-                          throw({:script_end, ctx})
-
-                        _ ->
-                          ctx
+                        ctx
                       end
 
-                    ctx
-                  else
                     ctx =
                       ctx
                       |> mes("[Attribute Expert]")
+                      |> mes("All right. Class is over.")
+                      |> next()
+                      |> mes("[Attribute Expert]")
                       |> mes(
-                        "Magic basically consists of different attribute attacks. There is another way of giving the attribute to your weapon by using skill or item. You will learn more the longer you play. Good luck!"
+                        "I am not sure if you remember monsters with ^FF0000Fire^000000 are weak against ^0D6EF2Water^000000."
+                      )
+                      |> next()
+                      |> mes("[Attribute Expert]")
+                      |> mes("I will give the ^0D6EF2Water^000000 attribute to you as a present.")
+                      |> mes("If you attack the Fire Eggs again you should do more damage now.")
+                      |> next()
+                      |> mes("[Attribute Expert]")
+                      |> mes("There is only one more chance!")
+                      |> mes(
+                        "Hurry up, the attribute magic will be gone if you take more time thanks for joining to my class."
+                      )
+                      |> completequest(2299)
+
+                    ctx =
+                      if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
+                        getexp(ctx, 100, 20)
+                      else
+                        ctx
+                      end
+
+                    ctx = close(ctx)
+                    throw({:script_end, ctx})
+
+                  2 ->
+                    ctx =
+                      ctx
+                      |> mes("[Attribute Expert]")
+                      |> mes("Go and smack those eggs over there.")
+                      |> mes(
+                        "The egg of an ant is strong so don't worry about destroying them too much."
                       )
                       |> close()
 
                     throw({:script_end, ctx})
-                  end
 
-                ctx
+                  3 ->
+                    ctx =
+                      ctx
+                      |> mes("[Attribute Expert]")
+                      |> mes(
+                        "There is nothing I can do. But I will help you anytime if you need."
+                      )
+                      |> erasequest(2299)
+                      |> close()
+
+                    throw({:script_end, ctx})
+
+                  _ ->
+                    throw({:script_end, ctx})
+                end
+              else
+                ctx =
+                  ctx
+                  |> mes("[Attribute Expert]")
+                  |> mes(
+                    "Magic basically consists of different attribute attacks. There is another way of giving the attribute to your weapon by using skill or item. You will learn more the longer you play. Good luck!"
+                  )
+                  |> close()
+
+                throw({:script_end, ctx})
               end
-
-            ctx
+            end
 
           4 ->
             ctx =
@@ -431,7 +419,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AttributeExpert do
             throw({:script_end, ctx})
 
           _ ->
-            ctx
+            throw({:script_end, ctx})
         end
       catch
         :throw, {:brk_2, ctx} -> ctx

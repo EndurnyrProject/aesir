@@ -64,7 +64,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.Npc135135 do
 
   @impl true
   @spec on_talk(Ctx.t()) :: Ctx.t()
-  def on_talk(ctx), do: ctx
+  # rAthena starts a click at the first label, so it runs this body too.
+  def on_talk(ctx), do: on_event("OnInit", ctx)
 
   defp announce(ctx, message), do: mapannounce(ctx, "prt_are01", message, 1, "0x00ff00")
 end

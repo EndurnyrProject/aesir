@@ -44,7 +44,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.ViciousDog do
 
   @impl true
   @spec on_talk(Ctx.t()) :: Ctx.t()
-  def on_talk(ctx), do: ctx
+  # rAthena starts a click at the first label, so it runs this body too.
+  def on_talk(ctx), do: on_event("OnTouch", ctx)
 
   defp approach_dog(ctx) do
     {ctx, choice} =

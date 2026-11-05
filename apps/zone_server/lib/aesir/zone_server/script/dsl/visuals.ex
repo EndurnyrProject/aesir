@@ -117,23 +117,59 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
   @doc """
   Plays a one-shot `EF_*` visual effect anchored on the NPC running the script,
   shown to every player in view range of the NPC's placement (rAthena
-  `specialeffect`, self-anchored form — the trailing send-target and named-NPC
-  arguments are dropped).
+  `specialeffect`).
 
-  `effect` is an `:ef_*` atom or a raw numeric effect id. Purely cosmetic, so
-  the context is returned unchanged and a detached ctx (no `npc_gid` to
-  originate the effect from) is a silent no-op rather than a halt — a missing
-  sprite burst must never abort the surrounding script. Resolves the NPC's
-  position through `SpatialIndex`, the same anchor `emotion/2` uses.
+  `effect` is an `:ef_*` atom or a raw numeric effect id. `target` narrows the
+  audience: `:area` (default) is every player in view range, `:self` is only the
+  invoking player. `npc_name` re-anchors the effect on the NPC with that unique
+  name (rAthena's fourth argument, resolved through `npc_name2id`, so a display
+  name that is not also the unique name matches nothing); an unknown name fails
+  the command, as the reference does, and the script goes on.
+
+  Purely cosmetic, so the context is returned unchanged and a detached ctx (no
+  `npc_gid` to originate the effect from) is a silent no-op rather than a halt —
+  a missing sprite burst must never abort the surrounding script. Resolves the
+  NPC's position through `SpatialIndex`, the same anchor `emotion/2` uses.
   """
-  @spec specialeffect(Ctx.t(), atom() | non_neg_integer()) :: Ctx.t()
-  def specialeffect(%Ctx{status: {:error, _}} = ctx, _effect), do: ctx
-  def specialeffect(%Ctx{npc_gid: nil} = ctx, _effect), do: ctx
+  @spec specialeffect(
+          Ctx.t(),
+          atom() | non_neg_integer(),
+          :area | :self,
+          String.t() | nil
+        ) :: Ctx.t()
+  def specialeffect(ctx, effect, target \\ :area, npc_name \\ nil)
 
-  def specialeffect(%Ctx{npc_gid: gid} = ctx, effect) do
-    SpecialEffect.play({:npc, gid}, effect, :area)
-    ctx
+  def specialeffect(%Ctx{status: {:error, _}} = ctx, _effect, _target, _npc_name), do: ctx
+
+  def specialeffect(%Ctx{} = ctx, effect, target, npc_name) do
+    case effect_anchor(ctx, npc_name) do
+      {:ok, gid} ->
+        play_effect(ctx, gid, effect, target)
+        ctx
+
+      :error ->
+        Ctx.fail(ctx, :specialeffect, {:unknown_npc, npc_name})
+    end
   end
+
+  # The running NPC, or the named one; `nil` when the script has neither to anchor on.
+  defp effect_anchor(%Ctx{npc_gid: gid}, nil), do: {:ok, gid}
+
+  defp effect_anchor(_ctx, npc_name) do
+    case NpcRegistry.by_name(npc_name) do
+      [{_module, placement} | _] -> {:ok, NpcRegistry.entity_id(placement)}
+      [] -> :error
+    end
+  end
+
+  defp play_effect(_ctx, nil, _effect, _target), do: :ok
+
+  defp play_effect(%Ctx{char_id: char_id}, gid, effect, :self) do
+    if char_id, do: SpecialEffect.play({:npc, gid}, effect, {:player, char_id})
+    :ok
+  end
+
+  defp play_effect(_ctx, gid, effect, _area), do: SpecialEffect.play({:npc, gid}, effect, :area)
 
   @doc """
   Places a marker on the invoking player's minimap (rAthena `viewpoint`,

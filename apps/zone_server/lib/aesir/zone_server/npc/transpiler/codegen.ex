@@ -161,10 +161,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     main_body =
       case opts.kind do
         :function ->
-          main_lines ++ main_fall_through(:function, main_terminal, segments, env)
+          main_lines ++ main_fall_through(:function, main, main_terminal, segments, env)
 
         _ ->
-          tail_return(main_lines ++ main_fall_through(opts.kind, main_terminal, segments, env))
+          tail_return(
+            main_lines ++ main_fall_through(opts.kind, main, main_terminal, segments, env)
+          )
       end
 
     segment_defs = emit_segments(segments, env)
@@ -543,7 +545,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {{:if, cond_expr, then_stmts, else_stmts}, hoisted, unresolvable}
   end
 
-  defp hoist_stmt({:switch, expr, clauses}, analysis, hoisted, unresolvable) do
+  defp hoist_stmt({:switch, expr, clauses, prelude}, analysis, hoisted, unresolvable) do
+    {prelude, hoisted, unresolvable} =
+      hoist_list(prelude, analysis, false, [], hoisted, unresolvable)
+
     {clauses, {hoisted, unresolvable}} =
       Enum.map_reduce(clauses, {hoisted, unresolvable}, fn {values, stmts},
                                                            {hoisted, unresolvable} ->
@@ -553,7 +558,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
         {{values, stmts}, {hoisted, unresolvable}}
       end)
 
-    {{:switch, expr, clauses}, hoisted, unresolvable}
+    {{:switch, expr, clauses, prelude}, hoisted, unresolvable}
   end
 
   defp hoist_stmt({:while, cond_expr, body}, analysis, hoisted, unresolvable) do
@@ -626,7 +631,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp emit_segment(kind, name, stmts, next, env) do
     {lines, terminal} = emit_block(stmts, env)
-    lines = lines ++ fall_through(terminal, List.wrap(next), env)
+    lines = lines ++ segment_fall_through(stmts, terminal, List.wrap(next), env)
     lines = if kind == :event, do: tail_return(lines), else: lines
     visibility = if kind == :event, do: "def", else: "defp"
 
@@ -670,8 +675,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   # ctx) — for a function that trailing `ctx` is the return value and must be a
   # tuple instead. Rewrite it to `{ctx, nil}` wherever it lands (no segment, or
   # a fall into a subroutine/event segment).
-  defp main_fall_through(:function, terminal, segments, env) do
-    case fall_through(terminal, segments, env) do
+  defp main_fall_through(:function, main, terminal, segments, env) do
+    case main_fall(:function, main, terminal, segments, env) do
       [] ->
         []
 
@@ -682,8 +687,30 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     end
   end
 
-  defp main_fall_through(_kind, terminal, segments, env),
-    do: fall_through(terminal, segments, env)
+  defp main_fall_through(_kind, main, terminal, segments, env),
+    do: main_fall(:entry, main, terminal, segments, env)
+
+  defp main_fall(kind, main, terminal, segments, env) do
+    case {kind, main, terminal, segments} do
+      # A script body that starts at an `On*` label has no dialog of its own: rAthena
+      # starts the click at position 0, where the label is a no-op that falls into the
+      # event body, so a click runs it too. Falling out of actual statements still
+      # ends normal flow at a label (events fire on their own engine triggers).
+      {:entry, [], :cont, [{:event, name, _} | _]} ->
+        ["#{fn_name(env, name)}(ctx#{helper_call(env)})"]
+
+      _ ->
+        fall_through(terminal, segments, env)
+    end
+  end
+
+  # rAthena label aliases: labels with no statements between them all point at the
+  # same code (`set_label` on the closing brace), so an empty label body runs the
+  # next label's body. The corpus relies on it for stacked timer labels.
+  defp segment_fall_through([], :cont, [{:event, name, _} | _], env),
+    do: ["#{fn_name(env, name)}(ctx#{helper_call(env)})"]
+
+  defp segment_fall_through(_stmts, terminal, next, env), do: fall_through(terminal, next, env)
 
   # A label function that runs off its end falls through into the next
   # segment; the last one (or a fall into a subroutine) ends the script.
@@ -848,7 +875,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {lines, terminal}
   end
 
-  defp emit_stmt({:switch, expr, clauses}, env), do: emit_switch(expr, clauses, env)
+  defp emit_stmt({:switch, expr, clauses, prelude}, env),
+    do: emit_switch(expr, clauses, prelude, env)
+
   defp emit_stmt({:while, cond_expr, body}, env), do: emit_loop(:while, cond_expr, [], body, env)
 
   defp emit_stmt({:do_while, body, cond_expr}, env),
@@ -1244,6 +1273,23 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
   end
 
+  # `specialeffect <effect>{,<send target>{,"<NPC name>"}}`: the target narrows the
+  # audience (`SELF` is the invoking player only) and the named NPC re-anchors the
+  # effect on that NPC (rAthena `npc_name2id`, matched on the unique name). A target
+  # form the DSL cannot express (e.g. `ALL_SAMEMAP`) stays a stub.
+  defp emit_mapped(name, %{shape: :specialeffect, dsl: dsl}, args, env) do
+    {pre, args} = hoist_all(args, env)
+
+    case special_effect_args(args, env) do
+      {:ok, rendered} ->
+        {pre ++ ["ctx = #{dsl}(#{Enum.join(["ctx" | rendered], ", ")})"], :cont}
+
+      :stub ->
+        rendered = Enum.map_join(args, ", ", &render(&1, env))
+        {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
+    end
+  end
+
   # An effect with one optional argument (`setcart {<type>}`): zero args →
   # the DSL default, one arg → `name(ctx, arg)`; any longer form stays a stub.
   defp emit_mapped(_name, %{shape: :opt1, dsl: dsl}, [], _env),
@@ -1504,6 +1550,28 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = #{dsl}(ctx, #{Enum.join(rendered, ", ")})"], :cont}
   end
 
+  defp special_effect_args([effect], env), do: {:ok, [typed_arg(effect, :effect, env)]}
+
+  defp special_effect_args([effect, target], env) do
+    case special_effect_target(target) do
+      {:ok, atom} -> {:ok, [typed_arg(effect, :effect, env), atom]}
+      :error -> :stub
+    end
+  end
+
+  defp special_effect_args([effect, target, npc_name], env) do
+    case special_effect_target(target) do
+      {:ok, atom} -> {:ok, [typed_arg(effect, :effect, env), atom, render(npc_name, env)]}
+      :error -> :stub
+    end
+  end
+
+  defp special_effect_args(_args, _env), do: :stub
+
+  defp special_effect_target({:name, "AREA"}), do: {:ok, ":area"}
+  defp special_effect_target({:name, "SELF"}), do: {:ok, ":self"}
+  defp special_effect_target(_target), do: :error
+
   defp emit_warp(name, args, env) do
     {pre, args} = hoist_all(args, env)
 
@@ -1752,7 +1820,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     case Resolver.effect(s) do
       {:ok, atom} when is_atom(atom) -> inspect(atom)
       {:ok, id} -> to_string(id)
-      :error -> const_todo(s)
+      # Not an `EF_*` id at all (the corpus passes skill ids such as PF_FOGWALL
+      # here). rAthena fails the buildin and the script goes on, so the reference
+      # behaviour is a skipped effect: the raw atom resolves to no id and
+      # `SpecialEffect` logs and sends nothing instead of ending the script.
+      :error -> inspect(String.to_atom(String.downcase(s)))
     end
   end
 
@@ -1825,7 +1897,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   # -- switch ------------------------------------------------------------------
 
-  defp emit_switch(expr, clauses, env) do
+  defp emit_switch(expr, clauses, prelude, env) do
     menu? = menu_subject?(expr)
     {pre, expr} = hoist(expr, env)
     id = next_id()
@@ -1833,12 +1905,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {value_pre, effective} =
       clauses |> effective_clauses(env) |> default_last() |> bind_clause_values(env)
 
-    nested_break? = Enum.any?(effective, fn {_, stmts} -> nested_break?(stmts) end)
+    nested_break? =
+      nested_break?(prelude) or Enum.any?(effective, fn {_, stmts} -> nested_break?(stmts) end)
 
     clause_env =
       if nested_break?,
         do: %{env | break: {:throw, "brk_#{id}"}},
         else: %{env | break: :plain}
+
+    # The prefix runs after the value is known and before any case is tested, so it
+    # lives inside the same break-catching scope as the clauses.
+    {prelude_lines, prelude_terminal} = emit_block(prelude, clause_env)
 
     {clause_lines, terminals} =
       effective
@@ -1849,21 +1926,49 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       |> Enum.unzip()
 
     default? = Enum.any?(effective, fn {values, _} -> :default in values end)
+    terminal = switch_terminal(effective, prelude_terminal, terminals, default?, menu?)
+    cases? = effective != [] and prelude_terminal == :cont
+    {tmp, bindings, consume} = switch_value(expr, cases?, env)
+    case_lines = switch_case_lines(cases?, tmp, clause_lines, default?, menu?)
+
+    body = prelude_lines ++ switch_body(case_lines, nested_break?, terminal, id)
+    {pre ++ value_pre ++ bindings ++ consume ++ body, terminal}
+  end
+
+  # No cases at all: the prefix is the whole switch, and flow continues after it
+  # (rAthena only ever jumps into a case body from a case test). A prefix that ends
+  # the script itself leaves nothing for the cases to test.
+  defp switch_terminal(effective, prelude_terminal, terminals, default?, menu?) do
+    cond do
+      effective == [] -> prelude_terminal
+      prelude_terminal != :cont -> prelude_terminal
+      Enum.all?(terminals, &(&1 == :stop)) and (default? or menu?) -> :stop
+      true -> :cont
+    end
+  end
+
+  defp switch_case_lines(false, _tmp, _clause_lines, _default?, _menu?), do: []
+
+  defp switch_case_lines(true, tmp, clause_lines, default?, menu?) do
     catch_all = no_match_clause(default?, menu?)
+    ["case #{tmp} do"] ++ List.flatten(clause_lines) ++ catch_all ++ ["end"]
+  end
 
-    {tmp, bindings} =
-      case expr do
-        {:temp, name} -> {name, []}
-        _ -> tmp_var() |> then(fn t -> {t, ["#{t} = #{render_numeric(expr, env)}", ""]} end)
-      end
+  # The switch value only needs a binding when something reads it: the case tests
+  # or, with no cases (or a prefix that already ended the script), the `_ = tmp`
+  # that keeps the hoisted read from being an unused variable.
+  defp switch_value(expr, cases?, env) do
+    case expr do
+      {:temp, name} ->
+        {name, [], if(cases?, do: [], else: ["_ = #{name}"])}
 
-    case_lines = ["case #{tmp} do"] ++ List.flatten(clause_lines) ++ catch_all ++ ["end"]
+      _ when not cases? ->
+        {nil, [], ["_ = #{render_numeric(expr, env)}"]}
 
-    terminal =
-      if Enum.all?(terminals, &(&1 == :stop)) and (default? or menu?), do: :stop, else: :cont
-
-    {pre ++ value_pre ++ bindings ++ switch_body(case_lines, nested_break?, terminal, id),
-     terminal}
+      _ ->
+        tmp = tmp_var()
+        {tmp, ["#{tmp} = #{render_numeric(expr, env)}", ""], []}
+    end
   end
 
   # rAthena ends the script when a menu is answered with its cancel code instead
@@ -1880,6 +1985,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   # An all-stop switch (every clause exits and no case is left unmatched) yields
   # no value anything could read; binding it would leave a dead `ctx =`.
+  defp switch_body([], _nested_break?, _terminal, _id), do: []
+
   defp switch_body(case_lines, true, :stop, id),
     do: ["try do"] ++ case_lines ++ ["catch", ":throw, {:brk_#{id}, ctx} -> ctx", "end"]
 
@@ -2116,8 +2223,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp stmt_reaches_loop_ctl?({:if, _, t, e}), do: any_loop_ctl?(t) or any_loop_ctl?(e)
   defp stmt_reaches_loop_ctl?({:block, b}), do: any_loop_ctl?(b)
 
-  defp stmt_reaches_loop_ctl?({:switch, _, clauses}),
-    do: Enum.any?(clauses, fn {_, stmts} -> any_continue?(stmts) end)
+  defp stmt_reaches_loop_ctl?({:switch, _, clauses, prelude}),
+    do: any_continue?(prelude) or Enum.any?(clauses, fn {_, stmts} -> any_continue?(stmts) end)
 
   defp stmt_reaches_loop_ctl?(_), do: false
 
@@ -2132,11 +2239,20 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   # switch absorbs break but continue passes through to the loop
   defp any_continue?(stmts) do
     Enum.any?(stmts, fn
-      {:continue} -> true
-      {:if, _, t, e} -> any_continue?(t) or any_continue?(e)
-      {:block, b} -> any_continue?(b)
-      {:switch, _, clauses} -> Enum.any?(clauses, fn {_, s} -> any_continue?(s) end)
-      _ -> false
+      {:continue} ->
+        true
+
+      {:if, _, t, e} ->
+        any_continue?(t) or any_continue?(e)
+
+      {:block, b} ->
+        any_continue?(b)
+
+      {:switch, _, clauses, prelude} ->
+        any_continue?(prelude) or Enum.any?(clauses, fn {_, s} -> any_continue?(s) end)
+
+      _ ->
+        false
     end)
   end
 
@@ -3047,8 +3163,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp nested_return?({:if, _, then_stmts, else_stmts}),
     do: any_return?(then_stmts) or any_return?(else_stmts)
 
-  defp nested_return?({:switch, _, clauses}),
-    do: Enum.any?(clauses, fn {_values, stmts} -> any_return?(stmts) end)
+  defp nested_return?({:switch, _, clauses, prelude}),
+    do: any_return?(prelude) or Enum.any?(clauses, fn {_values, stmts} -> any_return?(stmts) end)
 
   defp nested_return?({:while, _, body}), do: any_return?(body)
   defp nested_return?({:do_while, body, _}), do: any_return?(body)

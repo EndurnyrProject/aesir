@@ -276,7 +276,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.M11Hnttrap do
 
   @impl true
   @spec on_talk(Ctx.t()) :: Ctx.t()
-  def on_talk(ctx), do: ctx
+  # rAthena starts a click at the first label, so it runs this body too.
+  def on_talk(ctx), do: on_event("OnTouch_", ctx)
 
   defp announcement(44, _ctx) do
     " Tip of the day: Do not step on the traps. You will be returned to the starting point."

@@ -31,28 +31,27 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Monk75122 do
       |> next()
       |> select(["I'm sightseeing.", "No reason."])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx =
-            ctx
-            |> mes("[Monk]")
-            |> mes(
-              "Oh, you are a tourist. This is the '^0000FFPagoda^000000' worshiping the great Buddha. Please be respectful of the monks praying here."
-            )
-            |> close()
+    _ = v1
 
-          throw({:script_end, ctx})
-
-        2 ->
-          ctx = ctx |> mes("[Monk]") |> mes("Good day to you...") |> close()
-          throw({:script_end, ctx})
-
-        _ ->
+    case v1 do
+      1 ->
+        ctx =
           ctx
-      end
+          |> mes("[Monk]")
+          |> mes(
+            "Oh, you are a tourist. This is the '^0000FFPagoda^000000' worshiping the great Buddha. Please be respectful of the monks praying here."
+          )
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx = ctx |> mes("[Monk]") |> mes("Good day to you...") |> close()
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

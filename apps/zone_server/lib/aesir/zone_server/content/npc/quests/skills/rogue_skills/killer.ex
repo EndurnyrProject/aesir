@@ -64,7 +64,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.Killer do
 
   @impl true
   @spec on_talk(Ctx.t()) :: Ctx.t()
-  def on_talk(ctx), do: ctx
+  # rAthena starts a click at the first label, so it runs this body too.
+  def on_talk(ctx), do: on_event("OnInit", ctx)
 
   defp confine(ctx) do
     ctx =

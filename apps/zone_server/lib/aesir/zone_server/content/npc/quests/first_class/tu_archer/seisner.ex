@@ -42,11 +42,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.Seisner do
   def on_talk(ctx) do
     ctx =
       ctx
-      |> specialeffect(:hit2)
+      |> specialeffect(:hit2, :area, "#Target")
       |> mes("[Seisner]")
       |> mes("Aaaah!")
       |> mes("Double Strafe!")
-      |> specialeffect(:hit2)
+      |> specialeffect(:hit2, :area, "#Target")
       |> next()
       |> mes("[Seisner]")
       |> mes("I did it!")

@@ -83,7 +83,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ManufacturingMania
   end
 
   def ev_ontimer35000(ctx) do
-    ctx
+    ev_oninit(ctx)
   end
 
   def ev_oninit(ctx) do

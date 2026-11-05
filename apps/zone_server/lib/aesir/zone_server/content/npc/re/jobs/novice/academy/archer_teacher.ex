@@ -526,7 +526,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ArcherTeacher do
           throw({:script_end, ctx})
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     loop_1(ctx)

@@ -143,7 +143,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OddNovice do
                 |> mes("How about it? Newfangled.")
                 |> mes("Idling away too long,")
                 |> mes("All the skills learnt over your shoulder could be used.")
-                |> specialeffect(:sight)
+                |> specialeffect(:sight, :area, "Odd Novice#nk1")
                 |> next()
                 |> mes("[Odd Novice]")
                 |> mes("Ugh, all my SP is gone...")

@@ -19,12 +19,12 @@
         "y": 73,
         "map": "airplane",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "#AirshipWarp-1",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45,
-        "unique_name": "#AirshipWarp-1"
+        ]
       },
       {
         "name": "",
@@ -33,12 +33,12 @@
         "y": 29,
         "map": "airplane",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "#AirshipWarp-2",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45,
-        "unique_name": "#AirshipWarp-2"
+        ]
       }
     ]
   },
@@ -55,12 +55,12 @@
         "y": 73,
         "map": "airplane_01",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "#AirshipWarp-3",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45,
-        "unique_name": "#AirshipWarp-3"
+        ]
       },
       {
         "name": "",
@@ -69,12 +69,12 @@
         "y": 29,
         "map": "airplane_01",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "#AirshipWarp-4",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45,
-        "unique_name": "#AirshipWarp-4"
+        ]
       }
     ]
   },
@@ -216,12 +216,12 @@
         "y": 61,
         "map": "airplane_01",
         "dir": 2,
+        "sprite": 72,
+        "unique_name": "Dianne#01airplane_01",
         "trigger": [
           2,
           2
-        ],
-        "sprite": 72,
-        "unique_name": "Dianne#01airplane_01"
+        ]
       }
     ]
   },
@@ -384,12 +384,12 @@
         "y": 61,
         "map": "airplane_01",
         "dir": 4,
+        "sprite": 49,
+        "unique_name": "Nils#ein",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 49,
-        "unique_name": "Nils#ein"
+        ]
       }
     ]
   },
@@ -626,12 +626,12 @@
         "y": 142,
         "map": "hugel",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "toairplane#hugel",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45,
-        "unique_name": "toairplane#hugel"
+        ]
       }
     ]
   },
@@ -782,12 +782,12 @@
         "y": 208,
         "map": "ra_fild12",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "toairplane#rachel",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45,
-        "unique_name": "toairplane#rachel"
+        ]
       }
     ]
   },
@@ -3929,11 +3929,11 @@
         "y": 148,
         "map": "geffen",
         "dir": 4,
+        "sprite": 99,
         "trigger": [
           6,
           6
-        ],
-        "sprite": 99
+        ]
       }
     ]
   },
@@ -5778,12 +5778,12 @@
         "y": 20,
         "map": "lhz_in03",
         "dir": 6,
+        "sprite": 869,
+        "unique_name": "Bad Drunk#amano06",
         "trigger": [
           2,
           2
-        ],
-        "sprite": 869,
-        "unique_name": "Bad Drunk#amano06"
+        ]
       }
     ]
   },
@@ -5909,12 +5909,12 @@
         "y": 233,
         "map": "lighthalzen",
         "dir": 3,
+        "sprite": 777,
+        "unique_name": "Beggar#lhz_02",
         "trigger": [
           3,
           1
-        ],
-        "sprite": 777,
-        "unique_name": "Beggar#lhz_02"
+        ]
       }
     ]
   },
@@ -6903,12 +6903,12 @@
         "y": 53,
         "map": "lhz_in01",
         "dir": 3,
+        "sprite": 98,
+        "unique_name": "Jorje#zero",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 98,
-        "unique_name": "Jorje#zero"
+        ]
       }
     ]
   },
@@ -7600,12 +7600,12 @@
         "y": 132,
         "map": "lhz_in01",
         "dir": 3,
+        "sprite": 867,
+        "unique_name": "Rekenber Guard#li02",
         "trigger": [
           5,
           5
-        ],
-        "sprite": 867,
-        "unique_name": "Rekenber Guard#li02"
+        ]
       }
     ]
   },
@@ -7622,12 +7622,12 @@
         "y": 125,
         "map": "lhz_in01",
         "dir": 3,
+        "sprite": 867,
+        "unique_name": "Rekenber Guard#li03",
         "trigger": [
           5,
           5
-        ],
-        "sprite": 867,
-        "unique_name": "Rekenber Guard#li03"
+        ]
       }
     ]
   },
@@ -9474,12 +9474,12 @@
         "y": 120,
         "map": "morocc",
         "dir": 5,
+        "sprite": 707,
+        "unique_name": "MocSoldier",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 707,
-        "unique_name": "MocSoldier"
+        ]
       }
     ]
   },
@@ -9834,12 +9834,12 @@
         "y": 211,
         "map": "niflheim",
         "dir": 6,
+        "sprite": 796,
+        "unique_name": "Gigantia#nif",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 796,
-        "unique_name": "Gigantia#nif"
+        ]
       }
     ]
   },
@@ -9964,12 +9964,12 @@
         "y": 116,
         "map": "payon_in03",
         "dir": 3,
+        "sprite": 708,
+        "unique_name": "Chief Guardsman#payon",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 708,
-        "unique_name": "Chief Guardsman#payon"
+        ]
       }
     ]
   },
@@ -9986,12 +9986,12 @@
         "y": 190,
         "map": "payon_in03",
         "dir": 4,
+        "sprite": 107,
+        "unique_name": "Chief#payon",
         "trigger": [
           2,
           2
-        ],
-        "sprite": 107,
-        "unique_name": "Chief#payon"
+        ]
       }
     ]
   },
@@ -10044,12 +10044,12 @@
         "y": 246,
         "map": "payon",
         "dir": 3,
+        "sprite": 708,
+        "unique_name": "Guardsman#payon",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 708,
-        "unique_name": "Guardsman#payon"
+        ]
       }
     ]
   },
@@ -10120,12 +10120,12 @@
         "y": 158,
         "map": "payon",
         "dir": 5,
+        "sprite": 66,
+        "unique_name": "Woman#2payon",
         "trigger": [
           0,
           0
-        ],
-        "sprite": 66,
-        "unique_name": "Woman#2payon"
+        ]
       }
     ]
   },
@@ -13383,12 +13383,12 @@
         "y": 48,
         "map": "in_moc_16",
         "dir": 2,
+        "sprite": 725,
+        "unique_name": "Barcardi#ASN",
         "trigger": [
           2,
           2
-        ],
-        "sprite": 725,
-        "unique_name": "Barcardi#ASN"
+        ]
       }
     ]
   },
@@ -13419,12 +13419,12 @@
         "y": 80,
         "map": "in_moc_16",
         "dir": 4,
+        "sprite": 106,
+        "unique_name": "Guildmaster#ASN2",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 106,
-        "unique_name": "Guildmaster#ASN2"
+        ]
       }
     ]
   },
@@ -13441,12 +13441,12 @@
         "y": 90,
         "map": "in_moc_16",
         "dir": 1,
+        "sprite": 730,
+        "unique_name": "Guildsman#ASN2",
         "trigger": [
           2,
           2
-        ],
-        "sprite": 730,
-        "unique_name": "Guildsman#ASN2"
+        ]
       }
     ]
   },
@@ -13481,12 +13481,12 @@
         "y": 137,
         "map": "in_moc_16",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "Keeper of the Door#ASN",
         "trigger": [
           2,
           1
-        ],
-        "sprite": 45,
-        "unique_name": "Keeper of the Door#ASN"
+        ]
       }
     ]
   },
@@ -13503,11 +13503,11 @@
         "y": 81,
         "map": "in_moc_16",
         "dir": 1,
+        "sprite": 55,
         "trigger": [
           1,
           1
-        ],
-        "sprite": 55
+        ]
       }
     ]
   },
@@ -13524,11 +13524,11 @@
         "y": 169,
         "map": "in_moc_16",
         "dir": 0,
+        "sprite": 45,
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45
+        ]
       }
     ]
   },
@@ -13563,12 +13563,12 @@
         "y": 165,
         "map": "in_moc_16",
         "dir": 2,
+        "sprite": 725,
+        "unique_name": "Test Guide#ASN",
         "trigger": [
           4,
           4
-        ],
-        "sprite": 725,
-        "unique_name": "Test Guide#ASN"
+        ]
       }
     ]
   },
@@ -13585,12 +13585,12 @@
         "y": 98,
         "map": "in_moc_16",
         "dir": 1,
+        "sprite": 118,
+        "unique_name": "Thomas#ASNTEST",
         "trigger": [
           5,
           1
-        ],
-        "sprite": 118,
-        "unique_name": "Thomas#ASNTEST"
+        ]
       }
     ]
   },
@@ -13853,12 +13853,12 @@
         "y": 32,
         "map": "job_hunte",
         "dir": 1,
+        "sprite": 107,
+        "unique_name": "Guide#hnt",
         "trigger": [
           5,
           2
-        ],
-        "sprite": 107,
-        "unique_name": "Guide#hnt"
+        ]
       }
     ]
   },
@@ -13993,12 +13993,12 @@
         "y": 101,
         "map": "job_hunte",
         "dir": 1,
+        "sprite": 723,
+        "unique_name": "Switch#hnt",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 723,
-        "unique_name": "Switch#hnt"
+        ]
       }
     ]
   },
@@ -14033,12 +14033,12 @@
         "y": 139,
         "map": "job_hunte",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "exit#hnttest",
         "trigger": [
           2,
           2
-        ],
-        "sprite": 45,
-        "unique_name": "exit#hnttest"
+        ]
       }
     ]
   },
@@ -14238,12 +14238,12 @@
         "y": 57,
         "map": "job_knt",
         "dir": 1,
+        "sprite": 107,
+        "unique_name": "Warp#knt",
         "trigger": [
           22,
           22
-        ],
-        "sprite": 107,
-        "unique_name": "Warp#knt"
+        ]
       }
     ]
   },
@@ -14313,12 +14313,12 @@
         "y": 150,
         "map": "job_prist",
         "dir": 4,
+        "sprite": 736,
+        "unique_name": "Baphomet#prst",
         "trigger": [
           8,
           1
-        ],
-        "sprite": 736,
-        "unique_name": "Baphomet#prst"
+        ]
       }
     ]
   },
@@ -14335,12 +14335,12 @@
         "y": 115,
         "map": "job_prist",
         "dir": 4,
+        "sprite": 1272,
+        "unique_name": "Dark Lord#prst",
         "trigger": [
           8,
           1
-        ],
-        "sprite": 1272,
-        "unique_name": "Dark Lord#prst"
+        ]
       }
     ]
   },
@@ -14357,12 +14357,12 @@
         "y": 45,
         "map": "job_prist",
         "dir": 4,
+        "sprite": 1109,
+        "unique_name": "Deviruchi#prst",
         "trigger": [
           8,
           1
-        ],
-        "sprite": 1109,
-        "unique_name": "Deviruchi#prst"
+        ]
       }
     ]
   },
@@ -14379,12 +14379,12 @@
         "y": 80,
         "map": "job_prist",
         "dir": 4,
+        "sprite": 1046,
+        "unique_name": "Doppelganger#prst",
         "trigger": [
           8,
           1
-        ],
-        "sprite": 1046,
-        "unique_name": "Doppelganger#prst"
+        ]
       }
     ]
   },
@@ -14440,11 +14440,11 @@
         "y": 2,
         "map": "job_prist",
         "dir": 1,
+        "sprite": 110,
         "trigger": [
           1,
           1
-        ],
-        "sprite": 110
+        ]
       }
     ]
   },
@@ -14555,11 +14555,11 @@
         "y": 109,
         "map": "job_prist",
         "dir": 4,
+        "sprite": 45,
         "trigger": [
           3,
           3
-        ],
-        "sprite": 45
+        ]
       }
     ]
   },
@@ -14576,11 +14576,11 @@
         "y": 180,
         "map": "job_prist",
         "dir": 4,
+        "sprite": 45,
         "trigger": [
           3,
           3
-        ],
-        "sprite": 45
+        ]
       }
     ]
   },
@@ -14597,11 +14597,11 @@
         "y": 105,
         "map": "job_prist",
         "dir": 4,
+        "sprite": 45,
         "trigger": [
           3,
           3
-        ],
-        "sprite": 45
+        ]
       }
     ]
   },
@@ -14993,12 +14993,12 @@
         "y": 102,
         "map": "payon",
         "dir": 3,
+        "sprite": 828,
+        "unique_name": "Moohyun#job_star",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 828,
-        "unique_name": "Moohyun#job_star"
+        ]
       }
     ]
   },
@@ -15667,12 +15667,12 @@
         "y": 247,
         "map": "prt_monk",
         "dir": 1,
+        "sprite": 120,
+        "unique_name": "Guarding Monk#mk",
         "trigger": [
           6,
           2
-        ],
-        "sprite": 120,
-        "unique_name": "Guarding Monk#mk"
+        ]
       }
     ]
   },
@@ -15797,12 +15797,12 @@
         "y": 350,
         "map": "monk_test",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "Supervisor#race_monk",
         "trigger": [
           2,
           2
-        ],
-        "sprite": 45,
-        "unique_name": "Supervisor#race_monk"
+        ]
       }
     ]
   },
@@ -15862,12 +15862,12 @@
         "y": 278,
         "map": "monk_test",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "exit_monk#1",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45,
-        "unique_name": "exit_monk#1"
+        ]
       }
     ]
   },
@@ -15884,12 +15884,12 @@
         "y": 178,
         "map": "monk_test",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "exit_monk#2",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45,
-        "unique_name": "exit_monk#2"
+        ]
       }
     ]
   },
@@ -15906,12 +15906,12 @@
         "y": 278,
         "map": "monk_test",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "exit_monk#3",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45,
-        "unique_name": "exit_monk#3"
+        ]
       }
     ]
   },
@@ -16184,12 +16184,12 @@
         "y": 195,
         "map": "cmd_fild09",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "Warp#1",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45,
-        "unique_name": "Warp#1"
+        ]
       }
     ]
   },
@@ -16206,12 +16206,12 @@
         "y": 143,
         "map": "cmd_fild09",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "Warp#2",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45,
-        "unique_name": "Warp#2"
+        ]
       }
     ]
   },
@@ -16228,12 +16228,12 @@
         "y": 180,
         "map": "cmd_fild04",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "Warp#3",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45,
-        "unique_name": "Warp#3"
+        ]
       }
     ]
   },
@@ -16278,12 +16278,12 @@
         "y": 130,
         "map": "in_rogue",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "he_to_rogue#rg",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45,
-        "unique_name": "he_to_rogue#rg"
+        ]
       }
     ]
   },
@@ -16412,11 +16412,11 @@
         "y": 389,
         "map": "in_rogue",
         "dir": 0,
+        "sprite": 45,
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45
+        ]
       }
     ]
   },
@@ -16433,11 +16433,11 @@
         "y": 320,
         "map": "in_rogue",
         "dir": 0,
+        "sprite": 45,
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45
+        ]
       }
     ]
   },
@@ -17135,9 +17135,9 @@
   },
   "kafras/dts_warper.txt|floating|Cool Event Staff::VotingStaffCCE|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Floating.CoolEventStaffVotingstaffcce",
-    "output_hash": "1b0df1c226149263bac8468450c58c3fcb871807531b9873a2222c5ed98b0b91",
+    "output_hash": "f91d132b5e4883bab07516157ed219f66768865c7e03b584dd64b0f713fe926a",
     "output_path": "lib/aesir/zone_server/content/npc/floating/cool_event_staff_votingstaffcce.ex",
-    "source_hash": "ec79b1f163be50107a89c4d2d51ecc71f3c1e28da0fb01765871921cf536ba24",
+    "source_hash": "7ebb9d6ce0757d9c2962d16c82513a6ffc8ad416e999498f131a21f890ed4ca2",
     "spawns": [
       {
         "name": "Cool Event Staff",
@@ -17223,7 +17223,7 @@
   },
   "kafras/dts_warper.txt|function|F_VoteKafra|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Functions.FVotekafra",
-    "output_hash": "2949dc8dd947fccd490d166f3116d0909a6822e5d504698e2d8711eae5bd18bd",
+    "output_hash": "b67c717acf150e07aefaee38d609c05eefb94dac83ac5d0051b280257beb58f1",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_votekafra.ex",
     "source_hash": "39ebf0b4a33d275b992de9980ca3d07ec30ecdc791886b6936b87116b79d17f5",
     "spawns": []
@@ -17232,7 +17232,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.KafraVotingStaff11970",
     "output_hash": "1a8d62c539bad82fc5ec327df9838c97e416d53ed7968dc8a0233557b20e2c94",
     "output_path": "lib/aesir/zone_server/content/npc/kafras/dts_warper/kafra_voting_staff_119_70.ex",
-    "source_hash": "b96b2230a7886eee890d1ba4ee43b3d5f6424bbd519fb91f9e13a13a81a56b21",
+    "source_hash": "db8ccfa30fb9c4bf247d766820a98147c5c465115e1ab4250d85f40f14aa1738",
     "spawns": [
       {
         "name": "Kafra Voting Staff",
@@ -17250,7 +17250,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.KafraVotingStaff145102",
     "output_hash": "b7a8489e1f349bfd0e25fa3add983698289519067eb217a33d447c4b15dde404",
     "output_path": "lib/aesir/zone_server/content/npc/kafras/dts_warper/kafra_voting_staff_145_102.ex",
-    "source_hash": "b0db0571beec21c76abed6a8ccd8b2333e79353451727269f4ca6c41c7c2cb28",
+    "source_hash": "639c1e894ef75a4bf3fe27f3db23c07d2d585a25ee1ae1ebd57c511494423095",
     "spawns": [
       {
         "name": "Kafra Voting Staff",
@@ -17268,7 +17268,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.KafraVotingStaff12237",
     "output_hash": "2ab970c9a4304ad9d5f510161de145f7d095144db0afd7f1264657ccf1326d9f",
     "output_path": "lib/aesir/zone_server/content/npc/kafras/dts_warper/kafra_voting_staff_122_37.ex",
-    "source_hash": "3d4bf7fd7632c858bb46af09e4851534ce3bc59ed146135638e3f2b9ace908e9",
+    "source_hash": "86434b4e98701a7d8c1fffc4baac1e3463ae2af8bef1d206bac2ae93f87ef185",
     "spawns": [
       {
         "name": "Kafra Voting Staff",
@@ -17286,7 +17286,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.KafraVotingStaff16360",
     "output_hash": "aa244b863ce0e35cae6d9fb3967488b50fddb801b1c1efe54e0068dd4a17ba6f",
     "output_path": "lib/aesir/zone_server/content/npc/kafras/dts_warper/kafra_voting_staff_163_60.ex",
-    "source_hash": "f2da1ec05f400d48e3503494d896a71d2af3b7730392d898a029383280af9789",
+    "source_hash": "3d8de44d65e6ebae7dace2f9127154ed3b64512a9bb8306100567655f8edba82",
     "spawns": [
       {
         "name": "Kafra Voting Staff",
@@ -17304,7 +17304,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.KafraVotingStaff104133",
     "output_hash": "bdea62f684a552f5da85821fd2b8dd78b1e31ff701dbe030e0645dd0e5044ae3",
     "output_path": "lib/aesir/zone_server/content/npc/kafras/dts_warper/kafra_voting_staff_104_133.ex",
-    "source_hash": "a5a7aa4c900e31cb05d62d895817e85875e66a9b8137a39e1409819c8e5dd8c1",
+    "source_hash": "98a1367346433ca0744bb1baef53e473f09c28cb6c4674c876b10dbdec1fa1c3",
     "spawns": [
       {
         "name": "Kafra Voting Staff",
@@ -17322,7 +17322,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.KafraVotingStaff158182",
     "output_hash": "e5c507de52bc2568dcffc972f60b82a765a364d15a4bc0e04ea0e21f3d6b9953",
     "output_path": "lib/aesir/zone_server/content/npc/kafras/dts_warper/kafra_voting_staff_158_182.ex",
-    "source_hash": "a99de60ce8e7afbf1f8a008608f9457893d63645ae12cb7b5c8c3ca2991aecb4",
+    "source_hash": "aa5052d22ff8a2482b64e4fa846f7925ff26ac719a8d17e8e9d34a32fe660ae8",
     "spawns": [
       {
         "name": "Kafra Voting Staff",
@@ -17340,7 +17340,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.KafraVotingStaff164125",
     "output_hash": "57634b2e9e5137dc18099e267f21e5efc4935fae0fd2c988c2ac9d6cde6b7ce7",
     "output_path": "lib/aesir/zone_server/content/npc/kafras/dts_warper/kafra_voting_staff_164_125.ex",
-    "source_hash": "e1d1b84c63a0b4ad30e13544623c2b4ab2927f98287fd0a825da5a4a2e8d3b1d",
+    "source_hash": "7e24572ba1eb9d217d9d20c41bb7372b30f6b45d62c28b3968996a728d4c8bc5",
     "spawns": [
       {
         "name": "Kafra Voting Staff",
@@ -17358,7 +17358,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.KafraVotingStaff",
     "output_hash": "54a80c5514ea5cdbc9915fd90e0502bf2e4565434b2c18ad1be9cecc87d2cb35",
     "output_path": "lib/aesir/zone_server/content/npc/kafras/dts_warper/kafra_voting_staff.ex",
-    "source_hash": "8721d556794521cf938aa35e7dbfd716c99042dbaf0ba378dd2ec942dcfd92cb",
+    "source_hash": "bbd105bb33ae620da3c94c30d7d5ffd638eaa39d64cc4d8cbe9a46131732d6a1",
     "spawns": [
       {
         "name": "Kafra Voting Staff",
@@ -17374,56 +17374,56 @@
   },
   "kafras/dts_warper.txt|script|Scrutiny Association#5|yuno:103:225": {
     "module": "Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.ScrutinyAssociation",
-    "output_hash": "da70f1bd171aff6a1513180554bb9153be0a9be07cdf10d79a7cfb7b8489c150",
+    "output_hash": "bb191b087f7e06a030562ff72654de67aee341259dcb0bd53b8a5ddba3e937ba",
     "output_path": "lib/aesir/zone_server/content/npc/kafras/dts_warper/scrutiny_association.ex",
     "source_hash": "42ca629284a7933135b8aed600159f34b16d12991ad8b05c92e5787a313a53d0",
     "spawns": []
   },
   "kafras/dts_warper.txt|script|Scrutiny Association#6|einbroch:248:71": {
     "module": "Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.ScrutinyAssociation24871",
-    "output_hash": "9507bec4a83bd640eeb62a4d9e866f0b952c4cd36a2bb888d9037b4b4b23169a",
+    "output_hash": "a58b620dbc22e2bbbd5b625383c81e9f99a9d754efed720a8a51a659d1eceed1",
     "output_path": "lib/aesir/zone_server/content/npc/kafras/dts_warper/scrutiny_association_248_71.ex",
     "source_hash": "74ce8a5addafa22cc5fcd6d1addf857a710a181edd0ec76ab7db891194328a92",
     "spawns": []
   },
   "kafras/dts_warper.txt|script|Scrutiny Association#7|einbroch:249:71": {
     "module": "Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.ScrutinyAssociation24971",
-    "output_hash": "446d9e70c8a82ea4c54aa0d065270f4e44edb1ad3bd19856756a446ee411c7f1",
+    "output_hash": "dee63c1703685d2c03941d15fd14d454dc95b1fba68a468a27c6ba6960359f6d",
     "output_path": "lib/aesir/zone_server/content/npc/kafras/dts_warper/scrutiny_association_249_71.ex",
     "source_hash": "d9762f62b34b6ae8ee66506cb5ef79e3e1ffb12f169067897b338cfd0b9a23bf",
     "spawns": []
   },
   "kafras/dts_warper.txt|script|Vote Timer#ein|einbroch:246:70": {
     "module": "Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.VoteTimer",
-    "output_hash": "160c429fd346eb55f000e64d5802bf19b0888c3a1e6a708e75eaa0654a1dff84",
+    "output_hash": "43ca15025c81b2b9d85f49356dd2ae06cc811a0f8ff0387ebbb7e9fed088fcf5",
     "output_path": "lib/aesir/zone_server/content/npc/kafras/dts_warper/vote_timer.ex",
     "source_hash": "33e6082ad22f881916995bcb807580ab8207249bc919bf11d1934b71ea40cf60",
     "spawns": []
   },
   "kafras/dts_warper.txt|script|Vote Timer2#ein|einbroch:245:71": {
     "module": "Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.VoteTimer2",
-    "output_hash": "eadfea0e4537effc20a9749dcd8cb4dd99fe473221eb51b15e7d21d2f4c37608",
+    "output_hash": "20384e19577011f78dd7bf5203cb4bbb397fa7ceffb5d152741af5234171f596",
     "output_path": "lib/aesir/zone_server/content/npc/kafras/dts_warper/vote_timer2.ex",
     "source_hash": "0848095bf489ff10df333914698ad9b2ed758b4dea983bbaaf1e870e82f528ad",
     "spawns": []
   },
   "kafras/dts_warper.txt|script|Vote Timer3#ein|einbroch:246:71": {
     "module": "Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.VoteTimer3",
-    "output_hash": "98aafcb70838ec6f219cd15d9c45bdc2cb86c499d026472aaa72a64508c428fa",
+    "output_hash": "dd0cb66f62bf0abe3ccf9d0e9a81c1d9705e39771af5196bbf60485fe7364249",
     "output_path": "lib/aesir/zone_server/content/npc/kafras/dts_warper/vote_timer3.ex",
     "source_hash": "b9a2c20cbc85dc7668c7bd719891029500751b9995a895b1e3c27e3e97f00661",
     "spawns": []
   },
   "kafras/dts_warper.txt|script|Vote Timer4#ein|einbroch:247:71": {
     "module": "Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.VoteTimer4",
-    "output_hash": "87a001561e0507223c5d3eb025cfe26874c9719f4c520a353f9933c4f237419b",
+    "output_hash": "44178d7cdb73a782f09700533f928a89bcda25c9d6ca090a7be33a5103486ce3",
     "output_path": "lib/aesir/zone_server/content/npc/kafras/dts_warper/vote_timer4.ex",
     "source_hash": "126754db56579b6dd7b7f8fa9f519bb96a30bab5c8e4c167b60aecba2a77ffcf",
     "spawns": []
   },
   "kafras/functions_kafras.txt|function|F_CheckKafCode|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Functions.FCheckkafcode",
-    "output_hash": "9dc860d56755a37f0dae880067171f7472870e03e3fa9b09483266bd9379d0e1",
+    "output_hash": "c8d5d03948367696270d69db1a9f9413b0f527730a88006b61fa1a5c99dd2fdd",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_checkkafcode.ex",
     "source_hash": "74e1b0a00a17f1b9478ea62da62d73ff3b7b3ea62486051acb8f4fe36575bc69",
     "spawns": []
@@ -17437,14 +17437,14 @@
   },
   "kafras/functions_kafras.txt|function|F_KafCart|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Functions.FKafcart",
-    "output_hash": "ca06b35b938d06e1069b23a8190fa48b424fd0f83c17bb5694e8c2f7fb291df3",
+    "output_hash": "b3abf1b17daabaf742d4a6f6b321d1c14ef01463db26a5d685b553cab4aa0af5",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_kafcart.ex",
     "source_hash": "9df158112b5650ac15c28130a56b2ddcfe78baf6d117ccf30ef916ca5f23707b",
     "spawns": []
   },
   "kafras/functions_kafras.txt|function|F_KafEnd|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Functions.FKafend",
-    "output_hash": "8bf44a3dc79955afd11246f431e80fba176c9254ea051dd9836aafbb5355794c",
+    "output_hash": "19a9084367bbc6c577e773f4b89bc7f8c0bdf14a110c95a0a175b7dd77cc4d3a",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_kafend.ex",
     "source_hash": "1d6d2ffda23ec77d150ad3fcd1f794e9eb544194b581afa2544b2b7478ddd4d6",
     "spawns": []
@@ -17465,14 +17465,14 @@
   },
   "kafras/functions_kafras.txt|function|F_KafStor|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Functions.FKafstor",
-    "output_hash": "3bd9cc74c30184dc9180fbcac489116951487e9704588ce93fc7efa5cf456f71",
+    "output_hash": "6a9b441243fd96dd4531e5c72bf0093b08e0e66eea9683a6676048de849cd475",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_kafstor.ex",
     "source_hash": "522960dfa1fcef1727586ffac15e3437d8faf7a8ed9741beb2de51fa23d852de",
     "spawns": []
   },
   "kafras/functions_kafras.txt|function|F_KafTele|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Functions.FKaftele",
-    "output_hash": "8026d69252cd7469fc4b0a20a412ebd28999e41f377e425bbcb3afc6e49b5f85",
+    "output_hash": "9a4be1a1aab36fa87c6822729c0477b71081ee8e5db95b51ec98ef843b2ce557",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_kaftele.ex",
     "source_hash": "a9046a69e5e873f3229f3722420ef073dc26ab5f83b2718c474b6cabaf3c87e2",
     "spawns": []
@@ -17486,7 +17486,7 @@
   },
   "kafras/functions_kafras.txt|function|F_SetKafCode|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Functions.FSetkafcode",
-    "output_hash": "5d4493f1c6a77ddaa7ef3ea6c882f5680c4683ff40ecce746d7aeef7441e2a83",
+    "output_hash": "1675cdb5216156ab6fd5b2b0a2d047d35f414967abd68b7f9296ddca101d0d38",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_setkafcode.ex",
     "source_hash": "472cb1d5aebe29fc503708e22f317f36cdade0e1b333ee4a3b47965084445542",
     "spawns": []
@@ -18763,12 +18763,12 @@
         "y": 56,
         "map": "hugel",
         "dir": 3,
+        "sprite": 863,
+        "unique_name": "Hugel Guide Granny#huge",
         "trigger": [
           0,
           0
-        ],
-        "sprite": 863,
-        "unique_name": "Hugel Guide Granny#huge"
+        ]
       }
     ]
   },
@@ -19387,21 +19387,21 @@
   },
   "pre-re/jobs/1-1/swordman.txt|script|1_blank_1_a::SwdTrap1|job_sword1:16:251": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.M1Blank1ASwdtrap1",
-    "output_hash": "ef6fa1adf27e301b0ba8c4b4f4a235b9db88888c19c96a0ad05375d36aae0232",
+    "output_hash": "4c79c0efa58c74dc4ce01d1ececa5d4f31055ddfe7a85095ff035b7c537c0307",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/swordman/1_blank_1_a_swdtrap1.ex",
     "source_hash": "46fa996a79fec6e32267c44d991c2eb99b9373b3d2e987d0290f7e919add35af",
     "spawns": []
   },
   "pre-re/jobs/1-1/swordman.txt|script|2_blank_1_a::SwdTrap2|job_sword1:56:212": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.M2Blank1ASwdtrap2",
-    "output_hash": "50a7e59d62fe578d9c94df3b575b6ca5ab5d3b58dfebfc6ba8b2ff06a8a829a1",
+    "output_hash": "4c6c3913d90e7706b02c93f85323dd5134faf3731b130d577ec5a07ba09eee4f",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/swordman/2_blank_1_a_swdtrap2.ex",
     "source_hash": "5a83514607ca0349fa15a1ed96bbd0ed3b850df03c18b5a399a6aa03be4a8431",
     "spawns": []
   },
   "pre-re/jobs/1-1/swordman.txt|script|3_blank_1_a::SwdTrap3|job_sword1:17:174": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.M3Blank1ASwdtrap3",
-    "output_hash": "857ce2d1b6ba990c98031d52935fbcba698e94cc687847e7eea4a66115b65ac0",
+    "output_hash": "40ed00f8c4b9150f3424016ca716e266972168ac00ffa431650092c7618b7af8",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/swordman/3_blank_1_a_swdtrap3.ex",
     "source_hash": "0b932b8f5c46a949e95882ba61d7f2346345d08dd68f73b6f8f2800527e28e53",
     "spawns": []
@@ -19462,7 +19462,7 @@
   },
   "pre-re/jobs/1-1/swordman.txt|script|Swordman#swd_1|izlude_in:74:172": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.Swordman",
-    "output_hash": "900f686d5bc9dcf8652ba2d71bc3653ef0b1a69f12c30e7fb9d1b574fd0e619a",
+    "output_hash": "bdfbf5ed5318e640f866e85cae64ed42a23a51bbd723c3b08c3cab4c1f7aa5c5",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/swordman/swordman.ex",
     "source_hash": "19410cef74964876ac5a0ab0fc695b4c5b4f8cb18b72c28a6d8b7a0d7aa82a98",
     "spawns": [
@@ -19572,7 +19572,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.TestHallStaff7245",
     "output_hash": "50aa24620e5902574645d86a118a3cab5cde2205b8f16d419ade611268890a5b",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/swordman/test_hall_staff_7_245.ex",
-    "source_hash": "dd5944d4d1180b43422eae46b271f06fbbdbca1da0be2e1cf3e1444db79ed69d",
+    "source_hash": "c2ac5f951346812d67a70607003b194d07e573d06a563bc37f628b04069384d7",
     "spawns": [
       {
         "name": "Test Hall Staff",
@@ -19581,12 +19581,12 @@
         "y": 245,
         "map": "job_sword1",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "Test Hall Staff#swd_4",
         "trigger": [
           1,
           3
-        ],
-        "sprite": 45,
-        "unique_name": "Test Hall Staff#swd_4"
+        ]
       }
     ]
   },
@@ -19594,7 +19594,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.TestHallStaff8207",
     "output_hash": "cad5e0660f5e6f35b609006941f70cc3210838f324a114c004e1fb2bc6108d38",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/swordman/test_hall_staff_8_207.ex",
-    "source_hash": "d4b4a4e11f5124e35300130702f699f75cc6e22e2ac52c1b00a1f2a9504039ee",
+    "source_hash": "d0c046207b9980d67b176d34a4fcaef4b697df85a7b099cf63d334e01dc39aed",
     "spawns": [
       {
         "name": "Test Hall Staff",
@@ -19603,12 +19603,12 @@
         "y": 207,
         "map": "job_sword1",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "Test Hall Staff#swd_5",
         "trigger": [
           1,
           6
-        ],
-        "sprite": 45,
-        "unique_name": "Test Hall Staff#swd_5"
+        ]
       }
     ]
   },
@@ -19616,7 +19616,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.TestHallStaff8169",
     "output_hash": "600e354596ae9f975eb656489b123160c5ed0739c762b8011f2d1cc65534a650",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/swordman/test_hall_staff_8_169.ex",
-    "source_hash": "b99ad60de534d0382d3e2f0b150f34a65d92a0edf44d7c3173c2adc086953dce",
+    "source_hash": "dcb5b6942b44d0777ae6770c7e1b4266f1f7318fa6cdb83b3d3fcbd5c1eee3d8",
     "spawns": [
       {
         "name": "Test Hall Staff",
@@ -19625,12 +19625,12 @@
         "y": 169,
         "map": "job_sword1",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "Test Hall Staff#swd_6",
         "trigger": [
           1,
           6
-        ],
-        "sprite": 45,
-        "unique_name": "Test Hall Staff#swd_6"
+        ]
       }
     ]
   },
@@ -19638,7 +19638,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.TestHallStaff192244",
     "output_hash": "34d54d027a0439427774454f4eb3de1a3194dad4e6958fb8d73d1cd8c091395b",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/swordman/test_hall_staff_192_244.ex",
-    "source_hash": "fe95c8a1601d74901587c1b5ffc5a6871d64ae3bedd846e22e773d80ba0180bd",
+    "source_hash": "53183e940f33841f47be8eee33ecbeccc395acc02da32f43c134a0ab70986f66",
     "spawns": [
       {
         "name": "Test Hall Staff",
@@ -19647,12 +19647,12 @@
         "y": 244,
         "map": "job_sword1",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "Test Hall Staff#swd_7",
         "trigger": [
           1,
           3
-        ],
-        "sprite": 45,
-        "unique_name": "Test Hall Staff#swd_7"
+        ]
       }
     ]
   },
@@ -19660,7 +19660,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.TestHallStaff193207",
     "output_hash": "e0ba0f8425f0cad26f6e943e0b302bf4a510c2acd4fb45fb095ef85ca1c1c6ac",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/swordman/test_hall_staff_193_207.ex",
-    "source_hash": "8c9c22e22e44b08d14308689f20f178b7b787504a9a3d4b2e949db9fc7026eac",
+    "source_hash": "ce01c1e3927534f33b053dde3f5fdf6967eaf767421ebf02c4a33ba96546bba9",
     "spawns": [
       {
         "name": "Test Hall Staff",
@@ -19669,12 +19669,12 @@
         "y": 207,
         "map": "job_sword1",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "Test Hall Staff#swd_8",
         "trigger": [
           1,
           3
-        ],
-        "sprite": 45,
-        "unique_name": "Test Hall Staff#swd_8"
+        ]
       }
     ]
   },
@@ -19682,7 +19682,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.TestHallStaff193168",
     "output_hash": "9be8255004af87c7975f83f3dd3aea641b0f0f75cd857ef9fd3cc32bf4b270ba",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/swordman/test_hall_staff_193_168.ex",
-    "source_hash": "885368433f3d41b257a16e1a1c2ea4f31176cbff79c2eb9f6e23eef50cdc96d6",
+    "source_hash": "2bcee5324450e7e26d1411034a4cea7714b9ce997acfffa4c2b5cc30f40d4d39",
     "spawns": [
       {
         "name": "Test Hall Staff",
@@ -19691,12 +19691,12 @@
         "y": 168,
         "map": "job_sword1",
         "dir": 0,
+        "sprite": 45,
+        "unique_name": "Test Hall Staff#swd_9",
         "trigger": [
           1,
           3
-        ],
-        "sprite": 45,
-        "unique_name": "Test Hall Staff#swd_9"
+        ]
       }
     ]
   },
@@ -19764,12 +19764,12 @@
         "y": 105,
         "map": "job_cru",
         "dir": 4,
+        "sprite": 45,
+        "unique_name": " Summoner#cr5",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 45,
-        "unique_name": " Summoner#cr5"
+        ]
       }
     ]
   },
@@ -19786,12 +19786,12 @@
         "y": 180,
         "map": "job_cru",
         "dir": 4,
+        "sprite": 45,
+        "unique_name": "Monster Summon#cr5",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 45,
-        "unique_name": "Monster Summon#cr5"
+        ]
       }
     ]
   },
@@ -20417,7 +20417,7 @@
   },
   "pre-re/mobs/dungeons/lhz_dun.txt|script|summon_boss_lt|lhz_dun03:2:2": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Mobs.Dungeons.LhzDun.SummonBossLt",
-    "output_hash": "6c2e8e28a2161b900b4d02628cf27a37395441353b3f7c4b78dfa687a1ff35a9",
+    "output_hash": "cf9e944b1e0885b49897ed922f9e0138869293dbdbeaee23d04a6ad6e4c00393",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/mobs/dungeons/lhz_dun/summon_boss_lt.ex",
     "source_hash": "7bd68a01ce3a503075479b3051ba1e566e5b213d4c5f2e880c271de8c1719b87",
     "spawns": []
@@ -20453,11 +20453,11 @@
         "y": 177,
         "map": "ve_fild06",
         "dir": 0,
+        "sprite": 45,
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45
+        ]
       }
     ]
   },
@@ -20793,12 +20793,12 @@
         "y": 67,
         "map": "prontera",
         "dir": 0,
+        "sprite": 111,
+        "unique_name": " #prt_key-1-1",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 111,
-        "unique_name": " #prt_key-1-1"
+        ]
       }
     ]
   },
@@ -20833,12 +20833,12 @@
         "y": 28,
         "map": "pay_arche",
         "dir": 0,
+        "sprite": 111,
+        "unique_name": "Buddha Statue#paypuzz6",
         "trigger": [
           5,
           5
-        ],
-        "sprite": 111,
-        "unique_name": "Buddha Statue#paypuzz6"
+        ]
       }
     ]
   },
@@ -20927,12 +20927,12 @@
         "y": 59,
         "map": "gef_fild09",
         "dir": 0,
+        "sprite": 111,
+        "unique_name": "Hidden Cave#hellion",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 111,
-        "unique_name": "Hidden Cave#hellion"
+        ]
       }
     ]
   },
@@ -20949,12 +20949,12 @@
         "y": 101,
         "map": "morocc_in",
         "dir": 3,
+        "sprite": 735,
+        "unique_name": "Old Scholar Tyus#hellion",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 735,
-        "unique_name": "Old Scholar Tyus#hellion"
+        ]
       }
     ]
   },
@@ -20989,12 +20989,12 @@
         "y": 200,
         "map": "geffen",
         "dir": 3,
+        "sprite": 754,
+        "unique_name": "Sage Welshyun#hellion",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 754,
-        "unique_name": "Sage Welshyun#hellion"
+        ]
       }
     ]
   },
@@ -21065,12 +21065,12 @@
         "y": 123,
         "map": "prt_monk",
         "dir": 0,
+        "sprite": 139,
+        "unique_name": "#tu_monk",
         "trigger": [
           10,
           10
-        ],
-        "sprite": 139,
-        "unique_name": "#tu_monk"
+        ]
       }
     ]
   },
@@ -21122,12 +21122,12 @@
         "y": 238,
         "map": "prt_monk",
         "dir": 5,
+        "sprite": 139,
+        "unique_name": "Boy#boy_voi",
         "trigger": [
           5,
           5
-        ],
-        "sprite": 139,
-        "unique_name": "Boy#boy_voi"
+        ]
       }
     ]
   },
@@ -21319,12 +21319,12 @@
         "y": 261,
         "map": "prt_monk",
         "dir": 0,
+        "sprite": 139,
+        "unique_name": "Weapon Merchant#tu",
         "trigger": [
           9,
           9
-        ],
-        "sprite": 139,
-        "unique_name": "Weapon Merchant#tu"
+        ]
       }
     ]
   },
@@ -23222,11 +23222,11 @@
         "y": 33,
         "map": "kh_kiehl01",
         "dir": 0,
+        "sprite": 45,
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45
+        ]
       }
     ]
   },
@@ -23243,11 +23243,11 @@
         "y": 39,
         "map": "kh_kiehl01",
         "dir": 0,
+        "sprite": 45,
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45
+        ]
       }
     ]
   },
@@ -23264,11 +23264,11 @@
         "y": 107,
         "map": "kh_kiehl01",
         "dir": 0,
+        "sprite": 45,
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45
+        ]
       }
     ]
   },
@@ -23285,11 +23285,11 @@
         "y": 178,
         "map": "kh_kiehl01",
         "dir": 0,
+        "sprite": 45,
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45
+        ]
       }
     ]
   },
@@ -23306,11 +23306,11 @@
         "y": 186,
         "map": "kh_kiehl01",
         "dir": 0,
+        "sprite": 45,
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45
+        ]
       }
     ]
   },
@@ -23902,11 +23902,11 @@
         "y": 56,
         "map": "kh_kiehl02",
         "dir": 0,
+        "sprite": 45,
         "trigger": [
           1,
           1
-        ],
-        "sprite": 45
+        ]
       }
     ]
   },
@@ -23930,11 +23930,11 @@
         "y": 27,
         "map": "kh_mansion",
         "dir": 0,
+        "sprite": 45,
         "trigger": [
           2,
           2
-        ],
-        "sprite": 45
+        ]
       }
     ]
   },
@@ -24133,12 +24133,12 @@
         "y": 79,
         "map": "kh_mansion",
         "dir": 4,
+        "sprite": 727,
+        "unique_name": "Mysterious Woman#kh",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 727,
-        "unique_name": "Mysterious Woman#kh"
+        ]
       }
     ]
   },
@@ -24243,12 +24243,12 @@
         "y": 179,
         "map": "yuno_in01",
         "dir": 4,
+        "sprite": 46,
+        "unique_name": "Pub Master#kh",
         "trigger": [
           5,
           5
-        ],
-        "sprite": 46,
-        "unique_name": "Pub Master#kh"
+        ]
       }
     ]
   },
@@ -24379,11 +24379,11 @@
         "y": 141,
         "map": "yuno",
         "dir": 0,
+        "sprite": 45,
         "trigger": [
           2,
           2
-        ],
-        "sprite": 45
+        ]
       }
     ]
   },
@@ -24482,12 +24482,12 @@
         "y": 142,
         "map": "kh_school",
         "dir": 6,
+        "sprite": 893,
+        "unique_name": "Student#kha",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 893,
-        "unique_name": "Student#kha"
+        ]
       }
     ]
   },
@@ -24594,12 +24594,12 @@
         "y": 178,
         "map": "kh_vila",
         "dir": 4,
+        "sprite": 81,
+        "unique_name": "Vicious Dog#khp1",
         "trigger": [
           7,
           3
-        ],
-        "sprite": 81,
-        "unique_name": "Vicious Dog#khp1"
+        ]
       }
     ]
   },
@@ -24616,12 +24616,12 @@
         "y": 14,
         "map": "kh_vila",
         "dir": 0,
+        "sprite": 139,
+        "unique_name": "Wall#kh",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 139,
-        "unique_name": "Wall#kh"
+        ]
       }
     ]
   },
@@ -24960,11 +24960,11 @@
         "y": 63,
         "map": "payon",
         "dir": 3,
+        "sprite": 88,
         "trigger": [
           3,
           3
-        ],
-        "sprite": 88
+        ]
       }
     ]
   },
@@ -25130,12 +25130,12 @@
         "y": 72,
         "map": "morocc_in",
         "dir": 7,
+        "sprite": 741,
+        "unique_name": "Spiteful-Looking Bard#bs",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 741,
-        "unique_name": "Spiteful-Looking Bard#bs"
+        ]
       }
     ]
   },
@@ -25152,12 +25152,12 @@
         "y": 70,
         "map": "niflheim",
         "dir": 1,
+        "sprite": 800,
+        "unique_name": "Yhelle#bard_chick1",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 800,
-        "unique_name": "Yhelle#bard_chick1"
+        ]
       }
     ]
   },
@@ -25174,12 +25174,12 @@
         "y": 205,
         "map": "niflheim",
         "dir": 3,
+        "sprite": 800,
+        "unique_name": "Yhelle#bard_chick2",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 800,
-        "unique_name": "Yhelle#bard_chick2"
+        ]
       }
     ]
   },
@@ -25196,12 +25196,12 @@
         "y": 203,
         "map": "niflheim",
         "dir": 5,
+        "sprite": 800,
+        "unique_name": "Yhelle#bard_chick3",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 800,
-        "unique_name": "Yhelle#bard_chick3"
+        ]
       }
     ]
   },
@@ -25218,12 +25218,12 @@
         "y": 81,
         "map": "niflheim",
         "dir": 7,
+        "sprite": 800,
+        "unique_name": "Yhelle#bard_chick4",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 800,
-        "unique_name": "Yhelle#bard_chick4"
+        ]
       }
     ]
   },
@@ -25240,12 +25240,12 @@
         "y": 144,
         "map": "niflheim",
         "dir": 3,
+        "sprite": 800,
+        "unique_name": "Yhelle#bard_chick5",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 800,
-        "unique_name": "Yhelle#bard_chick5"
+        ]
       }
     ]
   },
@@ -25262,12 +25262,12 @@
         "y": 328,
         "map": "prontera",
         "dir": 3,
+        "sprite": 89,
+        "unique_name": "Young Man#bard_q1",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 89,
-        "unique_name": "Young Man#bard_q1"
+        ]
       }
     ]
   },
@@ -25427,12 +25427,12 @@
         "y": 351,
         "map": "prontera",
         "dir": 0,
+        "sprite": 111,
+        "unique_name": "#tour",
         "trigger": [
           5,
           5
-        ],
-        "sprite": 111,
-        "unique_name": "#tour"
+        ]
       }
     ]
   },
@@ -25597,11 +25597,11 @@
         "y": 96,
         "map": "alberta",
         "dir": 5,
+        "sprite": 98,
         "trigger": [
           7,
           7
-        ],
-        "sprite": 98
+        ]
       }
     ]
   },
@@ -25793,12 +25793,12 @@
         "y": 162,
         "map": "prt_are01",
         "dir": 0,
+        "sprite": 700,
+        "unique_name": "Kienna#1st",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 700,
-        "unique_name": "Kienna#1st"
+        ]
       },
       {
         "name": "Kienna",
@@ -25807,12 +25807,12 @@
         "y": 150,
         "map": "prt_are01",
         "dir": 0,
+        "sprite": 700,
+        "unique_name": "Kienna#2nd",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 700,
-        "unique_name": "Kienna#2nd"
+        ]
       },
       {
         "name": "Kienna",
@@ -25821,12 +25821,12 @@
         "y": 138,
         "map": "prt_are01",
         "dir": 0,
+        "sprite": 700,
+        "unique_name": "Kienna#3rd",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 700,
-        "unique_name": "Kienna#3rd"
+        ]
       },
       {
         "name": "Kienna",
@@ -25835,12 +25835,12 @@
         "y": 147,
         "map": "prt_are01",
         "dir": 0,
+        "sprite": 700,
+        "unique_name": "Kienna#4th",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 700,
-        "unique_name": "Kienna#4th"
+        ]
       },
       {
         "name": "Kienna",
@@ -25849,12 +25849,12 @@
         "y": 140,
         "map": "prt_are01",
         "dir": 0,
+        "sprite": 700,
+        "unique_name": "Kienna#5th",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 700,
-        "unique_name": "Kienna#5th"
+        ]
       },
       {
         "name": "Kienna",
@@ -25863,12 +25863,12 @@
         "y": 140,
         "map": "prt_are01",
         "dir": 0,
+        "sprite": 700,
+        "unique_name": "Kienna#6th",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 700,
-        "unique_name": "Kienna#6th"
+        ]
       },
       {
         "name": "Kienna",
@@ -25877,12 +25877,12 @@
         "y": 160,
         "map": "prt_are01",
         "dir": 0,
+        "sprite": 700,
+        "unique_name": "Kienna#7th",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 700,
-        "unique_name": "Kienna#7th"
+        ]
       },
       {
         "name": "Kienna",
@@ -25891,12 +25891,12 @@
         "y": 159,
         "map": "prt_are01",
         "dir": 0,
+        "sprite": 700,
+        "unique_name": "Kienna#8th",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 700,
-        "unique_name": "Kienna#8th"
+        ]
       }
     ]
   },
@@ -25913,12 +25913,12 @@
         "y": 174,
         "map": "in_rogue",
         "dir": 2,
+        "sprite": 705,
+        "unique_name": "Killer#Rogueguild",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 705,
-        "unique_name": "Killer#Rogueguild"
+        ]
       }
     ]
   },
@@ -26013,11 +26013,11 @@
         "y": 57,
         "map": "prt_in",
         "dir": 3,
+        "sprite": 85,
         "trigger": [
           4,
           4
-        ],
-        "sprite": 85
+        ]
       }
     ]
   },
@@ -26034,11 +26034,11 @@
         "y": 88,
         "map": "prt_in",
         "dir": 5,
+        "sprite": 85,
         "trigger": [
           3,
           3
-        ],
-        "sprite": 85
+        ]
       }
     ]
   },
@@ -26204,7 +26204,7 @@
   },
   "re/cities/dewata.txt|script|Alberta Sailor#dewata|dewata:229:49": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.AlbertaSailor",
-    "output_hash": "c689bfefdc3be60bb00298f4849d11c0dda02e337bc1e401175aabe397b8f0e1",
+    "output_hash": "69864c8ce2759db4b305b27bb71da4d49679825aacf4e39bcd9c15fb96ccbb7e",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/alberta_sailor.ex",
     "source_hash": "29908209029f9b54c92ec9a359609be016228a99fc71429d0772a1117731fd65",
     "spawns": [
@@ -26222,7 +26222,7 @@
   },
   "re/cities/dewata.txt|script|Dewata Sailor#alberta|alberta:212:202": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.DewataSailor",
-    "output_hash": "0283bdd49a46495fe1c7da9680ec948a00ff456ba54bf483c35131fea3ccde82",
+    "output_hash": "7ca9feac6ef29b8fdd7b3a7c0a4fc8ccff24db915f3c7048ae852c9f043e6138",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/dewata_sailor.ex",
     "source_hash": "ef8934055b8c862a8f9c1888f196ca8b082349848446390c1b356b2aa73c0a59",
     "spawns": [
@@ -26240,7 +26240,7 @@
   },
   "re/cities/dewata.txt|script|Dieting Lady#dew|dewata:204:230": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.DietingLady",
-    "output_hash": "563e6ad4812428632e64b04e0839c59ff27f6a1886e3e2a85d522bf75ee930ce",
+    "output_hash": "6cfae0eb5e0fc004f544c102d605d532c10f47c2899ec1acab77bb9e8ee8add6",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/dieting_lady.ex",
     "source_hash": "b00414df8105c0ff0cf7d6321261d2320359e9a6ed9baf25c2755f7594b44957",
     "spawns": [
@@ -26294,7 +26294,7 @@
   },
   "re/cities/dewata.txt|script|Gourmet#dew|dewata:147:107": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Gourmet",
-    "output_hash": "6320b56f85f8af56347d137d3620d6895fcc1e96e4a5b73b58225e8499e23972",
+    "output_hash": "9af074f0b47d383de239089a872509f2125f2df1ccccdc71d2e7188098a721bb",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/gourmet.ex",
     "source_hash": "72841b2e797cb764ad2736e2f379d4b988a2a7f48c0dc58112fa76e0fdbf8c3b",
     "spawns": [
@@ -26363,7 +26363,7 @@
   },
   "re/cities/dewata.txt|script|Lazy Young Man#dew|dewata:114:243": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.LazyYoungMan",
-    "output_hash": "54f181e81d33128f18aae1cc86b78be34119c06c150b5f7fedbfd543956f202d",
+    "output_hash": "c29c0dc38268cd79c680eea80838ab0056354b5399ecbb5353a5427dcb167557",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/lazy_young_man.ex",
     "source_hash": "2cef6985b297dc7c64d59d2f35f7253d52c1a36fdcb29784cc9626d5c04f228d",
     "spawns": [
@@ -26374,18 +26374,18 @@
         "y": 243,
         "map": "dewata",
         "dir": 6,
+        "sprite": 536,
+        "unique_name": "Lazy Young Man#dew",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 536,
-        "unique_name": "Lazy Young Man#dew"
+        ]
       }
     ]
   },
   "re/cities/dewata.txt|script|Little Kid in Town#dew|dewata:269:208": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.LittleKidInTown",
-    "output_hash": "e0d0452f69ace87aee3a2337cc0dd038296ce18f192f2f786a6fe09591c6f9e5",
+    "output_hash": "14c085005add18f967d10adb6edc65225110a6623430c4d3f60de722da2a9668",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/little_kid_in_town.ex",
     "source_hash": "2cc01ab5ad8fc832fb48b13b4434b4e9c8f6bdcd43c769409e085ba317d45124",
     "spawns": [
@@ -26396,18 +26396,18 @@
         "y": 208,
         "map": "dewata",
         "dir": 4,
+        "sprite": 538,
+        "unique_name": "Little Kid in Town#dew",
         "trigger": [
           2,
           3
-        ],
-        "sprite": 538,
-        "unique_name": "Little Kid in Town#dew"
+        ]
       }
     ]
   },
   "re/cities/dewata.txt|script|Lodge Employee#dew|dewata:245:244": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.LodgeEmployee",
-    "output_hash": "4e081141c38ce3c88b92e8f1857e4d38f82532cca3734e827c533df618178cbf",
+    "output_hash": "75a2996e8d160cd1ef6deb324b98b2b68343ab30f3699150f3b8f5b0eca5c4a5",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/lodge_employee.ex",
     "source_hash": "e5e86dac8d4ae0abdf93a758d91491b8ab4983f961323cf2b564c571bb83badc",
     "spawns": [
@@ -26418,18 +26418,18 @@
         "y": 244,
         "map": "dewata",
         "dir": 4,
+        "sprite": 536,
+        "unique_name": "Lodge Employee#dew",
         "trigger": [
           2,
           3
-        ],
-        "sprite": 536,
-        "unique_name": "Lodge Employee#dew"
+        ]
       }
     ]
   },
   "re/cities/dewata.txt|script|Lodge Owner#dew|dewata:211:272": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.LodgeOwner",
-    "output_hash": "35d47505b09c1c87303d373834c9fb090d9f13971c38e8823152f2647e062f85",
+    "output_hash": "9800fd805638b22c40b0e649a39f63a5fd5863ed2e49e4a5ac1b9288bd952e78",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/lodge_owner.ex",
     "source_hash": "2344ffeeb240b37b31dcc728c8b8ad86db2072123f5b7b7af3aad20cbcada459",
     "spawns": [
@@ -26440,18 +26440,18 @@
         "y": 272,
         "map": "dewata",
         "dir": 4,
+        "sprite": 534,
+        "unique_name": "Lodge Owner#dew",
         "trigger": [
           2,
           3
-        ],
-        "sprite": 534,
-        "unique_name": "Lodge Owner#dew"
+        ]
       }
     ]
   },
   "re/cities/dewata.txt|script|Majya#dew|dewata:228:177": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Majya",
-    "output_hash": "7a70bfdec223d5d94b550cbcd712e706e87550333817ab90a3b9930600e6e680",
+    "output_hash": "a370ad5a34eb14ab80a2c8f7ab324b772473d6c7dac4f53132abd43d721efbd3",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/majya.ex",
     "source_hash": "fe6e0d23c5992dd588e8b66d67161524b0e9f0ca826527193c4fa9a9463f85fe",
     "spawns": [
@@ -26462,18 +26462,18 @@
         "y": 177,
         "map": "dewata",
         "dir": 4,
+        "sprite": 538,
+        "unique_name": "Majya#dew",
         "trigger": [
           2,
           3
-        ],
-        "sprite": 538,
-        "unique_name": "Majya#dew"
+        ]
       }
     ]
   },
   "re/cities/dewata.txt|script|Missing Child#dew|dewata:278:100": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.MissingChild",
-    "output_hash": "625b8d443127b4f47c9dee1f6d7de62f49837b53b301a0424d2f1a2ab4eb5dc0",
+    "output_hash": "a9650235aa115acc3003f2fddb67b87e399795a918e05937d497a77a9d4cdce2",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/missing_child.ex",
     "source_hash": "c599c7787bfdbb6707ec598566f3edb5756e9fb3377a414d2af740e303295380",
     "spawns": [
@@ -26484,12 +26484,12 @@
         "y": 100,
         "map": "dewata",
         "dir": 4,
+        "sprite": 703,
+        "unique_name": "Missing Child#dew",
         "trigger": [
           2,
           3
-        ],
-        "sprite": 703,
-        "unique_name": "Missing Child#dew"
+        ]
       }
     ]
   },
@@ -26567,7 +26567,7 @@
   },
   "re/cities/dewata.txt|script|Monk#dewt1|dewata:75:122": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Monk75122",
-    "output_hash": "baaae0759173b4e8e728840b2a8ceb9eb209ebe513bd0f38704248013b6956cf",
+    "output_hash": "cf21be13ea01941c37bf997cc1eadc724e35a956e6ae59e6fc0b33d23041db9f",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/monk_75_122.ex",
     "source_hash": "1ad3437d9cfc4e875798abb4d8da15610430d5107e708b29a9b10970bb3e7327",
     "spawns": [
@@ -26585,7 +26585,7 @@
   },
   "re/cities/dewata.txt|script|Monk#dewt2|dewata:69:101": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Monk69101",
-    "output_hash": "72dacd0497ef137c6fcc41be3b77dc5f2c1e30651969a7b96f8cff88734aade3",
+    "output_hash": "f30d231d968ac3b7c0c65649c7ab8ef42ab77092185e08ccd5d76f9f6e44accd",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/monk_69_101.ex",
     "source_hash": "b8a8a10fd658166a6ffee4575de5d20c52dffedf0dcbef88303eda4772e4fd96",
     "spawns": [
@@ -26621,7 +26621,7 @@
   },
   "re/cities/dewata.txt|script|Mum#dew|dewata:249:87": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Mum",
-    "output_hash": "87ff2922c28b0497c5aef5903c805feed4ba347e6c38ce9a36e87fec81de2274",
+    "output_hash": "0515271b889600d1fbf452311296f4056bd61868830910e27514b0ef388d28ad",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/mum.ex",
     "source_hash": "4bfd3a40b36162df89b3c3b386eb6576581ab2d16d8144b9dfd69f16deb97dde",
     "spawns": [
@@ -26632,18 +26632,18 @@
         "y": 87,
         "map": "dewata",
         "dir": 4,
+        "sprite": 101,
+        "unique_name": "Mum#dew",
         "trigger": [
           2,
           3
-        ],
-        "sprite": 101,
-        "unique_name": "Mum#dew"
+        ]
       }
     ]
   },
   "re/cities/dewata.txt|script|Poppa#dew|dewata:251:85": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Poppa",
-    "output_hash": "8e528fe7190e55bf46b3a6b1bffc6cb14c76ba24cc7347489587308498e11104",
+    "output_hash": "93f0761664eaf4da2a2c26165832e1fbbb1e1d41679e22fd48017df23ffdfc5f",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/poppa.ex",
     "source_hash": "558f676e704438c7a7c0f8f0fb658dec1fdd5e2697f0f42da8d708f0bf4f80bc",
     "spawns": [
@@ -26654,12 +26654,12 @@
         "y": 85,
         "map": "dewata",
         "dir": 6,
+        "sprite": 97,
+        "unique_name": "Poppa#dew",
         "trigger": [
           2,
           3
-        ],
-        "sprite": 97,
-        "unique_name": "Poppa#dew"
+        ]
       }
     ]
   },
@@ -26682,7 +26682,7 @@
   },
   "re/cities/dewata.txt|script|Restauranteur#dew|dewata:146:109": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Restauranteur",
-    "output_hash": "b0fe80bb9a02b06535c26b4f812830f777e3581d81d17104719387088b4f00fb",
+    "output_hash": "5c4976b0165fcedfb41fa363f6a7076f33a18c783f9ffbc2c6d9c321a201ad19",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/restauranteur.ex",
     "source_hash": "e0bbfe8a7a69a17d23a0c14419bb8b36b5464c8e57309105355db769f60656b8",
     "spawns": [
@@ -26700,7 +26700,7 @@
   },
   "re/cities/dewata.txt|script|Sarr#dew|dewata:227:129": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Sarr",
-    "output_hash": "0face97e347230312da734362ecbc979375f6badc53f6ba889addd89e9ceee85",
+    "output_hash": "f63d3bb2e553efa438728f89b358a0c78f39473ac5bc7b1e9a6dfe1720b35d31",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/sarr.ex",
     "source_hash": "3708d2dba76682ef865a2ae6ed49556cbe875b24dcbf3f4c8f9125e165963c71",
     "spawns": [
@@ -26711,18 +26711,18 @@
         "y": 129,
         "map": "dewata",
         "dir": 4,
+        "sprite": 538,
+        "unique_name": "Sarr#dew",
         "trigger": [
           2,
           3
-        ],
-        "sprite": 538,
-        "unique_name": "Sarr#dew"
+        ]
       }
     ]
   },
   "re/cities/dewata.txt|script|Semangat's Wife#dew|dewata:139:114": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SemangatSWife",
-    "output_hash": "ea8586a15ab30077469a4bb33837731f28f2bfb4ac39d353cf1b5ce1fadd4cff",
+    "output_hash": "4e7b17a0bbd4b1649f51320fa47334f8250be146a77838a1711a18cf10fbb992",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/semangat_s_wife.ex",
     "source_hash": "5e4165a97804d6a313b3b7f8b95d58ab06708b34748682738ed0a6f62429ec2f",
     "spawns": [
@@ -26776,7 +26776,7 @@
   },
   "re/cities/dewata.txt|script|Sipo#dew|dewata:193:145": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Sipo",
-    "output_hash": "599a48431de48dcc15dbd20cdf35862bd53ffab0a6d3f699a484ec846ff84ed9",
+    "output_hash": "02c596407f45488ebdd1eb402c105458ff39691428d5ef81b434b96742e11e39",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/sipo.ex",
     "source_hash": "27c660b56336007d4dc4fa276cae5fe099be8e3db19273c8d00336f8ce0190d8",
     "spawns": [
@@ -26787,18 +26787,18 @@
         "y": 145,
         "map": "dewata",
         "dir": 4,
+        "sprite": 538,
+        "unique_name": "Sipo#dew",
         "trigger": [
           2,
           3
-        ],
-        "sprite": 538,
-        "unique_name": "Sipo#dew"
+        ]
       }
     ]
   },
   "re/cities/dewata.txt|script|Siyak#dew|dewata:239:140": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Siyak",
-    "output_hash": "34a97c384e37a4e39fad5bbf3317c76ecbbe7e383da70558726ba1657a570f05",
+    "output_hash": "a701e8d49b99bf0ae6a439bc5736fab456f9e3bbd399d212d6d004ec2e6b6437",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/siyak.ex",
     "source_hash": "4c3c8ce651beb537db5148efe140d83e3c802fc2f72e94f0011cc940da461c14",
     "spawns": [
@@ -26809,18 +26809,18 @@
         "y": 140,
         "map": "dewata",
         "dir": 4,
+        "sprite": 539,
+        "unique_name": "Siyak#dew",
         "trigger": [
           2,
           3
-        ],
-        "sprite": 539,
-        "unique_name": "Siyak#dew"
+        ]
       }
     ]
   },
   "re/cities/dewata.txt|script|Small Shrine#dew1|dewata:89:191": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SmallShrine",
-    "output_hash": "3f547e3e9b3e7918f0e2b303e9479b6618f1d005733d54a368781f6ae83937b4",
+    "output_hash": "169ffe80fb474d58bc9f170ca1b1072eaf27674201f7dc142bb82c7455558bdf",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/small_shrine.ex",
     "source_hash": "22b3510be40cb01432e8d5d20f345a5fe51f6dd6586eba5265f8060d046f27ac",
     "spawns": [
@@ -26868,7 +26868,7 @@
   },
   "re/cities/dewata.txt|script|Sweet Married Couple#1|dewata:233:263": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SweetMarriedCouple",
-    "output_hash": "cbbaa6ae064abb9c3cc85a64fa2b64bdb887c3a075d7129dc0fecf152ea5144a",
+    "output_hash": "5c95f1912837b91bc9482e3a6c5079f8fdeb0c7f6ff9223c7e8a683831dc25f2",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/sweet_married_couple.ex",
     "source_hash": "d2d6869ec45ddccbef6656442002cf1c4199b9ad356c6d69be93a7e6bd32102b",
     "spawns": [
@@ -26879,18 +26879,18 @@
         "y": 263,
         "map": "dewata",
         "dir": 8,
+        "sprite": 828,
+        "unique_name": "Sweet Married Couple#1",
         "trigger": [
           2,
           3
-        ],
-        "sprite": 828,
-        "unique_name": "Sweet Married Couple#1"
+        ]
       }
     ]
   },
   "re/cities/dewata.txt|script|Sweet Married Couple#2|dewata:234:263": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SweetMarriedCouple234263",
-    "output_hash": "a48e7ee0b0477262440869165158d739e311e04b95b7cf4eeade84848d4bb524",
+    "output_hash": "66c68a74287943a1663c8b8c95539c540fe36e56c827c99230d7a24331e1b454",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/sweet_married_couple_234_263.ex",
     "source_hash": "7cf7995d3f47e738e552969572e6ab4c08daf3cd012db67e0bd403913cba3dc1",
     "spawns": [
@@ -26901,12 +26901,12 @@
         "y": 263,
         "map": "dewata",
         "dir": 8,
+        "sprite": 727,
+        "unique_name": "Sweet Married Couple#2",
         "trigger": [
           2,
           3
-        ],
-        "sprite": 727,
-        "unique_name": "Sweet Married Couple#2"
+        ]
       }
     ]
   },
@@ -26930,7 +26930,7 @@
   },
   "re/cities/dewata.txt|script|Tourist#dew-2|dewata:279:213": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Tourist279213",
-    "output_hash": "492ad64690f80322c3d20e0e74f9e799a682cbf94cb018fc5aa18de932662797",
+    "output_hash": "1627bd9a64e7e58c04c9c8c48eaabc829e133609cd12f6c258d9443acb168f24",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/tourist_279_213.ex",
     "source_hash": "07587bf85ee45e37dca224aec10b423e6040499656c9953bab9e2db13b05f893",
     "spawns": [
@@ -26941,12 +26941,12 @@
         "y": 213,
         "map": "dewata",
         "dir": 4,
+        "sprite": 887,
+        "unique_name": "Tourist#dew-2",
         "trigger": [
           2,
           3
-        ],
-        "sprite": 887,
-        "unique_name": "Tourist#dew-2"
+        ]
       }
     ]
   },
@@ -27078,7 +27078,7 @@
   },
   "re/cities/dewata.txt|script|Young Man#dew-1|dewata:221:237": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.YoungMan",
-    "output_hash": "264b97bf6de9597fbdc3c6fce01829d13d78d030075a9c5fcbef9ca2eb2de0b6",
+    "output_hash": "1163c5e25df925dff88e1b34e53efc84e4c0f56048b1e6698a8f5d7bf6babfe5",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/young_man.ex",
     "source_hash": "49713b21a88a27e2a70704e6d9dba9f23b508bfa62e609e74085af86719b047d",
     "spawns": [
@@ -28329,12 +28329,12 @@
         "y": 168,
         "map": "malangdo",
         "dir": 3,
+        "sprite": 558,
+        "unique_name": "Cat Trainer#mal1",
         "trigger": [
           0,
           8
-        ],
-        "sprite": 558,
-        "unique_name": "Cat Trainer#mal1"
+        ]
       }
     ]
   },
@@ -28423,12 +28423,12 @@
         "y": 120,
         "map": "malangdo",
         "dir": 5,
+        "sprite": 485,
+        "unique_name": "Wanderer#mal",
         "trigger": [
           5,
           1
-        ],
-        "sprite": 485,
-        "unique_name": "Wanderer#mal"
+        ]
       }
     ]
   },
@@ -28445,12 +28445,12 @@
         "y": 367,
         "map": "ma_fild01",
         "dir": 6,
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#01",
         "trigger": [
           2,
           2
-        ],
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#01"
+        ]
       },
       {
         "name": "Unidentified Creature",
@@ -28459,12 +28459,12 @@
         "y": 41,
         "map": "ma_fild02",
         "dir": 4,
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#05",
         "trigger": [
           2,
           2
-        ],
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#05"
+        ]
       },
       {
         "name": "Unidentified Creature",
@@ -28473,12 +28473,12 @@
         "y": 92,
         "map": "ma_scene01",
         "dir": 4,
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#09",
         "trigger": [
           2,
           2
-        ],
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#09"
+        ]
       }
     ]
   },
@@ -28495,12 +28495,12 @@
         "y": 116,
         "map": "ma_fild01",
         "dir": 4,
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#02",
         "trigger": [
           2,
           2
-        ],
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#02"
+        ]
       },
       {
         "name": "Unidentified Creature",
@@ -28509,12 +28509,12 @@
         "y": 150,
         "map": "ma_fild01",
         "dir": 6,
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#03",
         "trigger": [
           2,
           2
-        ],
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#03"
+        ]
       },
       {
         "name": "Unidentified Creature",
@@ -28523,12 +28523,12 @@
         "y": 221,
         "map": "ma_fild01",
         "dir": 6,
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#04",
         "trigger": [
           2,
           2
-        ],
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#04"
+        ]
       },
       {
         "name": "Unidentified Creature",
@@ -28537,12 +28537,12 @@
         "y": 324,
         "map": "ma_fild02",
         "dir": 4,
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#06",
         "trigger": [
           2,
           2
-        ],
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#06"
+        ]
       },
       {
         "name": "Unidentified Creature",
@@ -28551,12 +28551,12 @@
         "y": 296,
         "map": "ma_fild02",
         "dir": 6,
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#07",
         "trigger": [
           2,
           2
-        ],
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#07"
+        ]
       },
       {
         "name": "Unidentified Creature",
@@ -28565,12 +28565,12 @@
         "y": 263,
         "map": "ma_fild02",
         "dir": 4,
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#08",
         "trigger": [
           2,
           2
-        ],
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#08"
+        ]
       },
       {
         "name": "Unidentified Creature",
@@ -28579,12 +28579,12 @@
         "y": 139,
         "map": "ma_scene01",
         "dir": 4,
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#10",
         "trigger": [
           2,
           2
-        ],
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#10"
+        ]
       },
       {
         "name": "Unidentified Creature",
@@ -28593,12 +28593,12 @@
         "y": 112,
         "map": "ma_scene01",
         "dir": 6,
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#11",
         "trigger": [
           2,
           2
-        ],
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#11"
+        ]
       }
     ]
   },
@@ -29892,12 +29892,12 @@
         "y": 191,
         "map": "dicastes01",
         "dir": 5,
+        "sprite": 481,
+        "unique_name": "Traveler Ichack#info",
         "trigger": [
           2,
           2
-        ],
-        "sprite": 481,
-        "unique_name": "Traveler Ichack#info"
+        ]
       }
     ]
   },
@@ -31154,12 +31154,12 @@
         "y": 105,
         "map": "job_cru",
         "dir": 4,
+        "sprite": 45,
+        "unique_name": " Summoner#cr5",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 45,
-        "unique_name": " Summoner#cr5"
+        ]
       }
     ]
   },
@@ -31176,12 +31176,12 @@
         "y": 180,
         "map": "job_cru",
         "dir": 4,
+        "sprite": 45,
+        "unique_name": "Monster Summon#cr5",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 45,
-        "unique_name": "Monster Summon#cr5"
+        ]
       }
     ]
   },
@@ -32064,12 +32064,12 @@
         "y": 49,
         "map": "iz_ac01",
         "dir": 0,
+        "sprite": 111,
+        "unique_name": "#acKick",
         "trigger": [
           5,
           5
-        ],
-        "sprite": 111,
-        "unique_name": "#acKick"
+        ]
       },
       {
         "name": "",
@@ -32078,12 +32078,12 @@
         "y": 49,
         "map": "iz_ac01_a",
         "dir": 0,
+        "sprite": 111,
+        "unique_name": "#acKick_a",
         "trigger": [
           5,
           5
-        ],
-        "sprite": 111,
-        "unique_name": "#acKick_a"
+        ]
       },
       {
         "name": "",
@@ -32092,12 +32092,12 @@
         "y": 49,
         "map": "iz_ac01_b",
         "dir": 0,
+        "sprite": 111,
+        "unique_name": "#acKick_b",
         "trigger": [
           5,
           5
-        ],
-        "sprite": 111,
-        "unique_name": "#acKick_b"
+        ]
       },
       {
         "name": "",
@@ -32106,12 +32106,12 @@
         "y": 49,
         "map": "iz_ac01_c",
         "dir": 0,
+        "sprite": 111,
+        "unique_name": "#acKick_c",
         "trigger": [
           5,
           5
-        ],
-        "sprite": 111,
-        "unique_name": "#acKick_c"
+        ]
       },
       {
         "name": "",
@@ -32120,12 +32120,12 @@
         "y": 49,
         "map": "iz_ac01_d",
         "dir": 0,
+        "sprite": 111,
+        "unique_name": "#acKick_d",
         "trigger": [
           5,
           5
-        ],
-        "sprite": 111,
-        "unique_name": "#acKick_d"
+        ]
       }
     ]
   },
@@ -32142,12 +32142,12 @@
         "y": 208,
         "map": "gef_fild07",
         "dir": 6,
+        "sprite": 111,
+        "unique_name": "#acmageguide",
         "trigger": [
           7,
           7
-        ],
-        "sprite": 111,
-        "unique_name": "#acmageguide"
+        ]
       }
     ]
   },
@@ -32385,7 +32385,7 @@
   },
   "re/jobs/novice/academy.txt|script|Academy Receptionist#1|iz_ac01:100:39": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyReceptionist",
-    "output_hash": "153887acbead9047194cd368999f185fce46991cf6a7dbbaf4b4e2cd66b1ce6f",
+    "output_hash": "4336f131acff4699b619a63132f360e50ab93ce6666b4cc5482e0e210c3c1885",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/academy_receptionist.ex",
     "source_hash": "1912b062ff94f3ba8eda07ec01356f265b80c20011569f4906b99f662ac28757",
     "spawns": [
@@ -32443,7 +32443,7 @@
   },
   "re/jobs/novice/academy.txt|script|Academy Student#0|izlude:140:249": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyStudent",
-    "output_hash": "3bd0d0b2d52aefb8c637550fd99ae668500662cb7532b7efac38c44546fffcd1",
+    "output_hash": "cfe30adec729e5789871d6a7dd40542faab72d495fd065f1759b8450835eab65",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/academy_student.ex",
     "source_hash": "b34d2195e55dd5caaa64a869ea461028d7e63507c79cfd8f0dd01cb529f05299",
     "spawns": [
@@ -32501,7 +32501,7 @@
   },
   "re/jobs/novice/academy.txt|script|Acolyte Leader Alice#2|iz_ac02:156:169": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcolyteLeaderAlice",
-    "output_hash": "7b10cbf46d40d01ca9f91796274ad9f45fedc2bb560c13f692ccca99ceef8eea",
+    "output_hash": "a03a7ebd8da0a6410a54dbd8282647f471f4cdc77da58150edd970e6060c36f0",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/acolyte_leader_alice.ex",
     "source_hash": "864f700265e8493ebf51594117d9c680bafad5227a67c450551b1c85b4621dc9",
     "spawns": [
@@ -32559,7 +32559,7 @@
   },
   "re/jobs/novice/academy.txt|script|Adept Adventurer#ac|iz_ac01:45:80": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AdeptAdventurer",
-    "output_hash": "8bb6c14779ab7977e6b8ea59db8c7ebcfef0c11f8e0c7b01229dd1dda10f60a7",
+    "output_hash": "92d61f5ad5cc8322305dad3ef007bec6c714b725cda602989e8ec2bf5eb85c08",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/adept_adventurer.ex",
     "source_hash": "4ae44ec0dd732cc66006e3cafc75d8e6e7b0ef1890519932d471c76efa60505b",
     "spawns": [
@@ -32617,7 +32617,7 @@
   },
   "re/jobs/novice/academy.txt|script|Adept Adventurer#new_1-3|new_1-3:92:169": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AdeptAdventurer92169",
-    "output_hash": "c8c372ac24bd16333096da3d97071636464e7d3d9eb87ac61e2a3d02977f95ed",
+    "output_hash": "61b7f0adedec2da7d2e0c29c58a51e3dff143e7e69deedb2b97bf56d0c993fbf",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/adept_adventurer_92_169.ex",
     "source_hash": "d9f44a2190471e256a5cc066e2cf426a89badded3eb87c0ac51a65c00952c01d",
     "spawns": [
@@ -32704,12 +32704,12 @@
         "y": 75,
         "map": "izlude",
         "dir": 3,
+        "sprite": 858,
+        "unique_name": "Airship#iz",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 858,
-        "unique_name": "Airship#iz"
+        ]
       },
       {
         "name": "Airship",
@@ -32718,12 +32718,12 @@
         "y": 75,
         "map": "izlude_a",
         "dir": 3,
+        "sprite": 858,
+        "unique_name": "Airship#iz_a",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 858,
-        "unique_name": "Airship#iz_a"
+        ]
       },
       {
         "name": "Airship",
@@ -32732,12 +32732,12 @@
         "y": 75,
         "map": "izlude_b",
         "dir": 3,
+        "sprite": 858,
+        "unique_name": "Airship#iz_b",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 858,
-        "unique_name": "Airship#iz_b"
+        ]
       },
       {
         "name": "Airship",
@@ -32746,12 +32746,12 @@
         "y": 75,
         "map": "izlude_c",
         "dir": 3,
+        "sprite": 858,
+        "unique_name": "Airship#iz_c",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 858,
-        "unique_name": "Airship#iz_c"
+        ]
       },
       {
         "name": "Airship",
@@ -32760,18 +32760,18 @@
         "y": 75,
         "map": "izlude_d",
         "dir": 3,
+        "sprite": 858,
+        "unique_name": "Airship#iz_d",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 858,
-        "unique_name": "Airship#iz_d"
+        ]
       }
     ]
   },
   "re/jobs/novice/academy.txt|script|Arang#ac|iz_ac02:70:85": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Arang",
-    "output_hash": "a37edda3b788a29023d91f5823a49bbe4ae77bb2b52ecf84572cd1ec595af9e3",
+    "output_hash": "68a954299dbcaedeb5218f31adc4e27d69d6f33bd8f602ba7def39e18081f86b",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/arang.ex",
     "source_hash": "f01ebd63c81f84314935456539f85dc6c042840cc5781b6ccb96e15e447c4553",
     "spawns": [
@@ -32829,7 +32829,7 @@
   },
   "re/jobs/novice/academy.txt|script|Archer Teacher#ac|iz_ac02:65:109": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ArcherTeacher",
-    "output_hash": "0e5a8838a2c240866c8521f5bcf6aefc83074892962a503aaa3019cc17f8166f",
+    "output_hash": "f935018c29f9d2a3bdfe97b33fa2fba12e0510d637750ec3fe2835ca8560f382",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/archer_teacher.ex",
     "source_hash": "20422dc2d20042bcd879c0959cf3b605ba81709138cafaad5621f87e1cd6e3b7",
     "spawns": [
@@ -32887,7 +32887,7 @@
   },
   "re/jobs/novice/academy.txt|script|Arena#iz|izlude:207:167": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Arena",
-    "output_hash": "ccc92225f419672bd18e8b594024ef6800610eed0380d8fb5895e2b3a114f896",
+    "output_hash": "2fe873640b9b3800cdb96484c32289021aba739a3bb5188afe378bdb0d5afb3c",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/arena.ex",
     "source_hash": "a0a07227babde20fdc5d545f32270951402cb9d5f0cffa0db8b9a30a72277081",
     "spawns": [
@@ -32898,12 +32898,12 @@
         "y": 167,
         "map": "izlude",
         "dir": 3,
+        "sprite": 858,
+        "unique_name": "Arena#iz",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 858,
-        "unique_name": "Arena#iz"
+        ]
       },
       {
         "name": "Arena",
@@ -32912,12 +32912,12 @@
         "y": 167,
         "map": "izlude_a",
         "dir": 3,
+        "sprite": 858,
+        "unique_name": "Arena#iz_a",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 858,
-        "unique_name": "Arena#iz_a"
+        ]
       },
       {
         "name": "Arena",
@@ -32926,12 +32926,12 @@
         "y": 167,
         "map": "izlude_b",
         "dir": 3,
+        "sprite": 858,
+        "unique_name": "Arena#iz_b",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 858,
-        "unique_name": "Arena#iz_b"
+        ]
       },
       {
         "name": "Arena",
@@ -32940,12 +32940,12 @@
         "y": 167,
         "map": "izlude_c",
         "dir": 3,
+        "sprite": 858,
+        "unique_name": "Arena#iz_c",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 858,
-        "unique_name": "Arena#iz_c"
+        ]
       },
       {
         "name": "Arena",
@@ -32954,18 +32954,18 @@
         "y": 167,
         "map": "izlude_d",
         "dir": 3,
+        "sprite": 858,
+        "unique_name": "Arena#iz_d",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 858,
-        "unique_name": "Arena#iz_d"
+        ]
       }
     ]
   },
   "re/jobs/novice/academy.txt|script|Attribute Expert#ac|iz_ac01:53:74": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AttributeExpert",
-    "output_hash": "49013968550fc3ee35de433113f5eeb456b5e235ffa6ab2277ea5fb29a0519ab",
+    "output_hash": "e457c599599a84357d629b95f2058dca4f99c89864640a30e9d8bd14bbf501b1",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/attribute_expert.ex",
     "source_hash": "003af25b12a96f52d644d5644de5bf6acad30fde6ddbb759e98967ddbe5d4e9a",
     "spawns": [
@@ -33023,7 +33023,7 @@
   },
   "re/jobs/novice/academy.txt|script|Battle Instructor#08|iz_ac01:59:83": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor",
-    "output_hash": "e598e1e316d3b604d316a8c651c5159c716ec1497e4fa63ed5f9f6c47a8591cf",
+    "output_hash": "36ce98491cd130f421b3a9cf30379e17338fd0c973ff969bbf9eb27e16ec412c",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/battle_instructor.ex",
     "source_hash": "fe5e17d32e473c9a0172ac2077baf62a3b7ca0150bc19bd5f138fa08005f375f",
     "spawns": [
@@ -33150,12 +33150,12 @@
         "y": 94,
         "map": "izlude",
         "dir": 3,
+        "sprite": 858,
+        "unique_name": "Bulletin Board#iz",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 858,
-        "unique_name": "Bulletin Board#iz"
+        ]
       },
       {
         "name": "Bulletin Board",
@@ -33164,12 +33164,12 @@
         "y": 94,
         "map": "izlude_a",
         "dir": 3,
+        "sprite": 858,
+        "unique_name": "Bulletin Board#iz_a",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 858,
-        "unique_name": "Bulletin Board#iz_a"
+        ]
       },
       {
         "name": "Bulletin Board",
@@ -33178,12 +33178,12 @@
         "y": 94,
         "map": "izlude_b",
         "dir": 3,
+        "sprite": 858,
+        "unique_name": "Bulletin Board#iz_b",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 858,
-        "unique_name": "Bulletin Board#iz_b"
+        ]
       },
       {
         "name": "Bulletin Board",
@@ -33192,12 +33192,12 @@
         "y": 94,
         "map": "izlude_c",
         "dir": 3,
+        "sprite": 858,
+        "unique_name": "Bulletin Board#iz_c",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 858,
-        "unique_name": "Bulletin Board#iz_c"
+        ]
       },
       {
         "name": "Bulletin Board",
@@ -33206,12 +33206,12 @@
         "y": 94,
         "map": "izlude_d",
         "dir": 3,
+        "sprite": 858,
+        "unique_name": "Bulletin Board#iz_d",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 858,
-        "unique_name": "Bulletin Board#iz_d"
+        ]
       }
     ]
   },
@@ -33275,7 +33275,7 @@
   },
   "re/jobs/novice/academy.txt|script|Captain Carocc#iz|izlude:198:213": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc198213",
-    "output_hash": "577ac8c84a30f5f841b2f84260c9900230e309ef7493c5691a635746dbaf80fb",
+    "output_hash": "954d776fa2f8d5a7a80ff5847f05db235ffe5141699956191bffe0dd67b35c09",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/captain_carocc_198_213.ex",
     "source_hash": "1b48119e1ffb12f46dff1689aa7dc10735cf9d52a3bf05572cc218cdfafb8ad9",
     "spawns": [
@@ -33286,12 +33286,12 @@
         "y": 213,
         "map": "izlude",
         "dir": 3,
+        "sprite": 873,
+        "unique_name": "Captain Carocc#iz",
         "trigger": [
           5,
           5
-        ],
-        "sprite": 873,
-        "unique_name": "Captain Carocc#iz"
+        ]
       },
       {
         "name": "Captain Carocc",
@@ -33300,12 +33300,12 @@
         "y": 213,
         "map": "izlude_a",
         "dir": 3,
+        "sprite": 873,
+        "unique_name": "Captain Carocc#iz_a",
         "trigger": [
           5,
           5
-        ],
-        "sprite": 873,
-        "unique_name": "Captain Carocc#iz_a"
+        ]
       },
       {
         "name": "Captain Carocc",
@@ -33314,12 +33314,12 @@
         "y": 213,
         "map": "izlude_b",
         "dir": 3,
+        "sprite": 873,
+        "unique_name": "Captain Carocc#iz_b",
         "trigger": [
           5,
           5
-        ],
-        "sprite": 873,
-        "unique_name": "Captain Carocc#iz_b"
+        ]
       },
       {
         "name": "Captain Carocc",
@@ -33328,12 +33328,12 @@
         "y": 213,
         "map": "izlude_c",
         "dir": 3,
+        "sprite": 873,
+        "unique_name": "Captain Carocc#iz_c",
         "trigger": [
           5,
           5
-        ],
-        "sprite": 873,
-        "unique_name": "Captain Carocc#iz_c"
+        ]
       },
       {
         "name": "Captain Carocc",
@@ -33342,12 +33342,12 @@
         "y": 213,
         "map": "izlude_d",
         "dir": 3,
+        "sprite": 873,
+        "unique_name": "Captain Carocc#iz_d",
         "trigger": [
           5,
           5
-        ],
-        "sprite": 873,
-        "unique_name": "Captain Carocc#iz_d"
+        ]
       }
     ]
   },
@@ -33429,7 +33429,7 @@
   },
   "re/jobs/novice/academy.txt|script|Cream Puff#ac|iz_ac02:143:55": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CreamPuff",
-    "output_hash": "10955fe9e30d61025c70dc2d398f4306e5fee4c2c6287e4cf5db206fc85277d3",
+    "output_hash": "39c91ba56a04c67aa283c908dca3c368653484c6061e694148aefa838bb068d5",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/cream_puff.ex",
     "source_hash": "880c108ffb6ef1fd09c61ae49358e99aecb5ff7d4e3344d40dd16e7d86257a6b",
     "spawns": [
@@ -33487,7 +33487,7 @@
   },
   "re/jobs/novice/academy.txt|script|Criatura Academy Staff#0|izlude:122:207": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CriaturaAcademyStaff",
-    "output_hash": "b8c9592589bdf836fd4ef59465b8ee1a12b1357452294416ad0b3c1600b90a39",
+    "output_hash": "0831fc6142589c7e17319c9a6053a4d1a49f91f1636acfdb1005e433fc94c101",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/criatura_academy_staff.ex",
     "source_hash": "5e4cc260aa78882066a129d7da5b1f4cbe2fe0e9033375ecac809f3c7b860ac0",
     "spawns": [
@@ -33498,12 +33498,12 @@
         "y": 207,
         "map": "izlude",
         "dir": 3,
+        "sprite": 903,
+        "unique_name": "Criatura Academy Staff#0",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 903,
-        "unique_name": "Criatura Academy Staff#0"
+        ]
       },
       {
         "name": "Criatura Academy Staff",
@@ -33512,12 +33512,12 @@
         "y": 207,
         "map": "izlude_a",
         "dir": 3,
+        "sprite": 903,
+        "unique_name": "Criatura Academy Staff#a",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 903,
-        "unique_name": "Criatura Academy Staff#a"
+        ]
       },
       {
         "name": "Criatura Academy Staff",
@@ -33526,12 +33526,12 @@
         "y": 207,
         "map": "izlude_b",
         "dir": 3,
+        "sprite": 903,
+        "unique_name": "Criatura Academy Staff#b",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 903,
-        "unique_name": "Criatura Academy Staff#b"
+        ]
       },
       {
         "name": "Criatura Academy Staff",
@@ -33540,12 +33540,12 @@
         "y": 207,
         "map": "izlude_c",
         "dir": 3,
+        "sprite": 903,
+        "unique_name": "Criatura Academy Staff#c",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 903,
-        "unique_name": "Criatura Academy Staff#c"
+        ]
       },
       {
         "name": "Criatura Academy Staff",
@@ -33554,18 +33554,18 @@
         "y": 207,
         "map": "izlude_d",
         "dir": 3,
+        "sprite": 903,
+        "unique_name": "Criatura Academy Staff#d",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 903,
-        "unique_name": "Criatura Academy Staff#d"
+        ]
       }
     ]
   },
   "re/jobs/novice/academy.txt|script|Cultivated Red Plant#0|izlude:141:251": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CultivatedRedPlant",
-    "output_hash": "370a37a890571eaff8822fe8ad9636cccee70ba4a424ff1685394787cd138b65",
+    "output_hash": "8a0d08ac808c9ac7448d0d39df7bcf71a9db1acb0d015eac65c1886172e68a4f",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/cultivated_red_plant.ex",
     "source_hash": "365d66c2a9b49a7d8bcf264eac4dcfc161617d446507400d148a5cb1da6b1fac",
     "spawns": [
@@ -33576,12 +33576,12 @@
         "y": 251,
         "map": "izlude",
         "dir": 0,
+        "sprite": 1078,
+        "unique_name": "Cultivated Red Plant#0",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 1078,
-        "unique_name": "Cultivated Red Plant#0"
+        ]
       },
       {
         "name": "Cultivated Red Plant",
@@ -33590,12 +33590,12 @@
         "y": 251,
         "map": "izlude_a",
         "dir": 0,
+        "sprite": 1078,
+        "unique_name": "Cultivated Red Plant#a",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 1078,
-        "unique_name": "Cultivated Red Plant#a"
+        ]
       },
       {
         "name": "Cultivated Red Plant",
@@ -33604,12 +33604,12 @@
         "y": 251,
         "map": "izlude_b",
         "dir": 0,
+        "sprite": 1078,
+        "unique_name": "Cultivated Red Plant#b",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 1078,
-        "unique_name": "Cultivated Red Plant#b"
+        ]
       },
       {
         "name": "Cultivated Red Plant",
@@ -33618,12 +33618,12 @@
         "y": 251,
         "map": "izlude_c",
         "dir": 0,
+        "sprite": 1078,
+        "unique_name": "Cultivated Red Plant#c",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 1078,
-        "unique_name": "Cultivated Red Plant#c"
+        ]
       },
       {
         "name": "Cultivated Red Plant",
@@ -33632,18 +33632,18 @@
         "y": 251,
         "map": "izlude_d",
         "dir": 0,
+        "sprite": 1078,
+        "unique_name": "Cultivated Red Plant#d",
         "trigger": [
           3,
           3
-        ],
-        "sprite": 1078,
-        "unique_name": "Cultivated Red Plant#d"
+        ]
       }
     ]
   },
   "re/jobs/novice/academy.txt|script|Dacquoise#ac|iz_ac01:147:50": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Dacquoise",
-    "output_hash": "624ddd5da1f09a54fc9116c2b54909f38ce7855fbefaf2b58c3467d70dcef52f",
+    "output_hash": "62520ce3d0d8f717b636a70fdf4492aec8fc2b0e24798d54e545bd22a9920d37",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/dacquoise.ex",
     "source_hash": "fc75d47ea38741cc86bcd00a0634a2cee926c0469890695e959e6494df58a733",
     "spawns": [
@@ -33817,7 +33817,7 @@
   },
   "re/jobs/novice/academy.txt|script|Enchanter Almond J#iz|izlude:108:139": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterAlmondJ",
-    "output_hash": "a7673cdee9d0ed60b05a9047d47f56000243aa1b8bcaaad9fda1bd77cd32b6c6",
+    "output_hash": "cd7693d37b387f18f6d4b46f3ef577bfb160d48125a3b96b6c381f54d7e8360c",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/enchanter_almond_j.ex",
     "source_hash": "f74050cb0ca1ce055dd5a25e176d6170b5906c6f4c5047b3b629ebff468771fe",
     "spawns": [
@@ -33875,7 +33875,7 @@
   },
   "re/jobs/novice/academy.txt|script|Enchanter Mounds#iz|izlude:96:125": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterMounds",
-    "output_hash": "96027145dae659b8db0f96b73ad5b054b4212ecda827ad0c9d512d54f991ec1b",
+    "output_hash": "78c12022cf8f5b522c8a773fcf196d4d2b3df63819e481a1d6c7e19f07e8695d",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/enchanter_mounds.ex",
     "source_hash": "69a18370b5b01975f5d97d6cc45d1b563a2de9e210c7ada23a4bcc54e14db4cf",
     "spawns": [
@@ -34009,7 +34009,7 @@
   },
   "re/jobs/novice/academy.txt|script|Friendly Poring#ac|new_1-3:99:169": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.FriendlyPoring",
-    "output_hash": "a5e16eff5fdc44d0d26cb553935c2308f4ae4b7c819f58dc1bc3f96a289f016a",
+    "output_hash": "71f0025599c02f8e9d54ec8751ea324e69cedd627e688b356520972f5b526c5a",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/friendly_poring.ex",
     "source_hash": "6bc318434d207c06c32c79af94c1ec1cfc6976a879581edddf361be066c9cb57",
     "spawns": [
@@ -34085,7 +34085,7 @@
   },
   "re/jobs/novice/academy.txt|script|General Store Owner#ac|iz_ac01:68:49": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GeneralStoreOwner",
-    "output_hash": "a25fb516d014a149b4580993550948fa629209bdbc4df50be03283fd32e4be71",
+    "output_hash": "9ceabfa4f0b4537b21b359923b702b89bc3b01d9960e7e9f0a15675e894ba1be",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/general_store_owner.ex",
     "source_hash": "64d8cb892ce46a92708b7be1d3d0ed38a9e753eed54c22be3a57409e38cb3d49",
     "spawns": [
@@ -34161,7 +34161,7 @@
   },
   "re/jobs/novice/academy.txt|script|Guest Lecturer Mayssel#0|iz_ac02:52:136": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuestLecturerMayssel",
-    "output_hash": "8256c8a69cc411f1e0de9035156dab274a172a8d86b6eaa1a6b16accc8d7bb82",
+    "output_hash": "03ea0c242b511f818634c5d0cc6a226a773647259d3955b45bb60a3057c1d1ff",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/guest_lecturer_mayssel.ex",
     "source_hash": "f85d6d2244e0cbf5c46d61a450449261c9e888f1b482328df27fbaee57083cc5",
     "spawns": [
@@ -34277,7 +34277,7 @@
   },
   "re/jobs/novice/academy.txt|script|Hungry Trainee#ac|iz_ac01:159:32": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.HungryTrainee",
-    "output_hash": "6d695f2473937da46fa648ff330b1b69c5b666f62f805fa2aaa4f280e14eed1a",
+    "output_hash": "20b6a4824602b46a0d5e8dafbd08b6deb6f5b0af3016c747e9c3538d57bb9979",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/hungry_trainee.ex",
     "source_hash": "ef5afd6cbcdaad9dfbf588c77acbc36d7150c4ec930158eeec589212bc72e3c0",
     "spawns": [
@@ -34335,7 +34335,7 @@
   },
   "re/jobs/novice/academy.txt|script|Information Staff#0|izlude:120:207": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InformationStaff",
-    "output_hash": "1ca84fbd96bed086510d3e122f459c64ad1f7b3f4bbbbe68eb85411286e8ed80",
+    "output_hash": "81b1bdbd1cebf36af000d723a7623033be177200cc968560e0e1ae3f5cd60fbe",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/information_staff.ex",
     "source_hash": "91d83e301b54cf4c638a10689739c92d079621c3a377331f1ea3a35eb5d15689",
     "spawns": [
@@ -34393,7 +34393,7 @@
   },
   "re/jobs/novice/academy.txt|script|Instructor Argos#iz|izlude:140:260": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InstructorArgos",
-    "output_hash": "172f60142c79f0999d055dc5e13094212153bd4d048d38d3790e267f7076ddbe",
+    "output_hash": "82296cd5ab3e64660e2370e4e807f9b55e87623e7bf8c30b7c0739edbe2ee725",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/instructor_argos.ex",
     "source_hash": "832fd7be257d3de26615e571f0ac116766fc23bb35164d6369c16cdd007678bc",
     "spawns": [
@@ -34451,7 +34451,7 @@
   },
   "re/jobs/novice/academy.txt|script|Kafra Guide Trainer#ac|iz_ac01:95:46": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer",
-    "output_hash": "e1df99e87f57dc256260185f216cbf67970d7ec7aa1fd92acf795a4da6518659",
+    "output_hash": "b1bcf86f54493a5c7d95b8bd39cc0d94d7d69bc072b9176ad5de447afb460f03",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/kafra_guide_trainer.ex",
     "source_hash": "d6f62f0ea7d9976e987cb9b27a4174d5064746f91bae2ab686ee18a4addd9f0a",
     "spawns": [
@@ -34685,7 +34685,7 @@
   },
   "re/jobs/novice/academy.txt|script|Locas#iz|izlude:155:132": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Locas",
-    "output_hash": "eda2c5be5baa7383f5f68574218304f244588af699f31862de7461ac9b7d3b6f",
+    "output_hash": "618eb2c2f4af30568220c36c355a4ac7a285df4d97955ecbfdc05b43747b7c0e",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/locas.ex",
     "source_hash": "907f820e72f11efa948790e4d91fa5c50d1b70faba2e9ad8b84dca9aab7ddb36",
     "spawns": [
@@ -34859,7 +34859,7 @@
   },
   "re/jobs/novice/academy.txt|script|Lusa#ac|iz_ac02:142:85": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lusa",
-    "output_hash": "20d20b45ca10dcb8e24222453315df73a4ea91368739cf04a27e96d3dcf7ffde",
+    "output_hash": "8d73dca94c1d2e5575886e017b29a99cb85138d01f8231407013ed638dd81b77",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/lusa.ex",
     "source_hash": "9a91ceddb138a95fd892d74f292549f859b133f1f6b8a488afb7ca25816c148e",
     "spawns": [
@@ -34917,7 +34917,7 @@
   },
   "re/jobs/novice/academy.txt|script|Lusa's Desk#ac|iz_ac02:131:82": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.LusaSDesk",
-    "output_hash": "69e6a3628bf6a405945d292923ffac7c9f78cadb8291e56a0709e4f891d8a0f7",
+    "output_hash": "d033e74835789110add1b4a1bed49da2568964c3508abd0ec48845aceba65b76",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/lusa_s_desk.ex",
     "source_hash": "d3d7844df70b421aa8be342841457d77133b3d9201f25aa50e2f4fadb8cbd7f1",
     "spawns": [
@@ -34975,7 +34975,7 @@
   },
   "re/jobs/novice/academy.txt|script|Mage Chuck#ac|iz_ac02:148:110": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.MageChuck",
-    "output_hash": "baba3dce629a66f20f56046656180670d0633a7622318f1c9d25537fa6309b4e",
+    "output_hash": "ffa5c91c19df843d88569e1e00c7376729ad47046658bbc7bdad80f5af0fef9b",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/mage_chuck.ex",
     "source_hash": "b27a31be0210ff05f308eb20100dd6f688a5d1ccdb8f678baa421241affa8c84",
     "spawns": [
@@ -35069,7 +35069,7 @@
   },
   "re/jobs/novice/academy.txt|script|Manufacturing Maniac#0|izlude:93:143": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ManufacturingManiac",
-    "output_hash": "86e59b7238036e4f121564034d7aa1e6dea6745ae5d86a57cd4690f0a81f28cc",
+    "output_hash": "a6003424ac3e69a049acb04e43209b5310570c3661c7cd69c1ab1f8a19503692",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/manufacturing_maniac.ex",
     "source_hash": "4153bbfcb8e6c7f02571bbe92e2c9ae3705c1fad2efaf60c078dae44439ef386",
     "spawns": [
@@ -35175,7 +35175,7 @@
   },
   "re/jobs/novice/academy.txt|script|Mom#iz|izlude:95:146": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Mom",
-    "output_hash": "bc7a091e351b19ea288f92a176e5c7916402db7b508e8b58c3e56ee1b6e4560e",
+    "output_hash": "c0d2b2dde22e5eeb18b9be22d6fed613c9a8d4cefa15fc12bd832521d1d61b57",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/mom.ex",
     "source_hash": "9742473f742c16b4c87c212ebd1002d9727564128e1d4b4655c87aa200314dfe",
     "spawns": [
@@ -35233,7 +35233,7 @@
   },
   "re/jobs/novice/academy.txt|script|Ninja Guide#ac|iz_ac02:140:139": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.NinjaGuide",
-    "output_hash": "0bc2d146d0736745546093cbfd82ee7cc1bf9c1a9aa5f6a958e5e928a39bec9c",
+    "output_hash": "a801d84985271d264c1fa85d0e05451183ae874d4fe3861ac0652e2be747008e",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/ninja_guide.ex",
     "source_hash": "c55ecd9997d6df306a243e3482cf19eeb946c19bdc32fb56b001bc5d0f5e628b",
     "spawns": [
@@ -35349,7 +35349,7 @@
   },
   "re/jobs/novice/academy.txt|script|Odd Novice#ac|iz_ac01:36:52": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OddNovice",
-    "output_hash": "6908ab23f01b6d006948215d43a2fa181f7a1f0d7fb0005b939391904ca27205",
+    "output_hash": "99dcfb661ef0ab3d2574ec720605f853aa0952c4815c9914f21cb9d4f8a53e6b",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/odd_novice.ex",
     "source_hash": "00f89f5e800a637967f0cd6bf6a752a41ebfa26b8631bf96fb606bf98724ff3c",
     "spawns": [
@@ -35407,7 +35407,7 @@
   },
   "re/jobs/novice/academy.txt|script|Otter Samssoon#ac|iz_ac01:69:36": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon",
-    "output_hash": "2b78375ec8ef8cd10f90e84c80ebb0bb72aad8884b2d0cc248c86293d11ad4ce",
+    "output_hash": "fabea5795d13e0e5672f2cd665bf112fe0e7543e74efa984382f374d09041c5f",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/otter_samssoon.ex",
     "source_hash": "9a8248a40816d9ef5c2b5fce8aa388e13ba397cfe00d608b7593e87abf1bbb6d",
     "spawns": [
@@ -35523,7 +35523,7 @@
   },
   "re/jobs/novice/academy.txt|script|Ragie#ac|iz_ac02:149:43": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Ragie",
-    "output_hash": "96a2adedb519590b02688c73b21838e5c2073cfd4300d8e9af243f616f310b87",
+    "output_hash": "16abce1073dd1b2f209c3a40fd3a4bf77850963e4d152d990a349db6a5d51fed",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/ragie.ex",
     "source_hash": "3ff1acba52c6f3125750841308a034238b07211261678a9972cd9c6664151743",
     "spawns": [
@@ -35581,7 +35581,7 @@
   },
   "re/jobs/novice/academy.txt|script|Refinery Owner Han#iz|izlude:153:126": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RefineryOwnerHan",
-    "output_hash": "5f9b43c9ef87bc94ba2ea3ef36c1ddb7bd601646a32c7398c4ccaf7fa19753db",
+    "output_hash": "faf88a37492b369da037b5d9928a79158d9649977b02cf1a3460692a7982accd",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/refinery_owner_han.ex",
     "source_hash": "7fb356103dfd851c809f49709937bf36865455c53488e9674d1135e4cc3e8790",
     "spawns": [
@@ -35697,7 +35697,7 @@
   },
   "re/jobs/novice/academy.txt|script|Repair Man#iz|izlude:158:130": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RepairMan",
-    "output_hash": "e2283019329f72f76f24f9cddc24cb66eb4a500d8e20d2d3f970f986af8b616a",
+    "output_hash": "887c39b38bbe9d709b00534685e8af728a174408f7a965b6210b9e24341afa37",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/repair_man.ex",
     "source_hash": "349ef2e3efdd938d58b26b5ddc28909764e4dde8acf74e6531645316d829a1a1",
     "spawns": [
@@ -35766,12 +35766,12 @@
         "y": 131,
         "map": "izlude",
         "dir": 5,
+        "sprite": 726,
+        "unique_name": "Repairing Blacksmith#0",
         "trigger": [
           5,
           7
-        ],
-        "sprite": 726,
-        "unique_name": "Repairing Blacksmith#0"
+        ]
       },
       {
         "name": "Repairing Blacksmith",
@@ -35780,12 +35780,12 @@
         "y": 131,
         "map": "izlude_a",
         "dir": 5,
+        "sprite": 726,
+        "unique_name": "Repairing Blacksmith#a",
         "trigger": [
           5,
           7
-        ],
-        "sprite": 726,
-        "unique_name": "Repairing Blacksmith#a"
+        ]
       },
       {
         "name": "Repairing Blacksmith",
@@ -35794,12 +35794,12 @@
         "y": 131,
         "map": "izlude_b",
         "dir": 5,
+        "sprite": 726,
+        "unique_name": "Repairing Blacksmith#b",
         "trigger": [
           5,
           7
-        ],
-        "sprite": 726,
-        "unique_name": "Repairing Blacksmith#b"
+        ]
       },
       {
         "name": "Repairing Blacksmith",
@@ -35808,12 +35808,12 @@
         "y": 131,
         "map": "izlude_c",
         "dir": 5,
+        "sprite": 726,
+        "unique_name": "Repairing Blacksmith#c",
         "trigger": [
           5,
           7
-        ],
-        "sprite": 726,
-        "unique_name": "Repairing Blacksmith#c"
+        ]
       },
       {
         "name": "Repairing Blacksmith",
@@ -35822,18 +35822,18 @@
         "y": 131,
         "map": "izlude_d",
         "dir": 5,
+        "sprite": 726,
+        "unique_name": "Repairing Blacksmith#d",
         "trigger": [
           5,
           7
-        ],
-        "sprite": 726,
-        "unique_name": "Repairing Blacksmith#d"
+        ]
       }
     ]
   },
   "re/jobs/novice/academy.txt|script|Romantic Female#iz|izlude:97:138": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RomanticFemale",
-    "output_hash": "a29bceafeea2db23db89a4154ebafd38e43f28d7015c5f3abfeba444993beee2",
+    "output_hash": "9ebc5c7c7d51388b7e12b1ad274b27c0d9d9a623538d649d5a9108c1acefaf6b",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/romantic_female.ex",
     "source_hash": "d27a6c1e7913667378f38d7eeb96a00ba20dbc5f7f97fbba88341b82dd4cc115",
     "spawns": [
@@ -35891,7 +35891,7 @@
   },
   "re/jobs/novice/academy.txt|script|Romantic Male#iz|izlude:99:138": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RomanticMale",
-    "output_hash": "a74c4511afe56de901474aceef97d5f3ca7abcba1cb8f17361e84412cb685b8a",
+    "output_hash": "5cedba6b37f7b7fafeded417c14fa9c980fd8710d1947714aaa8123d7733290a",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/romantic_male.ex",
     "source_hash": "e62820768892e54ee58325863c5d66ee3a91c7fe6ab615b535591f9bcb46b5b5",
     "spawns": [
@@ -36007,7 +36007,7 @@
   },
   "re/jobs/novice/academy.txt|script|Salim Hamid#ac|iz_ac02:50:169": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SalimHamid",
-    "output_hash": "000ade304d2da82d222ad27d9b8704f345fc56b986c337fa74542f71c24cd471",
+    "output_hash": "f40544599498f9693f0ec25ed657c9d1ba60801f79f8b5cfd66aedbb615c614f",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/salim_hamid.ex",
     "source_hash": "3f101bc008d09b074a0e64a0c163917d76e9fc1e2480a7a6cbd0d338c3a7fb4f",
     "spawns": [
@@ -36123,7 +36123,7 @@
   },
   "re/jobs/novice/academy.txt|script|Shop Helper#iz|izlude:115:181": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ShopHelper",
-    "output_hash": "ff72691507e4a8a33ac7eaa7bd3ed2f1fc2fb84006d44b6ba87adefda26f268b",
+    "output_hash": "ec5c7a6f507d585c9c225be08501b43f7c31572916fa868f9b5e4386907264a8",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/shop_helper.ex",
     "source_hash": "0539679a401171a5c93d3c668e02cd6bd9fc8cc3554e15931da4881b9d584eb1",
     "spawns": [
@@ -36181,7 +36181,7 @@
   },
   "re/jobs/novice/academy.txt|script|Steward Aydin#ac|iz_ac02:53:171": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.StewardAydin",
-    "output_hash": "7c238c4219b61c53b31b36f144625a6eedb6d7a9276b5ddaaed023d38a2efb1a",
+    "output_hash": "af4172514cf6f921f6b398097479279dac404c616f9b13d6652c0fdc0e4d9829",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/steward_aydin.ex",
     "source_hash": "644d8d9b547244517123c0543fea15980e537d07f6035c960767fd3026cd79a6",
     "spawns": [
@@ -36239,7 +36239,7 @@
   },
   "re/jobs/novice/academy.txt|script|Swordman Assistant#ac|iz_ac02:53:48": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanAssistant",
-    "output_hash": "4ae9c41cc18f9b2155067e8e31346a3d8336bec053ba3be503d7b5e8c3dfcb3b",
+    "output_hash": "5132fc7debe1be730fc4531be2ba8edc72718db2462b4032c5f06c82c1f483d1",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/swordman_assistant.ex",
     "source_hash": "6befff0834380e767804f337fd5b282256775126bd0f3ba2b257f2f7c306aa64",
     "spawns": [
@@ -36297,7 +36297,7 @@
   },
   "re/jobs/novice/academy.txt|script|Swordman Trainer#ac|iz_ac02:60:51": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanTrainer",
-    "output_hash": "ed4423b46774d6e31296fedd419d12ed854df383700d749d2d64392a5f50be22",
+    "output_hash": "8338277b6f8f5827bc06adaed94f0a788e923fb728006ad6af53e45e72d346c0",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/swordman_trainer.ex",
     "source_hash": "da2621a18631b9d78b8734ecdc7c447098f6faecad4edc487b508c9666669da9",
     "spawns": [
@@ -36355,7 +36355,7 @@
   },
   "re/jobs/novice/academy.txt|script|Tadde#iz|izlude:145:122": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Tadde",
-    "output_hash": "c2e2e40077809f316816be1933e04ccbae527b6b2c6e78c52f77d6d8da6777da",
+    "output_hash": "7cfde8774ec01a8709d08df92206f04462cb18dbf9ab16ad0c80643a243ea989",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/tadde.ex",
     "source_hash": "cecb962d367a3fe54a9b8df6ca2d447b7d160068ceebf37c86bba3b6b261d825",
     "spawns": [
@@ -36413,7 +36413,7 @@
   },
   "re/jobs/novice/academy.txt|script|Therapist#ac|iz_ac01:59:43": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Therapist",
-    "output_hash": "9517fd4bec1be0e9de797f0ccd28816e78db95fe5d4abf33a8321ef8f1aeda5a",
+    "output_hash": "6099e6d390c7d2fc4efecbae566e1e9fb448602c4b3d1bb10facb9c014208838",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/therapist.ex",
     "source_hash": "45dc8dd115563c52f78a88b20bdf3a49356e5267e014e8c81f39235acc45405d",
     "spawns": [
@@ -36471,7 +36471,7 @@
   },
   "re/jobs/novice/academy.txt|script|Trainer Mainz#ac|iz_ac01:134:47": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainerMainz",
-    "output_hash": "de2a056739937d68c1073917cae02830665e32065b92e1629d7afaf0a39aba60",
+    "output_hash": "7d493019209f292ccded06a87a6ba822cc39c0c74c3b7434cf941f81ec0b9239",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/trainer_mainz.ex",
     "source_hash": "37fcb5ee8fdee7de8214adb5239e57b9cfe9aa9d9f25143aa337b17cfc9a07fc",
     "spawns": [
@@ -36482,12 +36482,12 @@
         "y": 47,
         "map": "iz_ac01",
         "dir": 5,
+        "sprite": 418,
+        "unique_name": "Trainer Mainz#ac",
         "trigger": [
           4,
           4
-        ],
-        "sprite": 418,
-        "unique_name": "Trainer Mainz#ac"
+        ]
       },
       {
         "name": "Trainer Mainz",
@@ -36496,12 +36496,12 @@
         "y": 47,
         "map": "iz_ac01_a",
         "dir": 5,
+        "sprite": 418,
+        "unique_name": "Trainer Mainz#ac_a",
         "trigger": [
           4,
           4
-        ],
-        "sprite": 418,
-        "unique_name": "Trainer Mainz#ac_a"
+        ]
       },
       {
         "name": "Trainer Mainz",
@@ -36510,12 +36510,12 @@
         "y": 47,
         "map": "iz_ac01_b",
         "dir": 5,
+        "sprite": 418,
+        "unique_name": "Trainer Mainz#ac_b",
         "trigger": [
           4,
           4
-        ],
-        "sprite": 418,
-        "unique_name": "Trainer Mainz#ac_b"
+        ]
       },
       {
         "name": "Trainer Mainz",
@@ -36524,12 +36524,12 @@
         "y": 47,
         "map": "iz_ac01_c",
         "dir": 5,
+        "sprite": 418,
+        "unique_name": "Trainer Mainz#ac_c",
         "trigger": [
           4,
           4
-        ],
-        "sprite": 418,
-        "unique_name": "Trainer Mainz#ac_c"
+        ]
       },
       {
         "name": "Trainer Mainz",
@@ -36538,12 +36538,12 @@
         "y": 47,
         "map": "iz_ac01_d",
         "dir": 5,
+        "sprite": 418,
+        "unique_name": "Trainer Mainz#ac_d",
         "trigger": [
           4,
           4
-        ],
-        "sprite": 418,
-        "unique_name": "Trainer Mainz#ac_d"
+        ]
       }
     ]
   },
@@ -36915,7 +36915,7 @@
   },
   "re/jobs/novice/academy.txt|script|Verkhasel#ac|iz_ac02:55:134": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Verkhasel",
-    "output_hash": "802294826ad26bfa4919909451121f0e0ec8481fef87a97f32d6014e113ca83b",
+    "output_hash": "1061acc856fe923461140859f3e18b0fd8187a1c94166f322b4ed7b4a99d29bb",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/verkhasel.ex",
     "source_hash": "58ae552dad1845a5725222301d348d6c40fec7ab438c6967c4711fab80c3d449",
     "spawns": [
@@ -36973,7 +36973,7 @@
   },
   "re/jobs/novice/academy.txt|script|Vicente#ac|iz_ac02:49:134": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Vicente",
-    "output_hash": "790262135d50c7265060a904c53c7de5486d7e43d5aada0802fc6b2936d74695",
+    "output_hash": "1637b34807fe9d35057bab17226118ee9cb44178abc812349543ec325bb5cd51",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/vicente.ex",
     "source_hash": "daa461226fe374e1a70ebc5cb14dede7593f97440b78c1553f7692d15907b6ac",
     "spawns": [
@@ -37031,7 +37031,7 @@
   },
   "re/jobs/novice/academy.txt|script|Wedding Secretary#iz|izlude:102:150": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WeddingSecretary",
-    "output_hash": "1e0af883a7a232106aa37c8ffb10d5ecc3bd754cdb12ed53d175b5cf3249d26a",
+    "output_hash": "b43555ee21c377c768160795d31279394f2887cd56b70eb202dd0f4ba27132a3",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/wedding_secretary.ex",
     "source_hash": "1a5c6029259b580afa31bc6b23af28df59dd33dd9d0ec743f46852c2c946f49b",
     "spawns": [
@@ -37100,12 +37100,12 @@
         "y": 32,
         "map": "iz_int",
         "dir": 3,
+        "sprite": 687,
+        "unique_name": "Wounded Swordsman#intro_npc01_iz_int",
         "trigger": [
           5,
           5
-        ],
-        "sprite": 687,
-        "unique_name": "Wounded Swordsman#intro_npc01_iz_int"
+        ]
       },
       {
         "name": "Wounded Swordsman",
@@ -37114,12 +37114,12 @@
         "y": 32,
         "map": "iz_int01",
         "dir": 3,
+        "sprite": 687,
+        "unique_name": "Wounded Swordsman#intro_npc01_iz_int01",
         "trigger": [
           5,
           5
-        ],
-        "sprite": 687,
-        "unique_name": "Wounded Swordsman#intro_npc01_iz_int01"
+        ]
       },
       {
         "name": "Wounded Swordsman",
@@ -37128,12 +37128,12 @@
         "y": 32,
         "map": "iz_int02",
         "dir": 3,
+        "sprite": 687,
+        "unique_name": "Wounded Swordsman#intro_npc01_iz_int02",
         "trigger": [
           5,
           5
-        ],
-        "sprite": 687,
-        "unique_name": "Wounded Swordsman#intro_npc01_iz_int02"
+        ]
       },
       {
         "name": "Wounded Swordsman",
@@ -37142,12 +37142,12 @@
         "y": 32,
         "map": "iz_int03",
         "dir": 3,
+        "sprite": 687,
+        "unique_name": "Wounded Swordsman#intro_npc01_iz_int03",
         "trigger": [
           5,
           5
-        ],
-        "sprite": 687,
-        "unique_name": "Wounded Swordsman#intro_npc01_iz_int03"
+        ]
       },
       {
         "name": "Wounded Swordsman",
@@ -37156,12 +37156,12 @@
         "y": 32,
         "map": "iz_int04",
         "dir": 3,
+        "sprite": 687,
+        "unique_name": "Wounded Swordsman#intro_npc01_iz_int04",
         "trigger": [
           5,
           5
-        ],
-        "sprite": 687,
-        "unique_name": "Wounded Swordsman#intro_npc01_iz_int04"
+        ]
       }
     ]
   },
@@ -37236,12 +37236,12 @@
         "y": 30,
         "map": "iz_int",
         "dir": 0,
+        "sprite": 139,
+        "unique_name": "iz_int#intro_evt02",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 139,
-        "unique_name": "iz_int#intro_evt02"
+        ]
       },
       {
         "name": "iz_int01",
@@ -37250,12 +37250,12 @@
         "y": 30,
         "map": "iz_int01",
         "dir": 0,
+        "sprite": 139,
+        "unique_name": "iz_int01#intro_evt02",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 139,
-        "unique_name": "iz_int01#intro_evt02"
+        ]
       },
       {
         "name": "iz_int02",
@@ -37264,12 +37264,12 @@
         "y": 30,
         "map": "iz_int02",
         "dir": 0,
+        "sprite": 139,
+        "unique_name": "iz_int02#intro_evt02",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 139,
-        "unique_name": "iz_int02#intro_evt02"
+        ]
       },
       {
         "name": "iz_int03",
@@ -37278,12 +37278,12 @@
         "y": 30,
         "map": "iz_int03",
         "dir": 0,
+        "sprite": 139,
+        "unique_name": "iz_int03#intro_evt02",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 139,
-        "unique_name": "iz_int03#intro_evt02"
+        ]
       },
       {
         "name": "iz_int04",
@@ -37292,18 +37292,18 @@
         "y": 30,
         "map": "iz_int04",
         "dir": 0,
+        "sprite": 139,
+        "unique_name": "iz_int04#intro_evt02",
         "trigger": [
           1,
           1
-        ],
-        "sprite": 139,
-        "unique_name": "iz_int04#intro_evt02"
+        ]
       }
     ]
   },
   "re/jobs/novice/academy.txt|script|iz_int#intro_start|iz_int:18:30": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.IzInt",
-    "output_hash": "0c16ad7c9c3acdfc2b4751f5825ddc2effb5fbdb74f6404df4142f0951624c3c",
+    "output_hash": "885aac11aa944720c3eb74a1b0fb2537123881a4373eea0d15b4886dca382010",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/iz_int.ex",
     "source_hash": "487f6360de7c0cafbb7c66cf69d8e6f4839ca4d35c1dc7fa7efe4609451884f0",
     "spawns": [
@@ -37314,12 +37314,12 @@
         "y": 30,
         "map": "iz_int",
         "dir": 0,
+        "sprite": 139,
+        "unique_name": "iz_int#intro_start",
         "trigger": [
           6,
           6
-        ],
-        "sprite": 139,
-        "unique_name": "iz_int#intro_start"
+        ]
       },
       {
         "name": "iz_int01",
@@ -37328,12 +37328,12 @@
         "y": 30,
         "map": "iz_int01",
         "dir": 0,
+        "sprite": 139,
+        "unique_name": "iz_int01#intro_start",
         "trigger": [
           6,
           6
-        ],
-        "sprite": 139,
-        "unique_name": "iz_int01#intro_start"
+        ]
       },
       {
         "name": "iz_int02",
@@ -37342,12 +37342,12 @@
         "y": 30,
         "map": "iz_int02",
         "dir": 0,
+        "sprite": 139,
+        "unique_name": "iz_int02#intro_start",
         "trigger": [
           6,
           6
-        ],
-        "sprite": 139,
-        "unique_name": "iz_int02#intro_start"
+        ]
       },
       {
         "name": "iz_int03",
@@ -37356,12 +37356,12 @@
         "y": 30,
         "map": "iz_int03",
         "dir": 0,
+        "sprite": 139,
+        "unique_name": "iz_int03#intro_start",
         "trigger": [
           6,
           6
-        ],
-        "sprite": 139,
-        "unique_name": "iz_int03#intro_start"
+        ]
       },
       {
         "name": "iz_int04",
@@ -37370,12 +37370,12 @@
         "y": 30,
         "map": "iz_int04",
         "dir": 0,
+        "sprite": 139,
+        "unique_name": "iz_int04#intro_start",
         "trigger": [
           6,
           6
-        ],
-        "sprite": 139,
-        "unique_name": "iz_int04#intro_start"
+        ]
       }
     ]
   },

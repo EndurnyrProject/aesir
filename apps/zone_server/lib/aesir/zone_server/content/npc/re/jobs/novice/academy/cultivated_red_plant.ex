@@ -80,7 +80,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CultivatedRedPlant
   def ev_ontouch(ctx) do
     ctx =
       if isbegin_quest(ctx, 7478) == 1 and not Rathena.truthy?(isbegin_quest(ctx, 7479)) do
-        ctx = ctx |> specialeffect(:steal) |> emotion(:smile) |> emotion(:surprise)
+        ctx = specialeffect(ctx, :steal)
+
+        ctx =
+          emotion(
+            ctx,
+            :smile,
+            getnpcid(ctx, Rathena.concat("Academy Student#", strnpcinfo(ctx, 2)))
+          )
+
+        ctx = emotion(ctx, :surprise, playerattached(ctx))
 
         donpcevent(
           ctx,

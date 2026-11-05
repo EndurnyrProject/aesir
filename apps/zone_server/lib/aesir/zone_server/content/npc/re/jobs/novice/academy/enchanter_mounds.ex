@@ -637,7 +637,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterMounds do
               ctx
 
             _ ->
-              ctx
+              throw({:script_end, ctx})
           end
 
         throw({:brk_1, ctx})
@@ -722,7 +722,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterMounds do
           throw({:script_end, ctx})
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     ctx |> mes("[Mounds]") |> mes("Any other questions?") |> next() |> loop_3()

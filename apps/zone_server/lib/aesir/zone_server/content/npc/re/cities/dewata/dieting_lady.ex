@@ -52,47 +52,46 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.DietingLady do
       |> next()
       |> select(["Yes, want a taste?", "No, it's for me!"])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx =
-            ctx
-            |> delitem(11533, 1)
-            |> mes("[Dieting Lady]")
-            |> mes("Thanks so much!")
-            |> mes("I've been so hungry~!!")
-            |> mes("This smell of this ^006400Satay^000000")
-            |> mes("is so good~!")
-            |> next()
-            |> give_item(11533, 1)
-            |> mes("[Dieting Lady]")
-            |> mes("Ah... gotta come back to my senses,")
-            |> mes("too much of a good thing is bad...")
-            |> mes("I should stick with my diet.")
-            |> mes("Sorry, I'll give it back to you.")
-            |> emotion(:cry)
-            |> close()
+    _ = v1
 
-          throw({:script_end, ctx})
-
-        2 ->
-          ctx =
-            ctx
-            |> mes("[Dieting Lady]")
-            |> mes("Arrgg.. You are so greedy!")
-            |> mes("Since you don't want to share.")
-            |> mes("Anyway, I shouldn't cheat on my diet")
-            |> mes("even for something that looks and smells so good...")
-            |> emotion(:hng)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+    case v1 do
+      1 ->
+        ctx =
           ctx
-      end
+          |> delitem(11533, 1)
+          |> mes("[Dieting Lady]")
+          |> mes("Thanks so much!")
+          |> mes("I've been so hungry~!!")
+          |> mes("This smell of this ^006400Satay^000000")
+          |> mes("is so good~!")
+          |> next()
+          |> give_item(11533, 1)
+          |> mes("[Dieting Lady]")
+          |> mes("Ah... gotta come back to my senses,")
+          |> mes("too much of a good thing is bad...")
+          |> mes("I should stick with my diet.")
+          |> mes("Sorry, I'll give it back to you.")
+          |> emotion(:cry)
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx =
+          ctx
+          |> mes("[Dieting Lady]")
+          |> mes("Arrgg.. You are so greedy!")
+          |> mes("Since you don't want to share.")
+          |> mes("Anyway, I shouldn't cheat on my diet")
+          |> mes("even for something that looks and smells so good...")
+          |> emotion(:hng)
+          |> close()
+
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

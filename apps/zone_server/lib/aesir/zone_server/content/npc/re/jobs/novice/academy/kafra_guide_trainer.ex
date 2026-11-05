@@ -423,7 +423,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer 
                         ctx
 
                       _ ->
-                        ctx
+                        throw({:script_end, ctx})
                     end
                   catch
                     :throw, {:brk_3, ctx} -> ctx
@@ -510,7 +510,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer 
             throw({:script_end, ctx})
 
           _ ->
-            ctx
+            throw({:script_end, ctx})
         end
       catch
         :throw, {:brk_2, ctx} -> ctx

@@ -111,6 +111,8 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate getlook(ctx, type), to: Visuals
   defdelegate setlook(ctx, type, value), to: Visuals
   defdelegate specialeffect(ctx, effect), to: Visuals
+  defdelegate specialeffect(ctx, effect, target), to: Visuals
+  defdelegate specialeffect(ctx, effect, target, npc_name), to: Visuals
   defdelegate specialeffect2(ctx, effect), to: Visuals
   defdelegate viewpoint(ctx, type, x, y, id, color), to: Visuals
   defdelegate questinfo(ctx, icon), to: Visuals

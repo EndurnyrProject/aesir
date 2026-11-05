@@ -24,16 +24,19 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Gourmet do
 
   @impl true
   def on_talk(ctx) do
+    ctx =
+      ctx
+      |> mes("[Gourmet]")
+      |> mes("Oh... it's like a party in my")
+      |> mes("mouth... and everyone's invited!")
+      |> emotion(:cry)
+      |> next()
+      |> mes("[Gourmet]")
+      |> mes("Master~ One more please~")
+      |> emotion(:best)
+
     ctx
-    |> mes("[Gourmet]")
-    |> mes("Oh... it's like a party in my")
-    |> mes("mouth... and everyone's invited!")
-    |> emotion(:cry)
-    |> next()
-    |> mes("[Gourmet]")
-    |> mes("Master~ One more please~")
-    |> emotion(:best)
-    |> emotion(:ok)
+    |> emotion(:ok, getnpcid(ctx, "Restauranteur#dew"))
     |> next()
     |> mes("[Gourmet]")
     |> mes("You must try this! The Food here is succulent~")

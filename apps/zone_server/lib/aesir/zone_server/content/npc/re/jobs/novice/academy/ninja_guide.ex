@@ -283,7 +283,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.NinjaGuide do
               throw({:script_end, ctx})
 
             _ ->
-              ctx
+              throw({:script_end, ctx})
           end
 
         ctx
@@ -425,7 +425,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.NinjaGuide do
           throw({:script_end, ctx})
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     loop_2(ctx)

@@ -9,10 +9,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
     `++`/`--` are desugared into plain assignments
   - `{:block, stmts}`
   - `{:if, cond, then_stmts, else_stmts}`
-  - `{:switch, expr, clauses}` — clauses are `{values | :default, stmts}`,
+  - `{:switch, expr, clauses, prelude}` — clauses are `{values | :default, stmts}`,
     where `values` is the list of case expressions sharing the body
     (fall-through cases are merged; a non-empty body falling through is kept
-    as `{:fallthrough, values, stmts}`)
+    as `{:fallthrough, values, stmts}`); `prelude` holds the statements rAthena
+    runs between evaluating `expr` and testing the first `case`
   - `{:while, cond, stmts}` / `{:do_while, stmts, cond}` /
     `{:for, init, cond, step, stmts}`
   - `{:break}` / `{:continue}`
@@ -438,29 +439,34 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
   defp switch_statement(tokens) do
     with {:ok, expr, rest} <- paren_condition(tokens),
          {:ok, rest} <- expect(rest, {:punct, :lbrace}),
-         {:ok, clauses, rest} <- switch_clauses(rest, []) do
-      {:ok, {:switch, expr, clauses}, rest}
+         {:ok, prelude, clauses, rest} <- switch_clauses(rest, [], []) do
+      {:ok, {:switch, expr, clauses, prelude}, rest}
     end
   end
 
-  defp switch_clauses([{:punct, :rbrace} | rest], acc), do: {:ok, Enum.reverse(acc), rest}
+  defp switch_clauses([{:punct, :rbrace} | rest], prelude, acc),
+    do: {:ok, Enum.reverse(prelude), Enum.reverse(acc), rest}
 
-  # Statements before the first `case` are dead code rAthena tolerates
-  # (they exist in the corpus); parse and drop them.
-  defp switch_clauses([_ | _] = tokens, [] = acc) do
+  # rAthena runs statements before the first `case` after the switch value is
+  # evaluated and before any case is tested (`parse_curly_close` emits
+  # `set $@__SW_VAL, …` up front and the case tests follow the body prefix), and a
+  # switch with no cases at all is nothing but that prefix.
+  defp switch_clauses([_ | _] = tokens, prelude, [] = acc) do
     if switch_kw?(tokens) do
-      switch_clause(tokens, acc)
+      switch_clause(tokens, prelude, acc)
     else
-      with {:ok, _dead, rest} <- statements(tokens, []), do: switch_clauses(rest, acc)
+      with {:ok, stmts, rest} <- statements(tokens, []) do
+        switch_clauses(rest, Enum.reverse(stmts) ++ prelude, acc)
+      end
     end
   end
 
-  defp switch_clauses(tokens, acc), do: switch_clause(tokens, acc)
+  defp switch_clauses(tokens, prelude, acc), do: switch_clause(tokens, prelude, acc)
 
-  defp switch_clause(tokens, acc) do
+  defp switch_clause(tokens, prelude, acc) do
     with {:ok, values, rest} <- case_values(tokens, []),
          {:ok, stmts, rest} <- statements(rest, []) do
-      switch_clauses(rest, [{values, stmts} | acc])
+      switch_clauses(rest, prelude, [{values, stmts} | acc])
     end
   end
 

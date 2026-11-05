@@ -73,136 +73,135 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RepairMan do
       |> next()
       |> select(["Repair it.", "Nothing to be repaired now.", "What is repairing?"])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx = loop_2(ctx)
+    _ = v1
 
-          ctx =
-            if not Rathena.truthy?(get_local(ctx, :broken, 0)) do
-              ctx =
-                ctx
-                |> mes("[Repair Man]")
-                |> mes(
-                  "You must treat your equipment carefully... as you don't have anything to be repaired."
-                )
-                |> close()
+    case v1 do
+      1 ->
+        ctx = loop_2(ctx)
 
-              throw({:script_end, ctx})
-            else
+        ctx =
+          if not Rathena.truthy?(get_local(ctx, :broken, 0)) do
+            ctx =
               ctx
-            end
-
-          ctx =
-            ctx
-            |> set_local(:cost, 5000 * get_local(ctx, :broken, 0))
-            |> mes("[Repair Man]")
-            |> mes("Hmmm... let's see... oh.. hmm...")
-            |> next()
-            |> mes("[Repair Man]")
-            |> mes("------------------------")
-            |> mes("Damaged Equipment Estimate")
-
-          ctx =
-            mes(
-              ctx,
-              Rathena.concat(
-                Rathena.concat("Damaged Equipment: ^FF0000", get_local(ctx, :broken, 0)),
-                "^000000"
+              |> mes("[Repair Man]")
+              |> mes(
+                "You must treat your equipment carefully... as you don't have anything to be repaired."
               )
-            )
+              |> close()
 
-          {ctx, v2} =
+            throw({:script_end, ctx})
+          else
             ctx
-            |> mes(
-              Rathena.concat(
-                Rathena.concat("Fee: ^0000FF", get_local(ctx, :cost, 0)),
-                " Zeny^000000"
-              )
-            )
-            |> mes("------------------------")
-            |> mes("Would you like to proceed with the repair?")
-            |> next()
-            |> select(["Yes", "No"])
+          end
 
-          ctx =
-            if v2 == 2 do
-              ctx =
-                ctx
-                |> mes("[Repair Man]")
-                |> mes(
-                  "Well, I don't care. After all, it's not my equipment. However, leaving equipment unchecked is not a wise choice."
-                )
-                |> close()
-
-              throw({:script_end, ctx})
-            else
-              ctx
-            end
-
-          ctx =
-            if zeny(ctx) < get_local(ctx, :cost, 0) do
-              ctx =
-                ctx
-                |> mes("[Repair Man]")
-                |> mes(
-                  "The repair cost is 5000 Zeny per damaged equipment. You do not have enough money."
-                )
-                |> close()
-
-              throw({:script_end, ctx})
-            else
-              ctx
-            end
-
-          ctx =
-            ctx
-            |> pay_zeny(get_local(ctx, :cost, 0))
-            |> repairall()
-            |> mes("[Repair Man]")
-            |> mes("The repair has been completed. Be sure to take good care of your equipment.")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        2 ->
-          ctx =
-            ctx
-            |> mes("[Repair Man]")
-            |> mes(
-              "If you don't have any equipment to be repaired, you may not have something to talk with me about."
-            )
-            |> close()
-
-          throw({:script_end, ctx})
-
-        3 ->
-          ctx =
-            ctx
-            |> mes("[Repair Man]")
-            |> mes("A specific skill or boss monster could break your equipment frequently.")
-            |> next()
-            |> mes("[Repair Man]")
-            |> mes(
-              "This doesn't mean that your equipment is gone forever like what happens during refining."
-            )
-            |> next()
-            |> mes("[Repair Man]")
-            |> mes("When your item breaks this way, they won't perform normally...")
-            |> next()
-            |> mes("[Repair Man]")
-            |> mes(
-              "In this case, bring it to me, and I will repair it back to new at the cost of 5000 zeny for each equipment."
-            )
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+        ctx =
           ctx
-      end
+          |> set_local(:cost, 5000 * get_local(ctx, :broken, 0))
+          |> mes("[Repair Man]")
+          |> mes("Hmmm... let's see... oh.. hmm...")
+          |> next()
+          |> mes("[Repair Man]")
+          |> mes("------------------------")
+          |> mes("Damaged Equipment Estimate")
 
-    ctx
+        ctx =
+          mes(
+            ctx,
+            Rathena.concat(
+              Rathena.concat("Damaged Equipment: ^FF0000", get_local(ctx, :broken, 0)),
+              "^000000"
+            )
+          )
+
+        {ctx, v2} =
+          ctx
+          |> mes(
+            Rathena.concat(
+              Rathena.concat("Fee: ^0000FF", get_local(ctx, :cost, 0)),
+              " Zeny^000000"
+            )
+          )
+          |> mes("------------------------")
+          |> mes("Would you like to proceed with the repair?")
+          |> next()
+          |> select(["Yes", "No"])
+
+        ctx =
+          if v2 == 2 do
+            ctx =
+              ctx
+              |> mes("[Repair Man]")
+              |> mes(
+                "Well, I don't care. After all, it's not my equipment. However, leaving equipment unchecked is not a wise choice."
+              )
+              |> close()
+
+            throw({:script_end, ctx})
+          else
+            ctx
+          end
+
+        ctx =
+          if zeny(ctx) < get_local(ctx, :cost, 0) do
+            ctx =
+              ctx
+              |> mes("[Repair Man]")
+              |> mes(
+                "The repair cost is 5000 Zeny per damaged equipment. You do not have enough money."
+              )
+              |> close()
+
+            throw({:script_end, ctx})
+          else
+            ctx
+          end
+
+        ctx =
+          ctx
+          |> pay_zeny(get_local(ctx, :cost, 0))
+          |> repairall()
+          |> mes("[Repair Man]")
+          |> mes("The repair has been completed. Be sure to take good care of your equipment.")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx =
+          ctx
+          |> mes("[Repair Man]")
+          |> mes(
+            "If you don't have any equipment to be repaired, you may not have something to talk with me about."
+          )
+          |> close()
+
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx =
+          ctx
+          |> mes("[Repair Man]")
+          |> mes("A specific skill or boss monster could break your equipment frequently.")
+          |> next()
+          |> mes("[Repair Man]")
+          |> mes(
+            "This doesn't mean that your equipment is gone forever like what happens during refining."
+          )
+          |> next()
+          |> mes("[Repair Man]")
+          |> mes("When your item breaks this way, they won't perform normally...")
+          |> next()
+          |> mes("[Repair Man]")
+          |> mes(
+            "In this case, bring it to me, and I will repair it back to new at the cost of 5000 zeny for each equipment."
+          )
+          |> close()
+
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

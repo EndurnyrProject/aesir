@@ -23,7 +23,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Mobs.Dungeons.LhzDun.SummonBossLt d
   def on_event("OnMy99Dead", ctx), do: ev_onmy99dead(ctx)
   @impl true
   def on_talk(ctx) do
-    ctx
+    ev_oninit(ctx)
   end
 
   def ev_oninit(ctx) do

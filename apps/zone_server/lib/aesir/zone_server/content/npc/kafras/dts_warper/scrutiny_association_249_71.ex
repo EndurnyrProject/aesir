@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.ScrutinyAssociation24971
   def on_event("OnTimer15000", ctx), do: ev_ontimer15000(ctx)
   @impl true
   def on_talk(ctx) do
-    ctx
+    ev_onenable(ctx)
   end
 
   def ev_onenable(ctx) do

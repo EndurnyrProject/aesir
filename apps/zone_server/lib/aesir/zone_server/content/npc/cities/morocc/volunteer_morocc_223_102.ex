@@ -76,7 +76,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.VolunteerMorocc223102 do
     |> next()
     |> mes("[Ringing Voice]")
     |> mes("Be quiet! Can't you see what's going on?!")
-    |> specialeffect(:hit2)
+    |> specialeffect(:hit2, :area, "Volunteer - Morocc#06")
     |> next()
     |> mes("[Morocc Volunteer]")
     |> mes(

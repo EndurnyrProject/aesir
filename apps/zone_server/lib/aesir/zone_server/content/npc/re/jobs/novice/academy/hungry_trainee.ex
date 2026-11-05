@@ -62,14 +62,19 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.HungryTrainee do
       }
     ]
 
+  alias Aesir.ZoneServer.Script.Rathena
+
   @impl true
   def on_talk(ctx) do
+    ctx =
+      ctx
+      |> mes("[Hungry Trainee]")
+      |> mes("Wonder when my order will get taken... it's already been an hour...")
+      |> mes("Look at the helpers lingering on the side...")
+      |> next()
+
     ctx
-    |> mes("[Hungry Trainee]")
-    |> mes("Wonder when my order will get taken... it's already been an hour...")
-    |> mes("Look at the helpers lingering on the side...")
-    |> next()
-    |> emotion(:fret)
+    |> emotion(:fret, getnpcid(ctx, Rathena.concat("Scholarship Trainee#", strnpcinfo(ctx, 2))))
     |> mes("[Scholarship Trainee]")
     |> mes("Ugh... this guy...")
     |> mes("I already told you eight hundred times! It's buffet style! Ah!")

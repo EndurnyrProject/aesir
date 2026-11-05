@@ -84,7 +84,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.Warp do
 
   @impl true
   @spec on_talk(Ctx.t()) :: Ctx.t()
-  def on_talk(ctx), do: ctx
+  # rAthena starts a click at the first label, so it runs this body too.
+  def on_talk(ctx), do: on_event("OnTouch_", ctx)
 
   defp say_word(ctx, score, {options, answer}, first_word?) do
     {ctx, choice} = select(ctx, options)

@@ -20,12 +20,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafstor do
         if get_local(ctx, :type, 0) == 1 do
           ctx =
             if Rathena.truthy?(Todo.call!(:guildopenstorage, [])) do
-              ctx
-              |> mes("[Kafra Employee]")
-              |> mes("I'm sorry but another guild member is using the guild storage")
-              |> mes("right now.  Please wait until that person is finished.")
-              |> close()
-              |> cutin("", 255)
+              ctx =
+                ctx
+                |> mes("[Kafra Employee]")
+                |> mes("I'm sorry but another guild member is using the guild storage")
+                |> mes("right now.  Please wait until that person is finished.")
+                |> close()
+                |> cutin("", 255)
+
+              throw({:script_end, ctx})
             else
               ctx
             end

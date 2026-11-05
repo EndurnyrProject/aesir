@@ -98,487 +98,450 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CriaturaAcademySta
 
     ctx = viewpoint(ctx, 2, 122, 207, 1, 16_777_215)
 
-    ctx =
-      if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) and base_level(ctx) < 15 do
-        ctx =
-          if isbegin_quest(ctx, 7472) == 1 do
-            ctx =
-              ctx
-              |> mes("[Hun]")
-              |> mes("Oh.. you must be the adventurer Carocc was talking about.")
-              |> mes(
-                "I don't know where your homeland is but Midgard is a good place to start your life's journey."
-              )
-              |> next()
-              |> mes("[Hun]")
-              |> mes("It's a good sight to see new adventurers start their journey.")
-              |> mes("You must be tired. Need a drink?")
-              |> completequest(7472)
-              |> getexp(200, 0)
-              |> setquest(7473)
-              |> give_item(531, 1)
-              |> next()
-              |> mes("[Hun]")
-              |> mes(
-                "You can open the Item window by clicking on the 'item' icon on top left portion of the screen."
-              )
-              |> next()
-              |> mes("[Hun]")
-              |> mes(
-                "The items are automatically catagorized by 'consumables' 'equipment' 'etcetera' and 'personal' suitable for each use."
-              )
-              |> mes("It will do the automatic sorting per indiviaul useage to")
-              |> next()
-              |> mes("[Hun]")
-              |> mes("Either ^4d4dffdouble click on the item^000000 you intend to use")
-              |> mes("or drag it onto^4d4dff the equipment window and use it^000000")
-              |> next()
-              |> cutin("tutorial03.bmp", 4)
-              |> mes("!- Information -!")
-              |> mes("^4d4dffItems can be used or equipped with simply double-clicking.")
-              |> mes("Item window can be opened with shortcut key Alt+E")
-              |> next()
-              |> mes("!- Information -!")
-              |> mes("^4d4dff Equipped items can be checked with Alt+ Q")
-              |> mes("Items can also be dragged onto the location where you wish to equip it.")
-              |> next()
-              |> cutin("", 255)
-              |> mes("[Hun]")
-              |> mes(
-                "For detailed info on individual items^4d4dff, right click ^000000on that item."
-              )
-              |> mes("You can check the detailed info on the item.")
-              |> next()
-              |> cutin("tutorial04.bmp", 4)
-              |> mes("!- Information -!")
-              |> mes(
-                "^4d4dffRight-clicking on the item icon^4d4dff  brings up detailed info on the item."
-              )
-              |> next()
-              |> mes("!- Information -!")
-              |> mes(
-                "^4d4dffWhen you select other players, you can trade, party up with them with the community window that pops up."
-              )
-              |> next()
-              |> cutin("", 255)
-              |> mes("[Hun]")
-              |> mes("Ok now ^4d4dffdrink the apple juice that I gave you^000000.")
-              |> close()
-
-            throw({:script_end, ctx})
-          else
-            ctx =
-              if not Rathena.truthy?(isbegin_quest(ctx, 7473)) do
-                ctx =
-                  ctx
-                  |> mes("[Hun]")
-                  |> mes("Hey there.")
-                  |> mes("Rest up for a bit.")
-                  |> next()
-                  |> mes("[Hun]")
-                  |> mes("It's joyous to see new adventurers starting out.")
-                  |> mes("You want something to drink while you are resting?")
-                  |> setquest(7473)
-                  |> give_item(531, 1)
-                  |> next()
-                  |> mes("[Hun]")
-                  |> mes(
-                    "Right clicking on the item icon ^4d4dffon the basic item window at the upper left corner brings up the detailed info on the item"
-                  )
-                  |> next()
-                  |> mes("[Hun]")
-                  |> mes(
-                    "The items are automatically catagorized by 'consumables' 'equipment' 'etcetera' and 'personal' suitable for each use."
-                  )
-                  |> mes("It will do the automatic sorting per indiviaul useage to")
-                  |> next()
-                  |> mes("[Hun]")
-                  |> mes("Either ^4d4dffdouble click on the item^000000 you intend to use")
-                  |> mes("or drag it onto^4d4dff the equipment window and use it^000000")
-                  |> next()
-                  |> mes("[Hun]")
-                  |> mes(
-                    "For detailed info on individual items^4d4dff, right-click ^000000on the item."
-                  )
-                  |> mes("You can check the detailed info on the item.")
-                  |> next()
-                  |> cutin("tutorial04.bmp", 3)
-                  |> mes("!- Information -!")
-                  |> mes(
-                    "Right clicking on the item icon ^4d4dffbrings up the detailed info on the item"
-                  )
-                  |> next()
-                  |> mes("!- Information -!")
-                  |> mes(
-                    "When you select on other players^4d4dff you can trade, party up with them with the community window that pops up."
-                  )
-                  |> next()
-                  |> cutin("", 255)
-                  |> mes("[Hun]")
-                  |> mes("Ok now ^4d4dffdrink the apple juice that I gave you^000000.")
-                  |> close()
-
-                throw({:script_end, ctx})
-              else
-                ctx =
-                  if isbegin_quest(ctx, 7473) == 1 do
-                    ctx =
-                      if count_item(ctx, 531) > 0 do
-                        ctx =
-                          ctx
-                          |> mes("[Hun]")
-                          |> mes("Consume the apple juice that I gave you in your inventory.")
-                          |> mes("Then we'll talk.")
-                          |> close()
-
-                        throw({:script_end, ctx})
-                      else
-                        ctx =
-                          if isbegin_quest(ctx, 4269) > 0 do
-                            ctx =
-                              ctx
-                              |> mes("[Hun]")
-                              |> mes("How's the taste?")
-                              |> mes(
-                                "Pretty good-taste of sweet and sour, right? It might not be much but it also has healing properties."
-                              )
-                              |> next()
-                              |> mes("[Hun]")
-                              |> mes("I want to give you more but that was the last of it")
-                              |> mes(
-                                "Anyways here's some potions. They'll come in handy when you start fighting."
-                              )
-                              |> completequest(7473)
-                              |> give_item(569, 30)
-                              |> getexp(200, 0)
-                              |> next()
-                              |> mes("[Hun]")
-                              |> mes(
-                                "Criatura Academy is a good place to build up experience for the future."
-                              )
-                              |> mes("And I'm not just saying this because I work here.")
-                              |> next()
-                              |> mes("[Hun]")
-                              |> mes("I'm for real... haha")
-                              |> close()
-
-                            throw({:script_end, ctx})
-                          else
-                            {ctx, v1} =
-                              ctx
-                              |> mes("[Hun]")
-                              |> mes("How's the taste?")
-                              |> mes(
-                                "Pretty good-taste of sweet and sour, right? It might not be much but it also has healing properties."
-                              )
-                              |> next()
-                              |> mes("[Hun]")
-                              |> mes("I want to give you more but that was the last of it")
-                              |> mes(
-                                "Anyways here's some potions. They'll come in handy when you start fighting."
-                              )
-                              |> completequest(7473)
-                              |> give_item(569, 30)
-                              |> getexp(200, 0)
-                              |> next()
-                              |> mes("[Hun]")
-                              |> mes("What do you plan to do from now on?")
-                              |> mes("Have you found a place to stay?")
-                              |> next()
-                              |> select([
-                                "I need help with that",
-                                "Anything will do really.",
-                                "Don't worry."
-                              ])
-
-                            ctx =
-                              case v1 do
-                                1 ->
-                                  ctx =
-                                    ctx
-                                    |> mes("[Hun]")
-                                    |> mes("But still, though.")
-                                    |> mes("It's tough to be out alone in a new place.")
-                                    |> mes("That's why Criatura Academy is there.")
-                                    |> next()
-                                    |> mes("[Hun]")
-                                    |> mes("Carocc sent you to me probably for the same reason.")
-                                    |> mes(
-                                      "Even though I'm just a work-hand here, I could show you around."
-                                    )
-                                    |> next()
-                                    |> mes("[Hun]")
-                                    |> mes("If you follow this road up to north, you can see")
-                                    |> mes(
-                                      "<NAVI>[the Academy building]<INFO>iz_ac01,100,39</INFO></NAVI>."
-                                    )
-                                    |> mes("Anybody can enroll, so take advantage of it.")
-                                    |> next()
-                                    |> emotion(:surprise)
-                                    |> mes("[Information Staff]")
-                                    |> mes("Sorry to interrupt.")
-                                    |> mes(
-                                      "But ^4d4dffif you need location info, please ask me.^000000"
-                                    )
-                                    |> next()
-                                    |> mes("[Information Staff]")
-                                    |> mes("Hun's information has limits")
-                                    |> close()
-
-                                  throw({:script_end, ctx})
-
-                                2 ->
-                                  ctx =
-                                    ctx
-                                    |> mes("[Hun]")
-                                    |> mes("How optimistic of you.")
-                                    |> mes(
-                                      "If you need help, feel free to visit Criatura Academy any time."
-                                    )
-                                    |> next()
-                                    |> mes("[Hun]")
-                                    |> mes(
-                                      "There's no requirement or payment to enroll so it would be a great help to you."
-                                    )
-                                    |> mes(
-                                      "When you go through this way to the north, you'll find"
-                                    )
-                                    |> mes(
-                                      "<NAVI>[the academy building]<INFO>iz_ac01,100,39</INFO></NAVI>."
-                                    )
-                                    |> next()
-                                    |> mes("[Hun]")
-                                    |> mes(
-                                      "If there are more adventurers like you, the future will be brighter."
-                                    )
-                                    |> mes("Hahahaha.")
-                                    |> next()
-                                    |> emotion(:surprise)
-                                    |> mes("[Information Staff]")
-                                    |> mes("Sorry to interrupt.")
-                                    |> mes(
-                                      "But ^4d4dffif you need location info, please ask me.^000000"
-                                    )
-                                    |> next()
-                                    |> mes("[Information Staff]")
-                                    |> mes("Hun's information has limits")
-                                    |> close()
-
-                                  throw({:script_end, ctx})
-
-                                3 ->
-                                  ctx =
-                                    ctx
-                                    |> mes("[Hun]")
-                                    |> mes("You already have a plan laid out?")
-                                    |> mes("Well prepared.")
-                                    |> mes(
-                                      "But just in case, if you are curious about the Criatura Academy, make a visit."
-                                    )
-                                    |> next()
-                                    |> mes("[Hun]")
-                                    |> mes(
-                                      "When you go through this way to the north, you'll find"
-                                    )
-                                    |> mes(
-                                      "<NAVI>[the academy building]<INFO>iz_ac01,100,39</INFO></NAVI>."
-                                    )
-                                    |> mes("What is well, is well- isn't it?")
-                                    |> next()
-                                    |> emotion(:surprise)
-                                    |> mes("[Information Staff]")
-                                    |> mes("You are correct.")
-                                    |> mes("Preperation is the key.")
-                                    |> mes(
-                                      "But ^4d4dffif you need location info, please ask me.^000000"
-                                    )
-                                    |> next()
-                                    |> mes("[Information Staff]")
-                                    |> mes("Hun's information has limits.")
-                                    |> close()
-
-                                  throw({:script_end, ctx})
-
-                                _ ->
-                                  ctx
-                              end
-
-                            ctx
-                          end
-
-                        ctx
-                      end
-
-                    ctx
-                  else
-                    ctx =
-                      if not Rathena.truthy?(isbegin_quest(ctx, 4269)) do
-                        {ctx, v2} =
-                          ctx
-                          |> mes("[Hun]")
-                          |> mes("It's you..")
-                          |> mes("What do you plan to do from now on?")
-                          |> mes("Have you found a place to stay?")
-                          |> next()
-                          |> select([
-                            "I need help with that",
-                            "Anything will do really.",
-                            "Don't worry."
-                          ])
-
-                        ctx =
-                          case v2 do
-                            1 ->
-                              ctx =
-                                ctx
-                                |> mes("[Hun]")
-                                |> mes("But still, though.")
-                                |> mes("It's tough to be out alone in a new place.")
-                                |> mes("That's why Criatura Academy is there.")
-                                |> next()
-                                |> mes("[Hun]")
-                                |> mes("Carocc sent you to me probably for the same reason.")
-                                |> mes(
-                                  "Even though I'm just a work-hand here, I could show you around."
-                                )
-                                |> next()
-                                |> mes("[Hun]")
-                                |> mes("If you follow this road up to north, you can see")
-                                |> mes(
-                                  "<NAVI>[the Academy building]<INFO>iz_ac01,100,39</INFO></NAVI>."
-                                )
-                                |> mes("Anybody can enroll, so take advantage of it.")
-                                |> next()
-                                |> emotion(:surprise)
-                                |> mes("[Information Staff]")
-                                |> mes("Sorry to interrupt.")
-                                |> mes(
-                                  "But ^4d4dffif you need location info, please ask me.^000000"
-                                )
-                                |> next()
-                                |> mes("[Information Staff]")
-                                |> mes("Hun's information has limits")
-                                |> close()
-
-                              throw({:script_end, ctx})
-
-                            2 ->
-                              ctx =
-                                ctx
-                                |> mes("[Hun]")
-                                |> mes("How optimistic of you.")
-                                |> mes(
-                                  "If you need help, feel free to visit Criatura Academy any time."
-                                )
-                                |> next()
-                                |> mes("[Hun]")
-                                |> mes(
-                                  "There's no requirement or payment to enroll so it would be a great help to you."
-                                )
-                                |> mes("When you go through this way to the north, you'll find")
-                                |> mes(
-                                  "<NAVI>[the academy building]<INFO>iz_ac01,100,39</INFO></NAVI>."
-                                )
-                                |> next()
-                                |> mes("[Hun]")
-                                |> mes(
-                                  "If there are more adventurers like you, the future will be brighter."
-                                )
-                                |> mes("Hahahaha.")
-                                |> next()
-                                |> emotion(:surprise)
-                                |> mes("[Information Staff]")
-                                |> mes("Sorry to interrupt.")
-                                |> mes(
-                                  "But ^4d4dffif you need location info, please ask me.^000000"
-                                )
-                                |> next()
-                                |> mes("[Information Staff]")
-                                |> mes("Hun's information has limits")
-                                |> close()
-
-                              throw({:script_end, ctx})
-
-                            3 ->
-                              ctx =
-                                ctx
-                                |> mes("[Hun]")
-                                |> mes("You already have a plan laid out?")
-                                |> mes("Well prepared.")
-                                |> mes(
-                                  "But just in case, if you are curious about the Criatura Academy, make a visit."
-                                )
-                                |> next()
-                                |> mes("[Hun]")
-                                |> mes("When you go through this way to the north, you'll find")
-                                |> mes(
-                                  "<NAVI>[the academy building]<INFO>iz_ac01,100,39</INFO></NAVI>."
-                                )
-                                |> mes("What is well, is well- isn't it?")
-                                |> next()
-                                |> emotion(:surprise)
-                                |> mes("[Information Staff]")
-                                |> mes("You are correct.")
-                                |> mes("Preperation is the key.")
-                                |> mes(
-                                  "But ^4d4dffif you need location info, please ask me.^000000"
-                                )
-                                |> next()
-                                |> mes("[Information Staff]")
-                                |> mes("Hun's information has limits.")
-                                |> close()
-
-                              throw({:script_end, ctx})
-
-                            _ ->
-                              ctx
-                          end
-
-                        ctx
-                      else
-                        ctx =
-                          ctx
-                          |> mes("[Hun]")
-                          |> mes(
-                            "Criatura Academy is a good place to build up experience for the future."
-                          )
-                          |> mes("I'm not saying this just because I work here.")
-                          |> next()
-                          |> mes("[Hun]")
-                          |> mes("For real... hahahaha")
-                          |> close()
-
-                        throw({:script_end, ctx})
-                      end
-
-                    ctx
-                  end
-
-                ctx
-              end
-
-            ctx
-          end
-
-        ctx
-      else
+    if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) and base_level(ctx) < 15 do
+      if isbegin_quest(ctx, 7472) == 1 do
         ctx =
           ctx
           |> mes("[Hun]")
+          |> mes("Oh.. you must be the adventurer Carocc was talking about.")
           |> mes(
-            "The Royal Criatura Academy was founded to help budding adventurers on their initial journey."
+            "I don't know where your homeland is but Midgard is a good place to start your life's journey."
+          )
+          |> next()
+          |> mes("[Hun]")
+          |> mes("It's a good sight to see new adventurers start their journey.")
+          |> mes("You must be tired. Need a drink?")
+          |> completequest(7472)
+          |> getexp(200, 0)
+          |> setquest(7473)
+          |> give_item(531, 1)
+          |> next()
+          |> mes("[Hun]")
+          |> mes(
+            "You can open the Item window by clicking on the 'item' icon on top left portion of the screen."
           )
           |> next()
           |> mes("[Hun]")
           |> mes(
-            "Although I'm but a work-hand here, it makes me happy to see students graduate here and become fine members of society."
+            "The items are automatically catagorized by 'consumables' 'equipment' 'etcetera' and 'personal' suitable for each use."
           )
+          |> mes("It will do the automatic sorting per indiviaul useage to")
+          |> next()
+          |> mes("[Hun]")
+          |> mes("Either ^4d4dffdouble click on the item^000000 you intend to use")
+          |> mes("or drag it onto^4d4dff the equipment window and use it^000000")
+          |> next()
+          |> cutin("tutorial03.bmp", 4)
+          |> mes("!- Information -!")
+          |> mes("^4d4dffItems can be used or equipped with simply double-clicking.")
+          |> mes("Item window can be opened with shortcut key Alt+E")
+          |> next()
+          |> mes("!- Information -!")
+          |> mes("^4d4dff Equipped items can be checked with Alt+ Q")
+          |> mes("Items can also be dragged onto the location where you wish to equip it.")
+          |> next()
+          |> cutin("", 255)
+          |> mes("[Hun]")
+          |> mes("For detailed info on individual items^4d4dff, right click ^000000on that item.")
+          |> mes("You can check the detailed info on the item.")
+          |> next()
+          |> cutin("tutorial04.bmp", 4)
+          |> mes("!- Information -!")
+          |> mes(
+            "^4d4dffRight-clicking on the item icon^4d4dff  brings up detailed info on the item."
+          )
+          |> next()
+          |> mes("!- Information -!")
+          |> mes(
+            "^4d4dffWhen you select other players, you can trade, party up with them with the community window that pops up."
+          )
+          |> next()
+          |> cutin("", 255)
+          |> mes("[Hun]")
+          |> mes("Ok now ^4d4dffdrink the apple juice that I gave you^000000.")
           |> close()
 
         throw({:script_end, ctx})
-      end
+      else
+        if not Rathena.truthy?(isbegin_quest(ctx, 7473)) do
+          ctx =
+            ctx
+            |> mes("[Hun]")
+            |> mes("Hey there.")
+            |> mes("Rest up for a bit.")
+            |> next()
+            |> mes("[Hun]")
+            |> mes("It's joyous to see new adventurers starting out.")
+            |> mes("You want something to drink while you are resting?")
+            |> setquest(7473)
+            |> give_item(531, 1)
+            |> next()
+            |> mes("[Hun]")
+            |> mes(
+              "Right clicking on the item icon ^4d4dffon the basic item window at the upper left corner brings up the detailed info on the item"
+            )
+            |> next()
+            |> mes("[Hun]")
+            |> mes(
+              "The items are automatically catagorized by 'consumables' 'equipment' 'etcetera' and 'personal' suitable for each use."
+            )
+            |> mes("It will do the automatic sorting per indiviaul useage to")
+            |> next()
+            |> mes("[Hun]")
+            |> mes("Either ^4d4dffdouble click on the item^000000 you intend to use")
+            |> mes("or drag it onto^4d4dff the equipment window and use it^000000")
+            |> next()
+            |> mes("[Hun]")
+            |> mes(
+              "For detailed info on individual items^4d4dff, right-click ^000000on the item."
+            )
+            |> mes("You can check the detailed info on the item.")
+            |> next()
+            |> cutin("tutorial04.bmp", 3)
+            |> mes("!- Information -!")
+            |> mes(
+              "Right clicking on the item icon ^4d4dffbrings up the detailed info on the item"
+            )
+            |> next()
+            |> mes("!- Information -!")
+            |> mes(
+              "When you select on other players^4d4dff you can trade, party up with them with the community window that pops up."
+            )
+            |> next()
+            |> cutin("", 255)
+            |> mes("[Hun]")
+            |> mes("Ok now ^4d4dffdrink the apple juice that I gave you^000000.")
+            |> close()
 
-    ctx
+          throw({:script_end, ctx})
+        else
+          if isbegin_quest(ctx, 7473) == 1 do
+            if count_item(ctx, 531) > 0 do
+              ctx =
+                ctx
+                |> mes("[Hun]")
+                |> mes("Consume the apple juice that I gave you in your inventory.")
+                |> mes("Then we'll talk.")
+                |> close()
+
+              throw({:script_end, ctx})
+            else
+              if isbegin_quest(ctx, 4269) > 0 do
+                ctx =
+                  ctx
+                  |> mes("[Hun]")
+                  |> mes("How's the taste?")
+                  |> mes(
+                    "Pretty good-taste of sweet and sour, right? It might not be much but it also has healing properties."
+                  )
+                  |> next()
+                  |> mes("[Hun]")
+                  |> mes("I want to give you more but that was the last of it")
+                  |> mes(
+                    "Anyways here's some potions. They'll come in handy when you start fighting."
+                  )
+                  |> completequest(7473)
+                  |> give_item(569, 30)
+                  |> getexp(200, 0)
+                  |> next()
+                  |> mes("[Hun]")
+                  |> mes(
+                    "Criatura Academy is a good place to build up experience for the future."
+                  )
+                  |> mes("And I'm not just saying this because I work here.")
+                  |> next()
+                  |> mes("[Hun]")
+                  |> mes("I'm for real... haha")
+                  |> close()
+
+                throw({:script_end, ctx})
+              else
+                {ctx, v1} =
+                  ctx
+                  |> mes("[Hun]")
+                  |> mes("How's the taste?")
+                  |> mes(
+                    "Pretty good-taste of sweet and sour, right? It might not be much but it also has healing properties."
+                  )
+                  |> next()
+                  |> mes("[Hun]")
+                  |> mes("I want to give you more but that was the last of it")
+                  |> mes(
+                    "Anyways here's some potions. They'll come in handy when you start fighting."
+                  )
+                  |> completequest(7473)
+                  |> give_item(569, 30)
+                  |> getexp(200, 0)
+                  |> next()
+                  |> mes("[Hun]")
+                  |> mes("What do you plan to do from now on?")
+                  |> mes("Have you found a place to stay?")
+                  |> next()
+                  |> select(["I need help with that", "Anything will do really.", "Don't worry."])
+
+                _ = v1
+
+                case v1 do
+                  1 ->
+                    ctx =
+                      ctx
+                      |> mes("[Hun]")
+                      |> mes("But still, though.")
+                      |> mes("It's tough to be out alone in a new place.")
+                      |> mes("That's why Criatura Academy is there.")
+                      |> next()
+                      |> mes("[Hun]")
+                      |> mes("Carocc sent you to me probably for the same reason.")
+                      |> mes("Even though I'm just a work-hand here, I could show you around.")
+                      |> next()
+                      |> mes("[Hun]")
+                      |> mes("If you follow this road up to north, you can see")
+                      |> mes("<NAVI>[the Academy building]<INFO>iz_ac01,100,39</INFO></NAVI>.")
+                      |> mes("Anybody can enroll, so take advantage of it.")
+                      |> next()
+
+                    ctx =
+                      ctx
+                      |> emotion(
+                        :surprise,
+                        getnpcid(ctx, Rathena.concat("Information Staff#", strnpcinfo(ctx, 2)))
+                      )
+                      |> mes("[Information Staff]")
+                      |> mes("Sorry to interrupt.")
+                      |> mes("But ^4d4dffif you need location info, please ask me.^000000")
+                      |> next()
+                      |> mes("[Information Staff]")
+                      |> mes("Hun's information has limits")
+                      |> close()
+
+                    throw({:script_end, ctx})
+
+                  2 ->
+                    ctx =
+                      ctx
+                      |> mes("[Hun]")
+                      |> mes("How optimistic of you.")
+                      |> mes("If you need help, feel free to visit Criatura Academy any time.")
+                      |> next()
+                      |> mes("[Hun]")
+                      |> mes(
+                        "There's no requirement or payment to enroll so it would be a great help to you."
+                      )
+                      |> mes("When you go through this way to the north, you'll find")
+                      |> mes("<NAVI>[the academy building]<INFO>iz_ac01,100,39</INFO></NAVI>.")
+                      |> next()
+                      |> mes("[Hun]")
+                      |> mes(
+                        "If there are more adventurers like you, the future will be brighter."
+                      )
+                      |> mes("Hahahaha.")
+                      |> next()
+
+                    ctx =
+                      ctx
+                      |> emotion(
+                        :surprise,
+                        getnpcid(ctx, Rathena.concat("Information Staff#", strnpcinfo(ctx, 2)))
+                      )
+                      |> mes("[Information Staff]")
+                      |> mes("Sorry to interrupt.")
+                      |> mes("But ^4d4dffif you need location info, please ask me.^000000")
+                      |> next()
+                      |> mes("[Information Staff]")
+                      |> mes("Hun's information has limits")
+                      |> close()
+
+                    throw({:script_end, ctx})
+
+                  3 ->
+                    ctx =
+                      ctx
+                      |> mes("[Hun]")
+                      |> mes("You already have a plan laid out?")
+                      |> mes("Well prepared.")
+                      |> mes(
+                        "But just in case, if you are curious about the Criatura Academy, make a visit."
+                      )
+                      |> next()
+                      |> mes("[Hun]")
+                      |> mes("When you go through this way to the north, you'll find")
+                      |> mes("<NAVI>[the academy building]<INFO>iz_ac01,100,39</INFO></NAVI>.")
+                      |> mes("What is well, is well- isn't it?")
+                      |> next()
+
+                    ctx =
+                      ctx
+                      |> emotion(
+                        :surprise,
+                        getnpcid(ctx, Rathena.concat("Information Staff#", strnpcinfo(ctx, 2)))
+                      )
+                      |> mes("[Information Staff]")
+                      |> mes("You are correct.")
+                      |> mes("Preperation is the key.")
+                      |> mes("But ^4d4dffif you need location info, please ask me.^000000")
+                      |> next()
+                      |> mes("[Information Staff]")
+                      |> mes("Hun's information has limits.")
+                      |> close()
+
+                    throw({:script_end, ctx})
+
+                  _ ->
+                    throw({:script_end, ctx})
+                end
+              end
+            end
+          else
+            if not Rathena.truthy?(isbegin_quest(ctx, 4269)) do
+              {ctx, v2} =
+                ctx
+                |> mes("[Hun]")
+                |> mes("It's you..")
+                |> mes("What do you plan to do from now on?")
+                |> mes("Have you found a place to stay?")
+                |> next()
+                |> select(["I need help with that", "Anything will do really.", "Don't worry."])
+
+              _ = v2
+
+              case v2 do
+                1 ->
+                  ctx =
+                    ctx
+                    |> mes("[Hun]")
+                    |> mes("But still, though.")
+                    |> mes("It's tough to be out alone in a new place.")
+                    |> mes("That's why Criatura Academy is there.")
+                    |> next()
+                    |> mes("[Hun]")
+                    |> mes("Carocc sent you to me probably for the same reason.")
+                    |> mes("Even though I'm just a work-hand here, I could show you around.")
+                    |> next()
+                    |> mes("[Hun]")
+                    |> mes("If you follow this road up to north, you can see")
+                    |> mes("<NAVI>[the Academy building]<INFO>iz_ac01,100,39</INFO></NAVI>.")
+                    |> mes("Anybody can enroll, so take advantage of it.")
+                    |> next()
+
+                  ctx =
+                    ctx
+                    |> emotion(
+                      :surprise,
+                      getnpcid(ctx, Rathena.concat("Information Staff#", strnpcinfo(ctx, 2)))
+                    )
+                    |> mes("[Information Staff]")
+                    |> mes("Sorry to interrupt.")
+                    |> mes("But ^4d4dffif you need location info, please ask me.^000000")
+                    |> next()
+                    |> mes("[Information Staff]")
+                    |> mes("Hun's information has limits")
+                    |> close()
+
+                  throw({:script_end, ctx})
+
+                2 ->
+                  ctx =
+                    ctx
+                    |> mes("[Hun]")
+                    |> mes("How optimistic of you.")
+                    |> mes("If you need help, feel free to visit Criatura Academy any time.")
+                    |> next()
+                    |> mes("[Hun]")
+                    |> mes(
+                      "There's no requirement or payment to enroll so it would be a great help to you."
+                    )
+                    |> mes("When you go through this way to the north, you'll find")
+                    |> mes("<NAVI>[the academy building]<INFO>iz_ac01,100,39</INFO></NAVI>.")
+                    |> next()
+                    |> mes("[Hun]")
+                    |> mes("If there are more adventurers like you, the future will be brighter.")
+                    |> mes("Hahahaha.")
+                    |> next()
+
+                  ctx =
+                    ctx
+                    |> emotion(
+                      :surprise,
+                      getnpcid(ctx, Rathena.concat("Information Staff#", strnpcinfo(ctx, 2)))
+                    )
+                    |> mes("[Information Staff]")
+                    |> mes("Sorry to interrupt.")
+                    |> mes("But ^4d4dffif you need location info, please ask me.^000000")
+                    |> next()
+                    |> mes("[Information Staff]")
+                    |> mes("Hun's information has limits")
+                    |> close()
+
+                  throw({:script_end, ctx})
+
+                3 ->
+                  ctx =
+                    ctx
+                    |> mes("[Hun]")
+                    |> mes("You already have a plan laid out?")
+                    |> mes("Well prepared.")
+                    |> mes(
+                      "But just in case, if you are curious about the Criatura Academy, make a visit."
+                    )
+                    |> next()
+                    |> mes("[Hun]")
+                    |> mes("When you go through this way to the north, you'll find")
+                    |> mes("<NAVI>[the academy building]<INFO>iz_ac01,100,39</INFO></NAVI>.")
+                    |> mes("What is well, is well- isn't it?")
+                    |> next()
+
+                  ctx =
+                    ctx
+                    |> emotion(
+                      :surprise,
+                      getnpcid(ctx, Rathena.concat("Information Staff#", strnpcinfo(ctx, 2)))
+                    )
+                    |> mes("[Information Staff]")
+                    |> mes("You are correct.")
+                    |> mes("Preperation is the key.")
+                    |> mes("But ^4d4dffif you need location info, please ask me.^000000")
+                    |> next()
+                    |> mes("[Information Staff]")
+                    |> mes("Hun's information has limits.")
+                    |> close()
+
+                  throw({:script_end, ctx})
+
+                _ ->
+                  throw({:script_end, ctx})
+              end
+            else
+              ctx =
+                ctx
+                |> mes("[Hun]")
+                |> mes("Criatura Academy is a good place to build up experience for the future.")
+                |> mes("I'm not saying this just because I work here.")
+                |> next()
+                |> mes("[Hun]")
+                |> mes("For real... hahahaha")
+                |> close()
+
+              throw({:script_end, ctx})
+            end
+          end
+        end
+      end
+    else
+      ctx =
+        ctx
+        |> mes("[Hun]")
+        |> mes(
+          "The Royal Criatura Academy was founded to help budding adventurers on their initial journey."
+        )
+        |> next()
+        |> mes("[Hun]")
+        |> mes(
+          "Although I'm but a work-hand here, it makes me happy to see students graduate here and become fine members of society."
+        )
+        |> close()
+
+      throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

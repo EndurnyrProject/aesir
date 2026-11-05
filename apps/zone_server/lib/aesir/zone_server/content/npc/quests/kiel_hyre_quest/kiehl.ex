@@ -37,7 +37,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Kiehl do
     ]
 
   alias Aesir.ZoneServer.Script.Ctx
-  alias Aesir.ZoneServer.Script.Todo
 
   @impl true
   @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
@@ -353,11 +352,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Kiehl do
     |> next()
     |> mes("[Mitchell]")
     |> mes("Nooooo!")
-    |> specialeffect(Todo.const!(:PF_FOGWALL))
-    |> specialeffect(Todo.const!(:PF_FOGWALL))
-    |> specialeffect(Todo.const!(:PF_FOGWALL))
-    |> specialeffect(Todo.const!(:PF_FOGWALL))
-    |> specialeffect(Todo.const!(:PF_FOGWALL))
+    |> specialeffect(:pf_fogwall, :area, "Mitchell#KiehlRoom")
+    |> specialeffect(:pf_fogwall, :area, "Agent#KHAgent1")
+    |> specialeffect(:pf_fogwall, :area, "Agent#KHAgent2")
+    |> specialeffect(:pf_fogwall, :area, "Agent#KHAgent3")
+    |> specialeffect(:pf_fogwall, :area, "Agent#KHAgent4")
     |> next()
     |> cutin("kh_kiel03", 2)
     |> mes("[Kiehl]")

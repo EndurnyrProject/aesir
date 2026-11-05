@@ -86,7 +86,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Book do
         |> mes("wall slides opens open")
         |> mes("to reveal a secret path.^000000")
         |> set_char_var(:KielHyreQuest, 28)
-        |> specialeffect(:readyportal2)
+        |> specialeffect(:readyportal2, :area, "Wall#kh")
         |> close()
 
       true ->

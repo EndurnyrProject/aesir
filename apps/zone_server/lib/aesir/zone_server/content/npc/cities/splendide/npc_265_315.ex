@@ -30,9 +30,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Splendide.Npc265315 do
 
   @impl true
   @spec on_talk(Ctx.t()) :: Ctx.t()
-  def on_talk(ctx) do
-    ctx
-  end
+  # rAthena starts a click at the first label, so it runs this body too.
+  def on_talk(ctx), do: on_event("OnTouch", ctx)
 
   defp speak_through_wall(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do

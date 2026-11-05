@@ -441,7 +441,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.MageChuck do
             ctx
 
           _ ->
-            ctx
+            throw({:script_end, ctx})
         end
       catch
         :throw, {:brk_2, ctx} -> ctx

@@ -433,7 +433,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.LusaSDesk do
           ctx
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     ctx

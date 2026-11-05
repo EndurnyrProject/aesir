@@ -156,7 +156,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
   end
 
   test "specialeffect buildins map to their DSL ops with an effect arg" do
-    assert {:ok, %{dsl: "specialeffect", args: [:effect]}} = CommandMap.command("specialeffect")
+    assert {:ok, %{dsl: "specialeffect", shape: :specialeffect}} =
+             CommandMap.command("specialeffect")
+
     assert {:ok, %{dsl: "specialeffect2", args: [:effect]}} = CommandMap.command("specialeffect2")
     assert CommandMap.supported?("specialeffect")
     assert CommandMap.supported?("SpecialEffect2")

@@ -181,7 +181,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FVotekafra do
                         ctx
 
                       _ ->
-                        ctx
+                        throw({:script_end, ctx})
                     end
 
                   ctx
@@ -291,7 +291,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FVotekafra do
                             ctx
 
                           _ ->
-                            ctx
+                            throw({:script_end, ctx})
                         end
 
                       ctx
@@ -392,7 +392,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FVotekafra do
                         ctx
 
                       _ ->
-                        ctx
+                        throw({:script_end, ctx})
                     end
 
                   ctx
@@ -464,7 +464,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FVotekafra do
                             ctx
 
                           _ ->
-                            ctx
+                            throw({:script_end, ctx})
                         end
 
                       ctx
@@ -557,7 +557,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FVotekafra do
                             ctx
 
                           _ ->
-                            ctx
+                            throw({:script_end, ctx})
                         end
 
                       ctx
@@ -605,7 +605,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FVotekafra do
           ctx
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     ctx = ctx |> close() |> cutin("", 255)

@@ -117,83 +117,82 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanTrainer do
               |> next()
               |> select(["No thanks", "I want to test Swordsman Skills!", "Change me right now!"])
 
-            ctx =
-              case v1 do
-                1 ->
+            _ = v1
+
+            case v1 do
+              1 ->
+                ctx =
+                  ctx
+                  |> mes("[Trainer Adric]")
+                  |> mes("Since you're not interested in this opportunity,")
+                  |> next()
+                  |> mes("[Trainer Adric]")
+                  |> mes("Go hunt Porings and stay")
+                  |> mes("as a novice forever!")
+                  |> cutin("", 255)
+                  |> close()
+
+                throw({:script_end, ctx})
+
+              2 ->
+                ctx =
+                  ctx
+                  |> mes("[Trainer Adric]")
+                  |> mes("Calm down, lets's start over.")
+                  |> mes("First, I'll give you a ^FF0000Swordman Manual^000000")
+                  |> mes("Read it carefuly before asking any questions.")
+                  |> give_item(2819, 1)
+                  |> set_char_var(:nov_3_swordman, 1)
+                  |> setquest(1229)
+                  |> cutin("", 255)
+                  |> close()
+
+                throw({:script_end, ctx})
+
+              3 ->
+                if job_level(ctx) < 10 do
                   ctx =
                     ctx
                     |> mes("[Trainer Adric]")
-                    |> mes("Since you're not interested in this opportunity,")
+                    |> mes("If you want to become a Swordman,")
+                    |> mes("You should reach over ^006400Base level 10^000000,")
+                    |> mes("And become more than ^006400beginner's skill level 9^000000.")
                     |> next()
                     |> mes("[Trainer Adric]")
-                    |> mes("Go hunt Porings and stay")
-                    |> mes("as a novice forever!")
+                    |> mes("Get taught here and follow the steps.")
                     |> cutin("", 255)
                     |> close()
 
                   throw({:script_end, ctx})
-
-                2 ->
+                else
                   ctx =
                     ctx
                     |> mes("[Trainer Adric]")
-                    |> mes("Calm down, lets's start over.")
-                    |> mes("First, I'll give you a ^FF0000Swordman Manual^000000")
-                    |> mes("Read it carefuly before asking any questions.")
-                    |> give_item(2819, 1)
-                    |> set_char_var(:nov_3_swordman, 1)
-                    |> setquest(1229)
+                    |> mes("It seems you have learned enough.")
+                    |> mes("Head over to the Swordsman Guild")
+                    |> mes("to continue your change into a Swordsman!")
+                    |> next()
+                    |> mes("[Trainer Adric]")
+                    |> mes("The Swordsman Guild is located")
+                    |> mes("to the west of the Izlude Plaza Center.")
+                    |> mes("It should be very easy to find.")
                     |> cutin("", 255)
-                    |> close()
+                    |> set_char_var(:nov_3_swordman, 4)
 
+                  ctx =
+                    if Rathena.truthy?(isbegin_quest(ctx, 1230)) do
+                      erasequest(ctx, 1230)
+                    else
+                      ctx
+                    end
+
+                  ctx = close(ctx)
                   throw({:script_end, ctx})
+                end
 
-                3 ->
-                  if job_level(ctx) < 10 do
-                    ctx =
-                      ctx
-                      |> mes("[Trainer Adric]")
-                      |> mes("If you want to become a Swordman,")
-                      |> mes("You should reach over ^006400Base level 10^000000,")
-                      |> mes("And become more than ^006400beginner's skill level 9^000000.")
-                      |> next()
-                      |> mes("[Trainer Adric]")
-                      |> mes("Get taught here and follow the steps.")
-                      |> cutin("", 255)
-                      |> close()
-
-                    throw({:script_end, ctx})
-                  else
-                    ctx =
-                      ctx
-                      |> mes("[Trainer Adric]")
-                      |> mes("It seems you have learned enough.")
-                      |> mes("Head over to the Swordsman Guild")
-                      |> mes("to continue your change into a Swordsman!")
-                      |> next()
-                      |> mes("[Trainer Adric]")
-                      |> mes("The Swordsman Guild is located")
-                      |> mes("to the west of the Izlude Plaza Center.")
-                      |> mes("It should be very easy to find.")
-                      |> cutin("", 255)
-                      |> set_char_var(:nov_3_swordman, 4)
-
-                    ctx =
-                      if Rathena.truthy?(isbegin_quest(ctx, 1230)) do
-                        erasequest(ctx, 1230)
-                      else
-                        ctx
-                      end
-
-                    ctx = close(ctx)
-                    throw({:script_end, ctx})
-                  end
-
-                _ ->
-                  ctx
-              end
-
-            ctx
+              _ ->
+                throw({:script_end, ctx})
+            end
           else
             ctx =
               if get_char_var(ctx, :nov_3_swordman, 0) == 1 do
@@ -222,156 +221,102 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanTrainer do
               else
                 ctx =
                   if get_char_var(ctx, :nov_3_swordman, 0) == 2 do
-                    ctx =
-                      if job_level(ctx) < 10 do
-                        ctx =
-                          ctx
-                          |> mes("[Trainer Adric]")
-                          |> mes(
-                            "Using the Swordman Manual I gave you train by hunting monsters."
-                          )
-                          |> mes(
-                            "Go to the Battle Instructor Subino on the first floor Armory room."
-                          )
-                          |> next()
-                          |> mes("[Trainer Adric]")
-                          |> mes(
-                            "Raise your level to ^006400job level 10^000000 and get to ^006400beginner's skill level 9^000000, come back here again."
-                          )
-                          |> set_char_var(:nov_3_swordman, 3)
+                    if job_level(ctx) < 10 do
+                      ctx =
+                        ctx
+                        |> mes("[Trainer Adric]")
+                        |> mes("Using the Swordman Manual I gave you train by hunting monsters.")
+                        |> mes(
+                          "Go to the Battle Instructor Subino on the first floor Armory room."
+                        )
+                        |> next()
+                        |> mes("[Trainer Adric]")
+                        |> mes(
+                          "Raise your level to ^006400job level 10^000000 and get to ^006400beginner's skill level 9^000000, come back here again."
+                        )
+                        |> set_char_var(:nov_3_swordman, 3)
 
-                        ctx =
-                          if Rathena.truthy?(isbegin_quest(ctx, 1230)) do
-                            erasequest(ctx, 1230)
-                          else
+                      ctx =
+                        if Rathena.truthy?(isbegin_quest(ctx, 1230)) do
+                          erasequest(ctx, 1230)
+                        else
+                          ctx
+                        end
+
+                      ctx = ctx |> cutin("", 255) |> close()
+                      throw({:script_end, ctx})
+                    else
+                      {ctx, v3} =
+                        ctx
+                        |> mes("[Trainer Adric]")
+                        |> mes("Since you have enough job levels,")
+                        |> mes("you don't need any more lecturing.")
+                        |> next()
+                        |> select([
+                          "Then I will stop.",
+                          "But I want to listen more.",
+                          "I want to be a Swordsman right away!"
+                        ])
+
+                      _ = v3
+
+                      case v3 do
+                        1 ->
+                          ctx =
                             ctx
-                          end
+                            |> mes("[Trainer Adric]")
+                            |> mes("You surpassed the study material to raise your level.")
+                            |> next()
+                            |> mes("[Trainer Adric]")
+                            |> mes("Impressive.")
+                            |> cutin("", 255)
+                            |> close()
 
-                        ctx = ctx |> cutin("", 255) |> close()
-                        throw({:script_end, ctx})
-                      else
-                        {ctx, v3} =
-                          ctx
-                          |> mes("[Trainer Adric]")
-                          |> mes("Since you have enough job levels,")
-                          |> mes("you don't need any more lecturing.")
-                          |> next()
-                          |> select([
-                            "Then I will stop.",
-                            "But I want to listen more.",
-                            "I want to be a Swordsman right away!"
-                          ])
+                          throw({:script_end, ctx})
 
-                        ctx =
-                          case v3 do
+                        2 ->
+                          {ctx, v4} =
+                            ctx
+                            |> mes("[Trainer Adric]")
+                            |> mes("There's nothing else special to teach you.")
+                            |> mes(
+                              "Everything I taught you if you remember them well, that's all you need."
+                            )
+                            |> next()
+                            |> mes("[Trainer Adric]")
+                            |> mes("If you need additional training,")
+                            |> mes("Go to the Battle Instructor Subino")
+                            |> mes("on the first floor Armory room.")
+                            |> next()
+                            |> select([
+                              "This is very tedious.",
+                              "I need more training.",
+                              "I want to be a Swordsman right away!"
+                            ])
+
+                          _ = v4
+
+                          case v4 do
                             1 ->
                               ctx =
                                 ctx
                                 |> mes("[Trainer Adric]")
-                                |> mes("You surpassed the study material to raise your level.")
-                                |> next()
-                                |> mes("[Trainer Adric]")
-                                |> mes("Impressive.")
+                                |> mes("A simple No would've sufficed.")
                                 |> cutin("", 255)
                                 |> close()
 
                               throw({:script_end, ctx})
 
                             2 ->
-                              {ctx, v4} =
+                              ctx =
                                 ctx
                                 |> mes("[Trainer Adric]")
-                                |> mes("There's nothing else special to teach you.")
                                 |> mes(
-                                  "Everything I taught you if you remember them well, that's all you need."
+                                  "Go to the Battle Instructor Subino on the first floor Armory room."
                                 )
-                                |> next()
-                                |> mes("[Trainer Adric]")
-                                |> mes("If you need additional training,")
-                                |> mes("Go to the Battle Instructor Subino")
-                                |> mes("on the first floor Armory room.")
-                                |> next()
-                                |> select([
-                                  "This is very tedious.",
-                                  "I need more training.",
-                                  "I want to be a Swordsman right away!"
-                                ])
-
-                              ctx =
-                                case v4 do
-                                  1 ->
-                                    ctx =
-                                      ctx
-                                      |> mes("[Trainer Adric]")
-                                      |> mes("A simple No would've sufficed.")
-                                      |> cutin("", 255)
-                                      |> close()
-
-                                    throw({:script_end, ctx})
-
-                                  2 ->
-                                    ctx =
-                                      ctx
-                                      |> mes("[Trainer Adric]")
-                                      |> mes(
-                                        "Go to the Battle Instructor Subino on the first floor Armory room."
-                                      )
-                                      |> mes("If you think you're ready, come back here.")
-                                      |> mes("You need to change to a Swordsman job soon!")
-                                      |> set_char_var(:nov_3_swordman, 3)
-
-                                    ctx =
-                                      if Rathena.truthy?(isbegin_quest(ctx, 1230)) do
-                                        erasequest(ctx, 1230)
-                                      else
-                                        ctx
-                                      end
-
-                                    ctx = ctx |> cutin("", 255) |> close()
-                                    throw({:script_end, ctx})
-
-                                  3 ->
-                                    ctx =
-                                      ctx
-                                      |> mes("[Trainer Adric]")
-                                      |> mes("It seems you have learned enough.")
-                                      |> mes("Head over to the Swordsman Guild")
-                                      |> mes("to continue your transfer to a Swordsman!")
-                                      |> next()
-                                      |> mes("[Trainer Adric]")
-                                      |> mes("The Swordsman Guild is located")
-                                      |> mes("to the west of the Izlude Plaza Center.")
-                                      |> mes("It should be very easy to find.")
-                                      |> cutin("", 255)
-                                      |> set_char_var(:nov_3_swordman, 4)
-
-                                    ctx =
-                                      if Rathena.truthy?(isbegin_quest(ctx, 1230)) do
-                                        erasequest(ctx, 1230)
-                                      else
-                                        ctx
-                                      end
-
-                                    ctx = close(ctx)
-                                    throw({:script_end, ctx})
-
-                                  _ ->
-                                    ctx
-                                end
-
-                              ctx =
-                                ctx
-                                |> mes("[Trainer Adric]")
-                                |> mes("It seems you have learned enough.")
-                                |> mes("Head over to the Swordsman Guild")
-                                |> mes("to continue your change into a Swordsman!")
-                                |> next()
-                                |> mes("[Trainer Adric]")
-                                |> mes("The Swordsman Guild is located")
-                                |> mes("to the west of the Izlude Plaza Center.")
-                                |> mes("It should be very easy to find.")
-                                |> cutin("", 255)
-                                |> set_char_var(:nov_3_swordman, 4)
+                                |> mes("If you think you're ready, come back here.")
+                                |> mes("You need to change to a Swordsman job soon!")
+                                |> set_char_var(:nov_3_swordman, 3)
 
                               ctx =
                                 if Rathena.truthy?(isbegin_quest(ctx, 1230)) do
@@ -380,7 +325,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanTrainer do
                                   ctx
                                 end
 
-                              ctx = close(ctx)
+                              ctx = ctx |> cutin("", 255) |> close()
                               throw({:script_end, ctx})
 
                             3 ->
@@ -389,7 +334,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanTrainer do
                                 |> mes("[Trainer Adric]")
                                 |> mes("It seems you have learned enough.")
                                 |> mes("Head over to the Swordsman Guild")
-                                |> mes("to continue your change into a Swordsman!")
+                                |> mes("to continue your transfer to a Swordsman!")
                                 |> next()
                                 |> mes("[Trainer Adric]")
                                 |> mes("The Swordsman Guild is located")
@@ -409,13 +354,38 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanTrainer do
                               throw({:script_end, ctx})
 
                             _ ->
-                              ctx
+                              throw({:script_end, ctx})
                           end
 
-                        ctx
-                      end
+                        3 ->
+                          ctx =
+                            ctx
+                            |> mes("[Trainer Adric]")
+                            |> mes("It seems you have learned enough.")
+                            |> mes("Head over to the Swordsman Guild")
+                            |> mes("to continue your change into a Swordsman!")
+                            |> next()
+                            |> mes("[Trainer Adric]")
+                            |> mes("The Swordsman Guild is located")
+                            |> mes("to the west of the Izlude Plaza Center.")
+                            |> mes("It should be very easy to find.")
+                            |> cutin("", 255)
+                            |> set_char_var(:nov_3_swordman, 4)
 
-                    ctx
+                          ctx =
+                            if Rathena.truthy?(isbegin_quest(ctx, 1230)) do
+                              erasequest(ctx, 1230)
+                            else
+                              ctx
+                            end
+
+                          ctx = close(ctx)
+                          throw({:script_end, ctx})
+
+                        _ ->
+                          throw({:script_end, ctx})
+                      end
+                    end
                   else
                     ctx =
                       if get_char_var(ctx, :nov_3_swordman, 0) == 3 do
@@ -609,7 +579,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanTrainer do
               ctx
 
             _ ->
-              ctx
+              throw({:script_end, ctx})
           end
 
         throw({:brk_2, ctx})

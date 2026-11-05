@@ -143,33 +143,35 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Arena do
               |> next()
               |> select(["Are you kidding me?!", "Where's the treasure?"])
 
-            v2 = Rathena.bool_int(v1 == 1)
+            _ = Rathena.bool_int(v1 == 1)
 
-            ctx =
-              case v2 do
-                _ -> ctx
-              end
+            {ctx, _} =
+              ctx
+              |> mes("[Lumin]")
+              |> mes("No...")
+              |> mes("Meeting three times in one day must be destiny.")
+              |> mes("You and I can be friends.")
+              |> cutin("nov_lumin05.bmp", 2)
+              |> next()
+              |> select(["Or Frenemies!"])
 
             ctx =
               ctx
               |> mes("[Lumin]")
-              |> mes("Red potions.")
-              |> mes("If I hand it over to you, you'll just waste 'em so I'll just keep them.")
-              |> cutin("nov_lumin01.bmp", 2)
-              |> next()
-              |> mes("[Lumin]")
-              |> mes("Come on this is just friendly competition.")
-              |> cutin("nov_lumin05.bmp", 2)
-              |> next()
-              |> mes("[Lumin]")
-              |> mes("I am doing this for you to make you stronger.")
-              |> mes("Now, so long.")
-              |> cutin("nov_lumin03.bmp", 2)
+              |> mes("Frene-what? Oh well I'm done with the mission.")
+              |> mes("Take care.")
+              |> cutin("nov_lumin02.bmp", 2)
               |> next()
               |> cutin("", 255)
-              |> mes("^4d4dff...I have to report of the result to Information staff...^000000.")
+
+            ctx =
+              ctx
+              |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
+              |> mes("Are you even listening to me?!")
               |> setquest(7476)
               |> viewpoint(2, 207, 167, 3, 16_711_680)
+              |> next()
+              |> mes("^4d4dff...I have to report the result to the Information Staff...^000000.")
               |> close()
 
             throw({:script_end, ctx})

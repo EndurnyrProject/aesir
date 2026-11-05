@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.M3Blank1ASwdtrap3
 
   @impl true
   def on_talk(ctx) do
-    ctx
+    ev_ontouch(ctx)
   catch
     :throw, {:script_end, ctx} -> ctx
   end

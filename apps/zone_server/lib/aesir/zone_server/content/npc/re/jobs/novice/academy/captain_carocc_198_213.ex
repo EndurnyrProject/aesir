@@ -505,7 +505,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc19821
                           end
 
                         _ ->
-                          ctx
+                          throw({:script_end, ctx})
                       end
 
                     ctx
@@ -653,7 +653,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc19821
                   ctx
 
                 _ ->
-                  ctx
+                  throw({:script_end, ctx})
               end
 
             ctx

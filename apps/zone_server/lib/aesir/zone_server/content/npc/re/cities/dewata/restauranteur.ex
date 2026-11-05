@@ -50,156 +50,144 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Restauranteur do
       |> next()
       |> select(["About Dewata dishes", "Today's menu?", "I'm okay."])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx =
-            ctx
-            |> mes("[Restauranteur]")
-            |> mes(
-              "Need info about our foods? Well... I don't have much to talk about, but feel free to listen if you want."
-            )
-            |> next()
-            |> mes("[Restauranteur]")
-            |> mes("So much to cover, let me begin.")
-            |> next()
-            |> mes("[Restauranteur]")
-            |> mes("First, Dewata dishes have special names based on each cooking recipe,")
-            |> next()
-            |> mes("[Restauranteur]")
-            |> mes("If dish name has 'Goreng' in it, then it is either stir or deep fried food.")
-            |> next()
-            |> mes("[Restauranteur]")
-            |> mes("If it is a type of 'Bakar', then it is a grilled food.")
-            |> next()
-            |> mes("[Restauranteur]")
-            |> mes("And if it's 'Satay', then you are eating a skewered dish.")
-            |> next()
-            |> mes("[Restauranteur]")
-            |> mes("Second, we have dishes named after basic ingredients,")
-            |> next()
-            |> mes("[Restauranteur]")
-            |> mes(
-              "In Dewata island, we call rice as Nasi, noodle as Mie, bread as Roti, chicken as Ayam, fish as Ikan, and corn as Jagung."
-            )
-            |> next()
-            |> mes("[Restauranteur]")
-            |> mes(
-              "So, if rice is fried we call it 'Nasi Goreng', and fried noodle is 'Mie Goreng'."
-            )
-            |> next()
-            |> mes("[Restauranteur]")
-            |> mes(
-              "Well... This is enough to enjoy our foods in Dewata!! If you are hungry, we have our special set menu for only ^0000FF5000^000000 Zeny."
-            )
-            |> close()
+    _ = v1
 
-          throw({:script_end, ctx})
+    case v1 do
+      1 ->
+        ctx =
+          ctx
+          |> mes("[Restauranteur]")
+          |> mes(
+            "Need info about our foods? Well... I don't have much to talk about, but feel free to listen if you want."
+          )
+          |> next()
+          |> mes("[Restauranteur]")
+          |> mes("So much to cover, let me begin.")
+          |> next()
+          |> mes("[Restauranteur]")
+          |> mes("First, Dewata dishes have special names based on each cooking recipe,")
+          |> next()
+          |> mes("[Restauranteur]")
+          |> mes("If dish name has 'Goreng' in it, then it is either stir or deep fried food.")
+          |> next()
+          |> mes("[Restauranteur]")
+          |> mes("If it is a type of 'Bakar', then it is a grilled food.")
+          |> next()
+          |> mes("[Restauranteur]")
+          |> mes("And if it's 'Satay', then you are eating a skewered dish.")
+          |> next()
+          |> mes("[Restauranteur]")
+          |> mes("Second, we have dishes named after basic ingredients,")
+          |> next()
+          |> mes("[Restauranteur]")
+          |> mes(
+            "In Dewata island, we call rice as Nasi, noodle as Mie, bread as Roti, chicken as Ayam, fish as Ikan, and corn as Jagung."
+          )
+          |> next()
+          |> mes("[Restauranteur]")
+          |> mes(
+            "So, if rice is fried we call it 'Nasi Goreng', and fried noodle is 'Mie Goreng'."
+          )
+          |> next()
+          |> mes("[Restauranteur]")
+          |> mes(
+            "Well... This is enough to enjoy our foods in Dewata!! If you are hungry, we have our special set menu for only ^0000FF5000^000000 Zeny."
+          )
+          |> close()
 
-        2 ->
-          {ctx, v2} =
-            ctx
-            |> mes("[Restauranteur]")
-            |> mes("We have 2 items 'Nasi Goreng' and 'Satay'. Which one do you want?")
-            |> next()
-            |> select(["Nasi Goreng", "Satay"])
+        throw({:script_end, ctx})
 
-          ctx =
-            case v2 do
-              1 ->
+      2 ->
+        {ctx, v2} =
+          ctx
+          |> mes("[Restauranteur]")
+          |> mes("We have 2 items 'Nasi Goreng' and 'Satay'. Which one do you want?")
+          |> next()
+          |> select(["Nasi Goreng", "Satay"])
+
+        ctx =
+          case v2 do
+            1 ->
+              ctx
+              |> mes("[Restauranteur]")
+              |> mes(
+                "This is Nasi Goreng fried with my special sauce plus egg fry on the top. It only costs ^0000FF5000^000000 Zeny."
+              )
+              |> set_local(:food, 11532)
+
+            2 ->
+              ctx =
                 ctx
                 |> mes("[Restauranteur]")
                 |> mes(
-                  "This is Nasi Goreng fried with my special sauce plus egg fry on the top. It only costs ^0000FF5000^000000 Zeny."
+                  "This is the Satay, a slice of meat skewered and grilled over Palm fruit charcoal. It costs only ^0000FF5000^000000 Zeny."
                 )
-                |> set_local(:food, 11532)
+                |> set_local(:food, 11533)
 
-              2 ->
+              ctx
+
+            _ ->
+              throw({:script_end, ctx})
+          end
+
+        {ctx, v3} = ctx |> next() |> select(["Taste", "Walk away"])
+        _ = v3
+
+        case v3 do
+          1 ->
+            ctx =
+              if zeny(ctx) < 5000 do
                 ctx =
                   ctx
                   |> mes("[Restauranteur]")
-                  |> mes(
-                    "This is the Satay, a slice of meat skewered and grilled over Palm fruit charcoal. It costs only ^0000FF5000^000000 Zeny."
-                  )
-                  |> set_local(:food, 11533)
-
-                ctx
-
-              _ ->
-                ctx
-            end
-
-          {ctx, v3} = ctx |> next() |> select(["Taste", "Walk away"])
-
-          ctx =
-            case v3 do
-              1 ->
-                ctx =
-                  if zeny(ctx) < 5000 do
-                    ctx =
-                      ctx
-                      |> mes("[Restauranteur]")
-                      |> mes("Where's the money kid? Sheesh! No free food here! Ok?")
-                      |> close()
-
-                    throw({:script_end, ctx})
-                  else
-                    ctx
-                  end
-
-                ctx = mes(ctx, "[Restauranteur]")
-
-                ctx =
-                  ctx
-                  |> mes(
-                    Rathena.concat(
-                      Rathena.concat(
-                        "Here's your ",
-                        Rathena.getitemname(get_local(ctx, :food, 0))
-                      ),
-                      ", you won't regret it!"
-                    )
-                  )
-                  |> pay_zeny(5000)
-
-                ctx = ctx |> give_item(get_local(ctx, :food, 0), 1) |> close()
-                throw({:script_end, ctx})
-
-              2 ->
-                ctx =
-                  ctx
-                  |> mes("[Restauranteur]")
-                  |> mes("It's a shame you won't taste this great dish...")
+                  |> mes("Where's the money kid? Sheesh! No free food here! Ok?")
                   |> close()
 
                 throw({:script_end, ctx})
-
-              _ ->
+              else
                 ctx
-            end
+              end
 
-          ctx =
-            ctx
-            |> mes("[Restauranteur]")
-            |> mes("Are you serious? This is not even funny.")
-            |> close()
+            ctx = mes(ctx, "[Restauranteur]")
 
-          throw({:script_end, ctx})
+            ctx =
+              ctx
+              |> mes(
+                Rathena.concat(
+                  Rathena.concat("Here's your ", Rathena.getitemname(get_local(ctx, :food, 0))),
+                  ", you won't regret it!"
+                )
+              )
+              |> pay_zeny(5000)
 
-        3 ->
-          ctx =
-            ctx
-            |> mes("[Restauranteur]")
-            |> mes("Are you serious? This is not even funny.")
-            |> close()
+            ctx = ctx |> give_item(get_local(ctx, :food, 0), 1) |> close()
+            throw({:script_end, ctx})
 
-          throw({:script_end, ctx})
+          2 ->
+            ctx =
+              ctx
+              |> mes("[Restauranteur]")
+              |> mes("It's a shame you won't taste this great dish...")
+              |> close()
 
-        _ ->
+            throw({:script_end, ctx})
+
+          _ ->
+            throw({:script_end, ctx})
+        end
+
+      3 ->
+        ctx =
           ctx
-      end
+          |> mes("[Restauranteur]")
+          |> mes("Are you serious? This is not even funny.")
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

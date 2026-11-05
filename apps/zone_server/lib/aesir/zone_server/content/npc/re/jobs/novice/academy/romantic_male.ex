@@ -62,28 +62,40 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RomanticMale do
       }
     ]
 
+  alias Aesir.ZoneServer.Script.Rathena
+
   @impl true
   def on_talk(ctx) do
+    ctx =
+      ctx
+      |> emotion(:delight)
+      |> mes("[Romantic Male]")
+      |> mes(
+        "Let's go~~ together hand in hand~~ Put everything aside ~~ in the dark blue night of Jawaii~~ under the stars~~"
+      )
+      |> next()
+      |> mes("[Romantic Male]")
+      |> mes(
+        "We are leaving for Jawaii-the place of our honeymoon to celebrate our 10th wedding anniversary!"
+      )
+      |> next()
+      |> emotion(:throb)
+      |> mes("[Romantic Male]")
+      |> mes(
+        "Are you lifting up our good old memories renting my wedding dress and your tuxedo!! It will strenghthen our relationship, won't it?"
+      )
+      |> next()
+
+    ctx =
+      specialeffect(
+        ctx,
+        :heartcasting,
+        :area,
+        Rathena.concat("Romantic Female#", strnpcinfo(ctx, 2))
+      )
+
     ctx
-    |> emotion(:delight)
-    |> mes("[Romantic Male]")
-    |> mes(
-      "Let's go~~ together hand in hand~~ Put everything aside ~~ in the dark blue night of Jawaii~~ under the stars~~"
-    )
-    |> next()
-    |> mes("[Romantic Male]")
-    |> mes(
-      "We are leaving for Jawaii-the place of our honeymoon to celebrate our 10th wedding anniversary!"
-    )
-    |> next()
-    |> emotion(:throb)
-    |> mes("[Romantic Male]")
-    |> mes(
-      "Are you lifting up our good old memories renting my wedding dress and your tuxedo!! It will strenghthen our relationship, won't it?"
-    )
-    |> next()
-    |> specialeffect(:heartcasting)
-    |> emotion(:chup)
+    |> emotion(:chup, getnpcid(ctx, Rathena.concat("Romantic Female#", strnpcinfo(ctx, 2))))
     |> mes("[Romantic Male]")
     |> mes("Honey~~ I love you!! Sweetheart~")
     |> next()

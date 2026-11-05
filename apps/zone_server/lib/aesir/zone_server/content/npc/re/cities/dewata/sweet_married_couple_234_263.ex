@@ -27,34 +27,40 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SweetMarriedCouple234263
   def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
   @impl true
   def on_talk(ctx) do
-    ctx
+    ev_ontouch(ctx)
   end
 
   def ev_ontouch(ctx) do
+    ctx =
+      ctx
+      |> mes("[Sweet Wife]")
+      |> mes("Baby~ You know what flower that is~?")
+      |> emotion(:question)
+      |> next()
+      |> mes("[Sweet Husband]")
+      |> mes("Hmm? I don't know. But it's really pretty.")
+      |> next()
+      |> mes("[Sweet Wife]")
+      |> mes("Baby~ Who's prettier, me or the flower?")
+      |> emotion(:question)
+      |> next()
+      |> mes("[Sweet Husband]")
+      |> mes("No matter how pretty the flower is, you are always more beautiful~")
+
+    ctx =
+      ctx
+      |> emotion(:chup, getnpcid(ctx, "Sweet Married Couple#1"))
+      |> next()
+      |> mes("[Sweet Wife]")
+      |> mes("Really? I'm that pretty? I love you, sweetie~")
+      |> emotion(:chupchup)
+      |> next()
+      |> mes("[Sweet Married Couple]")
+      |> mes("Hahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahaha")
+      |> mes("Hohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohoho")
+
     ctx
-    |> mes("[Sweet Wife]")
-    |> mes("Baby~ You know what flower that is~?")
-    |> emotion(:question)
-    |> next()
-    |> mes("[Sweet Husband]")
-    |> mes("Hmm? I don't know. But it's really pretty.")
-    |> next()
-    |> mes("[Sweet Wife]")
-    |> mes("Baby~ Who's prettier, me or the flower?")
-    |> emotion(:question)
-    |> next()
-    |> mes("[Sweet Husband]")
-    |> mes("No matter how pretty the flower is, you are always more beautiful~")
-    |> emotion(:chup)
-    |> next()
-    |> mes("[Sweet Wife]")
-    |> mes("Really? I'm that pretty? I love you, sweetie~")
-    |> emotion(:chupchup)
-    |> next()
-    |> mes("[Sweet Married Couple]")
-    |> mes("Hahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahaha")
-    |> mes("Hohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohohoho")
-    |> emotion(:smile)
+    |> emotion(:smile, getnpcid(ctx, "Sweet Married Couple#1"))
     |> emotion(:smile)
     |> next()
     |> mes("Come on now, this bores me. Let's move on.")

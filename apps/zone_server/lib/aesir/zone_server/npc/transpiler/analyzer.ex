@@ -115,8 +115,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Analyzer do
     Enum.reduce(else_stmts, acc, &walk_stmt/2)
   end
 
-  defp walk_stmt({:switch, expr, clauses}, acc) do
+  defp walk_stmt({:switch, expr, clauses, prelude}, acc) do
     acc = walk_expr(expr, acc)
+    acc = Enum.reduce(prelude, acc, &walk_stmt/2)
 
     Enum.reduce(clauses, acc, fn {values, stmts}, a ->
       a = values |> Enum.reject(&(&1 == :default)) |> walk_exprs(a)

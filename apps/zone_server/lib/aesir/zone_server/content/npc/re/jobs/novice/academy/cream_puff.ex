@@ -174,7 +174,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CreamPuff do
           ctx
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     {ctx, v4} =
@@ -240,7 +240,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CreamPuff do
           ctx
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     ctx =
@@ -301,7 +301,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CreamPuff do
           ctx
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     {ctx, v7} =
@@ -353,7 +353,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CreamPuff do
           ctx
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     {ctx, v9} = select(ctx, ["Change", "Preservation"])
@@ -384,7 +384,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CreamPuff do
           ctx
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     {ctx, v11} = select(ctx, ["Speedy", "Cautious"])
@@ -1015,7 +1015,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CreamPuff do
               throw({:script_end, ctx})
 
             _ ->
-              ctx
+              throw({:script_end, ctx})
           end
 
         throw({:brk_1, ctx})

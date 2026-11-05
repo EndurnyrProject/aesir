@@ -87,615 +87,574 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuestLecturerMayss
 
     ctx =
       if isbegin_quest(ctx, 4269) > 0 and Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
-        ctx =
-          if not Rathena.truthy?(isbegin_quest(ctx, 7480)) do
-            {ctx, _} =
-              ctx
-              |> mes("[Lumin]")
-              |> mes(".......... Then")
-              |> cutin("nov_lumin01.bmp", 2)
-              |> next()
-              |> cutin("gc_mayssel05.bmp", 1)
-              |> mes("[Mayssel]")
-              |> mes("I see, Lu make it as you want.")
-              |> next()
-              |> select(["Uh, hi..."])
+        if not Rathena.truthy?(isbegin_quest(ctx, 7480)) do
+          {ctx, _} =
+            ctx
+            |> mes("[Lumin]")
+            |> mes(".......... Then")
+            |> cutin("nov_lumin01.bmp", 2)
+            |> next()
+            |> cutin("gc_mayssel05.bmp", 1)
+            |> mes("[Mayssel]")
+            |> mes("I see, Lu make it as you want.")
+            |> next()
+            |> select(["Uh, hi..."])
 
-            ctx =
-              ctx
-              |> cutin("gc_mayssel01.bmp", 1)
-              |> mes("[Mayssel]")
-              |> mes("I am sorry...")
-              |> mes("Are you a student of Criatura Academy?")
-              |> mes("I didn't intend to ignore you.")
-              |> mes("He is also one of the students in this class.")
-              |> next()
-              |> mes("[Mayssel]")
+          ctx =
+            ctx
+            |> cutin("gc_mayssel01.bmp", 1)
+            |> mes("[Mayssel]")
+            |> mes("I am sorry...")
+            |> mes("Are you a student of Criatura Academy?")
+            |> mes("I didn't intend to ignore you.")
+            |> mes("He is also one of the students in this class.")
+            |> next()
+            |> mes("[Mayssel]")
 
-            {ctx, v1} =
+          {ctx, v1} =
+            ctx
+            |> mes(Rathena.concat(Rathena.concat("Hello ", char_name(ctx, 0)), ""))
+            |> mes("I am Mayssel  the section chief of the Veins section of the Assassin Guild.")
+            |> mes("I came here to give you some information about the Thief class.")
+            |> next()
+            |> mes("[Mayssel]")
+            |> mes("Do you want to know about the Thief class?")
+            |> next()
+            |> select(["Yes, please.", "No, I won't be a Thief."])
+
+          ctx =
+            if v1 == 2 do
+              ctx =
+                ctx
+                |> mes("[Mayssel]")
+                |> mes("If you want it....")
+                |> cutin("gc_mayssel05.bmp", 1)
+                |> close()
+                |> cutin("", 255)
+
+              throw({:script_end, ctx})
+            else
               ctx
-              |> mes(Rathena.concat(Rathena.concat("Hello ", char_name(ctx, 0)), ""))
-              |> mes(
-                "I am Mayssel  the section chief of the Veins section of the Assassin Guild."
+            end
+
+          ctx =
+            ctx
+            |> mes("[Mayssel]")
+            |> mes("Well a thief is commonly thought of as a criminal.")
+            |> mes("But our guild is not about taking from those that are in need of it.")
+            |> next()
+            |> mes("[Mayssel]")
+            |> mes("First, we should make it clear.")
+            |> mes("We don't steal other's belongings.")
+            |> next()
+            |> mes("[Lumin]")
+            |> mes("How about monsters?")
+            |> cutin("nov_lumin01.bmp", 2)
+            |> next()
+            |> cutin("", 255)
+            |> mes("[Mayssel]")
+            |> mes("Now monsters...")
+            |> cutin("gc_mayssel03.bmp", 1)
+            |> next()
+            |> mes("[Verkhasel]")
+            |> mes("Hey, take it easy.")
+            |> mes(
+              "You said it was a mission for something important. But only a place like this..."
+            )
+            |> cutin("gc_verkhasel01.bmp", 2)
+            |> next()
+            |> cutin("gc_mayssel01.bmp", 1)
+            |> mes("[Mayssel]")
+            |> mes("I was upset...")
+            |> mes("Let me continue.")
+            |> mes("A Thief uses techniques that common thieves use to be fast and nimble.")
+            |> next()
+            |> mes("[Mayssel]")
+            |> mes("We use stealth to blend into our surroundings and strike our foes.")
+            |> next()
+            |> mes("[Mayssel]")
+            |> mes(
+              "Our primary weapon is a dagger and we compensate their attack strength by adding poison property to our attacks."
+            )
+            |> next()
+            |> mes("[Mayssel]")
+            |> mes("The higher class jobs in Thief class are Assassin and Rogue.")
+            |> mes(
+              "Verkhasel is a Guillotine Cross which is the third class of the Assassin Job."
+            )
+            |> mes("and......")
+            |> next()
+            |> mes("[Mayssel]")
+            |> mes("Mr. Vicente... I called Dumk..")
+            |> cutin("gc_mayssel02.bmp", 1)
+            |> next()
+            |> mes("[Vicente]")
+            |> mes("Ah, that is... Mayssel..")
+            |> mes("As you know well about Master.")
+            |> mes("I can explain about Rogues to you.")
+            |> next()
+            |> mes("[Mayssel]")
+            |> mes("I see...")
+
+          ctx =
+            ctx
+            |> mes(
+              Rathena.concat(
+                Rathena.concat("", char_name(ctx, 0)),
+                " Sorry but you can learn about the Shadow Chaser class from them."
               )
-              |> mes("I came here to give you some information about the Thief class.")
-              |> next()
-              |> mes("[Mayssel]")
-              |> mes("Do you want to know about the Thief class?")
-              |> next()
-              |> select(["Yes, please.", "No, I won't be a Thief."])
+            )
+            |> cutin("gc_mayssel03.bmp", 1)
+            |> next()
+            |> cutin("gc_mayssel01.bmp", 1)
+            |> mes("[Mayssel]")
+            |> mes("Anyway, these two gentlemen will help you.")
+            |> mes("^4d4dffCome back to me after speaking to Verkhasel and Vicente.^000000")
+            |> setquest(7480)
+            |> close()
+            |> cutin("", 255)
 
-            ctx =
-              if v1 == 2 do
-                ctx =
+          throw({:script_end, ctx})
+        else
+          if isbegin_quest(ctx, 7480) == 1 do
+            if isbegin_quest(ctx, 7481) > 0 and isbegin_quest(ctx, 7482) > 0 do
+              ctx =
+                ctx
+                |> mes("[Mayssel]")
+                |> mes("Have you learned something about Thief, Assassin and Rogue?")
+                |> mes("You don't need to understand everything right now.")
+                |> cutin("gc_mayssel01.bmp", 1)
+                |> next()
+
+              ctx =
+                if base_level(ctx) > 12 do
                   ctx
                   |> mes("[Mayssel]")
-                  |> mes("If you want it....")
-                  |> cutin("gc_mayssel05.bmp", 1)
-                  |> close()
-                  |> cutin("", 255)
-
-                throw({:script_end, ctx})
-              else
-                ctx
-              end
-
-            ctx =
-              ctx
-              |> mes("[Mayssel]")
-              |> mes("Well a thief is commonly thought of as a criminal.")
-              |> mes("But our guild is not about taking from those that are in need of it.")
-              |> next()
-              |> mes("[Mayssel]")
-              |> mes("First, we should make it clear.")
-              |> mes("We don't steal other's belongings.")
-              |> next()
-              |> mes("[Lumin]")
-              |> mes("How about monsters?")
-              |> cutin("nov_lumin01.bmp", 2)
-              |> next()
-              |> cutin("", 255)
-              |> mes("[Mayssel]")
-              |> mes("Now monsters...")
-              |> cutin("gc_mayssel03.bmp", 1)
-              |> next()
-              |> mes("[Verkhasel]")
-              |> mes("Hey, take it easy.")
-              |> mes(
-                "You said it was a mission for something important. But only a place like this..."
-              )
-              |> cutin("gc_verkhasel01.bmp", 2)
-              |> next()
-              |> cutin("gc_mayssel01.bmp", 1)
-              |> mes("[Mayssel]")
-              |> mes("I was upset...")
-              |> mes("Let me continue.")
-              |> mes("A Thief uses techniques that common thieves use to be fast and nimble.")
-              |> next()
-              |> mes("[Mayssel]")
-              |> mes("We use stealth to blend into our surroundings and strike our foes.")
-              |> next()
-              |> mes("[Mayssel]")
-              |> mes(
-                "Our primary weapon is a dagger and we compensate their attack strength by adding poison property to our attacks."
-              )
-              |> next()
-              |> mes("[Mayssel]")
-              |> mes("The higher class jobs in Thief class are Assassin and Rogue.")
-              |> mes(
-                "Verkhasel is a Guillotine Cross which is the third class of the Assassin Job."
-              )
-              |> mes("and......")
-              |> next()
-              |> mes("[Mayssel]")
-              |> mes("Mr. Vicente... I called Dumk..")
-              |> cutin("gc_mayssel02.bmp", 1)
-              |> next()
-              |> mes("[Vicente]")
-              |> mes("Ah, that is... Mayssel..")
-              |> mes("As you know well about Master.")
-              |> mes("I can explain about Rogues to you.")
-              |> next()
-              |> mes("[Mayssel]")
-              |> mes("I see...")
-
-            ctx =
-              ctx
-              |> mes(
-                Rathena.concat(
-                  Rathena.concat("", char_name(ctx, 0)),
-                  " Sorry but you can learn about the Shadow Chaser class from them."
-                )
-              )
-              |> cutin("gc_mayssel03.bmp", 1)
-              |> next()
-              |> cutin("gc_mayssel01.bmp", 1)
-              |> mes("[Mayssel]")
-              |> mes("Anyway, these two gentlemen will help you.")
-              |> mes("^4d4dffCome back to me after speaking to Verkhasel and Vicente.^000000")
-              |> setquest(7480)
-              |> close()
-              |> cutin("", 255)
-
-            throw({:script_end, ctx})
-          else
-            ctx =
-              if isbegin_quest(ctx, 7480) == 1 do
-                if isbegin_quest(ctx, 7481) > 0 and isbegin_quest(ctx, 7482) > 0 do
-                  ctx =
-                    ctx
-                    |> mes("[Mayssel]")
-                    |> mes("Have you learned something about Thief, Assassin and Rogue?")
-                    |> mes("You don't need to understand everything right now.")
-                    |> cutin("gc_mayssel01.bmp", 1)
-                    |> next()
-
-                  ctx =
-                    if base_level(ctx) > 12 do
-                      ctx
-                      |> mes("[Mayssel]")
-                      |> mes(
-                        "I only play the role to inform you of there is this one that one..."
-                      )
-                      |> mes(
-                        "The next course is how to use the experience guide... Let's skim it over."
-                      )
-                      |> next()
-                      |> mes("[Mayssel]")
-                      |> mes(
-                        "The guide for skill experience provided by the academy can be used up to level 12."
-                      )
-                      |> mes("Regretfully, only the explanation is available for you.")
-                      |> next()
-                      |> mes("[Mayssel]")
-                      |> mes("If you want to be a Thief, you just come back here.")
-                      |> mes("I can help you with the 1st step of the job change.")
-                      |> next()
-                      |> mes("[Mayssel]")
-                      |> mes("Thank you for your hard work.")
-                      |> cutin("gc_mayssel02.bmp", 1)
-                      |> completequest(7480)
-                      |> erasequest(7481)
-                      |> erasequest(7482)
-                      |> setquest(7483)
-                      |> completequest(7483)
-                      |> getexp(800, 50)
-                      |> give_item(569, 30)
-                      |> give_item(12325, 20)
-                    else
-                      ctx
-                      |> mes("[Mayssel]")
-                      |> mes(
-                        "I only play the role to inform you of there is this one that one..."
-                      )
-                      |> mes("Then, let's talk about the Thief's skills.")
-                      |> next()
-                      |> mes("[Mayssel]")
-                      |> mes("I will give you the guide to borrow the thief's skill temporarily.")
-                      |> mes(
-                        "Organize the guide items, you can see the useful skills on the 'ETC' skill window."
-                      )
-                      |> next()
-                      |> mes("[Mayssel]")
-                      |> mes(
-                        "By making use of the guide, you may take the missions being asked by Verkhasel and Vicente."
-                      )
-                      |> completequest(7480)
-                      |> erasequest(7481)
-                      |> erasequest(7482)
-                      |> setquest(7483)
-                      |> give_item(2820, 1)
-                    end
-
-                  ctx = ctx |> close() |> cutin("", 255)
-                  throw({:script_end, ctx})
+                  |> mes("I only play the role to inform you of there is this one that one...")
+                  |> mes(
+                    "The next course is how to use the experience guide... Let's skim it over."
+                  )
+                  |> next()
+                  |> mes("[Mayssel]")
+                  |> mes(
+                    "The guide for skill experience provided by the academy can be used up to level 12."
+                  )
+                  |> mes("Regretfully, only the explanation is available for you.")
+                  |> next()
+                  |> mes("[Mayssel]")
+                  |> mes("If you want to be a Thief, you just come back here.")
+                  |> mes("I can help you with the 1st step of the job change.")
+                  |> next()
+                  |> mes("[Mayssel]")
+                  |> mes("Thank you for your hard work.")
+                  |> cutin("gc_mayssel02.bmp", 1)
+                  |> completequest(7480)
+                  |> erasequest(7481)
+                  |> erasequest(7482)
+                  |> setquest(7483)
+                  |> completequest(7483)
+                  |> getexp(800, 50)
+                  |> give_item(569, 30)
+                  |> give_item(12325, 20)
                 else
-                  {ctx, v2} =
+                  ctx
+                  |> mes("[Mayssel]")
+                  |> mes("I only play the role to inform you of there is this one that one...")
+                  |> mes("Then, let's talk about the Thief's skills.")
+                  |> next()
+                  |> mes("[Mayssel]")
+                  |> mes("I will give you the guide to borrow the thief's skill temporarily.")
+                  |> mes(
+                    "Organize the guide items, you can see the useful skills on the 'ETC' skill window."
+                  )
+                  |> next()
+                  |> mes("[Mayssel]")
+                  |> mes(
+                    "By making use of the guide, you may take the missions being asked by Verkhasel and Vicente."
+                  )
+                  |> completequest(7480)
+                  |> erasequest(7481)
+                  |> erasequest(7482)
+                  |> setquest(7483)
+                  |> give_item(2820, 1)
+                end
+
+              ctx = ctx |> close() |> cutin("", 255)
+              throw({:script_end, ctx})
+            else
+              {ctx, v2} =
+                ctx
+                |> mes("[Mayssel]")
+                |> mes(
+                  "Verkhasel and Vicente will give you various information related to the higher class jobs."
+                )
+                |> mes("So, come back to me after listening to them.")
+                |> cutin("gc_mayssel01.bmp", 1)
+                |> next()
+                |> mes("[Mayssel]")
+                |> mes("Preparation for real battle is next.")
+                |> next()
+                |> select(["I see...", "I won't do it."])
+
+              ctx =
+                if v2 == 1 do
+                  ctx
+                  |> mes("[Mayssel]")
+                  |> mes("I will compensate for you when your mission is completed.")
+                  |> mes("Come back to me after speaking to Verkhasel and Vicente.")
+                else
+                  ctx
+                  |> mes("[Mayssel]")
+                  |> mes("I see..")
+                  |> mes("This course is now cancelled.")
+                  |> erasequest(7480)
+                end
+
+              ctx = ctx |> close() |> cutin("", 255)
+              throw({:script_end, ctx})
+            end
+          else
+            if not Rathena.truthy?(isbegin_quest(ctx, 7483)) do
+              ctx =
+                ctx
+                |> mes("[Mayssel]")
+                |> mes("Have you learned something about Thief, Assassin and Rogue?")
+                |> mes("You don't need to understand everything right now.")
+                |> cutin("gc_mayssel01.bmp", 1)
+                |> next()
+
+              ctx =
+                if base_level(ctx) > 12 do
+                  ctx
+                  |> mes("[Mayssel]")
+                  |> mes("I only play the role to inform you of there is this one that one...?")
+                  |> mes(
+                    "The next course is how to use the experience guide... Let's skim it over."
+                  )
+                  |> next()
+                  |> mes("[Mayssel]")
+                  |> mes(
+                    "The  guide for skill experience provided by the academy can be used up to level 12."
+                  )
+                  |> mes("Regretfully, only the explanation is available for you.")
+                  |> next()
+                  |> mes("[Mayssel]")
+                  |> mes("If you want to be a Thief, you just come back here.")
+                  |> mes("I can help you with the 1st step of the job change.")
+                  |> next()
+                  |> mes("[Mayssel]")
+                  |> mes("You've worked hard.")
+                  |> cutin("gc_mayssel02.bmp", 1)
+                  |> completequest(7480)
+                  |> erasequest(7481)
+                  |> erasequest(7482)
+                  |> setquest(7483)
+                  |> completequest(7483)
+                  |> getexp(800, 50)
+                  |> give_item(569, 30)
+                  |> give_item(12325, 20)
+                else
+                  ctx
+                  |> mes("[Mayssel]")
+                  |> mes("I only play the role to inform you of there is this one that one...")
+                  |> mes("Then, let's talk about the Thief's skills.")
+                  |> next()
+                  |> mes("[Mayssel]")
+                  |> mes("I will give you the guide to borrow the thief's skill temporarily.")
+                  |> mes(
+                    "Organize the guide items, you can see the useful skills on the 'ETC' skill window."
+                  )
+                  |> next()
+                  |> mes("[Mayssel]")
+                  |> mes(
+                    "By making use of the guide, you may take the missions being asked by Verkhasel and Vicente."
+                  )
+                  |> completequest(7480)
+                  |> erasequest(7481)
+                  |> erasequest(7482)
+                  |> setquest(7483)
+                  |> give_item(2820, 1)
+                end
+
+              ctx = ctx |> close() |> cutin("", 255)
+              throw({:script_end, ctx})
+            else
+              if isbegin_quest(ctx, 7483) == 1 do
+                if isbegin_quest(ctx, 7484) > 1 and isbegin_quest(ctx, 7485) > 1 do
+                  ctx =
                     ctx
+                    |> cutin("gc_mayssel01.bmp", 1)
+                    |> mes("[Mayssel]")
+                    |> mes("Have you got a sense what it is to be a Thief?")
+                    |> mes(
+                      "If you want to use the skill like double attack, visit ^4d4dffMr. Subino on the 1st floor^000000."
+                    )
+                    |> next()
                     |> mes("[Mayssel]")
                     |> mes(
-                      "Verkhasel and Vicente will give you various information related to the higher class jobs."
+                      "<NAVI>[Battle Trainer Subino]<INFO>iz_ac01,59,83</INFO></NAVI> will give you several battle missions."
                     )
-                    |> mes("So, come back to me after listening to them.")
-                    |> cutin("gc_mayssel01.bmp", 1)
                     |> next()
                     |> mes("[Mayssel]")
-                    |> mes("Preparation for real battle is next.")
+                    |> mes("I hope you experience other skills with battle Quests.")
+                    |> mes("Double attack is somewhat an exciting skill.")
                     |> next()
-                    |> select(["I see...", "I won't do it."])
+                    |> mes("[Mayssel]")
+                    |> mes("Make a decision after you've at least experienced it.")
+                    |> mes(
+                      "You still have a long way and enough time before you make a decision... Think of it deeply."
+                    )
+                    |> next()
+                    |> mes("[Mayssel]")
+                    |> mes("If you want to be a Thief, you just come back here.")
+                    |> mes("I can help you with the 1st step of the job change.")
+                    |> next()
+                    |> mes("[Mayssel]")
+                    |> mes("Thank you for you hard work.")
+                    |> completequest(7483)
+                    |> getexp(800, 50)
+                    |> give_item(569, 30)
+                    |> give_item(12325, 20)
+                    |> close()
+                    |> cutin("", 255)
 
-                  ctx =
-                    if v2 == 1 do
-                      ctx
-                      |> mes("[Mayssel]")
-                      |> mes("I will compensate for you when your mission is completed.")
-                      |> mes("Come back to me after speaking to Verkhasel and Vicente.")
-                    else
-                      ctx
-                      |> mes("[Mayssel]")
-                      |> mes("I see..")
-                      |> mes("This course is now cancelled.")
-                      |> erasequest(7480)
-                    end
-
-                  ctx = ctx |> close() |> cutin("", 255)
                   throw({:script_end, ctx})
-                end
-              else
-                ctx =
-                  if not Rathena.truthy?(isbegin_quest(ctx, 7483)) do
+                else
+                  {ctx, v3} =
+                    ctx
+                    |> cutin("gc_mayssel01.bmp", 1)
+                    |> mes("[Mayssel]")
+                    |> mes(
+                      "In the battle training, the actual fighting is more important than theory."
+                    )
+                    |> mes("To use the skill once is better than all this talking.")
+                    |> next()
+                    |> mes("[Mayssel]")
+                    |> mes(
+                      "If you carry out the mission asked by Verkhasel and Vicente, I will go to the next class."
+                    )
+                    |> next()
+                    |> select(["I see.", "I won't do it."])
+
+                  if v3 == 1 do
                     ctx =
                       ctx
                       |> mes("[Mayssel]")
-                      |> mes("Have you learned something about Thief, Assassin and Rogue?")
-                      |> mes("You don't need to understand everything right now.")
-                      |> cutin("gc_mayssel01.bmp", 1)
-                      |> next()
+                      |> mes("I will compensate for you when your mission is complete.")
+                      |> mes("Come back to me after listening to Verkhasel and Vicente.")
+                      |> close()
+                      |> cutin("", 255)
 
-                    ctx =
-                      if base_level(ctx) > 12 do
-                        ctx
-                        |> mes("[Mayssel]")
-                        |> mes(
-                          "I only play the role to inform you of there is this one that one...?"
-                        )
-                        |> mes(
-                          "The next course is how to use the experience guide... Let's skim it over."
-                        )
-                        |> next()
-                        |> mes("[Mayssel]")
-                        |> mes(
-                          "The  guide for skill experience provided by the academy can be used up to level 12."
-                        )
-                        |> mes("Regretfully, only the explanation is available for you.")
-                        |> next()
-                        |> mes("[Mayssel]")
-                        |> mes("If you want to be a Thief, you just come back here.")
-                        |> mes("I can help you with the 1st step of the job change.")
-                        |> next()
-                        |> mes("[Mayssel]")
-                        |> mes("You've worked hard.")
-                        |> cutin("gc_mayssel02.bmp", 1)
-                        |> completequest(7480)
-                        |> erasequest(7481)
-                        |> erasequest(7482)
-                        |> setquest(7483)
-                        |> completequest(7483)
-                        |> getexp(800, 50)
-                        |> give_item(569, 30)
-                        |> give_item(12325, 20)
-                      else
-                        ctx
-                        |> mes("[Mayssel]")
-                        |> mes(
-                          "I only play the role to inform you of there is this one that one..."
-                        )
-                        |> mes("Then, let's talk about the Thief's skills.")
-                        |> next()
-                        |> mes("[Mayssel]")
-                        |> mes(
-                          "I will give you the guide to borrow the thief's skill temporarily."
-                        )
-                        |> mes(
-                          "Organize the guide items, you can see the useful skills on the 'ETC' skill window."
-                        )
-                        |> next()
-                        |> mes("[Mayssel]")
-                        |> mes(
-                          "By making use of the guide, you may take the missions being asked by Verkhasel and Vicente."
-                        )
-                        |> completequest(7480)
-                        |> erasequest(7481)
-                        |> erasequest(7482)
-                        |> setquest(7483)
-                        |> give_item(2820, 1)
-                      end
-
-                    ctx = ctx |> close() |> cutin("", 255)
                     throw({:script_end, ctx})
                   else
+                    {ctx, v4} =
+                      ctx
+                      |> mes("[Mayssel]")
+                      |> mes("I see.")
+                      |> mes("This course is now cancelled.")
+                      |> mes("The ongoing lower courses are cancelled.")
+                      |> next()
+                      |> select(["No.", "Yes, cancel the course."])
+
                     ctx =
-                      if isbegin_quest(ctx, 7483) == 1 do
-                        if isbegin_quest(ctx, 7484) > 1 and isbegin_quest(ctx, 7485) > 1 do
+                      if v4 == 1 do
+                        ctx =
+                          ctx
+                          |> mes("[Mayssel]")
+                          |> mes("Fortunately...")
+                          |> mes("Good to see you have patience.")
+                          |> close()
+                          |> cutin("", 255)
+
+                        throw({:script_end, ctx})
+                      else
+                        ctx
+                      end
+
+                    ctx =
+                      ctx
+                      |> mes("[Mayssel]")
+                      |> mes("All the ongoing courses are cancelled.")
+                      |> mes("These are not your aptitude.")
+                      |> nude()
+
+                    ctx =
+                      if count_item(ctx, 2820) > 0 do
+                        delitem(ctx, 2820, count_item(ctx, 2820))
+                      else
+                        ctx
+                      end
+
+                    ctx =
+                      ctx
+                      |> erasequest(7483)
+                      |> erasequest(7484)
+                      |> erasequest(7485)
+                      |> close()
+                      |> cutin("", 255)
+
+                    throw({:script_end, ctx})
+                  end
+                end
+              else
+                {ctx, v5} =
+                  ctx
+                  |> cutin("gc_mayssel01.bmp", 1)
+                  |> mes("[Mayssel]")
+                  |> mes("What are you curious about?")
+                  |> mes(
+                    "If you want to know about battle, visit <NAVI>[Battle Trainer Subino]<INFO>iz_ac01_c,59,83</INFO></NAVI>."
+                  )
+                  |> next()
+                  |> select([
+                    "Change job to Thief.",
+                    "Thief Stat Explanation",
+                    "Thief Skill Explanation",
+                    "Not curious about it."
+                  ])
+
+                _ = v5
+
+                case v5 do
+                  1 ->
+                    if job_level(ctx) > 9 do
+                      {ctx, v6} =
+                        ctx
+                        |> mes("[Mayssel]")
+                        |> mes("You made up your mind.")
+                        |> mes("Welcome to the world of shadows.")
+                        |> cutin("gc_mayssel02.bmp", 1)
+                        |> next()
+                        |> cutin("gc_mayssel01.bmp", 1)
+                        |> mes("[Mayssel]")
+                        |> mes(
+                          "If you are ready, I will send you to the deserts of Morocc to embrace the shadows."
+                        )
+                        |> mes("The journey will be both strange and challenging.")
+                        |> next()
+                        |> select(["At once please.", "I need more time."])
+
+                      ctx =
+                        if v6 == 2 do
                           ctx =
                             ctx
-                            |> cutin("gc_mayssel01.bmp", 1)
-                            |> mes("[Mayssel]")
-                            |> mes("Have you got a sense what it is to be a Thief?")
-                            |> mes(
-                              "If you want to use the skill like double attack, visit ^4d4dffMr. Subino on the 1st floor^000000."
-                            )
-                            |> next()
                             |> mes("[Mayssel]")
                             |> mes(
-                              "<NAVI>[Battle Trainer Subino]<INFO>iz_ac01,59,83</INFO></NAVI> will give you several battle missions."
+                              "Yes, after a sufficient survey of other jobs, you may make a decision."
                             )
-                            |> next()
-                            |> mes("[Mayssel]")
-                            |> mes("I hope you experience other skills with battle Quests.")
-                            |> mes("Double attack is somewhat an exciting skill.")
-                            |> next()
-                            |> mes("[Mayssel]")
-                            |> mes("Make a decision after you've at least experienced it.")
-                            |> mes(
-                              "You still have a long way and enough time before you make a decision... Think of it deeply."
-                            )
-                            |> next()
-                            |> mes("[Mayssel]")
-                            |> mes("If you want to be a Thief, you just come back here.")
-                            |> mes("I can help you with the 1st step of the job change.")
-                            |> next()
-                            |> mes("[Mayssel]")
-                            |> mes("Thank you for you hard work.")
-                            |> completequest(7483)
-                            |> getexp(800, 50)
-                            |> give_item(569, 30)
-                            |> give_item(12325, 20)
                             |> close()
                             |> cutin("", 255)
 
                           throw({:script_end, ctx})
                         else
-                          {ctx, v3} =
-                            ctx
-                            |> cutin("gc_mayssel01.bmp", 1)
-                            |> mes("[Mayssel]")
-                            |> mes(
-                              "In the battle training, the actual fighting is more important than theory."
-                            )
-                            |> mes("To use the skill once is better than all this talking.")
-                            |> next()
-                            |> mes("[Mayssel]")
-                            |> mes(
-                              "If you carry out the mission asked by Verkhasel and Vicente, I will go to the next class."
-                            )
-                            |> next()
-                            |> select(["I see.", "I won't do it."])
-
-                          if v3 == 1 do
-                            ctx =
-                              ctx
-                              |> mes("[Mayssel]")
-                              |> mes("I will compensate for you when your mission is complete.")
-                              |> mes("Come back to me after listening to Verkhasel and Vicente.")
-                              |> close()
-                              |> cutin("", 255)
-
-                            throw({:script_end, ctx})
-                          else
-                            {ctx, v4} =
-                              ctx
-                              |> mes("[Mayssel]")
-                              |> mes("I see.")
-                              |> mes("This course is now cancelled.")
-                              |> mes("The ongoing lower courses are cancelled.")
-                              |> next()
-                              |> select(["No.", "Yes, cancel the course."])
-
-                            ctx =
-                              if v4 == 1 do
-                                ctx =
-                                  ctx
-                                  |> mes("[Mayssel]")
-                                  |> mes("Fortunately...")
-                                  |> mes("Good to see you have patience.")
-                                  |> close()
-                                  |> cutin("", 255)
-
-                                throw({:script_end, ctx})
-                              else
-                                ctx
-                              end
-
-                            ctx =
-                              ctx
-                              |> mes("[Mayssel]")
-                              |> mes("All the ongoing courses are cancelled.")
-                              |> mes("These are not your aptitude.")
-                              |> nude()
-
-                            ctx =
-                              if count_item(ctx, 2820) > 0 do
-                                delitem(ctx, 2820, count_item(ctx, 2820))
-                              else
-                                ctx
-                              end
-
-                            ctx =
-                              ctx
-                              |> erasequest(7483)
-                              |> erasequest(7484)
-                              |> erasequest(7485)
-                              |> close()
-                              |> cutin("", 255)
-
-                            throw({:script_end, ctx})
-                          end
-                        end
-                      else
-                        {ctx, v5} =
                           ctx
-                          |> cutin("gc_mayssel01.bmp", 1)
-                          |> mes("[Mayssel]")
-                          |> mes("What are you curious about?")
-                          |> mes(
-                            "If you want to know about battle, visit <NAVI>[Battle Trainer Subino]<INFO>iz_ac01_c,59,83</INFO></NAVI>."
-                          )
-                          |> next()
-                          |> select([
-                            "Change job to Thief.",
-                            "Thief Stat Explanation",
-                            "Thief Skill Explanation",
-                            "Not curious about it."
-                          ])
+                        end
 
-                        ctx =
-                          case v5 do
-                            1 ->
-                              if job_level(ctx) > 9 do
-                                {ctx, v6} =
-                                  ctx
-                                  |> mes("[Mayssel]")
-                                  |> mes("You made up your mind.")
-                                  |> mes("Welcome to the world of shadows.")
-                                  |> cutin("gc_mayssel02.bmp", 1)
-                                  |> next()
-                                  |> cutin("gc_mayssel01.bmp", 1)
-                                  |> mes("[Mayssel]")
-                                  |> mes(
-                                    "If you are ready, I will send you to the deserts of Morocc to embrace the shadows."
-                                  )
-                                  |> mes("The journey will be both strange and challenging.")
-                                  |> next()
-                                  |> select(["At once please.", "I need more time."])
-
-                                ctx =
-                                  if v6 == 2 do
-                                    ctx =
-                                      ctx
-                                      |> mes("[Mayssel]")
-                                      |> mes(
-                                        "Yes, after a sufficient survey of other jobs, you may make a decision."
-                                      )
-                                      |> close()
-                                      |> cutin("", 255)
-
-                                    throw({:script_end, ctx})
-                                  else
-                                    ctx
-                                  end
-
-                                ctx =
-                                  ctx
-                                  |> mes("[Mayssel]")
-                                  |> mes(
-                                    "^4d4dffFind the Pyramid^000000 in the ^4d4dffNorthwest^000000 of Morocc."
-                                  )
-                                  |> close()
-                                  |> cutin("", 255)
-                                  |> warp("morocc", 30, 290)
-
-                                throw({:script_end, ctx})
-                              else
-                                ctx =
-                                  ctx
-                                  |> mes("[Mayssel]")
-                                  |> mes(
-                                    "I'm sorry but you are short of job levels to change your job."
-                                  )
-                                  |> next()
-                                  |> mes("[Mayssel]")
-                                  |> mes("Level composes of Base level and Job level.")
-                                  |> mes("Job level is what determines your current job.")
-                                  |> next()
-                                  |> mes("[Mayssel]")
-                                  |> mes(
-                                    "^4d4dffThe 1st job condition condition is job level 10.^000000"
-                                  )
-                                  |> mes(
-                                    "You need more experience so fight more and level up first."
-                                  )
-                                  |> close()
-                                  |> cutin("", 255)
-
-                                throw({:script_end, ctx})
-                              end
-
-                            2 ->
-                              ctx =
-                                ctx
-                                |> mes("[Mayssel]")
-                                |> mes("You want to know more about stats?")
-                                |> mes(
-                                  "As Vicente already told you, stats don't have a fixed answer."
-                                )
-                                |> cutin("gc_mayssel01.bmp", 1)
-                                |> next()
-                                |> mes("[Mayssel]")
-                                |> mes("If I choose one among them,")
-                                |> mes("^4d4dffAGI is related to flee ability^000000,")
-                                |> mes("^4d4dffDex is related with hit ratio")
-                                |> mes("STR raises physical attacking power^000000")
-                                |> next()
-                                |> mes("[Mayssel]")
-                                |> mes("Vit, Luk, Int are valued according your target chosen.")
-                                |> mes("For your reference, Verkhasel has high level of Luk.")
-                                |> mes("A weapon called Katar is good for Critical.")
-                                |> next()
-                                |> mes("[Mayssel]")
-                                |> mes("But thief's primary weapon is a dagger.")
-                                |> mes(
-                                  "In the end, you have only to supplement your weak point, after evaluating you and your enemy."
-                                )
-                                |> next()
-                                |> mes("[Mayssel]")
-                                |> mes(
-                                  "If your attack doesn't hit the enemy, you come to think of the hit ratio."
-                                )
-                                |> mes(
-                                  "Hope you find the right stats that are suitable to your fighting style."
-                                )
-                                |> close()
-                                |> cutin("", 255)
-
-                              throw({:script_end, ctx})
-
-                            3 ->
-                              ctx =
-                                ctx
-                                |> mes("[Mayssel]")
-                                |> mes("Which skill are you curious about?")
-                                |> cutin("gc_mayssel01.bmp", 1)
-                                |> next()
-                                |> loop_2()
-                                |> mes("[Mayssel]")
-                                |> mes("Is that so?")
-                                |> mes(
-                                  "Like other job guilds, there is a limit learned through theory."
-                                )
-                                |> mes(
-                                  "I would like to recommend you to experience battle first-hand."
-                                )
-                                |> cutin("gc_mayssel01.bmp", 1)
-                                |> close()
-                                |> cutin("", 255)
-
-                              throw({:script_end, ctx})
-
-                            4 ->
-                              ctx =
-                                ctx
-                                |> mes("[Mayssel]")
-                                |> mes("Is that so?")
-                                |> mes(
-                                  "Like other job guilds, there is a limit learned through theory."
-                                )
-                                |> mes(
-                                  "I would like to recommend you to experience battle first-hand."
-                                )
-                                |> cutin("gc_mayssel01.bmp", 1)
-                                |> close()
-                                |> cutin("", 255)
-
-                              throw({:script_end, ctx})
-
-                            _ ->
-                              ctx
-                          end
-
+                      ctx =
                         ctx
-                      end
+                        |> mes("[Mayssel]")
+                        |> mes(
+                          "^4d4dffFind the Pyramid^000000 in the ^4d4dffNorthwest^000000 of Morocc."
+                        )
+                        |> close()
+                        |> cutin("", 255)
+                        |> warp("morocc", 30, 290)
 
-                    ctx
-                  end
+                      throw({:script_end, ctx})
+                    else
+                      ctx =
+                        ctx
+                        |> mes("[Mayssel]")
+                        |> mes("I'm sorry but you are short of job levels to change your job.")
+                        |> next()
+                        |> mes("[Mayssel]")
+                        |> mes("Level composes of Base level and Job level.")
+                        |> mes("Job level is what determines your current job.")
+                        |> next()
+                        |> mes("[Mayssel]")
+                        |> mes("^4d4dffThe 1st job condition condition is job level 10.^000000")
+                        |> mes("You need more experience so fight more and level up first.")
+                        |> close()
+                        |> cutin("", 255)
 
-                ctx
+                      throw({:script_end, ctx})
+                    end
+
+                  2 ->
+                    ctx =
+                      ctx
+                      |> mes("[Mayssel]")
+                      |> mes("You want to know more about stats?")
+                      |> mes("As Vicente already told you, stats don't have a fixed answer.")
+                      |> cutin("gc_mayssel01.bmp", 1)
+                      |> next()
+                      |> mes("[Mayssel]")
+                      |> mes("If I choose one among them,")
+                      |> mes("^4d4dffAGI is related to flee ability^000000,")
+                      |> mes("^4d4dffDex is related with hit ratio")
+                      |> mes("STR raises physical attacking power^000000")
+                      |> next()
+                      |> mes("[Mayssel]")
+                      |> mes("Vit, Luk, Int are valued according your target chosen.")
+                      |> mes("For your reference, Verkhasel has high level of Luk.")
+                      |> mes("A weapon called Katar is good for Critical.")
+                      |> next()
+                      |> mes("[Mayssel]")
+                      |> mes("But thief's primary weapon is a dagger.")
+                      |> mes(
+                        "In the end, you have only to supplement your weak point, after evaluating you and your enemy."
+                      )
+                      |> next()
+                      |> mes("[Mayssel]")
+                      |> mes(
+                        "If your attack doesn't hit the enemy, you come to think of the hit ratio."
+                      )
+                      |> mes(
+                        "Hope you find the right stats that are suitable to your fighting style."
+                      )
+                      |> close()
+                      |> cutin("", 255)
+
+                    throw({:script_end, ctx})
+
+                  3 ->
+                    ctx =
+                      ctx
+                      |> mes("[Mayssel]")
+                      |> mes("Which skill are you curious about?")
+                      |> cutin("gc_mayssel01.bmp", 1)
+                      |> next()
+                      |> loop_2()
+                      |> mes("[Mayssel]")
+                      |> mes("Is that so?")
+                      |> mes("Like other job guilds, there is a limit learned through theory.")
+                      |> mes("I would like to recommend you to experience battle first-hand.")
+                      |> cutin("gc_mayssel01.bmp", 1)
+                      |> close()
+                      |> cutin("", 255)
+
+                    throw({:script_end, ctx})
+
+                  4 ->
+                    ctx =
+                      ctx
+                      |> mes("[Mayssel]")
+                      |> mes("Is that so?")
+                      |> mes("Like other job guilds, there is a limit learned through theory.")
+                      |> mes("I would like to recommend you to experience battle first-hand.")
+                      |> cutin("gc_mayssel01.bmp", 1)
+                      |> close()
+                      |> cutin("", 255)
+
+                    throw({:script_end, ctx})
+
+                  _ ->
+                    throw({:script_end, ctx})
+                end
               end
-
-            ctx
+            end
           end
-
-        ctx
+        end
       else
         ctx =
           if not Rathena.truthy?(isbegin_quest(ctx, 4269)) do
@@ -727,79 +686,78 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuestLecturerMayss
                 "Not curious about it."
               ])
 
-            ctx =
-              case v8 do
-                1 ->
-                  ctx =
-                    ctx
-                    |> mes("[Mayssel]")
-                    |> mes("You want to know more about stats?")
-                    |> mes("As Vicente already told you, stats don't have a fixed answer.")
-                    |> next()
-                    |> mes("[Mayssel]")
-                    |> mes("If I choose one among them,")
-                    |> mes("^4d4dffAGI is related to flee ability^000000,")
-                    |> mes("^4d4dffDex is related with hit ratio")
-                    |> mes("STR raises physical attacking power^000000")
-                    |> next()
-                    |> mes("[Mayssel]")
-                    |> mes("Vit, Luk, Int are valued according your target chosen.")
-                    |> mes("For your reference, Verkhasel has high level of Luk.")
-                    |> mes("A weapon called Katar is good for Critical.")
-                    |> next()
-                    |> mes("[Mayssel]")
-                    |> mes("But thief's primary weapon is a dagger.")
-                    |> mes(
-                      "In the end, you have only to supplement your weak point, after evaluating you and your enemy."
-                    )
-                    |> next()
-                    |> mes("[Mayssel]")
-                    |> mes(
-                      "If your attack doesn't hit the enemy, you come to think of the hit ratio."
-                    )
-                    |> mes(
-                      "Hope you find the right stats that are suitable to your fighting style."
-                    )
-                    |> close()
-                    |> cutin("", 255)
+            _ = v8
 
-                  throw({:script_end, ctx})
-
-                2 ->
-                  ctx =
-                    ctx
-                    |> mes("[Mayssel]")
-                    |> mes("Which skill are you curious about?")
-                    |> next()
-                    |> loop_5()
-                    |> mes("[Mayssel]")
-                    |> mes(
-                      "After you register as a student, you can take lessons and gain more experience."
-                    )
-                    |> cutin("gc_mayssel01.bmp", 1)
-                    |> close()
-                    |> cutin("", 255)
-
-                  throw({:script_end, ctx})
-
-                3 ->
-                  ctx =
-                    ctx
-                    |> mes("[Mayssel]")
-                    |> mes(
-                      "After you register as a student, you can take lessons and gain more experience."
-                    )
-                    |> cutin("gc_mayssel01.bmp", 1)
-                    |> close()
-                    |> cutin("", 255)
-
-                  throw({:script_end, ctx})
-
-                _ ->
+            case v8 do
+              1 ->
+                ctx =
                   ctx
-              end
+                  |> mes("[Mayssel]")
+                  |> mes("You want to know more about stats?")
+                  |> mes("As Vicente already told you, stats don't have a fixed answer.")
+                  |> next()
+                  |> mes("[Mayssel]")
+                  |> mes("If I choose one among them,")
+                  |> mes("^4d4dffAGI is related to flee ability^000000,")
+                  |> mes("^4d4dffDex is related with hit ratio")
+                  |> mes("STR raises physical attacking power^000000")
+                  |> next()
+                  |> mes("[Mayssel]")
+                  |> mes("Vit, Luk, Int are valued according your target chosen.")
+                  |> mes("For your reference, Verkhasel has high level of Luk.")
+                  |> mes("A weapon called Katar is good for Critical.")
+                  |> next()
+                  |> mes("[Mayssel]")
+                  |> mes("But thief's primary weapon is a dagger.")
+                  |> mes(
+                    "In the end, you have only to supplement your weak point, after evaluating you and your enemy."
+                  )
+                  |> next()
+                  |> mes("[Mayssel]")
+                  |> mes(
+                    "If your attack doesn't hit the enemy, you come to think of the hit ratio."
+                  )
+                  |> mes(
+                    "Hope you find the right stats that are suitable to your fighting style."
+                  )
+                  |> close()
+                  |> cutin("", 255)
 
-            ctx
+                throw({:script_end, ctx})
+
+              2 ->
+                ctx =
+                  ctx
+                  |> mes("[Mayssel]")
+                  |> mes("Which skill are you curious about?")
+                  |> next()
+                  |> loop_5()
+                  |> mes("[Mayssel]")
+                  |> mes(
+                    "After you register as a student, you can take lessons and gain more experience."
+                  )
+                  |> cutin("gc_mayssel01.bmp", 1)
+                  |> close()
+                  |> cutin("", 255)
+
+                throw({:script_end, ctx})
+
+              3 ->
+                ctx =
+                  ctx
+                  |> mes("[Mayssel]")
+                  |> mes(
+                    "After you register as a student, you can take lessons and gain more experience."
+                  )
+                  |> cutin("gc_mayssel01.bmp", 1)
+                  |> close()
+                  |> cutin("", 255)
+
+                throw({:script_end, ctx})
+
+              _ ->
+                throw({:script_end, ctx})
+            end
           else
             ctx =
               if Rathena.job_id(class(ctx)) == Rathena.job_id(:thief) do
@@ -898,7 +856,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuestLecturerMayss
                       throw({:script_end, ctx})
 
                     _ ->
-                      ctx
+                      throw({:script_end, ctx})
                   end
 
                 ctx
@@ -990,7 +948,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuestLecturerMayss
           throw({:script_end, ctx})
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     loop_2(ctx)
@@ -1059,7 +1017,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuestLecturerMayss
           throw({:script_end, ctx})
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     loop_5(ctx)
@@ -1127,7 +1085,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuestLecturerMayss
           throw({:script_end, ctx})
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     loop_8(ctx)
