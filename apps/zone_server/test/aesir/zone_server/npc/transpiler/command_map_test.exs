@@ -150,8 +150,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert CommandMap.supported?("AreaMonster")
   end
 
-  test "emotion maps to the emotion DSL op with an emote arg" do
-    assert {:ok, %{dsl: "emotion", args: [:emote]}} = CommandMap.command("emotion")
+  test "emotion maps to the emotion DSL op with an optional target id" do
+    assert {:ok, %{dsl: "emotion", args: [:emote, :int]}} = CommandMap.command("emotion")
   end
 
   test "specialeffect buildins map to their DSL ops with an effect arg" do
