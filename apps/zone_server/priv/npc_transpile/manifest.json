@@ -24714,6 +24714,186 @@
       }
     ]
   },
+  "quests/lvl4_weapon_quest.txt|script|Bazo#lv4|umbala:117:285": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Lvl4WeaponQuest.Bazo",
+    "output_hash": "9b37f0cbb4102f92cbd1e7dca4c8df74923965f3e084db321edc3015d9811450",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/lvl4_weapon_quest/bazo.ex",
+    "source_hash": "042937a50acbbe792dc1f19836e5634523950b590e1457297c852db1b2a319bd",
+    "spawns": [
+      {
+        "name": "Bazo",
+        "scope": "shared",
+        "x": 117,
+        "y": 285,
+        "map": "umbala",
+        "dir": 3,
+        "sprite": 85,
+        "unique_name": "Bazo#lv4"
+      }
+    ]
+  },
+  "quests/lvl4_weapon_quest.txt|script|Bill Thayer#lv4|aldebaran:178:239": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Lvl4WeaponQuest.BillThayer",
+    "output_hash": "949b4a455042ca48f79ec4483ae74caeb5142a1968f898e9e0da9d91af0c9f9a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/lvl4_weapon_quest/bill_thayer.ex",
+    "source_hash": "9967296b8fa6137d22fc8cbd16b094daed7895f72e7de4b31857187710b9d112",
+    "spawns": [
+      {
+        "name": "Bill Thayer",
+        "scope": "shared",
+        "x": 178,
+        "y": 239,
+        "map": "aldebaran",
+        "dir": 3,
+        "sprite": 712,
+        "unique_name": "Bill Thayer#lv4"
+      }
+    ]
+  },
+  "quests/lvl4_weapon_quest.txt|script|Citizen#lv4-1|geffen:203:146": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Lvl4WeaponQuest.Citizen",
+    "output_hash": "846088eba7de9c45964f16dac86a9a3037c11a86e58887baa3ab6e16d903a51f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/lvl4_weapon_quest/citizen.ex",
+    "source_hash": "cba57b8497d4a678fbc9e7e6c09a620fac1586dd3a3d412b4d2b333a31a9cf81",
+    "spawns": [
+      {
+        "name": "Citizen",
+        "scope": "shared",
+        "x": 203,
+        "y": 146,
+        "map": "geffen",
+        "dir": 5,
+        "sprite": 97,
+        "unique_name": "Citizen#lv4-1"
+      }
+    ]
+  },
+  "quests/lvl4_weapon_quest.txt|script|Citizen#lv4-2|morocc:289:230": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Lvl4WeaponQuest.Citizen289230",
+    "output_hash": "a3f86acaafa94a694ea5ef43ab32d2d46f96d23121656b8b9bfe1acba9a7bff2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/lvl4_weapon_quest/citizen_289_230.ex",
+    "source_hash": "340b9e3ed91cb4342ffca12be570508909408da931c0992fe58d179279997eac",
+    "spawns": [
+      {
+        "name": "Citizen",
+        "scope": "shared",
+        "x": 289,
+        "y": 230,
+        "map": "morocc",
+        "dir": 3,
+        "sprite": 92,
+        "unique_name": "Citizen#lv4-2"
+      }
+    ]
+  },
+  "quests/lvl4_weapon_quest.txt|script|Hein#lv4|niflheim:187:280": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Lvl4WeaponQuest.Hein",
+    "output_hash": "59478987f1b982e5b78788bf331b44daa0105213489694fb4da3e27754529266",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/lvl4_weapon_quest/hein.ex",
+    "source_hash": "2129be6e5d3bcc1466e71b70814b89ce90ea272ce75a2d800fcacf0bb76c151c",
+    "spawns": [
+      {
+        "name": "Hein",
+        "scope": "shared",
+        "x": 187,
+        "y": 280,
+        "map": "niflheim",
+        "dir": 3,
+        "sprite": 795,
+        "unique_name": "Hein#lv4"
+      }
+    ]
+  },
+  "quests/lvl4_weapon_quest.txt|script|Hibilaithan#lv4|umbala:163:257": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Lvl4WeaponQuest.Hibilaithan",
+    "output_hash": "7d47c173667fddb25f645e36ededd72705568a236fb5ea084dce84106ca876e3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/lvl4_weapon_quest/hibilaithan.ex",
+    "source_hash": "cb71262f9297f2a3f62641c233db1e9732237835276cfbcc16a8ed43e429d7df",
+    "spawns": [
+      {
+        "name": "Hibilaithan",
+        "scope": "shared",
+        "x": 163,
+        "y": 257,
+        "map": "umbala",
+        "dir": 3,
+        "sprite": 785,
+        "unique_name": "Hibilaithan#lv4"
+      }
+    ]
+  },
+  "quests/lvl4_weapon_quest.txt|script|Kayron#lv4|niflheim:240:193": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Lvl4WeaponQuest.Kayron",
+    "output_hash": "3c68d7918e47944c66bb1bc86f1cf3c60385c14a0660b7693a7d74137dbbc427",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/lvl4_weapon_quest/kayron.ex",
+    "source_hash": "84ea99fdbcaf3448fed50c65efb60b90a7841b48c92be76002b9d48142963c17",
+    "spawns": [
+      {
+        "name": "Kayron",
+        "scope": "shared",
+        "x": 240,
+        "y": 193,
+        "map": "niflheim",
+        "dir": 3,
+        "sprite": 794,
+        "unique_name": "Kayron#lv4"
+      }
+    ]
+  },
+  "quests/lvl4_weapon_quest.txt|script|Reyghema#lv4|niflheim:99:268": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Lvl4WeaponQuest.Reyghema",
+    "output_hash": "49e5158e70e94dfe5f826bd239d3b8515e8c385904d8b5071858ff37669f539c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/lvl4_weapon_quest/reyghema.ex",
+    "source_hash": "cc8924fbd82b4bf7a8c784103b80bdc5ed1d6a9a909ffdea0965b2da954e1d71",
+    "spawns": [
+      {
+        "name": "Reyghema",
+        "scope": "shared",
+        "x": 99,
+        "y": 268,
+        "map": "niflheim",
+        "dir": 5,
+        "sprite": 794,
+        "unique_name": "Reyghema#lv4"
+      }
+    ]
+  },
+  "quests/lvl4_weapon_quest.txt|script|Tabezthan#lv4|um_in:156:77": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Lvl4WeaponQuest.Tabezthan",
+    "output_hash": "e95bfa075bccd03e4581a999d75f20c9610b0ba80893cdd57019a2ac2083d66f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/lvl4_weapon_quest/tabezthan.ex",
+    "source_hash": "98a30f91dfad8c4fc42d86e3401e50ff77c05d9852a5ed58f8c3dd5adb11df4e",
+    "spawns": [
+      {
+        "name": "Tabezthan",
+        "scope": "shared",
+        "x": 156,
+        "y": 77,
+        "map": "um_in",
+        "dir": 5,
+        "sprite": 788,
+        "unique_name": "Tabezthan#lv4"
+      }
+    ]
+  },
+  "quests/lvl4_weapon_quest.txt|script|Waltboughst#lv4|niflheim:331:72": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Lvl4WeaponQuest.Waltboughst",
+    "output_hash": "343b4a0b17f6c08d4b40a15413ae9b94fd5a1290a45b94aca4344a71d3bab5d6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/lvl4_weapon_quest/waltboughst.ex",
+    "source_hash": "1b68030ab7dc3bb239d9e5ed0636793dc431eab11728da1c8f727283fd8ea501",
+    "spawns": [
+      {
+        "name": "Waltboughst",
+        "scope": "shared",
+        "x": 331,
+        "y": 72,
+        "map": "niflheim",
+        "dir": 3,
+        "sprite": 795,
+        "unique_name": "Waltboughst#lv4"
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",

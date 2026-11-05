@@ -169,7 +169,8 @@ defmodule H.Core do
   def call(:is_guild_leader, [_ctx | args]), do: pick({:is_guild_leader, args}, [1, 0])
 
   def call(:gettimestr, [_ctx, format, _n]),
-    do: pick({:gettimestr, format}, ["0001", "0101", "0201", "1015", "1230", "2200", "2300", "2359"])
+    do:
+      pick({:gettimestr, format}, ["0001", "0101", "0201", "1015", "1230", "2200", "2300", "2359"])
 
   def call(:get_local, [ctx, key, default]), do: Map.get(ctx.locals, key, default)
   def call(:set_local, [ctx, key, value]), do: %{ctx | locals: Map.put(ctx.locals, key, value)}
@@ -276,6 +277,13 @@ defmodule H.Core do
   def rathena(:truthy?, [x]), do: x not in [0, "", false, nil]
   def rathena(:getitemname, [id]), do: "Item#{id}"
   def rathena(:bool_int, [b]), do: if(b, do: 1, else: 0)
+
+  def rathena(:put_at, [list, index, value, _pad]) when index < length(list),
+    do: List.replace_at(list, index, value)
+
+  def rathena(:put_at, [list, index, value, pad]),
+    do: list ++ List.duplicate(pad, index - length(list)) ++ [value]
+
   def rathena(f, args), do: raise("unhandled Rathena.#{f} #{inspect(args)}")
 
   def rathena(piped, f, args), do: rathena(f, [piped | args])
@@ -415,8 +423,7 @@ end
 
 {ints, atoms, strings} =
   for path <- [old_path, new_path],
-      reduce:
-        {MapSet.new([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 99, -1]), MapSet.new(), MapSet.new()} do
+      reduce: {MapSet.new([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 99, -1]), MapSet.new(), MapSet.new()} do
     acc ->
       {:ok, ast} = Code.string_to_quoted(File.read!(path))
 
