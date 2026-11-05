@@ -20773,6 +20773,285 @@
       }
     ]
   },
+  "quests/eye_of_hellion.txt|script| #paypuzz1|payon:101:190": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.Npc101190",
+    "output_hash": "7ff53a2d9c843de7bd2d34b763399bc58e43353f50c19d1f921c6e955e219ae1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/eye_of_hellion/npc_101_190.ex",
+    "source_hash": "954e42a0375a7b25d257048d543702edf6edc00e565346686a4d2a1f1027ad01",
+    "spawns": []
+  },
+  "quests/eye_of_hellion.txt|script| #prt_key-1-1|prontera:45:67": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.Npc4567",
+    "output_hash": "9b95a66e1cdd34e28ea6890d98e40ec449c2078be1948e2db09aa2120b9e8ee8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/eye_of_hellion/npc_45_67.ex",
+    "source_hash": "e27b606aa1e233368cb789dede65151b5124562973fed145e93b74c099bc264c",
+    "spawns": [
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 45,
+        "y": 67,
+        "map": "prontera",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": " #prt_key-1-1",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/eye_of_hellion.txt|script|#prt_key-1|prontera:223:82": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.Npc",
+    "output_hash": "7d86a9c41262eabfca60b43697b4a7b782db451fbab8ffd04c2e1cc5ff14feda",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/eye_of_hellion/npc.ex",
+    "source_hash": "ab784e6f99f9762831ffc8eaa9111b0308640a3cb71ebd11465faeaef1e38d45",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 223,
+        "y": 82,
+        "map": "prontera",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#prt_key-1"
+      }
+    ]
+  },
+  "quests/eye_of_hellion.txt|script|Buddha Statue#paypuzz6|pay_arche:142:28": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.BuddhaStatue",
+    "output_hash": "d8931cc8e4245deb129ce170d03407ff16610bebb2ce45aff930f7a43328f92f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/eye_of_hellion/buddha_statue.ex",
+    "source_hash": "5c03d9adeb9b6c0ebb872eb92e380501eb189628d9262ca4b943595534222564",
+    "spawns": [
+      {
+        "name": "Buddha Statue",
+        "scope": "shared",
+        "x": 142,
+        "y": 28,
+        "map": "pay_arche",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Buddha Statue#paypuzz6",
+        "trigger": [
+          5,
+          5
+        ]
+      }
+    ]
+  },
+  "quests/eye_of_hellion.txt|script|Clanux Heffron#hellion|prontera:269:326": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.ClanuxHeffron",
+    "output_hash": "74e7b97fc1a61bec8aab53342d2de69b0faf0104366493be4156f84c0a7ae340",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/eye_of_hellion/clanux_heffron.ex",
+    "source_hash": "ff13d20165861f78ce9ada2412bd5500f550426aba9d0bd49c3e970762977368",
+    "spawns": [
+      {
+        "name": "Clanux Heffron",
+        "scope": "shared",
+        "x": 269,
+        "y": 326,
+        "map": "prontera",
+        "dir": 3,
+        "sprite": 50,
+        "unique_name": "Clanux Heffron#hellion"
+      }
+    ]
+  },
+  "quests/eye_of_hellion.txt|script|Dried Fish#paypuzz3|payon:239:56": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.DriedFish",
+    "output_hash": "160182ece59e02c8b6075cf94e154bdc559e2ede7fdb328f3349cf82f1634cd2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/eye_of_hellion/dried_fish.ex",
+    "source_hash": "9d47dd80be4ae5de69953bb21b7d8b8c6c3ffa9a842e1e5beedc346543d8292f",
+    "spawns": [
+      {
+        "name": "Dried Fish",
+        "scope": "shared",
+        "x": 239,
+        "y": 56,
+        "map": "payon",
+        "dir": 3,
+        "sprite": 111,
+        "unique_name": "Dried Fish#paypuzz3"
+      }
+    ]
+  },
+  "quests/eye_of_hellion.txt|script|Enoz#hellion|gef_tower:116:37": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.Enoz",
+    "output_hash": "eee99ea6ddf611f28d9f0fd10e684a0bfb3ebec674ba4e4b4cab53d84072e4d7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/eye_of_hellion/enoz.ex",
+    "source_hash": "ea0004f3f1e578501440e1f2900d76890c71265d788b159b2db0e8bafcd4fd42",
+    "spawns": [
+      {
+        "name": "Enoz",
+        "scope": "shared",
+        "x": 116,
+        "y": 37,
+        "map": "gef_tower",
+        "dir": 0,
+        "sprite": 748,
+        "unique_name": "Enoz#hellion"
+      }
+    ]
+  },
+  "quests/eye_of_hellion.txt|script|Grout'he Tuccok#hellion|payon:182:132": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.GroutHeTuccok",
+    "output_hash": "b87a3f0b88a4676d31542bb6726bcc14e8cbf3b081236b0cfcdc3aa019093244",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/eye_of_hellion/grout_he_tuccok.ex",
+    "source_hash": "0e30959129e17b4e60c3b1698f534066abaca299b5604c603b5199e9dbff830e",
+    "spawns": [
+      {
+        "name": "Grout'he Tuccok",
+        "scope": "shared",
+        "x": 182,
+        "y": 132,
+        "map": "payon",
+        "dir": 3,
+        "sprite": 48,
+        "unique_name": "Grout'he Tuccok#hellion"
+      }
+    ]
+  },
+  "quests/eye_of_hellion.txt|script|Hidden Cave#hellion|gef_fild09:296:59": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.HiddenCave",
+    "output_hash": "293266f373100aa7f54f65b3710bdf2afa3618abca9209031fa076fe6c215179",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/eye_of_hellion/hidden_cave.ex",
+    "source_hash": "a90452d4d629c92a88f0b2958082f79736d39089830ba66d4e6ad81af014a519",
+    "spawns": [
+      {
+        "name": "Hidden Cave",
+        "scope": "shared",
+        "x": 296,
+        "y": 59,
+        "map": "gef_fild09",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Hidden Cave#hellion",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/eye_of_hellion.txt|script|Old Scholar Tyus#hellion|morocc_in:116:101": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.OldScholarTyus",
+    "output_hash": "5b573f58114065b6a27bbb04904931c055f3299a496f913ccf551fe46e2fb8cb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/eye_of_hellion/old_scholar_tyus.ex",
+    "source_hash": "c74478fa8bdebe29cb2b8b07059562b41c213e1db10b422559bc8b48a7409cde",
+    "spawns": [
+      {
+        "name": "Old Scholar Tyus",
+        "scope": "shared",
+        "x": 116,
+        "y": 101,
+        "map": "morocc_in",
+        "dir": 3,
+        "sprite": 735,
+        "unique_name": "Old Scholar Tyus#hellion",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/eye_of_hellion.txt|script|Pile of Stone#paypuzz2|payon:82:109": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.PileOfStone",
+    "output_hash": "2e6aabb915d813f0cc4acc9463b07277cbe9713e3929922edb22753f1555a8e2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/eye_of_hellion/pile_of_stone.ex",
+    "source_hash": "89cf409523cae9ef9b8e7f78023cab3783dfdf5a7880c00576500ad080c02ea7",
+    "spawns": [
+      {
+        "name": "Pile of Stone",
+        "scope": "shared",
+        "x": 82,
+        "y": 109,
+        "map": "payon",
+        "dir": 3,
+        "sprite": 111,
+        "unique_name": "Pile of Stone#paypuzz2"
+      }
+    ]
+  },
+  "quests/eye_of_hellion.txt|script|Sage Welshyun#hellion|geffen:110:200": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.SageWelshyun",
+    "output_hash": "0b3fc8c0338aaf9441a76f49a019b32e7d95948f5b3b77754b99125755026d5c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/eye_of_hellion/sage_welshyun.ex",
+    "source_hash": "167cff4084dedd4706808a26fc0e4a9a857df36bae417350e9f9966b76d08e5f",
+    "spawns": [
+      {
+        "name": "Sage Welshyun",
+        "scope": "shared",
+        "x": 110,
+        "y": 200,
+        "map": "geffen",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Sage Welshyun#hellion",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/eye_of_hellion.txt|script|Unknown Machine#prt_key|prt_in:128:79": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.UnknownMachine",
+    "output_hash": "b94480b0944b642c2fb8362a525352790afbedce030d51301ec0160b297d0486",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/eye_of_hellion/unknown_machine.ex",
+    "source_hash": "ef8fd3dbd0b245c908095149e244b7e6fd1a86acfe9ab339aac019a4db630878",
+    "spawns": [
+      {
+        "name": "Unknown Machine",
+        "scope": "shared",
+        "x": 128,
+        "y": 79,
+        "map": "prt_in",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Unknown Machine#prt_key"
+      }
+    ]
+  },
+  "quests/eye_of_hellion.txt|script|Vat#paypuzz4|payon:240:160": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.Vat",
+    "output_hash": "05f2c00762a1ff068d9d37f47aa051abf46d551bd3c5f56f966d558585f0aecf",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/eye_of_hellion/vat.ex",
+    "source_hash": "cbd20721c82ce90a13fa4c38e65cbfeb8921f24f82eb72925a9575cd5b94a0da",
+    "spawns": [
+      {
+        "name": "Vat",
+        "scope": "shared",
+        "x": 240,
+        "y": 160,
+        "map": "payon",
+        "dir": 3,
+        "sprite": 111,
+        "unique_name": "Vat#paypuzz4"
+      }
+    ]
+  },
+  "quests/eye_of_hellion.txt|script|Wooden Floor#paypuzz5|payon:159:129": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.WoodenFloor",
+    "output_hash": "42a3f5e454222ec745f20c0f827ef456a905a73d2c4dd6877f4ce49b52d4c4a7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/eye_of_hellion/wooden_floor.ex",
+    "source_hash": "eb7219985d6e2f282c84ac5b8e89ca2d78f473e60128d991bef80a639d5ee7b0",
+    "spawns": [
+      {
+        "name": "Wooden Floor",
+        "scope": "shared",
+        "x": 159,
+        "y": 129,
+        "map": "payon",
+        "dir": 3,
+        "sprite": 111,
+        "unique_name": "Wooden Floor#paypuzz5"
+      }
+    ]
+  },
   "quests/first_class/tu_acolyte.txt|script|#tu_monk|prt_monk:217:123": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.Npc",
     "output_hash": "4173d1a09f9c852ce67a043574911a95aaad70dc1689b9b4813b0c5a5b40062b",
