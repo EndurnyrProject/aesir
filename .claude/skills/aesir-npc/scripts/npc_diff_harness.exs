@@ -62,6 +62,29 @@ defmodule H.Core do
   @jobs [:archer, :archer, :archer, :archer, :bard, :dancer, :novice, :clown, :gypsy]
   @base_classes [:novice, :swordman, :mage, :archer, :acolyte, :merchant, :thief, :taekwon]
 
+  @npc_names [
+    "Buzz",
+    "Jody",
+    "Chungye",
+    "Hermod",
+    "Pariz",
+    "Lenya",
+    "Gealuve",
+    "Atila",
+    "Diligo",
+    "Ashin",
+    "Others"
+  ]
+
+  @castle_maps [
+    "aldeg_cas01",
+    "aldeg_cas05",
+    "gefg_cas01",
+    "payg_cas03",
+    "prtg_cas05",
+    "prontera"
+  ]
+
   def seed, do: Process.get(:seed)
   def ints, do: :persistent_term.get(:h_ints)
   def atoms, do: :persistent_term.get(:h_atoms)
@@ -105,8 +128,31 @@ defmodule H.Core do
   def call(:get_npc_var_of, [_ctx, npc, key, default]),
     do: pick({:gnvo, npc, key}, [default | @int_domain])
 
+  # `getpartymember` fills $@partymembercount; party-size gates compare it to an integer.
+  def call(:get_server_temp_var, [_ctx, key, default])
+      when key in ["partymembercount", :partymembercount],
+      do: pick({:gstv_party, key}, [default, 6, 8, 10, 6, 8])
+
   def call(:get_server_temp_var, [_ctx, key, default]),
     do: pick({:gstv, key}, [default, [], [1, 2], [150_001, 150_002, 150_003]])
+
+  def call(:getpartymember, [ctx | args]),
+    do: {log(ctx, {:getpartymember, args}), ["Party1", "Party2"]}
+
+  # NPC placement identity: name (1) and the unique-name suffix (2).
+  def call(:strnpcinfo, [_ctx, 1]), do: pick(:strnpcinfo1, @npc_names)
+  def call(:strnpcinfo, [_ctx, _n]), do: pick(:strnpcinfo_n, ["01", "02", "03", "04", "05"])
+
+  # Position of the talking unit; castle maps and their sibling suffixes are the gates here.
+  def call(:getmapxy, [_ctx, kind]), do: {pick({:getmapxy, kind}, @castle_maps), 100, 100}
+
+  def call(:castle_data, [_ctx, map, index]),
+    do: pick({:castle_data, map, index}, [0, 0, 1, 2, 150_001, 150_002])
+
+  def call(:is_guild_leader, [_ctx | args]), do: pick({:is_guild_leader, args}, [1, 0])
+
+  def call(:gettimestr, [_ctx, format, _n]),
+    do: pick({:gettimestr, format}, ["0001", "0101", "0201", "1015", "1230", "2200", "2300", "2359"])
 
   def call(:get_local, [ctx, key, default]), do: Map.get(ctx.locals, key, default)
   def call(:set_local, [ctx, key, value]), do: %{ctx | locals: Map.put(ctx.locals, key, value)}
@@ -191,6 +237,7 @@ defmodule H.Core do
   def call(name, args), do: raise("unhandled #{name}/#{length(args)} #{inspect(args)}")
 
   def rathena(:concat, [a, b]), do: to_string(a) <> to_string(b)
+  def rathena(:atoi, [s]) when is_binary(s), do: s |> String.trim() |> String.to_integer()
   def rathena(:job_id, [id]) when is_integer(id), do: id
   def rathena(:job_id, [id]) when is_atom(id), do: :erlang.phash2(id)
   def rathena(:truthy?, [x]), do: x not in [0, "", false, nil]

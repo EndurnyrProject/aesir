@@ -22089,6 +22089,838 @@
       }
     ]
   },
+  "quests/guildrelay.txt|floating|GuildDummy4::GuildRelay4|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Guilddummy4Guildrelay4",
+    "output_hash": "e9e894b2e32654d18030676cf775a71476a1af74b05490cec8066a7117c72e22",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/guilddummy4_guildrelay4.ex",
+    "source_hash": "07c2c92100a41db3de643609354c2b0539c32b1b11c6ea256c325b144ce0314a",
+    "spawns": [
+      {
+        "name": "Pariz",
+        "scope": "shared",
+        "x": 59,
+        "y": 224,
+        "map": "aldeg_cas01",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Pariz#01"
+      },
+      {
+        "name": "Pariz",
+        "scope": "shared",
+        "x": 62,
+        "y": 201,
+        "map": "aldeg_cas02",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Pariz#02"
+      },
+      {
+        "name": "Pariz",
+        "scope": "shared",
+        "x": 188,
+        "y": 181,
+        "map": "aldeg_cas03",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Pariz#03"
+      },
+      {
+        "name": "Pariz",
+        "scope": "shared",
+        "x": 181,
+        "y": 97,
+        "map": "aldeg_cas04",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Pariz#04"
+      },
+      {
+        "name": "Pariz",
+        "scope": "shared",
+        "x": 165,
+        "y": 51,
+        "map": "aldeg_cas05",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Pariz#05"
+      },
+      {
+        "name": "Gen Garish",
+        "scope": "shared",
+        "x": 35,
+        "y": 34,
+        "map": "gefg_cas01",
+        "dir": 6,
+        "sprite": 754,
+        "unique_name": "Gen Garish#01"
+      },
+      {
+        "name": "Gen Garish",
+        "scope": "shared",
+        "x": 18,
+        "y": 159,
+        "map": "gefg_cas02",
+        "dir": 5,
+        "sprite": 754,
+        "unique_name": "Gen Garish#02"
+      },
+      {
+        "name": "Gen Garish",
+        "scope": "shared",
+        "x": 124,
+        "y": 24,
+        "map": "gefg_cas03",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Gen Garish#03"
+      },
+      {
+        "name": "Gen Garish",
+        "scope": "shared",
+        "x": 73,
+        "y": 38,
+        "map": "gefg_cas04",
+        "dir": 6,
+        "sprite": 754,
+        "unique_name": "Gen Garish#04"
+      },
+      {
+        "name": "Gen Garish",
+        "scope": "shared",
+        "x": 46,
+        "y": 28,
+        "map": "gefg_cas05",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Gen Garish#05"
+      },
+      {
+        "name": "Ashin",
+        "scope": "shared",
+        "x": 91,
+        "y": 49,
+        "map": "payg_cas01",
+        "dir": 3,
+        "sprite": 59,
+        "unique_name": "Ashin#01"
+      },
+      {
+        "name": "Ashin",
+        "scope": "shared",
+        "x": 289,
+        "y": 264,
+        "map": "payg_cas02",
+        "dir": 3,
+        "sprite": 59,
+        "unique_name": "Ashin#02"
+      },
+      {
+        "name": "Ashin",
+        "scope": "shared",
+        "x": 10,
+        "y": 266,
+        "map": "payg_cas03",
+        "dir": 3,
+        "sprite": 59,
+        "unique_name": "Ashin#03"
+      },
+      {
+        "name": "Ashin",
+        "scope": "shared",
+        "x": 18,
+        "y": 239,
+        "map": "payg_cas04",
+        "dir": 3,
+        "sprite": 59,
+        "unique_name": "Ashin#04"
+      },
+      {
+        "name": "Ashin",
+        "scope": "shared",
+        "x": 276,
+        "y": 287,
+        "map": "payg_cas05",
+        "dir": 3,
+        "sprite": 59,
+        "unique_name": "Ashin#05"
+      },
+      {
+        "name": "Diligo",
+        "scope": "shared",
+        "x": 125,
+        "y": 191,
+        "map": "prtg_cas01",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Diligo#01"
+      },
+      {
+        "name": "Diligo",
+        "scope": "shared",
+        "x": 100,
+        "y": 62,
+        "map": "prtg_cas02",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Diligo#02"
+      },
+      {
+        "name": "Diligo",
+        "scope": "shared",
+        "x": 183,
+        "y": 215,
+        "map": "prtg_cas03",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Diligo#03"
+      },
+      {
+        "name": "Diligo",
+        "scope": "shared",
+        "x": 59,
+        "y": 282,
+        "map": "prtg_cas04",
+        "dir": 5,
+        "sprite": 754,
+        "unique_name": "Diligo#04"
+      },
+      {
+        "name": "Diligo",
+        "scope": "shared",
+        "x": 211,
+        "y": 36,
+        "map": "prtg_cas05",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Diligo#05"
+      }
+    ]
+  },
+  "quests/guildrelay.txt|floating|RelayDummy1::GuildRelay1|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Relaydummy1Guildrelay1",
+    "output_hash": "312391f7ea5fe17d579f51375a344873228b030b914a51f7bf4609189e9cce45",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/relaydummy1_guildrelay1.ex",
+    "source_hash": "16db6faf31bba2ef186ce9254906c458fc5fda411f46b3424cfe9fc296c5d525",
+    "spawns": [
+      {
+        "name": "Buzz",
+        "scope": "shared",
+        "x": 51,
+        "y": 102,
+        "map": "aldeg_cas01",
+        "dir": 5,
+        "sprite": 754,
+        "unique_name": "Buzz#01"
+      },
+      {
+        "name": "Buzz",
+        "scope": "shared",
+        "x": 120,
+        "y": 51,
+        "map": "aldeg_cas02",
+        "dir": 5,
+        "sprite": 754,
+        "unique_name": "Buzz#02"
+      },
+      {
+        "name": "Buzz",
+        "scope": "shared",
+        "x": 70,
+        "y": 252,
+        "map": "aldeg_cas03",
+        "dir": 5,
+        "sprite": 754,
+        "unique_name": "Buzz#03"
+      },
+      {
+        "name": "Buzz",
+        "scope": "shared",
+        "x": 31,
+        "y": 116,
+        "map": "aldeg_cas04",
+        "dir": 5,
+        "sprite": 754,
+        "unique_name": "Buzz#04"
+      },
+      {
+        "name": "Buzz",
+        "scope": "shared",
+        "x": 31,
+        "y": 191,
+        "map": "aldeg_cas05",
+        "dir": 5,
+        "sprite": 754,
+        "unique_name": "Buzz#05"
+      },
+      {
+        "name": "Jody",
+        "scope": "shared",
+        "x": 85,
+        "y": 47,
+        "map": "gefg_cas01",
+        "dir": 4,
+        "sprite": 754,
+        "unique_name": "Jody#01"
+      },
+      {
+        "name": "Jody",
+        "scope": "shared",
+        "x": 15,
+        "y": 69,
+        "map": "gefg_cas02",
+        "dir": 4,
+        "sprite": 754,
+        "unique_name": "Jody#02"
+      },
+      {
+        "name": "Jody",
+        "scope": "shared",
+        "x": 257,
+        "y": 41,
+        "map": "gefg_cas03",
+        "dir": 4,
+        "sprite": 754,
+        "unique_name": "Jody#03"
+      },
+      {
+        "name": "Jody",
+        "scope": "shared",
+        "x": 26,
+        "y": 73,
+        "map": "gefg_cas04",
+        "dir": 4,
+        "sprite": 754,
+        "unique_name": "Jody#04"
+      },
+      {
+        "name": "Jody",
+        "scope": "shared",
+        "x": 47,
+        "y": 47,
+        "map": "gefg_cas05",
+        "dir": 4,
+        "sprite": 754,
+        "unique_name": "Jody#05"
+      },
+      {
+        "name": "Chungye",
+        "scope": "shared",
+        "x": 87,
+        "y": 35,
+        "map": "payg_cas01",
+        "dir": 3,
+        "sprite": 106,
+        "unique_name": "Chungye#01"
+      },
+      {
+        "name": "Chungye",
+        "scope": "shared",
+        "x": 34,
+        "y": 253,
+        "map": "payg_cas02",
+        "dir": 3,
+        "sprite": 106,
+        "unique_name": "Chungye#02"
+      },
+      {
+        "name": "Chungye",
+        "scope": "shared",
+        "x": 48,
+        "y": 265,
+        "map": "payg_cas03",
+        "dir": 3,
+        "sprite": 106,
+        "unique_name": "Chungye#03"
+      },
+      {
+        "name": "Chungye",
+        "scope": "shared",
+        "x": 24,
+        "y": 285,
+        "map": "payg_cas04",
+        "dir": 3,
+        "sprite": 106,
+        "unique_name": "Chungye#04"
+      },
+      {
+        "name": "Chungye",
+        "scope": "shared",
+        "x": 277,
+        "y": 271,
+        "map": "payg_cas05",
+        "dir": 3,
+        "sprite": 106,
+        "unique_name": "Chungye#05"
+      },
+      {
+        "name": "Hermod",
+        "scope": "shared",
+        "x": 96,
+        "y": 205,
+        "map": "prtg_cas01",
+        "dir": 5,
+        "sprite": 754,
+        "unique_name": "Hermod#01"
+      },
+      {
+        "name": "Hermod",
+        "scope": "shared",
+        "x": 73,
+        "y": 35,
+        "map": "prtg_cas02",
+        "dir": 5,
+        "sprite": 754,
+        "unique_name": "Hermod#02"
+      },
+      {
+        "name": "Hermod",
+        "scope": "shared",
+        "x": 5,
+        "y": 68,
+        "map": "prtg_cas03",
+        "dir": 5,
+        "sprite": 754,
+        "unique_name": "Hermod#03"
+      },
+      {
+        "name": "Hermod",
+        "scope": "shared",
+        "x": 39,
+        "y": 263,
+        "map": "prtg_cas04",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Hermod#04"
+      },
+      {
+        "name": "Hermod",
+        "scope": "shared",
+        "x": 52,
+        "y": 70,
+        "map": "prtg_cas05",
+        "dir": 5,
+        "sprite": 754,
+        "unique_name": "Hermod#05"
+      }
+    ]
+  },
+  "quests/guildrelay.txt|floating|RelayDummy2::GuildRelay2|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Relaydummy2Guildrelay2",
+    "output_hash": "e8fd6b76fe06ca8e8d7de8a354c3d9fd93ddaa3862525c6cc3d8b63f019752dc",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/relaydummy2_guildrelay2.ex",
+    "source_hash": "33576908d775cf67b35356f8578ce528d115eb85fada87b3dfdb492583aeae57",
+    "spawns": [
+      {
+        "name": "Lenya",
+        "scope": "shared",
+        "x": 75,
+        "y": 39,
+        "map": "aldeg_cas01",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Lenya#01"
+      },
+      {
+        "name": "Lenya",
+        "scope": "shared",
+        "x": 180,
+        "y": 184,
+        "map": "aldeg_cas02",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Lenya#02"
+      },
+      {
+        "name": "Lenya",
+        "scope": "shared",
+        "x": 72,
+        "y": 115,
+        "map": "aldeg_cas03",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Lenya#03"
+      },
+      {
+        "name": "Lenya",
+        "scope": "shared",
+        "x": 66,
+        "y": 117,
+        "map": "aldeg_cas04",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Lenya#04"
+      },
+      {
+        "name": "Lenya",
+        "scope": "shared",
+        "x": 140,
+        "y": 196,
+        "map": "aldeg_cas05",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Lenya#05"
+      },
+      {
+        "name": "Ron Haware",
+        "scope": "shared",
+        "x": 67,
+        "y": 83,
+        "map": "gefg_cas01",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Ron Haware#01"
+      },
+      {
+        "name": "Ron Haware",
+        "scope": "shared",
+        "x": 23,
+        "y": 22,
+        "map": "gefg_cas02",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Ron Haware#02"
+      },
+      {
+        "name": "Ron Haware",
+        "scope": "shared",
+        "x": 110,
+        "y": 91,
+        "map": "gefg_cas03",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Ron Haware#03"
+      },
+      {
+        "name": "Ron Haware",
+        "scope": "shared",
+        "x": 34,
+        "y": 16,
+        "map": "gefg_cas04",
+        "dir": 1,
+        "sprite": 754,
+        "unique_name": "Ron Haware#04"
+      },
+      {
+        "name": "Ron Haware",
+        "scope": "shared",
+        "x": 65,
+        "y": 28,
+        "map": "gefg_cas05",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Ron Haware#05"
+      },
+      {
+        "name": "Dosuhlji",
+        "scope": "shared",
+        "x": 129,
+        "y": 29,
+        "map": "payg_cas01",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Dosuhlji#01"
+      },
+      {
+        "name": "Dosuhlji",
+        "scope": "shared",
+        "x": 77,
+        "y": 229,
+        "map": "payg_cas02",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Dosuhlji#02"
+      },
+      {
+        "name": "Dosuhlji",
+        "scope": "shared",
+        "x": 7,
+        "y": 265,
+        "map": "payg_cas03",
+        "dir": 5,
+        "sprite": 754,
+        "unique_name": "Dosuhlji#03"
+      },
+      {
+        "name": "Dosuhlji",
+        "scope": "shared",
+        "x": 21,
+        "y": 16,
+        "map": "payg_cas04",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Dosuhlji#04"
+      },
+      {
+        "name": "Dosuhlji",
+        "scope": "shared",
+        "x": 273,
+        "y": 15,
+        "map": "payg_cas05",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Dosuhlji#05"
+      },
+      {
+        "name": "Atila",
+        "scope": "shared",
+        "x": 157,
+        "y": 117,
+        "map": "prtg_cas01",
+        "dir": 3,
+        "sprite": 728,
+        "unique_name": "Atila#01"
+      },
+      {
+        "name": "Atila",
+        "scope": "shared",
+        "x": 43,
+        "y": 41,
+        "map": "prtg_cas02",
+        "dir": 5,
+        "sprite": 728,
+        "unique_name": "Atila#02"
+      },
+      {
+        "name": "Atila",
+        "scope": "shared",
+        "x": 18,
+        "y": 109,
+        "map": "prtg_cas03",
+        "dir": 3,
+        "sprite": 728,
+        "unique_name": "Atila#03"
+      },
+      {
+        "name": "Atila",
+        "scope": "shared",
+        "x": 259,
+        "y": 251,
+        "map": "prtg_cas04",
+        "dir": 3,
+        "sprite": 728,
+        "unique_name": "Atila#04"
+      },
+      {
+        "name": "Atila",
+        "scope": "shared",
+        "x": 253,
+        "y": 91,
+        "map": "prtg_cas05",
+        "dir": 3,
+        "sprite": 728,
+        "unique_name": "Atila#05"
+      }
+    ]
+  },
+  "quests/guildrelay.txt|floating|RelayDummy3::GuildRelay3|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Relaydummy3Guildrelay3",
+    "output_hash": "5a8c7c6a432f07a7ca33613296ce8844a708e3702b07fbf0e5030100d556f8ba",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/relaydummy3_guildrelay3.ex",
+    "source_hash": "0fdbe330b0da39e41023ba95b3768b420c1506d55bfc3a5a88fc936cb1b7d2cb",
+    "spawns": [
+      {
+        "name": "Gealuve",
+        "scope": "shared",
+        "x": 200,
+        "y": 175,
+        "map": "aldeg_cas01",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Gealuve#01"
+      },
+      {
+        "name": "Gealuve",
+        "scope": "shared",
+        "x": 62,
+        "y": 65,
+        "map": "aldeg_cas02",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Gealuve#02"
+      },
+      {
+        "name": "Gealuve",
+        "scope": "shared",
+        "x": 114,
+        "y": 119,
+        "map": "aldeg_cas03",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Gealuve#03"
+      },
+      {
+        "name": "Gealuve",
+        "scope": "shared",
+        "x": 24,
+        "y": 80,
+        "map": "aldeg_cas04",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Gealuve#04"
+      },
+      {
+        "name": "Gealuve",
+        "scope": "shared",
+        "x": 148,
+        "y": 224,
+        "map": "aldeg_cas05",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Gealuve#05"
+      },
+      {
+        "name": "Vers",
+        "scope": "shared",
+        "x": 184,
+        "y": 40,
+        "map": "gefg_cas01",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Vers#01"
+      },
+      {
+        "name": "Vers",
+        "scope": "shared",
+        "x": 178,
+        "y": 38,
+        "map": "gefg_cas02",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Vers#02"
+      },
+      {
+        "name": "Vers",
+        "scope": "shared",
+        "x": 158,
+        "y": 57,
+        "map": "gefg_cas03",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Vers#03"
+      },
+      {
+        "name": "Vers",
+        "scope": "shared",
+        "x": 55,
+        "y": 70,
+        "map": "gefg_cas04",
+        "dir": 5,
+        "sprite": 754,
+        "unique_name": "Vers#04"
+      },
+      {
+        "name": "Vers",
+        "scope": "shared",
+        "x": 87,
+        "y": 31,
+        "map": "gefg_cas05",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "Vers#05"
+      },
+      {
+        "name": "Yayula",
+        "scope": "shared",
+        "x": 13,
+        "y": 146,
+        "map": "payg_cas01",
+        "dir": 5,
+        "sprite": 741,
+        "unique_name": "Yayula#01"
+      },
+      {
+        "name": "Yayula",
+        "scope": "shared",
+        "x": 252,
+        "y": 287,
+        "map": "payg_cas02",
+        "dir": 3,
+        "sprite": 741,
+        "unique_name": "Yayula#02"
+      },
+      {
+        "name": "Yayula",
+        "scope": "shared",
+        "x": 16,
+        "y": 16,
+        "map": "payg_cas03",
+        "dir": 5,
+        "sprite": 741,
+        "unique_name": "Yayula#03"
+      },
+      {
+        "name": "Yayula",
+        "scope": "shared",
+        "x": 69,
+        "y": 270,
+        "map": "payg_cas04",
+        "dir": 3,
+        "sprite": 741,
+        "unique_name": "Yayula#04"
+      },
+      {
+        "name": "Yayula",
+        "scope": "shared",
+        "x": 283,
+        "y": 24,
+        "map": "payg_cas05",
+        "dir": 3,
+        "sprite": 741,
+        "unique_name": "Yayula#05"
+      },
+      {
+        "name": "Cecil",
+        "scope": "shared",
+        "x": 149,
+        "y": 78,
+        "map": "prtg_cas01",
+        "dir": 3,
+        "sprite": 92,
+        "unique_name": "Cecil#01"
+      },
+      {
+        "name": "Cecil",
+        "scope": "shared",
+        "x": 52,
+        "y": 63,
+        "map": "prtg_cas02",
+        "dir": 3,
+        "sprite": 92,
+        "unique_name": "Cecil#02"
+      },
+      {
+        "name": "Cecil",
+        "scope": "shared",
+        "x": 71,
+        "y": 81,
+        "map": "prtg_cas03",
+        "dir": 5,
+        "sprite": 92,
+        "unique_name": "Cecil#03"
+      },
+      {
+        "name": "Cecil",
+        "scope": "shared",
+        "x": 6,
+        "y": 281,
+        "map": "prtg_cas04",
+        "dir": 5,
+        "sprite": 92,
+        "unique_name": "Cecil#04"
+      },
+      {
+        "name": "Cecil",
+        "scope": "shared",
+        "x": 276,
+        "y": 93,
+        "map": "prtg_cas05",
+        "dir": 3,
+        "sprite": 92,
+        "unique_name": "Cecil#05"
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
