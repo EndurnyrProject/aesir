@@ -20719,6 +20719,60 @@
       }
     ]
   },
+  "quests/counteragent_mixture.txt|script|Aure Dupon#cm|geffen:181:114": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.CounteragentMixture.AureDupon",
+    "output_hash": "0a8aa0764452fe7b3fe0bbdba9452de8160d149f34c1494e7642775b58132926",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/counteragent_mixture/aure_dupon.ex",
+    "source_hash": "e4ba9c59b67002c247c89635e23e1f2e299c1ea1c938b1da85f2892113950ca1",
+    "spawns": [
+      {
+        "name": "Aure Dupon",
+        "scope": "shared",
+        "x": 181,
+        "y": 114,
+        "map": "geffen",
+        "dir": 3,
+        "sprite": 82,
+        "unique_name": "Aure Dupon#cm"
+      }
+    ]
+  },
+  "quests/counteragent_mixture.txt|script|Louitz#cm|alberta_in:133:55": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.CounteragentMixture.Louitz",
+    "output_hash": "655513bac715965a33001ee3ef1c97cb51cabce7f5bc8f6257c0dce57657634d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/counteragent_mixture/louitz.ex",
+    "source_hash": "541ae05a009772ce30f1779e7d4d69d3a297e368dbcb2b83337547c49412bedb",
+    "spawns": [
+      {
+        "name": "Louitz",
+        "scope": "shared",
+        "x": 133,
+        "y": 55,
+        "map": "alberta_in",
+        "dir": 3,
+        "sprite": 84,
+        "unique_name": "Louitz#cm"
+      }
+    ]
+  },
+  "quests/counteragent_mixture.txt|script|Morgenstein#cm|geffen_in:141:140": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.CounteragentMixture.Morgenstein",
+    "output_hash": "cb10d8eaca352fe444447a8564e00f1836fb29defdd780d6e8095b7d4b7de548",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/counteragent_mixture/morgenstein.ex",
+    "source_hash": "69ff9f6f83e82a9b8ed280afff8a64967f9ca15c7b11379d87472b08acd39dba",
+    "spawns": [
+      {
+        "name": "Morgenstein",
+        "scope": "shared",
+        "x": 141,
+        "y": 140,
+        "map": "geffen_in",
+        "dir": 3,
+        "sprite": 121,
+        "unique_name": "Morgenstein#cm"
+      }
+    ]
+  },
   "quests/first_class/tu_acolyte.txt|script|#tu_monk|prt_monk:217:123": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.Npc",
     "output_hash": "4173d1a09f9c852ce67a043574911a95aaad70dc1689b9b4813b0c5a5b40062b",

@@ -1742,6 +1742,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   # -- switch ------------------------------------------------------------------
 
   defp emit_switch(expr, clauses, env) do
+    menu? = menu_subject?(expr)
     {pre, expr} = hoist(expr, env)
     id = next_id()
 
@@ -1764,7 +1765,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       |> Enum.unzip()
 
     default? = Enum.any?(effective, fn {values, _} -> :default in values end)
-    catch_all = if default?, do: [], else: ["_ -> ctx"]
+    catch_all = no_match_clause(default?, menu?)
 
     {tmp, bindings} =
       case expr do
@@ -1773,14 +1774,28 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       end
 
     case_lines = ["case #{tmp} do"] ++ List.flatten(clause_lines) ++ catch_all ++ ["end"]
-    terminal = if Enum.all?(terminals, &(&1 == :stop)) and default?, do: :stop, else: :cont
+
+    terminal =
+      if Enum.all?(terminals, &(&1 == :stop)) and (default? or menu?), do: :stop, else: :cont
 
     {pre ++ value_pre ++ bindings ++ switch_body(case_lines, nested_break?, terminal, id),
      terminal}
   end
 
-  # An all-stop switch (every clause exits, default present) yields no value
-  # anything could read; binding it would leave a dead `ctx =`.
+  # rAthena ends the script when a menu is answered with its cancel code instead
+  # of one of the offered options (script.cpp, `buildin_select`), so a switch on a
+  # menu never falls through to the code after it the way a switch on a plain
+  # value does: an unmatched menu ends the script, an unmatched value continues.
+  defp menu_subject?({:call, name, _args}) when name in ["select", "prompt"], do: true
+  defp menu_subject?({:cmd, name, _args}) when name in ["select", "prompt"], do: true
+  defp menu_subject?(_expr), do: false
+
+  defp no_match_clause(true, _menu?), do: []
+  defp no_match_clause(false, true), do: ["_ -> #{@script_end}"]
+  defp no_match_clause(false, false), do: ["_ -> ctx"]
+
+  # An all-stop switch (every clause exits and no case is left unmatched) yields
+  # no value anything could read; binding it would leave a dead `ctx =`.
   defp switch_body(case_lines, true, :stop, id),
     do: ["try do"] ++ case_lines ++ ["catch", ":throw, {:brk_#{id}, ctx} -> ctx", "end"]
 

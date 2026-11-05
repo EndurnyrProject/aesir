@@ -195,6 +195,40 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ "_ ->"
   end
 
+  # rAthena ends the script when a menu is answered with its cancel code instead
+  # of an offered option, so nothing after a switch on a menu is reachable.
+  test "a switch on a menu ends the script when no case matches" do
+    src =
+      gen!("""
+      switch (select("Yes:No")) {
+      case 1:
+        close;
+      case 2:
+        close;
+      }
+      mes "After the menu";
+      close;
+      """)
+
+    assert src =~ "case v1 do"
+    assert src =~ ~r/\n\s+_ ->\n\s+throw\(\{:script_end, ctx\}\)/
+    refute src =~ "After the menu"
+  end
+
+  test "a switch on a plain value falls through when no case matches" do
+    src =
+      gen!("""
+      switch (.@w) {
+      case 1:
+        close;
+      }
+      mes "After the switch";
+      close;
+      """)
+
+    assert src =~ "After the switch"
+  end
+
   test "item-group commands resolve optional subgroup forms" do
     src =
       gen!("""
