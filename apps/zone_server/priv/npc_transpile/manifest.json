@@ -19,12 +19,12 @@
         "y": 73,
         "map": "airplane",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "#AirshipWarp-1",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "#AirshipWarp-1"
       },
       {
         "name": "",
@@ -33,12 +33,12 @@
         "y": 29,
         "map": "airplane",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "#AirshipWarp-2",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "#AirshipWarp-2"
       }
     ]
   },
@@ -55,12 +55,12 @@
         "y": 73,
         "map": "airplane_01",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "#AirshipWarp-3",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "#AirshipWarp-3"
       },
       {
         "name": "",
@@ -69,12 +69,12 @@
         "y": 29,
         "map": "airplane_01",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "#AirshipWarp-4",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "#AirshipWarp-4"
       }
     ]
   },
@@ -216,12 +216,12 @@
         "y": 61,
         "map": "airplane_01",
         "dir": 2,
-        "sprite": 72,
-        "unique_name": "Dianne#01airplane_01",
         "trigger": [
           2,
           2
-        ]
+        ],
+        "sprite": 72,
+        "unique_name": "Dianne#01airplane_01"
       }
     ]
   },
@@ -384,12 +384,12 @@
         "y": 61,
         "map": "airplane_01",
         "dir": 4,
-        "sprite": 49,
-        "unique_name": "Nils#ein",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 49,
+        "unique_name": "Nils#ein"
       }
     ]
   },
@@ -626,12 +626,12 @@
         "y": 142,
         "map": "hugel",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "toairplane#hugel",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "toairplane#hugel"
       }
     ]
   },
@@ -782,12 +782,12 @@
         "y": 208,
         "map": "ra_fild12",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "toairplane#rachel",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "toairplane#rachel"
       }
     ]
   },
@@ -3929,11 +3929,11 @@
         "y": 148,
         "map": "geffen",
         "dir": 4,
-        "sprite": 99,
         "trigger": [
           6,
           6
-        ]
+        ],
+        "sprite": 99
       }
     ]
   },
@@ -5778,12 +5778,12 @@
         "y": 20,
         "map": "lhz_in03",
         "dir": 6,
-        "sprite": 869,
-        "unique_name": "Bad Drunk#amano06",
         "trigger": [
           2,
           2
-        ]
+        ],
+        "sprite": 869,
+        "unique_name": "Bad Drunk#amano06"
       }
     ]
   },
@@ -5909,12 +5909,12 @@
         "y": 233,
         "map": "lighthalzen",
         "dir": 3,
-        "sprite": 777,
-        "unique_name": "Beggar#lhz_02",
         "trigger": [
           3,
           1
-        ]
+        ],
+        "sprite": 777,
+        "unique_name": "Beggar#lhz_02"
       }
     ]
   },
@@ -6903,12 +6903,12 @@
         "y": 53,
         "map": "lhz_in01",
         "dir": 3,
-        "sprite": 98,
-        "unique_name": "Jorje#zero",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 98,
+        "unique_name": "Jorje#zero"
       }
     ]
   },
@@ -7600,12 +7600,12 @@
         "y": 132,
         "map": "lhz_in01",
         "dir": 3,
-        "sprite": 867,
-        "unique_name": "Rekenber Guard#li02",
         "trigger": [
           5,
           5
-        ]
+        ],
+        "sprite": 867,
+        "unique_name": "Rekenber Guard#li02"
       }
     ]
   },
@@ -7622,12 +7622,12 @@
         "y": 125,
         "map": "lhz_in01",
         "dir": 3,
-        "sprite": 867,
-        "unique_name": "Rekenber Guard#li03",
         "trigger": [
           5,
           5
-        ]
+        ],
+        "sprite": 867,
+        "unique_name": "Rekenber Guard#li03"
       }
     ]
   },
@@ -9474,12 +9474,12 @@
         "y": 120,
         "map": "morocc",
         "dir": 5,
-        "sprite": 707,
-        "unique_name": "MocSoldier",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 707,
+        "unique_name": "MocSoldier"
       }
     ]
   },
@@ -9834,12 +9834,12 @@
         "y": 211,
         "map": "niflheim",
         "dir": 6,
-        "sprite": 796,
-        "unique_name": "Gigantia#nif",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 796,
+        "unique_name": "Gigantia#nif"
       }
     ]
   },
@@ -9964,12 +9964,12 @@
         "y": 116,
         "map": "payon_in03",
         "dir": 3,
-        "sprite": 708,
-        "unique_name": "Chief Guardsman#payon",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 708,
+        "unique_name": "Chief Guardsman#payon"
       }
     ]
   },
@@ -9986,12 +9986,12 @@
         "y": 190,
         "map": "payon_in03",
         "dir": 4,
-        "sprite": 107,
-        "unique_name": "Chief#payon",
         "trigger": [
           2,
           2
-        ]
+        ],
+        "sprite": 107,
+        "unique_name": "Chief#payon"
       }
     ]
   },
@@ -10044,12 +10044,12 @@
         "y": 246,
         "map": "payon",
         "dir": 3,
-        "sprite": 708,
-        "unique_name": "Guardsman#payon",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 708,
+        "unique_name": "Guardsman#payon"
       }
     ]
   },
@@ -10120,12 +10120,12 @@
         "y": 158,
         "map": "payon",
         "dir": 5,
-        "sprite": 66,
-        "unique_name": "Woman#2payon",
         "trigger": [
           0,
           0
-        ]
+        ],
+        "sprite": 66,
+        "unique_name": "Woman#2payon"
       }
     ]
   },
@@ -13383,12 +13383,12 @@
         "y": 48,
         "map": "in_moc_16",
         "dir": 2,
-        "sprite": 725,
-        "unique_name": "Barcardi#ASN",
         "trigger": [
           2,
           2
-        ]
+        ],
+        "sprite": 725,
+        "unique_name": "Barcardi#ASN"
       }
     ]
   },
@@ -13419,12 +13419,12 @@
         "y": 80,
         "map": "in_moc_16",
         "dir": 4,
-        "sprite": 106,
-        "unique_name": "Guildmaster#ASN2",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 106,
+        "unique_name": "Guildmaster#ASN2"
       }
     ]
   },
@@ -13441,12 +13441,12 @@
         "y": 90,
         "map": "in_moc_16",
         "dir": 1,
-        "sprite": 730,
-        "unique_name": "Guildsman#ASN2",
         "trigger": [
           2,
           2
-        ]
+        ],
+        "sprite": 730,
+        "unique_name": "Guildsman#ASN2"
       }
     ]
   },
@@ -13481,12 +13481,12 @@
         "y": 137,
         "map": "in_moc_16",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "Keeper of the Door#ASN",
         "trigger": [
           2,
           1
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "Keeper of the Door#ASN"
       }
     ]
   },
@@ -13503,11 +13503,11 @@
         "y": 81,
         "map": "in_moc_16",
         "dir": 1,
-        "sprite": 55,
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 55
       }
     ]
   },
@@ -13524,11 +13524,11 @@
         "y": 169,
         "map": "in_moc_16",
         "dir": 0,
-        "sprite": 45,
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 45
       }
     ]
   },
@@ -13563,12 +13563,12 @@
         "y": 165,
         "map": "in_moc_16",
         "dir": 2,
-        "sprite": 725,
-        "unique_name": "Test Guide#ASN",
         "trigger": [
           4,
           4
-        ]
+        ],
+        "sprite": 725,
+        "unique_name": "Test Guide#ASN"
       }
     ]
   },
@@ -13585,12 +13585,12 @@
         "y": 98,
         "map": "in_moc_16",
         "dir": 1,
-        "sprite": 118,
-        "unique_name": "Thomas#ASNTEST",
         "trigger": [
           5,
           1
-        ]
+        ],
+        "sprite": 118,
+        "unique_name": "Thomas#ASNTEST"
       }
     ]
   },
@@ -13853,12 +13853,12 @@
         "y": 32,
         "map": "job_hunte",
         "dir": 1,
-        "sprite": 107,
-        "unique_name": "Guide#hnt",
         "trigger": [
           5,
           2
-        ]
+        ],
+        "sprite": 107,
+        "unique_name": "Guide#hnt"
       }
     ]
   },
@@ -13993,12 +13993,12 @@
         "y": 101,
         "map": "job_hunte",
         "dir": 1,
-        "sprite": 723,
-        "unique_name": "Switch#hnt",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 723,
+        "unique_name": "Switch#hnt"
       }
     ]
   },
@@ -14033,12 +14033,12 @@
         "y": 139,
         "map": "job_hunte",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "exit#hnttest",
         "trigger": [
           2,
           2
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "exit#hnttest"
       }
     ]
   },
@@ -14238,12 +14238,12 @@
         "y": 57,
         "map": "job_knt",
         "dir": 1,
-        "sprite": 107,
-        "unique_name": "Warp#knt",
         "trigger": [
           22,
           22
-        ]
+        ],
+        "sprite": 107,
+        "unique_name": "Warp#knt"
       }
     ]
   },
@@ -14313,12 +14313,12 @@
         "y": 150,
         "map": "job_prist",
         "dir": 4,
-        "sprite": 736,
-        "unique_name": "Baphomet#prst",
         "trigger": [
           8,
           1
-        ]
+        ],
+        "sprite": 736,
+        "unique_name": "Baphomet#prst"
       }
     ]
   },
@@ -14335,12 +14335,12 @@
         "y": 115,
         "map": "job_prist",
         "dir": 4,
-        "sprite": 1272,
-        "unique_name": "Dark Lord#prst",
         "trigger": [
           8,
           1
-        ]
+        ],
+        "sprite": 1272,
+        "unique_name": "Dark Lord#prst"
       }
     ]
   },
@@ -14357,12 +14357,12 @@
         "y": 45,
         "map": "job_prist",
         "dir": 4,
-        "sprite": 1109,
-        "unique_name": "Deviruchi#prst",
         "trigger": [
           8,
           1
-        ]
+        ],
+        "sprite": 1109,
+        "unique_name": "Deviruchi#prst"
       }
     ]
   },
@@ -14379,12 +14379,12 @@
         "y": 80,
         "map": "job_prist",
         "dir": 4,
-        "sprite": 1046,
-        "unique_name": "Doppelganger#prst",
         "trigger": [
           8,
           1
-        ]
+        ],
+        "sprite": 1046,
+        "unique_name": "Doppelganger#prst"
       }
     ]
   },
@@ -14440,11 +14440,11 @@
         "y": 2,
         "map": "job_prist",
         "dir": 1,
-        "sprite": 110,
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 110
       }
     ]
   },
@@ -14555,11 +14555,11 @@
         "y": 109,
         "map": "job_prist",
         "dir": 4,
-        "sprite": 45,
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 45
       }
     ]
   },
@@ -14576,11 +14576,11 @@
         "y": 180,
         "map": "job_prist",
         "dir": 4,
-        "sprite": 45,
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 45
       }
     ]
   },
@@ -14597,11 +14597,11 @@
         "y": 105,
         "map": "job_prist",
         "dir": 4,
-        "sprite": 45,
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 45
       }
     ]
   },
@@ -14993,12 +14993,12 @@
         "y": 102,
         "map": "payon",
         "dir": 3,
-        "sprite": 828,
-        "unique_name": "Moohyun#job_star",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 828,
+        "unique_name": "Moohyun#job_star"
       }
     ]
   },
@@ -15667,12 +15667,12 @@
         "y": 247,
         "map": "prt_monk",
         "dir": 1,
-        "sprite": 120,
-        "unique_name": "Guarding Monk#mk",
         "trigger": [
           6,
           2
-        ]
+        ],
+        "sprite": 120,
+        "unique_name": "Guarding Monk#mk"
       }
     ]
   },
@@ -15797,12 +15797,12 @@
         "y": 350,
         "map": "monk_test",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "Supervisor#race_monk",
         "trigger": [
           2,
           2
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "Supervisor#race_monk"
       }
     ]
   },
@@ -15862,12 +15862,12 @@
         "y": 278,
         "map": "monk_test",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "exit_monk#1",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "exit_monk#1"
       }
     ]
   },
@@ -15884,12 +15884,12 @@
         "y": 178,
         "map": "monk_test",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "exit_monk#2",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "exit_monk#2"
       }
     ]
   },
@@ -15906,12 +15906,12 @@
         "y": 278,
         "map": "monk_test",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "exit_monk#3",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "exit_monk#3"
       }
     ]
   },
@@ -16184,12 +16184,12 @@
         "y": 195,
         "map": "cmd_fild09",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "Warp#1",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "Warp#1"
       }
     ]
   },
@@ -16206,12 +16206,12 @@
         "y": 143,
         "map": "cmd_fild09",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "Warp#2",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "Warp#2"
       }
     ]
   },
@@ -16228,12 +16228,12 @@
         "y": 180,
         "map": "cmd_fild04",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "Warp#3",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "Warp#3"
       }
     ]
   },
@@ -16278,12 +16278,12 @@
         "y": 130,
         "map": "in_rogue",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "he_to_rogue#rg",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "he_to_rogue#rg"
       }
     ]
   },
@@ -16412,11 +16412,11 @@
         "y": 389,
         "map": "in_rogue",
         "dir": 0,
-        "sprite": 45,
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 45
       }
     ]
   },
@@ -16433,11 +16433,11 @@
         "y": 320,
         "map": "in_rogue",
         "dir": 0,
-        "sprite": 45,
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 45
       }
     ]
   },
@@ -18763,12 +18763,12 @@
         "y": 56,
         "map": "hugel",
         "dir": 3,
-        "sprite": 863,
-        "unique_name": "Hugel Guide Granny#huge",
         "trigger": [
           0,
           0
-        ]
+        ],
+        "sprite": 863,
+        "unique_name": "Hugel Guide Granny#huge"
       }
     ]
   },
@@ -19581,12 +19581,12 @@
         "y": 245,
         "map": "job_sword1",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "Test Hall Staff#swd_4",
         "trigger": [
           1,
           3
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "Test Hall Staff#swd_4"
       }
     ]
   },
@@ -19603,12 +19603,12 @@
         "y": 207,
         "map": "job_sword1",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "Test Hall Staff#swd_5",
         "trigger": [
           1,
           6
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "Test Hall Staff#swd_5"
       }
     ]
   },
@@ -19625,12 +19625,12 @@
         "y": 169,
         "map": "job_sword1",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "Test Hall Staff#swd_6",
         "trigger": [
           1,
           6
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "Test Hall Staff#swd_6"
       }
     ]
   },
@@ -19647,12 +19647,12 @@
         "y": 244,
         "map": "job_sword1",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "Test Hall Staff#swd_7",
         "trigger": [
           1,
           3
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "Test Hall Staff#swd_7"
       }
     ]
   },
@@ -19669,12 +19669,12 @@
         "y": 207,
         "map": "job_sword1",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "Test Hall Staff#swd_8",
         "trigger": [
           1,
           3
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "Test Hall Staff#swd_8"
       }
     ]
   },
@@ -19691,12 +19691,12 @@
         "y": 168,
         "map": "job_sword1",
         "dir": 0,
-        "sprite": 45,
-        "unique_name": "Test Hall Staff#swd_9",
         "trigger": [
           1,
           3
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "Test Hall Staff#swd_9"
       }
     ]
   },
@@ -19764,12 +19764,12 @@
         "y": 105,
         "map": "job_cru",
         "dir": 4,
-        "sprite": 45,
-        "unique_name": " Summoner#cr5",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": " Summoner#cr5"
       }
     ]
   },
@@ -19786,12 +19786,12 @@
         "y": 180,
         "map": "job_cru",
         "dir": 4,
-        "sprite": 45,
-        "unique_name": "Monster Summon#cr5",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "Monster Summon#cr5"
       }
     ]
   },
@@ -20453,11 +20453,11 @@
         "y": 177,
         "map": "ve_fild06",
         "dir": 0,
-        "sprite": 45,
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 45
       }
     ]
   },
@@ -20793,12 +20793,12 @@
         "y": 67,
         "map": "prontera",
         "dir": 0,
-        "sprite": 111,
-        "unique_name": " #prt_key-1-1",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 111,
+        "unique_name": " #prt_key-1-1"
       }
     ]
   },
@@ -20833,12 +20833,12 @@
         "y": 28,
         "map": "pay_arche",
         "dir": 0,
-        "sprite": 111,
-        "unique_name": "Buddha Statue#paypuzz6",
         "trigger": [
           5,
           5
-        ]
+        ],
+        "sprite": 111,
+        "unique_name": "Buddha Statue#paypuzz6"
       }
     ]
   },
@@ -20927,12 +20927,12 @@
         "y": 59,
         "map": "gef_fild09",
         "dir": 0,
-        "sprite": 111,
-        "unique_name": "Hidden Cave#hellion",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 111,
+        "unique_name": "Hidden Cave#hellion"
       }
     ]
   },
@@ -20949,12 +20949,12 @@
         "y": 101,
         "map": "morocc_in",
         "dir": 3,
-        "sprite": 735,
-        "unique_name": "Old Scholar Tyus#hellion",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 735,
+        "unique_name": "Old Scholar Tyus#hellion"
       }
     ]
   },
@@ -20989,12 +20989,12 @@
         "y": 200,
         "map": "geffen",
         "dir": 3,
-        "sprite": 754,
-        "unique_name": "Sage Welshyun#hellion",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 754,
+        "unique_name": "Sage Welshyun#hellion"
       }
     ]
   },
@@ -21065,12 +21065,12 @@
         "y": 123,
         "map": "prt_monk",
         "dir": 0,
-        "sprite": 139,
-        "unique_name": "#tu_monk",
         "trigger": [
           10,
           10
-        ]
+        ],
+        "sprite": 139,
+        "unique_name": "#tu_monk"
       }
     ]
   },
@@ -21122,12 +21122,12 @@
         "y": 238,
         "map": "prt_monk",
         "dir": 5,
-        "sprite": 139,
-        "unique_name": "Boy#boy_voi",
         "trigger": [
           5,
           5
-        ]
+        ],
+        "sprite": 139,
+        "unique_name": "Boy#boy_voi"
       }
     ]
   },
@@ -21319,12 +21319,12 @@
         "y": 261,
         "map": "prt_monk",
         "dir": 0,
-        "sprite": 139,
-        "unique_name": "Weapon Merchant#tu",
         "trigger": [
           9,
           9
-        ]
+        ],
+        "sprite": 139,
+        "unique_name": "Weapon Merchant#tu"
       }
     ]
   },
@@ -22921,6 +22921,1799 @@
       }
     ]
   },
+  "quests/juice_maker.txt|script|Marianne#juice|prt_in:49:172": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.JuiceMaker.Marianne",
+    "output_hash": "5fad126e5abd819b3584a2f2df20daf9b6d9526501d97c2ffef20e18c78df75d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/juice_maker/marianne.ex",
+    "source_hash": "247e4c033376afd2a80f3c2744af2f96020c2f5c0de9897fab375d880e79a761",
+    "spawns": [
+      {
+        "name": "Marianne",
+        "scope": "shared",
+        "x": 49,
+        "y": 172,
+        "map": "prt_in",
+        "dir": 3,
+        "sprite": 53,
+        "unique_name": "Marianne#juice"
+      }
+    ]
+  },
+  "quests/juice_maker.txt|script|Marx Hansen#juice|payon_in03:188:146": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.JuiceMaker.MarxHansen",
+    "output_hash": "95f54c6359377ee202116fdd6ec2fe60a786e24b08d0957bc8ee4edff03d4b2e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/juice_maker/marx_hansen.ex",
+    "source_hash": "96f6b004041e64cd9ca3550912ab155ae9bc1b0c946b82aef98272a7310716a5",
+    "spawns": [
+      {
+        "name": "Marx Hansen",
+        "scope": "shared",
+        "x": 188,
+        "y": 146,
+        "map": "payon_in03",
+        "dir": 5,
+        "sprite": 86,
+        "unique_name": "Marx Hansen#juice"
+      }
+    ]
+  },
+  "quests/juice_maker.txt|script|Morrison#juice|prt_in:47:173": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.JuiceMaker.Morrison",
+    "output_hash": "fc7067154497617e99849d4e474dfdaa78ef39a02f8368f21cf831c8b981289a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/juice_maker/morrison.ex",
+    "source_hash": "020c2a5130a22e5c29393f656225cdbcd8761823636b885f43a0a088d871842d",
+    "spawns": [
+      {
+        "name": "Morrison",
+        "scope": "shared",
+        "x": 47,
+        "y": 173,
+        "map": "prt_in",
+        "dir": 3,
+        "sprite": 97,
+        "unique_name": "Morrison#juice"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Abduction_trigger|lighthalzen:188:200": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.AbductionTrigger",
+    "output_hash": "edc8179087ea838dc42bafc2ab638e4c053b1081c952d89d6ccfc019a1ee4c16",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/abduction_trigger.ex",
+    "source_hash": "a69481f5a8d5f4de721b68c3d65b0450f61a5c4ab6add4dfc931a67a3d19ef34",
+    "spawns": []
+  },
+  "quests/kiel_hyre_quest.txt|script|Allysia|kh_mansion:18:30": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Allysia",
+    "output_hash": "23f1fd7cc04294d1f8bb4af1bcfff4be2add7cd69f2f126ab24f4989a24fd358",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/allysia.ex",
+    "source_hash": "f23f45b689129c2c4fef0cdcc17e52aa7027cfa53566767fdb37378b910ecced",
+    "spawns": [
+      {
+        "name": "Allysia",
+        "scope": "shared",
+        "x": 18,
+        "y": 30,
+        "map": "kh_mansion",
+        "dir": 4,
+        "sprite": 894
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Apple Box#khp1|kh_vila:30:184": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.AppleBox",
+    "output_hash": "e7c1d411510fe62c32d8efb1bd53101ef2c41b24e1e28fef320a09b293190b5f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/apple_box.ex",
+    "source_hash": "1f520171faa72c0c4d4926a8f87aa9cfe7aade6b225cd7e20d77800941931c00",
+    "spawns": [
+      {
+        "name": "Apple Box",
+        "scope": "shared",
+        "x": 30,
+        "y": 184,
+        "map": "kh_vila",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Apple Box#khp1"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Beautiful Lady#kh1::BeatifulLadyKHQ1|kh_school:119:149": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.BeautifulLady",
+    "output_hash": "8aaf1c4c5c3b97019ebfa8c2209f7f649be375f927aefa94f5c9a0157ba5a6fb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/beautiful_lady.ex",
+    "source_hash": "c70f9c99d3290cc3c872282625e3af42239bff0659e60a5a623f17ab8b2829a1",
+    "spawns": [
+      {
+        "name": "Beautiful Lady",
+        "scope": "shared",
+        "x": 119,
+        "y": 149,
+        "map": "kh_school",
+        "dir": 4,
+        "sprite": 894,
+        "unique_name": "BeatifulLadyKHQ1"
+      },
+      {
+        "name": "Beautiful lady",
+        "scope": "shared",
+        "x": 121,
+        "y": 149,
+        "map": "kh_school",
+        "dir": 4,
+        "sprite": 894,
+        "unique_name": "Beautiful lady#kh5"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Beautiful Lady#kh6|kh_school:122:186": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.BeautifulLady122186",
+    "output_hash": "763ac3c1ee3b8da2fd90303b3d8d652431c5eda97dfbc166694d526bdb939426",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/beautiful_lady_122_186.ex",
+    "source_hash": "3e0a802cbeed3fbaa84895a95ae0d86da684ae87722cad8aaa825fe34618cc9e",
+    "spawns": [
+      {
+        "name": "Beautiful Lady",
+        "scope": "shared",
+        "x": 122,
+        "y": 186,
+        "map": "kh_school",
+        "dir": 4,
+        "sprite": 894,
+        "unique_name": "Beautiful Lady#kh6"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Beautiful lady#kh2::BeatifulLadyKHQ2|kh_school:117:149": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.BeautifulLady117149",
+    "output_hash": "f736f3c9956aeadc05c846f46f24d874e2cfc464c0d39507bde24bb1ebc41f8f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/beautiful_lady_117_149.ex",
+    "source_hash": "7db589629951b68a4623e379c51c093c15f174ad3b2115042202d86b571d9bf8",
+    "spawns": [
+      {
+        "name": "Beautiful lady",
+        "scope": "shared",
+        "x": 117,
+        "y": 149,
+        "map": "kh_school",
+        "dir": 4,
+        "sprite": 894,
+        "unique_name": "BeatifulLadyKHQ2"
+      },
+      {
+        "name": "Beautiful lady",
+        "scope": "shared",
+        "x": 118,
+        "y": 149,
+        "map": "kh_school",
+        "dir": 4,
+        "sprite": 894,
+        "unique_name": "Beautiful lady#kh3"
+      },
+      {
+        "name": "Beautiful lady",
+        "scope": "shared",
+        "x": 120,
+        "y": 149,
+        "map": "kh_school",
+        "dir": 4,
+        "sprite": 894,
+        "unique_name": "Beautiful lady#kh4"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Bed#khr|kh_rossi:154:286": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Bed",
+    "output_hash": "2cb9a615a31642f83c48686c183da659d6680ed83f35575748806b5c945664c3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/bed.ex",
+    "source_hash": "453c8d9e59c2e88784723b18732c9b17d0f89dd4b9b6ee489c8dc22ec7e0d9ae",
+    "spawns": [
+      {
+        "name": "Bed",
+        "scope": "shared",
+        "x": 154,
+        "y": 286,
+        "map": "kh_rossi",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Bed#khr"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Big Door#BigDoorKHQ1|kh_kiehl01:44:33": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.BigDoor",
+    "output_hash": "b90594e3dae80fd4ef73ffbde9b6f2d85abeaf88c814d6c198fe397a956b8e88",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/big_door.ex",
+    "source_hash": "a86658ea68688d970865221bea03324f26b6a9bf70ec190221ab411527c35dc3",
+    "spawns": [
+      {
+        "name": "Big Door",
+        "scope": "shared",
+        "x": 44,
+        "y": 33,
+        "map": "kh_kiehl01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Big Door#BigDoorKHQ1"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Big Door#BigDoorKHQ2|kh_kiehl01:174:40": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.BigDoor17440",
+    "output_hash": "92515812ca63dc7e1e5ca41b4e2977595b4fe2d060ded8b9cb0ba73e04687ffe",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/big_door_174_40.ex",
+    "source_hash": "25f528da180d7dd502c10b3871cd2280a67baf8605ce72d920d678314c6485aa",
+    "spawns": [
+      {
+        "name": "Big Door",
+        "scope": "shared",
+        "x": 174,
+        "y": 40,
+        "map": "kh_kiehl01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Big Door#BigDoorKHQ2"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Big Door#BigDoorKHQ3|kh_kiehl01:77:108": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.BigDoor77108",
+    "output_hash": "d8b854709b7aee3b0623c2cba876acf41713b0a2dda9005808e8d9e400954788",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/big_door_77_108.ex",
+    "source_hash": "a6c141fe954483e7133848225f3806acbb4e349aa53f5ca7a1ffe138c8958972",
+    "spawns": [
+      {
+        "name": "Big Door",
+        "scope": "shared",
+        "x": 77,
+        "y": 108,
+        "map": "kh_kiehl01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Big Door#BigDoorKHQ3"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Big Door#BigDoorKHQ4|kh_kiehl01:42:177": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.BigDoor42177",
+    "output_hash": "325096ffd5c1d0cbaa5adb59056ab508866c633a6048743221000ca79c6e449c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/big_door_42_177.ex",
+    "source_hash": "074cd2e5950723c3e1d25581abe57f12aa094a48fe3e54f9c89bbf9dcf19ea68",
+    "spawns": [
+      {
+        "name": "Big Door",
+        "scope": "shared",
+        "x": 42,
+        "y": 177,
+        "map": "kh_kiehl01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Big Door#BigDoorKHQ4"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Big Door#BigDoorKHQ5|kh_kiehl01:166:187": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.BigDoor166187",
+    "output_hash": "a8a8babc7fdebf61f2e5d3832417987c4fc04ba10713400947bb2dbadd0eb825",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/big_door_166_187.ex",
+    "source_hash": "100d55a8239b7e0fdecdeb4b1d6f8e753f91fd9f0a98551cb33f01884a517814",
+    "spawns": [
+      {
+        "name": "Big Door",
+        "scope": "shared",
+        "x": 166,
+        "y": 187,
+        "map": "kh_kiehl01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Big Door#BigDoorKHQ5"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Big_Door_1_Warp|kh_kiehl01:43:33": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.BigDoor1Warp",
+    "output_hash": "4244f2620afd61c186b52878be9e547e0ef6ff617ca1c0c6f60a7a20cb92581e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/big_door_1_warp.ex",
+    "source_hash": "8e8ddbdfda1748ec72fec5499b650ef63b092008c5c36f3c7999dfedf42c02f4",
+    "spawns": [
+      {
+        "name": "Big_Door_1_Warp",
+        "scope": "shared",
+        "x": 43,
+        "y": 33,
+        "map": "kh_kiehl01",
+        "dir": 0,
+        "trigger": [
+          1,
+          1
+        ],
+        "sprite": 45
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Big_Door_2_Warp|kh_kiehl01:173:39": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.BigDoor2Warp",
+    "output_hash": "720814d6e03a45c1bb41f32044b12408183a4bc4d26ee5a981bdcc17a383bee9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/big_door_2_warp.ex",
+    "source_hash": "239b37fba3c678530abed551fdbbe997b8956c59f04ad9c46b768b9a39f5ba62",
+    "spawns": [
+      {
+        "name": "Big_Door_2_Warp",
+        "scope": "shared",
+        "x": 173,
+        "y": 39,
+        "map": "kh_kiehl01",
+        "dir": 0,
+        "trigger": [
+          1,
+          1
+        ],
+        "sprite": 45
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Big_Door_3_Warp|kh_kiehl01:78:107": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.BigDoor3Warp",
+    "output_hash": "044b0f12fa3c9fc66c57d86436ea9ab954926111fa7eddeb741cf798954aadf8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/big_door_3_warp.ex",
+    "source_hash": "2434f5958136e37f7018affda7e947a09bc4abe8a51ad8a05e821139f270a40b",
+    "spawns": [
+      {
+        "name": "Big_Door_3_Warp",
+        "scope": "shared",
+        "x": 78,
+        "y": 107,
+        "map": "kh_kiehl01",
+        "dir": 0,
+        "trigger": [
+          1,
+          1
+        ],
+        "sprite": 45
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Big_Door_4_Warp|kh_kiehl01:41:178": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.BigDoor4Warp",
+    "output_hash": "22f710d3deaa992be6c322f074ed5113e5edf0859c2d5bcbb926998857d44784",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/big_door_4_warp.ex",
+    "source_hash": "60a7dcc7e92c9f1658981b2e8f7f80105a499d202b86644cd9bdf34ae81c75e5",
+    "spawns": [
+      {
+        "name": "Big_Door_4_Warp",
+        "scope": "shared",
+        "x": 41,
+        "y": 178,
+        "map": "kh_kiehl01",
+        "dir": 0,
+        "trigger": [
+          1,
+          1
+        ],
+        "sprite": 45
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Big_Door_5_Warp|kh_kiehl01:166:186": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.BigDoor5Warp",
+    "output_hash": "664d88234395cf14137e57100d8ac4c33058bed56aed8713f775b9ebfa9a5aa6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/big_door_5_warp.ex",
+    "source_hash": "4f3c00921d46c1daffef44d105282a944e38c173833e02ddc57213fddc826c41",
+    "spawns": [
+      {
+        "name": "Big_Door_5_Warp",
+        "scope": "shared",
+        "x": 166,
+        "y": 186,
+        "map": "kh_kiehl01",
+        "dir": 0,
+        "trigger": [
+          1,
+          1
+        ],
+        "sprite": 45
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Book#kh1::BookKHQ1|kh_vila:184:20": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Book",
+    "output_hash": "13259dfa163efe73e51b5c2a740d6c36c81ca47bf32c17a1017343355a6e98ba",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/book.ex",
+    "source_hash": "eb6d86dfaffcc503b1e792c0c6c1f44895286889dc3ddcfaaeb593566bda6ba1",
+    "spawns": [
+      {
+        "name": "Book",
+        "scope": "shared",
+        "x": 184,
+        "y": 20,
+        "map": "kh_vila",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "BookKHQ1"
+      },
+      {
+        "name": "Book",
+        "scope": "shared",
+        "x": 181,
+        "y": 20,
+        "map": "kh_vila",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Book#kh2"
+      },
+      {
+        "name": "Book",
+        "scope": "shared",
+        "x": 178,
+        "y": 20,
+        "map": "kh_vila",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Book#kh3"
+      },
+      {
+        "name": "Book",
+        "scope": "shared",
+        "x": 175,
+        "y": 19,
+        "map": "kh_vila",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Book#kh4"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Bookshelf#khp1|kh_vila:181:138": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Bookshelf",
+    "output_hash": "fe9102cc6b11a36e9fb1f494998eec9c4f2fe531b33ffff59f29f6c409382fc8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/bookshelf.ex",
+    "source_hash": "855e7d15f33e4560ccf19697327ebc1fc4e831ee8dd0bc382a601b6a645ba24b",
+    "spawns": [
+      {
+        "name": "Bookshelf",
+        "scope": "shared",
+        "x": 181,
+        "y": 138,
+        "map": "kh_vila",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Bookshelf#khp1"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Bookshelf#khr|kh_rossi:148:288": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Bookshelf148288",
+    "output_hash": "d49b19ed4d3655d5fc0cfe98d93263d0fd4a99d15d16857b1a12c0134607cb54",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/bookshelf_148_288.ex",
+    "source_hash": "c9ba4a916017e379c6f5cdc0a6b38f02aa7f2d9c56a0568df4419322b7124a43",
+    "spawns": [
+      {
+        "name": "Bookshelf",
+        "scope": "shared",
+        "x": 148,
+        "y": 288,
+        "map": "kh_rossi",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Bookshelf#khr"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Box#kh1|kh_kiehl01:19:25": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Box1925",
+    "output_hash": "0cc1d31e7f93fd20d70d8192a24c1384f446a9f72659603a042bf1c864bcba9e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/box_19_25.ex",
+    "source_hash": "701d830a1eb97822c9bc0fd16f45d30afe8f433b440efd4f1ec68aafa1cca930",
+    "spawns": [
+      {
+        "name": "Box",
+        "scope": "shared",
+        "x": 19,
+        "y": 25,
+        "map": "kh_kiehl01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Box#kh1"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Box#khp1|kh_vila:16:175": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Box",
+    "output_hash": "a4514d1c3225342b518564617f852f8ac7ff88cdea80574c78dcc96e2c8481fc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/box.ex",
+    "source_hash": "c374f569383f8d59bd50d882e73aa138563cbe614cc128a6b8fc5f0634e97790",
+    "spawns": [
+      {
+        "name": "Box",
+        "scope": "shared",
+        "x": 16,
+        "y": 175,
+        "map": "kh_vila",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Box#khp1"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Box#khp2|kh_vila:107:126": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Box107126",
+    "output_hash": "bc8428a71d3275e2a1bd824427abbb4b68ff6b6599f21d68a55290f610b200ab",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/box_107_126.ex",
+    "source_hash": "034d9b253eecd7ab0269a4b3b0c9db799059596321ab57290f8efc6d8a8fd216",
+    "spawns": [
+      {
+        "name": "Box",
+        "scope": "shared",
+        "x": 107,
+        "y": 126,
+        "map": "kh_vila",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Box#khp2"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Calabash#khp1|kh_vila:14:55": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Calabash",
+    "output_hash": "2ece715f2e0e57f09d5d8d754d7d2d3fa526ab702ee3c41adc4bcbb2633e3805",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/calabash.ex",
+    "source_hash": "1f1b7ca36a5f4eb5c7665ca90e8766b0b2cd23104b0906c5e2d7fc171359940d",
+    "spawns": [
+      {
+        "name": "Calabash",
+        "scope": "shared",
+        "x": 14,
+        "y": 55,
+        "map": "kh_vila",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Calabash#khp1"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Cookie Basket#kh|kh_school:175:176": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.CookieBasket",
+    "output_hash": "0ae6274b0635dc211a657f372b7106f32dfd51d0b1dde42e2bebd305e1902775",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/cookie_basket.ex",
+    "source_hash": "95518e570e7dc96f4a33f48f7a1879301e832fdc513ef0e4044eeedaa3ca01ca",
+    "spawns": [
+      {
+        "name": "Cookie Basket",
+        "scope": "shared",
+        "x": 175,
+        "y": 176,
+        "map": "kh_school",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Cookie Basket#kh"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Cottage Keeper#kh|yuno_fild02:93:210": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.CottageKeeper",
+    "output_hash": "3fc1c8491209a323acaf2ddf23bb4f27117266c7f44c596589ff67aab7ec83ed",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/cottage_keeper.ex",
+    "source_hash": "fbbbeb936c874cc5a2e2e455ea78ce3678fc2d7ce0040ea0ade813d239a395f0",
+    "spawns": [
+      {
+        "name": "Cottage Keeper",
+        "scope": "shared",
+        "x": 93,
+        "y": 210,
+        "map": "yuno_fild02",
+        "dir": 4,
+        "sprite": 85,
+        "unique_name": "Cottage Keeper#kh"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Cute Student#kh|kh_school:179:39": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.CuteStudent",
+    "output_hash": "bb6b342a52598de62405d81fd29cbd614fa398e09d2333e50979809a3f6837ed",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/cute_student.ex",
+    "source_hash": "ae7ca00c2b9933d78c818ed8f7c5cd032b58754c8e073536fd9358b3d044d1c8",
+    "spawns": [
+      {
+        "name": "Cute Student",
+        "scope": "shared",
+        "x": 179,
+        "y": 39,
+        "map": "kh_school",
+        "dir": 0,
+        "sprite": 895,
+        "unique_name": "Cute Student#kh"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Desk#khp1|kh_vila:118:144": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Desk",
+    "output_hash": "89eb669d06ce037812092c34a9888e305d661133d98af3fccb040af4dedb5d5b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/desk.ex",
+    "source_hash": "de1a93cdb012df2593865d169c6eaa1b260ebbc4a692143a5d00bea97084588a",
+    "spawns": [
+      {
+        "name": "Desk",
+        "scope": "shared",
+        "x": 118,
+        "y": 144,
+        "map": "kh_vila",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Desk#khp1"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Desk#khr3|kh_rossi:144:286": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Desk144286",
+    "output_hash": "42c41f47f573af438ad413338a084b234d539a6bbbabb3fcdab48956baca2dd5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/desk_144_286.ex",
+    "source_hash": "2c87e9efa47d38b22337c1b1be987411c166c655fb69a34ee730067a4b817c09",
+    "spawns": [
+      {
+        "name": "Desk",
+        "scope": "shared",
+        "x": 144,
+        "y": 286,
+        "map": "kh_rossi",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Desk#khr3"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Door#kh1|yuno_fild02:109:218": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Door109218",
+    "output_hash": "bc38fd9d10237d15c0b2dd49cab932e49d9d1dc4a42e182da5aee29bfe7e721b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/door_109_218.ex",
+    "source_hash": "2491990f4c023757e91f9648c9a1e838cf4b6e4f82554977a429d77aeb0ec9cf",
+    "spawns": [
+      {
+        "name": "Door",
+        "scope": "shared",
+        "x": 109,
+        "y": 218,
+        "map": "yuno_fild02",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Door#kh1"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Door#kh2|yuno_fild02:75:218": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Door",
+    "output_hash": "1a1e0ccfad408d29dc78565715e06a1bd88d15cb8f135e20332221c77d721807",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/door.ex",
+    "source_hash": "debc23fbee5f658229fd8e5ea23bc3c0a8008f7544f0bba19f348c642a21aba7",
+    "spawns": [
+      {
+        "name": "Door",
+        "scope": "shared",
+        "x": 75,
+        "y": 218,
+        "map": "yuno_fild02",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Door#kh2"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Drawer#khp1|kh_vila:115:186": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Drawer",
+    "output_hash": "8aca1612f89305eacf73a929e5acf293d5be4b9fffef8716b774174a8699729b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/drawer.ex",
+    "source_hash": "50c379552139c9e7cf12e124b414d773610557b979745cdbba0d3fc94f64cdce",
+    "spawns": [
+      {
+        "name": "Drawer",
+        "scope": "shared",
+        "x": 115,
+        "y": 186,
+        "map": "kh_vila",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Drawer#khp1"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Elly|kh_school:178:180": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Elly",
+    "output_hash": "1ceed7f16111ff29f5d1b8176fc0e868e518790304e3239b7106b88b7efc6222",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/elly.ex",
+    "source_hash": "488a0138c641df8cb89f59e032775e0a3542d9dc73da3c0a9a7191974e8a1f33",
+    "spawns": [
+      {
+        "name": "Elly",
+        "scope": "shared",
+        "x": 178,
+        "y": 180,
+        "map": "kh_school",
+        "dir": 4,
+        "sprite": 895
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Entrance Device#khd2::KHAccess|kh_dun01:44:203": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.EntranceDevice",
+    "output_hash": "160f298f65e6e7fdda00d38e6044a441a7b211e031ba4fe0ec717dca4217fe01",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/entrance_device.ex",
+    "source_hash": "c0cfbf93dcdb018db66c53c11aacaccf1a136d5702dc8fd149c28616e70efa5b",
+    "spawns": [
+      {
+        "name": "Entrance Device",
+        "scope": "shared",
+        "x": 44,
+        "y": 203,
+        "map": "kh_dun01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "KHAccess"
+      },
+      {
+        "name": "Entrance Device",
+        "scope": "shared",
+        "x": 36,
+        "y": 195,
+        "map": "kh_dun01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Entrance Device#khd1"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Factory B Area Door|kh_dun01:224:233": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.FactoryBAreaDoor",
+    "output_hash": "1f3b7a497d262d324fb3d315d880f8bb04b4a66de71caadaae0b1fbb19cb2dce",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/factory_b_area_door.ex",
+    "source_hash": "5297cc5e648f5c9b98a17b2e5c09cbcd5c15a67a2c0ef01a72c0981f6c781296",
+    "spawns": []
+  },
+  "quests/kiel_hyre_quest.txt|script|Flower Vase#kh1|kh_kiehl01:13:40": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.FlowerVase",
+    "output_hash": "83fbaff1224bcf8be6c9748f5da681b9234949ef0c7556c0661e5e1be448a4e2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/flower_vase.ex",
+    "source_hash": "359ddbcb9488c3d9541a242199806cac2f5887c6c55615fba583957187369696",
+    "spawns": [
+      {
+        "name": "Flower Vase",
+        "scope": "shared",
+        "x": 13,
+        "y": 40,
+        "map": "kh_kiehl01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Flower Vase#kh1"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Grave#kh|yuno_fild08:71:170": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Grave",
+    "output_hash": "8db2e069119e85ff9338fe9c898e9e85a58e386124618bf4a67facf198428a4d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/grave.ex",
+    "source_hash": "c6a7ea9f4855a94e233f222c58b12eaa02378ba19ae3ba276235e8753e458dba",
+    "spawns": [
+      {
+        "name": "Grave",
+        "scope": "shared",
+        "x": 71,
+        "y": 170,
+        "map": "yuno_fild08",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Grave#kh"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Hanie#kh1|yuno_fild08:196:196": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Hanie",
+    "output_hash": "c7c8e913acc5023d435cfc0a695c1da7719437b3b5023458b80813410654c875",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/hanie.ex",
+    "source_hash": "18f298f17e69116b261aa40612799873f7a4cebe1be567279a1c8bdb099e01a5",
+    "spawns": [
+      {
+        "name": "Hanie",
+        "scope": "shared",
+        "x": 196,
+        "y": 196,
+        "map": "yuno_fild08",
+        "dir": 5,
+        "sprite": 102,
+        "unique_name": "Hanie#kh1"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Heavy Door#kh1::HeavyDoorKHQ1|kh_dun01:235:48": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.HeavyDoor",
+    "output_hash": "5c95f32e35c1a73896d8273f552bb64619442a01b0c14d4aa65cd8dd729ea21e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/heavy_door.ex",
+    "source_hash": "761d010a9f01b3ea93c5b208431fcd2d1531b2994d9039739c5241548dba60e8",
+    "spawns": [
+      {
+        "name": "Heavy Door",
+        "scope": "shared",
+        "x": 235,
+        "y": 48,
+        "map": "kh_dun01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "HeavyDoorKHQ1"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Heavy Door::HeavyDoorKHQ2|kh_dun01:76:233": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.HeavyDoorHeavydoorkhq2",
+    "output_hash": "773b86d8d670c05441ad2f119f5b74a0acafff2f763329206c76cc1cfbfb90b9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/heavy_door_heavydoorkhq2.ex",
+    "source_hash": "cc578f804ef9384d1d7c03f5f83c0886e256cbac390755331a31b721b211943b",
+    "spawns": [
+      {
+        "name": "Heavy Door::HeavyDoorKHQ2",
+        "scope": "shared",
+        "x": 76,
+        "y": 233,
+        "map": "kh_dun01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "HeavyDoorKHQ2"
+      },
+      {
+        "name": "Heavy Door",
+        "scope": "shared",
+        "x": 106,
+        "y": 233,
+        "map": "kh_dun01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Heavy Door#kh3"
+      },
+      {
+        "name": "Heavy Door",
+        "scope": "shared",
+        "x": 6,
+        "y": 164,
+        "map": "kh_dun01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Heavy Door#kh4"
+      },
+      {
+        "name": "Heavy Door",
+        "scope": "shared",
+        "x": 6,
+        "y": 133,
+        "map": "kh_dun01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Heavy Door#kh5"
+      },
+      {
+        "name": "Heavy Door",
+        "scope": "shared",
+        "x": 6,
+        "y": 60,
+        "map": "kh_dun01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Heavy Door#kh6"
+      },
+      {
+        "name": "Heavy Door",
+        "scope": "shared",
+        "x": 6,
+        "y": 30,
+        "map": "kh_dun01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Heavy Door#kh7"
+      },
+      {
+        "name": "Heavy Door",
+        "scope": "shared",
+        "x": 6,
+        "y": 18,
+        "map": "kh_dun01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Heavy Door#kh8"
+      },
+      {
+        "name": "Heavy Door",
+        "scope": "shared",
+        "x": 235,
+        "y": 70,
+        "map": "kh_dun01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Heavy Door#kh9"
+      },
+      {
+        "name": "Heavy Door",
+        "scope": "shared",
+        "x": 235,
+        "y": 92,
+        "map": "kh_dun01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Heavy Door#kh10"
+      },
+      {
+        "name": "Heavy Door",
+        "scope": "shared",
+        "x": 235,
+        "y": 114,
+        "map": "kh_dun01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Heavy Door#kh11"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Kiehl#Copy|kh_kiehl02:48:53": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Kiehl4853",
+    "output_hash": "1151ec3bfd165cf8e7450e1482e8c71d552d5d8d874fd95ca1212234ff3e221d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/kiehl_48_53.ex",
+    "source_hash": "3be6910602dab7a869b26190073e11f5c8fe73ccea00366e93246df033e59f73",
+    "spawns": [
+      {
+        "name": "Kiehl",
+        "scope": "shared",
+        "x": 48,
+        "y": 53,
+        "map": "kh_kiehl02",
+        "dir": 6,
+        "sprite": 902,
+        "unique_name": "Kiehl#Copy"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Kiehl#Original|kh_kiehl02:50:52": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Kiehl",
+    "output_hash": "5dd899f615e2deea0629849bab2e98c19bd31da2768a8dc5b6175d53f828153b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/kiehl.ex",
+    "source_hash": "d8083f0a22c9f039b268814218cf5ef948ef11d002795919bc64a5ec547c3309",
+    "spawns": [
+      {
+        "name": "Kiehl",
+        "scope": "shared",
+        "x": 50,
+        "y": 52,
+        "map": "kh_kiehl02",
+        "dir": 4,
+        "sprite": 902,
+        "unique_name": "Kiehl#Original"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|KiehlRoom|kh_kiehl02:1:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Kiehlroom",
+    "output_hash": "0f82093d9fee7cf07af837610f3ad87d25fd374e262bd8833a8ddbf98c216625",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/kiehlroom.ex",
+    "source_hash": "b2e72b8706adcb499ade782fbef4a315fb13fbf610ba3cba8466d4dee76b696e",
+    "spawns": []
+  },
+  "quests/kiel_hyre_quest.txt|script|Kiehl_Room_Exit|kh_kiehl02:49:56": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.KiehlRoomExit",
+    "output_hash": "194de767f0c886948684544c625280f36ee338368e634ca06d438f5b2ec4cc84",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/kiehl_room_exit.ex",
+    "source_hash": "9d681f9acfac8924b60f9548aee3a7b9c729c75f93ac5e471e1e679dc3683328",
+    "spawns": [
+      {
+        "name": "Kiehl_Room_Exit",
+        "scope": "shared",
+        "x": 49,
+        "y": 56,
+        "map": "kh_kiehl02",
+        "dir": 0,
+        "trigger": [
+          1,
+          1
+        ],
+        "sprite": 45
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Kiehl_Room_Trap|kh_kiehl02:49:10": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.KiehlRoomTrap",
+    "output_hash": "6146af33bce7d3a99ac72a8efb453853a1908ed4cc1b76afa41510391604bb36",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/kiehl_room_trap.ex",
+    "source_hash": "219bf7209e90bc624872425921ba047a2c6bc9be75e9c306cd618bf1961cb247",
+    "spawns": []
+  },
+  "quests/kiel_hyre_quest.txt|script|Kiehl_Room_Warp|kh_mansion:27:27": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.KiehlRoomWarp",
+    "output_hash": "47e9cca8f7470277c7593df6a3f84b3eb64286aefb010d50284251146fc633c1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/kiehl_room_warp.ex",
+    "source_hash": "8b78593befb7f50d62c5c541cfdb43649ee71257687f42be58ce38b44f9ef600",
+    "spawns": [
+      {
+        "name": "Kiehl_Room_Warp",
+        "scope": "shared",
+        "x": 27,
+        "y": 27,
+        "map": "kh_mansion",
+        "dir": 0,
+        "trigger": [
+          2,
+          2
+        ],
+        "sprite": 45
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Kiel Hyre#kh|kh_mansion:22:28": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.KielHyre",
+    "output_hash": "34a1de8474f3c5fc65e36ecf020b88e7c501ec572a1a554ea3eaff97bea82a7b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/kiel_hyre.ex",
+    "source_hash": "b6cffebf5373b241d4de06f91198e8c0f4c67fe38805e24bf66cd45b30916738",
+    "spawns": [
+      {
+        "name": "Kiel Hyre",
+        "scope": "shared",
+        "x": 22,
+        "y": 28,
+        "map": "kh_mansion",
+        "dir": 4,
+        "sprite": 903,
+        "unique_name": "Kiel Hyre#kh"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Lady#kh|kh_school:176:60": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Lady",
+    "output_hash": "fb072e1d1c1dd9503295b948da3982aaed5360524fd58a4e9fb04912193037e1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/lady.ex",
+    "source_hash": "d6a1c3c7327646cc168d2344840cab55d7476651ab8c2b8c99e28c10dd41c47a",
+    "spawns": [
+      {
+        "name": "Lady",
+        "scope": "shared",
+        "x": 176,
+        "y": 60,
+        "map": "kh_school",
+        "dir": 4,
+        "sprite": 101,
+        "unique_name": "Lady#kh"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Letter#kh|kh_vila:179:11": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Letter",
+    "output_hash": "43f6f55bd78ceb09384e2da9cd3fc0d20da6ca85982110b5d31d172d3dff6f82",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/letter.ex",
+    "source_hash": "f1b60205b90f530a51ca5322d1ba61dc79963dee0b5bb4a55005865f581ac318",
+    "spawns": []
+  },
+  "quests/kiel_hyre_quest.txt|script|Little Kid#kh|yuno:217:114": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.LittleKid",
+    "output_hash": "bbcebc85176c6db59cdc5e8df1f502e880baa99655d2bd9aca068b88d530bdcd",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/little_kid.ex",
+    "source_hash": "f4e0de94658e62db7236263fc101b5885a341a6556973f737cbb9463ec1fa770",
+    "spawns": [
+      {
+        "name": "Little Kid",
+        "scope": "shared",
+        "x": 217,
+        "y": 114,
+        "map": "yuno",
+        "dir": 6,
+        "sprite": 96,
+        "unique_name": "Little Kid#kh"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Map#khp1|kh_vila:44:126": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Map",
+    "output_hash": "aef2d029ae41dd3fd5dbb01e44262ad25c1bfa357d4cc018634a4490fa7cb0fa",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/map.ex",
+    "source_hash": "8e10efd10f4bec3dfbfe8b8c72f7f16a5010a678378168bf1dbc87905f6b0879",
+    "spawns": [
+      {
+        "name": "Map",
+        "scope": "shared",
+        "x": 44,
+        "y": 126,
+        "map": "kh_vila",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Map#khp1"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Mechanical Device#kh::KHKeyardReader|kh_dun01:166:223": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.MechanicalDevice",
+    "output_hash": "eb0df897429b1e9aa70c6adf56658f1e49a34a8b093ab8ea9b3f88750483c66a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/mechanical_device.ex",
+    "source_hash": "bef61ce17da650d02ce297f02fb17f18268f260d08e73ce7228f3964d04347c0",
+    "spawns": [
+      {
+        "name": "Mechanical Device",
+        "scope": "shared",
+        "x": 166,
+        "y": 223,
+        "map": "kh_dun01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "KHKeyardReader"
+      },
+      {
+        "name": "Mechanical Device",
+        "scope": "shared",
+        "x": 162,
+        "y": 206,
+        "map": "kh_dun01",
+        "dir": 0,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Medicine Chest#khp1|kh_vila:123:170": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.MedicineChest",
+    "output_hash": "0aab9f2feb59be188fbe864af1f3c311d0b6b1e3a6229a6cc7e0140aa5d1c2ad",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/medicine_chest.ex",
+    "source_hash": "4341c6378f25b5568bf8f55909fd1d746a09ed5a1dc0d1dfea150928bf321871",
+    "spawns": [
+      {
+        "name": "Medicine Chest",
+        "scope": "shared",
+        "x": 123,
+        "y": 170,
+        "map": "kh_vila",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Medicine Chest#khp1"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Mitchell#KiehlRoom|kh_kiehl02:49:55": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Mitchell",
+    "output_hash": "ed289dc6be9929ffeeed28af9b20dc173633b9fb5351c095354bb2e3ccf2aa29",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/mitchell.ex",
+    "source_hash": "f46b24ed744b42e26aaf6e9af9868ac021f9d35585b0b007edf7d9f2f5ed1b50",
+    "spawns": [
+      {
+        "name": "Mitchell",
+        "scope": "shared",
+        "x": 49,
+        "y": 55,
+        "map": "kh_kiehl02",
+        "dir": 6,
+        "sprite": 727,
+        "unique_name": "Mitchell#KiehlRoom"
+      },
+      {
+        "name": "Agent",
+        "scope": "shared",
+        "x": 53,
+        "y": 52,
+        "map": "kh_kiehl02",
+        "dir": 4,
+        "sprite": 880,
+        "unique_name": "Agent#KHAgent1"
+      },
+      {
+        "name": "Agent",
+        "scope": "shared",
+        "x": 51,
+        "y": 49,
+        "map": "kh_kiehl02",
+        "dir": 1,
+        "sprite": 880,
+        "unique_name": "Agent#KHAgent2"
+      },
+      {
+        "name": "Agent",
+        "scope": "shared",
+        "x": 47,
+        "y": 50,
+        "map": "kh_kiehl02",
+        "dir": 0,
+        "sprite": 880,
+        "unique_name": "Agent#KHAgent3"
+      },
+      {
+        "name": "Agent",
+        "scope": "shared",
+        "x": 46,
+        "y": 53,
+        "map": "kh_kiehl02",
+        "dir": 6,
+        "sprite": 880,
+        "unique_name": "Agent#KHAgent4"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Mysterious Woman#kh|kh_mansion:25:79": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.MysteriousWoman",
+    "output_hash": "e7e95de1e4a832df31781f0a76118efdee7f273b2351a80c5a6c20e648c814a0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/mysterious_woman.ex",
+    "source_hash": "96879e4ea122c73a5a4a3b84cbde26ffc23d90a14354ea7a4138258e9853d4cb",
+    "spawns": [
+      {
+        "name": "Mysterious Woman",
+        "scope": "shared",
+        "x": 25,
+        "y": 79,
+        "map": "kh_mansion",
+        "dir": 4,
+        "trigger": [
+          3,
+          3
+        ],
+        "sprite": 727,
+        "unique_name": "Mysterious Woman#kh"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Odd Grandma|yuno:257:140": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.OddGrandma",
+    "output_hash": "674c9a53fa142ea4c0aae4830068505f0db8784490706a6367206a661ce69aa0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/odd_grandma.ex",
+    "source_hash": "5c6ef24979b016dfb38b40524bde6ac2e243614c14680cef89846da71b78331d",
+    "spawns": [
+      {
+        "name": "Odd Grandma",
+        "scope": "shared",
+        "x": 257,
+        "y": 140,
+        "map": "yuno",
+        "dir": 4,
+        "sprite": 846
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Old Fisherman|yuno_fild12:232:222": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.OldFisherman",
+    "output_hash": "d24950f0d52ca0ee206eb4d7581f341bababf547f75360b6b63713e870a1886b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/old_fisherman.ex",
+    "source_hash": "e4aef614dcf22e00960cda628eb726b85190e93b86884a397863f8242a4bd983",
+    "spawns": [
+      {
+        "name": "Old Fisherman",
+        "scope": "shared",
+        "x": 232,
+        "y": 222,
+        "map": "yuno_fild12",
+        "dir": 0,
+        "sprite": 709
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Old Lady#kh|yuno:250:132": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.OldLady",
+    "output_hash": "0320cb9432427d932970ca407bd7e31f251f3e039591e005c55c9cc7207d30bb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/old_lady.ex",
+    "source_hash": "61d7861dd69721198bf20031fc286e1b8aa92ca7340cee7bc78cffdbe7bb6a54",
+    "spawns": [
+      {
+        "name": "Old Lady",
+        "scope": "shared",
+        "x": 250,
+        "y": 132,
+        "map": "yuno",
+        "dir": 0,
+        "sprite": 711,
+        "unique_name": "Old Lady#kh"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Pool#khp1|kh_vila:39:41": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Pool",
+    "output_hash": "6f86d205e71af1ea364b6c0afd73d3aac128b90218457d29aaf9b458fefc4dcb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/pool.ex",
+    "source_hash": "fc895efb1857cf15b0033b46fd4b4d2cb076e34244f1cc199ff71c8f4aee70c9",
+    "spawns": [
+      {
+        "name": "Pool",
+        "scope": "shared",
+        "x": 39,
+        "y": 41,
+        "map": "kh_vila",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Pool#khp1"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Pot#khp1|kh_vila:33:184": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Pot",
+    "output_hash": "511924e26f035a4593ab677908af5ee05cf7d5239eeb53affed94565778df102",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/pot.ex",
+    "source_hash": "4e905a6fa5c47e99b85a519707bb7915d217202fbc514614b66f3507941430c4",
+    "spawns": [
+      {
+        "name": "Pot",
+        "scope": "shared",
+        "x": 33,
+        "y": 184,
+        "map": "kh_vila",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Pot#khp1"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Pub Master#kh|yuno_in01:35:179": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.PubMaster",
+    "output_hash": "a1428d0283bab5edb04e1c61a64e122b127a3a036e7b868cf1a42e908e5b7503",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/pub_master.ex",
+    "source_hash": "9257ddbcbf9d75f2559dd2554dd24bac539f1e398b4c239ce8f2117eeab36a93",
+    "spawns": [
+      {
+        "name": "Pub Master",
+        "scope": "shared",
+        "x": 35,
+        "y": 179,
+        "map": "yuno_in01",
+        "dir": 4,
+        "trigger": [
+          5,
+          5
+        ],
+        "sprite": 46,
+        "unique_name": "Pub Master#kh"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Receiver#kh|kh_kiehl01:17:39": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Receiver",
+    "output_hash": "8e713f3661628a57789172b275f2ef55594c5651dd5236b1e74d418545936408",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/receiver.ex",
+    "source_hash": "757b143606a20712265a33142141fd57980582349f33d738040e9d6c1168a144",
+    "spawns": [
+      {
+        "name": "Receiver",
+        "scope": "shared",
+        "x": 17,
+        "y": 39,
+        "map": "kh_kiehl01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Receiver#kh"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Robots#kh1|kh_kiehl01:15:179": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Robots",
+    "output_hash": "a9315e3a18a2a0dd136bb7bd3529143f409af961b066d4b6a7f46fd8fd31d7f1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/robots.ex",
+    "source_hash": "0b92e259feae5a037d462440e3b20ba5d4a973b8065b3a8d2855574cba1b6d09",
+    "spawns": [
+      {
+        "name": "Robots",
+        "scope": "shared",
+        "x": 15,
+        "y": 179,
+        "map": "kh_kiehl01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Robots#kh1"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Robots#kh2::RobotsKHQ|kh_kiehl01:15:177": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Robots15177",
+    "output_hash": "3b288f20b2bc9fbcda078fbc2a6512aa548c5ece9fea1db3d64d2876719230ae",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/robots_15_177.ex",
+    "source_hash": "f893cd4b37a42187d5de1cf19d1191b9a13de4080cfcab8305d81daeee46b5ce",
+    "spawns": [
+      {
+        "name": "Robots",
+        "scope": "shared",
+        "x": 15,
+        "y": 177,
+        "map": "kh_kiehl01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "RobotsKHQ"
+      },
+      {
+        "name": "Robots",
+        "scope": "shared",
+        "x": 15,
+        "y": 180,
+        "map": "kh_kiehl01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Robots#kh3"
+      },
+      {
+        "name": "Robots",
+        "scope": "shared",
+        "x": 15,
+        "y": 182,
+        "map": "kh_kiehl01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Robots#kh4"
+      },
+      {
+        "name": "Robots",
+        "scope": "shared",
+        "x": 35,
+        "y": 187,
+        "map": "kh_kiehl01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Robots#kh5"
+      },
+      {
+        "name": "Robots",
+        "scope": "shared",
+        "x": 37,
+        "y": 187,
+        "map": "kh_kiehl01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Robots#kh6"
+      },
+      {
+        "name": "Robots",
+        "scope": "shared",
+        "x": 39,
+        "y": 187,
+        "map": "kh_kiehl01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Robots#kh7"
+      },
+      {
+        "name": "Robots",
+        "scope": "shared",
+        "x": 41,
+        "y": 187,
+        "map": "kh_kiehl01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Robots#kh8"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Rosimmir_Entrance|yuno:273:141": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.RosimmirEntrance",
+    "output_hash": "ec8d8ca8ed15f869cd22665f1eb3b643ab89cfa079cf13e9103f330633489f0f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/rosimmir_entrance.ex",
+    "source_hash": "0c9dc2d9dd91531c52ae631515637e1e09e1eb8fb5bffb863f44b2e1f4e3d6b4",
+    "spawns": [
+      {
+        "name": "Rosimmir_Entrance",
+        "scope": "shared",
+        "x": 273,
+        "y": 141,
+        "map": "yuno",
+        "dir": 0,
+        "trigger": [
+          2,
+          2
+        ],
+        "sprite": 45
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Security Guard#1::KHAGuard|yuno_fild08:158:194": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.SecurityGuard",
+    "output_hash": "179e206c37dbd322123274d25dcc6c23bb9b33c8fd54e6b02edb1dfb02b8a0c4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/security_guard.ex",
+    "source_hash": "7a6a75db027101eb76ddafccacd35b16d0bf0de3c7b95ba70b3d218e4dca5110",
+    "spawns": [
+      {
+        "name": "Security Guard",
+        "scope": "shared",
+        "x": 158,
+        "y": 194,
+        "map": "yuno_fild08",
+        "dir": 6,
+        "sprite": 852,
+        "unique_name": "KHAGuard"
+      },
+      {
+        "name": "Security Guard",
+        "scope": "shared",
+        "x": 158,
+        "y": 183,
+        "map": "yuno_fild08",
+        "dir": 7,
+        "sprite": 852,
+        "unique_name": "Security Guard#2"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Shelf#khr|kh_rossi:92:40": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Shelf",
+    "output_hash": "96e808a2369226b05c06f3116e945f7d7b6bd6f3933a4723cf5c188983655899",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/shelf.ex",
+    "source_hash": "4b2aa1a7930802b83aeec0d5663c95035243c46ca745b57418c900f62389b78b",
+    "spawns": [
+      {
+        "name": "Shelf",
+        "scope": "shared",
+        "x": 92,
+        "y": 40,
+        "map": "kh_rossi",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Shelf#khr"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Signboard#kh|kh_dun01:163:223": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Signboard",
+    "output_hash": "1468601bbac2ab410237af4e20325e1cf9d9af1aa8eedf865798c0a493c27573",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/signboard.ex",
+    "source_hash": "d12a2834d132586fdbe6da6dd24a4e2f931624d5bc8200c209b310b48bc4c6b0",
+    "spawns": [
+      {
+        "name": "Signboard",
+        "scope": "shared",
+        "x": 163,
+        "y": 223,
+        "map": "kh_dun01",
+        "dir": 4,
+        "sprite": 857,
+        "unique_name": "Signboard#kh"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Steward#kh|kh_mansion:78:55": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Steward",
+    "output_hash": "112551038c3594535a83cfb32d1f0315fb4b58be313db67c00c111129ac4a7d6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/steward.ex",
+    "source_hash": "5ae52f6ca3be2734d6c97f9bb24815ca0c5257f8ff6a6bbf7a9b0efc89257580",
+    "spawns": [
+      {
+        "name": "Steward",
+        "scope": "shared",
+        "x": 78,
+        "y": 55,
+        "map": "kh_mansion",
+        "dir": 5,
+        "sprite": 109,
+        "unique_name": "Steward#kh"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Student#kha|kh_school:57:142": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Student",
+    "output_hash": "c2348882f16dbd85ac3a65e05c1b31a8317308f49e45a1f7e45c65e457aed041",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/student.ex",
+    "source_hash": "0ecc5cf140bedfad9ccd1c6ac2d0270f621fc02bfc38cbf14b8d653ba2d80d8c",
+    "spawns": [
+      {
+        "name": "Student",
+        "scope": "shared",
+        "x": 57,
+        "y": 142,
+        "map": "kh_school",
+        "dir": 6,
+        "trigger": [
+          3,
+          3
+        ],
+        "sprite": 893,
+        "unique_name": "Student#kha"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Student#khb|kh_school:57:139": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Student57139",
+    "output_hash": "abcecc5569675832eba1207f776ece45be8ffce3c6adc80a44589aec65a64b83",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/student_57_139.ex",
+    "source_hash": "9f2ed2c4b53f6c14b20c89e9f2d0346831efb46d6334c01a09e8b4849ce08db1",
+    "spawns": [
+      {
+        "name": "Student",
+        "scope": "shared",
+        "x": 57,
+        "y": 139,
+        "map": "kh_school",
+        "dir": 0,
+        "sprite": 893,
+        "unique_name": "Student#khb"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Sword Hilt#kh|kh_vila:136:68": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.SwordHilt",
+    "output_hash": "8a7eb0630054e1340f37e36585e57c2f3b3bd7eedf1a10c5a945013f4b88d239",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/sword_hilt.ex",
+    "source_hash": "6bc0dfc3164cb60a469042650069d4ff31cb431bb0b4e640e0a6f3b176228540",
+    "spawns": [
+      {
+        "name": "Sword Hilt",
+        "scope": "shared",
+        "x": 136,
+        "y": 68,
+        "map": "kh_vila",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Sword Hilt#kh"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Table#khr2|kh_rossi:23:23": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Table",
+    "output_hash": "a802f603a64cdceed00e1f9754cf44056876e0c014f13b3a72bf2d97781729af",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/table.ex",
+    "source_hash": "0fd986081e0a605465af453c40e349405d48d28a100a936753ca3bf6df17909f",
+    "spawns": [
+      {
+        "name": "Table",
+        "scope": "shared",
+        "x": 23,
+        "y": 23,
+        "map": "kh_rossi",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Table#khr2"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Test Tube#khp2|kh_vila:179:68": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.TestTube",
+    "output_hash": "2fcd7b82c425b2a0ddf552a1c26244787bf163fc3d5df33a24057206c67c91bc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/test_tube.ex",
+    "source_hash": "cba023fab102237c93a9104dd731f620677ab64d55edd2fd2fd7444dec2ebc9c",
+    "spawns": [
+      {
+        "name": "Test Tube",
+        "scope": "shared",
+        "x": 179,
+        "y": 68,
+        "map": "kh_vila",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Test Tube#khp2"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Test Tube::TestTubeKHQ2|kh_vila:185:68": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.TestTubeTesttubekhq2",
+    "output_hash": "56e3b06900a8ea7f813f32b408bcfa72ce3313719fb4b7dd63ce0c1b09c252f1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/test_tube_testtubekhq2.ex",
+    "source_hash": "6b11eb5c2f7e6f212151bc3506853cb631b7545aa4b8b3769e51a1a8d2c89534",
+    "spawns": [
+      {
+        "name": "Test Tube::TestTubeKHQ2",
+        "scope": "shared",
+        "x": 185,
+        "y": 68,
+        "map": "kh_vila",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "TestTubeKHQ2"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Vicious Dog#khp1|kh_vila:181:178": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.ViciousDog",
+    "output_hash": "926ab7771122d5c82230df5d0b65f9317891d943484d42b58330c784f5ddc5d7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/vicious_dog.ex",
+    "source_hash": "6bddc027e5b4ab0a25b8c04e818946e51ea0d6034f86191266c140e1e7c40927",
+    "spawns": [
+      {
+        "name": "Vicious Dog",
+        "scope": "shared",
+        "x": 181,
+        "y": 178,
+        "map": "kh_vila",
+        "dir": 4,
+        "trigger": [
+          7,
+          3
+        ],
+        "sprite": 81,
+        "unique_name": "Vicious Dog#khp1"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Wall#kh|kh_vila:191:14": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Wall",
+    "output_hash": "1f8c2e81f9b8061e1bbe3ebe60bf459052da53020c93acd08340b53dfd17451f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/wall.ex",
+    "source_hash": "157177732191823af4b014ec6150ef674454bb602ebfac63e01e24eb52d16902",
+    "spawns": [
+      {
+        "name": "Wall",
+        "scope": "shared",
+        "x": 191,
+        "y": 14,
+        "map": "kh_vila",
+        "dir": 0,
+        "trigger": [
+          1,
+          1
+        ],
+        "sprite": 139,
+        "unique_name": "Wall#kh"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Windmill Owner#kh|lighthalzen:366:299": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.WindmillOwner",
+    "output_hash": "b79f6aa00d676334e53f2024df8cfefc1da1ed3774c16d3e29337c43faf670f0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/windmill_owner.ex",
+    "source_hash": "40cacf5c56e00ef94afeb5df59e07894c90eab9d240643b2a35b430bb33ed4f7",
+    "spawns": [
+      {
+        "name": "Windmill Owner",
+        "scope": "shared",
+        "x": 366,
+        "y": 299,
+        "map": "lighthalzen",
+        "dir": 4,
+        "sprite": 46,
+        "unique_name": "Windmill Owner#kh"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Windmill Owner's Helper|lighthalzen:366:289": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.WindmillOwnerSHelper",
+    "output_hash": "47918b3e98ecd16d8751e75acaa580b9619592639aa9b3ac03aa83ec0bdcecc6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/windmill_owner_s_helper.ex",
+    "source_hash": "5d3c1fae0b3ee2ec7c820b9d076d0a9c9b0f15cfebdfeac71a89b2645159776b",
+    "spawns": [
+      {
+        "name": "Windmill Owner's Helper",
+        "scope": "shared",
+        "x": 366,
+        "y": 289,
+        "map": "lighthalzen",
+        "dir": 2,
+        "sprite": 97
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Window#kh2|kh_school:188:185": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Window188185",
+    "output_hash": "f69ed78ff3ef9ee0fee2546d06b92e1240b1cf00ccfbb69c882ee9f2d6e4942a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/window_188_185.ex",
+    "source_hash": "c62a8d71f6df7f69350372cacaef078467832ea838d51734eaa8bb78ca0bc878",
+    "spawns": [
+      {
+        "name": "Window",
+        "scope": "shared",
+        "x": 188,
+        "y": 185,
+        "map": "kh_school",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Window#kh2"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Window#kh|yuno_fild08:69:185": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Window",
+    "output_hash": "6e95afa45d0359c8a272d9e276638663b7ec3790285862ee01c33af2decc1337",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/window.ex",
+    "source_hash": "0748e6d9a809736a2bd1cc0fe3297c4a96ef772b91ac03b3df1b29ecffe9a2e7",
+    "spawns": [
+      {
+        "name": "Window",
+        "scope": "shared",
+        "x": 69,
+        "y": 185,
+        "map": "yuno_fild08",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Window#kh"
+      }
+    ]
+  },
+  "quests/kiel_hyre_quest.txt|script|Wooden Board#kh|yuno_fild09:158:217": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.WoodenBoard",
+    "output_hash": "7a8559a58003171d9f057bbdbc0ed29efd013607ac7f7f74311b54eccf4b4de0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/kiel_hyre_quest/wooden_board.ex",
+    "source_hash": "c5531c64b5202b3aa108626e47ab3c56e092733a02dd78fbdf2455113e03a049",
+    "spawns": [
+      {
+        "name": "Wooden Board",
+        "scope": "shared",
+        "x": 158,
+        "y": 217,
+        "map": "yuno_fild09",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Wooden Board#kh"
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
@@ -23167,11 +24960,11 @@
         "y": 63,
         "map": "payon",
         "dir": 3,
-        "sprite": 88,
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 88
       }
     ]
   },
@@ -23337,12 +25130,12 @@
         "y": 72,
         "map": "morocc_in",
         "dir": 7,
-        "sprite": 741,
-        "unique_name": "Spiteful-Looking Bard#bs",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 741,
+        "unique_name": "Spiteful-Looking Bard#bs"
       }
     ]
   },
@@ -23359,12 +25152,12 @@
         "y": 70,
         "map": "niflheim",
         "dir": 1,
-        "sprite": 800,
-        "unique_name": "Yhelle#bard_chick1",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 800,
+        "unique_name": "Yhelle#bard_chick1"
       }
     ]
   },
@@ -23381,12 +25174,12 @@
         "y": 205,
         "map": "niflheim",
         "dir": 3,
-        "sprite": 800,
-        "unique_name": "Yhelle#bard_chick2",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 800,
+        "unique_name": "Yhelle#bard_chick2"
       }
     ]
   },
@@ -23403,12 +25196,12 @@
         "y": 203,
         "map": "niflheim",
         "dir": 5,
-        "sprite": 800,
-        "unique_name": "Yhelle#bard_chick3",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 800,
+        "unique_name": "Yhelle#bard_chick3"
       }
     ]
   },
@@ -23425,12 +25218,12 @@
         "y": 81,
         "map": "niflheim",
         "dir": 7,
-        "sprite": 800,
-        "unique_name": "Yhelle#bard_chick4",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 800,
+        "unique_name": "Yhelle#bard_chick4"
       }
     ]
   },
@@ -23447,12 +25240,12 @@
         "y": 144,
         "map": "niflheim",
         "dir": 3,
-        "sprite": 800,
-        "unique_name": "Yhelle#bard_chick5",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 800,
+        "unique_name": "Yhelle#bard_chick5"
       }
     ]
   },
@@ -23469,12 +25262,12 @@
         "y": 328,
         "map": "prontera",
         "dir": 3,
-        "sprite": 89,
-        "unique_name": "Young Man#bard_q1",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 89,
+        "unique_name": "Young Man#bard_q1"
       }
     ]
   },
@@ -23634,12 +25427,12 @@
         "y": 351,
         "map": "prontera",
         "dir": 0,
-        "sprite": 111,
-        "unique_name": "#tour",
         "trigger": [
           5,
           5
-        ]
+        ],
+        "sprite": 111,
+        "unique_name": "#tour"
       }
     ]
   },
@@ -23804,11 +25597,11 @@
         "y": 96,
         "map": "alberta",
         "dir": 5,
-        "sprite": 98,
         "trigger": [
           7,
           7
-        ]
+        ],
+        "sprite": 98
       }
     ]
   },
@@ -24000,12 +25793,12 @@
         "y": 162,
         "map": "prt_are01",
         "dir": 0,
-        "sprite": 700,
-        "unique_name": "Kienna#1st",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 700,
+        "unique_name": "Kienna#1st"
       },
       {
         "name": "Kienna",
@@ -24014,12 +25807,12 @@
         "y": 150,
         "map": "prt_are01",
         "dir": 0,
-        "sprite": 700,
-        "unique_name": "Kienna#2nd",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 700,
+        "unique_name": "Kienna#2nd"
       },
       {
         "name": "Kienna",
@@ -24028,12 +25821,12 @@
         "y": 138,
         "map": "prt_are01",
         "dir": 0,
-        "sprite": 700,
-        "unique_name": "Kienna#3rd",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 700,
+        "unique_name": "Kienna#3rd"
       },
       {
         "name": "Kienna",
@@ -24042,12 +25835,12 @@
         "y": 147,
         "map": "prt_are01",
         "dir": 0,
-        "sprite": 700,
-        "unique_name": "Kienna#4th",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 700,
+        "unique_name": "Kienna#4th"
       },
       {
         "name": "Kienna",
@@ -24056,12 +25849,12 @@
         "y": 140,
         "map": "prt_are01",
         "dir": 0,
-        "sprite": 700,
-        "unique_name": "Kienna#5th",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 700,
+        "unique_name": "Kienna#5th"
       },
       {
         "name": "Kienna",
@@ -24070,12 +25863,12 @@
         "y": 140,
         "map": "prt_are01",
         "dir": 0,
-        "sprite": 700,
-        "unique_name": "Kienna#6th",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 700,
+        "unique_name": "Kienna#6th"
       },
       {
         "name": "Kienna",
@@ -24084,12 +25877,12 @@
         "y": 160,
         "map": "prt_are01",
         "dir": 0,
-        "sprite": 700,
-        "unique_name": "Kienna#7th",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 700,
+        "unique_name": "Kienna#7th"
       },
       {
         "name": "Kienna",
@@ -24098,12 +25891,12 @@
         "y": 159,
         "map": "prt_are01",
         "dir": 0,
-        "sprite": 700,
-        "unique_name": "Kienna#8th",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 700,
+        "unique_name": "Kienna#8th"
       }
     ]
   },
@@ -24120,12 +25913,12 @@
         "y": 174,
         "map": "in_rogue",
         "dir": 2,
-        "sprite": 705,
-        "unique_name": "Killer#Rogueguild",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 705,
+        "unique_name": "Killer#Rogueguild"
       }
     ]
   },
@@ -24220,11 +26013,11 @@
         "y": 57,
         "map": "prt_in",
         "dir": 3,
-        "sprite": 85,
         "trigger": [
           4,
           4
-        ]
+        ],
+        "sprite": 85
       }
     ]
   },
@@ -24241,11 +26034,11 @@
         "y": 88,
         "map": "prt_in",
         "dir": 5,
-        "sprite": 85,
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 85
       }
     ]
   },
@@ -24581,12 +26374,12 @@
         "y": 243,
         "map": "dewata",
         "dir": 6,
-        "sprite": 536,
-        "unique_name": "Lazy Young Man#dew",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 536,
+        "unique_name": "Lazy Young Man#dew"
       }
     ]
   },
@@ -24603,12 +26396,12 @@
         "y": 208,
         "map": "dewata",
         "dir": 4,
-        "sprite": 538,
-        "unique_name": "Little Kid in Town#dew",
         "trigger": [
           2,
           3
-        ]
+        ],
+        "sprite": 538,
+        "unique_name": "Little Kid in Town#dew"
       }
     ]
   },
@@ -24625,12 +26418,12 @@
         "y": 244,
         "map": "dewata",
         "dir": 4,
-        "sprite": 536,
-        "unique_name": "Lodge Employee#dew",
         "trigger": [
           2,
           3
-        ]
+        ],
+        "sprite": 536,
+        "unique_name": "Lodge Employee#dew"
       }
     ]
   },
@@ -24647,12 +26440,12 @@
         "y": 272,
         "map": "dewata",
         "dir": 4,
-        "sprite": 534,
-        "unique_name": "Lodge Owner#dew",
         "trigger": [
           2,
           3
-        ]
+        ],
+        "sprite": 534,
+        "unique_name": "Lodge Owner#dew"
       }
     ]
   },
@@ -24669,12 +26462,12 @@
         "y": 177,
         "map": "dewata",
         "dir": 4,
-        "sprite": 538,
-        "unique_name": "Majya#dew",
         "trigger": [
           2,
           3
-        ]
+        ],
+        "sprite": 538,
+        "unique_name": "Majya#dew"
       }
     ]
   },
@@ -24691,12 +26484,12 @@
         "y": 100,
         "map": "dewata",
         "dir": 4,
-        "sprite": 703,
-        "unique_name": "Missing Child#dew",
         "trigger": [
           2,
           3
-        ]
+        ],
+        "sprite": 703,
+        "unique_name": "Missing Child#dew"
       }
     ]
   },
@@ -24839,12 +26632,12 @@
         "y": 87,
         "map": "dewata",
         "dir": 4,
-        "sprite": 101,
-        "unique_name": "Mum#dew",
         "trigger": [
           2,
           3
-        ]
+        ],
+        "sprite": 101,
+        "unique_name": "Mum#dew"
       }
     ]
   },
@@ -24861,12 +26654,12 @@
         "y": 85,
         "map": "dewata",
         "dir": 6,
-        "sprite": 97,
-        "unique_name": "Poppa#dew",
         "trigger": [
           2,
           3
-        ]
+        ],
+        "sprite": 97,
+        "unique_name": "Poppa#dew"
       }
     ]
   },
@@ -24918,12 +26711,12 @@
         "y": 129,
         "map": "dewata",
         "dir": 4,
-        "sprite": 538,
-        "unique_name": "Sarr#dew",
         "trigger": [
           2,
           3
-        ]
+        ],
+        "sprite": 538,
+        "unique_name": "Sarr#dew"
       }
     ]
   },
@@ -24994,12 +26787,12 @@
         "y": 145,
         "map": "dewata",
         "dir": 4,
-        "sprite": 538,
-        "unique_name": "Sipo#dew",
         "trigger": [
           2,
           3
-        ]
+        ],
+        "sprite": 538,
+        "unique_name": "Sipo#dew"
       }
     ]
   },
@@ -25016,12 +26809,12 @@
         "y": 140,
         "map": "dewata",
         "dir": 4,
-        "sprite": 539,
-        "unique_name": "Siyak#dew",
         "trigger": [
           2,
           3
-        ]
+        ],
+        "sprite": 539,
+        "unique_name": "Siyak#dew"
       }
     ]
   },
@@ -25086,12 +26879,12 @@
         "y": 263,
         "map": "dewata",
         "dir": 8,
-        "sprite": 828,
-        "unique_name": "Sweet Married Couple#1",
         "trigger": [
           2,
           3
-        ]
+        ],
+        "sprite": 828,
+        "unique_name": "Sweet Married Couple#1"
       }
     ]
   },
@@ -25108,12 +26901,12 @@
         "y": 263,
         "map": "dewata",
         "dir": 8,
-        "sprite": 727,
-        "unique_name": "Sweet Married Couple#2",
         "trigger": [
           2,
           3
-        ]
+        ],
+        "sprite": 727,
+        "unique_name": "Sweet Married Couple#2"
       }
     ]
   },
@@ -25148,12 +26941,12 @@
         "y": 213,
         "map": "dewata",
         "dir": 4,
-        "sprite": 887,
-        "unique_name": "Tourist#dew-2",
         "trigger": [
           2,
           3
-        ]
+        ],
+        "sprite": 887,
+        "unique_name": "Tourist#dew-2"
       }
     ]
   },
@@ -26536,12 +28329,12 @@
         "y": 168,
         "map": "malangdo",
         "dir": 3,
-        "sprite": 558,
-        "unique_name": "Cat Trainer#mal1",
         "trigger": [
           0,
           8
-        ]
+        ],
+        "sprite": 558,
+        "unique_name": "Cat Trainer#mal1"
       }
     ]
   },
@@ -26630,12 +28423,12 @@
         "y": 120,
         "map": "malangdo",
         "dir": 5,
-        "sprite": 485,
-        "unique_name": "Wanderer#mal",
         "trigger": [
           5,
           1
-        ]
+        ],
+        "sprite": 485,
+        "unique_name": "Wanderer#mal"
       }
     ]
   },
@@ -26652,12 +28445,12 @@
         "y": 367,
         "map": "ma_fild01",
         "dir": 6,
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#01",
         "trigger": [
           2,
           2
-        ]
+        ],
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#01"
       },
       {
         "name": "Unidentified Creature",
@@ -26666,12 +28459,12 @@
         "y": 41,
         "map": "ma_fild02",
         "dir": 4,
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#05",
         "trigger": [
           2,
           2
-        ]
+        ],
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#05"
       },
       {
         "name": "Unidentified Creature",
@@ -26680,12 +28473,12 @@
         "y": 92,
         "map": "ma_scene01",
         "dir": 4,
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#09",
         "trigger": [
           2,
           2
-        ]
+        ],
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#09"
       }
     ]
   },
@@ -26702,12 +28495,12 @@
         "y": 116,
         "map": "ma_fild01",
         "dir": 4,
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#02",
         "trigger": [
           2,
           2
-        ]
+        ],
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#02"
       },
       {
         "name": "Unidentified Creature",
@@ -26716,12 +28509,12 @@
         "y": 150,
         "map": "ma_fild01",
         "dir": 6,
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#03",
         "trigger": [
           2,
           2
-        ]
+        ],
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#03"
       },
       {
         "name": "Unidentified Creature",
@@ -26730,12 +28523,12 @@
         "y": 221,
         "map": "ma_fild01",
         "dir": 6,
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#04",
         "trigger": [
           2,
           2
-        ]
+        ],
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#04"
       },
       {
         "name": "Unidentified Creature",
@@ -26744,12 +28537,12 @@
         "y": 324,
         "map": "ma_fild02",
         "dir": 4,
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#06",
         "trigger": [
           2,
           2
-        ]
+        ],
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#06"
       },
       {
         "name": "Unidentified Creature",
@@ -26758,12 +28551,12 @@
         "y": 296,
         "map": "ma_fild02",
         "dir": 6,
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#07",
         "trigger": [
           2,
           2
-        ]
+        ],
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#07"
       },
       {
         "name": "Unidentified Creature",
@@ -26772,12 +28565,12 @@
         "y": 263,
         "map": "ma_fild02",
         "dir": 4,
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#08",
         "trigger": [
           2,
           2
-        ]
+        ],
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#08"
       },
       {
         "name": "Unidentified Creature",
@@ -26786,12 +28579,12 @@
         "y": 139,
         "map": "ma_scene01",
         "dir": 4,
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#10",
         "trigger": [
           2,
           2
-        ]
+        ],
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#10"
       },
       {
         "name": "Unidentified Creature",
@@ -26800,12 +28593,12 @@
         "y": 112,
         "map": "ma_scene01",
         "dir": 6,
-        "sprite": 572,
-        "unique_name": "Unidentified Creature#11",
         "trigger": [
           2,
           2
-        ]
+        ],
+        "sprite": 572,
+        "unique_name": "Unidentified Creature#11"
       }
     ]
   },
@@ -28099,12 +29892,12 @@
         "y": 191,
         "map": "dicastes01",
         "dir": 5,
-        "sprite": 481,
-        "unique_name": "Traveler Ichack#info",
         "trigger": [
           2,
           2
-        ]
+        ],
+        "sprite": 481,
+        "unique_name": "Traveler Ichack#info"
       }
     ]
   },
@@ -29361,12 +31154,12 @@
         "y": 105,
         "map": "job_cru",
         "dir": 4,
-        "sprite": 45,
-        "unique_name": " Summoner#cr5",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": " Summoner#cr5"
       }
     ]
   },
@@ -29383,12 +31176,12 @@
         "y": 180,
         "map": "job_cru",
         "dir": 4,
-        "sprite": 45,
-        "unique_name": "Monster Summon#cr5",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 45,
+        "unique_name": "Monster Summon#cr5"
       }
     ]
   },
@@ -30271,12 +32064,12 @@
         "y": 49,
         "map": "iz_ac01",
         "dir": 0,
-        "sprite": 111,
-        "unique_name": "#acKick",
         "trigger": [
           5,
           5
-        ]
+        ],
+        "sprite": 111,
+        "unique_name": "#acKick"
       },
       {
         "name": "",
@@ -30285,12 +32078,12 @@
         "y": 49,
         "map": "iz_ac01_a",
         "dir": 0,
-        "sprite": 111,
-        "unique_name": "#acKick_a",
         "trigger": [
           5,
           5
-        ]
+        ],
+        "sprite": 111,
+        "unique_name": "#acKick_a"
       },
       {
         "name": "",
@@ -30299,12 +32092,12 @@
         "y": 49,
         "map": "iz_ac01_b",
         "dir": 0,
-        "sprite": 111,
-        "unique_name": "#acKick_b",
         "trigger": [
           5,
           5
-        ]
+        ],
+        "sprite": 111,
+        "unique_name": "#acKick_b"
       },
       {
         "name": "",
@@ -30313,12 +32106,12 @@
         "y": 49,
         "map": "iz_ac01_c",
         "dir": 0,
-        "sprite": 111,
-        "unique_name": "#acKick_c",
         "trigger": [
           5,
           5
-        ]
+        ],
+        "sprite": 111,
+        "unique_name": "#acKick_c"
       },
       {
         "name": "",
@@ -30327,12 +32120,12 @@
         "y": 49,
         "map": "iz_ac01_d",
         "dir": 0,
-        "sprite": 111,
-        "unique_name": "#acKick_d",
         "trigger": [
           5,
           5
-        ]
+        ],
+        "sprite": 111,
+        "unique_name": "#acKick_d"
       }
     ]
   },
@@ -30349,12 +32142,12 @@
         "y": 208,
         "map": "gef_fild07",
         "dir": 6,
-        "sprite": 111,
-        "unique_name": "#acmageguide",
         "trigger": [
           7,
           7
-        ]
+        ],
+        "sprite": 111,
+        "unique_name": "#acmageguide"
       }
     ]
   },
@@ -30911,12 +32704,12 @@
         "y": 75,
         "map": "izlude",
         "dir": 3,
-        "sprite": 858,
-        "unique_name": "Airship#iz",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 858,
+        "unique_name": "Airship#iz"
       },
       {
         "name": "Airship",
@@ -30925,12 +32718,12 @@
         "y": 75,
         "map": "izlude_a",
         "dir": 3,
-        "sprite": 858,
-        "unique_name": "Airship#iz_a",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 858,
+        "unique_name": "Airship#iz_a"
       },
       {
         "name": "Airship",
@@ -30939,12 +32732,12 @@
         "y": 75,
         "map": "izlude_b",
         "dir": 3,
-        "sprite": 858,
-        "unique_name": "Airship#iz_b",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 858,
+        "unique_name": "Airship#iz_b"
       },
       {
         "name": "Airship",
@@ -30953,12 +32746,12 @@
         "y": 75,
         "map": "izlude_c",
         "dir": 3,
-        "sprite": 858,
-        "unique_name": "Airship#iz_c",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 858,
+        "unique_name": "Airship#iz_c"
       },
       {
         "name": "Airship",
@@ -30967,12 +32760,12 @@
         "y": 75,
         "map": "izlude_d",
         "dir": 3,
-        "sprite": 858,
-        "unique_name": "Airship#iz_d",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 858,
+        "unique_name": "Airship#iz_d"
       }
     ]
   },
@@ -31105,12 +32898,12 @@
         "y": 167,
         "map": "izlude",
         "dir": 3,
-        "sprite": 858,
-        "unique_name": "Arena#iz",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 858,
+        "unique_name": "Arena#iz"
       },
       {
         "name": "Arena",
@@ -31119,12 +32912,12 @@
         "y": 167,
         "map": "izlude_a",
         "dir": 3,
-        "sprite": 858,
-        "unique_name": "Arena#iz_a",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 858,
+        "unique_name": "Arena#iz_a"
       },
       {
         "name": "Arena",
@@ -31133,12 +32926,12 @@
         "y": 167,
         "map": "izlude_b",
         "dir": 3,
-        "sprite": 858,
-        "unique_name": "Arena#iz_b",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 858,
+        "unique_name": "Arena#iz_b"
       },
       {
         "name": "Arena",
@@ -31147,12 +32940,12 @@
         "y": 167,
         "map": "izlude_c",
         "dir": 3,
-        "sprite": 858,
-        "unique_name": "Arena#iz_c",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 858,
+        "unique_name": "Arena#iz_c"
       },
       {
         "name": "Arena",
@@ -31161,12 +32954,12 @@
         "y": 167,
         "map": "izlude_d",
         "dir": 3,
-        "sprite": 858,
-        "unique_name": "Arena#iz_d",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 858,
+        "unique_name": "Arena#iz_d"
       }
     ]
   },
@@ -31357,12 +33150,12 @@
         "y": 94,
         "map": "izlude",
         "dir": 3,
-        "sprite": 858,
-        "unique_name": "Bulletin Board#iz",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 858,
+        "unique_name": "Bulletin Board#iz"
       },
       {
         "name": "Bulletin Board",
@@ -31371,12 +33164,12 @@
         "y": 94,
         "map": "izlude_a",
         "dir": 3,
-        "sprite": 858,
-        "unique_name": "Bulletin Board#iz_a",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 858,
+        "unique_name": "Bulletin Board#iz_a"
       },
       {
         "name": "Bulletin Board",
@@ -31385,12 +33178,12 @@
         "y": 94,
         "map": "izlude_b",
         "dir": 3,
-        "sprite": 858,
-        "unique_name": "Bulletin Board#iz_b",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 858,
+        "unique_name": "Bulletin Board#iz_b"
       },
       {
         "name": "Bulletin Board",
@@ -31399,12 +33192,12 @@
         "y": 94,
         "map": "izlude_c",
         "dir": 3,
-        "sprite": 858,
-        "unique_name": "Bulletin Board#iz_c",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 858,
+        "unique_name": "Bulletin Board#iz_c"
       },
       {
         "name": "Bulletin Board",
@@ -31413,12 +33206,12 @@
         "y": 94,
         "map": "izlude_d",
         "dir": 3,
-        "sprite": 858,
-        "unique_name": "Bulletin Board#iz_d",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 858,
+        "unique_name": "Bulletin Board#iz_d"
       }
     ]
   },
@@ -31493,12 +33286,12 @@
         "y": 213,
         "map": "izlude",
         "dir": 3,
-        "sprite": 873,
-        "unique_name": "Captain Carocc#iz",
         "trigger": [
           5,
           5
-        ]
+        ],
+        "sprite": 873,
+        "unique_name": "Captain Carocc#iz"
       },
       {
         "name": "Captain Carocc",
@@ -31507,12 +33300,12 @@
         "y": 213,
         "map": "izlude_a",
         "dir": 3,
-        "sprite": 873,
-        "unique_name": "Captain Carocc#iz_a",
         "trigger": [
           5,
           5
-        ]
+        ],
+        "sprite": 873,
+        "unique_name": "Captain Carocc#iz_a"
       },
       {
         "name": "Captain Carocc",
@@ -31521,12 +33314,12 @@
         "y": 213,
         "map": "izlude_b",
         "dir": 3,
-        "sprite": 873,
-        "unique_name": "Captain Carocc#iz_b",
         "trigger": [
           5,
           5
-        ]
+        ],
+        "sprite": 873,
+        "unique_name": "Captain Carocc#iz_b"
       },
       {
         "name": "Captain Carocc",
@@ -31535,12 +33328,12 @@
         "y": 213,
         "map": "izlude_c",
         "dir": 3,
-        "sprite": 873,
-        "unique_name": "Captain Carocc#iz_c",
         "trigger": [
           5,
           5
-        ]
+        ],
+        "sprite": 873,
+        "unique_name": "Captain Carocc#iz_c"
       },
       {
         "name": "Captain Carocc",
@@ -31549,12 +33342,12 @@
         "y": 213,
         "map": "izlude_d",
         "dir": 3,
-        "sprite": 873,
-        "unique_name": "Captain Carocc#iz_d",
         "trigger": [
           5,
           5
-        ]
+        ],
+        "sprite": 873,
+        "unique_name": "Captain Carocc#iz_d"
       }
     ]
   },
@@ -31705,12 +33498,12 @@
         "y": 207,
         "map": "izlude",
         "dir": 3,
-        "sprite": 903,
-        "unique_name": "Criatura Academy Staff#0",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 903,
+        "unique_name": "Criatura Academy Staff#0"
       },
       {
         "name": "Criatura Academy Staff",
@@ -31719,12 +33512,12 @@
         "y": 207,
         "map": "izlude_a",
         "dir": 3,
-        "sprite": 903,
-        "unique_name": "Criatura Academy Staff#a",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 903,
+        "unique_name": "Criatura Academy Staff#a"
       },
       {
         "name": "Criatura Academy Staff",
@@ -31733,12 +33526,12 @@
         "y": 207,
         "map": "izlude_b",
         "dir": 3,
-        "sprite": 903,
-        "unique_name": "Criatura Academy Staff#b",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 903,
+        "unique_name": "Criatura Academy Staff#b"
       },
       {
         "name": "Criatura Academy Staff",
@@ -31747,12 +33540,12 @@
         "y": 207,
         "map": "izlude_c",
         "dir": 3,
-        "sprite": 903,
-        "unique_name": "Criatura Academy Staff#c",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 903,
+        "unique_name": "Criatura Academy Staff#c"
       },
       {
         "name": "Criatura Academy Staff",
@@ -31761,12 +33554,12 @@
         "y": 207,
         "map": "izlude_d",
         "dir": 3,
-        "sprite": 903,
-        "unique_name": "Criatura Academy Staff#d",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 903,
+        "unique_name": "Criatura Academy Staff#d"
       }
     ]
   },
@@ -31783,12 +33576,12 @@
         "y": 251,
         "map": "izlude",
         "dir": 0,
-        "sprite": 1078,
-        "unique_name": "Cultivated Red Plant#0",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 1078,
+        "unique_name": "Cultivated Red Plant#0"
       },
       {
         "name": "Cultivated Red Plant",
@@ -31797,12 +33590,12 @@
         "y": 251,
         "map": "izlude_a",
         "dir": 0,
-        "sprite": 1078,
-        "unique_name": "Cultivated Red Plant#a",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 1078,
+        "unique_name": "Cultivated Red Plant#a"
       },
       {
         "name": "Cultivated Red Plant",
@@ -31811,12 +33604,12 @@
         "y": 251,
         "map": "izlude_b",
         "dir": 0,
-        "sprite": 1078,
-        "unique_name": "Cultivated Red Plant#b",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 1078,
+        "unique_name": "Cultivated Red Plant#b"
       },
       {
         "name": "Cultivated Red Plant",
@@ -31825,12 +33618,12 @@
         "y": 251,
         "map": "izlude_c",
         "dir": 0,
-        "sprite": 1078,
-        "unique_name": "Cultivated Red Plant#c",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 1078,
+        "unique_name": "Cultivated Red Plant#c"
       },
       {
         "name": "Cultivated Red Plant",
@@ -31839,12 +33632,12 @@
         "y": 251,
         "map": "izlude_d",
         "dir": 0,
-        "sprite": 1078,
-        "unique_name": "Cultivated Red Plant#d",
         "trigger": [
           3,
           3
-        ]
+        ],
+        "sprite": 1078,
+        "unique_name": "Cultivated Red Plant#d"
       }
     ]
   },
@@ -33973,12 +35766,12 @@
         "y": 131,
         "map": "izlude",
         "dir": 5,
-        "sprite": 726,
-        "unique_name": "Repairing Blacksmith#0",
         "trigger": [
           5,
           7
-        ]
+        ],
+        "sprite": 726,
+        "unique_name": "Repairing Blacksmith#0"
       },
       {
         "name": "Repairing Blacksmith",
@@ -33987,12 +35780,12 @@
         "y": 131,
         "map": "izlude_a",
         "dir": 5,
-        "sprite": 726,
-        "unique_name": "Repairing Blacksmith#a",
         "trigger": [
           5,
           7
-        ]
+        ],
+        "sprite": 726,
+        "unique_name": "Repairing Blacksmith#a"
       },
       {
         "name": "Repairing Blacksmith",
@@ -34001,12 +35794,12 @@
         "y": 131,
         "map": "izlude_b",
         "dir": 5,
-        "sprite": 726,
-        "unique_name": "Repairing Blacksmith#b",
         "trigger": [
           5,
           7
-        ]
+        ],
+        "sprite": 726,
+        "unique_name": "Repairing Blacksmith#b"
       },
       {
         "name": "Repairing Blacksmith",
@@ -34015,12 +35808,12 @@
         "y": 131,
         "map": "izlude_c",
         "dir": 5,
-        "sprite": 726,
-        "unique_name": "Repairing Blacksmith#c",
         "trigger": [
           5,
           7
-        ]
+        ],
+        "sprite": 726,
+        "unique_name": "Repairing Blacksmith#c"
       },
       {
         "name": "Repairing Blacksmith",
@@ -34029,12 +35822,12 @@
         "y": 131,
         "map": "izlude_d",
         "dir": 5,
-        "sprite": 726,
-        "unique_name": "Repairing Blacksmith#d",
         "trigger": [
           5,
           7
-        ]
+        ],
+        "sprite": 726,
+        "unique_name": "Repairing Blacksmith#d"
       }
     ]
   },
@@ -34689,12 +36482,12 @@
         "y": 47,
         "map": "iz_ac01",
         "dir": 5,
-        "sprite": 418,
-        "unique_name": "Trainer Mainz#ac",
         "trigger": [
           4,
           4
-        ]
+        ],
+        "sprite": 418,
+        "unique_name": "Trainer Mainz#ac"
       },
       {
         "name": "Trainer Mainz",
@@ -34703,12 +36496,12 @@
         "y": 47,
         "map": "iz_ac01_a",
         "dir": 5,
-        "sprite": 418,
-        "unique_name": "Trainer Mainz#ac_a",
         "trigger": [
           4,
           4
-        ]
+        ],
+        "sprite": 418,
+        "unique_name": "Trainer Mainz#ac_a"
       },
       {
         "name": "Trainer Mainz",
@@ -34717,12 +36510,12 @@
         "y": 47,
         "map": "iz_ac01_b",
         "dir": 5,
-        "sprite": 418,
-        "unique_name": "Trainer Mainz#ac_b",
         "trigger": [
           4,
           4
-        ]
+        ],
+        "sprite": 418,
+        "unique_name": "Trainer Mainz#ac_b"
       },
       {
         "name": "Trainer Mainz",
@@ -34731,12 +36524,12 @@
         "y": 47,
         "map": "iz_ac01_c",
         "dir": 5,
-        "sprite": 418,
-        "unique_name": "Trainer Mainz#ac_c",
         "trigger": [
           4,
           4
-        ]
+        ],
+        "sprite": 418,
+        "unique_name": "Trainer Mainz#ac_c"
       },
       {
         "name": "Trainer Mainz",
@@ -34745,12 +36538,12 @@
         "y": 47,
         "map": "iz_ac01_d",
         "dir": 5,
-        "sprite": 418,
-        "unique_name": "Trainer Mainz#ac_d",
         "trigger": [
           4,
           4
-        ]
+        ],
+        "sprite": 418,
+        "unique_name": "Trainer Mainz#ac_d"
       }
     ]
   },
@@ -35307,12 +37100,12 @@
         "y": 32,
         "map": "iz_int",
         "dir": 3,
-        "sprite": 687,
-        "unique_name": "Wounded Swordsman#intro_npc01_iz_int",
         "trigger": [
           5,
           5
-        ]
+        ],
+        "sprite": 687,
+        "unique_name": "Wounded Swordsman#intro_npc01_iz_int"
       },
       {
         "name": "Wounded Swordsman",
@@ -35321,12 +37114,12 @@
         "y": 32,
         "map": "iz_int01",
         "dir": 3,
-        "sprite": 687,
-        "unique_name": "Wounded Swordsman#intro_npc01_iz_int01",
         "trigger": [
           5,
           5
-        ]
+        ],
+        "sprite": 687,
+        "unique_name": "Wounded Swordsman#intro_npc01_iz_int01"
       },
       {
         "name": "Wounded Swordsman",
@@ -35335,12 +37128,12 @@
         "y": 32,
         "map": "iz_int02",
         "dir": 3,
-        "sprite": 687,
-        "unique_name": "Wounded Swordsman#intro_npc01_iz_int02",
         "trigger": [
           5,
           5
-        ]
+        ],
+        "sprite": 687,
+        "unique_name": "Wounded Swordsman#intro_npc01_iz_int02"
       },
       {
         "name": "Wounded Swordsman",
@@ -35349,12 +37142,12 @@
         "y": 32,
         "map": "iz_int03",
         "dir": 3,
-        "sprite": 687,
-        "unique_name": "Wounded Swordsman#intro_npc01_iz_int03",
         "trigger": [
           5,
           5
-        ]
+        ],
+        "sprite": 687,
+        "unique_name": "Wounded Swordsman#intro_npc01_iz_int03"
       },
       {
         "name": "Wounded Swordsman",
@@ -35363,12 +37156,12 @@
         "y": 32,
         "map": "iz_int04",
         "dir": 3,
-        "sprite": 687,
-        "unique_name": "Wounded Swordsman#intro_npc01_iz_int04",
         "trigger": [
           5,
           5
-        ]
+        ],
+        "sprite": 687,
+        "unique_name": "Wounded Swordsman#intro_npc01_iz_int04"
       }
     ]
   },
@@ -35443,12 +37236,12 @@
         "y": 30,
         "map": "iz_int",
         "dir": 0,
-        "sprite": 139,
-        "unique_name": "iz_int#intro_evt02",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 139,
+        "unique_name": "iz_int#intro_evt02"
       },
       {
         "name": "iz_int01",
@@ -35457,12 +37250,12 @@
         "y": 30,
         "map": "iz_int01",
         "dir": 0,
-        "sprite": 139,
-        "unique_name": "iz_int01#intro_evt02",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 139,
+        "unique_name": "iz_int01#intro_evt02"
       },
       {
         "name": "iz_int02",
@@ -35471,12 +37264,12 @@
         "y": 30,
         "map": "iz_int02",
         "dir": 0,
-        "sprite": 139,
-        "unique_name": "iz_int02#intro_evt02",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 139,
+        "unique_name": "iz_int02#intro_evt02"
       },
       {
         "name": "iz_int03",
@@ -35485,12 +37278,12 @@
         "y": 30,
         "map": "iz_int03",
         "dir": 0,
-        "sprite": 139,
-        "unique_name": "iz_int03#intro_evt02",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 139,
+        "unique_name": "iz_int03#intro_evt02"
       },
       {
         "name": "iz_int04",
@@ -35499,12 +37292,12 @@
         "y": 30,
         "map": "iz_int04",
         "dir": 0,
-        "sprite": 139,
-        "unique_name": "iz_int04#intro_evt02",
         "trigger": [
           1,
           1
-        ]
+        ],
+        "sprite": 139,
+        "unique_name": "iz_int04#intro_evt02"
       }
     ]
   },
@@ -35521,12 +37314,12 @@
         "y": 30,
         "map": "iz_int",
         "dir": 0,
-        "sprite": 139,
-        "unique_name": "iz_int#intro_start",
         "trigger": [
           6,
           6
-        ]
+        ],
+        "sprite": 139,
+        "unique_name": "iz_int#intro_start"
       },
       {
         "name": "iz_int01",
@@ -35535,12 +37328,12 @@
         "y": 30,
         "map": "iz_int01",
         "dir": 0,
-        "sprite": 139,
-        "unique_name": "iz_int01#intro_start",
         "trigger": [
           6,
           6
-        ]
+        ],
+        "sprite": 139,
+        "unique_name": "iz_int01#intro_start"
       },
       {
         "name": "iz_int02",
@@ -35549,12 +37342,12 @@
         "y": 30,
         "map": "iz_int02",
         "dir": 0,
-        "sprite": 139,
-        "unique_name": "iz_int02#intro_start",
         "trigger": [
           6,
           6
-        ]
+        ],
+        "sprite": 139,
+        "unique_name": "iz_int02#intro_start"
       },
       {
         "name": "iz_int03",
@@ -35563,12 +37356,12 @@
         "y": 30,
         "map": "iz_int03",
         "dir": 0,
-        "sprite": 139,
-        "unique_name": "iz_int03#intro_start",
         "trigger": [
           6,
           6
-        ]
+        ],
+        "sprite": 139,
+        "unique_name": "iz_int03#intro_start"
       },
       {
         "name": "iz_int04",
@@ -35577,12 +37370,12 @@
         "y": 30,
         "map": "iz_int04",
         "dir": 0,
-        "sprite": 139,
-        "unique_name": "iz_int04#intro_start",
         "trigger": [
           6,
           6
-        ]
+        ],
+        "sprite": 139,
+        "unique_name": "iz_int04#intro_start"
       }
     ]
   },

@@ -201,6 +201,30 @@ defmodule Aesir.ZoneServer.Script.Dsl.ItemGrants do
   end
 
   @doc """
+  Puts `amount` of `item` on the floor of `map` (`"this"` is the attached
+  player's map) next to `{x, y}` (rAthena `makeitem`), owned by nobody.
+
+  The reference spells "drop it unidentified" as a negative item id: the id is
+  negated and equipment keeps its unidentified state, while items that are
+  always identified stay identified. Everything else is zeroed, so no refine,
+  attribute or card is carried. The trailing drop-effect flag is accepted; the
+  floor item message has no effect field.
+  """
+  @spec makeitem(
+          Ctx.t(),
+          integer(),
+          integer(),
+          String.t(),
+          integer(),
+          integer(),
+          integer()
+        ) :: Ctx.t()
+  def makeitem(ctx, item, amount, map, x, y, _effect \\ 0) do
+    {item, identify} = if item < 0, do: {-item, 0}, else: {item, 1}
+    make(ctx, :makeitem, item, amount, map, {x, y}, {identify, 0, 0, 0, 0, 0, 0}, [])
+  end
+
+  @doc """
   Puts `amount` of `item` with explicit attributes on the floor of `map`
   (`"this"` is the attached player's map) next to `{x, y}` (rAthena
   `makeitem2`), owned by nobody. The trailing drop-effect flag is accepted;
@@ -225,7 +249,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.ItemGrants do
         ) :: Ctx.t()
   # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
   def makeitem2(ctx, item, amount, map, x, y, iden, ref, attr, c1, c2, c3, c4, _effect \\ 0),
-    do: make(ctx, item, amount, map, {x, y}, {iden, ref, attr, c1, c2, c3, c4}, [])
+    do: make(ctx, :makeitem2, item, amount, map, {x, y}, {iden, ref, attr, c1, c2, c3, c4}, [])
 
   @doc "`makeitem2` with random options (rAthena `makeitem3`)."
   # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
@@ -264,12 +288,31 @@ defmodule Aesir.ZoneServer.Script.Dsl.ItemGrants do
         options,
         _effect \\ 0
       ),
-      do: make(ctx, item, amount, map, {x, y}, {iden, ref, attr, c1, c2, c3, c4}, options)
+      do:
+        make(
+          ctx,
+          :makeitem3,
+          item,
+          amount,
+          map,
+          {x, y},
+          {iden, ref, attr, c1, c2, c3, c4},
+          options
+        )
 
-  defp make(%Ctx{status: {:error, _}} = ctx, _item, _amount, _map, _cell, _fixed, _options),
-    do: ctx
+  defp make(
+         %Ctx{status: {:error, _}} = ctx,
+         _kind,
+         _item,
+         _amount,
+         _map,
+         _cell,
+         _fixed,
+         _options
+       ),
+       do: ctx
 
-  defp make(ctx, item, amount, map, {x, y}, fixed, options) do
+  defp make(ctx, kind, item, amount, map, {x, y}, fixed, options) do
     with {:ok, definition} <- Items.by_id(item),
          {:ok, map_name} <- floor_map(ctx, map) do
       attrs = attributes(definition, fixed)
@@ -289,7 +332,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.ItemGrants do
 
       ctx
     else
-      :error -> Ctx.fail(ctx, :makeitem2, :unknown_item)
+      :error -> Ctx.fail(ctx, kind, :unknown_item)
       :no_player -> Ctx.halt(ctx, :no_player)
       :unknown_map -> ctx
     end

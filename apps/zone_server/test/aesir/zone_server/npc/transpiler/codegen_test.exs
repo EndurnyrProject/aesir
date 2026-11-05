@@ -1828,6 +1828,20 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "Todo."
   end
 
+  test "makeitem maps to the plain floor drop, id and map target included" do
+    src =
+      gen!("""
+      makeitem 7506, 1, "this", 19, 36;
+      makeitem -1101, 2, "prontera", 100, 120, 1;
+      close;
+      """)
+
+    flat = String.replace(src, ~r/\s+/, " ")
+    assert flat =~ ~r/makeitem\((ctx, )?7506, 1, "this", 19, 36\)/
+    assert flat =~ ~r/makeitem\((ctx, )?-1101, 2, "prontera", 100, 120, 1\)/
+    refute src =~ "Todo."
+  end
+
   test "random option buildins emit their DSL calls, setrandomoption threading the ctx" do
     src =
       gen!("""

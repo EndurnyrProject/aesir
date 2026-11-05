@@ -191,6 +191,22 @@ defmodule Aesir.ZoneServer.Script.DslExtendedItemGrantsTest do
       assert {:script_end, %Ctx{status: {:error, :no_player}}} =
                catch_throw(Dsl.makeitem2(detached, @sword, 1, "this", 1, 1, 1, 0, 0, 0, 0, 0, 0))
     end
+
+    test "makeitem identifies the drop unless the item id is negative", %{session: s} do
+      Dsl.makeitem(ctx(s), @sword, 1, "prontera", 100, 120)
+      assert_received {:floor, "prontera", [{@sword, 1, 101, 120, true}], 101, 120}
+
+      Dsl.makeitem(ctx(s), -@sword, 1, "prontera", 100, 120, 1)
+      assert_received {:floor, "prontera", [{@sword, 1, 101, 120, false}], 101, 120}
+
+      Dsl.makeitem(ctx(s), -@potion, 2, "this", 10, 10)
+      assert_received {:floor, "prontera", [{@potion, 2, 11, 10, true}], 11, 10}
+
+      assert %Ctx{status: :ok, failures: [{:makeitem, :unknown_item}]} =
+               Dsl.makeitem(ctx(s), 1, 1, "prontera", 1, 1)
+
+      refute_received {:floor, _, _, _, _}
+    end
   end
 
   describe "rentitem2/3" do

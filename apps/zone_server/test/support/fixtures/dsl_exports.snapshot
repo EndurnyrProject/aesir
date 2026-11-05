@@ -166,6 +166,8 @@ kickwaitingroomall/2
 killmonster/3
 killmonsterall/2
 logmes/2
+makeitem/6
+makeitem/7
 makeitem2/13
 makeitem2/14
 makeitem3/14

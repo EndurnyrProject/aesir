@@ -253,6 +253,10 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
   defdelegate rentitem2(ctx, item, seconds, iden, ref, attr, c1, c2, c3, c4), to: ItemGrants
 
+  defdelegate makeitem(ctx, item, amount, map, x, y), to: ItemGrants
+
+  defdelegate makeitem(ctx, item, amount, map, x, y, effect), to: ItemGrants
+
   # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
   defdelegate makeitem2(ctx, item, amount, map, x, y, iden, ref, attr, c1, c2, c3, c4),
     to: ItemGrants

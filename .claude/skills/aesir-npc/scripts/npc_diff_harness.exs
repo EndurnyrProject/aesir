@@ -52,7 +52,7 @@ scenarios =
   end
 
 defmodule Ctx do
-  defstruct log: [], charvars: %{}, locals: %{}, npcvars: %{}, status: :ok
+  defstruct log: [], charvars: %{}, locals: %{}, npcvars: %{}, tempvars: %{}, status: :ok
 end
 
 defmodule H.Core do
@@ -112,6 +112,13 @@ defmodule H.Core do
 
   def call(:set_char_var, [ctx, key, value]) do
     ctx |> log({:set_char_var, key, value}) |> Map.update!(:charvars, &Map.put(&1, key, value))
+  end
+
+  def call(:get_temp_var, [ctx, key, default]), do: Map.get(ctx.tempvars, key, default)
+  def call(:get_temp_var, [ctx, key]), do: call(:get_temp_var, [ctx, key, 0])
+
+  def call(:set_temp_var, [ctx, key, value]) do
+    ctx |> log({:set_temp_var, key, value}) |> Map.update!(:tempvars, &Map.put(&1, key, value))
   end
 
   def call(:get_npc_var, [ctx, key, default]) do
@@ -174,8 +181,18 @@ defmodule H.Core do
           nil
       end)
 
-    domain = List.duplicate(guess, 7) ++ ["wrong", 0, nil]
-    v = pick({:input, counter(:input)}, domain)
+    # Two thirds replay the last coloured dialog page (the usual "type the name you
+    # were just given" guard); the rest explore the module's own short string
+    # literals, which is the only way a keycard/password gate becomes reachable.
+    n = counter(:input)
+
+    v =
+      if rem(:erlang.phash2({:input_guess?, seed(), n}), 3) != 0 do
+        guess
+      else
+        pick({:input_pool, n}, short_strings() ++ ["wrong", 0, nil])
+      end
+
     {log(ctx, {:input, kind, v}), v}
   end
 
@@ -203,7 +220,11 @@ defmodule H.Core do
   def call(:mobcount, [_ctx | args]), do: pick({:mobcount, args}, [0, 1, 2, 5])
   def call(:getmapusers, [_ctx | args]), do: pick({:getmapusers, args}, [0, 1, 2, 5])
   def call(:getcharid, [_ctx | args]), do: pick({:getcharid, args}, [0, 150_001, 150_002])
-  def call(:checkweight, [_ctx | args]), do: pick({:checkweight, args}, [true, false])
+  # The DSL answers 1/0, like rAthena: gates spell `== 0` for "would not fit".
+  def call(:checkweight, [_ctx | args]), do: pick({:checkweight, args}, [1, 0])
+
+  # 0 when unmarried; any other value when the player has a partner.
+  def call(:getpartnerid, [_ctx | _args]), do: pick(:getpartnerid, [0, 150_001])
   def call(:can_change_job?, [_ctx | args]), do: pick({:ccj, args}, [true, false])
 
   # Renewal/classic switch: 1 in renewal, 0 otherwise.
@@ -235,6 +256,8 @@ defmodule H.Core do
   end
 
   def call(name, args), do: raise("unhandled #{name}/#{length(args)} #{inspect(args)}")
+
+  def short_strings, do: :persistent_term.get(:h_strings)
 
   def rathena(:concat, [a, b]), do: to_string(a) <> to_string(b)
   def rathena(:atoi, [s]) when is_binary(s), do: s |> String.trim() |> String.to_integer()
@@ -374,19 +397,29 @@ end
 
 Code.compiler_options(ignore_module_conflict: true)
 
-{ints, atoms} =
+# A scripted answer, not a dialog page: one short line of text the client could be
+# asked to type back (keycard and password guards).
+answer_like? = fn s ->
+  String.length(s) in 1..32 and not String.contains?(s, "\n") and s =~ ~r/[A-Za-z]/
+end
+
+{ints, atoms, strings} =
   for path <- [old_path, new_path],
-      reduce: {MapSet.new([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 99, -1]), MapSet.new()} do
+      reduce:
+        {MapSet.new([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 99, -1]), MapSet.new(), MapSet.new()} do
     acc ->
       {:ok, ast} = Code.string_to_quoted(File.read!(path))
 
       {_, acc} =
         Macro.prewalk(ast, acc, fn
-          i, {is, as} when is_integer(i) and i >= -1 and i < 100_000 ->
-            {i, {is |> MapSet.put(i - 1) |> MapSet.put(i) |> MapSet.put(i + 1), as}}
+          i, {is, as, ss} when is_integer(i) and i >= -1 and i < 100_000 ->
+            {i, {is |> MapSet.put(i - 1) |> MapSet.put(i) |> MapSet.put(i + 1), as, ss}}
 
-          a, {is, as} when is_atom(a) and a not in [nil, true, false] ->
-            {a, {is, MapSet.put(as, a)}}
+          a, {is, as, ss} when is_atom(a) and a not in [nil, true, false] ->
+            {a, {is, MapSet.put(as, a), ss}}
+
+          s, {is, as, ss} when is_binary(s) ->
+            {s, {is, as, if(answer_like?.(s), do: MapSet.put(ss, s), else: ss)}}
 
           node, acc ->
             {node, acc}
@@ -396,6 +429,8 @@ Code.compiler_options(ignore_module_conflict: true)
   end
 
 :persistent_term.put(:h_ints, Enum.sort(ints))
+
+:persistent_term.put(:h_strings, strings |> Enum.filter(answer_like?) |> Enum.sort())
 
 :persistent_term.put(
   :h_atoms,

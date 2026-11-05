@@ -198,6 +198,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
       args: [:item, :int, :int, :int, :int, :item, :item, :item, :item]
     },
     "delitem" => %{shape: :item_attrs, dsl: "delitem", arrays: false, args: [:item, :int]},
+    "makeitem" => %{
+      shape: :item_attrs,
+      dsl: "makeitem",
+      arrays: false,
+      args: [:item, :int, :string, :int, :int]
+    },
     "makeitem2" => %{
       shape: :item_attrs,
       dsl: "makeitem2",
