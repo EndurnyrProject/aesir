@@ -100,6 +100,23 @@ defmodule H.Core do
     "prontera"
   ]
 
+  # Town maps the shared helper tables key on (the Kafra teleport menu and its viewpoints).
+  @maps [
+    "prontera",
+    "alberta",
+    "aldebaran",
+    "comodo",
+    "cmd_fild07",
+    "geffen",
+    "izlude",
+    "morocc",
+    "umbala",
+    "payon",
+    "yuno",
+    "job3_rune01",
+    "niflheim"
+  ]
+
   def seed, do: Process.get(:seed)
   def ints, do: :persistent_term.get(:h_ints)
   def atoms, do: :persistent_term.get(:h_atoms)
@@ -173,6 +190,10 @@ defmodule H.Core do
 
   # NPC placement identity: name (1) and the unique-name suffix (2).
   def call(:strnpcinfo, [_ctx, 1]), do: pick(:strnpcinfo1, @npc_names)
+
+  # `strnpcinfo(4)` is the NPC's map, the lookup key of map-keyed tables such as the Kafra menu.
+  def call(:strnpcinfo, [_ctx, 4]), do: pick(:strnpcinfo4, @maps)
+
   def call(:strnpcinfo, [_ctx, _n]), do: pick(:strnpcinfo_n, ["01", "02", "03", "04", "05"])
 
   # Position of the talking unit; castle maps and their sibling suffixes are the gates here.
@@ -327,6 +348,14 @@ defmodule H.Core do
 
   def call(name, [ctx | args]) when name in [:fgetweapontype, :fgetarmortype],
     do: {log(ctx, {name, args}), "#{name}#{inspect(args)}"}
+
+  def call(:fcanopenstorage, [ctx | args]),
+    do: {log(ctx, {:fcanopenstorage, args}), pick(:fcanopenstorage, [0, 1])}
+
+  def call(name, [ctx | args]) when name in [:fcheckkafcode, :fsetkafcode],
+    do: {log(ctx, {name, args}), nil}
+
+  def call(:fcleargarbage, [ctx | args]), do: {log(ctx, {:fcleargarbage, args}), nil}
 
   def call(name, [%Ctx{} = ctx | args]) do
     if System.get_env("NPC_HARNESS_STRICT"),
