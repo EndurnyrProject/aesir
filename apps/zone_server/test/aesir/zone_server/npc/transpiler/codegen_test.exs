@@ -519,6 +519,33 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "unreachable"
   end
 
+  # The corpus had Kafra Leilah open the storage door for a player who could not pay the fee: a
+  # `close3` inside a conditional lost its `{:script_end, ctx}` and fell through into the service.
+  test "close3 inside a conditional ends the script instead of falling through" do
+    src =
+      gen!("""
+      mes "hello";
+      switch(select("Save:Storage")) {
+      case 1:
+      	mes "saved";
+      	break;
+      case 2:
+      	if (Zeny < 20) {
+      		mes "no money";
+      		close3;
+      	}
+      	mes "service";
+      	openstorage;
+      	break;
+      }
+      cutin "", 255;
+      end;
+      """)
+
+    assert src =~ ~r/close\(\) \|> cutin\("", 255\)\n\s+throw\(\{:script_end, ctx\}\)/
+    assert src =~ ~S{mes("service")}
+  end
+
   test "deletearray forms: wipe, tail truncate, and shifting delete" do
     src =
       gen!("""
