@@ -191,6 +191,10 @@ defmodule H.Core do
   # NPC placement identity: name (1) and the unique-name suffix (2).
   def call(:strnpcinfo, [_ctx, 1]), do: pick(:strnpcinfo1, @npc_names)
 
+  # Server-persistent variables: election results, vote counters and feature flags.
+  def call(:get_server_var, [_ctx, key, default]),
+    do: pick({:gstv, key}, [default, 0, 1, 2, 3, 20])
+
   # `strnpcinfo(4)` is the NPC's map, the lookup key of map-keyed tables such as the Kafra menu.
   def call(:strnpcinfo, [_ctx, 4]), do: pick(:strnpcinfo4, @maps)
 
