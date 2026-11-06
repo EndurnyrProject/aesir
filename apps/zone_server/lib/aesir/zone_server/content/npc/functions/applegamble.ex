@@ -111,6 +111,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.Applegamble do
     |> close()
   end
 
+  @spec play(Ctx.t(), term()) :: no_return()
   defp play(ctx, npc) do
     ctx =
       ctx
@@ -205,6 +206,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.Applegamble do
     end
   end
 
+  @spec play_round(Ctx.t(), term(), integer()) :: no_return()
   defp play_round(ctx, npc, wager) do
     ctx = ctx |> mes("^3355FF*Rolling and rumbling*^000000") |> next()
 
@@ -360,6 +362,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.Applegamble do
     end
   end
 
+  @spec house_third_die(Ctx.t(), term(), integer(), integer(), integer()) :: no_return()
   defp house_third_die(ctx, npc, wager, house_total, player_total) do
     ctx = ctx |> next() |> mes("^3355FF*Rolling and rumbling*^000000")
     third = Enum.random(1..6)

@@ -121,6 +121,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Functions.FMerckafra do
     |> give_item(voucher, 1)
   end
 
+  @spec wrong_package(Ctx.t(), String.t()) :: no_return()
   defp wrong_package(ctx, detail) do
     ctx
     |> mes("Mmmm? Hold on. This is")

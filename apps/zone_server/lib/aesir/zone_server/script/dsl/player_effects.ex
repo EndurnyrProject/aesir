@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Script.Ctx
+  alias Aesir.ZoneServer.Script.Rathena
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.ScriptVitals
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -332,16 +333,16 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
 
   @doc """
   Equips or dismisses the Falcon. NPC scripts use the session seam; item scripts
-  stage the toggle for their owning session's item handler. A zero flag dismisses;
-  every non-zero integer equips, matching rAthena truthiness.
+  stage the toggle for their owning session's item handler. A zero or `false` flag
+  dismisses; any other value equips, matching rAthena truthiness.
   """
-  @spec setfalcon(Ctx.t(), integer()) :: Ctx.t()
+  @spec setfalcon(Ctx.t(), boolean() | integer()) :: Ctx.t()
   def setfalcon(%Ctx{status: {:error, _}} = ctx, _flag), do: ctx
 
   def setfalcon(%Ctx{source: {:item, _}} = ctx, flag),
-    do: stage_session_effect(ctx, {:falcon, flag != 0})
+    do: stage_session_effect(ctx, {:falcon, Rathena.truthy?(flag)})
 
-  def setfalcon(%Ctx{} = ctx, flag), do: apply_op(ctx, {:set_falcon, flag != 0})
+  def setfalcon(%Ctx{} = ctx, flag), do: apply_op(ctx, {:set_falcon, Rathena.truthy?(flag)})
 
   @doc """
   Re-attaches the script to a different online player by account id (rAthena

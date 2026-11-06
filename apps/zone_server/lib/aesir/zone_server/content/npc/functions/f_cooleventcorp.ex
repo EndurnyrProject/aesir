@@ -259,6 +259,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FCooleventcorp do
     end
   end
 
+  @spec password_service(Ctx.t()) :: no_return()
   defp password_service(ctx) do
     {ctx, _password} = FSetkafcode.call(ctx, [@staff, "Cool Event Corp."])
     feedback(ctx)

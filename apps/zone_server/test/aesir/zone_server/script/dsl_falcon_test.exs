@@ -95,6 +95,16 @@ defmodule Aesir.ZoneServer.Script.DslFalconTest do
       assert_received {:script_apply, {:set_falcon, false}}
     end
 
+    test "normalizes booleans, matching the transpiled setfalcon/2 form" do
+      refreshed = %PlayerState{character_id: 1, option: @falcon_bit}
+      session = start_session(fn {:set_falcon, true} -> {:ok, refreshed} end)
+
+      result = Dsl.setfalcon(%{ctx(session_pid: session) | game_state: %PlayerState{}}, true)
+
+      assert result.game_state == refreshed
+      assert_received {:script_apply, {:set_falcon, true}}
+    end
+
     test "ends the script on detached contexts without mutating their snapshots" do
       detached = %{ctx() | game_state: nil}
 

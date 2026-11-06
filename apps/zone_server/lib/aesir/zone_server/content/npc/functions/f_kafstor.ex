@@ -57,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafstor do
     end
   end
 
+  @spec guild_storage(Ctx.t()) :: no_return()
   defp guild_storage(ctx) do
     # `guildopenstorage` has no engine implementation yet; it raises when a guild Kafra is used.
     if Rathena.truthy?(Todo.call!(:guildopenstorage, [])) do
@@ -130,6 +131,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafstor do
     end
   end
 
+  @spec refuse_fee(Ctx.t(), integer(), boolean()) :: no_return()
   defp refuse_fee(ctx, fee, niflheim?) do
     ctx = ctx |> mes("[Kafra Employee]") |> fee_refusal(fee, niflheim?)
     halt_with_nil(ctx)

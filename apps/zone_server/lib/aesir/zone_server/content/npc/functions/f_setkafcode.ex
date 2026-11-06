@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FSetkafcode do
     end
   end
 
+  @spec offer_password(Ctx.t(), term(), term()) :: no_return()
   defp offer_password(ctx, name, company) do
     {ctx, choice} =
       ctx
@@ -66,6 +67,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FSetkafcode do
     halt(ctx |> close() |> cutin("", 255))
   end
 
+  @spec manage_password(Ctx.t(), term(), term()) :: no_return()
   defp manage_password(ctx, name, company) do
     {ctx, choice} =
       ctx
