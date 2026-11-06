@@ -83,7 +83,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Izludewagjak do
         Rathena.put_at(
           get_local(ctx, :indices, []),
           1 + 0,
-          get_char_var(ctx, :EQI_HEAD_TOP, 0),
+          6,
           0
         )
       )
@@ -92,49 +92,49 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Izludewagjak do
       set_local(
         ctx,
         :indices,
-        Rathena.put_at(get_local(ctx, :indices, []), 1 + 1, get_char_var(ctx, :EQI_ARMOR, 0), 0)
+        Rathena.put_at(get_local(ctx, :indices, []), 1 + 1, 7, 0)
       )
 
     ctx =
       set_local(
         ctx,
         :indices,
-        Rathena.put_at(get_local(ctx, :indices, []), 1 + 2, get_char_var(ctx, :EQI_HAND_L, 0), 0)
+        Rathena.put_at(get_local(ctx, :indices, []), 1 + 2, 8, 0)
       )
 
     ctx =
       set_local(
         ctx,
         :indices,
-        Rathena.put_at(get_local(ctx, :indices, []), 1 + 3, get_char_var(ctx, :EQI_HAND_R, 0), 0)
+        Rathena.put_at(get_local(ctx, :indices, []), 1 + 3, 9, 0)
       )
 
     ctx =
       set_local(
         ctx,
         :indices,
-        Rathena.put_at(get_local(ctx, :indices, []), 1 + 4, get_char_var(ctx, :EQI_GARMENT, 0), 0)
+        Rathena.put_at(get_local(ctx, :indices, []), 1 + 4, 3, 0)
       )
 
     ctx =
       set_local(
         ctx,
         :indices,
-        Rathena.put_at(get_local(ctx, :indices, []), 1 + 5, get_char_var(ctx, :EQI_SHOES, 0), 0)
+        Rathena.put_at(get_local(ctx, :indices, []), 1 + 5, 2, 0)
       )
 
     ctx =
       set_local(
         ctx,
         :indices,
-        Rathena.put_at(get_local(ctx, :indices, []), 1 + 6, get_char_var(ctx, :EQI_ACC_L, 0), 0)
+        Rathena.put_at(get_local(ctx, :indices, []), 1 + 6, 0, 0)
       )
 
     ctx =
       set_local(
         ctx,
         :indices,
-        Rathena.put_at(get_local(ctx, :indices, []), 1 + 7, get_char_var(ctx, :EQI_ACC_R, 0), 0)
+        Rathena.put_at(get_local(ctx, :indices, []), 1 + 7, 1, 0)
       )
 
     ctx =
@@ -144,7 +144,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Izludewagjak do
         Rathena.put_at(
           get_local(ctx, :indices, []),
           1 + 8,
-          get_char_var(ctx, :EQI_HEAD_MID, 0),
+          5,
           0
         )
       )
@@ -156,7 +156,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Izludewagjak do
         Rathena.put_at(
           get_local(ctx, :indices, []),
           1 + 9,
-          get_char_var(ctx, :EQI_HEAD_LOW, 0),
+          4,
           0
         )
       )

@@ -106,7 +106,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterAlmondJ d
           if get_local(ctx, :in_tutorial, 0) == 4 do
             {ctx, v1} =
               ctx
-              |> set_local(:part, get_char_var(ctx, :EQI_ARMOR, 0))
+              |> set_local(:part, 7)
               |> mes("[Almond J]")
               |> mes(
                 "Welcome.. I have been waiting for you. Are you coming for the hidden enchant service on your cotton shirt?"
@@ -380,7 +380,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterAlmondJ d
           throw({:script_end, ctx})
       end
 
-    ctx = set_local(ctx, :part, get_char_var(ctx, :EQI_HAND_R, 0))
+    ctx = set_local(ctx, :part, 9)
 
     ctx =
       if not Rathena.truthy?(getequipisequiped(ctx, get_local(ctx, :part, 0))) do

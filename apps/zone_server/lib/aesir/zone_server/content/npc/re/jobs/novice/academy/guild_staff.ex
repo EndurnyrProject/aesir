@@ -256,13 +256,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuildStaff do
 
         {ctx, v3} =
           Aesir.ZoneServer.Content.Npc.Functions.FIsequipidhack.call(ctx, [
-            get_char_var(ctx, :EQI_HAND_R, 0),
+            9,
             get_local(ctx, :gun, 0)
           ])
 
         {ctx, v4} =
           Aesir.ZoneServer.Content.Npc.Functions.FIsequipcardhack.call(ctx, [
-            get_char_var(ctx, :EQI_HAND_R, 0),
+            9,
             Enum.at(get_local(ctx, :card, []), 0, 0),
             Enum.at(get_local(ctx, :card, []), 1, 0),
             Enum.at(get_local(ctx, :card, []), 2, 0),
@@ -271,7 +271,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuildStaff do
 
         {ctx, v5} =
           Aesir.ZoneServer.Content.Npc.Functions.FIsequiprefinehack.call(ctx, [
-            get_char_var(ctx, :EQI_HAND_R, 0),
+            9,
             get_local(ctx, :equip_refine, 0)
           ])
 
