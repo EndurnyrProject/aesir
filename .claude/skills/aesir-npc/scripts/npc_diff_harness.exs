@@ -143,6 +143,19 @@ defmodule H.Core do
 
   def random(range), do: pick({:random, counter(:random)}, Enum.to_list(range))
 
+  def job_atoms, do: :persistent_term.get(:h_job_atoms, [])
+
+  # Jobs the module itself compares against lead the domain: a gate like
+  # `Class == Job_Swordman` is only reachable at all when the draw can land on
+  # `swordman`, and a job-quest module compares against a handful of them. Modules
+  # that compare against no job keep the generic list plus the file's own atoms.
+  def call(name, [_ctx]) when name in [:base_job, :class] do
+    case job_atoms() do
+      [] -> pick(name, @jobs ++ atoms())
+      jobs -> pick(name, jobs ++ @jobs)
+    end
+  end
+
   def call(:get_char_var, [ctx, key, default]) do
     case Map.fetch(ctx.charvars, key) do
       {:ok, v} -> v
@@ -254,7 +267,6 @@ defmodule H.Core do
 
   def call(:upper, [_ctx]), do: pick(:upper, [0, 1, 2])
   def call(:sex, [_ctx]), do: pick(:sex, [0, 1])
-  def call(name, [_ctx]) when name in [:base_job, :class], do: pick(name, @jobs ++ atoms())
   def call(:base_class, [_ctx]), do: pick(:base_class, atoms() ++ @base_classes)
   def call(:job_level, [_ctx]), do: pick(:job_level, [10, 39, 40, 41, 50] ++ ints())
   def call(:base_level, [_ctx]), do: pick(:base_level, [10, 39, 40, 41, 50, 99])
@@ -608,6 +620,25 @@ end
   :h_atoms,
   atoms |> Enum.filter(&(Atom.to_string(&1) =~ ~r/^[a-z][a-z_0-9]*$/)) |> Enum.sort()
 )
+
+job_atoms =
+  for path <- [old_path, new_path], reduce: MapSet.new() do
+    acc ->
+      {:ok, ast} = Code.string_to_quoted(File.read!(path))
+
+      {_, acc} =
+        Macro.prewalk(ast, acc, fn
+          {{:., _, [{:__aliases__, _, [:Rathena]}, :job_id]}, _, [a]} = node, acc when is_atom(a) ->
+            {node, MapSet.put(acc, a)}
+
+          node, acc ->
+            {node, acc}
+        end)
+
+      acc
+  end
+
+:persistent_term.put(:h_job_atoms, Enum.sort(job_atoms))
 
 H.Gen.gen([old_path, new_path])
 H.Load.load(old_path, OldMod)
