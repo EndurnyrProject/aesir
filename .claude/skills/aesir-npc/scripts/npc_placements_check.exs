@@ -8,11 +8,12 @@
 # with RATHENA_ROOT. Several module paths share one pass over the reference tree,
 # which is the slow part (~15 s).
 #
-# Compares the module's `spawn:` list with the reference script. A floating body
-# is placed only through `duplicate(<exname>)` rows in the scoped scripts, so
-# those rows are the reference; the manifest's recorded spawns are not, because a
-# targeted (`--only`) run can write a record before the scoped duplicates are in
-# scope and that stale record is never revisited while the source stays unchanged.
+# Compares the module's `spawn:` list with the reference script. A body reaches the
+# map either through its own `script` placement row or through `duplicate(<exname>)`
+# rows in the scoped scripts, so both are the reference; the manifest's recorded
+# spawns are not, because a targeted (`--only`) run can write a record before the
+# scoped duplicates are in scope and that stale record is never revisited while the
+# source stays unchanged.
 #
 # Output, one line per module:
 #
@@ -38,7 +39,7 @@ defmodule PlacementsCheck do
       rathena_root
       |> Path.join("npc/**/*.txt")
       |> Path.wildcard()
-      |> Enum.flat_map(&duplicate_rows(&1, rathena_root, sprites))
+      |> Enum.flat_map(&placement_rows(&1, rathena_root, sprites))
       |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
 
     failures = Enum.count(module_paths, &(check(&1, reference_index) != :ok))
@@ -47,13 +48,20 @@ defmodule PlacementsCheck do
   end
 
   defp check(module_path, reference_index) do
+    source = File.read!(module_path)
+
     module_placements =
-      module_path
-      |> File.read!()
+      source
       |> spawn_block()
       |> module_rows()
 
-    reference = Map.get(reference_index, body_name(module_path), []) |> MapSet.new()
+    module_scope = module_scope(source)
+
+    reference =
+      reference_index
+      |> Map.get(body_name(module_path), [])
+      |> Enum.filter(&(module_scope == "shared" or elem(&1, 6) == module_scope))
+      |> MapSet.new()
 
     module_set = MapSet.new(module_placements)
     missing = Enum.sort(MapSet.difference(reference, module_set))
@@ -72,6 +80,15 @@ defmodule PlacementsCheck do
   end
 
   # -- the module's spawn list ---------------------------------------------------
+
+  # A mode-scoped body is only active in its own mode, so only that mode's placements count. A
+  # shared body may be placed by both scoped scripts and is compared against all of them.
+  defp module_scope(source) do
+    case Regex.run(~r/use Aesir\.ZoneServer\.Npc,\s*scope: :(\w+)/, source) do
+      [_, scope] -> scope
+      nil -> "shared"
+    end
+  end
 
   defp spawn_block(source) do
     case Regex.run(~r/spawn: \[(.*?)\n    \]/s, source) do
@@ -129,7 +146,7 @@ defmodule PlacementsCheck do
     end
   end
 
-  defp duplicate_rows(path, rathena_root, sprites) do
+  defp placement_rows(path, rathena_root, sprites) do
     scope =
       case path |> Path.relative_to(Path.join(rathena_root, "npc")) |> Path.split() |> hd() do
         "re" -> "renewal"
@@ -143,7 +160,26 @@ defmodule PlacementsCheck do
     |> Enum.filter(
       &(String.valid?(&1) and not String.starts_with?(String.trim_leading(&1), "//"))
     )
-    |> Enum.flat_map(&duplicate_row(&1, scope, sprites))
+    |> Enum.flat_map(&placement_row(&1, scope, sprites))
+  end
+
+  defp placement_row(line, scope, sprites) do
+    duplicate_row(line, scope, sprites) ++ script_row(line, scope, sprites)
+  end
+
+  # A body placed directly on a map carries its own `script` row; a floating body has none and is
+  # placed only through `duplicate` rows.
+  defp script_row(line, scope, sprites) do
+    with [position, "script", name | rest] <- String.split(line, "\t"),
+         [map, x, y, dir] <- String.split(position, ",") do
+      [
+        {exname(name),
+         {map, to_int(x), to_int(y), to_int(dir), sprite(Enum.at(rest, 0, ""), sprites),
+          exname(name), scope}}
+      ]
+    else
+      _ -> []
+    end
   end
 
   defp duplicate_row(line, scope, sprites) do

@@ -112,11 +112,12 @@ adaptation. Do not label original Aesir content as imported.
    the actual map cache and agree on the mapping first.
    Before touching the body, verify the `spawn:` list against the reference script with
    `elixir .agents/skills/aesir-npc/scripts/npc_placements_check.exs <module path> [...]`. It
-   compares the module with the `duplicate(<exname>)` rows that actually place the body, resolving
-   sprite constants; several paths share one pass, and `RATHENA_ROOT=` points it at another
-   checkout. The manifest's recorded spawns are not the reference: a targeted `--only` run can
-   write a record before the scoped duplicates are in scope, and that stale record is never
-   revisited while the source stays unchanged. Every MISSING/EXTRA placement is fixed in the
+   compares the module with the rows that actually place the body, its own `script` row or the
+   `duplicate(<exname>)` rows in the scoped scripts, resolving sprite constants and keeping only the
+   placements of a mode-scoped body's own mode; several paths share one pass, and `RATHENA_ROOT=`
+   points it at another checkout. The manifest's recorded spawns are not the reference: a targeted
+   `--only` run can write a record before the scoped duplicates are in scope, and that stale record
+   is never revisited while the source stays unchanged. Every MISSING/EXTRA placement is fixed in the
    module as part of the refactor, and the stale record is reported in the backlog.
 5. **Keep importer protection intact.** Hand edits are detected by comparing file contents with
    the manifest's original `output_hash`, not by a comment or a handmade flag. Leave the manifest

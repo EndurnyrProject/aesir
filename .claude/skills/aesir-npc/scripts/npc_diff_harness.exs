@@ -145,6 +145,10 @@ defmodule H.Core do
 
   def job_atoms, do: :persistent_term.get(:h_job_atoms, [])
 
+  # `Rathena.job_id/1` is a hashed atom in this model, so a variable holding a job id (`ADVJOB`)
+  # only reaches a `Rathena.job_id(:job)` comparison when its domain carries the same hashes.
+  def job_ids, do: Enum.map(job_atoms(), &:erlang.phash2/1)
+
   # Jobs the module itself compares against lead the domain: a gate like
   # `Class == Job_Swordman` is only reachable at all when the draw can land on
   # `swordman`, and a job-quest module compares against a handful of them. Modules
@@ -159,7 +163,7 @@ defmodule H.Core do
   def call(:get_char_var, [ctx, key, default]) do
     case Map.fetch(ctx.charvars, key) do
       {:ok, v} -> v
-      :error -> pick({:gcv, key}, [default | ints()])
+      :error -> pick({:gcv, key}, [default | ints()] ++ job_ids())
     end
   end
 
@@ -234,6 +238,13 @@ defmodule H.Core do
     {log(ctx, {:select, options, choice}), choice}
   end
 
+  # `input(:int)` answers with a number, the way the client does. A string answer keeps every
+  # `input > N` retry loop spinning and hides the whole flow behind it.
+  def call(:input, [ctx, :int]) do
+    v = pick({:input_int, counter(:input)}, [0, 1, 10, 100, 9_999, 10_000, 10_001] ++ ints())
+    {log(ctx, {:input, [:int], v}), v}
+  end
+
   def call(:input, [ctx | kind]) do
     guess =
       Enum.find_value(ctx.log, "", fn
@@ -279,6 +290,10 @@ defmodule H.Core do
     do: pick({:count_item, args}, [0, 1, 2, 3, 5, 10, 20, 60, 100])
 
   def call(:checkquest, [_ctx | args]), do: pick({:checkquest, args}, [-1, 0, 1, 2])
+  def call(:isbegin_quest, [_ctx | args]), do: pick({:isbegin_quest, args}, [0, 1])
+
+  # Basic-skill gate of every job change quest: 1 when the applicant meets it, 0 otherwise.
+  def call(:can_change_job?, [_ctx]), do: pick(:can_change_job, [0, 1])
   def call(:getskilllv, [_ctx | args]), do: pick({:getskilllv, args}, [0, 1, 5, 10])
   def call(:mobcount, [_ctx | args]), do: pick({:mobcount, args}, [0, 1, 2, 5])
   def call(:getmapusers, [_ctx | args]), do: pick({:getmapusers, args}, [0, 1, 2, 5])
@@ -376,6 +391,20 @@ defmodule H.Core do
     do: {log(ctx, {name, args}), nil}
 
   def call(:fcleargarbage, [ctx | args]), do: {log(ctx, {:fcleargarbage, args}), nil}
+
+  # Job change helpers that end the script with `{:script_end, ctx}` at runtime. The model keeps the
+  # `{ctx, value}` pair their generated call sites destructure, so the caller's flow stays comparable.
+  def call(name, [ctx | args])
+      when name in [
+             :fjobswdmedic,
+             :fjobswdstaff,
+             :fjobswdteststaff,
+             :fjobswdteststaff2,
+             :ffatherrub,
+             :ffatheryos,
+             :fmothermart
+           ],
+      do: {log(ctx, {name, args}), nil}
 
   # Service menus that hand the conversation on: their callers destructure the `{ctx, value}`
   # pair and ignore the value. `FKafra`/`FKafend` end the script at runtime; the model just
