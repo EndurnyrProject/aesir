@@ -262,8 +262,9 @@ defmodule H.Core do
   # Time components: hour values cover every day/night gate in the corpus.
   def call(:gettime, [_ctx, type]), do: pick({:gettime, type}, [0, 5, 12, 18, 21, 23])
 
+  # The DSL answers 1/0 for these cart, falcon and riding checks, like rAthena.
   def call(name, [_ctx]) when name in [:checkcart, :checkfalcon, :checkriding],
-    do: pick(name, [true, false])
+    do: pick(name, [0, 1])
 
   def call(:finsertplural, [ctx | args]),
     do: {log(ctx, {:finsertplural, args}), "plural#{inspect(args)}"}
@@ -335,6 +336,16 @@ defmodule H.Core do
   end
 
   def call(name, args), do: raise("unhandled #{name}/#{length(args)} #{inspect(args)}")
+
+  # A thrown `{:script_end, ctx}` / `{:script_return, {ctx, value}}` carries the whole context,
+  # but only its recorded effects are observable: locals are function-scoped and never survive
+  # the unwinding, and every persistent write is logged as an effect.
+  def ctx_payload(%Ctx{} = ctx), do: {:ctx, Enum.reverse(ctx.log)}
+
+  def ctx_payload(tuple) when is_tuple(tuple),
+    do: tuple |> Tuple.to_list() |> Enum.map(&ctx_payload/1) |> List.to_tuple()
+
+  def ctx_payload(other), do: other
 
   def short_strings, do: :persistent_term.get(:h_strings)
 
@@ -605,7 +616,7 @@ run = fn mod, entry, seed ->
 
       {:error, e.__struct__}
   catch
-    kind, value -> {:caught, kind, value}
+    kind, value -> {:caught, kind, H.Core.ctx_payload(value)}
   end
 end
 
@@ -638,7 +649,7 @@ entries =
 
 errors =
   paths
-  |> Enum.reject(fn {_entry, result} -> is_tuple(result) and elem(result, 0) == :ok end)
+  |> Enum.filter(fn {_entry, result} -> match?({:error, _}, result) end)
   |> Enum.uniq()
 
 IO.puts(
