@@ -7,7 +7,9 @@
 #
 # Loads both versions of an NPC module against a fake, recording DSL and runs
 # `on_talk/1` plus every literal `on_event/2` label under `scenarios` (default 3000)
-# deterministic seeds per entry point. Each seed fixes every read (char vars,
+# deterministic seeds per entry point. A global helper module (one exporting
+# `call/2` and no `on_talk/1`) is driven through `call/2` instead, with seeded
+# argument lists. Each seed fixes every read (char vars,
 # job, level, items, menu choices, inputs, random rolls), so both versions see
 # the same world; the ordered effect logs must be identical.
 #
@@ -32,7 +34,9 @@
 #   Unknown ctx-first calls are logged as effects and return the ctx; reads need an
 #   explicit clause. `Helper.call(ctx, args)` maps to the downcased last alias segment
 #   (for example `FClearjobvar.call` -> `:fclearjobvar`).
-# - `Rathena.*` helpers go through `H.Core.rathena/2`.
+# - `Rathena.*` helpers go through `H.Core.rathena/2`. The ones with a project-specific
+#   model (item names, job ids, array writes) are defined there; any other helper is
+#   delegated to the real `Aesir.ZoneServer.Script.Rathena`, compiled from source.
 # - `Enum.random/1` and `:rand.uniform/1` share one draw counter, so swapping one for
 #   the other stays comparable when the ranges are equivalent.
 # - Integer and atom literals from both files seed the read domains, so gates such as
@@ -53,6 +57,17 @@ scenarios =
 
 defmodule Ctx do
   defstruct log: [], charvars: %{}, locals: %{}, npcvars: %{}, tempvars: %{}, status: :ok
+end
+
+# The project's string/array helpers (Rathena) are deterministic and have no I/O, so the
+# unmodelled ones are delegated to the real module instead of being reimplemented here.
+rathena_source =
+  Path.expand("../../../../apps/zone_server/lib/aesir/zone_server/script/rathena.ex", __DIR__)
+
+if File.exists?(rathena_source) do
+  # Its callers reference modules this script does not load; only warnings result.
+  Code.compiler_options(no_warn_undefined: :all)
+  Code.compile_file(rathena_source)
 end
 
 defmodule H.Core do
@@ -259,6 +274,14 @@ defmodule H.Core do
   def call(:fsexmes, [ctx, options]) when is_list(options),
     do: {log(ctx, {:fsexmes, options}), Enum.at(options, call(:sex, [ctx]), 0)}
 
+  def call(:frand, [ctx, options]) when is_list(options) and options != [],
+    do: {log(ctx, {:frand, options}), Enum.at(options, random(1..length(options)) - 1)}
+
+  # Text helpers answer with a stable stand-in; the module under test is the one that
+  # computes the real string, so its own branches are not duplicated here.
+  def call(name, [ctx | args]) when name in [:fgetplural, :fgetarticle],
+    do: {log(ctx, {name, args}), "#{name}#{inspect(args)}"}
+
   def call(name, [%Ctx{} = ctx | args]) do
     if System.get_env("NPC_HARNESS_STRICT"),
       do: raise("unhandled ctx-first call #{name}/#{length(args) + 1}")
@@ -284,7 +307,12 @@ defmodule H.Core do
   def rathena(:put_at, [list, index, value, pad]),
     do: list ++ List.duplicate(pad, index - length(list)) ++ [value]
 
-  def rathena(f, args), do: raise("unhandled Rathena.#{f} #{inspect(args)}")
+  # Anything the harness does not model itself is the real project helper.
+  def rathena(f, args) do
+    if function_exported?(Aesir.ZoneServer.Script.Rathena, f, length(args)),
+      do: apply(Aesir.ZoneServer.Script.Rathena, f, args),
+      else: raise("unhandled Rathena.#{f} #{inspect(args)}")
+  end
 
   def rathena(piped, f, args), do: rathena(f, [piped | args])
 end
@@ -351,6 +379,7 @@ defmodule H.Load do
 
   defp drop?({:use, _, _}), do: true
   defp drop?({:alias, _, _}), do: true
+  defp drop?({:import, _, _}), do: true
   defp drop?({:@, _, [{a, _, _}]}) when a in [:impl, :spec, :moduledoc, :doc], do: true
   defp drop?(_), do: false
 
@@ -478,19 +507,50 @@ if old_labels != new_labels,
 
 debug? = System.get_env("NPC_HARNESS_DEBUG") in ["1", "true"]
 
+# Global helpers take their arguments from the caller, so the shape and the values are
+# drawn per seed from the literals both versions contain.
+helper_args = fn seed ->
+  ints = H.Core.ints()
+  strings = H.Core.short_strings()
+
+  num = fn tag -> Enum.at(ints, rem(:erlang.phash2({tag, seed}), length(ints))) end
+
+  str = fn tag ->
+    Enum.at(strings, rem(:erlang.phash2({tag, seed}), max(length(strings), 1)), "")
+  end
+
+  shapes = [
+    fn -> [] end,
+    fn -> [num.(:n0)] end,
+    fn -> [str.(:s0)] end,
+    fn -> [num.(:n0), num.(:n1)] end,
+    fn -> [str.(:s0), num.(:n1)] end,
+    fn -> [str.(:s0), num.(:n1), num.(:n2)] end,
+    fn -> [str.(:s0), num.(:n1), num.(:n2), str.(:s3)] end,
+    fn -> [num.(:n0), str.(:s1), num.(:n2)] end,
+    fn -> [str.(:s0), str.(:s1)] end
+  ]
+
+  Enum.at(shapes, rem(seed, length(shapes))).()
+end
+
 run = fn mod, entry, seed ->
   Enum.each(Process.get_keys(), fn k -> if match?({:counter, _}, k), do: Process.delete(k) end)
   Process.put(:seed, seed)
   ctx = struct(Ctx, [])
 
   try do
-    result =
-      case entry do
-        :talk -> mod.on_talk(ctx)
-        {:event, label} -> mod.on_event(label, ctx)
-      end
+    case entry do
+      :talk ->
+        {:ok, Enum.reverse(mod.on_talk(ctx).log)}
 
-    {:ok, Enum.reverse(result.log)}
+      {:event, label} ->
+        {:ok, Enum.reverse(mod.on_event(label, ctx).log)}
+
+      :call ->
+        {ctx, value} = mod.call(ctx, helper_args.(seed))
+        {:ok, Enum.reverse(ctx.log), if(is_struct(value, Ctx), do: :ctx, else: value)}
+    end
   rescue
     e ->
       if debug? do
@@ -505,9 +565,11 @@ run = fn mod, entry, seed ->
 end
 
 entries =
-  if function_exported?(OldMod, :on_talk, 1),
-    do: [:talk | Enum.map(old_labels, &{:event, &1})],
-    else: Enum.map(old_labels, &{:event, &1})
+  cond do
+    function_exported?(OldMod, :on_talk, 1) -> [:talk | Enum.map(old_labels, &{:event, &1})]
+    function_exported?(OldMod, :call, 2) -> [:call]
+    true -> Enum.map(old_labels, &{:event, &1})
+  end
 
 {mismatches, paths} =
   for entry <- entries, seed <- 1..scenarios, reduce: {0, MapSet.new()} do
@@ -529,7 +591,10 @@ entries =
       end
   end
 
-errors = paths |> Enum.reject(&match?({_, {:ok, _}}, &1)) |> Enum.uniq()
+errors =
+  paths
+  |> Enum.reject(fn {_entry, result} -> is_tuple(result) and elem(result, 0) == :ok end)
+  |> Enum.uniq()
 
 IO.puts(
   "#{Path.basename(new_path)}: entries=#{length(entries)} distinct_paths=#{MapSet.size(paths)} " <>
