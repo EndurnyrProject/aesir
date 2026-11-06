@@ -33,6 +33,56 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.KafIzlude do
     spawn: [
       %{
         map: "izlude",
+        x: 128,
+        y: 148,
+        dir: 6,
+        sprite: 117,
+        name: "Kafra Employee",
+        scope: :renewal,
+        unique_name: "Kafra Employee#iz"
+      },
+      %{
+        map: "izlude_a",
+        x: 128,
+        y: 148,
+        dir: 6,
+        sprite: 117,
+        name: "Kafra Employee",
+        scope: :renewal,
+        unique_name: "Kafra Employee#iz_a"
+      },
+      %{
+        map: "izlude_b",
+        x: 128,
+        y: 148,
+        dir: 6,
+        sprite: 117,
+        name: "Kafra Employee",
+        scope: :renewal,
+        unique_name: "Kafra Employee#iz_b"
+      },
+      %{
+        map: "izlude_c",
+        x: 128,
+        y: 148,
+        dir: 6,
+        sprite: 117,
+        name: "Kafra Employee",
+        scope: :renewal,
+        unique_name: "Kafra Employee#iz_c"
+      },
+      %{
+        map: "izlude_d",
+        x: 128,
+        y: 148,
+        dir: 6,
+        sprite: 117,
+        name: "Kafra Employee",
+        scope: :renewal,
+        unique_name: "Kafra Employee#iz_d"
+      },
+      %{
+        map: "izlude",
         x: 134,
         y: 87,
         dir: 3,

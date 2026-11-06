@@ -28,7 +28,30 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.AcolyteTu do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "pay_fild08",
+        x: 40,
+        y: 83,
+        dir: 5,
+        sprite: 95,
+        name: "Acolyte",
+        scope: :renewal,
+        unique_name: "Acolyte#tu"
+      },
+      %{
+        map: "mjolnir_11",
+        x: 27,
+        y: 223,
+        dir: 3,
+        sprite: 95,
+        name: "Acolyte",
+        scope: :pre_renewal,
+        unique_name: "Acolyte#tu"
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

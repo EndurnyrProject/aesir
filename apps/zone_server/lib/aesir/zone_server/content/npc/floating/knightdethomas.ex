@@ -28,7 +28,30 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Knightdethomas do
   - LLM-assisted Elixir refactor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "izlude_in",
+        x: 118,
+        y: 175,
+        dir: 2,
+        sprite: 98,
+        name: "Knight De Thomas",
+        scope: :renewal,
+        trigger: {4, 4}
+      },
+      %{
+        map: "izlude_in",
+        x: 175,
+        y: 130,
+        dir: 2,
+        sprite: 98,
+        name: "Knight De Thomas",
+        scope: :pre_renewal,
+        trigger: {4, 4}
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena

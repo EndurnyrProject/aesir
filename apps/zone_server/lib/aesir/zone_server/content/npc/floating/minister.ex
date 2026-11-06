@@ -27,7 +27,30 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Minister do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "prt_cas",
+        x: 97,
+        y: 289,
+        dir: 3,
+        sprite: 55,
+        name: "Minister",
+        scope: :renewal,
+        unique_name: "Minister#tu"
+      },
+      %{
+        map: "prt_castle",
+        x: 76,
+        y: 165,
+        dir: 6,
+        sprite: 55,
+        name: "Minister",
+        scope: :pre_renewal,
+        unique_name: "Minister#tu"
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena

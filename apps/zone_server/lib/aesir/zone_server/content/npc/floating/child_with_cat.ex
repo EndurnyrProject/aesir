@@ -25,7 +25,30 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.ChildWithCat do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "prt_cas",
+        x: 329,
+        y: 194,
+        dir: 3,
+        sprite: 877,
+        name: "Child with Cat",
+        scope: :renewal,
+        unique_name: "Child with Cat#cook"
+      },
+      %{
+        map: "prt_castle",
+        x: 45,
+        y: 28,
+        dir: 3,
+        sprite: 877,
+        name: "Child with Cat",
+        scope: :pre_renewal,
+        unique_name: "Child with Cat#cook"
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

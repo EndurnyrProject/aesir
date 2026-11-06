@@ -28,7 +28,30 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CharlesOrleans do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "prt_cas",
+        x: 324,
+        y: 200,
+        dir: 5,
+        sprite: 878,
+        name: "Charles Orleans",
+        scope: :renewal,
+        unique_name: "Charles Orleans#cook"
+      },
+      %{
+        map: "prt_castle",
+        x: 43,
+        y: 30,
+        dir: 3,
+        sprite: 878,
+        name: "Charles Orleans",
+        scope: :pre_renewal,
+        unique_name: "Charles Orleans#cook"
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena

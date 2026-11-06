@@ -29,7 +29,28 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.GershaunAlberta do
   - LLM-assisted Elixir refactor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "alberta",
+        x: 232,
+        y: 103,
+        dir: 6,
+        sprite: 57,
+        name: "Gershaun",
+        scope: :renewal
+      },
+      %{
+        map: "alberta",
+        x: 232,
+        y: 106,
+        dir: 6,
+        sprite: 57,
+        name: "Gershaun",
+        scope: :pre_renewal
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena

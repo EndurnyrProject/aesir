@@ -26,7 +26,32 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Npc0 do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "prt_cas",
+        x: 94,
+        y: 270,
+        dir: 5,
+        sprite: 139,
+        name: "",
+        scope: :renewal,
+        unique_name: "#sound_tu",
+        trigger: {6, 6}
+      },
+      %{
+        map: "prt_castle",
+        x: 94,
+        y: 150,
+        dir: 4,
+        sprite: 139,
+        name: "",
+        scope: :pre_renewal,
+        unique_name: "#sound_tu",
+        trigger: {6, 6}
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

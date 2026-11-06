@@ -25,7 +25,30 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Wickebine do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "prt_cas",
+        x: 329,
+        y: 192,
+        dir: 3,
+        sprite: 725,
+        name: "Wickebine",
+        scope: :renewal,
+        unique_name: "Wickebine#cook"
+      },
+      %{
+        map: "prt_castle",
+        x: 44,
+        y: 30,
+        dir: 5,
+        sprite: 725,
+        name: "Wickebine",
+        scope: :pre_renewal,
+        unique_name: "Wickebine#cook"
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

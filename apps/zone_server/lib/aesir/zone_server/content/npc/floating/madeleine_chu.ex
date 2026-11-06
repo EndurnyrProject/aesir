@@ -27,7 +27,30 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.MadeleineChu do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "prt_cas",
+        x: 329,
+        y: 206,
+        dir: 3,
+        sprite: 886,
+        name: "Madeleine Chu",
+        scope: :renewal,
+        unique_name: "Madeleine Chu#cook"
+      },
+      %{
+        map: "prt_castle",
+        x: 45,
+        y: 35,
+        dir: 5,
+        sprite: 886,
+        name: "Madeleine Chu",
+        scope: :pre_renewal,
+        unique_name: "Madeleine Chu#cook"
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena

@@ -31,7 +31,30 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.MonstertamerIzlude do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "izlude_in",
+        x: 55,
+        y: 105,
+        dir: 4,
+        sprite: 125,
+        name: "Monster Tamer",
+        scope: :renewal,
+        unique_name: "Monster Tamer#izu"
+      },
+      %{
+        map: "izlude_in",
+        x: 129,
+        y: 64,
+        dir: 4,
+        sprite: 125,
+        name: "Monster Tamer",
+        scope: :pre_renewal,
+        unique_name: "Monster Tamer#izu"
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 
