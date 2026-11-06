@@ -270,6 +270,48 @@ defmodule H.Core do
 
   def call(:fclearjobvar, [ctx | args]), do: {log(ctx, {:fclearjobvar, args}), nil}
 
+  # Wall clock: `gettimetick(2)` is Unix epoch seconds, the form countdown NPCs subtract from.
+  def call(:gettimetick, [_ctx, 2]), do: pick(:gettimetick, [0, 1000, 3600, 90_500])
+
+  # Equipment reads: slot arguments are the rAthena `equip_index` ordinals.
+  def call(:getequipid, [_ctx | args]), do: pick({:getequipid, args}, [-1, 0, 1201, 1202])
+
+  def call(:getequiprefinerycnt, [_ctx | args]),
+    do: pick({:getequiprefinerycnt, args}, [0, 1, 5, 10])
+
+  def call(:getequipcardid, [_ctx | args]), do: pick({:getequipcardid, args}, [0, 4001, 4002])
+
+  # `ITEMINFO_VIEW` (11) and `ITEMINFO_LOCATIONS` (5) cover the weapon and armor type lookups;
+  # the locations domain includes the combined accessory masks.
+  def call(:getiteminfo, [_ctx, _item, 11]),
+    do: pick(:iteminfo_view, [0, 1, 2, 3, 8, 10, 16, 22, 99])
+
+  def call(:getiteminfo, [_ctx, _item, 5]),
+    do:
+      pick(:iteminfo_locations, [
+        0,
+        1,
+        2,
+        3,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        136,
+        256,
+        512,
+        1024,
+        4096,
+        8192,
+        32_768,
+        65_536,
+        3_145_728
+      ])
+
+  def call(:getiteminfo, [_ctx, _item, _type]), do: 0
+
   # Value-returning global functions: the generated call keeps the `{ctx, value}` shape.
   def call(:fsexmes, [ctx, options]) when is_list(options),
     do: {log(ctx, {:fsexmes, options}), Enum.at(options, call(:sex, [ctx]), 0)}
@@ -280,6 +322,9 @@ defmodule H.Core do
   # Text helpers answer with a stable stand-in; the module under test is the one that
   # computes the real string, so its own branches are not duplicated here.
   def call(name, [ctx | args]) when name in [:fgetplural, :fgetarticle],
+    do: {log(ctx, {name, args}), "#{name}#{inspect(args)}"}
+
+  def call(name, [ctx | args]) when name in [:fgetweapontype, :fgetarmortype],
     do: {log(ctx, {name, args}), "#{name}#{inspect(args)}"}
 
   def call(name, [%Ctx{} = ctx | args]) do
