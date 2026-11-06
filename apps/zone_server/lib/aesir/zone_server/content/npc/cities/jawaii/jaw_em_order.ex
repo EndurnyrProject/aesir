@@ -19,7 +19,22 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Jawaii.JawEmOrder do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "jawaii_in",
+        x: 28,
+        y: 96,
+        dir: 0,
+        sprite: -1,
+        name: "jaw_em_order",
+        scope: :shared,
+        unique_name: "jaw_em_order#Jawaii",
+        trigger: {3, 3}
+      }
+    ]
+
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 

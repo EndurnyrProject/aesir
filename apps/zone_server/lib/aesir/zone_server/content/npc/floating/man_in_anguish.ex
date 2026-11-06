@@ -7,29 +7,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.ManInAnguish do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc,
-    scope: :shared,
-    spawn: [
-      %{
-        map: "prt_cas",
-        x: 238,
-        y: 94,
-        dir: 5,
-        sprite: 733,
-        name: "Man in Anguish",
-        scope: :renewal
-      },
-      %{
-        map: "prt_castle",
-        x: 164,
-        y: 32,
-        dir: 1,
-        sprite: 733,
-        name: "Man in Anguish",
-        scope: :pre_renewal
-      }
-    ]
-
+  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true

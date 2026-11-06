@@ -25,7 +25,20 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Zombie31 do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "job_prist",
+        x: 24,
+        y: 72,
+        dir: 0,
+        sprite: -1,
+        name: "Zombie3_1",
+        scope: :shared,
+        trigger: {14, 1}
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena

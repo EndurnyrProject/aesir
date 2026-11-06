@@ -31,7 +31,2271 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.M11Hnttrap do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "job_hunte",
+        x: 52,
+        y: 140,
+        dir: 0,
+        sprite: -1,
+        name: "1-1::HntTrap",
+        scope: :shared,
+        unique_name: "HntTrap",
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 53,
+        y: 140,
+        dir: 0,
+        sprite: -1,
+        name: "1-2",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 54,
+        y: 141,
+        dir: 0,
+        sprite: -1,
+        name: "1-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 55,
+        y: 141,
+        dir: 0,
+        sprite: -1,
+        name: "1-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 55,
+        y: 140,
+        dir: 0,
+        sprite: -1,
+        name: "1-5",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 54,
+        y: 140,
+        dir: 0,
+        sprite: -1,
+        name: "1-6",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 52,
+        y: 138,
+        dir: 0,
+        sprite: -1,
+        name: "1-7",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 53,
+        y: 138,
+        dir: 0,
+        sprite: -1,
+        name: "1-8",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 62,
+        y: 140,
+        dir: 0,
+        sprite: -1,
+        name: "2-1",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 63,
+        y: 140,
+        dir: 0,
+        sprite: -1,
+        name: "2-2",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 64,
+        y: 140,
+        dir: 0,
+        sprite: -1,
+        name: "2-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 64,
+        y: 141,
+        dir: 0,
+        sprite: -1,
+        name: "2-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 65,
+        y: 140,
+        dir: 0,
+        sprite: -1,
+        name: "2-5",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 65,
+        y: 141,
+        dir: 0,
+        sprite: -1,
+        name: "2-6",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 62,
+        y: 138,
+        dir: 0,
+        sprite: -1,
+        name: "2-7",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 63,
+        y: 138,
+        dir: 0,
+        sprite: -1,
+        name: "2-8",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 72,
+        y: 140,
+        dir: 0,
+        sprite: -1,
+        name: "3-1",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 73,
+        y: 140,
+        dir: 0,
+        sprite: -1,
+        name: "3-2",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 72,
+        y: 138,
+        dir: 0,
+        sprite: -1,
+        name: "3-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 72,
+        y: 138,
+        dir: 0,
+        sprite: -1,
+        name: "3-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 78,
+        y: 140,
+        dir: 0,
+        sprite: -1,
+        name: "4-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 78,
+        y: 141,
+        dir: 0,
+        sprite: -1,
+        name: "4-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 79,
+        y: 140,
+        dir: 0,
+        sprite: -1,
+        name: "4-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 79,
+        y: 141,
+        dir: 0,
+        sprite: -1,
+        name: "4-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 82,
+        y: 138,
+        dir: 0,
+        sprite: -1,
+        name: "5-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 82,
+        y: 139,
+        dir: 0,
+        sprite: -1,
+        name: "5-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 83,
+        y: 138,
+        dir: 0,
+        sprite: -1,
+        name: "5-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 83,
+        y: 139,
+        dir: 0,
+        sprite: -1,
+        name: "5-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 99,
+        y: 138,
+        dir: 0,
+        sprite: -1,
+        name: "6-1",
+        scope: :shared,
+        trigger: {1, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 99,
+        y: 139,
+        dir: 0,
+        sprite: -1,
+        name: "6-2",
+        scope: :shared,
+        trigger: {1, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 101,
+        y: 138,
+        dir: 0,
+        sprite: -1,
+        name: "6-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 101,
+        y: 139,
+        dir: 0,
+        sprite: -1,
+        name: "6-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 106,
+        y: 140,
+        dir: 0,
+        sprite: -1,
+        name: "7-1",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 107,
+        y: 140,
+        dir: 0,
+        sprite: -1,
+        name: "7-2",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 106,
+        y: 138,
+        dir: 0,
+        sprite: -1,
+        name: "7-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 107,
+        y: 138,
+        dir: 0,
+        sprite: -1,
+        name: "7-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 112,
+        y: 140,
+        dir: 0,
+        sprite: -1,
+        name: "8-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 112,
+        y: 141,
+        dir: 0,
+        sprite: -1,
+        name: "8-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 113,
+        y: 140,
+        dir: 0,
+        sprite: -1,
+        name: "8-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 113,
+        y: 141,
+        dir: 0,
+        sprite: -1,
+        name: "8-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 116,
+        y: 140,
+        dir: 0,
+        sprite: -1,
+        name: "9-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 116,
+        y: 141,
+        dir: 0,
+        sprite: -1,
+        name: "9-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 117,
+        y: 140,
+        dir: 0,
+        sprite: -1,
+        name: "9-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 117,
+        y: 141,
+        dir: 0,
+        sprite: -1,
+        name: "9-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 120,
+        y: 138,
+        dir: 0,
+        sprite: -1,
+        name: "10-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 120,
+        y: 139,
+        dir: 0,
+        sprite: -1,
+        name: "10-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 121,
+        y: 138,
+        dir: 0,
+        sprite: -1,
+        name: "10-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 121,
+        y: 139,
+        dir: 0,
+        sprite: -1,
+        name: "10-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 126,
+        y: 139,
+        dir: 0,
+        sprite: -1,
+        name: "11-1",
+        scope: :shared,
+        trigger: {0, 2}
+      },
+      %{
+        map: "job_hunte",
+        x: 127,
+        y: 139,
+        dir: 0,
+        sprite: -1,
+        name: "11-2",
+        scope: :shared,
+        trigger: {0, 2}
+      },
+      %{
+        map: "job_hunte",
+        x: 126,
+        y: 136,
+        dir: 0,
+        sprite: -1,
+        name: "11-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 127,
+        y: 136,
+        dir: 0,
+        sprite: -1,
+        name: "11-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 52,
+        y: 134,
+        dir: 0,
+        sprite: -1,
+        name: "12-1",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 53,
+        y: 134,
+        dir: 0,
+        sprite: -1,
+        name: "12-2",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 52,
+        y: 132,
+        dir: 0,
+        sprite: -1,
+        name: "12-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 53,
+        y: 132,
+        dir: 0,
+        sprite: -1,
+        name: "12-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 124,
+        y: 130,
+        dir: 0,
+        sprite: -1,
+        name: "13-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 124,
+        y: 131,
+        dir: 0,
+        sprite: -1,
+        name: "13-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 125,
+        y: 130,
+        dir: 0,
+        sprite: -1,
+        name: "13-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 125,
+        y: 131,
+        dir: 0,
+        sprite: -1,
+        name: "13-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 64,
+        y: 128,
+        dir: 0,
+        sprite: -1,
+        name: "14-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 64,
+        y: 129,
+        dir: 0,
+        sprite: -1,
+        name: "14-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 65,
+        y: 128,
+        dir: 0,
+        sprite: -1,
+        name: "14-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 65,
+        y: 129,
+        dir: 0,
+        sprite: -1,
+        name: "14-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 68,
+        y: 126,
+        dir: 0,
+        sprite: -1,
+        name: "15-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 68,
+        y: 127,
+        dir: 0,
+        sprite: -1,
+        name: "15-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 69,
+        y: 126,
+        dir: 0,
+        sprite: -1,
+        name: "15-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 69,
+        y: 127,
+        dir: 0,
+        sprite: -1,
+        name: "15-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 75,
+        y: 128,
+        dir: 0,
+        sprite: -1,
+        name: "16-1",
+        scope: :shared,
+        trigger: {1, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 75,
+        y: 129,
+        dir: 0,
+        sprite: -1,
+        name: "16-2",
+        scope: :shared,
+        trigger: {1, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 77,
+        y: 128,
+        dir: 0,
+        sprite: -1,
+        name: "16-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 77,
+        y: 129,
+        dir: 0,
+        sprite: -1,
+        name: "16-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 82,
+        y: 126,
+        dir: 0,
+        sprite: -1,
+        name: "17-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 82,
+        y: 127,
+        dir: 0,
+        sprite: -1,
+        name: "17-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 83,
+        y: 126,
+        dir: 0,
+        sprite: -1,
+        name: "17-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 83,
+        y: 127,
+        dir: 0,
+        sprite: -1,
+        name: "17-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 96,
+        y: 128,
+        dir: 0,
+        sprite: -1,
+        name: "18-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 96,
+        y: 129,
+        dir: 0,
+        sprite: -1,
+        name: "18-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 97,
+        y: 128,
+        dir: 0,
+        sprite: -1,
+        name: "18-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 97,
+        y: 129,
+        dir: 0,
+        sprite: -1,
+        name: "18-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 100,
+        y: 126,
+        dir: 0,
+        sprite: -1,
+        name: "19-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 100,
+        y: 127,
+        dir: 0,
+        sprite: -1,
+        name: "19-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 101,
+        y: 126,
+        dir: 0,
+        sprite: -1,
+        name: "19-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 101,
+        y: 127,
+        dir: 0,
+        sprite: -1,
+        name: "19-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 106,
+        y: 128,
+        dir: 0,
+        sprite: -1,
+        name: "20-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 106,
+        y: 129,
+        dir: 0,
+        sprite: -1,
+        name: "20-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 107,
+        y: 128,
+        dir: 0,
+        sprite: -1,
+        name: "20-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 107,
+        y: 129,
+        dir: 0,
+        sprite: -1,
+        name: "20-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 112,
+        y: 126,
+        dir: 0,
+        sprite: -1,
+        name: "21-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 112,
+        y: 127,
+        dir: 0,
+        sprite: -1,
+        name: "21-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 113,
+        y: 126,
+        dir: 0,
+        sprite: -1,
+        name: "21-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 113,
+        y: 127,
+        dir: 0,
+        sprite: -1,
+        name: "21-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 126,
+        y: 126,
+        dir: 0,
+        sprite: -1,
+        name: "22-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 126,
+        y: 127,
+        dir: 0,
+        sprite: -1,
+        name: "22-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 127,
+        y: 126,
+        dir: 0,
+        sprite: -1,
+        name: "22-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 127,
+        y: 127,
+        dir: 0,
+        sprite: -1,
+        name: "22-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 52,
+        y: 122,
+        dir: 0,
+        sprite: -1,
+        name: "23-1",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 52,
+        y: 122,
+        dir: 0,
+        sprite: -1,
+        name: "23-2",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 53,
+        y: 120,
+        dir: 0,
+        sprite: -1,
+        name: "23-3",
+        scope: :shared,
+        trigger: {1, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 54,
+        y: 121,
+        dir: 0,
+        sprite: -1,
+        name: "23-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 55,
+        y: 121,
+        dir: 0,
+        sprite: -1,
+        name: "23-5",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 55,
+        y: 120,
+        dir: 0,
+        sprite: -1,
+        name: "23-6",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 66,
+        y: 120,
+        dir: 0,
+        sprite: -1,
+        name: "24-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 66,
+        y: 121,
+        dir: 0,
+        sprite: -1,
+        name: "24-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 67,
+        y: 120,
+        dir: 0,
+        sprite: -1,
+        name: "24-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 67,
+        y: 121,
+        dir: 0,
+        sprite: -1,
+        name: "24-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 114,
+        y: 118,
+        dir: 0,
+        sprite: -1,
+        name: "25-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 114,
+        y: 119,
+        dir: 0,
+        sprite: -1,
+        name: "25-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 115,
+        y: 118,
+        dir: 0,
+        sprite: -1,
+        name: "25-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 115,
+        y: 119,
+        dir: 0,
+        sprite: -1,
+        name: "25-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 124,
+        y: 120,
+        dir: 0,
+        sprite: -1,
+        name: "26-1",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 125,
+        y: 120,
+        dir: 0,
+        sprite: -1,
+        name: "26-2",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 124,
+        y: 118,
+        dir: 0,
+        sprite: -1,
+        name: "26-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 125,
+        y: 118,
+        dir: 0,
+        sprite: -1,
+        name: "26-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 66,
+        y: 116,
+        dir: 0,
+        sprite: -1,
+        name: "27-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 66,
+        y: 117,
+        dir: 0,
+        sprite: -1,
+        name: "27-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 67,
+        y: 116,
+        dir: 0,
+        sprite: -1,
+        name: "27-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 67,
+        y: 117,
+        dir: 0,
+        sprite: -1,
+        name: "27-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 76,
+        y: 114,
+        dir: 0,
+        sprite: -1,
+        name: "28-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 76,
+        y: 115,
+        dir: 0,
+        sprite: -1,
+        name: "28-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 77,
+        y: 114,
+        dir: 0,
+        sprite: -1,
+        name: "28-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 77,
+        y: 115,
+        dir: 0,
+        sprite: -1,
+        name: "28-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 82,
+        y: 116,
+        dir: 0,
+        sprite: -1,
+        name: "29-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 82,
+        y: 117,
+        dir: 0,
+        sprite: -1,
+        name: "29-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 83,
+        y: 116,
+        dir: 0,
+        sprite: -1,
+        name: "29-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 83,
+        y: 117,
+        dir: 0,
+        sprite: -1,
+        name: "29-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 86,
+        y: 114,
+        dir: 0,
+        sprite: -1,
+        name: "30-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 86,
+        y: 115,
+        dir: 0,
+        sprite: -1,
+        name: "30-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 87,
+        y: 114,
+        dir: 0,
+        sprite: -1,
+        name: "30-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 87,
+        y: 115,
+        dir: 0,
+        sprite: -1,
+        name: "30-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 92,
+        y: 115,
+        dir: 0,
+        sprite: -1,
+        name: "31-1",
+        scope: :shared,
+        trigger: {1, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 92,
+        y: 114,
+        dir: 0,
+        sprite: -1,
+        name: "31-2",
+        scope: :shared,
+        trigger: {1, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 90,
+        y: 115,
+        dir: 0,
+        sprite: -1,
+        name: "31-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 102,
+        y: 116,
+        dir: 0,
+        sprite: -1,
+        name: "32-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 102,
+        y: 117,
+        dir: 0,
+        sprite: -1,
+        name: "32-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 103,
+        y: 116,
+        dir: 0,
+        sprite: -1,
+        name: "32-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 103,
+        y: 117,
+        dir: 0,
+        sprite: -1,
+        name: "32-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 114,
+        y: 114,
+        dir: 0,
+        sprite: -1,
+        name: "33-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 114,
+        y: 115,
+        dir: 0,
+        sprite: -1,
+        name: "33-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 115,
+        y: 114,
+        dir: 0,
+        sprite: -1,
+        name: "33-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 115,
+        y: 115,
+        dir: 0,
+        sprite: -1,
+        name: "33-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 54,
+        y: 110,
+        dir: 0,
+        sprite: -1,
+        name: "34-1",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 55,
+        y: 110,
+        dir: 0,
+        sprite: -1,
+        name: "34-2",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 54,
+        y: 108,
+        dir: 0,
+        sprite: -1,
+        name: "34-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 55,
+        y: 108,
+        dir: 0,
+        sprite: -1,
+        name: "34-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 64,
+        y: 112,
+        dir: 0,
+        sprite: -1,
+        name: "35-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 64,
+        y: 113,
+        dir: 0,
+        sprite: -1,
+        name: "35-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 65,
+        y: 112,
+        dir: 0,
+        sprite: -1,
+        name: "35-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 65,
+        y: 113,
+        dir: 0,
+        sprite: -1,
+        name: "35-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 80,
+        y: 110,
+        dir: 0,
+        sprite: -1,
+        name: "36-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 80,
+        y: 111,
+        dir: 0,
+        sprite: -1,
+        name: "36-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 81,
+        y: 110,
+        dir: 0,
+        sprite: -1,
+        name: "36-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 81,
+        y: 111,
+        dir: 0,
+        sprite: -1,
+        name: "36-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 90,
+        y: 108,
+        dir: 0,
+        sprite: -1,
+        name: "37-1",
+        scope: :shared,
+        trigger: {0, 6}
+      },
+      %{
+        map: "job_hunte",
+        x: 91,
+        y: 108,
+        dir: 0,
+        sprite: -1,
+        name: "37-2",
+        scope: :shared,
+        trigger: {0, 5}
+      },
+      %{
+        map: "job_hunte",
+        x: 91,
+        y: 102,
+        dir: 0,
+        sprite: -1,
+        name: "37-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 98,
+        y: 109,
+        dir: 0,
+        sprite: -1,
+        name: "38-1",
+        scope: :shared,
+        trigger: {0, 2}
+      },
+      %{
+        map: "job_hunte",
+        x: 99,
+        y: 109,
+        dir: 0,
+        sprite: -1,
+        name: "38-2",
+        scope: :shared,
+        trigger: {0, 2}
+      },
+      %{
+        map: "job_hunte",
+        x: 103,
+        y: 109,
+        dir: 0,
+        sprite: -1,
+        name: "38-3",
+        scope: :shared,
+        trigger: {3, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 103,
+        y: 108,
+        dir: 0,
+        sprite: -1,
+        name: "38-4",
+        scope: :shared,
+        trigger: {3, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 97,
+        y: 106,
+        dir: 0,
+        sprite: -1,
+        name: "39-1",
+        scope: :shared,
+        trigger: {2, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 96,
+        y: 107,
+        dir: 0,
+        sprite: -1,
+        name: "39-2",
+        scope: :shared,
+        trigger: {1, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 94,
+        y: 108,
+        dir: 0,
+        sprite: -1,
+        name: "39-3",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 95,
+        y: 109,
+        dir: 0,
+        sprite: -1,
+        name: "39-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 95,
+        y: 108,
+        dir: 0,
+        sprite: -1,
+        name: "40-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 94,
+        y: 106,
+        dir: 0,
+        sprite: -1,
+        name: "40-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 96,
+        y: 102,
+        dir: 0,
+        sprite: -1,
+        name: "40-3",
+        scope: :shared,
+        trigger: {0, 3}
+      },
+      %{
+        map: "job_hunte",
+        x: 97,
+        y: 102,
+        dir: 0,
+        sprite: -1,
+        name: "40-4",
+        scope: :shared,
+        trigger: {0, 3}
+      },
+      %{
+        map: "job_hunte",
+        x: 95,
+        y: 98,
+        dir: 0,
+        sprite: -1,
+        name: "41-1",
+        scope: :shared,
+        trigger: {2, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 94,
+        y: 99,
+        dir: 0,
+        sprite: -1,
+        name: "42-1",
+        scope: :shared,
+        trigger: {1, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 92,
+        y: 98,
+        dir: 0,
+        sprite: -1,
+        name: "43-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 112,
+        y: 110,
+        dir: 0,
+        sprite: -1,
+        name: "44-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 112,
+        y: 111,
+        dir: 0,
+        sprite: -1,
+        name: "44-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 113,
+        y: 110,
+        dir: 0,
+        sprite: -1,
+        name: "44-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 113,
+        y: 111,
+        dir: 0,
+        sprite: -1,
+        name: "44-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 126,
+        y: 108,
+        dir: 0,
+        sprite: -1,
+        name: "45-1",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 127,
+        y: 108,
+        dir: 0,
+        sprite: -1,
+        name: "45-2",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 126,
+        y: 106,
+        dir: 0,
+        sprite: -1,
+        name: "45-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 126,
+        y: 106,
+        dir: 0,
+        sprite: -1,
+        name: "45-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 53,
+        y: 102,
+        dir: 0,
+        sprite: -1,
+        name: "46-1",
+        scope: :shared,
+        trigger: {1, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 55,
+        y: 102,
+        dir: 0,
+        sprite: -1,
+        name: "46-2",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 53,
+        y: 100,
+        dir: 0,
+        sprite: -1,
+        name: "46-3",
+        scope: :shared,
+        trigger: {1, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 55,
+        y: 100,
+        dir: 0,
+        sprite: -1,
+        name: "46-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 64,
+        y: 106,
+        dir: 0,
+        sprite: -1,
+        name: "47-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 64,
+        y: 107,
+        dir: 0,
+        sprite: -1,
+        name: "47-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 65,
+        y: 106,
+        dir: 0,
+        sprite: -1,
+        name: "47-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 65,
+        y: 107,
+        dir: 0,
+        sprite: -1,
+        name: "47-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 66,
+        y: 100,
+        dir: 0,
+        sprite: -1,
+        name: "48-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 66,
+        y: 101,
+        dir: 0,
+        sprite: -1,
+        name: "48-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 67,
+        y: 100,
+        dir: 0,
+        sprite: -1,
+        name: "48-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 67,
+        y: 101,
+        dir: 0,
+        sprite: -1,
+        name: "48-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 86,
+        y: 106,
+        dir: 0,
+        sprite: -1,
+        name: "49-1",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 87,
+        y: 106,
+        dir: 0,
+        sprite: -1,
+        name: "49-2",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 82,
+        y: 104,
+        dir: 0,
+        sprite: -1,
+        name: "49-3",
+        scope: :shared,
+        trigger: {5, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 81,
+        y: 105,
+        dir: 0,
+        sprite: -1,
+        name: "49-4",
+        scope: :shared,
+        trigger: {4, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 76,
+        y: 105,
+        dir: 0,
+        sprite: -1,
+        name: "50-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 76,
+        y: 104,
+        dir: 0,
+        sprite: -1,
+        name: "50-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 78,
+        y: 101,
+        dir: 0,
+        sprite: -1,
+        name: "50-3",
+        scope: :shared,
+        trigger: {0, 2}
+      },
+      %{
+        map: "job_hunte",
+        x: 79,
+        y: 101,
+        dir: 0,
+        sprite: -1,
+        name: "50-4",
+        scope: :shared,
+        trigger: {0, 2}
+      },
+      %{
+        map: "job_hunte",
+        x: 76,
+        y: 99,
+        dir: 0,
+        sprite: -1,
+        name: "51-1",
+        scope: :shared,
+        trigger: {1, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 77,
+        y: 98,
+        dir: 0,
+        sprite: -1,
+        name: "51-2",
+        scope: :shared,
+        trigger: {2, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 74,
+        y: 99,
+        dir: 0,
+        sprite: -1,
+        name: "51-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 74,
+        y: 98,
+        dir: 0,
+        sprite: -1,
+        name: "51-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 82,
+        y: 100,
+        dir: 0,
+        sprite: -1,
+        name: "53-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 82,
+        y: 101,
+        dir: 0,
+        sprite: -1,
+        name: "53-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 83,
+        y: 100,
+        dir: 0,
+        sprite: -1,
+        name: "53-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 83,
+        y: 101,
+        dir: 0,
+        sprite: -1,
+        name: "53-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 106,
+        y: 104,
+        dir: 0,
+        sprite: -1,
+        name: "54-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 106,
+        y: 105,
+        dir: 0,
+        sprite: -1,
+        name: "54-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 107,
+        y: 104,
+        dir: 0,
+        sprite: -1,
+        name: "54-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 107,
+        y: 105,
+        dir: 0,
+        sprite: -1,
+        name: "54-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 112,
+        y: 104,
+        dir: 0,
+        sprite: -1,
+        name: "55-1",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 113,
+        y: 104,
+        dir: 0,
+        sprite: -1,
+        name: "55-2",
+        scope: :shared,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_hunte",
+        x: 112,
+        y: 102,
+        dir: 0,
+        sprite: -1,
+        name: "55-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 113,
+        y: 102,
+        dir: 0,
+        sprite: -1,
+        name: "55-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 54,
+        y: 92,
+        dir: 0,
+        sprite: -1,
+        name: "56-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 54,
+        y: 93,
+        dir: 0,
+        sprite: -1,
+        name: "56-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 55,
+        y: 92,
+        dir: 0,
+        sprite: -1,
+        name: "56-3",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 55,
+        y: 93,
+        dir: 0,
+        sprite: -1,
+        name: "56-4",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 52,
+        y: 90,
+        dir: 0,
+        sprite: -1,
+        name: "56-5",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 52,
+        y: 91,
+        dir: 0,
+        sprite: -1,
+        name: "56-6",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 53,
+        y: 90,
+        dir: 0,
+        sprite: -1,
+        name: "56-7",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 53,
+        y: 91,
+        dir: 0,
+        sprite: -1,
+        name: "56-8",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 64,
+        y: 92,
+        dir: 0,
+        sprite: -1,
+        name: "57-1",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 64,
+        y: 93,
+        dir: 0,
+        sprite: -1,
+        name: "57-2",
+        scope: :shared,
+        trigger: {0, 0}
+      },
+      %{
+        map: "job_hunte",
+        x: 65,
+        y: 92,
+        dir: 0,
+        sprite: -1,
+        name: "57-3",
+        scope: :shared,
+        trigger: {0, 0}
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

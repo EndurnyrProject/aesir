@@ -106,7 +106,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Therapist do
       end
 
     {ctx, v1} = select(ctx, String.split(get_local(ctx, :"menu$", ""), ":"))
-    _ = v1
 
     case v1 do
       1 ->

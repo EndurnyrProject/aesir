@@ -9,6 +9,10 @@ defmodule Aesir.ZoneServer.Npc.Packets do
   broadcasts (which push the same packet to every player in range), so both
   build the identical packet for the same placement instead of duplicating
   the field list.
+
+  An invisible placement (a `-1` sprite event NPC) has no packet: `spawn_packet/1`
+  answers `:invisible` and `visible?/1` reports `false`, so callers never put an
+  event NPC on a client's screen.
   """
 
   alias Aesir.Net.UnitDespawn
@@ -20,53 +24,81 @@ defmodule Aesir.ZoneServer.Npc.Packets do
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Session, as: NpcSession
 
-  @doc "Builds the spawn packet for an NPC entry, keyed by its placement's entity id."
-  @spec spawn_packet({module(), Placement.t()}) :: UnitSpawn.t()
+  @doc """
+  Whether `entry` renders on a client.
+
+  A placement with no client view (`Placement.invisible?/1`) stays invisible
+  unless a display override assigns it a sprite, which is the reference's
+  `setnpcdisplay` class change: assigning a view to an invisible event NPC
+  makes it visible.
+  """
+  @spec visible?(NpcRegistry.entry()) :: boolean()
+  def visible?({_module, %Placement{} = placement}) do
+    {sprite, _name, _size} = display(placement)
+    sprite >= 0
+  end
+
+  @doc """
+  Builds the spawn packet for an NPC entry, keyed by its placement's entity id.
+
+  Returns `:invisible` for a placement with no client view, so callers never
+  send a spawn for an event NPC that the client must not see.
+  """
+  @spec spawn_packet({module(), Placement.t()}) :: UnitSpawn.t() | :invisible
   def spawn_packet({module, %Placement{} = placement}) do
     entity_id = NpcRegistry.entity_id(placement)
+    {sprite, name, size} = display(placement)
 
-    {sprite, name, size} =
-      case NpcSession.display_override(entity_id) do
-        {s, n, sz} -> {s || placement.sprite, n || placement.name, sz}
-        nil -> {placement.sprite, placement.name, 0}
-      end
+    if sprite < 0 do
+      :invisible
+    else
+      {guild_id, guild_name, emblem_id} = GuildIdentity.resolve(npc_guild_id(module, placement))
 
-    {guild_id, guild_name, emblem_id} = GuildIdentity.resolve(npc_guild_id(module, placement))
+      %UnitSpawn{
+        object_type: ObjectType.npc(),
+        aid: entity_id,
+        gid: entity_id,
+        speed: 0,
+        body_state: 0,
+        health_state: 0,
+        effect_state: 0,
+        job: sprite,
+        head: 0,
+        weapon: 0,
+        shield: 0,
+        accessory: 0,
+        accessory2: 0,
+        accessory3: 0,
+        head_palette: 0,
+        body_palette: 0,
+        head_dir: 0,
+        robe: 0,
+        guild_id: guild_id,
+        guild_name: guild_name,
+        emblem_id: emblem_id,
+        sex: 0,
+        x: placement.x,
+        y: placement.y,
+        dir: placement.dir,
+        clevel: 0,
+        max_hp: 0,
+        hp: 0,
+        is_boss: false,
+        name: name,
+        size: display_size(size),
+        moving: false
+      }
+    end
+  end
 
-    %UnitSpawn{
-      object_type: ObjectType.npc(),
-      aid: entity_id,
-      gid: entity_id,
-      speed: 0,
-      body_state: 0,
-      health_state: 0,
-      effect_state: 0,
-      job: sprite,
-      head: 0,
-      weapon: 0,
-      shield: 0,
-      accessory: 0,
-      accessory2: 0,
-      accessory3: 0,
-      head_palette: 0,
-      body_palette: 0,
-      head_dir: 0,
-      robe: 0,
-      guild_id: guild_id,
-      guild_name: guild_name,
-      emblem_id: emblem_id,
-      sex: 0,
-      x: placement.x,
-      y: placement.y,
-      dir: placement.dir,
-      clevel: 0,
-      max_hp: 0,
-      hp: 0,
-      is_boss: false,
-      name: name,
-      size: display_size(size),
-      moving: false
-    }
+  # The appearance a client would receive: the placement's own view unless a
+  # display override replaced it. `size` stays 0 when nothing overrode it.
+  @spec display(Placement.t()) :: {integer(), String.t(), non_neg_integer()}
+  defp display(%Placement{} = placement) do
+    case NpcSession.display_override(NpcRegistry.entity_id(placement)) do
+      {sprite, name, size} -> {sprite || placement.sprite, name || placement.name, size}
+      nil -> {placement.sprite, placement.name, 0}
+    end
   end
 
   # A module without `guild_id/1` displays no guild emblem.

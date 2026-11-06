@@ -27,7 +27,20 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Resetter do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "monk_test",
+        x: 3,
+        y: 3,
+        dir: 0,
+        sprite: -1,
+        name: "resetter",
+        scope: :shared,
+        unique_name: "resetter#monk"
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

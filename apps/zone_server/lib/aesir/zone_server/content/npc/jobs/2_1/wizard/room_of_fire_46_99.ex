@@ -22,7 +22,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.RoomOfFire4699 do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "job_wiz",
+        x: 46,
+        y: 99,
+        dir: 0,
+        sprite: -1,
+        name: "Room of Fire",
+        scope: :shared,
+        unique_name: "Room of Fire#Failed",
+        trigger: {16, 16}
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

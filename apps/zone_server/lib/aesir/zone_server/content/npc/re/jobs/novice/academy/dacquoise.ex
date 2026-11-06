@@ -744,8 +744,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Dacquoise do
               "Golden Apple Roast"
             ])
 
-          _ = v4
-
           case v4 do
             1 ->
               ctx =

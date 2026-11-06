@@ -7,7 +7,19 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Mobs.Dungeons.LhzDun.SummonBossLt d
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, scope: :pre_renewal, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :pre_renewal,
+    spawn: [
+      %{
+        map: "lhz_dun03",
+        x: 2,
+        y: 2,
+        dir: 0,
+        sprite: -1,
+        name: "summon_boss_lt",
+        scope: :pre_renewal
+      }
+    ]
 
   @impl true
   def on_event("OnInit", ctx), do: ev_oninit(ctx)

@@ -28,7 +28,20 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Dance1010 do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "job_duncer",
+        x: 10,
+        y: 10,
+        dir: 0,
+        sprite: -1,
+        name: "dance",
+        scope: :shared,
+        unique_name: "dance#poring"
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

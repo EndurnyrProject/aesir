@@ -623,8 +623,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SalimHamid do
                 "Garlet 37z Zargon 444z"
               ])
 
-            _ = v11
-
             case v11 do
               1 ->
                 ctx =

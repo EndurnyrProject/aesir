@@ -24,7 +24,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.AssassinSkills.Npc do
   - LLM-assisted Elixir refactor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "moc_pryd04",
+        x: 85,
+        y: 96,
+        dir: 0,
+        sprite: -1,
+        name: "¡¡",
+        scope: :shared,
+        unique_name: "¡¡#crypt",
+        trigger: {3, 3}
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

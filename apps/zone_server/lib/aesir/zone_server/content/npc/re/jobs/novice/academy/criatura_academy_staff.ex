@@ -279,8 +279,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CriaturaAcademySta
                   |> next()
                   |> select(["I need help with that", "Anything will do really.", "Don't worry."])
 
-                _ = v1
-
                 case v1 do
                   1 ->
                     ctx =
@@ -401,8 +399,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CriaturaAcademySta
                 |> mes("Have you found a place to stay?")
                 |> next()
                 |> select(["I need help with that", "Anything will do really.", "Don't worry."])
-
-              _ = v2
 
               case v2 do
                 1 ->

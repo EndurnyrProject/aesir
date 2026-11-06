@@ -28,6 +28,14 @@ defmodule Aesir.ZoneServer.Npc.PacketsTest do
     def guild_id(_placement), do: 7
   end
 
+  defmodule InvisibleNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [%{map: "prontera", x: 170, y: 170, sprite: -1, name: "Trap", trigger: {1, 1}}]
+
+    @impl true
+    def on_talk(ctx), do: ctx
+  end
+
   describe "spawn_packet/1" do
     test "an NPC without guild_id/1 spawns with no guild identity" do
       [placement] = GuildlessNpc.spawn()
@@ -57,6 +65,21 @@ defmodule Aesir.ZoneServer.Npc.PacketsTest do
       packet = NpcPackets.spawn_packet({GuildedNpc, placement})
 
       assert %{guild_id: 7, guild_name: "", emblem_id: 0} = packet
+    end
+  end
+
+  describe "invisible placements" do
+    test "an invisible event NPC yields no spawn packet" do
+      [placement] = InvisibleNpc.spawn()
+
+      assert NpcPackets.spawn_packet({InvisibleNpc, placement}) == :invisible
+      refute NpcPackets.visible?({InvisibleNpc, placement})
+    end
+
+    test "a placement with a view is client-visible" do
+      [placement] = GuildlessNpc.spawn()
+
+      assert NpcPackets.visible?({GuildlessNpc, placement})
     end
   end
 

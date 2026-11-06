@@ -35,7 +35,20 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.NamelessOne do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "in_moc_16",
+        x: 19,
+        y: 154,
+        dir: 0,
+        sprite: -1,
+        name: "nameless_one",
+        scope: :shared,
+        trigger: {8, 2}
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

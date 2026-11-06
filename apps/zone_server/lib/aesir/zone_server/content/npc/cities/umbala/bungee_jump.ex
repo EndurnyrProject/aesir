@@ -21,7 +21,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Umbala.BungeeJump do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "umbala",
+        x: 140,
+        y: 197,
+        dir: 1,
+        sprite: -1,
+        name: "Bungee Jump",
+        scope: :shared,
+        trigger: {0, 0}
+      }
+    ]
+
   alias Aesir.ZoneServer.Script.Ctx
 
   @impl true

@@ -173,13 +173,19 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Services do
 
   @spec broadcast_flag(NpcRegistry.entry()) :: :ok
   defp broadcast_flag({_module, placement} = entry) do
-    Broadcast.to_in_range(
-      placement.map,
-      placement.x,
-      placement.y,
-      Config.view_range(),
-      NpcPackets.spawn_packet(entry)
-    )
+    case NpcPackets.spawn_packet(entry) do
+      :invisible ->
+        :ok
+
+      packet ->
+        Broadcast.to_in_range(
+          placement.map,
+          placement.x,
+          placement.y,
+          Config.view_range(),
+          packet
+        )
+    end
   end
 
   @spec fire_check(non_neg_integer(), non_neg_integer() | nil) ::

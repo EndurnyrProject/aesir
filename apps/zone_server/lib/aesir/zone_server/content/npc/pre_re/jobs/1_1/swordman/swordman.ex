@@ -117,8 +117,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.Swordman do
       |> next()
       |> select(["Job Change", "About Swordman.", "About the Job requirements.", "Cancel."])
 
-    _ = v2
-
     case v2 do
       1 ->
         ctx =

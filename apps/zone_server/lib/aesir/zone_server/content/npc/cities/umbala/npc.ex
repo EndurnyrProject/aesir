@@ -20,7 +20,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Umbala.Npc do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "umbala",
+        x: 136,
+        y: 195,
+        dir: 0,
+        sprite: -1,
+        name: " ",
+        scope: :shared,
+        unique_name: " #jump",
+        trigger: {1, 1}
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

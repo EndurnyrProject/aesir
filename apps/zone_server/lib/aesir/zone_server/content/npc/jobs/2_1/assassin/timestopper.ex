@@ -33,7 +33,20 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Timestopper do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "in_moc_16",
+        x: 3,
+        y: 3,
+        dir: 0,
+        sprite: -1,
+        name: "timestopper",
+        scope: :shared,
+        unique_name: "timestopper#1"
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

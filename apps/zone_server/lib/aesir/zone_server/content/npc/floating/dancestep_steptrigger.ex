@@ -7,13 +7,72 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.DancestepSteptrigger do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "job_duncer",
+        x: 69,
+        y: 113,
+        dir: 0,
+        sprite: -1,
+        name: "dance",
+        scope: :shared,
+        unique_name: "dance#up",
+        trigger: {1, 1}
+      },
+      %{
+        map: "job_duncer",
+        x: 69,
+        y: 107,
+        dir: 0,
+        sprite: -1,
+        name: "dance",
+        scope: :shared,
+        unique_name: "dance#down",
+        trigger: {1, 1}
+      },
+      %{
+        map: "job_duncer",
+        x: 66,
+        y: 110,
+        dir: 0,
+        sprite: -1,
+        name: "dance",
+        scope: :shared,
+        unique_name: "dance#left",
+        trigger: {1, 1}
+      },
+      %{
+        map: "job_duncer",
+        x: 72,
+        y: 110,
+        dir: 0,
+        sprite: -1,
+        name: "dance",
+        scope: :shared,
+        unique_name: "dance#right",
+        trigger: {1, 1}
+      },
+      %{
+        map: "job_duncer",
+        x: 69,
+        y: 110,
+        dir: 0,
+        sprite: -1,
+        name: "dance",
+        scope: :shared,
+        unique_name: "dance#cen",
+        trigger: {1, 1}
+      }
+    ]
+
   alias Aesir.ZoneServer.Script.Rathena
   @impl true
   def on_event("OnTouch_", ctx), do: ev_ontouch(ctx)
   @impl true
   def on_talk(ctx) do
-    ctx
+    ev_ontouch(ctx)
   end
 
   def ev_ontouch(ctx) do

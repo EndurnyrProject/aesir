@@ -29,7 +29,20 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Bijou69105 do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "job_duncer",
+        x: 69,
+        y: 105,
+        dir: 0,
+        sprite: -1,
+        name: "Bijou",
+        scope: :shared,
+        unique_name: "Bijou#dance_timer"
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

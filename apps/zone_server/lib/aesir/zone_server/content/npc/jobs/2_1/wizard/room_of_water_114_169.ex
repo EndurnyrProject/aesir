@@ -22,7 +22,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.RoomOfWater114169 do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "job_wiz",
+        x: 114,
+        y: 169,
+        dir: 0,
+        sprite: -1,
+        name: "Room of Water",
+        scope: :shared,
+        unique_name: "Room of Water#Failed",
+        trigger: {16, 16}
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

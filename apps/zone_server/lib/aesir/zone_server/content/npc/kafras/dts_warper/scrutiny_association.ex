@@ -7,7 +7,20 @@ defmodule Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.ScrutinyAssociation do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "yuno",
+        x: 103,
+        y: 225,
+        dir: 0,
+        sprite: -1,
+        name: "Scrutiny Association",
+        scope: :shared,
+        unique_name: "Scrutiny Association#5"
+      }
+    ]
 
   @impl true
   def on_event("OnInit", ctx), do: ev_oninit(ctx)

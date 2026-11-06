@@ -92,8 +92,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GeneralStoreOwner 
       |> next()
       |> select(["Novice Combination Book", "Combination Kit", "Cancel."])
 
-    _ = v1
-
     case v1 do
       1 ->
         ctx =

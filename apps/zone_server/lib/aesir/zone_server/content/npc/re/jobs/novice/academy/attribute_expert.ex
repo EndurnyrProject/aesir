@@ -291,8 +291,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AttributeExpert do
                   |> next()
                   |> select(["Yes", "No", "I want to quit."])
 
-                _ = v4
-
                 case v4 do
                   1 ->
                     {ctx, v5} =

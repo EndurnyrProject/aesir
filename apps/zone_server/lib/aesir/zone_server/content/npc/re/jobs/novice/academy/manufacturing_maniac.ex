@@ -11,6 +11,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ManufacturingMania
     scope: :renewal,
     spawn: [
       %{
+        map: "izlude",
+        x: 93,
+        y: 143,
+        dir: 3,
+        sprite: -1,
+        name: "Manufacturing Maniac",
+        scope: :renewal,
+        unique_name: "Manufacturing Maniac#0"
+      },
+      %{
         map: "izlude_a",
         x: 93,
         y: 143,

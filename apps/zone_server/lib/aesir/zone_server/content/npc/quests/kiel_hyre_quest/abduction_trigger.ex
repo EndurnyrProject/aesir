@@ -19,7 +19,20 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.AbductionTrigger do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "lighthalzen",
+        x: 188,
+        y: 200,
+        dir: 0,
+        sprite: -1,
+        name: "Abduction_trigger",
+        scope: :shared,
+        trigger: {3, 1}
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

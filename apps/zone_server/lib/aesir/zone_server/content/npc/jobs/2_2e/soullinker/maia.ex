@@ -32,6 +32,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.Maia do
     spawn: [
       %{
         map: "job_soul",
+        x: 30,
+        y: 31,
+        dir: 0,
+        sprite: -1,
+        name: "Maia",
+        scope: :shared,
+        unique_name: "SLTester",
+        trigger: {3, 3}
+      },
+      %{
+        map: "job_soul",
         x: 35,
         y: 30,
         dir: 6,

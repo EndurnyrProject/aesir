@@ -121,8 +121,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
             |> next()
             |> select(["Check requests", "Warp me to the Field", "End Conversation"])
 
-          _ = v1
-
           case v1 do
             1 ->
               {ctx, v2} =
@@ -139,8 +137,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
                     ":"
                   )
                 )
-
-              _ = v2
 
               case v2 do
                 1 ->

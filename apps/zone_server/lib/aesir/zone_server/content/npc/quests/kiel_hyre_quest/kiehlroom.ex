@@ -20,7 +20,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Kiehlroom do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{map: "kh_kiehl02", x: 1, y: 1, dir: 0, sprite: -1, name: "KiehlRoom", scope: :shared}
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

@@ -24,7 +24,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MobRogue223187 do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "in_rogue",
+        x: 223,
+        y: 187,
+        dir: 0,
+        sprite: -1,
+        name: "mob_rogue",
+        scope: :shared,
+        unique_name: "mob_rogue#13",
+        trigger: {1, 8}
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena

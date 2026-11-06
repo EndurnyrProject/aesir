@@ -24,7 +24,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.GenRo100389 do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "in_rogue",
+        x: 100,
+        y: 389,
+        dir: 0,
+        sprite: -1,
+        name: "gen_ro",
+        scope: :shared,
+        unique_name: "gen_ro#2",
+        trigger: {3, 3}
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena

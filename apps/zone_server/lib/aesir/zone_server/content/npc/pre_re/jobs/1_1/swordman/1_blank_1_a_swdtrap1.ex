@@ -7,7 +7,491 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.M1Blank1ASwdtrap1
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, scope: :pre_renewal, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :pre_renewal,
+    spawn: [
+      %{
+        map: "job_sword1",
+        x: 16,
+        y: 251,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_1_a::SwdTrap1",
+        scope: :pre_renewal,
+        unique_name: "SwdTrap1",
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_sword1",
+        x: 19,
+        y: 251,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_1_b",
+        scope: :pre_renewal,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_sword1",
+        x: 17,
+        y: 250,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_1_c",
+        scope: :pre_renewal,
+        trigger: {1, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 16,
+        y: 238,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_2_a",
+        scope: :pre_renewal,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_sword1",
+        x: 19,
+        y: 238,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_2_b",
+        scope: :pre_renewal,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_sword1",
+        x: 17,
+        y: 239,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_2_c",
+        scope: :pre_renewal,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_sword1",
+        x: 28,
+        y: 247,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_3_a",
+        scope: :pre_renewal,
+        trigger: {4, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 33,
+        y: 245,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_3_b",
+        scope: :pre_renewal,
+        trigger: {0, 2}
+      },
+      %{
+        map: "job_sword1",
+        x: 29,
+        y: 242,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_3_c",
+        scope: :pre_renewal,
+        trigger: {4, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 24,
+        y: 244,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_3_d",
+        scope: :pre_renewal,
+        trigger: {0, 2}
+      },
+      %{
+        map: "job_sword1",
+        x: 38,
+        y: 251,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_4_a",
+        scope: :pre_renewal,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_sword1",
+        x: 41,
+        y: 251,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_4_b",
+        scope: :pre_renewal,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_sword1",
+        x: 39,
+        y: 250,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_4_c",
+        scope: :pre_renewal,
+        trigger: {1, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 38,
+        y: 238,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_5_a",
+        scope: :pre_renewal,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_sword1",
+        x: 41,
+        y: 238,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_5_b",
+        scope: :pre_renewal,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_sword1",
+        x: 39,
+        y: 239,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_5_c",
+        scope: :pre_renewal,
+        trigger: {1, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 54,
+        y: 251,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_6_a",
+        scope: :pre_renewal,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_sword1",
+        x: 71,
+        y: 251,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_6_b",
+        scope: :pre_renewal,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_sword1",
+        x: 62,
+        y: 250,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_6_c",
+        scope: :pre_renewal,
+        trigger: {9, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 62,
+        y: 247,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_7_a",
+        scope: :pre_renewal,
+        trigger: {8, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 71,
+        y: 244,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_7_b",
+        scope: :pre_renewal,
+        trigger: {0, 2}
+      },
+      %{
+        map: "job_sword1",
+        x: 63,
+        y: 242,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_7_c",
+        scope: :pre_renewal,
+        trigger: {8, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 54,
+        y: 244,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_7_d",
+        scope: :pre_renewal,
+        trigger: {0, 2}
+      },
+      %{
+        map: "job_sword1",
+        x: 54,
+        y: 238,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_8_a",
+        scope: :pre_renewal,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_sword1",
+        x: 71,
+        y: 238,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_8_b",
+        scope: :pre_renewal,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_sword1",
+        x: 62,
+        y: 239,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_8_c",
+        scope: :pre_renewal,
+        trigger: {9, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 102,
+        y: 247,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_9_a",
+        scope: :pre_renewal,
+        trigger: {2, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 105,
+        y: 245,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_9_b",
+        scope: :pre_renewal,
+        trigger: {0, 2}
+      },
+      %{
+        map: "job_sword1",
+        x: 103,
+        y: 242,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_9_c",
+        scope: :pre_renewal,
+        trigger: {2, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 100,
+        y: 244,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_9_d",
+        scope: :pre_renewal,
+        trigger: {0, 2}
+      },
+      %{
+        map: "job_sword1",
+        x: 156,
+        y: 249,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_10_a",
+        scope: :pre_renewal,
+        trigger: {14, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 156,
+        y: 248,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_10_b",
+        scope: :pre_renewal,
+        trigger: {14, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 170,
+        y: 249,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_10_c",
+        scope: :pre_renewal,
+        trigger: {1, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 170,
+        y: 248,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_10_d",
+        scope: :pre_renewal,
+        trigger: {1, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 156,
+        y: 245,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_11_a",
+        scope: :pre_renewal,
+        trigger: {14, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 156,
+        y: 244,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_11_b",
+        scope: :pre_renewal,
+        trigger: {14, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 170,
+        y: 245,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_11_c",
+        scope: :pre_renewal,
+        trigger: {1, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 170,
+        y: 244,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_11_d",
+        scope: :pre_renewal,
+        trigger: {1, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 156,
+        y: 241,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_12_a",
+        scope: :pre_renewal,
+        trigger: {14, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 156,
+        y: 240,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_12_b",
+        scope: :pre_renewal,
+        trigger: {14, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 170,
+        y: 241,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_12_c",
+        scope: :pre_renewal,
+        trigger: {1, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 170,
+        y: 240,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_12_d",
+        scope: :pre_renewal,
+        trigger: {1, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 180,
+        y: 251,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_13_a",
+        scope: :pre_renewal,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_sword1",
+        x: 183,
+        y: 251,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_13_b",
+        scope: :pre_renewal,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_sword1",
+        x: 181,
+        y: 250,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_13_c",
+        scope: :pre_renewal,
+        trigger: {1, 0}
+      },
+      %{
+        map: "job_sword1",
+        x: 180,
+        y: 238,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_14_a",
+        scope: :pre_renewal,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_sword1",
+        x: 183,
+        y: 238,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_14_b",
+        scope: :pre_renewal,
+        trigger: {0, 1}
+      },
+      %{
+        map: "job_sword1",
+        x: 181,
+        y: 239,
+        dir: 0,
+        sprite: -1,
+        name: "1_blank_14_c",
+        scope: :pre_renewal,
+        trigger: {1, 0}
+      }
+    ]
 
   @impl true
   def on_event("OnTouch", ctx) do

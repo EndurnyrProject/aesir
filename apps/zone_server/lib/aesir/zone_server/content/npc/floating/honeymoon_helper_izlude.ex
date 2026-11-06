@@ -7,71 +7,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.HoneymoonHelperIzlude do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc,
-    scope: :shared,
-    spawn: [
-      %{
-        map: "izlude",
-        x: 180,
-        y: 224,
-        dir: 3,
-        sprite: 71,
-        name: "Honeymoon Helper",
-        scope: :renewal,
-        unique_name: "Honeymoon Helper#Izlude"
-      },
-      %{
-        map: "izlude_a",
-        x: 180,
-        y: 224,
-        dir: 3,
-        sprite: 71,
-        name: "Honeymoon Helper",
-        scope: :renewal,
-        unique_name: "Honeymoon Helper#Iz_a"
-      },
-      %{
-        map: "izlude_b",
-        x: 180,
-        y: 224,
-        dir: 3,
-        sprite: 71,
-        name: "Honeymoon Helper",
-        scope: :renewal,
-        unique_name: "Honeymoon Helper#Iz_b"
-      },
-      %{
-        map: "izlude_c",
-        x: 180,
-        y: 224,
-        dir: 3,
-        sprite: 71,
-        name: "Honeymoon Helper",
-        scope: :renewal,
-        unique_name: "Honeymoon Helper#Iz_c"
-      },
-      %{
-        map: "izlude_d",
-        x: 180,
-        y: 224,
-        dir: 3,
-        sprite: 71,
-        name: "Honeymoon Helper",
-        scope: :renewal,
-        unique_name: "Honeymoon Helper#Iz_d"
-      },
-      %{
-        map: "izlude",
-        x: 171,
-        y: 185,
-        dir: 3,
-        sprite: 71,
-        name: "Honeymoon Helper",
-        scope: :pre_renewal,
-        unique_name: "Honeymoon Helper#Izlude"
-      }
-    ]
-
+  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
@@ -86,96 +22,93 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.HoneymoonHelperIzlude do
       |> next()
       |> select(["Jawaii?", "Let's go to Jawaii~!", "Cancel."])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx =
-            ctx
-            |> mes("[Helper]")
-            |> mes("There is an island far, far away from the Midgard continent.")
-            |> mes("It is a very quiet and beautiful island resort that only opens")
-            |> mes("its doors to couples.")
-            |> next()
-            |> mes("[Helper]")
-            |> mes(
-              "This is an exclusive travel offer to the special honeymoon resort for Midgard's citizens. The price, 100,000 zeny, may be expensive, but you really get what you pay for."
-            )
-            |> next()
-            |> mes("[Helper]")
-            |> mes("I guarantee you that some of")
-            |> mes("the happiest moments you can")
-            |> mes(
-              "experience in your marriage will be on this island. Can you really put a price on that?"
-            )
-            |> close()
-
-          throw({:script_end, ctx})
-
-        2 ->
-          ctx = mes(ctx, "[Helper]")
-
-          ctx =
-            if not Rathena.truthy?(getpartnerid(ctx)) do
-              ctx =
-                ctx
-                |> mes("Errm...")
-                |> mes(
-                  "Unfortunately, singles are not allowed on the island. Why don't you go forget your loneliness in the Prontera pub?"
-                )
-                |> close()
-
-              throw({:script_end, ctx})
-            else
-              ctx =
-                if zeny(ctx) > 99999 do
-                  ctx =
-                    ctx
-                    |> pay_zeny(100_000)
-                    |> mes("Bon Voyage...!!")
-                    |> mes("Let me guide")
-                    |> mes("you to 'Jawaii!'")
-                    |> close()
-                    |> warp("jawaii", 245, 125)
-
-                  throw({:script_end, ctx})
-                else
-                  ctx
-                end
-
-              ctx
-            end
-
-          ctx =
-            ctx
-            |> mes(
-              "As I explained, you must have 100,000 zeny in order to visit Jawaii. Why don't you ask your partner for help in gathering the zeny for this trip?"
-            )
-            |> close()
-
-          throw({:script_end, ctx})
-
-        3 ->
-          ctx =
-            ctx
-            |> mes("[Helper]")
-            |> mes(
-              "There's there no better way to share special, secluded moments with your beloved than through"
-            )
-            |> mes("a secret trip to a remote, exotic area.")
-            |> next()
-            |> mes("[Helper]")
-            |> mes(
-              "A vacation in Jawaii could very well be the greatest gift that you could give to the one you love~"
-            )
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+    case v1 do
+      1 ->
+        ctx =
           ctx
-      end
+          |> mes("[Helper]")
+          |> mes("There is an island far, far away from the Midgard continent.")
+          |> mes("It is a very quiet and beautiful island resort that only opens")
+          |> mes("its doors to couples.")
+          |> next()
+          |> mes("[Helper]")
+          |> mes(
+            "This is an exclusive travel offer to the special honeymoon resort for Midgard's citizens. The price, 100,000 zeny, may be expensive, but you really get what you pay for."
+          )
+          |> next()
+          |> mes("[Helper]")
+          |> mes("I guarantee you that some of")
+          |> mes("the happiest moments you can")
+          |> mes(
+            "experience in your marriage will be on this island. Can you really put a price on that?"
+          )
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx = mes(ctx, "[Helper]")
+
+        ctx =
+          if not Rathena.truthy?(getpartnerid(ctx)) do
+            ctx =
+              ctx
+              |> mes("Errm...")
+              |> mes(
+                "Unfortunately, singles are not allowed on the island. Why don't you go forget your loneliness in the Prontera pub?"
+              )
+              |> close()
+
+            throw({:script_end, ctx})
+          else
+            ctx =
+              if zeny(ctx) > 99999 do
+                ctx =
+                  ctx
+                  |> pay_zeny(100_000)
+                  |> mes("Bon Voyage...!!")
+                  |> mes("Let me guide")
+                  |> mes("you to 'Jawaii!'")
+                  |> close()
+                  |> warp("jawaii", 245, 125)
+
+                throw({:script_end, ctx})
+              else
+                ctx
+              end
+
+            ctx
+          end
+
+        ctx =
+          ctx
+          |> mes(
+            "As I explained, you must have 100,000 zeny in order to visit Jawaii. Why don't you ask your partner for help in gathering the zeny for this trip?"
+          )
+          |> close()
+
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx =
+          ctx
+          |> mes("[Helper]")
+          |> mes(
+            "There's there no better way to share special, secluded moments with your beloved than through"
+          )
+          |> mes("a secret trip to a remote, exotic area.")
+          |> next()
+          |> mes("[Helper]")
+          |> mes(
+            "A vacation in Jawaii could very well be the greatest gift that you could give to the one you love~"
+          )
+          |> close()
+
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

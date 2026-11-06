@@ -27,7 +27,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.MobMonk150164 do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "monk_test",
+        x: 150,
+        y: 164,
+        dir: 0,
+        sprite: -1,
+        name: "mob_monk",
+        scope: :shared,
+        unique_name: "mob_monk#2_2",
+        trigger: {1, 1}
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

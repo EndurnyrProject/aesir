@@ -20,7 +20,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Letter do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "kh_vila",
+        x: 179,
+        y: 11,
+        dir: 0,
+        sprite: -1,
+        name: "Letter",
+        scope: :shared,
+        unique_name: "Letter#kh",
+        trigger: {1, 1}
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

@@ -542,7 +542,10 @@ defmodule Aesir.ZoneServer.Npc.Session do
   @spec broadcast_spawn(non_neg_integer()) :: :ok
   defp broadcast_spawn(gid) do
     with_entry(gid, fn {_module, placement} = entry ->
-      broadcast_to_range(placement, NpcPackets.spawn_packet(entry))
+      case NpcPackets.spawn_packet(entry) do
+        :invisible -> :ok
+        packet -> broadcast_to_range(placement, packet)
+      end
     end)
   end
 

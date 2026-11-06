@@ -36,7 +36,20 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Beholder do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "in_moc_16",
+        x: 1,
+        y: 1,
+        dir: 0,
+        sprite: -1,
+        name: "Beholder",
+        scope: :shared,
+        unique_name: "Beholder#ASNTEST"
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

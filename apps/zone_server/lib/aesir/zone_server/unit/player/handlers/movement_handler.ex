@@ -881,20 +881,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
     # Handle static NPC visibility — same model as warps: registered placements
     # are held statically (in `Npc.Registry`), not spatial-indexed, and diffed
-    # against `visible_npcs` by the `view_range` square. A disabled
-    # or hidden NPC (`Npc.Session.visible?/1`) is filtered out here, so the
-    # diff never sends a spawn for one and drops it from `visible_npcs` (as a
-    # vanish, if the player already had it visible) the moment it stops
-    # qualifying — the flag flip itself is broadcast immediately by
-    # `Npc.Session`, so a player standing still doesn't have to wait for this
-    # diff to notice.
-    npcs_in_range =
-      Enum.filter(NpcRegistry.entries(), fn {_module, placement} ->
-        placement.map == game_state.map_name and
-          Geometry.chebyshev_distance(game_state.x, game_state.y, placement.x, placement.y) <=
-            game_state.view_range and
-          NpcSession.visible?(NpcRegistry.entity_id(placement))
-      end)
+    # against `visible_npcs` by the `view_range` square. A disabled or hidden
+    # NPC (`Npc.Session.visible?/1`) and an invisible event NPC
+    # (`Npc.Packets.visible?/1`, a `-1` sprite touch area) are filtered out
+    # here, so the diff never sends a spawn for one and drops it from
+    # `visible_npcs` (as a vanish, if the player already had it visible) the
+    # moment it stops qualifying — the flag flip itself is broadcast
+    # immediately by `Npc.Session`, so a player standing still doesn't have to
+    # wait for this diff to notice.
+    npcs_in_range = Enum.filter(NpcRegistry.entries(), &npc_visible_to?(&1, game_state))
 
     npcs_by_id =
       Map.new(npcs_in_range, fn {_module, placement} = entry ->
@@ -1176,16 +1171,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     end
   end
 
+  # Whether the player at `game_state` should currently see `entry`'s NPC: it
+  # has to stand on the player's map, inside the view range square, be enabled
+  # and unhidden, and have a client view at all (not an invisible event NPC).
+  @spec npc_visible_to?(NpcRegistry.entry(), PlayerState.t()) :: boolean()
+  defp npc_visible_to?({_module, placement} = entry, game_state) do
+    placement.map == game_state.map_name and
+      Geometry.chebyshev_distance(game_state.x, game_state.y, placement.x, placement.y) <=
+        game_state.view_range and
+      NpcSession.visible?(NpcRegistry.entity_id(placement)) and
+      NpcPackets.visible?(entry)
+  end
+
   defp send_npc_spawn_packet_to(to_char_id, {_module, %Placement{} = placement} = entry) do
-    case UnitRegistry.get_player_pid(to_char_id) do
-      {:ok, to_pid} ->
-        GenServer.cast(to_pid, {:send_packet, NpcPackets.spawn_packet(entry)})
+    with %UnitSpawn{} = packet <- NpcPackets.spawn_packet(entry),
+         {:ok, to_pid} <- UnitRegistry.get_player_pid(to_char_id) do
+      GenServer.cast(to_pid, {:send_packet, packet})
 
-        with {:ok, room} <- WaitingRoom.get(NpcRegistry.entity_id(placement)),
-             do: GenServer.cast(to_pid, {:send_packet, WaitingRoomHandler.info_packet(room)})
-
-      {:error, :not_found} ->
-        :ok
+      with {:ok, room} <- WaitingRoom.get(NpcRegistry.entity_id(placement)),
+           do: GenServer.cast(to_pid, {:send_packet, WaitingRoomHandler.info_packet(room)})
+    else
+      _invisible_or_gone -> :ok
     end
   end
 

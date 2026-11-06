@@ -129,7 +129,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Locas do
       end
 
     {ctx, v3} = select(ctx, ["Refining Oridecon", "Refining Elunium", "Other questions."])
-    _ = v3
 
     case v3 do
       1 ->

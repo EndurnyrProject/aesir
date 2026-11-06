@@ -19,7 +19,22 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Npc13847 do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "lhz_in01",
+        x: 138,
+        y: 47,
+        dir: 0,
+        sprite: -1,
+        name: "",
+        scope: :shared,
+        unique_name: "#mimir_camera",
+        trigger: {2, 2}
+      }
+    ]
+
   alias Aesir.ZoneServer.Script.Ctx
 
   @impl true

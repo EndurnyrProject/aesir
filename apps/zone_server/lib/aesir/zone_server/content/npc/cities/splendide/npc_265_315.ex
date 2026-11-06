@@ -18,7 +18,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Splendide.Npc265315 do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "spl_in01",
+        x: 265,
+        y: 315,
+        dir: 0,
+        sprite: -1,
+        name: "",
+        scope: :shared,
+        unique_name: "#spl_prs1",
+        trigger: {5, 5}
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

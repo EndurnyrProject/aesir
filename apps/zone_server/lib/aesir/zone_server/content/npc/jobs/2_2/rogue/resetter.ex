@@ -22,7 +22,20 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.Resetter do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "in_rogue",
+        x: 3,
+        y: 3,
+        dir: 0,
+        sprite: -1,
+        name: "resetter",
+        scope: :shared,
+        unique_name: "resetter#rogue"
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

@@ -24,7 +24,20 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Crusader.ZombieGuide do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "job_cru",
+        x: 168,
+        y: 17,
+        dir: 0,
+        sprite: -1,
+        name: "Zombie Guide",
+        scope: :shared,
+        trigger: {2, 2}
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

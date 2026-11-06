@@ -138,7 +138,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcolyteLeaderAlice
         end
 
       {ctx, v1} = select(ctx, String.split(get_local(ctx, :"menu$", ""), ":"))
-      _ = v1
 
       case v1 do
         1 ->
@@ -174,8 +173,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcolyteLeaderAlice
             )
             |> next()
             |> select(["Support type", "Attack type", "Stop."])
-
-          _ = v2
 
           case v2 do
             1 ->

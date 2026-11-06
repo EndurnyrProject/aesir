@@ -21,7 +21,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.FactoryBAreaDoor do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "kh_dun01",
+        x: 224,
+        y: 233,
+        dir: 0,
+        sprite: -1,
+        name: "Factory B Area Door",
+        scope: :shared,
+        trigger: {5, 5}
+      }
+    ]
+
   alias Aesir.ZoneServer.Script.Ctx
 
   @impl true

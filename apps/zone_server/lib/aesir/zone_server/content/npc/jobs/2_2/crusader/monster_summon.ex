@@ -31,7 +31,20 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Crusader.MonsterSummon do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "job_cru",
+        x: 2,
+        y: 1,
+        dir: 1,
+        sprite: -1,
+        name: "Monster Summon",
+        scope: :shared,
+        unique_name: "Monster Summon#cr0"
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

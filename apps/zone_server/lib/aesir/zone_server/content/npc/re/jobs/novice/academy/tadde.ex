@@ -113,8 +113,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Tadde do
       |> next()
       |> select(["Phracon - 200 zeny.", "Emveretarcon - 1000 zeny.", "Ask for other metals."])
 
-    _ = v3
-
     case v3 do
       1 ->
         ctx =

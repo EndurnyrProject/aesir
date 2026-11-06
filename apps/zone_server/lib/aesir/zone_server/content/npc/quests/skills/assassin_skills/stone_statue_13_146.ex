@@ -23,7 +23,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.AssassinSkills.StoneStatue1
   - LLM-assisted Elixir refactor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "in_sphinx2",
+        x: 13,
+        y: 146,
+        dir: 0,
+        sprite: -1,
+        name: "Stone Statue",
+        scope: :shared,
+        unique_name: "Stone Statue#qsk_as2",
+        trigger: {7, 7}
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

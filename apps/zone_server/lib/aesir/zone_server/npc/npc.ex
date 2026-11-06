@@ -15,7 +15,10 @@ defmodule Aesir.ZoneServer.Npc do
 
   Each spawn entry may also declare `unique_name` (defaults to `name` when
   omitted; used for `donpcevent`-style targeting) and `trigger: {xs, ys}`
-  (touch-area half-extents around the cell; omit for no touch area).
+  (touch-area half-extents around the cell; omit for no touch area). A spawn
+  entry with a negative `sprite` declares an invisible event NPC: it is
+  registered and its touch area and events work, but no client ever sees it
+  and it cannot be clicked.
 
   NPCs may also implement `on_event/2`, the uniform handler for rAthena-style
   event labels (`on_event("OnTouch", ctx)`, `on_event("OnTimer5000", ctx)`,

@@ -10,15 +10,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   synthetic dialog id.
 
   A click on a bespoke NPC module gid that is currently disabled or hidden
-  (`Npc.Session.visible?/1`) starts no interaction: the movement diff already
-  keeps such an NPC off the client's screen, but this guards against a click
-  the client sent just before the vanish packet arrived.
+  (`Npc.Session.visible?/1`), or that has no client view at all
+  (`Npc.Packets.visible?/1`, a `-1` sprite event NPC), starts no interaction:
+  the movement diff already keeps such an NPC off the client's screen, but
+  this guards against a click the client sent just before the vanish packet
+  arrived, and against a synthetic click on a touch area that must not be
+  talked to.
   """
 
   alias Aesir.Commons.GameMode
   alias Aesir.Net.NpcInteract
   alias Aesir.Net.SystemNotice
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Npc.Packets, as: NpcPackets
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Session, as: NpcSession
   alias Aesir.ZoneServer.Npc.Shop.Registry, as: ShopRegistry
@@ -58,8 +62,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   @doc """
   Resolves `gid` to its bespoke NPC module and starts a supervised, monitored
   interaction process, storing the lock. A gid that resolves to no NPC
-  module, one that is currently disabled/hidden, or a player already held by
-  a script is a no-op.
+  module, one that is currently disabled, hidden or client-invisible, or a
+  player already held by a script is a no-op.
 
   Public so `TouchHandler`'s click fallback (a trigger area whose module
   declares no touch label, the reference warper behaviour) can start the same
@@ -69,8 +73,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   @spec talk_to_npc(non_neg_integer(), map(), SessionState.t()) :: {:noreply, SessionState.t()}
   def talk_to_npc(gid, game_state, state) do
     with false <- SessionState.in_script?(state),
-         {:ok, {module, _placement}} <- NpcRegistry.module_for_unit(gid),
-         true <- NpcSession.visible?(gid) do
+         {:ok, {module, placement}} <- NpcRegistry.module_for_unit(gid),
+         true <- NpcSession.visible?(gid),
+         true <- NpcPackets.visible?({module, placement}) do
       base_ctx =
         Ctx.from_session(
           %{game_state: game_state, connection_pid: state.connection_pid},

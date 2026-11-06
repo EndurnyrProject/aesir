@@ -19,7 +19,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.DomesticAirship do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{map: "airplane", x: 1, y: 1, dir: 0, sprite: -1, name: "Domestic_Airship", scope: :shared}
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

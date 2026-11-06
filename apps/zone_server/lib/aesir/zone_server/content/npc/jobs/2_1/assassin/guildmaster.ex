@@ -32,7 +32,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildmaster do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "in_moc_16",
+        x: 167,
+        y: 110,
+        dir: 0,
+        sprite: -1,
+        name: "Guildmaster",
+        scope: :shared,
+        unique_name: "Guildmaster#ASN1",
+        trigger: {3, 1}
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

@@ -648,13 +648,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
 
-  defp placed?(%{map: _} = entry), do: visible_sprite?(entry.sprite)
+  # A placement needs a map to be placed at all. Sprite `-1` is not filtered
+  # out: it marks an invisible event NPC (a touch-trigger area or controller),
+  # which is registered and fires its events while staying off every client's
+  # screen. Dropping those placements silently loses the trigger areas.
+  defp placed?(%{map: _}), do: true
   defp placed?(_entry), do: false
-
-  # Sprite -1 marks an invisible (event/trigger) NPC; it has no client visual.
-  defp visible_sprite?(sprite) when is_integer(sprite), do: sprite > 0
-  defp visible_sprite?(sprite) when is_binary(sprite), do: true
-  defp visible_sprite?(_), do: false
 
   defp resolve_sprite(sprite, _sprites, unresolved) when is_integer(sprite),
     do: {sprite, unresolved}

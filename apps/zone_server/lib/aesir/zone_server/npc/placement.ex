@@ -4,7 +4,10 @@ defmodule Aesir.ZoneServer.Npc.Placement do
 
   Declared via `use Aesir.ZoneServer.Npc, spawn: [...]`; the raw map given there
   is normalized into this struct at compile time. `sprite` is the NPC's view
-  class (e.g. `58`); `dir` is the facing direction `0..7`. `unique_name` is the
+  class (e.g. `58`); `dir` is the facing direction `0..7`. A negative `sprite`
+  marks an invisible event NPC (a touch-trigger area or controller): it is
+  registered, occupies its cell and fires its touch area, but it has no client
+  view and cannot be clicked. `unique_name` is the
   name used for `donpcevent`-style targeting; the normalizer falls back to
   `name` when not declared, so this struct carries whatever it is given.
   `trigger` is the touch-area half-extents `{xs, ys}` around the placement's
@@ -30,12 +33,22 @@ defmodule Aesir.ZoneServer.Npc.Placement do
           x: non_neg_integer(),
           y: non_neg_integer(),
           dir: non_neg_integer(),
-          sprite: non_neg_integer(),
+          sprite: integer(),
           name: String.t(),
           unique_name: String.t(),
           trigger: {non_neg_integer(), non_neg_integer()} | nil,
           scope: ContentScope.t()
         }
+
+  @doc """
+  Whether this placement has no client view, i.e. a negative `sprite`.
+
+  Such a placement is a pure event NPC: it still occupies its cell, still
+  carries its touch area, and its module's events fire normally; it is simply
+  never sent to a client and never accepts a click.
+  """
+  @spec invisible?(t()) :: boolean()
+  def invisible?(%__MODULE__{sprite: sprite}), do: sprite < 0
 
   @doc """
   Whether the cell `{map, x, y}` lies inside this placement's touch area. A

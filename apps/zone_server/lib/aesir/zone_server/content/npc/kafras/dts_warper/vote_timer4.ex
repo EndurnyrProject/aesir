@@ -7,7 +7,20 @@ defmodule Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.VoteTimer4 do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "einbroch",
+        x: 247,
+        y: 71,
+        dir: 0,
+        sprite: -1,
+        name: "Vote Timer4",
+        scope: :shared,
+        unique_name: "Vote Timer4#ein"
+      }
+    ]
 
   @impl true
   def on_event("OnEnable", ctx), do: ev_onenable(ctx)

@@ -25,7 +25,20 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.Npc0 do
   - LLM-assisted Elixir refactor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "prt_are01",
+        x: 135,
+        y: 135,
+        dir: 0,
+        sprite: -1,
+        name: "",
+        scope: :shared,
+        unique_name: "#1stmove"
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

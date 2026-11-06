@@ -30,7 +30,20 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Crusader.Summoner13 do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "job_cru",
+        x: 1,
+        y: 3,
+        dir: 1,
+        sprite: -1,
+        name: "Summoner",
+        scope: :shared,
+        unique_name: "Summoner#cr3"
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

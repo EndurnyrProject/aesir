@@ -27,7 +27,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Info5 do
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{map: "in_moc_16", x: 164, y: 88, dir: 0, sprite: -1, name: "info 5", scope: :shared}
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

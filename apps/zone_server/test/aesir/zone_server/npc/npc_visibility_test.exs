@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.UnitSpawn
+  alias Aesir.ZoneServer.Npc.Packets, as: NpcPackets
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Session, as: NpcSession
   alias Aesir.ZoneServer.Script.Ctx
@@ -61,12 +62,25 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
     def on_talk(ctx), do: ctx
   end
 
+  defmodule TrapNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [
+        %{map: "prontera", x: 305, y: 305, sprite: -1, name: "Trap", trigger: {1, 1}}
+      ]
+
+    @impl true
+    def on_talk(ctx) do
+      send(:npc_visibility_probe, :trap_talked)
+      ctx
+    end
+  end
+
   setup :set_mimic_from_context
   setup :setup_ets_tables
 
   setup do
     Aesir.TestProbe.register!(:npc_visibility_probe)
-    NpcRegistry.reload([ToggleNpc, DupNpcA, DupNpcB])
+    NpcRegistry.reload([ToggleNpc, DupNpcA, DupNpcB, TrapNpc])
 
     # `:npc_session_flags` is the one real table `Npc.Session` owns
     # (`SessionSupervisor`-owned, not per-test-seeded like the `EtsTable`
@@ -78,7 +92,7 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
     # clear them here too, unconditionally. Computed once, before
     # `persistent_term.erase/1` below drops the registry these gids are
     # derived from.
-    gids = Enum.map([ToggleNpc, DupNpcA, DupNpcB], &gid_for/1)
+    gids = Enum.map([ToggleNpc, DupNpcA, DupNpcB, TrapNpc], &gid_for/1)
 
     on_exit(fn ->
       :persistent_term.erase(NpcRegistry)
@@ -375,6 +389,56 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
       assert_received {:"$gen_cast", {:send_packet, %UnitSpawn{gid: ^gid}}}
       assert MapSet.member?(new_state.visible_npcs, gid)
     end
+
+    test "an invisible event NPC is never spawned and never tracked, on its own cell" do
+      gid = gid_for(TrapNpc)
+
+      game_state = %{PlayerState.new(character(1)) | x: 305, y: 305, map_name: @map}
+      UnitRegistry.register_unit(:player, 1, PlayerState, game_state, self())
+
+      new_state = MovementHandler.handle_visibility_update(game_state)
+
+      refute_received {:"$gen_cast", {:send_packet, %UnitSpawn{gid: ^gid}}}
+      refute MapSet.member?(new_state.visible_npcs, gid)
+    end
+  end
+
+  describe "invisible event NPCs" do
+    setup do
+      stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
+      stub(SpatialIndex, :get_units_in_range, fn _, _, _, _, _ -> [] end)
+      stub(SpatialIndex, :update_visibility, fn _, _, _ -> :ok end)
+      stub(Broadcast, :to_players, fn _, _, _ -> :ok end)
+      :ok
+    end
+
+    test "the placement still registers its touch area" do
+      gid = gid_for(TrapNpc)
+
+      assert {^gid, 304..306, 304..306} =
+               Enum.find(NpcRegistry.touch_rects(@map), &(elem(&1, 0) == gid))
+    end
+
+    test "clicking one starts no Interaction" do
+      gid = gid_for(TrapNpc)
+
+      {:noreply, new_state} = NpcInteractionHandler.handle_talk(gid, talk_state())
+
+      assert new_state.interaction_lock == nil
+      refute_received :trap_talked
+    end
+
+    test "a display override assigning a view makes it client-visible" do
+      gid = gid_for(TrapNpc)
+      ctx = npc_ctx(gid)
+
+      refute NpcPackets.visible?(entry_for(TrapNpc))
+
+      assert Dsl.set_npc_display(ctx, npc: "Trap", sprite: 58) == ctx
+
+      assert NpcPackets.visible?(entry_for(TrapNpc))
+      assert %UnitSpawn{gid: ^gid, job: 58} = NpcPackets.spawn_packet(entry_for(TrapNpc))
+    end
   end
 
   describe "immediate visibility transition broadcasts" do
@@ -510,6 +574,10 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
   defp gid_for(module) do
     {^module, placement} = Enum.find(NpcRegistry.entries(), fn {mod, _} -> mod == module end)
     NpcRegistry.entity_id(placement)
+  end
+
+  defp entry_for(module) do
+    Enum.find(NpcRegistry.entries(), fn {mod, _} -> mod == module end)
   end
 
   defp npc_ctx(gid) do

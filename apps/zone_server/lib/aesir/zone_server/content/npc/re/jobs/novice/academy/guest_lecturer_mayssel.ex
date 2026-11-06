@@ -513,8 +513,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuestLecturerMayss
                     "Not curious about it."
                   ])
 
-                _ = v5
-
                 case v5 do
                   1 ->
                     if job_level(ctx) > 9 do
@@ -685,8 +683,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuestLecturerMayss
                 "About Thief's primary skills",
                 "Not curious about it."
               ])
-
-            _ = v8
 
             case v8 do
               1 ->

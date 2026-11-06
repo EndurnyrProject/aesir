@@ -185,8 +185,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RefineryOwnerHan d
             "Cancel"
           ])
 
-        _ = v2
-
         case v2 do
           1 ->
             ctx =

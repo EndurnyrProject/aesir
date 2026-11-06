@@ -24,7 +24,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.AssassinSkills.OldCoffin212
   - LLM-assisted Elixir refactor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "in_sphinx2",
+        x: 212,
+        y: 267,
+        dir: 0,
+        sprite: -1,
+        name: "Old Coffin",
+        scope: :shared,
+        unique_name: "Old Coffin#qsk_as2",
+        trigger: {5, 6}
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Ctx
 

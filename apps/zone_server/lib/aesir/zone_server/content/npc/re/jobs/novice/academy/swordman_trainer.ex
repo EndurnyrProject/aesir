@@ -117,8 +117,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanTrainer do
               |> next()
               |> select(["No thanks", "I want to test Swordsman Skills!", "Change me right now!"])
 
-            _ = v1
-
             case v1 do
               1 ->
                 ctx =
@@ -258,8 +256,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanTrainer do
                           "I want to be a Swordsman right away!"
                         ])
 
-                      _ = v3
-
                       case v3 do
                         1 ->
                           ctx =
@@ -293,8 +289,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanTrainer do
                               "I need more training.",
                               "I want to be a Swordsman right away!"
                             ])
-
-                          _ = v4
 
                           case v4 do
                             1 ->

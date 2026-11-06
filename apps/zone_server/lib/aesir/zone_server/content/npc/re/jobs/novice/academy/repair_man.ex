@@ -73,8 +73,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RepairMan do
       |> next()
       |> select(["Repair it.", "Nothing to be repaired now.", "What is repairing?"])
 
-    _ = v1
-
     case v1 do
       1 ->
         ctx = loop_2(ctx)
