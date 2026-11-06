@@ -361,6 +361,13 @@ defmodule H.Core do
 
   def call(:fcleargarbage, [ctx | args]), do: {log(ctx, {:fcleargarbage, args}), nil}
 
+  # Service menus that hand the conversation on: their callers destructure the `{ctx, value}`
+  # pair and ignore the value. `FKafra`/`FKafend` end the script at runtime; the model just
+  # records the call so the caller's own flow stays comparable.
+  def call(name, [ctx | args])
+      when name in [:fkafset, :fkafra, :fkafend, :fmerckafra, :fvotekafra, :fcooleventcorp],
+      do: {log(ctx, {name, args}), nil}
+
   def call(name, [%Ctx{} = ctx | args]) do
     if System.get_env("NPC_HARNESS_STRICT"),
       do: raise("unhandled ctx-first call #{name}/#{length(args) + 1}")
@@ -373,6 +380,11 @@ defmodule H.Core do
   # A thrown `{:script_end, ctx}` / `{:script_return, {ctx, value}}` carries the whole context,
   # but only its recorded effects are observable: locals are function-scoped and never survive
   # the unwinding, and every persistent write is logged as an effect.
+  # A hand-written `on_talk`/`on_event` may return the `{ctx, value}` pair a global helper hands
+  # back; the runtime `auto_close` unwraps it the same way.
+  def returned_ctx({%Ctx{} = ctx, _value}), do: ctx
+  def returned_ctx(%Ctx{} = ctx), do: ctx
+
   def ctx_payload(%Ctx{} = ctx), do: {:ctx, Enum.reverse(ctx.log)}
 
   def ctx_payload(tuple) when is_tuple(tuple),
@@ -631,10 +643,10 @@ run = fn mod, entry, seed ->
   try do
     case entry do
       :talk ->
-        {:ok, Enum.reverse(mod.on_talk(ctx).log)}
+        {:ok, Enum.reverse(H.Core.returned_ctx(mod.on_talk(ctx)).log)}
 
       {:event, label} ->
-        {:ok, Enum.reverse(mod.on_event(label, ctx).log)}
+        {:ok, Enum.reverse(H.Core.returned_ctx(mod.on_event(label, ctx)).log)}
 
       :call ->
         {ctx, value} = mod.call(ctx, helper_args.(seed))
@@ -649,7 +661,17 @@ run = fn mod, entry, seed ->
 
       {:error, e.__struct__}
   catch
-    kind, value -> {:caught, kind, H.Core.ctx_payload(value)}
+    # A transpiled `close`/`end` and `Ctx.halt/2` end the script by throwing this tag. The runtime
+    # interaction catches it and keeps the ctx, so a clean end and a normal return are equivalent.
+    :throw, {:script_end, ctx} ->
+      if is_map(ctx) and Map.get(ctx, :__struct__) == Ctx do
+        {:ok, Enum.reverse(ctx.log)}
+      else
+        {:caught, :throw, H.Core.ctx_payload({:script_end, ctx})}
+      end
+
+    kind, value ->
+      {:caught, kind, H.Core.ctx_payload(value)}
   end
 end
 
