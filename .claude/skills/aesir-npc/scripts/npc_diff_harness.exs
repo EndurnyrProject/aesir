@@ -276,7 +276,11 @@ defmodule H.Core do
 
   # 0 when unmarried; any other value when the player has a partner.
   def call(:getpartnerid, [_ctx | _args]), do: pick(:getpartnerid, [0, 150_001])
-  def call(:can_change_job?, [_ctx | args]), do: pick({:ccj, args}, [true, false])
+  # VIP membership status flag, 1 while the paid VIP status is active.
+  def call(:vip_status, [_ctx | args]), do: pick({:vip_status, args}, [0, 1])
+
+  # Reads.insert_comma groups thousands; a modelled read keeps it out of the effect log.
+  def call(:insert_comma, [_ctx, value]), do: group_thousands(value)
 
   # Renewal/classic switch: 1 in renewal, 0 otherwise.
   def call(:checkre, [_ctx | args]), do: pick({:checkre, args}, [0, 1])
@@ -416,6 +420,27 @@ defmodule H.Core do
   end
 
   def rathena(piped, f, args), do: rathena(f, [piped | args])
+
+  defp group_thousands(value) when is_integer(value),
+    do: group_thousands(Integer.to_string(value))
+
+  defp group_thousands(value) do
+    {sign, digits} =
+      if String.starts_with?(value, "-"),
+        do: {"-", binary_part(value, 1, byte_size(value) - 1)},
+        else: {"", value}
+
+    grouped =
+      digits
+      |> String.to_charlist()
+      |> Enum.reverse()
+      |> Enum.chunk_every(3)
+      |> Enum.map(fn chunk -> chunk |> Enum.reverse() |> List.to_string() end)
+      |> Enum.reverse()
+      |> Enum.join(",")
+
+    sign <> grouped
+  end
 end
 
 defmodule H.Load do

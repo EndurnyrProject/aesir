@@ -106,10 +106,18 @@ adaptation. Do not label original Aesir content as imported.
    branches or helper returns, not simple deletion that allows fallthrough. Keep post-close
    effects such as `savepoint` and `warp` reachable, preserve page/menu boundaries, and retain
    existing fallback branches and random-choice behavior.
-4. **Keep placements intact.** Preserve module names, scopes, event labels, maps, coordinates,
-   sprites, directions, and unique names. Identical coordinates on different maps are distinct
-   placements, not duplicates to remove. Map renaming is a separate explicit change: check the
-   actual map cache and agree on the mapping first. 
+4. **Keep placements intact, and check them.** Preserve module names, scopes, event labels, maps,
+   coordinates, sprites, directions, and unique names. Identical coordinates on different maps are
+   distinct placements, not duplicates to remove. Map renaming is a separate explicit change: check
+   the actual map cache and agree on the mapping first.
+   Before touching the body, verify the `spawn:` list against the reference script with
+   `elixir .agents/skills/aesir-npc/scripts/npc_placements_check.exs <module path> [...]`. It
+   compares the module with the `duplicate(<exname>)` rows that actually place the body, resolving
+   sprite constants; several paths share one pass, and `RATHENA_ROOT=` points it at another
+   checkout. The manifest's recorded spawns are not the reference: a targeted `--only` run can
+   write a record before the scoped duplicates are in scope, and that stale record is never
+   revisited while the source stays unchanged. Every MISSING/EXTRA placement is fixed in the
+   module as part of the refactor, and the stale record is reported in the backlog.
 5. **Keep importer protection intact.** Hand edits are detected by comparing file contents with
    the manifest's original `output_hash`, not by a comment or a handmade flag. Leave the manifest
    and its generated hashes unchanged during a hand refactor. Updating a hash to match the edited
