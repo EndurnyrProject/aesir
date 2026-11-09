@@ -79,6 +79,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AttributeExpert do
     )
     |> next()
     |> loop_1()
+    |> ev_oninit()
   catch
     :throw, {:script_end, ctx} -> ctx
   end

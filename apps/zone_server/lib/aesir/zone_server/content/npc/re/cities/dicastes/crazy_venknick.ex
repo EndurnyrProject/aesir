@@ -61,13 +61,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.CrazyVenknick do
             ctx
           end
 
-        ctx =
-          ctx
-          |> pay_zeny(5000)
-          |> mes("[Crazy Venknick]")
-          |> mes("Thanks.")
-          |> emotion(:kik)
-          |> next()
+        ctx = ctx |> pay_zeny(5000) |> mes("[Crazy Venknick]") |> mes("Thanks.")
+        ctx = ctx |> emotion(:kik, getnpcid(ctx, "Complaining Galten#fihs")) |> next()
 
         ctx =
           ctx
@@ -84,7 +79,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.CrazyVenknick do
           |> mes("[Crazy Venknick]")
           |> mes("I don't believe in legends.")
           |> next()
-          |> emotion(:think)
+
+        ctx = emotion(ctx, :think, playerattached(ctx))
 
         ctx =
           ctx

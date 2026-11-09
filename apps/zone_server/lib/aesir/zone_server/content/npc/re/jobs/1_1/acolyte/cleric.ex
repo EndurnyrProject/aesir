@@ -124,104 +124,101 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Acolyte.Cleric do
         "Quit it."
       ])
 
-    ctx =
-      case v2 do
-        1 ->
-          ctx = mes(ctx, "[Father Mareusis]")
+    case v2 do
+      1 ->
+        ctx = mes(ctx, "[Father Mareusis]")
 
-          if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
-            ctx =
-              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) do
-                mes(
-                  ctx,
-                  "Are you feeling okay today? I can tell by your attire that you are already an Acolyte. You're not joking around, are you?"
-                )
-              else
-                mes(ctx, "I'm sorry but it seems you already have your own job, aren't you?")
-              end
+        if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
+          ctx =
+            if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) do
+              mes(
+                ctx,
+                "Are you feeling okay today? I can tell by your attire that you are already an Acolyte. You're not joking around, are you?"
+              )
+            else
+              mes(ctx, "I'm sorry but it seems you already have your own job, aren't you?")
+            end
 
-            ctx = close(ctx)
-            throw({:script_end, ctx})
-          else
-            ctx =
-              ctx
-              |> mes("Do you truly wish to become a servant of God?")
-              |> mes("Let's see whether you are ready for it or not... Hmm...")
-              |> next()
+          ctx = close(ctx)
+          throw({:script_end, ctx})
+        else
+          ctx =
+            ctx
+            |> mes("Do you truly wish to become a servant of God?")
+            |> mes("Let's see whether you are ready for it or not... Hmm...")
+            |> next()
 
-            v3 = can_change_job?(ctx)
+          v3 = can_change_job?(ctx)
 
-            ctx =
-              if not Rathena.truthy?(v3) do
-                ctx =
-                  ctx
-                  |> mes("[Father Mareusis]")
-                  |> mes(
-                    "Oh my?! You haven't accomplished the basic practice yet?! You have a long way to go! Come again after increasing your job level!"
-                  )
-                  |> close()
-
-                throw({:script_end, ctx})
-              else
+          ctx =
+            if not Rathena.truthy?(v3) do
+              ctx =
                 ctx
-              end
+                |> mes("[Father Mareusis]")
+                |> mes(
+                  "Oh my?! You haven't accomplished the basic practice yet?! You have a long way to go! Come again after increasing your job level!"
+                )
+                |> close()
 
-            ctx =
+              throw({:script_end, ctx})
+            else
               ctx
-              |> mes("[Father Mareusis]")
-              |> mes("Hmm... your job level is enough...")
-              |> mes("Good. Now I will give you the qualification to become an Acolyte.")
-              |> next()
-              |> mes("[Father Mareusis]")
-              |> mes(
-                "Always remember to be thankful to God, who takes care of us all the time. In chaos and times of difficulty, face your hardships with unwavering faith."
-              )
-              |> jobchange(:acolyte)
-              |> give_item(1545, 1)
-              |> next()
-              |> mes("[Father Mareusis]")
-              |> mes(
-                "Lastly, I want to sincerely congratulate you on persevering through your trial of penance."
-              )
-              |> close()
+            end
 
-            throw({:script_end, ctx})
-          end
-
-        2 ->
           ctx =
             ctx
             |> mes("[Father Mareusis]")
-            |> mes("Do you wish to become an Acolyte?")
-            |> mes(
-              "Then, you must fulfill the following requirements thinking those are the practices given by God."
-            )
+            |> mes("Hmm... your job level is enough...")
+            |> mes("Good. Now I will give you the qualification to become an Acolyte.")
             |> next()
             |> mes("[Father Mareusis]")
             |> mes(
-              "First, you have to reach at least Novice Job Level 9 and learn all of the Basic Skills."
+              "Always remember to be thankful to God, who takes care of us all the time. In chaos and times of difficulty, face your hardships with unwavering faith."
             )
-            |> mes(
-              "This is the most basic thing to do, so you need to regard it as the way of training yourself."
-            )
+            |> jobchange(:acolyte)
+            |> give_item(1545, 1)
             |> next()
             |> mes("[Father Mareusis]")
             |> mes(
-              "When you think you fulfilled this requirement, then come back to me again. Then you will have a holy job in which you can spread God's will."
+              "Lastly, I want to sincerely congratulate you on persevering through your trial of penance."
             )
             |> close()
 
           throw({:script_end, ctx})
+        end
 
-        3 ->
-          ctx = close(ctx)
-          throw({:script_end, ctx})
-
-        _ ->
+      2 ->
+        ctx =
           ctx
-      end
+          |> mes("[Father Mareusis]")
+          |> mes("Do you wish to become an Acolyte?")
+          |> mes(
+            "Then, you must fulfill the following requirements thinking those are the practices given by God."
+          )
+          |> next()
+          |> mes("[Father Mareusis]")
+          |> mes(
+            "First, you have to reach at least Novice Job Level 9 and learn all of the Basic Skills."
+          )
+          |> mes(
+            "This is the most basic thing to do, so you need to regard it as the way of training yourself."
+          )
+          |> next()
+          |> mes("[Father Mareusis]")
+          |> mes(
+            "When you think you fulfilled this requirement, then come back to me again. Then you will have a holy job in which you can spread God's will."
+          )
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx = close(ctx)
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

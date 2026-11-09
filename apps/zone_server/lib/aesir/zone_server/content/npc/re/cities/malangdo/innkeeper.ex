@@ -31,89 +31,74 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malangdo.Innkeeper do
       |> next()
       |> select(["Umm... Can I rest here?", "Psst... Can I save here?", "Leave."])
 
-    ctx =
-      case v1 do
-        1 ->
-          {ctx, v2} =
-            ctx
-            |> mes("[Innkeeper]")
-            |> mes("Eh?")
-            |> mes(
-              "Uh, sure you can use this hammock if you give me ^FF00005 Malangdo Cans^000000."
-            )
-            |> next()
-            |> select(["Here you go.", "Never mind."])
-
-          ctx =
-            case v2 do
-              1 ->
-                ctx =
-                  if count_item(ctx, 12636) > 4 do
-                    ctx =
-                      ctx
-                      |> delitem(12636, 5)
-                      |> percent_heal(hp: 100, sp: 100)
-                      |> specialeffect2(:healsp)
-                      |> mes("[Innkeeper]")
-                      |> mes("Now relax.")
-                      |> emotion(:chup)
-                      |> next()
-                      |> warp("malangdo", 140, 121)
-                      |> close()
-
-                    throw({:script_end, ctx})
-                  else
-                    ctx
-                  end
-
-                ctx = ctx |> mes("[Innkeeper]") |> mes("This ain't no charity.") |> close()
-                throw({:script_end, ctx})
-
-              2 ->
-                ctx =
-                  ctx |> mes("[Innkeeper]") |> mes("Let me know if you want to relax.") |> close()
-
-                throw({:script_end, ctx})
-
-              _ ->
-                ctx
-            end
-
-          ctx =
-            ctx
-            |> mes("[Innkeeper]")
-            |> mes("Location saved. We should keep company, haha~")
-            |> savepoint("malangdo", 142, 118)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        2 ->
-          ctx =
-            ctx
-            |> mes("[Innkeeper]")
-            |> mes("Location saved. We should keep company, haha~")
-            |> savepoint("malangdo", 142, 118)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        3 ->
-          ctx =
-            ctx
-            |> mes("[Innkeeper]")
-            |> mes("Sometimes you just have to relax.")
-            |> next()
-            |> mes("- Wow, this is the laziest cat ever. -")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+    case v1 do
+      1 ->
+        {ctx, v2} =
           ctx
-      end
+          |> mes("[Innkeeper]")
+          |> mes("Eh?")
+          |> mes(
+            "Uh, sure you can use this hammock if you give me ^FF00005 Malangdo Cans^000000."
+          )
+          |> next()
+          |> select(["Here you go.", "Never mind."])
 
-    close(ctx)
+        case v2 do
+          1 ->
+            ctx =
+              if count_item(ctx, 12636) > 4 do
+                ctx =
+                  ctx
+                  |> delitem(12636, 5)
+                  |> percent_heal(hp: 100, sp: 100)
+                  |> specialeffect2(:healsp)
+                  |> mes("[Innkeeper]")
+                  |> mes("Now relax.")
+                  |> emotion(:chup)
+                  |> next()
+                  |> warp("malangdo", 140, 121)
+                  |> close()
+
+                throw({:script_end, ctx})
+              else
+                ctx
+              end
+
+            ctx = ctx |> mes("[Innkeeper]") |> mes("This ain't no charity.") |> close()
+            throw({:script_end, ctx})
+
+          2 ->
+            ctx = ctx |> mes("[Innkeeper]") |> mes("Let me know if you want to relax.") |> close()
+            throw({:script_end, ctx})
+
+          _ ->
+            throw({:script_end, ctx})
+        end
+
+      2 ->
+        ctx =
+          ctx
+          |> mes("[Innkeeper]")
+          |> mes("Location saved. We should keep company, haha~")
+          |> savepoint("malangdo", 142, 118)
+          |> close()
+
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx =
+          ctx
+          |> mes("[Innkeeper]")
+          |> mes("Sometimes you just have to relax.")
+          |> next()
+          |> mes("- Wow, this is the laziest cat ever. -")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

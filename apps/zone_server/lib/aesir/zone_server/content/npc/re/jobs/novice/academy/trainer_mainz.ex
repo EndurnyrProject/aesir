@@ -465,7 +465,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainerMainz do
         ctx
       end
 
-    ctx
+    ev_ontouch(ctx)
   catch
     :throw, {:script_end, ctx} -> ctx
   end

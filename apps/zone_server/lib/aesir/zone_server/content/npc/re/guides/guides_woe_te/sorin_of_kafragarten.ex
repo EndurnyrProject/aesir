@@ -36,90 +36,87 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesWoeTe.SorinOfKafragarten 
         "Forget it."
       ])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx =
-            ctx
-            |> mes("[Sorin]")
-            |> mes(
-              "This is a fortress provided by Kafra Service in cooperation with the royal family of Rune-Midgarts."
-            )
-            |> mes("It means 'Kafra's garden.'")
-            |> next()
-            |> mes("[Sorin]")
-            |> mes("Although it looks very similar to Luina")
-            |> mes("It should be fine since it's servicing different users.")
-            |> mes("It's like a training stage, so to speak.")
-            |> next()
-            |> mes("[Sorin]")
-            |> mes(
-              "Kafragarten is built in the region of Luina, and in Valkyrie Realm, the royal family's Gloria is founded."
-            )
-            |> mes(
-              "Kafra Service hopes that you would gain valuable experience in this new fortress."
-            )
-            |> close()
-
-          throw({:script_end, ctx})
-
-        2 ->
-          ctx =
-            ctx
-            |> mes("[Sorin]")
-            |> mes(
-              "Siege Battle TE is ^4d4dffsiege battles designed for primary and secondary job classes only, ruling out tertiary job class.^000000"
-            )
-            |> next()
-            |> mes("[Sorin]")
-            |> mes(
-              "It's been newly established in an effort to allow more users to gain experience through siege battles."
-            )
-            |> next()
-            |> mes("[Sorin]")
-            |> mes(
-              "Moreover, for your convenience, we lend a variety of items that you can use only inside the corresponding fortress. So, take advantage of this opportunity."
-            )
-            |> next()
-            |> mes("[Sorin]")
-            |> mes("As they say, 'action speaks louder than words.'")
-            |> mes("Now, go and see for yourself~")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        3 ->
-          ctx =
-            ctx
-            |> mes("[Sorin]")
-            |> mes(
-              "Primary, secondary, and extra job classes without expanded levels as well as primary and secondary job classes are allowed to participate only."
-            )
-            |> next()
-            |> mes("[Sorin]")
-            |> mes(
-              "In other words, tertiary job class and jobs with expanded levels such as Kagerou and Oboro are not allowed."
-            )
-            |> close()
-
-          throw({:script_end, ctx})
-
-        4 ->
-          ctx =
-            ctx
-            |> mes("[Sorin]")
-            |> mes(
-              "Kafra Service will do its utmost to bring joy to your life through Kafragarten."
-            )
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+    case v1 do
+      1 ->
+        ctx =
           ctx
-      end
+          |> mes("[Sorin]")
+          |> mes(
+            "This is a fortress provided by Kafra Service in cooperation with the royal family of Rune-Midgarts."
+          )
+          |> mes("It means 'Kafra's garden.'")
+          |> next()
+          |> mes("[Sorin]")
+          |> mes("Although it looks very similar to Luina")
+          |> mes("It should be fine since it's servicing different users.")
+          |> mes("It's like a training stage, so to speak.")
+          |> next()
+          |> mes("[Sorin]")
+          |> mes(
+            "Kafragarten is built in the region of Luina, and in Valkyrie Realm, the royal family's Gloria is founded."
+          )
+          |> mes(
+            "Kafra Service hopes that you would gain valuable experience in this new fortress."
+          )
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx =
+          ctx
+          |> mes("[Sorin]")
+          |> mes(
+            "Siege Battle TE is ^4d4dffsiege battles designed for primary and secondary job classes only, ruling out tertiary job class.^000000"
+          )
+          |> next()
+          |> mes("[Sorin]")
+          |> mes(
+            "It's been newly established in an effort to allow more users to gain experience through siege battles."
+          )
+          |> next()
+          |> mes("[Sorin]")
+          |> mes(
+            "Moreover, for your convenience, we lend a variety of items that you can use only inside the corresponding fortress. So, take advantage of this opportunity."
+          )
+          |> next()
+          |> mes("[Sorin]")
+          |> mes("As they say, 'action speaks louder than words.'")
+          |> mes("Now, go and see for yourself~")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx =
+          ctx
+          |> mes("[Sorin]")
+          |> mes(
+            "Primary, secondary, and extra job classes without expanded levels as well as primary and secondary job classes are allowed to participate only."
+          )
+          |> next()
+          |> mes("[Sorin]")
+          |> mes(
+            "In other words, tertiary job class and jobs with expanded levels such as Kagerou and Oboro are not allowed."
+          )
+          |> close()
+
+        throw({:script_end, ctx})
+
+      4 ->
+        ctx =
+          ctx
+          |> mes("[Sorin]")
+          |> mes(
+            "Kafra Service will do its utmost to bring joy to your life through Kafragarten."
+          )
+          |> close()
+
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

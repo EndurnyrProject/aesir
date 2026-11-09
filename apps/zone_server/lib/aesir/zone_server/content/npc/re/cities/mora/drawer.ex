@@ -42,29 +42,26 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.Drawer do
       |> next()
       |> select(["Insert 100 zeny.", "Don't do anything."])
 
-    ctx =
-      case v2 do
-        1 ->
-          ctx =
-            if zeny(ctx) < 100 do
-              ctx = ctx |> mes("- You don't seem to have 100 zeny with you. -") |> close()
-              throw({:script_end, ctx})
-            else
-              ctx
-            end
+    case v2 do
+      1 ->
+        ctx =
+          if zeny(ctx) < 100 do
+            ctx = ctx |> mes("- You don't seem to have 100 zeny with you. -") |> close()
+            throw({:script_end, ctx})
+          else
+            ctx
+          end
 
-          ctx = ctx |> pay_zeny(100) |> openstorage() |> close()
-          throw({:script_end, ctx})
+        ctx = ctx |> pay_zeny(100) |> openstorage() |> close()
+        throw({:script_end, ctx})
 
-        2 ->
-          ctx = ctx |> mes("- You gave up using the warehouse. -") |> close()
-          throw({:script_end, ctx})
+      2 ->
+        ctx = ctx |> mes("- You gave up using the warehouse. -") |> close()
+        throw({:script_end, ctx})
 
-        _ ->
-          ctx
-      end
-
-    ctx
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

@@ -33,8 +33,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Monk69101 do
       |> next()
       |> select(["I see...", "Explain about Buddhas", "Ah, okay."])
 
-    _ = v1
-
     case v1 do
       1 ->
         ctx =

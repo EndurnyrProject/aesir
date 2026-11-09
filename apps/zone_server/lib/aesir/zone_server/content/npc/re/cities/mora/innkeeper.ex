@@ -39,179 +39,129 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.Innkeeper do
         "How can I use the warehouse?"
       ])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx =
-            ctx
-            |> mes("[Innkeeper]")
-            |> mes("Wow, what's the rush?")
-            |> mes("You've just come here, and you're already going someplace else?")
-            |> next()
-            |> mes("[Innkeeper]")
-            |> mes("You know, haste makes waste. Tsk tsk.")
-            |> mes("Well, the game's been saved.")
-            |> savepoint("mora", 56, 143)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        2 ->
-          {ctx, v2} =
-            ctx
-            |> mes("[Innkeeper]")
-            |> mes("My my, I need some rest also.")
-            |> mes("The rate is 5000 zeny. Do you want a room?")
-            |> next()
-            |> select(["Yes", "No"])
-
-          ctx =
-            case v2 do
-              1 ->
-                ctx =
-                  if zeny(ctx) < 5000 do
-                    ctx = ctx |> mes("[Innkeeper]") |> mes("The rate is 5000z.") |> close()
-                    throw({:script_end, ctx})
-                  else
-                    ctx
-                  end
-
-                ctx =
-                  ctx
-                  |> mes("[Innkeeper]")
-                  |> mes("Make yourself at home.")
-                  |> close()
-                  |> pay_zeny(5000)
-                  |> percent_heal(hp: 100, sp: 100)
-                  |> warp("mora", 32, 123)
-
-                throw({:script_end, ctx})
-
-              2 ->
-                ctx =
-                  ctx
-                  |> mes("[Innkeeper]")
-                  |> mes(
-                    "If you don't have the money, go soak yourself in the puddle in the center of the village."
-                  )
-                  |> mes("It will warm you up.")
-                  |> close()
-
-                throw({:script_end, ctx})
-
-              _ ->
-                ctx
-            end
-
-          {ctx, v3} = input(ctx, :string)
-          ctx = set_local(ctx, :"inputstr$", v3)
-          ctx = mes(ctx, Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
-
-          ctx =
-            ctx
-            |> mes(
-              Rathena.concat(
-                Rathena.concat("I come from a place called ", get_local(ctx, :"inputstr$", "")),
-                "."
-              )
-            )
-            |> next()
-            |> mes("[Innkeeper]")
-            |> mes("Oh, I think I've heard about the place before!")
-            |> next()
-
-          ctx =
-            if get_local(ctx, :"inputstr$", "") == "Shinlim" do
-              ctx
-              |> mes("[Innkeeper]")
-              |> mes(
-                "I heard there's an old tower where horrible witches put Savages in a giant cauldron and cast evil spells on them, right?"
-              )
-              |> next()
-              |> mes("[Innkeeper]")
-              |> mes(
-                "What's worse is that whoever takes medicine made out of Savages will come back for more!"
-              )
-              |> mes(
-                "And he will wander around looking for the tower, and eventually turn into an enormous Savage!"
-              )
-              |> emotion(:stare_about)
-              |> next()
-            else
-              ctx
-              |> mes("[Innkeeper]")
-              |> mes(
-                "I heard that there are creeps there who won't get up at all even if it rains or snows, or their sweethearts or parents call them!"
-              )
-              |> mes("And that black clouds hover over them all the time, causing a storm!")
-              |> next()
-            end
-
-          ctx = ctx |> mes("[Innkeeper]") |> mes("How terrible!") |> close()
-          throw({:script_end, ctx})
-
-        3 ->
-          {ctx, v4} = input(ctx, :string)
-          ctx = set_local(ctx, :"inputstr$", v4)
-          ctx = mes(ctx, Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
-
-          ctx =
-            ctx
-            |> mes(
-              Rathena.concat(
-                Rathena.concat("I come from a place called ", get_local(ctx, :"inputstr$", "")),
-                "."
-              )
-            )
-            |> next()
-            |> mes("[Innkeeper]")
-            |> mes("Oh, I think I've heard about the place before!")
-            |> next()
-
-          ctx =
-            if get_local(ctx, :"inputstr$", "") == "Shinlim" do
-              ctx
-              |> mes("[Innkeeper]")
-              |> mes(
-                "I heard there's an old tower where horrible witches put Savages in a giant cauldron and cast evil spells on them, right?"
-              )
-              |> next()
-              |> mes("[Innkeeper]")
-              |> mes(
-                "What's worse is that whoever takes medicine made out of Savages will come back for more!"
-              )
-              |> mes(
-                "And he will wander around looking for the tower, and eventually turn into an enormous Savage!"
-              )
-              |> emotion(:stare_about)
-              |> next()
-            else
-              ctx
-              |> mes("[Innkeeper]")
-              |> mes(
-                "I heard that there are creeps there who won't get up at all even if it rains or snows, or their sweethearts or parents call them!"
-              )
-              |> mes("And that black clouds hover over them all the time, causing a storm!")
-              |> next()
-            end
-
-          ctx = ctx |> mes("[Innkeeper]") |> mes("How terrible!") |> close()
-          throw({:script_end, ctx})
-
-        4 ->
-          ctx =
-            ctx
-            |> mes("[Innkeeper]")
-            |> mes("Search through the vegetable-shaped drawer to my right.")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+    case v1 do
+      1 ->
+        ctx =
           ctx
-      end
+          |> mes("[Innkeeper]")
+          |> mes("Wow, what's the rush?")
+          |> mes("You've just come here, and you're already going someplace else?")
+          |> next()
+          |> mes("[Innkeeper]")
+          |> mes("You know, haste makes waste. Tsk tsk.")
+          |> mes("Well, the game's been saved.")
+          |> savepoint("mora", 56, 143)
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      2 ->
+        {ctx, v2} =
+          ctx
+          |> mes("[Innkeeper]")
+          |> mes("My my, I need some rest also.")
+          |> mes("The rate is 5000 zeny. Do you want a room?")
+          |> next()
+          |> select(["Yes", "No"])
+
+        case v2 do
+          1 ->
+            ctx =
+              if zeny(ctx) < 5000 do
+                ctx = ctx |> mes("[Innkeeper]") |> mes("The rate is 5000z.") |> close()
+                throw({:script_end, ctx})
+              else
+                ctx
+              end
+
+            ctx =
+              ctx
+              |> mes("[Innkeeper]")
+              |> mes("Make yourself at home.")
+              |> close()
+              |> pay_zeny(5000)
+              |> percent_heal(hp: 100, sp: 100)
+              |> warp("mora", 32, 123)
+
+            throw({:script_end, ctx})
+
+          2 ->
+            ctx =
+              ctx
+              |> mes("[Innkeeper]")
+              |> mes(
+                "If you don't have the money, go soak yourself in the puddle in the center of the village."
+              )
+              |> mes("It will warm you up.")
+              |> close()
+
+            throw({:script_end, ctx})
+
+          _ ->
+            throw({:script_end, ctx})
+        end
+
+      3 ->
+        {ctx, v3} = input(ctx, :string)
+        ctx = set_local(ctx, :"inputstr$", v3)
+        ctx = mes(ctx, Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
+
+        ctx =
+          ctx
+          |> mes(
+            Rathena.concat(
+              Rathena.concat("I come from a place called ", get_local(ctx, :"inputstr$", "")),
+              "."
+            )
+          )
+          |> next()
+          |> mes("[Innkeeper]")
+          |> mes("Oh, I think I've heard about the place before!")
+          |> next()
+
+        ctx =
+          if get_local(ctx, :"inputstr$", "") == "Shinlim" do
+            ctx =
+              ctx
+              |> mes("[Innkeeper]")
+              |> mes(
+                "I heard there's an old tower where horrible witches put Savages in a giant cauldron and cast evil spells on them, right?"
+              )
+              |> next()
+              |> mes("[Innkeeper]")
+              |> mes(
+                "What's worse is that whoever takes medicine made out of Savages will come back for more!"
+              )
+              |> mes(
+                "And he will wander around looking for the tower, and eventually turn into an enormous Savage!"
+              )
+
+            ctx |> emotion(:stare_about, playerattached(ctx)) |> next()
+          else
+            ctx
+            |> mes("[Innkeeper]")
+            |> mes(
+              "I heard that there are creeps there who won't get up at all even if it rains or snows, or their sweethearts or parents call them!"
+            )
+            |> mes("And that black clouds hover over them all the time, causing a storm!")
+            |> next()
+          end
+
+        ctx = ctx |> mes("[Innkeeper]") |> mes("How terrible!") |> close()
+        throw({:script_end, ctx})
+
+      4 ->
+        ctx =
+          ctx
+          |> mes("[Innkeeper]")
+          |> mes("Search through the vegetable-shaped drawer to my right.")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

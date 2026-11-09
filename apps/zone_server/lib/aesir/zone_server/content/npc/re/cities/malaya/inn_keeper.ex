@@ -63,52 +63,46 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.InnKeeper do
       |> next()
       |> select(["Store.", "Lodge. - 5,000z", "Cancel."])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx =
-            ctx
-            |> mes("[Inn Keeper]")
-            |> mes("Successfully stored. See you next time.")
-            |> savepoint("ma_in01", 43, 98)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        2 ->
-          ctx =
-            if zeny(ctx) < 5000 do
-              ctx =
-                ctx
-                |> mes("[Inn Keeper]")
-                |> mes("Sorry. I think you are a bit short.")
-                |> close()
-
-              throw({:script_end, ctx})
-            else
-              ctx
-            end
-
-          ctx =
-            ctx
-            |> mes("[Inn Keeper]")
-            |> mes("Hope you enjoy your stay.")
-            |> close()
-            |> pay_zeny(5000)
-            |> percent_heal(hp: 100, sp: 100)
-            |> warp("ma_in01", 43, 98)
-
-          throw({:script_end, ctx})
-
-        3 ->
-          ctx = close(ctx)
-          throw({:script_end, ctx})
-
-        _ ->
+    case v1 do
+      1 ->
+        ctx =
           ctx
-      end
+          |> mes("[Inn Keeper]")
+          |> mes("Successfully stored. See you next time.")
+          |> savepoint("ma_in01", 43, 98)
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx =
+          if zeny(ctx) < 5000 do
+            ctx =
+              ctx |> mes("[Inn Keeper]") |> mes("Sorry. I think you are a bit short.") |> close()
+
+            throw({:script_end, ctx})
+          else
+            ctx
+          end
+
+        ctx =
+          ctx
+          |> mes("[Inn Keeper]")
+          |> mes("Hope you enjoy your stay.")
+          |> close()
+          |> pay_zeny(5000)
+          |> percent_heal(hp: 100, sp: 100)
+          |> warp("ma_in01", 43, 98)
+
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx = close(ctx)
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

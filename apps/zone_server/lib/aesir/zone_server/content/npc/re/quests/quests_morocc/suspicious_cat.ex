@@ -110,49 +110,46 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Quests.QuestsMorocc.SuspiciousCat do
       |> next()
       |> select(["Pay 5,000 zeny and set out.", "Forget it."])
 
-    ctx =
-      case v4 do
-        1 ->
-          ctx =
-            if zeny(ctx) < 5000 do
-              ctx =
-                ctx
-                |> mes("[Suspicious Cat]")
-                |> mes("Where do you think you're going! You're so broke!")
-                |> close()
-
-              throw({:script_end, ctx})
-            else
+    case v4 do
+      1 ->
+        ctx =
+          if zeny(ctx) < 5000 do
+            ctx =
               ctx
-            end
+              |> mes("[Suspicious Cat]")
+              |> mes("Where do you think you're going! You're so broke!")
+              |> close()
 
-          ctx =
+            throw({:script_end, ctx})
+          else
             ctx
-            |> pay_zeny(5000)
-            |> mes("[Suspicious Cat]")
-            |> mes(
-              "Bah, what's up with this old money... you don't have anything sparkly or shiny?!"
-            )
-            |> mes("Ahh, just follow me!")
-            |> close()
-            |> warp("moc_prydn1", 93, 96)
+          end
 
-          throw({:script_end, ctx})
-
-        2 ->
-          ctx =
-            ctx
-            |> mes("[Suspicious Cat]")
-            |> mes("Gosh, you don't even have 5000 Zeny, do you?")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+        ctx =
           ctx
-      end
+          |> pay_zeny(5000)
+          |> mes("[Suspicious Cat]")
+          |> mes(
+            "Bah, what's up with this old money... you don't have anything sparkly or shiny?!"
+          )
+          |> mes("Ahh, just follow me!")
+          |> close()
+          |> warp("moc_prydn1", 93, 96)
 
-    ctx
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx =
+          ctx
+          |> mes("[Suspicious Cat]")
+          |> mes("Gosh, you don't even have 5000 Zeny, do you?")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

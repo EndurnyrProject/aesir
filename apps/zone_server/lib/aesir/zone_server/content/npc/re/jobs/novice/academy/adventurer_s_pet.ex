@@ -100,7 +100,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AdventurerSPet do
           ctx
       end
 
-    ctx
+    ev_oninit(ctx)
   end
 
   def ev_oninit(ctx) do

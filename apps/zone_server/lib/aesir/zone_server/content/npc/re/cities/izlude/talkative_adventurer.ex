@@ -163,7 +163,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.TalkativeAdventurer do
   end
 
   def ev_ontimer565000(ctx) do
-    ctx
+    ev_oninit(ctx)
   end
 
   def ev_oninit(ctx) do

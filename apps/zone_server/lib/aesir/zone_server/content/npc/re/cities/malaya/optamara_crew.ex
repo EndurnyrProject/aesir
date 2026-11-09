@@ -32,79 +32,76 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.OptamaraCrew do
       |> next()
       |> select(["About Port Malaya.", "Go to Port Malaya.", "Cancel."])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx =
-            ctx
-            |> mes("[Optamara Crew]")
-            |> mes(
-              "Port Malaya is a small village you could reach by sailing southwest from Alberta."
-            )
-            |> next()
-            |> mes("[Optamara Crew]")
-            |> mes(
-              "I couldn't visit the village because they had some issues there but now it seems all is clear!"
-            )
-            |> next()
-            |> mes("[Optamara Crew]")
-            |> mes(
-              "I don't know for sure but it was a village that's like a comfortable and cozy park."
-            )
-            |> next()
-            |> mes("[Optamara Crew]")
-            |> mes("I was this close to not coming back to cozy Alberta again.")
-            |> next()
-            |> mes("[Optamara Crew]")
-            |> mes("I'm sure you'll feel the same once you reach Port Malaya.")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        2 ->
-          ctx =
-            if zeny(ctx) < 10000 do
-              ctx =
-                ctx
-                |> mes("[Optamara Crew]")
-                |> mes("Oh God!!")
-                |> mes(
-                  "You don't know how far it is from here. Of course it's not free. Please come back with 10,000 Zeny. Sorry!"
-                )
-                |> close()
-
-              throw({:script_end, ctx})
-            else
-              ctx
-            end
-
-          ctx =
-            ctx
-            |> mes("[Optamara Crew]")
-            |> mes("Great!")
-            |> mes("Heading for Port Malaya!!")
-            |> pay_zeny(10000)
-            |> close()
-            |> warp("malaya", 271, 55)
-
-          throw({:script_end, ctx})
-
-        3 ->
-          ctx =
-            ctx
-            |> mes("[Optamara Crew]")
-            |> mes(
-              "Adventurers these days act like they are busy. Come back when you have the time and we could go visit Port Malaya together."
-            )
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+    case v1 do
+      1 ->
+        ctx =
           ctx
-      end
+          |> mes("[Optamara Crew]")
+          |> mes(
+            "Port Malaya is a small village you could reach by sailing southwest from Alberta."
+          )
+          |> next()
+          |> mes("[Optamara Crew]")
+          |> mes(
+            "I couldn't visit the village because they had some issues there but now it seems all is clear!"
+          )
+          |> next()
+          |> mes("[Optamara Crew]")
+          |> mes(
+            "I don't know for sure but it was a village that's like a comfortable and cozy park."
+          )
+          |> next()
+          |> mes("[Optamara Crew]")
+          |> mes("I was this close to not coming back to cozy Alberta again.")
+          |> next()
+          |> mes("[Optamara Crew]")
+          |> mes("I'm sure you'll feel the same once you reach Port Malaya.")
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx =
+          if zeny(ctx) < 10000 do
+            ctx =
+              ctx
+              |> mes("[Optamara Crew]")
+              |> mes("Oh God!!")
+              |> mes(
+                "You don't know how far it is from here. Of course it's not free. Please come back with 10,000 Zeny. Sorry!"
+              )
+              |> close()
+
+            throw({:script_end, ctx})
+          else
+            ctx
+          end
+
+        ctx =
+          ctx
+          |> mes("[Optamara Crew]")
+          |> mes("Great!")
+          |> mes("Heading for Port Malaya!!")
+          |> pay_zeny(10000)
+          |> close()
+          |> warp("malaya", 271, 55)
+
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx =
+          ctx
+          |> mes("[Optamara Crew]")
+          |> mes(
+            "Adventurers these days act like they are busy. Come back when you have the time and we could go visit Port Malaya together."
+          )
+          |> close()
+
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

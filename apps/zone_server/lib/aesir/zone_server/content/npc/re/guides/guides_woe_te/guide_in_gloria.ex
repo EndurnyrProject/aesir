@@ -41,91 +41,88 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesWoeTe.GuideInGloria do
         "Forget it."
       ])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx =
-            ctx
-            |> mes("[Guide Soldier]")
-            |> mes("It has been named in honor of the seven royal families and the kingdom.")
-            |> mes(
-              "The whole city closely resembles Valkyrie Realm, and here resides the aspirations of the royal family for everyone."
-            )
-            |> next()
-            |> mes("[Guide Soldier]")
-            |> mes(
-              "In Kafragarten of Aldebaran, managed by Gloria and Kafra Service, we have special rules that are slightly different from the existing ones."
-            )
-            |> mes("We call it Siege Battle TE.")
-            |> next()
-            |> mes("[Guide Soldier]")
-            |> mes(
-              "You should not have troubles understanding the new rules since it is simply about setting a limit on qualifications for participation."
-            )
-            |> close()
-
-          throw({:script_end, ctx})
-
-        2 ->
-          ctx =
-            ctx
-            |> mes("[Guide Soldier]")
-            |> mes(
-              "It is a new stage prepared by the royal family in order to let more people participate in siege battles."
-            )
-            |> mes(
-              "Different rules are applied, and sufficient supports are provided since its atmosphere is similar to that of a gymnasium."
-            )
-            |> next()
-            |> mes("[Guide Soldier]")
-            |> mes(
-              "^4d4dffTertiary job class and users with expanded levels are not allowed in Gloria and Kafragarten regions, where Siege Battle TE rules are applied.^000000"
-            )
-            |> next()
-            |> mes("[Guide Soldier]")
-            |> mes(
-              "Also, we lend a variety of battlegears that you use only in corresponding regions for free."
-            )
-            |> mes("This may be the biggest difference.")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        3 ->
-          ctx =
-            ctx
-            |> mes("[Guide Soldier]")
-            |> mes(
-              "^4d4dffNovice, primary, and secondary job classes are allowed to participate as well as extra job class.^000000"
-            )
-            |> mes("Of course, primary and secondary job classes are included as well.")
-            |> next()
-            |> mes("[Guide Soldier]")
-            |> mes(
-              "In other words, tertiary job class and jobs with expanded levels such as Kagerou and Oboro are not allowed."
-            )
-            |> mes("Also, their buff effects get eliminated here.")
-            |> next()
-            |> mes("[Guide Soldier]")
-            |> mes("Other than that, it is not much different from the existing siege battles.")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        4 ->
-          ctx =
-            ctx
-            |> mes("[Guide Soldier]")
-            |> mes("May the glory of the royal family and Odin's protection be with you!")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+    case v1 do
+      1 ->
+        ctx =
           ctx
-      end
+          |> mes("[Guide Soldier]")
+          |> mes("It has been named in honor of the seven royal families and the kingdom.")
+          |> mes(
+            "The whole city closely resembles Valkyrie Realm, and here resides the aspirations of the royal family for everyone."
+          )
+          |> next()
+          |> mes("[Guide Soldier]")
+          |> mes(
+            "In Kafragarten of Aldebaran, managed by Gloria and Kafra Service, we have special rules that are slightly different from the existing ones."
+          )
+          |> mes("We call it Siege Battle TE.")
+          |> next()
+          |> mes("[Guide Soldier]")
+          |> mes(
+            "You should not have troubles understanding the new rules since it is simply about setting a limit on qualifications for participation."
+          )
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx =
+          ctx
+          |> mes("[Guide Soldier]")
+          |> mes(
+            "It is a new stage prepared by the royal family in order to let more people participate in siege battles."
+          )
+          |> mes(
+            "Different rules are applied, and sufficient supports are provided since its atmosphere is similar to that of a gymnasium."
+          )
+          |> next()
+          |> mes("[Guide Soldier]")
+          |> mes(
+            "^4d4dffTertiary job class and users with expanded levels are not allowed in Gloria and Kafragarten regions, where Siege Battle TE rules are applied.^000000"
+          )
+          |> next()
+          |> mes("[Guide Soldier]")
+          |> mes(
+            "Also, we lend a variety of battlegears that you use only in corresponding regions for free."
+          )
+          |> mes("This may be the biggest difference.")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx =
+          ctx
+          |> mes("[Guide Soldier]")
+          |> mes(
+            "^4d4dffNovice, primary, and secondary job classes are allowed to participate as well as extra job class.^000000"
+          )
+          |> mes("Of course, primary and secondary job classes are included as well.")
+          |> next()
+          |> mes("[Guide Soldier]")
+          |> mes(
+            "In other words, tertiary job class and jobs with expanded levels such as Kagerou and Oboro are not allowed."
+          )
+          |> mes("Also, their buff effects get eliminated here.")
+          |> next()
+          |> mes("[Guide Soldier]")
+          |> mes("Other than that, it is not much different from the existing siege battles.")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      4 ->
+        ctx =
+          ctx
+          |> mes("[Guide Soldier]")
+          |> mes("May the glory of the royal family and Odin's protection be with you!")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

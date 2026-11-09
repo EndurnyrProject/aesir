@@ -192,7 +192,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesComodo.ComodoGuide do
             ctx
 
           _ ->
-            ctx
+            throw({:script_end, ctx})
         end
 
       loop_3(ctx)
@@ -252,7 +252,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesComodo.ComodoGuide do
             ctx
 
           _ ->
-            ctx
+            throw({:script_end, ctx})
         end
 
       loop_5(ctx)
@@ -323,7 +323,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesComodo.ComodoGuide do
           ctx
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     loop_1(ctx)

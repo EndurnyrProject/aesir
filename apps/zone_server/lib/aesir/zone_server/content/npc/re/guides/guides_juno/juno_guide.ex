@@ -177,7 +177,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesJuno.JunoGuide do
             ctx
 
           _ ->
-            ctx
+            throw({:script_end, ctx})
         end
 
       loop_3(ctx)
@@ -215,7 +215,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesJuno.JunoGuide do
             ctx
 
           _ ->
-            ctx
+            throw({:script_end, ctx})
         end
 
       loop_5(ctx)
@@ -270,7 +270,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesJuno.JunoGuide do
           throw({:script_end, ctx})
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     loop_1(ctx)

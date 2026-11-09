@@ -53,32 +53,29 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.OptamaraCrew27655 do
 
     {ctx, v1} = select(ctx, ["Return.", "Do not return."])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx =
-            ctx
-            |> mes("[Optamara Crew]")
-            |> mes("Great! Let's leave now for Alberta!!")
-            |> close()
-            |> warp("alberta", 192, 217)
-
-          throw({:script_end, ctx})
-
-        2 ->
-          ctx =
-            ctx
-            |> mes("[Optamara Crew]")
-            |> mes("That's okay. Come here if you ever want to go back to Alberta.")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+    case v1 do
+      1 ->
+        ctx =
           ctx
-      end
+          |> mes("[Optamara Crew]")
+          |> mes("Great! Let's leave now for Alberta!!")
+          |> close()
+          |> warp("alberta", 192, 217)
 
-    ctx
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx =
+          ctx
+          |> mes("[Optamara Crew]")
+          |> mes("That's okay. Come here if you ever want to go back to Alberta.")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

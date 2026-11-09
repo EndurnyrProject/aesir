@@ -58,8 +58,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.LazyYoungMan do
           |> next()
           |> select(["Give", "Do not give"])
 
-        _ = v1
-
         case v1 do
           1 ->
             ctx =

@@ -107,39 +107,36 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.PortGuard do
       |> next()
       |> select(["I see.", "Is there any way to prevent them from coming?"])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx = ctx |> mes("[Port Guard]") |> mes("Be careful at night!") |> close()
-          throw({:script_end, ctx})
+    case v1 do
+      1 ->
+        ctx = ctx |> mes("[Port Guard]") |> mes("Be careful at night!") |> close()
+        throw({:script_end, ctx})
 
-        2 ->
-          ctx =
-            ctx
-            |> mes("[Port Guard]")
-            |> mes(
-              "They say you can attack Buwaya's weak point inside the box they carry if you ever get caught in one."
-            )
-            |> next()
-            |> mes("[Port Guard]")
-            |> mes(
-              "And you should run into the nearest building when you hear Wokwoks wings fluttering from afar."
-            )
-            |> next()
-            |> emotion(:scratch)
-            |> mes("[Port Guard]")
-            |> mes(
-              "But if the fluttering sound is small or if you don't hear anything, let's just say you should prepare for attack and wish for luck."
-            )
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+      2 ->
+        ctx =
           ctx
-      end
+          |> mes("[Port Guard]")
+          |> mes(
+            "They say you can attack Buwaya's weak point inside the box they carry if you ever get caught in one."
+          )
+          |> next()
+          |> mes("[Port Guard]")
+          |> mes(
+            "And you should run into the nearest building when you hear Wokwoks wings fluttering from afar."
+          )
+          |> next()
+          |> emotion(:scratch)
+          |> mes("[Port Guard]")
+          |> mes(
+            "But if the fluttering sound is small or if you don't hear anything, let's just say you should prepare for attack and wish for luck."
+          )
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

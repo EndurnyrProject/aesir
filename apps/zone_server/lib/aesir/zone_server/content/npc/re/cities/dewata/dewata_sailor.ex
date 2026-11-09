@@ -42,7 +42,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.DewataSailor do
       end
 
     {ctx, v1} = ctx |> next() |> select(["Yes!", "No."])
-    _ = v1
 
     case v1 do
       1 ->

@@ -56,16 +56,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.ComplainingGalten do
 
         ctx =
           ctx
-          |> emotion(:kik)
+          |> emotion(:kik, getnpcid(ctx, "Crazy Venknick#fihsing1"))
           |> mes("[Complaining Galten]")
           |> mes("You also fell for that crazy man.")
           |> next()
 
         ctx =
+          ctx |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]")) |> mes("Yes")
+
+        ctx =
           ctx
-          |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
-          |> mes("Yes")
-          |> emotion(:cry)
+          |> emotion(:cry, playerattached(ctx))
           |> next()
           |> mes("[Complaining Galten]")
           |> mes("Just forget about it quickly for your own good.")

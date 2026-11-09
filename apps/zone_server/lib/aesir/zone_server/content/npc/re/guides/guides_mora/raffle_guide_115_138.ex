@@ -44,107 +44,104 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMora.RaffleGuide115138 do
         "Quit."
       ])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx =
-            ctx
-            |> mes("[Raffla]")
-            |> mes("Lala!")
-            |> mes(
-              Rathena.concat(
-                Todo.call!(:F_Navi, ["This", "mora,44,138"]),
-                " is where travelers can rest la!"
-              )
-            )
-            |> mes("The innkeeper is very kind, so try to talk to him a lot la!")
-            |> viewpoint(1, 44, 134, 0, 688_895)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        2 ->
-          ctx =
-            ctx
-            |> mes("[Raffla]")
-            |> mes("Lala!")
-            |> mes(
-              Rathena.concat(
-                Todo.call!(:F_Navi, ["This", "mora,119,170"]),
-                " is where Raffles live la!"
-              )
-            )
-            |> mes("Head over there la!")
-            |> viewpoint(1, 119, 170, 1, 11_206_400)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        3 ->
-          ctx =
-            ctx
-            |> mes("[Raffla]")
-            |> mes("Lala!")
-            |> mes("So you want to buy something la?")
-            |> mes(
-              Rathena.concat(
-                Rathena.concat(
-                  "There are a lot of ",
-                  Todo.call!(:F_Navi, ["stores and cafes", "mora,112,110"])
-                ),
-                ", so check them out la!"
-              )
-            )
-            |> viewpoint(1, 112, 110, 2, 14_315_734)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        4 ->
-          ctx =
-            ctx
-            |> mes("[Raffla]")
-            |> mes("Lala!")
-            |> mes(
-              Rathena.concat(
-                Rathena.concat("The ", Todo.call!(:F_Navi, ["Warehouse", "mora,182,161"])),
-                " is where you keep your valuables la!"
-              )
-            )
-            |> mes("Be careful so you don't get robbed la!")
-            |> viewpoint(1, 182, 161, 3, 16_716_947)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        5 ->
-          ctx =
-            ctx
-            |> mes("[Raffla]")
-            |> mes("Okay, I'll remove all the markers from the map la!")
-            |> viewpoint(2, 1, 1, 0, 16_776_960)
-            |> viewpoint(2, 1, 1, 1, 16_776_960)
-            |> viewpoint(2, 1, 1, 2, 16_776_960)
-            |> viewpoint(2, 1, 1, 3, 16_776_960)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        6 ->
-          ctx =
-            ctx
-            |> mes("[Raffla]")
-            |> mes("Lala!")
-            |> mes("I really don't know how my family ends up doing these things la!")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+    case v1 do
+      1 ->
+        ctx =
           ctx
-      end
+          |> mes("[Raffla]")
+          |> mes("Lala!")
+          |> mes(
+            Rathena.concat(
+              Todo.call!(:F_Navi, ["This", "mora,44,138"]),
+              " is where travelers can rest la!"
+            )
+          )
+          |> mes("The innkeeper is very kind, so try to talk to him a lot la!")
+          |> viewpoint(1, 44, 134, 0, 688_895)
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx =
+          ctx
+          |> mes("[Raffla]")
+          |> mes("Lala!")
+          |> mes(
+            Rathena.concat(
+              Todo.call!(:F_Navi, ["This", "mora,119,170"]),
+              " is where Raffles live la!"
+            )
+          )
+          |> mes("Head over there la!")
+          |> viewpoint(1, 119, 170, 1, 11_206_400)
+          |> close()
+
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx =
+          ctx
+          |> mes("[Raffla]")
+          |> mes("Lala!")
+          |> mes("So you want to buy something la?")
+          |> mes(
+            Rathena.concat(
+              Rathena.concat(
+                "There are a lot of ",
+                Todo.call!(:F_Navi, ["stores and cafes", "mora,112,110"])
+              ),
+              ", so check them out la!"
+            )
+          )
+          |> viewpoint(1, 112, 110, 2, 14_315_734)
+          |> close()
+
+        throw({:script_end, ctx})
+
+      4 ->
+        ctx =
+          ctx
+          |> mes("[Raffla]")
+          |> mes("Lala!")
+          |> mes(
+            Rathena.concat(
+              Rathena.concat("The ", Todo.call!(:F_Navi, ["Warehouse", "mora,182,161"])),
+              " is where you keep your valuables la!"
+            )
+          )
+          |> mes("Be careful so you don't get robbed la!")
+          |> viewpoint(1, 182, 161, 3, 16_716_947)
+          |> close()
+
+        throw({:script_end, ctx})
+
+      5 ->
+        ctx =
+          ctx
+          |> mes("[Raffla]")
+          |> mes("Okay, I'll remove all the markers from the map la!")
+          |> viewpoint(2, 1, 1, 0, 16_776_960)
+          |> viewpoint(2, 1, 1, 1, 16_776_960)
+          |> viewpoint(2, 1, 1, 2, 16_776_960)
+          |> viewpoint(2, 1, 1, 3, 16_776_960)
+          |> close()
+
+        throw({:script_end, ctx})
+
+      6 ->
+        ctx =
+          ctx
+          |> mes("[Raffla]")
+          |> mes("Lala!")
+          |> mes("I really don't know how my family ends up doing these things la!")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

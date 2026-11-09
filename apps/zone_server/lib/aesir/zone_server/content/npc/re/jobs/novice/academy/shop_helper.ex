@@ -330,7 +330,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ShopHelper do
         ctx
       end
 
-    loop_2(ctx)
+    ctx |> loop_2() |> ev_oninit()
   catch
     :throw, {:script_end, ctx} -> ctx
   end

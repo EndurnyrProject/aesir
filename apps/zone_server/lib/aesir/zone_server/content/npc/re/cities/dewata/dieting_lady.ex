@@ -52,8 +52,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.DietingLady do
       |> next()
       |> select(["Yes, want a taste?", "No, it's for me!"])
 
-    _ = v1
-
     case v1 do
       1 ->
         ctx =

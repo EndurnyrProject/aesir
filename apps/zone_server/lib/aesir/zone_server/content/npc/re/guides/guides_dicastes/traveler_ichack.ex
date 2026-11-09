@@ -59,144 +59,141 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesDicastes.TravelerIchack d
         "Cat Paw Caravan"
       ])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx =
-            ctx
-            |> mes("[Traveler Ichack]")
-            |> mes("Ah~ That's a beautiful building.")
-            |> mes("It's said they discuss important things...")
-            |> next()
-            |> mes("[Traveler Ichack]")
-            |> mes(
-              Rathena.concat(
-                Rathena.concat(
-                  "Please make sure you signed in at the ",
-                  Todo.call!(:F_Navi, ["Diel", "dicastes01,198,351"])
-                ),
-                ", otherwise you'll get in trouble."
-              )
-            )
-            |> mes("Go directly north from here and you can't miss it.")
-            |> viewpoint(1, 198, 351, 0, 65280)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        2 ->
-          ctx =
-            ctx
-            |> mes("[Traveler Ichack]")
-            |> mes("The Sapha tribe is so weird. How can they sleep in there?")
-            |> next()
-            |> mes("[Traveler Ichack]")
-            |> mes("You don't understand?")
-            |> mes("You won't believe me until you see it! Go see it for yourself!")
-            |> next()
-            |> mes("[Traveler Ichack]")
-            |> mes("The residential area is divided into 2 areas.")
-            |> mes(
-              Rathena.concat(
-                Rathena.concat(
-                  "The ",
-                  Todo.call!(:F_Navi, ["lower residential area", "dicastes01,136,106"])
-                ),
-                " is around 7 o'clock, and the "
-              )
-            )
-            |> mes(
-              Rathena.concat(
-                Todo.call!(:F_Navi, ["upper area", "dicastes01,280,283"]),
-                " is around 1 o'clock."
-              )
-            )
-            |> viewpoint(1, 280, 283, 1, 130_817)
-            |> viewpoint(1, 136, 106, 2, 26367)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        3 ->
-          ctx =
-            ctx
-            |> mes("[Traveler Ichack]")
-            |> mes("Because of the dangers here, we need better security...")
-            |> mes("Have you ever been to the ")
-            |> mes(
-              Rathena.concat(
-                Todo.call!(:F_Navi, ["training room", "dicastes01,255,172"]),
-                "? The training guards seem to never sleep!"
-              )
-            )
-            |> viewpoint(1, 255, 172, 3, 16_764_108)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        4 ->
-          ctx =
-            ctx
-            |> mes("[Traveler Ichack]")
-            |> mes("This is one of the most important reasons why they live here.")
-            |> mes(
-              Rathena.concat(
-                Rathena.concat(
-                  "If you go to the ",
-                  Todo.call!(:F_Navi, ["factory", "dicastes01,97,256"])
-                ),
-                ", you can see the recently refined Bradium."
-              )
-            )
-            |> viewpoint(1, 97, 256, 4, 26367)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        5 ->
-          ctx =
-            ctx
-            |> mes("[Traveler Ichack]")
-            |> mes(
-              "Although I arrived here as the first adventurer, the owner of the pub was the first person here."
-            )
-            |> mes(
-              Rathena.concat(
-                Todo.call!(:F_Navi, ["Bumen Florine's pub", "dicastes01,136,106"]),
-                " is located underground in the lower residential area."
-              )
-            )
-            |> mes("He might have some valuable information for you.")
-            |> viewpoint(1, 136, 106, 5, 16_724_736)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        6 ->
-          ctx =
-            ctx
-            |> mes("[Traveler Ichack]")
-            |> mes(
-              Rathena.concat(
-                Rathena.concat("The ", Todo.call!(:F_Navi, ["cats", "dicastes01,199,39"])),
-                " don't seem to have a good relationship with the Sapha like we do."
-              )
-            )
-            |> mes("Perhaps it's because trading is involved.")
-            |> mes("Poor cats. They must be shivering from the cold out there.")
-            |> next()
-            |> mes("[Traveler Ichack]")
-            |> mes("You can find their caravan just outside the gates.")
-            |> viewpoint(1, 199, 39, 6, 10_040_319)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+    case v1 do
+      1 ->
+        ctx =
           ctx
-      end
+          |> mes("[Traveler Ichack]")
+          |> mes("Ah~ That's a beautiful building.")
+          |> mes("It's said they discuss important things...")
+          |> next()
+          |> mes("[Traveler Ichack]")
+          |> mes(
+            Rathena.concat(
+              Rathena.concat(
+                "Please make sure you signed in at the ",
+                Todo.call!(:F_Navi, ["Diel", "dicastes01,198,351"])
+              ),
+              ", otherwise you'll get in trouble."
+            )
+          )
+          |> mes("Go directly north from here and you can't miss it.")
+          |> viewpoint(1, 198, 351, 0, 65280)
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx =
+          ctx
+          |> mes("[Traveler Ichack]")
+          |> mes("The Sapha tribe is so weird. How can they sleep in there?")
+          |> next()
+          |> mes("[Traveler Ichack]")
+          |> mes("You don't understand?")
+          |> mes("You won't believe me until you see it! Go see it for yourself!")
+          |> next()
+          |> mes("[Traveler Ichack]")
+          |> mes("The residential area is divided into 2 areas.")
+          |> mes(
+            Rathena.concat(
+              Rathena.concat(
+                "The ",
+                Todo.call!(:F_Navi, ["lower residential area", "dicastes01,136,106"])
+              ),
+              " is around 7 o'clock, and the "
+            )
+          )
+          |> mes(
+            Rathena.concat(
+              Todo.call!(:F_Navi, ["upper area", "dicastes01,280,283"]),
+              " is around 1 o'clock."
+            )
+          )
+          |> viewpoint(1, 280, 283, 1, 130_817)
+          |> viewpoint(1, 136, 106, 2, 26367)
+          |> close()
+
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx =
+          ctx
+          |> mes("[Traveler Ichack]")
+          |> mes("Because of the dangers here, we need better security...")
+          |> mes("Have you ever been to the ")
+          |> mes(
+            Rathena.concat(
+              Todo.call!(:F_Navi, ["training room", "dicastes01,255,172"]),
+              "? The training guards seem to never sleep!"
+            )
+          )
+          |> viewpoint(1, 255, 172, 3, 16_764_108)
+          |> close()
+
+        throw({:script_end, ctx})
+
+      4 ->
+        ctx =
+          ctx
+          |> mes("[Traveler Ichack]")
+          |> mes("This is one of the most important reasons why they live here.")
+          |> mes(
+            Rathena.concat(
+              Rathena.concat(
+                "If you go to the ",
+                Todo.call!(:F_Navi, ["factory", "dicastes01,97,256"])
+              ),
+              ", you can see the recently refined Bradium."
+            )
+          )
+          |> viewpoint(1, 97, 256, 4, 26367)
+          |> close()
+
+        throw({:script_end, ctx})
+
+      5 ->
+        ctx =
+          ctx
+          |> mes("[Traveler Ichack]")
+          |> mes(
+            "Although I arrived here as the first adventurer, the owner of the pub was the first person here."
+          )
+          |> mes(
+            Rathena.concat(
+              Todo.call!(:F_Navi, ["Bumen Florine's pub", "dicastes01,136,106"]),
+              " is located underground in the lower residential area."
+            )
+          )
+          |> mes("He might have some valuable information for you.")
+          |> viewpoint(1, 136, 106, 5, 16_724_736)
+          |> close()
+
+        throw({:script_end, ctx})
+
+      6 ->
+        ctx =
+          ctx
+          |> mes("[Traveler Ichack]")
+          |> mes(
+            Rathena.concat(
+              Rathena.concat("The ", Todo.call!(:F_Navi, ["cats", "dicastes01,199,39"])),
+              " don't seem to have a good relationship with the Sapha like we do."
+            )
+          )
+          |> mes("Perhaps it's because trading is involved.")
+          |> mes("Poor cats. They must be shivering from the cold out there.")
+          |> next()
+          |> mes("[Traveler Ichack]")
+          |> mes("You can find their caravan just outside the gates.")
+          |> viewpoint(1, 199, 39, 6, 10_040_319)
+          |> close()
+
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

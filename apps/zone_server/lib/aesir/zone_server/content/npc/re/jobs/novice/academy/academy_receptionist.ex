@@ -158,7 +158,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyReceptionis
         )
       end
 
-    ctx |> next() |> loop_1()
+    ctx |> next() |> loop_1() |> ev_oninit()
   catch
     :throw, {:script_end, ctx} -> ctx
   end

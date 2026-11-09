@@ -511,7 +511,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterMounds do
         ctx
       end
 
-    ctx
+    ev_oninit(ctx)
   catch
     :throw, {:script_end, ctx} -> ctx
   end

@@ -906,6 +906,25 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ ~r/def ev_ontimer600000\(ctx\) do\n\s*ev_ontimer900000\(ctx\)/
   end
 
+  test "a label body that runs off its end falls through into the next event label" do
+    src =
+      gen!(
+        """
+        end;
+
+        OnDisable:
+          stopnpctimer;
+        OnInit:
+          disablenpc "Hansenne#ep131_rhea07";
+          end;
+        """,
+        module: "Aesir.ZoneServer.Content.Npc.Payon.TestNpcLabelFallThrough"
+      )
+
+    assert src =~ ~r/def ev_ondisable\(ctx\) do\n\s*ctx \|> stopnpctimer\(\) \|> ev_oninit\(\)/
+    assert src =~ ~r/def ev_oninit\(ctx\) do\n\s*disablenpc\(ctx, "Hansenne#ep131_rhea07"\)/
+  end
+
   test "a body that starts at an event label makes on_talk run that label" do
     src =
       gen!(

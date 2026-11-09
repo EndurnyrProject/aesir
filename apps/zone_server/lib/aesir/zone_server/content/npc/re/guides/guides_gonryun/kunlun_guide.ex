@@ -135,7 +135,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesGonryun.KunlunGuide do
           throw({:script_end, ctx})
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     loop_1(ctx)

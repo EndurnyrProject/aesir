@@ -298,7 +298,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InformationStaff d
         ctx
       end
 
-    ctx
+    ev_oninit(ctx)
   catch
     :throw, {:script_end, ctx} -> ctx
   end

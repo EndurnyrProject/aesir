@@ -115,126 +115,121 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Archer.ArcherGuildsman do
         "Nothing, thanks."
       ])
 
-    ctx =
-      case v2 do
-        1 ->
-          ctx = mes(ctx, "[Archer Guildsman]")
+    case v2 do
+      1 ->
+        ctx = mes(ctx, "[Archer Guildsman]")
 
-          if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
-            ctx =
-              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:archer) do
-                mes(ctx, "Haha, you are kidding me...")
-              else
-                ctx
-                |> mes("I feel sorry but only Novices can change their job.")
-                |> mes("You already have your own decent job, don't you?")
-              end
-
-            ctx = close(ctx)
-            throw({:script_end, ctx})
-          else
-            ctx =
+        if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
+          ctx =
+            if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:archer) do
+              mes(ctx, "Haha, you are kidding me...")
+            else
               ctx
-              |> mes(Rathena.concat(Rathena.concat("You are... ", char_name(ctx, 0)), ", right?"))
-              |> next()
+              |> mes("I feel sorry but only Novices can change their job.")
+              |> mes("You already have your own decent job, don't you?")
+            end
 
-            v3 = can_change_job?(ctx)
+          ctx = close(ctx)
+          throw({:script_end, ctx})
+        else
+          ctx =
+            ctx
+            |> mes(Rathena.concat(Rathena.concat("You are... ", char_name(ctx, 0)), ", right?"))
+            |> next()
 
-            ctx =
-              if not Rathena.truthy?(v3) do
-                ctx =
-                  ctx
-                  |> mes("[Archer Guildsman]")
-                  |> mes("Well, you're not at the right skill level.")
-                  |> mes(
-                    "Your job level must be at least ^4A4AFF10^000000 and your Basic Skill level should reach ^4A4AFFlevel 9"
-                  )
-                  |> next()
-                  |> mes("[Archer Guildsman]")
-                  |> mes(
-                    "Because an Archer needs extremely high concentration, so we do not accept those who have little patience."
-                  )
-                  |> close()
+          v3 = can_change_job?(ctx)
 
-                throw({:script_end, ctx})
-              else
+          ctx =
+            if not Rathena.truthy?(v3) do
+              ctx =
                 ctx
-              end
+                |> mes("[Archer Guildsman]")
+                |> mes("Well, you're not at the right skill level.")
+                |> mes(
+                  "Your job level must be at least ^4A4AFF10^000000 and your Basic Skill level should reach ^4A4AFFlevel 9"
+                )
+                |> next()
+                |> mes("[Archer Guildsman]")
+                |> mes(
+                  "Because an Archer needs extremely high concentration, so we do not accept those who have little patience."
+                )
+                |> close()
 
-            ctx =
+              throw({:script_end, ctx})
+            else
               ctx
-              |> mes("[Archer Guildsman]")
-              |> mes("Your Basic Skill is now enough..")
-              |> mes(
-                "....Hm~~ so you are now ready to be an Archer. I will take the step right away."
-              )
-              |> next()
-              |> mes("[Archer Guildsman]")
-              |> mes(
-                "Congratulations! You are now an Archer! Also, we hope that you actively participate in many programs for the revival of the Archer Guild."
-              )
-              |> mes(
-                "Ah, items have arrived from the Production Department. Here, take these! These are all yours!"
-              )
-              |> jobchange(:archer)
-              |> give_item(1742, 1)
-              |> give_item(12004, 1)
-              |> give_item(12009, 1)
-              |> give_item(12008, 1)
-              |> next()
-              |> mes("[Archer Guildsman]")
-              |> mes("Having a bow and arrows, now you became a real Archer.")
-              |> mes(
-                "If you open the arrow container, there are arrows in it and then you can equip them."
-              )
-              |> mes("Well, I expect to hear better news from you. It's time to say goodbye.")
-              |> mes("Bye.")
-              |> close()
+            end
 
-            throw({:script_end, ctx})
-          end
-
-        2 ->
           ctx =
             ctx
             |> mes("[Archer Guildsman]")
-            |> mes("An Archer has skills using a bow and has various talents.")
-            |> mes("The greatest ability of an Archer is attacking enemies from a long distance.")
-            |> next()
-            |> mes("[Archer Guildsman]")
+            |> mes("Your Basic Skill is now enough..")
             |> mes(
-              "Although an Archer has weaker HP, he or she can shoot enemies at a long range,"
-            )
-            |> mes("so an Archer is safer in a real battle.")
-            |> next()
-            |> mes("[Archer Guildsman]")
-            |> mes(
-              "Although an Archer in Ragnarok has lower HP, he or she has high accuracy and attack rate so that the archer can kill monsters before they get close to an Archer."
+              "....Hm~~ so you are now ready to be an Archer. I will take the step right away."
             )
             |> next()
             |> mes("[Archer Guildsman]")
-            |> mes("^8C2121An Archer can change jobs to a Hunter.^000000")
             |> mes(
-              "^8C2121Other than Hunter, if you are a man, you can change your job to Bard and if you are a woman, you can change your job to Dancer.^000000"
+              "Congratulations! You are now an Archer! Also, we hope that you actively participate in many programs for the revival of the Archer Guild."
             )
+            |> mes(
+              "Ah, items have arrived from the Production Department. Here, take these! These are all yours!"
+            )
+            |> jobchange(:archer)
+            |> give_item(1742, 1)
+            |> give_item(12004, 1)
+            |> give_item(12009, 1)
+            |> give_item(12008, 1)
+            |> next()
+            |> mes("[Archer Guildsman]")
+            |> mes("Having a bow and arrows, now you became a real Archer.")
+            |> mes(
+              "If you open the arrow container, there are arrows in it and then you can equip them."
+            )
+            |> mes("Well, I expect to hear better news from you. It's time to say goodbye.")
+            |> mes("Bye.")
             |> close()
 
           throw({:script_end, ctx})
+        end
 
-        3 ->
-          ctx =
-            ctx
-            |> mes("[Archer Guildsman]")
-            |> mes("If you have any questions, feel free to come and ask me.")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+      2 ->
+        ctx =
           ctx
-      end
+          |> mes("[Archer Guildsman]")
+          |> mes("An Archer has skills using a bow and has various talents.")
+          |> mes("The greatest ability of an Archer is attacking enemies from a long distance.")
+          |> next()
+          |> mes("[Archer Guildsman]")
+          |> mes("Although an Archer has weaker HP, he or she can shoot enemies at a long range,")
+          |> mes("so an Archer is safer in a real battle.")
+          |> next()
+          |> mes("[Archer Guildsman]")
+          |> mes(
+            "Although an Archer in Ragnarok has lower HP, he or she has high accuracy and attack rate so that the archer can kill monsters before they get close to an Archer."
+          )
+          |> next()
+          |> mes("[Archer Guildsman]")
+          |> mes("^8C2121An Archer can change jobs to a Hunter.^000000")
+          |> mes(
+            "^8C2121Other than Hunter, if you are a man, you can change your job to Bard and if you are a woman, you can change your job to Dancer.^000000"
+          )
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx =
+          ctx
+          |> mes("[Archer Guildsman]")
+          |> mes("If you have any questions, feel free to come and ask me.")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

@@ -238,7 +238,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesLouyang.LuoyangGuide do
           throw({:script_end, ctx})
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     loop_1(ctx)

@@ -39353,7 +39353,7 @@
   },
   "re/cities/dewata.txt|script|Alberta Sailor#dewata|dewata:229:49": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.AlbertaSailor",
-    "output_hash": "69864c8ce2759db4b305b27bb71da4d49679825aacf4e39bcd9c15fb96ccbb7e",
+    "output_hash": "87646e25631bd0c7eb8e0f202343b266706673520bafd081725ca6cf7827c7c7",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/alberta_sailor.ex",
     "source_hash": "29908209029f9b54c92ec9a359609be016228a99fc71429d0772a1117731fd65",
     "spawns": [
@@ -39371,7 +39371,7 @@
   },
   "re/cities/dewata.txt|script|Dewata Sailor#alberta|alberta:212:202": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.DewataSailor",
-    "output_hash": "7ca9feac6ef29b8fdd7b3a7c0a4fc8ccff24db915f3c7048ae852c9f043e6138",
+    "output_hash": "1d08937e47aae0ae0a0e8134f1bf02b8a25f3503277b0be461335914123fb3f2",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/dewata_sailor.ex",
     "source_hash": "ef8934055b8c862a8f9c1888f196ca8b082349848446390c1b356b2aa73c0a59",
     "spawns": [
@@ -39389,7 +39389,7 @@
   },
   "re/cities/dewata.txt|script|Dieting Lady#dew|dewata:204:230": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.DietingLady",
-    "output_hash": "6cfae0eb5e0fc004f544c102d605d532c10f47c2899ec1acab77bb9e8ee8add6",
+    "output_hash": "9aa62a72b3867d70153ac61771c5beb08d1a99fe1f962a21a9f2a1422ecb14b6",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/dieting_lady.ex",
     "source_hash": "b00414df8105c0ff0cf7d6321261d2320359e9a6ed9baf25c2755f7594b44957",
     "spawns": [
@@ -39512,7 +39512,7 @@
   },
   "re/cities/dewata.txt|script|Lazy Young Man#dew|dewata:114:243": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.LazyYoungMan",
-    "output_hash": "c29c0dc38268cd79c680eea80838ab0056354b5399ecbb5353a5427dcb167557",
+    "output_hash": "7f35dcb52ce77dbc09d97b6a4371c7385b3104f5e3081a3c023f3dfe18ed0ab3",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/lazy_young_man.ex",
     "source_hash": "2cef6985b297dc7c64d59d2f35f7253d52c1a36fdcb29784cc9626d5c04f228d",
     "spawns": [
@@ -39716,7 +39716,7 @@
   },
   "re/cities/dewata.txt|script|Monk#dewt1|dewata:75:122": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Monk75122",
-    "output_hash": "cf21be13ea01941c37bf997cc1eadc724e35a956e6ae59e6fc0b33d23041db9f",
+    "output_hash": "b175e3e348c82779fd86ac45a28444457e4c9d3b45c616fdc0f1cdfb9872a86f",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/monk_75_122.ex",
     "source_hash": "1ad3437d9cfc4e875798abb4d8da15610430d5107e708b29a9b10970bb3e7327",
     "spawns": [
@@ -39734,7 +39734,7 @@
   },
   "re/cities/dewata.txt|script|Monk#dewt2|dewata:69:101": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Monk69101",
-    "output_hash": "f30d231d968ac3b7c0c65649c7ab8ef42ab77092185e08ccd5d76f9f6e44accd",
+    "output_hash": "efde2b0ea464ed9a4d5270567f2395a06184e8dafef32b8ff47631a5962f08ef",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/monk_69_101.ex",
     "source_hash": "b8a8a10fd658166a6ffee4575de5d20c52dffedf0dcbef88303eda4772e4fd96",
     "spawns": [
@@ -39831,7 +39831,7 @@
   },
   "re/cities/dewata.txt|script|Restauranteur#dew|dewata:146:109": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Restauranteur",
-    "output_hash": "5c4976b0165fcedfb41fa363f6a7076f33a18c783f9ffbc2c6d9c321a201ad19",
+    "output_hash": "dfc918a8765132e4c83d9ef3d4b43df0bf60f10b1e11c65d22e730065d8806bc",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/restauranteur.ex",
     "source_hash": "e0bbfe8a7a69a17d23a0c14419bb8b36b5464c8e57309105355db769f60656b8",
     "spawns": [
@@ -39871,7 +39871,7 @@
   },
   "re/cities/dewata.txt|script|Semangat's Wife#dew|dewata:139:114": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SemangatSWife",
-    "output_hash": "4e7b17a0bbd4b1649f51320fa47334f8250be146a77838a1711a18cf10fbb992",
+    "output_hash": "64303513bf7874e8c6c04c2b28855b2e48d52b2e75602bda43c3933c02be1608",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/semangat_s_wife.ex",
     "source_hash": "5e4165a97804d6a313b3b7f8b95d58ab06708b34748682738ed0a6f62429ec2f",
     "spawns": [
@@ -40227,7 +40227,7 @@
   },
   "re/cities/dewata.txt|script|Young Man#dew-1|dewata:221:237": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.YoungMan",
-    "output_hash": "1163c5e25df925dff88e1b34e53efc84e4c0f56048b1e6698a8f5d7bf6babfe5",
+    "output_hash": "e050331b1583537c8896263332ba27044207dee33acaba7b59423ac0cb0e693a",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dewata/young_man.ex",
     "source_hash": "49713b21a88a27e2a70704e6d9dba9f23b508bfa62e609e74085af86719b047d",
     "spawns": [
@@ -40263,7 +40263,7 @@
   },
   "re/cities/dicastes.txt|script|Complaining Galten#fihs|dicastes01:191:202": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.ComplainingGalten",
-    "output_hash": "96cd996dda06c877f9043287da2d22e9dfe41a79284c78968c3602c4355adebf",
+    "output_hash": "039bf2996e9abfab5b528561cc01fa01ed4cc0ff4c0964e95f01c1eeaf718c58",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dicastes/complaining_galten.ex",
     "source_hash": "6d1fd1e0abf6eb398bd34a1f0c87d880252febc94808677a77fbc2f3f6b736bf",
     "spawns": [
@@ -40281,7 +40281,7 @@
   },
   "re/cities/dicastes.txt|script|Crazy Venknick#fihsing1|dicastes01:202:197": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.CrazyVenknick",
-    "output_hash": "09a1b1f6ef837363da020c7234dc13388abad35d9d79af7ea15ab336a8e33415",
+    "output_hash": "4ff9dd3489f59891017fec68ef057d8e8933897c72d6aca0e8121964ffedde1e",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/dicastes/crazy_venknick.ex",
     "source_hash": "7d3d372b3f80c7dc08d2cfb785b85c3fad8bdb2980f874cc054bd1b8dfefee0b",
     "spawns": [
@@ -40937,7 +40937,7 @@
   },
   "re/cities/eclage.txt|script|Receptionist#Laphine|ecl_in02:164:56": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Eclage.Receptionist",
-    "output_hash": "4acba1a202c42fc822c62deaa15e0aa1ac0bda799d55925769b72c7ea25b9f92",
+    "output_hash": "543cd9ab51bab01ea584ce7e0804da5d12125e3f36082de1d227b90ef6f8b4ee",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/eclage/receptionist.ex",
     "source_hash": "dfed4b29fd87c951f76883d2ce92a2c242452e2a5d888f6681dde422e37e8ddb",
     "spawns": [
@@ -41127,7 +41127,7 @@
   },
   "re/cities/izlude.txt|script|Resting Adventurer#iz|prt_fild08:338:217": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.RestingAdventurer",
-    "output_hash": "9f8a08e83bc018b9f7a1cbc933aaf3c4f8f83f3c4ac35613aae7ef27f8506bbc",
+    "output_hash": "f9d97886aa5681278800b1192b88482ccb63ed99be305e69a2dace84c22b4438",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/izlude/resting_adventurer.ex",
     "source_hash": "8f231cf3baed704d11811db16f362c8abb85c76352df79e0627a020dee9c287b",
     "spawns": [
@@ -41185,7 +41185,7 @@
   },
   "re/cities/izlude.txt|script|Talkative Adventurer#iz|izlude:146:205": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.TalkativeAdventurer",
-    "output_hash": "ab3d88d2cd3a1f6c4c3c31e320050750595ce2c88860a4358f44dc9e57377083",
+    "output_hash": "727ac35b487c97220e0bf3071bea28c11064048fd7fd4988da591842af6270cc",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/izlude/talkative_adventurer.ex",
     "source_hash": "b5ef582bf5c80326849694fe5984aeea261721137e8f206b5717d1dbd7cccd89",
     "spawns": [
@@ -41243,7 +41243,7 @@
   },
   "re/cities/izlude.txt|script|Talkative Kid#iz|izlude:143:205": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.TalkativeKid",
-    "output_hash": "21e210fc1168b1182a2c5ebfd40e5b65ba8b9970baea23c61bb32f87a0f612d3",
+    "output_hash": "adbf6b2511cad58cb6a8312cd7c7df2987798c07b1fe9e421efea5a3d1c9579b",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/izlude/talkative_kid.ex",
     "source_hash": "d13628252935f0747707b8c442d4dd9702cdf15d740ff3a9360305b343b653ee",
     "spawns": [
@@ -41507,7 +41507,7 @@
   },
   "re/cities/malangdo.txt|script|Innkeeper#malang|malangdo:147:117": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Malangdo.Innkeeper",
-    "output_hash": "0a5fd68dd9aa47a0c16a86cac56266aa3419da6ee78e2627b357e9c962008ed1",
+    "output_hash": "0a42c3de8db85d9bc28195dffadcf3e9f05563eb2d3b825a1ce0dfa7074fbd95",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/malangdo/innkeeper.ex",
     "source_hash": "86db9eb8244cc706e764167a5e7e2967431143544b0e655442974e7ab35adcc8",
     "spawns": [
@@ -41561,7 +41561,7 @@
   },
   "re/cities/malangdo.txt|script|Wanderer#mal|malangdo:149:120": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Malangdo.Wanderer",
-    "output_hash": "48c1fee394ce33329a7e160b3de151adac3eb6209e2ca5eadae1ede4034b1e9e",
+    "output_hash": "d432ae24e8f13ea6ae8a5c1ab3ac7e7c0efdad4a43d1c27ce44d03d114288306",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/malangdo/wanderer.ex",
     "source_hash": "f01239e21fb1cfcad1b02e52e7bc3d6a81c4250adafcd0fbbe20957164be32f4",
     "spawns": [
@@ -41753,7 +41753,7 @@
   },
   "re/cities/malaya.txt|function|F_Malaya_Jeepney|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Functions.FMalayaJeepney",
-    "output_hash": "dad7c769fa9dbc8d809c4bd37589b9943097fa1b67e2cce1e2fd369d52109cb0",
+    "output_hash": "0a8262effe637959726c7152e4b1024c406479a38443c5a3cbe80a5c90d4b3d5",
     "output_path": "lib/aesir/zone_server/content/npc/re/functions/f_malaya_jeepney.ex",
     "source_hash": "1473a3b01a8b6d50fbd122603077fd1536aab62142027e75b1919d2cc6127724",
     "spawns": []
@@ -41796,7 +41796,7 @@
   },
   "re/cities/malaya.txt|script|Inn Keeper#ma|ma_in01:30:94": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.InnKeeper",
-    "output_hash": "58cbe902be3fe522a78ba4598e7242b5b89589bc8b8d9e32015ba48dde692dc2",
+    "output_hash": "60f7c51a729c30c77d43eb0765a76a22f088c9d1070c52f753f8631cd365ae87",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/malaya/inn_keeper.ex",
     "source_hash": "6d46f7dc8cf8f2ed094230ae552a978683fef501d1ecc50889aba36ee0122cca",
     "spawns": [
@@ -42048,7 +42048,7 @@
   },
   "re/cities/malaya.txt|script|Optamara Crew#alberta|alberta:196:202": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.OptamaraCrew",
-    "output_hash": "4d0822a12ba1dbfc07ba2991dfaf19922517a071b88a7f5d5446eae9978306b3",
+    "output_hash": "abf92b4c6e7184b430562862e242cacdbed91e525640ec91ca62b1619c285e2e",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/malaya/optamara_crew.ex",
     "source_hash": "d3c16852644fae30959f695bdea224906394ee5cb6f44698ab175e5737ce4119",
     "spawns": [
@@ -42066,7 +42066,7 @@
   },
   "re/cities/malaya.txt|script|Optamara Crew#malaya|malaya:276:55": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.OptamaraCrew27655",
-    "output_hash": "ef79ca23175a93042b59f2c890fdb5d2de5798092fdd71a1f988fb395446ab2c",
+    "output_hash": "b06f067827bb18bb793874317533c8ed7ea22b64ff88659c7f1123f8cfd71193",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/malaya/optamara_crew_276_55.ex",
     "source_hash": "92ca2a05d142f7312b4fda2093ade3f2f3247579b0d3bbda42232fb5c19e70ce",
     "spawns": [
@@ -42084,7 +42084,7 @@
   },
   "re/cities/malaya.txt|script|Port Guard#ma03|malaya:270:59": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.PortGuard",
-    "output_hash": "1c321d69e117df2e5532068848440cc8a79688bfab97fe85bd2d0ef57dbc773c",
+    "output_hash": "1fe11fe0340ee288a7f510baee2c08333361dcfc0b3c7d5144cd50c2a4ce9104",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/malaya/port_guard.ex",
     "source_hash": "7b485db01b6ee22e92245b0c782a11f2d28cd2ba0b1ce7389b62f6c0e5fd067f",
     "spawns": [
@@ -42158,7 +42158,7 @@
   },
   "re/cities/mora.txt|script|Banana Rafflesia#ep14_1|mora:99:65": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.BananaRafflesia",
-    "output_hash": "bfd58e1b59db7289fc4eda38353391726748225489fb1cf622ecb8c06848a3ce",
+    "output_hash": "e13bcd4ebae44f48739959d45e432edde205794b3198b2a4f5a6588cbfd00164",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/mora/banana_rafflesia.ex",
     "source_hash": "2378e7abcccb88f5bcb598b73fd827ec7f834b2bf2d2ed4306cfe24556660505",
     "spawns": [
@@ -42176,7 +42176,7 @@
   },
   "re/cities/mora.txt|script|Boaster#podo|mora:105:104": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.Boaster",
-    "output_hash": "9b61fc94b36ea76ceb1df197186985141f8a84c17430e4c7543a6fe0e6722e49",
+    "output_hash": "cb2e57736d0ac9448610ce0d4caebfc50d87d6076136f84eea6fb5fac9a2fc78",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/mora/boaster.ex",
     "source_hash": "81b187c4a9510953253c2e73d641afecfbe78e4646f36454949d3e8728b3214e",
     "spawns": [
@@ -42212,7 +42212,7 @@
   },
   "re/cities/mora.txt|script|Drawer#mora_warehouse|mora:48:128": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.Drawer",
-    "output_hash": "a0fa095337870007e4f53944e0cc8fd8db63c4be8de764a39191347c5e3a1b57",
+    "output_hash": "eb2af796b9f2ef8c259d09bbfa647b2f79218d6732f02f9cd2df3423eb70acac",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/mora/drawer.ex",
     "source_hash": "bd1c205efeec8c25f294af5461d08bff046aa74277a015d539aec22ebf8595e9",
     "spawns": [
@@ -42284,7 +42284,7 @@
   },
   "re/cities/mora.txt|script|Innkeeper#mora_inn|mora:43:127": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.Innkeeper",
-    "output_hash": "2f5d483b8c277f90522295ff74f4a98df78b974094dc9cf7322e29ac9b7fc902",
+    "output_hash": "e755dd99b8368494969ac2403b51717b85b40d87b8954831a9402a622dbf47df",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/mora/innkeeper.ex",
     "source_hash": "8b79168fd3f9d5c8d13ac91152096cb365adab35fc34c27d11b43163393d3ea0",
     "spawns": [
@@ -42500,7 +42500,7 @@
   },
   "re/cities/mora.txt|script|Nemnem#p|mora:160:123": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.Nemnem",
-    "output_hash": "27ef5b951eb00aa0c69ea0adbe232778a96bf5a31184e7e2af127202797ae08a",
+    "output_hash": "ef846538fa5f8031d652eccf76629dd316ef87cfbd96dd8cafbe49e883f80e52",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/mora/nemnem.ex",
     "source_hash": "770809ceb7dda2706a392a913c97e415c530fdb4882b8e6c21ca24dfa0b7eb62",
     "spawns": [
@@ -42571,7 +42571,7 @@
   },
   "re/cities/mora.txt|script|Reading Raffle#ep14_1|mora:113:185": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.ReadingRaffle",
-    "output_hash": "fb7bf32c5ebcd185620bd39ba64f844ec892c589fe1547fb7108845cb78281f1",
+    "output_hash": "285b54b21f1e26d7f3f6b4f72ab8e05a34100e1c5b252af123dea96434b62904",
     "output_path": "lib/aesir/zone_server/content/npc/re/cities/mora/reading_raffle.ex",
     "source_hash": "71c26b6b26f0e6445215563664c2a5de7c883e930b8cfa9c52e53b2b328ab478",
     "spawns": [
@@ -42805,7 +42805,7 @@
   },
   "re/guides/guides_alberta.txt|script|Guide#01alberta::AlbertaGuide|alberta:23:238": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesAlberta.Guide",
-    "output_hash": "440e7a14bdb147b18760104f6e3c216f20f8e45f76bf15009a6a15be1cb5fa50",
+    "output_hash": "d6a67e11b7035af8e8571828977462c57d12905525e1dbcf537bb434d65dacc7",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_alberta/guide.ex",
     "source_hash": "741111f41463b08275ff4eec3be455c374757a77c8750e12e0e1506d70a0f975",
     "spawns": [
@@ -42843,7 +42843,7 @@
   },
   "re/guides/guides_aldebaran.txt|script|Guide#01aldebaran::GuideAldearan|aldebaran:139:63": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesAldebaran.Guide",
-    "output_hash": "ea66374fa1fbf7d746297df6d5b3407298f559668c1b0f81d43f904afd9be9ab",
+    "output_hash": "07f3c5b3bc2da80faadb5cebe189262c7a92a6b54497fc05f7b5694a36eac4cb",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_aldebaran/guide.ex",
     "source_hash": "544de25270fa5787ee9346c3b3a00fc3461c27120a922af43be3a0d8300ceb21",
     "spawns": [
@@ -42891,7 +42891,7 @@
   },
   "re/guides/guides_amatsu.txt|script|Amatsu Guide#amatsu|amatsu:202:91": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesAmatsu.AmatsuGuide",
-    "output_hash": "0f23f3474c9d1b8ffcb514b8fd4a2a3d4c267a3fe643f20a75f5b3f3aa0bb563",
+    "output_hash": "26ef4b4a413b0ef2e47a4f255bbd9c3e5aab1bd50a6577aea247028f2f55009c",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_amatsu/amatsu_guide.ex",
     "source_hash": "44924d2180aae96db05c06cf48504d92e950ddba9d40ce6285a57d0c13710c6d",
     "spawns": [
@@ -42909,7 +42909,7 @@
   },
   "re/guides/guides_ayothaya.txt|script|Ayothaya Guide Noi#01ay|ayothaya:203:169": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesAyothaya.AyothayaGuideNoi",
-    "output_hash": "dbfcf9c193db0d1424a375000c5dd17cd76fc4995b9887d50785c47f01d10755",
+    "output_hash": "8ccc4bf8a4e684ee72da8dff76feeaff3ae15f603bd74ccbdddc021c688b03c6",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_ayothaya/ayothaya_guide_noi.ex",
     "source_hash": "c970649e519bbdc5443af5c491af5e061d447dd218eb6128013747ff5744864d",
     "spawns": [
@@ -42937,7 +42937,7 @@
   },
   "re/guides/guides_brasilis.txt|script|Brasilis Guide|brasilis:219:97": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesBrasilis.BrasilisGuide",
-    "output_hash": "62b0b3841504d87bc153cb4325f22e85dab464ba64cdd78b81dc7716f7469cd0",
+    "output_hash": "156adb20bbc8804706242a89d8a9c37082aa333f9c17849cb8fd809be6e8c40e",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_brasilis/brasilis_guide.ex",
     "source_hash": "a988ceae33e7fa2177dfc6abbd2440a2e4e1e9aee3f1c7e967434cb318ad4200",
     "spawns": [
@@ -42954,7 +42954,7 @@
   },
   "re/guides/guides_comodo.txt|script|Comodo Guide#01comodo::GuideComodo|comodo:322:178": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesComodo.ComodoGuide",
-    "output_hash": "ad23d4c8424e52d6fd8ec807668937e4b0bd33475e8cdb7cfe53e29de0fd7887",
+    "output_hash": "3e1eec405582206462dca1817a3c9a78023675a0dd197b1d31668bc0d99ca7a3",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_comodo/comodo_guide.ex",
     "source_hash": "c16f46171ef69504da032fcdd333d2ecd80c7a2e70fba2d08a70e77b4b71ad70",
     "spawns": [
@@ -43002,7 +43002,7 @@
   },
   "re/guides/guides_dewata.txt|script|Dewata Guide#dewata01|dewata:202:106": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesDewata.DewataGuide",
-    "output_hash": "5de9768810973f6086238031a168b2de12a6c77b7f56aa4600c539f82837e582",
+    "output_hash": "0b64ca558ad306b8dbfe7de6a04643c91bc899534020bae633a14e58bde8ed5c",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_dewata/dewata_guide.ex",
     "source_hash": "1b13be16d9c87343947b6ee43f7e95210bd3e0593d58249dcf9273ac293d2577",
     "spawns": [
@@ -43030,7 +43030,7 @@
   },
   "re/guides/guides_dicastes.txt|script|Traveler Ichack#info|dicastes01:189:191": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesDicastes.TravelerIchack",
-    "output_hash": "e410264dac5830fed70d5d1a4a8034b429c94a415c38cd396d40761f437085c0",
+    "output_hash": "cc52f4d2f2925e780b38068bc4bdf5d188b5b359c408d1436cb3ce6216273b66",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_dicastes/traveler_ichack.ex",
     "source_hash": "c18f8caac6893f7f11ec5860592d798b4da2637a33b0f186756912ea977159ff",
     "spawns": [
@@ -43052,7 +43052,7 @@
   },
   "re/guides/guides_eclage.txt|script|Eclage Guard#obb|ecl_in01:48:60": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesEclage.EclageGuard",
-    "output_hash": "490b5105088bbc4556e5eb4f4a2fe2a2e6d02b718a9624b3eaeabdee98ce3086",
+    "output_hash": "cf9dc3985d877d11326583b0e898e1434a1fd4d1b6bbc168494ef3f957561aaa",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_eclage/eclage_guard.ex",
     "source_hash": "7bd1de14f1a68484f0219755095f0fae8df08e4aedfc0bef6b418ddf356a4c82",
     "spawns": [
@@ -43070,7 +43070,7 @@
   },
   "re/guides/guides_einbroch.txt|script|Einbech Guide#einbech01::GuideEinbech|einbech:67:37": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesEinbroch.EinbechGuide",
-    "output_hash": "c3263b72152567a2bb4d2dd40afa132ab5870a5c4e5257d393761499c8123fd9",
+    "output_hash": "43aef171598900784936f3f718b12957a7c77707bb96308564eaa4f5a43419d4",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_einbroch/einbech_guide.ex",
     "source_hash": "d869644d2144f12b7c3903649dc976b83ffa9ee5f8ce388997cd5e3ef84e1c2f",
     "spawns": [
@@ -43098,7 +43098,7 @@
   },
   "re/guides/guides_einbroch.txt|script|Einbroch Guide#ein01::GuideEinbroch|einbroch:72:202": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesEinbroch.EinbrochGuide",
-    "output_hash": "89d617c29dec914c744a30c6a5a46ed4a9a9aa44bc3a06517975c739af8497db",
+    "output_hash": "34c96097ef99cdf50c4d621a7f2f8108b07971dfe83c4af2b8f7c86b8aa39a2b",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_einbroch/einbroch_guide.ex",
     "source_hash": "231f1ff91e8d2477f8b92b99693c02e4be624d25942f3ce302171d495b76046e",
     "spawns": [
@@ -43146,7 +43146,7 @@
   },
   "re/guides/guides_geffen.txt|script|Guide#01geffen::GuideGeffen|geffen:203:116": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesGeffen.Guide",
-    "output_hash": "3e64f58c43eb39316a41f3ccf6c666a9b83486775d95f2d93227e64874caa4ff",
+    "output_hash": "7a14c74f31f953aa6d22f3bc8909e349592cbb8c48bb0bbf909465ab035dede3",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_geffen/guide.ex",
     "source_hash": "77378489be216037d805c8410e5dd627bfd630c28a83e000a21ee2f321c395aa",
     "spawns": [
@@ -43194,7 +43194,7 @@
   },
   "re/guides/guides_gonryun.txt|script|Kunlun Guide#01gonryun|gonryun:163:60": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesGonryun.KunlunGuide",
-    "output_hash": "3c865596113f1fb9eda4130c60374abd8caf15982be6a529a50ac25bf2e826ce",
+    "output_hash": "3fb1bd30d009aad6fcd1cfc55468ae5205eb1db7f54fc957d89cbda3f5ec644b",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_gonryun/kunlun_guide.ex",
     "source_hash": "e9b3165fd7286537d59cd1e402250660dd0cc32b3cf47bc6d97637365f9bc432",
     "spawns": [
@@ -43212,7 +43212,7 @@
   },
   "re/guides/guides_hugel.txt|script|Guide Rich King#hugel|hugel:187:172": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesHugel.GuideRichKing",
-    "output_hash": "e202bafff223bab89657f4df91b2234d7b52e68044575e49b049ac84102dfa45",
+    "output_hash": "5e8fd7c5b445ff3ffcf76d1b9f4857a8f851f758090d7b99e6b83a2e7332ef5d",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_hugel/guide_rich_king.ex",
     "source_hash": "42b3e49bbb688ad734d04d4d5b5ba51982c2a57194b957644dd1c2f80cb1f8e4",
     "spawns": [
@@ -43230,7 +43230,7 @@
   },
   "re/guides/guides_hugel.txt|script|Hugel Guide Granny#hugel|hugel:98:56": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesHugel.HugelGuideGranny",
-    "output_hash": "2f0560dada4b03422c93b6b0d632872beb1f951967c096fb4f14a0d1c1c19130",
+    "output_hash": "c24adbd4924f17a79cd6d1255ddefaac10d31b510380a462cdcb77d5331a3c0a",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_hugel/hugel_guide_granny.ex",
     "source_hash": "07c88dee04a3ad8998efa5b0323d62c388fa1e7837ad54c93c0fdcb366410f81",
     "spawns": [
@@ -43356,7 +43356,7 @@
   },
   "re/guides/guides_juno.txt|script|Juno Guide#yuno01::GuideJuno|yuno:59:212": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesJuno.JunoGuide",
-    "output_hash": "fbbdbed62203bedb2c76bf234e7112912faa80cb2c3d3e60dbf9b0c482fbaa4c",
+    "output_hash": "367a411560a418c525052bc6b8f0a4e45aab93ab2a61ef7ab7f140d530667084",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_juno/juno_guide.ex",
     "source_hash": "5655e90dd55a487664b2b3b8327d6dcdf2a0f4da31e246278ddf9764fc66abbc",
     "spawns": [
@@ -43384,7 +43384,7 @@
   },
   "re/guides/guides_lighthalzen.txt|script|Lighthalzen Guide#lhz01::GuideLighthalzen|lighthalzen:207:310": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesLighthalzen.LighthalzenGuide",
-    "output_hash": "7792dcd25d85fb98f008104f56362f0d45c6bfe30d7185d2155f7360252ba04b",
+    "output_hash": "b40c10a488b6471d3d1743934aff5d8c775a5c073d4618716ddde9d33834121b",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_lighthalzen/lighthalzen_guide.ex",
     "source_hash": "c9ccc49a347384d4ab4386ff7cf0c5f13bc1d6101d99d50e7d4760f32e6fa171",
     "spawns": [
@@ -43442,7 +43442,7 @@
   },
   "re/guides/guides_louyang.txt|script|Luoyang Guide#01louyang|louyang:224:104": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesLouyang.LuoyangGuide",
-    "output_hash": "6757e5e49d69b3fd958a240ae41275498ddc7efc0285664b3c3ff0dcc0124947",
+    "output_hash": "244c9693c98a8fb850aec568b3662c0130272cb02144b797c67cd3521301020e",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_louyang/luoyang_guide.ex",
     "source_hash": "f908dab0323e0aebe713e1ec2132099e4267a6a00e48b379b095de76ccdcf1be",
     "spawns": [
@@ -43460,7 +43460,7 @@
   },
   "re/guides/guides_lutie.txt|script|Lutie Guide#xmas|xmas:140:137": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesLutie.LutieGuide",
-    "output_hash": "74515e396777c99e26c7fb3b78056402fbafc5666989b1d1ac55187dcba84b8c",
+    "output_hash": "878e8359567569960b0277b81b5a4b9f20224aecfe37883e806843870cf25580",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_lutie/lutie_guide.ex",
     "source_hash": "617f63728fd73f7fac6afd5c41e1f543e1ea1fa2dbacab6ecde85d582be0d394",
     "spawns": [
@@ -43478,7 +43478,7 @@
   },
   "re/guides/guides_malangdo.txt|script|Malangdo Guide#Malangdo|malangdo:218:101": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMalangdo.MalangdoGuide",
-    "output_hash": "d61b46c2e7925684aefddfe9b1ebe2c68c78dc392de6f427279b792056bad5b7",
+    "output_hash": "f0916f7e7ac29e31c545f3825baa36948c2e9ee3f341bbdb17db2d6a0ef1052a",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_malangdo/malangdo_guide.ex",
     "source_hash": "e7ec167a966cc60fe18b779b562aebc06c2ba1727c43a287588c7ab46d361451",
     "spawns": [
@@ -43496,7 +43496,7 @@
   },
   "re/guides/guides_malaya.txt|script|Port Malaya Guide#01::GuideMalaya|malaya:71:72": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMalaya.PortMalayaGuide",
-    "output_hash": "5cc631c1eee0a70fbd6145e82e8b4f33dbe2f1281b2ab421ad217b91271a8faf",
+    "output_hash": "b020ebd1de281671a32f1dfed3d4ec70f699e5ae2ac81041334105a54906a6eb",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_malaya/port_malaya_guide.ex",
     "source_hash": "0fff6c6f9339525077e59bd28863564719c97e8ee0646a0ecd9284fa2335755f",
     "spawns": [
@@ -43534,7 +43534,7 @@
   },
   "re/guides/guides_mora.txt|script|Raffle Guide#center|mora:115:138": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMora.RaffleGuide115138",
-    "output_hash": "afc15e59adcf3b178983cd2c7d74a46ad649cae7d6d5bf059022dbf681171ef9",
+    "output_hash": "f29fafe468c4b8e4ffa969505517a90ac7537240cbb3359b3d5e81b567afd9e3",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_mora/raffle_guide_115_138.ex",
     "source_hash": "4a66940be6a2fc5477ad60f46cc4148c3a0fe038434cc88f8656fa778cc42eb3",
     "spawns": [
@@ -43552,7 +43552,7 @@
   },
   "re/guides/guides_mora.txt|script|Raffle Guide#east|mora:167:76": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMora.RaffleGuide16776",
-    "output_hash": "d2d5fc72157e07eff0db413a0d5d6e1b7d73c0d70b22169b6456bb29cac338d1",
+    "output_hash": "ee96d58c86812b0fcdef6c08ba75392bbcee4695140d50f1d912d5cc7fd543ba",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_mora/raffle_guide_167_76.ex",
     "source_hash": "9f9284e80ef4afb4fa6202bdb5bb9b5d39559b6fbe9f7a854b3d18503d39c2b5",
     "spawns": [
@@ -43570,7 +43570,7 @@
   },
   "re/guides/guides_mora.txt|script|Raffle Guide#north|mora:25:158": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMora.RaffleGuide",
-    "output_hash": "4ec4e9230310e7d416ee8b1ae8f18b17c2f76ec29223899c99202f8114645749",
+    "output_hash": "e47a901e4c8e86951d19f56862af8b1f86b5a8358b1e2f502df6e82ef0579345",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_mora/raffle_guide.ex",
     "source_hash": "a8f774abaf9c9edf5a5179141c0182043e692afd02f82679d7fb6179da604f9e",
     "spawns": [
@@ -43588,7 +43588,7 @@
   },
   "re/guides/guides_mora.txt|script|Raffle Guide#south|mora:72:51": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMora.RaffleGuide7251",
-    "output_hash": "e85c589c9da8e8fbbf6cd9939c9cf6398e2335add3a9af715291db86c8cb0208",
+    "output_hash": "9397bd0c352b3e17523c7854f253fec78d80583b99fac63dfb3c35543b229c3f",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_mora/raffle_guide_72_51.ex",
     "source_hash": "35a707011bec8ac9c447e1d99c2c7e55a6257997d310d65c65f07ab58bc7bf35",
     "spawns": [
@@ -43606,7 +43606,7 @@
   },
   "re/guides/guides_morroc.txt|script|Guide#01morocc::GuideMorocc|morocc:153:286": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMorroc.Guide",
-    "output_hash": "3da57e1173c130e5b29a409bb913dd73897b2fefa3650bbeee69d0496bd55000",
+    "output_hash": "e1346ff44458ba4743ece2a512be1ca6b3a0ac9227542fc7d6a50c09b70fca1e",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_morroc/guide.ex",
     "source_hash": "84838cad35c6092726a80f35a5e890960d71c8c1adbcec5a14a31c80d540e510",
     "spawns": [
@@ -43654,7 +43654,7 @@
   },
   "re/guides/guides_morroc.txt|script|Guide#01ruins::GuideMocRuins|moc_ruins:159:53": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMorroc.Guide15953",
-    "output_hash": "ce39defdff2d34cd82ffc125e80e1016ca067baa63b59beca7caf7334de21aeb",
+    "output_hash": "b414be641a175cb2b8cba3d20ee9772d213bdb4f827eabf542d0bc2d9cb89e48",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_morroc/guide_159_53.ex",
     "source_hash": "4d59d322b96dab2bed766cb553d7acd8af674e9c2b642c24406dc08428dfce97",
     "spawns": [
@@ -43692,7 +43692,7 @@
   },
   "re/guides/guides_moscovia.txt|script|Moscovia Guide#01mosc|moscovia:161:76": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMoscovia.MoscoviaGuide",
-    "output_hash": "86a9b998fc12ddc954a70400c19024219c204b8d815cb1b72a0ad637c01d0363",
+    "output_hash": "dae90e4f33c85987eb2948b55759973938725cff6a9bdba90ca8c6f8adf8ca59",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_moscovia/moscovia_guide.ex",
     "source_hash": "e1e01dc1496b561de4438da95de8008d5f61d722b48a352a5369e389706ea411",
     "spawns": [
@@ -43720,7 +43720,7 @@
   },
   "re/guides/guides_niflheim.txt|script|Niflheim Guide#01nif|niflheim:201:187": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesNiflheim.NiflheimGuide",
-    "output_hash": "9701f9a89b5bd777e8bd67c6eb6c17d9827f7ad3064b6eab5bca01f7ff2831ea",
+    "output_hash": "92cbd6574b280560ea75668938fff9cd3a58cf4e87dd2341325712e90a47182c",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_niflheim/niflheim_guide.ex",
     "source_hash": "7f9254e049813300397b43f142ff710cc9d2629ad07c32c830420914ef7a44e4",
     "spawns": [
@@ -43738,7 +43738,7 @@
   },
   "re/guides/guides_payon.txt|script|Guide#01payon::GuidePayon|payon:160:67": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesPayon.Guide",
-    "output_hash": "d36cd625f53d78eff9d2205ad955f358012540bd60c103ae070905039175bc0b",
+    "output_hash": "5e164a9b0571c920a7bd090a6c20fb5d56c31f69183d86d0530f8050cd578d1b",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_payon/guide.ex",
     "source_hash": "f5b88f319d11776d8733080f35a7ee835315030c767cea5b8b45f8798ac6ec80",
     "spawns": [
@@ -43786,7 +43786,7 @@
   },
   "re/guides/guides_payon.txt|script|Guide#05payon|pay_arche:86:33": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesPayon.Guide8633",
-    "output_hash": "271224ea2046d75de3de2aff0539dd59e7af13a0d090cfb8eae717a4db9e567b",
+    "output_hash": "a28b4e6797138fc604a2995ca73fe5ca8877f092a2d00f77fb8f744526d5742b",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_payon/guide_86_33.ex",
     "source_hash": "75e53b975a5ed023aa978223c47e0ed513b3c88283e15918df5facd5e2db8bcd",
     "spawns": [
@@ -43804,7 +43804,7 @@
   },
   "re/guides/guides_prontera.txt|script|Guide#01prontera::GuideProntera|prontera:154:187": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesProntera.Guide",
-    "output_hash": "bc1d23c2bf6c7d40d8307f9579b56dced42ecd11a9e9ceb6eb9249dce32e7ff5",
+    "output_hash": "6f696ae7f89c96f3356aaae3555f20b7be3c0e99d544c76db07c36d826ac4f61",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_prontera/guide.ex",
     "source_hash": "e3ba4ad01479cd3f93e6c99ce6694379e9c21e4a11b92f82d0e010f0aa414650",
     "spawns": [
@@ -43862,7 +43862,7 @@
   },
   "re/guides/guides_rachel.txt|script|Rachel Guide#rachel|rachel:138:146": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesRachel.RachelGuide",
-    "output_hash": "e446578d1cdf3de7700ff142b90e87f7daa5661b8a821ff4c12ae997628cea9e",
+    "output_hash": "65dee5905fc0a4e66b50ed38f5925505ef7cb38815a520dd23fbbd3fc1351e38",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_rachel/rachel_guide.ex",
     "source_hash": "64c36745c143e6c137fa6066e6e248d00fed0a15b504c3dfde440124a21aaaab",
     "spawns": [
@@ -43908,7 +43908,7 @@
   },
   "re/guides/guides_umbala.txt|script|Umbala Guide#01umbala::GuideUmbala|umbala:128:94": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesUmbala.UmbalaGuide",
-    "output_hash": "e19f951240cc0b87c132d08cd13500e596610fa6d9230c454571d7b4a11c713d",
+    "output_hash": "74cdd90011cbaacd9775ba3ac6399dccaed1dda9b35b0660518677c575348eb7",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_umbala/umbala_guide.ex",
     "source_hash": "affb308c85474a127d96a6495fceb4479d271dac1409635fc3756708d2a7b573",
     "spawns": [
@@ -43936,7 +43936,7 @@
   },
   "re/guides/guides_veins.txt|script|Veins Guide#veins01::GuideVeins|veins:210:345": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesVeins.VeinsGuide",
-    "output_hash": "3ed6f7696aee081272462a1d4133bc6b16f84e4961dbf2fcde30f57307389ee2",
+    "output_hash": "b39fe28efaa5b59308fe105c92b72f2f5234e5518307ef7af0bffe9e1d48e37e",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_veins/veins_guide.ex",
     "source_hash": "ac727a79d062f1e14b59d9d50358bc376248f64afd6e49ae03ae650bba879cd7",
     "spawns": [
@@ -43981,7 +43981,7 @@
   },
   "re/guides/guides_woe_te.txt|script|Guide in Gloria#tes01|prt_gld:118:151": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesWoeTe.GuideInGloria",
-    "output_hash": "e0abe9c3159dabf37bc4ac9806e6163b5f699df60c4cbbed588d6d2a4924381b",
+    "output_hash": "6c62418483196257f8efad92d728122e2fc6ae1026e0ade4a93c3cb945b42b32",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_woe_te/guide_in_gloria.ex",
     "source_hash": "089ca55092f066f205bfc8b0a3c83b96df72b0bb751e0d2a28da73f5a1250820",
     "spawns": [
@@ -44053,7 +44053,7 @@
   },
   "re/guides/guides_woe_te.txt|script|Sorin of Kafragarten|alde_gld:228:189": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesWoeTe.SorinOfKafragarten",
-    "output_hash": "6dd9f05b1da68dd0a643cf98e10a95b1be1cc892107efda39d0350a2fc813a82",
+    "output_hash": "b26d34953d702d700a6de5539b995722bbc78e64406e1328c1382c64556a2d6b",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_woe_te/sorin_of_kafragarten.ex",
     "source_hash": "0f058b2d320489508a63176622f4aca5c63ad0d4b3efd73c22da1464353d5b20",
     "spawns": [
@@ -44166,7 +44166,7 @@
   },
   "re/jobs/1-1/acolyte.txt|script|Cleric#aco|prt_church:184:41": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Acolyte.Cleric",
-    "output_hash": "c501dce16c4ae19df7eddf0b08d349fe597f639ea8a11c920cd2e7ef1ef4ebf9",
+    "output_hash": "5bda66092e38d315ac2575ddbf29c469b4e6fc4d128a4a10c4390583ca15d610",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/acolyte/cleric.ex",
     "source_hash": "56a44a15ed5de36184b2361121a9f66582b1553e01f889a5adb89149263d19cf",
     "spawns": [
@@ -44184,7 +44184,7 @@
   },
   "re/jobs/1-1/archer.txt|script|Archer Guildsman#archer|payon_in02:64:71": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Archer.ArcherGuildsman",
-    "output_hash": "74a7e3d4a415122065ebacd15c30e67b7e41b0b101fdc091c4066faaeeb1341e",
+    "output_hash": "6fff3b06a10cfe1e6b45ebf6066db1877bd0f3558d32df6127e4134e8a1efcb4",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/archer/archer_guildsman.ex",
     "source_hash": "7666772eb6556d9673da08a8b5565bb0b7750465f4b388147a11870883f706d8",
     "spawns": [
@@ -44220,7 +44220,7 @@
   },
   "re/jobs/1-1/merchant.txt|script|Merchant#mer|alberta_in:53:43": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Merchant.Merchant",
-    "output_hash": "74d775397b22b83f8d70709f17a96898d36816e896f770b51caed61909a3aa25",
+    "output_hash": "c6b4e1c1af53d2c59d93d8fdfb9a7d36a53bc7a343f5c71635ae0ade53b783b8",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/merchant/merchant.ex",
     "source_hash": "4ae0dbdc7da3ed8dd0ea3a0456709ef68afbf6898d7c3ae7b4364498fb4cf006",
     "spawns": [
@@ -44238,7 +44238,7 @@
   },
   "re/jobs/1-1/swordman.txt|script|Swordman#swd|izlude_in:74:172": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Swordman.Swordman",
-    "output_hash": "54b2f3d526595010ba1338085b83c5a5d7910dbfdd75c9c4d50fc0c16a765644",
+    "output_hash": "aeaeada1feda4e445520f76f94d8f01460ee4d2f3e1f2438095236d8a310b7b7",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/swordman/swordman.ex",
     "source_hash": "053023849dd37320eacee2f640aa06922baca63a0432ac2c331b93c3491baff9",
     "spawns": [
@@ -45534,7 +45534,7 @@
   },
   "re/jobs/novice/academy.txt|script|Academy Receptionist#1|iz_ac01:100:39": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyReceptionist",
-    "output_hash": "4336f131acff4699b619a63132f360e50ab93ce6666b4cc5482e0e210c3c1885",
+    "output_hash": "f0d3d84dcae1bb4575e26949ae99885bbb3be24fbd474e1455d766a27b0d5565",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/academy_receptionist.ex",
     "source_hash": "dc38e8892c75aaed0f9ea5dbcbedb6744004fd747e160588926fda05afd3c7af",
     "spawns": [
@@ -45784,7 +45784,7 @@
   },
   "re/jobs/novice/academy.txt|script|Adventurer's Pet#ac|iz_ac01:43:80": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AdventurerSPet",
-    "output_hash": "e762f8e248b1fbd8cc75aca5ae1104d48975b309d59e6a99080e2766e798dc14",
+    "output_hash": "8c1eeff783b80c6a892c9c7e70d1ef305bbd76f44f95870f25762a58235818d7",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/adventurer_s_pet.ex",
     "source_hash": "afc3ecfc2bb44705e803fda01902569c53c6fa3dbfb6d3fb2b48a9cb7db96e33",
     "spawns": [
@@ -46114,7 +46114,7 @@
   },
   "re/jobs/novice/academy.txt|script|Attribute Expert#ac|iz_ac01:53:74": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AttributeExpert",
-    "output_hash": "886eb40a4f751a342e44937a8640af187565e1269f864c660b7d79cf2c3b99c0",
+    "output_hash": "ff32e4e21f68597106d079b32308870232063ebe8ff01adc2b318895d0daabdf",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/attribute_expert.ex",
     "source_hash": "c7ab3f13b6f12e485bd7733d60d0871e7d9203d01493cdf3e0389b5b58c2d8ce",
     "spawns": [
@@ -47024,7 +47024,7 @@
   },
   "re/jobs/novice/academy.txt|script|Enchanter Mounds#iz|izlude:96:125": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterMounds",
-    "output_hash": "78c12022cf8f5b522c8a773fcf196d4d2b3df63819e481a1d6c7e19f07e8695d",
+    "output_hash": "0538b32393c58aeb3b750d68dd1dccb7019fea61952710c448fdeb2c4e6a9df1",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/enchanter_mounds.ex",
     "source_hash": "8b1a3ea881236e9122d35f031e7bdf8cff7265d75904509e4e0bb817ce730765",
     "spawns": [
@@ -47310,7 +47310,7 @@
   },
   "re/jobs/novice/academy.txt|script|Guest Lecturer Mayssel#0|iz_ac02:52:136": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuestLecturerMayssel",
-    "output_hash": "96fcb67390bf109e9ff88c488515740e3afc5d0911ae5328042dc78e6d2b966e",
+    "output_hash": "5435d707fd00343c2a57b707201b823387f5ad3d96a0c507c458ac76519fe87a",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/guest_lecturer_mayssel.ex",
     "source_hash": "3db3c6209c54ea8894faf367259cd879ee4c96c247b105e96b86eaaa272d564e",
     "spawns": [
@@ -47484,7 +47484,7 @@
   },
   "re/jobs/novice/academy.txt|script|Information Staff#0|izlude:120:207": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InformationStaff",
-    "output_hash": "81b1bdbd1cebf36af000d723a7623033be177200cc968560e0e1ae3f5cd60fbe",
+    "output_hash": "bb2612906df49a1cf27e6a9af975a5a60be98ac72bcbaec4a0558e1d48d8ac63",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/information_staff.ex",
     "source_hash": "c1ba99825d4a31afc00145c4005df3b975103c0fa5402d7c68f36d68dc71c9d0",
     "spawns": [
@@ -49282,7 +49282,7 @@
   },
   "re/jobs/novice/academy.txt|script|Shop Helper#iz|izlude:115:181": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ShopHelper",
-    "output_hash": "ec5c7a6f507d585c9c225be08501b43f7c31572916fa868f9b5e4386907264a8",
+    "output_hash": "1eca5ac2fe3132dbf52d60d6a69790cb6089c90bb872103eb9d1176fc4c6786b",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/shop_helper.ex",
     "source_hash": "ee27b75593e67847fd7a20a903a623b64430564cc8cd3239c876bf9172483ccb",
     "spawns": [
@@ -49630,7 +49630,7 @@
   },
   "re/jobs/novice/academy.txt|script|Trainer Mainz#ac|iz_ac01:134:47": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainerMainz",
-    "output_hash": "7d493019209f292ccded06a87a6ba822cc39c0c74c3b7434cf941f81ec0b9239",
+    "output_hash": "cf7e1b89c54facfd70dc76dd0a555716eb8b862386383041bf0e2e1ddda7847e",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/trainer_mainz.ex",
     "source_hash": "4448765ea8ff43750dd29118c6e7945f597b001d894dd38a8bcb9ba164707aa4",
     "spawns": [
@@ -51888,7 +51888,7 @@
   },
   "re/jobs/novice/supernovice_ex.txt|script|Fishing Novice#sp2|beach_dun2:119:92": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.SupernoviceEx.FishingNovice",
-    "output_hash": "952dbaefd655feb603d91ef598d82e9ce5eea65492c2f21746c6c511a29bb6cf",
+    "output_hash": "3d4d48c9ac62bdecaa326a3f5c07beb781d1409a653cb8320d756765499e4cff",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/supernovice_ex/fishing_novice.ex",
     "source_hash": "9f9a84277bd92f7c263fbbd078901d69f45a0954104a9b27f1b7fea1bdc83ff6",
     "spawns": [
@@ -52022,7 +52022,7 @@
   },
   "re/quests/quests_morocc.txt|script|Suspicious Cat#night2|moc_prydn1:94:98": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Quests.QuestsMorocc.SuspiciousCat9498",
-    "output_hash": "87258db4b3856d9bad091a352e9481e919a25886cd04fd566493dea8e761013a",
+    "output_hash": "ce5ca84f402791e8dad02109ed0d37837d41ac532ab1cb09b79287201e4bde28",
     "output_path": "lib/aesir/zone_server/content/npc/re/quests/quests_morocc/suspicious_cat_94_98.ex",
     "source_hash": "5c432dab960dfba9696c29a3dc3530335ca28a65adee2271e179feaf63f171ad",
     "spawns": [
@@ -52040,7 +52040,7 @@
   },
   "re/quests/quests_morocc.txt|script|Suspicious Cat#night|moc_prydb1:103:54": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Quests.QuestsMorocc.SuspiciousCat",
-    "output_hash": "4e79893f44b0e1981109d6974feca44c0c7ea912a42cf5cb648f30fa50093a57",
+    "output_hash": "1daa8420beb74640765fa74bf5b2b5d4f81410cd54f10c297587093c02754a1d",
     "output_path": "lib/aesir/zone_server/content/npc/re/quests/quests_morocc/suspicious_cat.ex",
     "source_hash": "aa0df66619f7b3abfb446aa79fa62ed54d017589f4c26d1f1a6c47692f8cbe8a",
     "spawns": [

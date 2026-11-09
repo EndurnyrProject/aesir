@@ -125,7 +125,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Functions.FMalayaJeepney do
                 ctx
 
               _ ->
-                ctx
+                throw({:script_end, ctx})
             end
 
           ctx = mes(ctx, "[Jeepney Driver]")
@@ -143,7 +143,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Functions.FMalayaJeepney do
           ctx
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     ctx = ctx |> mes("[Jeepney Driver]") |> mes("Have a nice trip.") |> close()

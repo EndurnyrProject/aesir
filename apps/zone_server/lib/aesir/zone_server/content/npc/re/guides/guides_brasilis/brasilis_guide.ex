@@ -35,152 +35,146 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesBrasilis.BrasilisGuide do
       |> next()
       |> select(["Ask about locations", "Remove Marks from Mini-Map", "Cancel"])
 
-    ctx =
-      case v1 do
-        1 ->
-          {ctx, v2} =
-            ctx
-            |> mes("[Brasilis Guide]")
-            |> mes("Where can I guide you?")
-            |> next()
-            |> select([
-              "[ Hotel ]",
-              "[ Jungle Cable ]",
-              "[ Art Museum ]",
-              "[ Market ]",
-              "[ Verass Monument ]"
-            ])
-
-          ctx =
-            case v2 do
-              1 ->
-                ctx =
-                  ctx
-                  |> mes("[Brasilis Guide]")
-                  |> mes(
-                    Rathena.concat(
-                      Rathena.concat(
-                        "The ",
-                        Todo.call!(:F_Navi, ["Brasilis Hotel", "brasilis,274,151"])
-                      ),
-                      " is located just above, ^FF3355+^000000."
-                    )
-                  )
-                  |> mes("Is there anything else I can do for you?")
-                  |> viewpoint(1, 274, 151, 2, 16_724_821)
-                  |> close()
-
-                throw({:script_end, ctx})
-
-              2 ->
-                ctx =
-                  ctx
-                  |> mes("[Brasilis Guide]")
-                  |> mes("Do you want to go through the rough jungle? You can take a ")
-                  |> mes(
-                    Rathena.concat(
-                      Todo.call!(:F_Navi, ["Jungle Cable", "brasilis,308,335"]),
-                      " here ^CE6300+^000000."
-                    )
-                  )
-                  |> mes("Is there anything else I can do for you?")
-                  |> viewpoint(1, 308, 335, 3, 13_525_760)
-                  |> close()
-
-                throw({:script_end, ctx})
-
-              3 ->
-                ctx =
-                  ctx
-                  |> mes("[Brasilis Guide]")
-                  |> mes(
-                    Rathena.concat(
-                      Rathena.concat(
-                        "The pride of Brasilis, the world scale ",
-                        Todo.call!(:F_Navi, ["Art Museum", "brasilis,137,167"])
-                      ),
-                      " is at ^A5BAAD+^000000."
-                    )
-                  )
-                  |> mes("Is there anything else I can do for you?")
-                  |> viewpoint(1, 137, 167, 4, 65280)
-                  |> close()
-
-                throw({:script_end, ctx})
-
-              4 ->
-                ctx =
-                  ctx
-                  |> mes("[Brasilis Guide]")
-                  |> mes(
-                    Rathena.concat(
-                      Rathena.concat(
-                        "You can buy items for hunting at the ",
-                        Todo.call!(:F_Navi, ["Market", "brasilis,254,248"])
-                      ),
-                      " here ^55FF33+^000000."
-                    )
-                  )
-                  |> mes("Is there anything else I can do for you?")
-                  |> viewpoint(1, 254, 248, 5, 5_635_891)
-                  |> close()
-
-                throw({:script_end, ctx})
-
-              5 ->
-                ctx =
-                  ctx
-                  |> mes("[Brasilis Guide]")
-                  |> mes(
-                    Rathena.concat(
-                      Rathena.concat(
-                        "The iconic monument of Brasilis, the ",
-                        Todo.call!(:F_Navi, ["Verass Monument", "brasilis,195,222"])
-                      ),
-                      " stands at ^3355FF+^000000."
-                    )
-                  )
-                  |> mes("Is there anything else I can do for you?")
-                  |> viewpoint(1, 195, 235, 6, 3_364_351)
-                  |> close()
-
-                throw({:script_end, ctx})
-
-              _ ->
-                ctx
-            end
-
-          throw({:script_end, ctx})
-
-        2 ->
-          ctx =
-            ctx
-            |> mes("[Brasilis Guide]")
-            |> mes("I'll remove all marks from your mini-map.")
-            |> mes("Is there anything else I can do for you?")
-            |> viewpoint(0, 274, 151, 2, 65280)
-            |> viewpoint(0, 308, 335, 3, 65280)
-            |> viewpoint(0, 137, 167, 4, 65280)
-            |> viewpoint(0, 254, 248, 5, 65280)
-            |> viewpoint(0, 195, 235, 6, 65280)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        3 ->
-          ctx =
-            ctx
-            |> mes("[Brasilis Guide]")
-            |> mes("Wandering on your own is always the best way to explore. Anyway, take care.")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+    case v1 do
+      1 ->
+        {ctx, v2} =
           ctx
-      end
+          |> mes("[Brasilis Guide]")
+          |> mes("Where can I guide you?")
+          |> next()
+          |> select([
+            "[ Hotel ]",
+            "[ Jungle Cable ]",
+            "[ Art Museum ]",
+            "[ Market ]",
+            "[ Verass Monument ]"
+          ])
 
-    ctx
+        case v2 do
+          1 ->
+            ctx =
+              ctx
+              |> mes("[Brasilis Guide]")
+              |> mes(
+                Rathena.concat(
+                  Rathena.concat(
+                    "The ",
+                    Todo.call!(:F_Navi, ["Brasilis Hotel", "brasilis,274,151"])
+                  ),
+                  " is located just above, ^FF3355+^000000."
+                )
+              )
+              |> mes("Is there anything else I can do for you?")
+              |> viewpoint(1, 274, 151, 2, 16_724_821)
+              |> close()
+
+            throw({:script_end, ctx})
+
+          2 ->
+            ctx =
+              ctx
+              |> mes("[Brasilis Guide]")
+              |> mes("Do you want to go through the rough jungle? You can take a ")
+              |> mes(
+                Rathena.concat(
+                  Todo.call!(:F_Navi, ["Jungle Cable", "brasilis,308,335"]),
+                  " here ^CE6300+^000000."
+                )
+              )
+              |> mes("Is there anything else I can do for you?")
+              |> viewpoint(1, 308, 335, 3, 13_525_760)
+              |> close()
+
+            throw({:script_end, ctx})
+
+          3 ->
+            ctx =
+              ctx
+              |> mes("[Brasilis Guide]")
+              |> mes(
+                Rathena.concat(
+                  Rathena.concat(
+                    "The pride of Brasilis, the world scale ",
+                    Todo.call!(:F_Navi, ["Art Museum", "brasilis,137,167"])
+                  ),
+                  " is at ^A5BAAD+^000000."
+                )
+              )
+              |> mes("Is there anything else I can do for you?")
+              |> viewpoint(1, 137, 167, 4, 65280)
+              |> close()
+
+            throw({:script_end, ctx})
+
+          4 ->
+            ctx =
+              ctx
+              |> mes("[Brasilis Guide]")
+              |> mes(
+                Rathena.concat(
+                  Rathena.concat(
+                    "You can buy items for hunting at the ",
+                    Todo.call!(:F_Navi, ["Market", "brasilis,254,248"])
+                  ),
+                  " here ^55FF33+^000000."
+                )
+              )
+              |> mes("Is there anything else I can do for you?")
+              |> viewpoint(1, 254, 248, 5, 5_635_891)
+              |> close()
+
+            throw({:script_end, ctx})
+
+          5 ->
+            ctx =
+              ctx
+              |> mes("[Brasilis Guide]")
+              |> mes(
+                Rathena.concat(
+                  Rathena.concat(
+                    "The iconic monument of Brasilis, the ",
+                    Todo.call!(:F_Navi, ["Verass Monument", "brasilis,195,222"])
+                  ),
+                  " stands at ^3355FF+^000000."
+                )
+              )
+              |> mes("Is there anything else I can do for you?")
+              |> viewpoint(1, 195, 235, 6, 3_364_351)
+              |> close()
+
+            throw({:script_end, ctx})
+
+          _ ->
+            throw({:script_end, ctx})
+        end
+
+      2 ->
+        ctx =
+          ctx
+          |> mes("[Brasilis Guide]")
+          |> mes("I'll remove all marks from your mini-map.")
+          |> mes("Is there anything else I can do for you?")
+          |> viewpoint(0, 274, 151, 2, 65280)
+          |> viewpoint(0, 308, 335, 3, 65280)
+          |> viewpoint(0, 137, 167, 4, 65280)
+          |> viewpoint(0, 254, 248, 5, 65280)
+          |> viewpoint(0, 195, 235, 6, 65280)
+          |> close()
+
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx =
+          ctx
+          |> mes("[Brasilis Guide]")
+          |> mes("Wandering on your own is always the best way to explore. Anyway, take care.")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

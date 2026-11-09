@@ -44,114 +44,111 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMora.RaffleGuide16776 do
         "Quit"
       ])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx =
-            ctx
-            |> mes("[Raffuh]")
-            |> mes("Uh...")
-            |> mes("Are, are you sleepy?")
-            |> mes(
-              Rathena.concat(
-                Rathena.concat("You can sleep ", Todo.call!(:F_Navi, ["here", "mora,44,138"])),
-                " uh!! Put your stuff down uh! And-- and---"
-              )
-            )
-            |> viewpoint(1, 44, 134, 0, 688_895)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        2 ->
-          ctx =
-            ctx
-            |> mes("[Raffuh]")
-            |> mes("Uh...")
-            |> mes(
-              Rathena.concat(
-                Rathena.concat(
-                  "Why are you trying to find out ",
-                  Todo.call!(:F_Navi, ["where", "mora,119,170"])
-                ),
-                " I live--?"
-              )
-            )
-            |> mes("Uh, no... I'd like to live with my friends--")
-            |> viewpoint(1, 119, 170, 1, 11_206_400)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        3 ->
-          ctx =
-            ctx
-            |> mes("[Raffuh]")
-            |> mes("Uh...")
-            |> mes(
-              Rathena.concat(
-                Rathena.concat(
-                  "There are a lot of things in those ",
-                  Todo.call!(:F_Navi, ["stores", "mora,112,110"])
-                ),
-                "-- oh, there is a hot spring also uh!"
-              )
-            )
-            |> viewpoint(1, 112, 110, 2, 14_315_734)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        4 ->
-          ctx =
-            ctx
-            |> mes("[Raffuh]")
-            |> mes("Uh...")
-            |> mes(
-              Rathena.concat(
-                Rathena.concat(
-                  "You can't just march into the ",
-                  Todo.call!(:F_Navi, ["warehouse", "mora,182,161"])
-                ),
-                ", or you'll be in trouble--"
-              )
-            )
-            |> mes(
-              "Many of the things there are from outside the village-- Raffuh has been in trouble several times--"
-            )
-            |> viewpoint(1, 182, 161, 3, 16_716_947)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        5 ->
-          ctx =
-            ctx
-            |> mes("[Raffuh]")
-            |> mes("Are you sure you want them removed?")
-            |> viewpoint(2, 1, 1, 0, 16_776_960)
-            |> viewpoint(2, 1, 1, 1, 16_776_960)
-            |> viewpoint(2, 1, 1, 2, 16_776_960)
-            |> viewpoint(2, 1, 1, 3, 16_776_960)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        6 ->
-          ctx =
-            ctx
-            |> mes("[Raffuh]")
-            |> mes("Uh...")
-            |> mes("Being a guide doesn't help much with my social phobia--")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+    case v1 do
+      1 ->
+        ctx =
           ctx
-      end
+          |> mes("[Raffuh]")
+          |> mes("Uh...")
+          |> mes("Are, are you sleepy?")
+          |> mes(
+            Rathena.concat(
+              Rathena.concat("You can sleep ", Todo.call!(:F_Navi, ["here", "mora,44,138"])),
+              " uh!! Put your stuff down uh! And-- and---"
+            )
+          )
+          |> viewpoint(1, 44, 134, 0, 688_895)
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx =
+          ctx
+          |> mes("[Raffuh]")
+          |> mes("Uh...")
+          |> mes(
+            Rathena.concat(
+              Rathena.concat(
+                "Why are you trying to find out ",
+                Todo.call!(:F_Navi, ["where", "mora,119,170"])
+              ),
+              " I live--?"
+            )
+          )
+          |> mes("Uh, no... I'd like to live with my friends--")
+          |> viewpoint(1, 119, 170, 1, 11_206_400)
+          |> close()
+
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx =
+          ctx
+          |> mes("[Raffuh]")
+          |> mes("Uh...")
+          |> mes(
+            Rathena.concat(
+              Rathena.concat(
+                "There are a lot of things in those ",
+                Todo.call!(:F_Navi, ["stores", "mora,112,110"])
+              ),
+              "-- oh, there is a hot spring also uh!"
+            )
+          )
+          |> viewpoint(1, 112, 110, 2, 14_315_734)
+          |> close()
+
+        throw({:script_end, ctx})
+
+      4 ->
+        ctx =
+          ctx
+          |> mes("[Raffuh]")
+          |> mes("Uh...")
+          |> mes(
+            Rathena.concat(
+              Rathena.concat(
+                "You can't just march into the ",
+                Todo.call!(:F_Navi, ["warehouse", "mora,182,161"])
+              ),
+              ", or you'll be in trouble--"
+            )
+          )
+          |> mes(
+            "Many of the things there are from outside the village-- Raffuh has been in trouble several times--"
+          )
+          |> viewpoint(1, 182, 161, 3, 16_716_947)
+          |> close()
+
+        throw({:script_end, ctx})
+
+      5 ->
+        ctx =
+          ctx
+          |> mes("[Raffuh]")
+          |> mes("Are you sure you want them removed?")
+          |> viewpoint(2, 1, 1, 0, 16_776_960)
+          |> viewpoint(2, 1, 1, 1, 16_776_960)
+          |> viewpoint(2, 1, 1, 2, 16_776_960)
+          |> viewpoint(2, 1, 1, 3, 16_776_960)
+          |> close()
+
+        throw({:script_end, ctx})
+
+      6 ->
+        ctx =
+          ctx
+          |> mes("[Raffuh]")
+          |> mes("Uh...")
+          |> mes("Being a guide doesn't help much with my social phobia--")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

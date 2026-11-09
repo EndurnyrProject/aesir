@@ -112,126 +112,121 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Swordman.Swordman do
       |> next()
       |> select(["Tell me about being a Swordman.", "I want to be a Swordman.", "Nothing."])
 
-    ctx =
-      case v2 do
-        1 ->
+    case v2 do
+      1 ->
+        ctx =
+          ctx
+          |> mes("[Swordman Guildsman]")
+          |> mes("So you wish to know more about the mighty Swordman? Okay!")
+          |> next()
+          |> mes("[Swordman Guildsman]")
+          |> mes(
+            "The most distinctive feature of the Swordman is that the Swordman can show us his/her real abilities in close combat."
+          )
+          |> mes("There are three reasons!")
+          |> next()
+          |> mes("[Swordman Guildsman]")
+          |> mes("First, Swordman has higher HP than other jobs.")
+          |> mes(
+            "Second, except for Bows and Rods, Swordman can use all other weapons so they can fight at their optimal ability."
+          )
+          |> mes("And third, most of the skills of the Swordman give powerful physical attacks.")
+          |> next()
+          |> mes("[Swordman Guildsman]")
+          |> mes(
+            "Though I gave you a simple explanation, I believe you understand the core meaning of what it is to be a Swordman."
+          )
+          |> mes("In my opinion, Swordman is the best job ever!")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx = mes(ctx, "[Swordman Guildsman]")
+
+        if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
+          ctx =
+            if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:swordman) do
+              ctx
+              |> mes("You are already an excellent Swordman, aren't you?")
+              |> mes("Just devote yourself to be a great Swordman.")
+            else
+              ctx
+              |> mes("You already have one of the other jobs, don't you?")
+              |> mes("You've gone too far with that joke.")
+            end
+
+          ctx = close(ctx)
+          throw({:script_end, ctx})
+        else
+          v3 = can_change_job?(ctx)
+
+          ctx =
+            if not Rathena.truthy?(v3) do
+              ctx =
+                ctx
+                |> mes(
+                  "I'm sorry to tell you this but to be a Swordman, you must reach at least ^4A4AFFJob Level 10^000000."
+                )
+                |> mes("and ^4A4AFFBasic Skill Level 9^000000.")
+                |> next()
+                |> mes("[Swordman Guildsman]")
+                |> mes("Want to be a Swordman without having the minimum requirement?")
+                |> mes("Do you think being a Swordman is that easy?")
+                |> close()
+
+              throw({:script_end, ctx})
+            else
+              ctx
+            end
+
+          {ctx, v4} =
+            ctx
+            |> mes("Hmm, both your Job Level and Basic Skill Level check out.")
+            |> mes("Good. Do you want to be a Swordman right away?")
+            |> next()
+            |> select(["Yes, I do.", "I'll consider it again."])
+
+          ctx =
+            if v4 == 2 do
+              ctx =
+                ctx
+                |> mes("[Swordman Guildsman]")
+                |> mes("Yeah. Prudent decision is needed for choosing a job.")
+                |> mes(
+                  "But I feel sorry... that you consider it again after overcoming all the hardships...."
+                )
+                |> close()
+
+              throw({:script_end, ctx})
+            else
+              ctx
+            end
+
           ctx =
             ctx
             |> mes("[Swordman Guildsman]")
-            |> mes("So you wish to know more about the mighty Swordman? Okay!")
+            |> mes("Congratulations! From now on, you are going to live a Swordman's life!")
+            |> mes("Let's do it right now!")
             |> next()
             |> mes("[Swordman Guildsman]")
             |> mes(
-              "The most distinctive feature of the Swordman is that the Swordman can show us his/her real abilities in close combat."
+              "Congratulations again for being a Swordman and I hope that you participate in many activities for the revival of our guild."
             )
-            |> mes("There are three reasons!")
-            |> next()
-            |> mes("[Swordman Guildsman]")
-            |> mes("First, Swordman has higher HP than other jobs.")
-            |> mes(
-              "Second, except for Bows and Rods, Swordman can use all other weapons so they can fight at their optimal ability."
-            )
-            |> mes(
-              "And third, most of the skills of the Swordman give powerful physical attacks."
-            )
-            |> next()
-            |> mes("[Swordman Guildsman]")
-            |> mes(
-              "Though I gave you a simple explanation, I believe you understand the core meaning of what it is to be a Swordman."
-            )
-            |> mes("In my opinion, Swordman is the best job ever!")
+            |> jobchange(:swordman)
+            |> give_item(13415, 1)
             |> close()
 
           throw({:script_end, ctx})
+        end
 
-        2 ->
-          ctx = mes(ctx, "[Swordman Guildsman]")
+      3 ->
+        ctx = close(ctx)
+        throw({:script_end, ctx})
 
-          if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
-            ctx =
-              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:swordman) do
-                ctx
-                |> mes("You are already an excellent Swordman, aren't you?")
-                |> mes("Just devote yourself to be a great Swordman.")
-              else
-                ctx
-                |> mes("You already have one of the other jobs, don't you?")
-                |> mes("You've gone too far with that joke.")
-              end
-
-            ctx = close(ctx)
-            throw({:script_end, ctx})
-          else
-            v3 = can_change_job?(ctx)
-
-            ctx =
-              if not Rathena.truthy?(v3) do
-                ctx =
-                  ctx
-                  |> mes(
-                    "I'm sorry to tell you this but to be a Swordman, you must reach at least ^4A4AFFJob Level 10^000000."
-                  )
-                  |> mes("and ^4A4AFFBasic Skill Level 9^000000.")
-                  |> next()
-                  |> mes("[Swordman Guildsman]")
-                  |> mes("Want to be a Swordman without having the minimum requirement?")
-                  |> mes("Do you think being a Swordman is that easy?")
-                  |> close()
-
-                throw({:script_end, ctx})
-              else
-                ctx
-              end
-
-            {ctx, v4} =
-              ctx
-              |> mes("Hmm, both your Job Level and Basic Skill Level check out.")
-              |> mes("Good. Do you want to be a Swordman right away?")
-              |> next()
-              |> select(["Yes, I do.", "I'll consider it again."])
-
-            ctx =
-              if v4 == 2 do
-                ctx =
-                  ctx
-                  |> mes("[Swordman Guildsman]")
-                  |> mes("Yeah. Prudent decision is needed for choosing a job.")
-                  |> mes(
-                    "But I feel sorry... that you consider it again after overcoming all the hardships...."
-                  )
-                  |> close()
-
-                throw({:script_end, ctx})
-              else
-                ctx
-              end
-
-            ctx =
-              ctx
-              |> mes("[Swordman Guildsman]")
-              |> mes("Congratulations! From now on, you are going to live a Swordman's life!")
-              |> mes("Let's do it right now!")
-              |> next()
-              |> mes("[Swordman Guildsman]")
-              |> mes(
-                "Congratulations again for being a Swordman and I hope that you participate in many activities for the revival of our guild."
-              )
-              |> jobchange(:swordman)
-              |> give_item(13415, 1)
-              |> close()
-
-            throw({:script_end, ctx})
-          end
-
-        3 ->
-          ctx = close(ctx)
-          throw({:script_end, ctx})
-
-        _ ->
-          ctx
-      end
-
-    ctx
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

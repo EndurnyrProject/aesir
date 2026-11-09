@@ -50,8 +50,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Restauranteur do
       |> next()
       |> select(["About Dewata dishes", "Today's menu?", "I'm okay."])
 
-    _ = v1
-
     case v1 do
       1 ->
         ctx =
@@ -131,7 +129,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Restauranteur do
           end
 
         {ctx, v3} = ctx |> next() |> select(["Taste", "Walk away"])
-        _ = v3
 
         case v3 do
           1 ->

@@ -52,7 +52,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.SupernoviceEx.FishingNovic
           |> next()
           |> select(["I have a delivery from Esseray..."])
 
-        {ctx, v1} =
+        ctx =
           ctx
           |> emotion(:scratch)
           |> mes("[Fishing Novice]")
@@ -60,7 +60,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.SupernoviceEx.FishingNovic
           |> mes("Hmm! I know him...")
           |> mes("Esseray... Esseray... hmm.")
           |> next()
-          |> emotion(:think)
+
+        {ctx, v1} =
+          ctx
+          |> emotion(:think, playerattached(ctx))
           |> emotion(:think)
           |> mes("..................")
           |> next()
@@ -82,12 +85,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.SupernoviceEx.FishingNovic
             |> mes("[Fishing Novice]")
             |> mes("So what do you want from me?")
           else
+            ctx =
+              ctx
+              |> mes("[Fishing Novice]")
+              |> mes("What?! He isn't?")
+              |> mes("Then where is Esseray from?")
+              |> next()
+
             ctx
-            |> mes("[Fishing Novice]")
-            |> mes("What?! He isn't?")
-            |> mes("Then where is Esseray from?")
-            |> next()
-            |> emotion(:think)
+            |> emotion(:think, playerattached(ctx))
             |> emotion(:think)
             |> mes(".... .... .... ....")
             |> next()
@@ -608,14 +614,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.SupernoviceEx.FishingNovic
                               |> next()
                               |> select(["??????"])
 
-                            {ctx, v9} =
+                            ctx =
                               ctx
                               |> emotion(:sweat)
                               |> mes("[Nodor]")
                               |> mes("Watch out!! A bunch of Golems are running after us!")
                               |> mes("We... have to run...!!!")
                               |> next()
-                              |> emotion(:huk)
+
+                            {ctx, v9} =
+                              ctx
+                              |> emotion(:huk, playerattached(ctx))
                               |> select(["What?!", "Um?"])
 
                             ctx =
@@ -675,7 +684,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.SupernoviceEx.FishingNovic
 
                             {ctx, _} =
                               ctx
-                              |> emotion(:think)
+                              |> emotion(:think, playerattached(ctx))
                               |> emotion(:sorry)
                               |> mes("[Nodor]")
                               |> mes("Sorry for scaring you!")
@@ -692,7 +701,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.SupernoviceEx.FishingNovic
 
                             {ctx, v10} =
                               ctx
-                              |> emotion(:question)
+                              |> emotion(:question, playerattached(ctx))
                               |> mes("[Nodor]")
                               |> mes("Oh--- My--- (tut,tut,tut)!!")
                               |> next()

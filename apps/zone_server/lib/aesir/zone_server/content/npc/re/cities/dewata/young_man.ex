@@ -44,8 +44,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.YoungMan do
         "No thanks."
       ])
 
-    _ = v1
-
     case v1 do
       1 ->
         ctx =

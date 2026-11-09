@@ -33,8 +33,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SemangatSWife do
       |> next()
       |> select(["I think I saw him there..", "No I haven't.."])
 
-    _ = v1
-
     case v1 do
       1 ->
         ctx =

@@ -53,7 +53,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malangdo.Wanderer do
           soundeffect(ctx, "assassin_of_sunset.wav", 0)
 
         4 ->
-          ctx = ctx |> emotion(:delight) |> emotion(:delight)
+          ctx = emotion(ctx, :delight)
+          ctx = emotion(ctx, :delight, getnpcid(ctx, "Minstrel#mal"))
           ctx
 
         _ ->

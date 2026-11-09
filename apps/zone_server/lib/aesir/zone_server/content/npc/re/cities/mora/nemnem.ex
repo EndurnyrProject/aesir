@@ -33,27 +33,19 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.Nemnem do
       |> next()
       |> select(["Of course I am!", "That's an unfair accusation!"])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx = ctx |> mes("[Nemnem]") |> mes("Bra~vo!") |> emotion(:cool) |> close()
-          throw({:script_end, ctx})
+    case v1 do
+      1 ->
+        ctx = ctx |> mes("[Nemnem]") |> mes("Bra~vo!") |> emotion(:cool) |> close()
+        throw({:script_end, ctx})
 
-        2 ->
-          ctx =
-            ctx
-            |> mes("[Nemnem]")
-            |> mes("If not, never mind!")
-            |> emotion(:profusely_sweat)
-            |> close()
+      2 ->
+        ctx = ctx |> mes("[Nemnem]") |> mes("If not, never mind!")
+        ctx = ctx |> emotion(:profusely_sweat, playerattached(ctx)) |> close()
+        throw({:script_end, ctx})
 
-          throw({:script_end, ctx})
-
-        _ ->
-          ctx
-      end
-
-    ctx
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

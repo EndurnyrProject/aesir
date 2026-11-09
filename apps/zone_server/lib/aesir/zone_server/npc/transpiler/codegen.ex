@@ -167,11 +167,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     main_body =
       case opts.kind do
         :function ->
-          main_lines ++ main_fall_through(:function, main, main_terminal, segments, env)
+          main_lines ++ main_fall_through(:function, main_terminal, segments, env)
 
         _ ->
           tail_return(
-            main_lines ++ main_fall_through(opts.kind, main, main_terminal, segments, env)
+            main_lines ++ main_fall_through(opts.kind, main_terminal, segments, env)
           )
       end
 
@@ -641,7 +641,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp emit_segment(kind, name, stmts, next, env) do
     {lines, terminal} = emit_block(stmts, env)
-    lines = lines ++ segment_fall_through(stmts, terminal, List.wrap(next), env)
+    lines = lines ++ fall_through(terminal, List.wrap(next), env)
     lines = if kind == :event, do: tail_return(lines), else: lines
     visibility = if kind == :event, do: "def", else: "defp"
 
@@ -685,8 +685,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   # ctx) — for a function that trailing `ctx` is the return value and must be a
   # tuple instead. Rewrite it to `{ctx, nil}` wherever it lands (no segment, or
   # a fall into a subroutine/event segment).
-  defp main_fall_through(:function, main, terminal, segments, env) do
-    case main_fall(:function, main, terminal, segments, env) do
+  defp main_fall_through(:function, terminal, segments, env) do
+    case fall_through(terminal, segments, env) do
       [] ->
         []
 
@@ -697,42 +697,23 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     end
   end
 
-  defp main_fall_through(_kind, main, terminal, segments, env),
-    do: main_fall(:entry, main, terminal, segments, env)
+  defp main_fall_through(_kind, terminal, segments, env),
+    do: fall_through(terminal, segments, env)
 
-  defp main_fall(kind, main, terminal, segments, env) do
-    case {kind, main, terminal, segments} do
-      # A script body that starts at an `On*` label has no dialog of its own: rAthena
-      # starts the click at position 0, where the label is a no-op that falls into the
-      # event body, so a click runs it too. Falling out of actual statements still
-      # ends normal flow at a label (events fire on their own engine triggers).
-      {:entry, [], :cont, [{:event, name, _} | _]} ->
-        ["#{fn_name(env, name)}(ctx#{helper_call(env)})"]
-
-      _ ->
-        fall_through(terminal, segments, env)
-    end
-  end
-
-  # rAthena label aliases: labels with no statements between them all point at the
-  # same code (`set_label` on the closing brace), so an empty label body runs the
-  # next label's body. The corpus relies on it for stacked timer labels.
-  defp segment_fall_through([], :cont, [{:event, name, _} | _], env),
-    do: ["#{fn_name(env, name)}(ctx#{helper_call(env)})"]
-
-  defp segment_fall_through(_stmts, terminal, next, env), do: fall_through(terminal, next, env)
-
-  # A label function that runs off its end falls through into the next
-  # segment; the last one (or a fall into a subroutine) ends the script.
+  # A label is only a position in the compiled script (`set_label` stores a code
+  # address and emits nothing), so a body that runs off its end continues into
+  # the label that follows it, event labels included. Both an empty and a filled
+  # body therefore chain into the next segment; the last one (or a fall into a
+  # subroutine) ends the script. A click starts at position 0, so an `On*` label
+  # leading the body is a no-op that the same rule falls into.
   defp fall_through(terminal, _next, _env) when terminal != :cont, do: []
   defp fall_through(:cont, [], _env), do: ["ctx"]
 
   defp fall_through(:cont, [{:jump, name, _} | _], env),
     do: ["#{fn_name(env, name)}(ctx#{helper_call(env)})"]
 
-  # Falling into an event label ends normal flow (events run on their own
-  # engine triggers, not as dialog continuation).
-  defp fall_through(:cont, [{:event, _, _} | _], _env), do: ["ctx"]
+  defp fall_through(:cont, [{:event, name, _} | _], env),
+    do: ["#{fn_name(env, name)}(ctx#{helper_call(env)})"]
 
   defp fall_through(:cont, [{:sub, name, _} | _], env),
     do: ["{ctx, _} = #{fn_name(env, name)}(ctx, [])", "ctx"]

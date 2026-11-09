@@ -210,7 +210,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesVeins.VeinsGuide do
           throw({:script_end, ctx})
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     loop_1(ctx)

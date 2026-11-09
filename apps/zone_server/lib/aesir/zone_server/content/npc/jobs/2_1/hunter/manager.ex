@@ -7,7 +7,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Manager do
   - Starts a test by spawning target monsters among many decoys and a countdown of arena announcements.
   - Opens the escape switch once enough target monsters are hunted.
   - Sends the examinee back to the waiting area for killing a decoy.
-  - Clears the arena when the test ends or times out and reopens the waiting room.
+  - Clears the arena when the test ends, times out, or is reset, and reopens the waiting room.
 
   ## Credits
 
@@ -130,7 +130,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Manager do
     |> donpcevent("Waiting Room#hnt::OnStart")
   end
 
-  def on_event("OnReset", ctx), do: stopnpctimer(ctx)
+  # The reference's `OnReset` body has no terminator, so a reset also runs the
+  # `OnDisable` cleanup below.
+  def on_event("OnReset", ctx), do: ctx |> stopnpctimer() |> on_event("OnDisable")
 
   def on_event("OnDisable", ctx) do
     ctx

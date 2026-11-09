@@ -41,87 +41,84 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesEclage.EclageGuard do
         "Finish the conversation"
       ])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx =
-            ctx
-            |> mes("[Eclage Guard]")
-            |> mes(
-              "Our great king, courageous generals, and scholars are all staying at the palace."
-            )
-            |> mes(
-              "The palace is located at the top of Eclage. We usually fly there, but I see you don't have wings. Follow the path on your right then. It will lead you to the palace."
-            )
-            |> close()
-
-          throw({:script_end, ctx})
-
-        2 ->
-          ctx =
-            ctx
-            |> mes("[Eclage Guard]")
-            |> mes("The Orb behind me is like a symbol of us Laphines.")
-            |> mes(
-              "It's filled with great and mysterious power. We always keep an eye on it and guard it carefully."
-            )
-            |> close()
-
-          throw({:script_end, ctx})
-
-        3 ->
-          ctx =
-            ctx
-            |> mes("[Eclage Guard]")
-            |> mes("This is the plaza of Eclage. You'll find everything you need around here.")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        4 ->
-          ctx =
-            ctx
-            |> mes("[Eclage Guard]")
-            |> mes("Prison is a place for criminals. Why would an adventurer like you go there?")
-            |> mes(
-              "Well, it's a little suspicious...but I'll tell you the location. Follow the path on your left. They don't let anyone in though."
-            )
-            |> close()
-
-          throw({:script_end, ctx})
-
-        5 ->
-          ctx =
-            ctx
-            |> mes("[Eclage Guard]")
-            |> mes(
-              "All your pain and weariness melt away in the arms of nature. Restore your mind and body at Eclage Clinic."
-            )
-            |> mes("Follow the path on your left.")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        6 ->
-          ctx =
-            ctx
-            |> mes("[Eclage Guard]")
-            |> mes(
-              "Haven't you seen our decorations for Yai? Take a trip outside. You'll see our residential area."
-            )
-            |> close()
-
-          throw({:script_end, ctx})
-
-        7 ->
-          ctx = close(ctx)
-          throw({:script_end, ctx})
-
-        _ ->
+    case v1 do
+      1 ->
+        ctx =
           ctx
-      end
+          |> mes("[Eclage Guard]")
+          |> mes(
+            "Our great king, courageous generals, and scholars are all staying at the palace."
+          )
+          |> mes(
+            "The palace is located at the top of Eclage. We usually fly there, but I see you don't have wings. Follow the path on your right then. It will lead you to the palace."
+          )
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx =
+          ctx
+          |> mes("[Eclage Guard]")
+          |> mes("The Orb behind me is like a symbol of us Laphines.")
+          |> mes(
+            "It's filled with great and mysterious power. We always keep an eye on it and guard it carefully."
+          )
+          |> close()
+
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx =
+          ctx
+          |> mes("[Eclage Guard]")
+          |> mes("This is the plaza of Eclage. You'll find everything you need around here.")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      4 ->
+        ctx =
+          ctx
+          |> mes("[Eclage Guard]")
+          |> mes("Prison is a place for criminals. Why would an adventurer like you go there?")
+          |> mes(
+            "Well, it's a little suspicious...but I'll tell you the location. Follow the path on your left. They don't let anyone in though."
+          )
+          |> close()
+
+        throw({:script_end, ctx})
+
+      5 ->
+        ctx =
+          ctx
+          |> mes("[Eclage Guard]")
+          |> mes(
+            "All your pain and weariness melt away in the arms of nature. Restore your mind and body at Eclage Clinic."
+          )
+          |> mes("Follow the path on your left.")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      6 ->
+        ctx =
+          ctx
+          |> mes("[Eclage Guard]")
+          |> mes(
+            "Haven't you seen our decorations for Yai? Take a trip outside. You'll see our residential area."
+          )
+          |> close()
+
+        throw({:script_end, ctx})
+
+      7 ->
+        ctx = close(ctx)
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

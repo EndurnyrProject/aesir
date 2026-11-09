@@ -31,35 +31,32 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.BananaRafflesia do
       |> next()
       |> select(["Yes, I do.", "No, thanks."])
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx =
-            ctx
-            |> mes("[Banana Rafflesia]")
-            |> mes("Take it if you can.")
-            |> mes("If you are successful, you can have it for free.")
-            |> emotion(:ok)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        2 ->
-          ctx =
-            ctx
-            |> mes("[Banana Rafflesia]")
-            |> mes("Well, I was going to give it for free,")
-            |> mes("but if you don't want it, it's fine with me.")
-            |> emotion(:hng)
-            |> close()
-
-          throw({:script_end, ctx})
-
-        _ ->
+    case v1 do
+      1 ->
+        ctx =
           ctx
-      end
+          |> mes("[Banana Rafflesia]")
+          |> mes("Take it if you can.")
+          |> mes("If you are successful, you can have it for free.")
+          |> emotion(:ok)
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      2 ->
+        ctx =
+          ctx
+          |> mes("[Banana Rafflesia]")
+          |> mes("Well, I was going to give it for free,")
+          |> mes("but if you don't want it, it's fine with me.")
+          |> emotion(:hng)
+          |> close()
+
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

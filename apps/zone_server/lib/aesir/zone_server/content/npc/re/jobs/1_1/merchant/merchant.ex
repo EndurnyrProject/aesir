@@ -111,133 +111,130 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Merchant.Merchant do
         "Nothing."
       ])
 
-    ctx =
-      case v2 do
-        1 ->
-          ctx = mes(ctx, "[Guildsman Mahnsoo]")
+    case v2 do
+      1 ->
+        ctx = mes(ctx, "[Guildsman Mahnsoo]")
 
-          if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
-            ctx =
-              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:merchant) do
-                ctx
-                |> mes(".....? Sorry? What are you saying?")
-                |> mes("You are already a merchant. Oh my..")
-                |> mes("Huh?! ...Do I need to laugh right now?!")
-              else
-                ctx
-                |> mes("Ahh? Are you trying to have both ways?")
-                |> mes("How about just giving yourself over to your original job?")
-                |> next()
-                |> mes("[Guildsman Mahnsoo]")
-                |> mes("We have business ethics you know.")
-              end
-
-            ctx = close(ctx)
-            throw({:script_end, ctx})
-          else
-            ctx = ctx |> mes("Want to be a merchant? Hmm...") |> next()
-            v3 = can_change_job?(ctx)
-
-            ctx =
-              if not Rathena.truthy?(v3) do
-                ctx =
-                  ctx
-                  |> mes("[Guildsman Mahnsoo]")
-                  |> mes(
-                    "But if you want to be a merchant, your basic skill level must reach Level 9 or you must spend all of your skill points."
-                  )
-                  |> next()
-                  |> mes("[Guildsman Mahnsoo]")
-                  |> mes(
-                    "Don't you think we need to learn some basic skills although we just deal with money?"
-                  )
-                  |> close()
-
-                throw({:script_end, ctx})
-              else
-                ctx
-              end
-
-            ctx =
+        if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
+          ctx =
+            if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:merchant) do
               ctx
-              |> mes("[Guildsman Mahnsoo]")
-              |> mes(
-                "Good, I think you're fully ready for it seeing that your basic skill level is fulfilled."
-              )
-              |> mes("Now I allow you to be a merchant.")
+              |> mes(".....? Sorry? What are you saying?")
+              |> mes("You are already a merchant. Oh my..")
+              |> mes("Huh?! ...Do I need to laugh right now?!")
+            else
+              ctx
+              |> mes("Ahh? Are you trying to have both ways?")
+              |> mes("How about just giving yourself over to your original job?")
               |> next()
               |> mes("[Guildsman Mahnsoo]")
-              |> mes("Congratulations on becoming a merchant!")
-              |> mes(
-                "Congratulations again for being a member of the merchant guild and one of our colleagues. I expect your active participation from now on!"
-              )
-              |> jobchange(:merchant)
-              |> give_item(1381, 1)
-              |> next()
-              |> mes("[Guildsman Mahnsoo]")
-              |> mes(
-                "Absolutely, we need young people who have passion to achieve our great goal for securing 20% of the worldwide currency volume. You get it? Huh?"
-              )
-              |> mes(
-                "Well, I'm just saying... it means let's make lots of money in the end. You guys know that~"
-              )
-              |> close()
+              |> mes("We have business ethics you know.")
+            end
 
-            throw({:script_end, ctx})
-          end
-
-        2 ->
-          ctx =
-            ctx
-            |> mes("[Guildsman Mahnsoo]")
-            |> mes(
-              "Merchant? To put it simply, the person who sells good and makes money is a merchant."
-            )
-            |> mes(
-              "Not good at fighting and doesn't have special attack/recovery skills... but a merchant can buy things at a low price and then sell them and make money."
-            )
-            |> next()
-            |> mes("[Guildsman Mahnsoo]")
-            |> mes(
-              "Well, a merchant has an ultimate skill called Mammonite which strikes an enemy with his/her money... We can equip everything except Bows, Rods, and Two-Handed Swords. But we can always sell and buy those."
-            )
-            |> mes("Yes... we merchants always have money on our minds, got it?")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        3 ->
-          ctx =
-            ctx
-            |> mes("[Guildsman Mahnsoo]")
-            |> mes(
-              "To become a merchant, although just selling and receiving money is our job, you must reach at least basic skill level 9."
-            )
-            |> next()
-            |> mes("[Guildsman Mahnsoo]")
-            |> mes(
-              "Well, we used to receive a start-up fee before. Wasn't it hard to make that money?"
-            )
-            |> mes("There were too many people who couldn't gather that money and kept crying.")
-            |> next()
-            |> mes("[Guildsman Mahnsoo]")
-            |> mes(
-              "So recently, we decided to allow any Novice who wants to be a merchant become one."
-            )
-            |> mes("Because to be alive or not later is all up to one's ability.")
-            |> close()
-
-          throw({:script_end, ctx})
-
-        4 ->
           ctx = close(ctx)
           throw({:script_end, ctx})
+        else
+          ctx = ctx |> mes("Want to be a merchant? Hmm...") |> next()
+          v3 = can_change_job?(ctx)
 
-        _ ->
+          ctx =
+            if not Rathena.truthy?(v3) do
+              ctx =
+                ctx
+                |> mes("[Guildsman Mahnsoo]")
+                |> mes(
+                  "But if you want to be a merchant, your basic skill level must reach Level 9 or you must spend all of your skill points."
+                )
+                |> next()
+                |> mes("[Guildsman Mahnsoo]")
+                |> mes(
+                  "Don't you think we need to learn some basic skills although we just deal with money?"
+                )
+                |> close()
+
+              throw({:script_end, ctx})
+            else
+              ctx
+            end
+
+          ctx =
+            ctx
+            |> mes("[Guildsman Mahnsoo]")
+            |> mes(
+              "Good, I think you're fully ready for it seeing that your basic skill level is fulfilled."
+            )
+            |> mes("Now I allow you to be a merchant.")
+            |> next()
+            |> mes("[Guildsman Mahnsoo]")
+            |> mes("Congratulations on becoming a merchant!")
+            |> mes(
+              "Congratulations again for being a member of the merchant guild and one of our colleagues. I expect your active participation from now on!"
+            )
+            |> jobchange(:merchant)
+            |> give_item(1381, 1)
+            |> next()
+            |> mes("[Guildsman Mahnsoo]")
+            |> mes(
+              "Absolutely, we need young people who have passion to achieve our great goal for securing 20% of the worldwide currency volume. You get it? Huh?"
+            )
+            |> mes(
+              "Well, I'm just saying... it means let's make lots of money in the end. You guys know that~"
+            )
+            |> close()
+
+          throw({:script_end, ctx})
+        end
+
+      2 ->
+        ctx =
           ctx
-      end
+          |> mes("[Guildsman Mahnsoo]")
+          |> mes(
+            "Merchant? To put it simply, the person who sells good and makes money is a merchant."
+          )
+          |> mes(
+            "Not good at fighting and doesn't have special attack/recovery skills... but a merchant can buy things at a low price and then sell them and make money."
+          )
+          |> next()
+          |> mes("[Guildsman Mahnsoo]")
+          |> mes(
+            "Well, a merchant has an ultimate skill called Mammonite which strikes an enemy with his/her money... We can equip everything except Bows, Rods, and Two-Handed Swords. But we can always sell and buy those."
+          )
+          |> mes("Yes... we merchants always have money on our minds, got it?")
+          |> close()
 
-    ctx
+        throw({:script_end, ctx})
+
+      3 ->
+        ctx =
+          ctx
+          |> mes("[Guildsman Mahnsoo]")
+          |> mes(
+            "To become a merchant, although just selling and receiving money is our job, you must reach at least basic skill level 9."
+          )
+          |> next()
+          |> mes("[Guildsman Mahnsoo]")
+          |> mes(
+            "Well, we used to receive a start-up fee before. Wasn't it hard to make that money?"
+          )
+          |> mes("There were too many people who couldn't gather that money and kept crying.")
+          |> next()
+          |> mes("[Guildsman Mahnsoo]")
+          |> mes(
+            "So recently, we decided to allow any Novice who wants to be a merchant become one."
+          )
+          |> mes("Because to be alive or not later is all up to one's ability.")
+          |> close()
+
+        throw({:script_end, ctx})
+
+      4 ->
+        ctx = close(ctx)
+        throw({:script_end, ctx})
+
+      _ ->
+        throw({:script_end, ctx})
+    end
   catch
     :throw, {:script_end, ctx} -> ctx
   end

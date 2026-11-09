@@ -79,10 +79,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.RestingAdventurer do
   end
 
   def ev_ontimer65000(ctx) do
-    npctalk(
-      ctx,
+    ctx
+    |> npctalk(
       "Resting Adventurer : Sitting is possible if your basic job skill level is more than 3. Shortcut is pressing the <INSERT> key."
     )
+    |> ev_oninit()
   end
 
   def ev_oninit(ctx) do

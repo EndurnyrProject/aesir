@@ -189,7 +189,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesAlberta.Guide do
             ctx
 
           _ ->
-            ctx
+            throw({:script_end, ctx})
         end
 
       loop_3(ctx)
@@ -320,7 +320,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesAlberta.Guide do
             ctx
 
           _ ->
-            ctx
+            throw({:script_end, ctx})
         end
 
       loop_5(ctx)
@@ -399,7 +399,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesAlberta.Guide do
             ctx
 
           _ ->
-            ctx
+            throw({:script_end, ctx})
         end
 
       loop_7(ctx)
@@ -463,7 +463,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesAlberta.Guide do
           throw({:script_end, ctx})
 
         _ ->
-          ctx
+          throw({:script_end, ctx})
       end
 
     loop_1(ctx)
