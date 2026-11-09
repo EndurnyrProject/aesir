@@ -154,6 +154,18 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ParserTest do
                """)
     end
 
+    test "a `-` menu target is the next-line label" do
+      assert {:ok,
+              [
+                {:menu, [{{:str, "Buy"}, "L_Buy"}, {{:str, "Leave"}, :next_line}]},
+                {:cmd, "close", []}
+              ]} =
+               Parser.parse_body("""
+               menu "Buy",L_Buy,"Leave",-;
+               close;
+               """)
+    end
+
     test "callsub and return with value" do
       assert {:ok,
               [

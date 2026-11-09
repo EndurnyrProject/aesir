@@ -282,12 +282,14 @@ defmodule H.Core do
   def call(:job_level, [_ctx]), do: pick(:job_level, [10, 39, 40, 41, 50] ++ ints())
   def call(:base_level, [_ctx]), do: pick(:base_level, [10, 39, 40, 41, 50, 99])
   def call(:skill_point, [_ctx]), do: pick(:skill_point, [0, 0, 0, 1])
-  def call(:zeny, [_ctx]), do: pick(:zeny, [0, 9999, 10_000, 50_000])
+  # Materials-heavy quests gate on quantities the fixed domain never reaches, so the file's own
+  # literals widen both the purse and the item counts; otherwise every expensive path is a dead end.
+  def call(:zeny, [_ctx]), do: pick(:zeny, Enum.uniq([0, 9999, 10_000, 50_000] ++ ints()))
   def call(:weight, [_ctx]), do: pick(:weight, [0, 100, 5000, 20_000])
   def call(:char_name, [_ctx | args]), do: "Name#{inspect(args)}"
 
   def call(:count_item, [_ctx | args]),
-    do: pick({:count_item, args}, [0, 1, 2, 3, 5, 10, 20, 60, 100])
+    do: pick({:count_item, args}, Enum.uniq([0, 1, 2, 3, 5, 10, 20, 60, 100] ++ ints()))
 
   def call(:checkquest, [_ctx | args]), do: pick({:checkquest, args}, [-1, 0, 1, 2])
   def call(:isbegin_quest, [_ctx | args]), do: pick({:isbegin_quest, args}, [0, 1])
@@ -657,7 +659,8 @@ job_atoms =
 
       {_, acc} =
         Macro.prewalk(ast, acc, fn
-          {{:., _, [{:__aliases__, _, [:Rathena]}, :job_id]}, _, [a]} = node, acc when is_atom(a) ->
+          {{:., _, [{:__aliases__, _, [:Rathena]}, :job_id]}, _, [a]} = node, acc
+          when is_atom(a) ->
             {node, MapSet.put(acc, a)}
 
           node, acc ->

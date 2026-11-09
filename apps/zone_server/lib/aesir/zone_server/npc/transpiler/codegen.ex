@@ -599,13 +599,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     case List.last(stmts) do
       {:cmd, name, _} when name in ["close", "end", "close2", "close3"] -> true
       {:goto, _} -> true
-      {:menu, _} -> true
+      {:menu, pairs} -> not next_line?(pairs)
       {:return, _} -> true
       {:break} -> true
       {:continue} -> true
       _ -> false
     end
   end
+
+  # A `-` menu target is rAthena's `LABEL_NEXTLINE`; the option resumes after
+  # the menu, so the menu does not end the flow.
+  defp next_line?(pairs), do: Enum.any?(pairs, fn {_, label} -> label == :next_line end)
 
   defp emit_segments(segments, env) do
     segments
@@ -813,20 +817,32 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       pairs
       |> Enum.with_index(1)
       |> Enum.map(fn {{_, label}, idx} ->
-        if label?(env, label) do
-          "#{idx} -> #{fn_name(env, label)}(ctx#{helper_call(env)})"
-        else
-          flag(:todo_fun)
-          "#{idx} -> todo(ctx, :goto, [#{inspect(label)}])"
+        cond do
+          label == :next_line ->
+            "#{idx} -> ctx"
+
+          label?(env, label) ->
+            "#{idx} -> #{fn_name(env, label)}(ctx#{helper_call(env)})"
+
+          true ->
+            flag(:todo_fun)
+            "#{idx} -> todo(ctx, :goto, [#{inspect(label)}])"
         end
       end)
+
+    fall_through? = next_line?(pairs)
+    bind = if fall_through?, do: "ctx = ", else: ""
+
+    # The menu's cancel code ends the script (rAthena's `buildin_menu`), which only
+    # needs saying when a `-` target lets the flow continue past the menu.
+    cancel = if fall_through?, do: "_ -> #{@script_end}", else: "_ -> ctx"
 
     lines =
       pre ++
         ["{ctx, choice} = select(ctx, #{options})", ""] ++
-        ["case choice do"] ++ clauses ++ ["_ -> ctx", "end"]
+        ["#{bind}case choice do"] ++ clauses ++ [cancel, "end"]
 
-    {lines, :stop}
+    {lines, if(fall_through?, do: :cont, else: :stop)}
   end
 
   # A `return` nested below the function's top level (inside an if/switch/loop
@@ -2063,7 +2079,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       {:break} -> false
       {:cmd, c, _} when c in ["close", "end"] -> false
       {:goto, _} -> false
-      {:menu, _} -> false
+      {:menu, pairs} -> not next_line?(pairs)
       {:return, _} -> false
       _ -> true
     end

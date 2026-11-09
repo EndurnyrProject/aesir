@@ -81,8 +81,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Analyzer do
     acc = Enum.reduce(pairs, acc, fn {text, _label}, a -> walk_expr(text, a) end)
 
     targets =
-      Enum.reduce(pairs, acc.jump_targets, fn {_, label}, s ->
-        MapSet.put(s, String.downcase(label))
+      Enum.reduce(pairs, acc.jump_targets, fn
+        {_, :next_line}, s -> s
+        {_, label}, s -> MapSet.put(s, String.downcase(label))
       end)
 
     %{acc | jump_targets: targets}

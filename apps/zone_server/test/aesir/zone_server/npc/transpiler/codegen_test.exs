@@ -396,6 +396,22 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ "2 -> l_l_bye(ctx)"
   end
 
+  test "a `-` menu target falls through past the menu" do
+    src =
+      gen!("""
+      menu "Buy",L_Buy,"Leave",-;
+      mes "After";
+      close;
+      L_Buy:
+      close;
+      """)
+
+    assert src =~ "1 -> l_l_buy(ctx)"
+    assert src =~ "2 -> ctx"
+    assert src =~ ~S|_ -> throw({:script_end, ctx})|
+    assert src =~ ~S{ctx |> mes("After")}
+  end
+
   test "callsub returns {ctx, value} and getarg reads args" do
     src =
       gen!("""

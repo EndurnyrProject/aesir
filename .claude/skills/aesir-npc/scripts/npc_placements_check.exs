@@ -90,8 +90,9 @@ defmodule PlacementsCheck do
     end
   end
 
+  # A one- or multi-line `spawn:` list; the list itself holds no brackets.
   defp spawn_block(source) do
-    case Regex.run(~r/spawn: \[(.*?)\n    \]/s, source) do
+    case Regex.run(~r/spawn: \[(.*?)\]/s, source) do
       [_, block] -> block
       nil -> ""
     end

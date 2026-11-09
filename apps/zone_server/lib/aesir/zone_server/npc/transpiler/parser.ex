@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
     `{:for, init, cond, step, stmts}`
   - `{:break}` / `{:continue}`
   - `{:label, name}` / `{:goto, name}`
-  - `{:menu, pairs}` — `{text_expr, label_name}` pairs
+  - `{:menu, pairs}` — `{text_expr, label_ref}` pairs, where `label_ref` is a
+    label name or `:next_line` (the rAthena `-` target)
   - `{:return, expr | nil}`
   - `{:fn_decl, name}` / `{:function, name, stmts}` — script-local functions
 
@@ -506,6 +507,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
   defp menu_pairs([text, {:name, label} | rest], acc),
     do: menu_pairs(rest, [{text, label} | acc])
 
+  # A `-` target is rAthena's `LABEL_NEXTLINE` (`parse_subexpr`): the option
+  # resumes at the line after the menu, so it continues past it.
+  defp menu_pairs([text, {:next_line} | rest], acc),
+    do: menu_pairs(rest, [{text, :next_line} | acc])
+
   defp menu_pairs(args, _acc), do: {:error, {:bad_menu_args, args}}
 
   # -- expressions -------------------------------------------------------------
@@ -561,6 +567,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
   end
 
   defp binary_tail(left, tokens, _level), do: {:ok, left, tokens}
+
+  # rAthena's `parse_subexpr` reads a `-` followed by `;` or `,` as the
+  # unnamed `LABEL_NEXTLINE` label instead of a negation.
+  defp unary([{:op, :-}, {:punct, punct} | rest]) when punct in [:semicolon, :comma],
+    do: {:ok, {:next_line}, [{:punct, punct} | rest]}
 
   defp unary([{:op, :-} | rest]) do
     with {:ok, expr, rest} <- unary(rest), do: {:ok, {:neg, expr}, rest}

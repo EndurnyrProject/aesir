@@ -31,6 +31,18 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.AnalyzerTest do
     assert a.events == ["OnInit", "OnTouch"]
   end
 
+  test "a `-` menu target is not a jump target" do
+    a =
+      analyze!("""
+      menu "Bye",L_Bye,"Leave",-;
+      close;
+      L_Bye:
+      end;
+      """)
+
+    assert MapSet.equal?(a.jump_targets, MapSet.new(["l_bye"]))
+  end
+
   test "assigned bare names are collected from assignments, input and setarray" do
     a =
       analyze!("""
