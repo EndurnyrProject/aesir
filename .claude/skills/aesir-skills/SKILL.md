@@ -8,7 +8,7 @@ description: How to implement job/player skills in Aesir - the Skill behaviour a
 ## Parity first
 
 A skill must behave exactly like rAthena in both modes (`AGENTS.md`, "Mechanics Parity").
-Before coding, read the skill's reference file under `rathena/src/map/skills/<job>/`, its
+Before coding, read the skill's reference file under `<rathena>/src/map/skills/<job>/`, its
 cases in `battle.cpp` / `skill.cpp` / `status.cpp` / `unit.cpp`, and both modes' `skill_db.yml`
 rows (including `CastTimeFlags`, `DamageFlags`, `Flags`, `Unit`), and write the parity checklist
 described in `aesir-workflow`. The task brief's formulas are a summary, not the authority.
@@ -62,9 +62,9 @@ Declared in `mmo/skill/`:
 - **`Skill.Active`** — `cast(caster, target, level, definition)`; optional `validate/4`,
   `deferred/2` (effects that must run later in the caster's session), `mob_cast/5` (raw
   unit-typed target + full mob-skill row), `dynamic_cost/4`, `dynamic_cast_time/4`
-  (e.g. instant-cast combo skills). Caster type is `PlayerState.t() | MobState.t()` — don't
-  pattern-match `%{character_id: _}` unless the skill is deliberately player-only (that's
-  what forces a denylist entry for mobs).
+  (e.g. instant-cast combo skills). The caster is a `PlayerState`, `MobState` or
+  `HomunculusState` (caster kinds in `mmo/skill/caster/`). Keep the code caster-generic; a
+  skill that genuinely needs a player facility declares it in `requires:` (see "Mob casting").
 - **`Skill.Passive`** — optional bonus callbacks (`atk_bonus/2`, `hit_bonus/2`, ...),
   `attack_proc/2` (carries `:chance`), `attack_replacement/2`, `skill_rider/4` (e.g. Fatal
   Blow riding Bash).
@@ -152,21 +152,17 @@ Placement flows cast → Interpreter → `Skill.Unit.place/4` → `place_group/2
   (e.g. `Combat.resolve_combatant(caster_id)`) is a self-call deadlock. Read the caster cell
   from `%Group{origin: {px, py}}` (stamped by `place_group/2`; fall back `origin: nil ->
   {1, 0}` for direction math). `on_interval`/`on_touch` run in `Skill.Unit.Manager` and may
-  resolve the caster safely. (`TargetResolver.get_player_unit_state/1` now self-heals the
-  self-call case via the UnitRegistry snapshot, but don't rely on it from `on_place`.)
+  resolve the caster safely. (`TargetResolver` self-heals the self-call case via the
+  UnitRegistry snapshot, but don't rely on it from `on_place`.)
 - Per-level data arrays (durations etc.) must cover every level a mob row can cast
   (mob rows carry levels past 10 — an out-of-range level nil-crashes `on_place`).
 
 ## Deferred effects
 
-Effects that must run later in the caster's session go through the generic seam:
-`Skill.defer/3` + the optional `Active.deferred/2` callback. Never add per-skill clauses to
-`PlayerSession`/`MobSession` — `session_hygiene_test` forbids `Mmo.Skills` references in
-sessions. MobSession handles `{:skill, {:deferred, module, payload}}` too.
-
-Delayed work that can be invalidated must carry an epoch or token (cast token, combo/spirit
-generation counters, mob `deferred_epoch`); the rule, the session shell, and the
-single-writer/no-deadlock rules that govern where skill code runs are in `aesir-units`.
+Effects that must run later in the caster's session go through `Skill.defer/3` + the optional
+`Active.deferred/2` callback, never per-skill session clauses. Invalidatable delayed work
+carries an epoch or token. Both rules, and the single-writer/no-deadlock rules that govern
+where skill code runs, are owned by `aesir-units`.
 
 ## Skill-staged dialogs (client menus without new proto messages)
 
@@ -179,8 +175,11 @@ this before inventing new wire messages.
 
 Mobs cast real skill modules via `Mmo.MobSkill.Executor` (see the `aesir-mobs` skill for the
 trigger layer). When writing a skill, either keep `cast/4` caster-generic or add a
-`mob_cast/5` clause; a player-only pattern-match means adding the skill to
-`MobSkill.Denylist` with a reason.
+`mob_cast/5` clause. A skill that needs a facility only some casters have (inventory, party,
+client dialog, equipment, zeny, spheres, ...) lists it in `requires:` (vocabulary in
+`Skill.Requirement`); `Skill.Castability` drops rows for casters that do not provide it (mobs
+provide none). Never narrow `requires:` beyond what the reference needs: an over-declared
+requirement silently removes mob rows.
 
 ## Testing conventions
 
@@ -188,16 +187,7 @@ trigger layer). When writing a skill, either keep `cast/4` caster-generic or add
   write catalog-metadata tests (`id`, `name`, `max_level`, `display_name`, module resolves);
   `catalog_discovery_test.exs` already guards every discovered skill. A skill whose behaviour
   is fully declarative (`use` args plus a shared helper) needs no test file.
-- Bugs in the session-execution class (deadlocks, message routing) only reproduce when the
-  cast goes through the real session: use `simulate_incoming_message` in integration tests,
-  not direct `Skill.cast/4` from the test process.
-- Use real `PlayerState`/`MobState`/`UnitRegistry` shapes, not hand-built maps — synthetic
-  `attack_info`/entity fixtures have hidden wrong-field and boss-gate bugs.
-- Bare `%PlayerState{character_id: id}` fixtures have `stats: nil`; keep code nil-tolerant
-  rather than inflating fixtures.
-- Fixture shapes, the Mimic arity trap, and the determinism checklist are in `aesir-workflow`.
-- rAthena research: skill logic is under `rathena/src/map/skills/<job>/`, not just
-  `skill.cpp`. Always check for `#ifdef RENEWAL` branches — many skills behave differently
-  pre-renewal. Tests assert the reference's numbers; derive expected values from the
-  source, never from the implementation. The both-modes `@moduledoc` rule and the no-rAthena-citations rule are in
-  `aesir-game-modes`.
+- Tests assert the reference's numbers in both modes; derive expected values from the source
+  (check its `#ifdef RENEWAL` branches), never from the implementation.
+- Real session paths for deadlock-class bugs, real fixture shapes, the Mimic arity trap and the
+  determinism checklist are in `aesir-workflow`.

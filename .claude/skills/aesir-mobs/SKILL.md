@@ -6,14 +6,14 @@ description: How to work on mobs in Aesir - MobSession/AI, the mob and spawn dat
 # Mobs and mob skills in Aesir
 
 Mob skills are real skills: an `NPC_*` module must match its rAthena implementation
-(`src/map/skills/npc/`, both modes' `skill_db.yml`) exactly, including the ratio per level,
+(`<rathena>/src/map/skills/npc/`, both modes' `skill_db.yml`) exactly, including the ratio per level,
 hit-rate bonuses, status chance and the skill's own duration (`AGENTS.md`, "Mechanics
 Parity"). A mob row naming a skill with no module is skipped, which is itself a gap to fill.
 
 ## Data and runtime
 
-- Mob DB: `apps/zone_server/priv/db/<mode>/mobs/mobs.yml` (`mix aesir.import.mobs`) — mode
-  dir is `re/` or `pre-re/` per `AESIR_DB_MODE` (see `aesir-game-modes`); loaded into
+- Mob DB: `apps/zone_server/priv/db/<mode>/mobs/mobs.yml` (`mix aesir.import.mobs
+  <rathena_root> --mode re|pre-re`; the runtime reads the `AESIR_DB_MODE` dir); loaded into
   `:persistent_term` via `Mmo.MobManagement.Mobs`. Boss/MVP classification is data-driven
   (two-axis: boss-flag vs MVP).
 - Spawns: `priv/db/<mode>/spawns/<map>.yml` (`mix aesir.import.spawns`); map `Coordinator` owns
@@ -29,12 +29,9 @@ Parity"). A mob row naming a skill with no module is skipped, which is itself a 
   which resolves attack/chase to their angry forms from `aggressive`) and the AI body is
   one ordered pass: target validity, attacked event, search, random walk or attack/chase/
   immobile fallback. MobSession is a routing shell over the handlers in `unit/mob/handlers/`
-  — `AiHandler` (tick/sleep-wake/targeting), `CastingHandler` (cast lifecycle),
-  `CombatHandler` (damage/death), `MovementHandler` (path/ticks/teleport/displacement). Put
-  logic in handlers, never new inline session clauses (`session_hygiene_test` guards this).
+  (listed in `aesir-units`); put logic in handlers, never new inline session clauses.
   Tests build mob states with `awake: false` (no tick at all); a test that wants one hard
-  think sends `{:ai, {:hard, player_id}}` (`AiHandler.handle_hard_think/2`). See `aesir-units` for the
-  full shell/handler + single-writer model shared with `PlayerSession`.
+  think sends `{:ai, {:hard, player_id}}` (`AiHandler.handle_hard_think/2`).
 - Mob statuses share the player `StatusStorage`; mob vitals never touch `UnitRegistry`.
 - Mobs have real cast state via `CastingHandler`: `begin_cast/3` / `abort_cast/1` (forced
   interrupts such as Spell Breaker), cooldowns keyed by skill_id, and `{:skill, {:deferred,
@@ -50,9 +47,9 @@ Parity"). A mob row naming a skill with no module is skipped, which is itself a 
 There is no separate mob-skill implementation layer (the old archetype system was deleted).
 The split is:
 
-- **Trigger layer** — `mmo/mob_skill/` (`Db`, `Importer`, `Selector`, `CastingHandler`):
-  the imported rows (`priv/db/<mode>/mob_skills/`) own cast time, rate, state conditions, target
-  codes.
+- **Trigger layer**: `mmo/mob_skill/` (`Db`, `Importer`, `Selector`, `Event`): the imported
+  rows (`priv/db/<mode>/mob_skills/`) own cast time, rate, state conditions, target codes. The
+  cast lifecycle itself is the mob's `CastingHandler` (`unit/mob/handlers/`).
 - **Execution** — `MobSkill.Executor` resolves `Skill.Catalog.by_id(row.skill_id)` and
   dispatches to the real `Skill.Active` module with a `%MobState{}` caster, calling
   `mob_cast/5` when the module exports it (raw unit-typed target + full row, giving access
@@ -62,9 +59,11 @@ The split is:
 
 Rules and gotchas:
 
-- `MobSkill.Denylist` lists skills mobs cannot cast, each with a reason (mostly player-only
-  pattern-matches, plus rows whose levels exceed a skill's per-level arrays).
-  Un-denylisting = giving the skill a mob-caster clause, not editing rows.
+- There is no denylist. Castability is derived: a skill's `requires:` facilities are checked
+  by `Skill.Castability` against the caster kind (mobs provide none), and `Selector` drops
+  rows that fail it. Making a skill mob-castable means giving it a caster-generic path and
+  removing the requirement, not editing rows. Per-level arrays must still cover every level a
+  mob row casts.
 - `Targeting.validate_enemy/2` blocks mob→mob (PvE faction rule) — this is the only thing
   keeping mob-cast ground groups from friendly fire; `apply_skill_unit_damage` has no gate
   of its own. Splash enumeration via `Combat.splash_targets` must receive the **resolved

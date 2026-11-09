@@ -2,11 +2,10 @@
 #
 # Usage (plain elixir, no Mix, no compiled project needed), from the repo root:
 #
-#     elixir .agents/skills/aesir-npc/scripts/npc_placements_check.exs <module path> [...]
+#     RATHENA_ROOT=<rathena> elixir .agents/skills/aesir-npc/scripts/npc_placements_check.exs <module path> [...]
 #
-# The rAthena checkout defaults to ~/Development/personal/rathena; override it
-# with RATHENA_ROOT. Several module paths share one pass over the reference tree,
-# which is the slow part (~15 s).
+# RATHENA_ROOT (the rAthena checkout) is required; it varies per machine. Several
+# module paths share one pass over the reference tree, which is the slow part (~15 s).
 #
 # Compares the module's `spawn:` list with the reference script. A body reaches the
 # map either through its own `script` placement row or through `duplicate(<exname>)`
@@ -32,7 +31,9 @@ defmodule PlacementsCheck do
   @moduledoc false
 
   def run(module_paths) do
-    rathena_root = System.get_env("RATHENA_ROOT", Path.expand("~/Development/personal/rathena"))
+    rathena_root =
+      System.get_env("RATHENA_ROOT") ||
+        raise "set RATHENA_ROOT to the rAthena checkout (it varies per machine)"
     sprites = sprite_constants(rathena_root)
 
     reference_index =

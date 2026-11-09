@@ -111,11 +111,11 @@ adaptation. Do not label original Aesir content as imported.
    distinct placements, not duplicates to remove. Map renaming is a separate explicit change: check
    the actual map cache and agree on the mapping first.
    Before touching the body, verify the `spawn:` list against the reference script with
-   `elixir .agents/skills/aesir-npc/scripts/npc_placements_check.exs <module path> [...]`. It
+   `RATHENA_ROOT=<rathena> elixir .agents/skills/aesir-npc/scripts/npc_placements_check.exs <module path> [...]`
+   (recall the checkout from memory or ask the user). It
    compares the module with the rows that actually place the body, its own `script` row or the
    `duplicate(<exname>)` rows in the scoped scripts, resolving sprite constants and keeping only the
-   placements of a mode-scoped body's own mode; several paths share one pass, and `RATHENA_ROOT=`
-   points it at another checkout. The manifest's recorded spawns are not the reference: a targeted
+   placements of a mode-scoped body's own mode; several paths share one pass. The manifest's recorded spawns are not the reference: a targeted
    `--only` run can write a record before the scoped duplicates are in scope, and that stale record
    is never revisited while the source stays unchanged. Every MISSING/EXTRA placement is fixed in the
    module as part of the refactor, and the stale record is reported in the backlog.
@@ -182,8 +182,9 @@ External-store vars are read/written directly by the interaction Task, not via
 
 ## The rAthena transpiler
 
-`mix aesir.import.npcs [<rathena_root>] [--only <glob>] [--force]` transpiles upstream
-`npc/**/*.txt` into DSL modules. Run it from the repository root. With no `--only`, it follows
+`mix aesir.import.npcs <rathena_root> [--only <glob>] [--force]` transpiles upstream
+`npc/**/*.txt` into DSL modules. Run it from the repository root and always pass the rAthena
+root (the `../rathena` default does not resolve). With no `--only`, it follows
 the enabled shared, renewal, and pre-renewal configuration graphs rooted at
 `npc/re/scripts_main.conf` and `npc/pre-re/scripts_main.conf`, deduplicates shared files, and
 emits one all-scope corpus. This import is independent of `AESIR_DB_MODE`. `--only` globs are

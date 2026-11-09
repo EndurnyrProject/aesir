@@ -7,11 +7,11 @@ description: How to work on the Aesir codebase - version control (colocated Juju
 
 Aesir is a Ragnarok Online emulator in Elixir: an umbrella of four OTP apps
 (`commons`, `account_server`, `char_server`, `zone_server`) talking to a custom Rust client
-over QUIC + Protobuf. It serves two rulesets from one artifact, **renewal** (the flagship)
-and **pre-renewal** (trans-era classic), selected at boot by `AESIR_DB_MODE`. Correctness
-with respect to the active mode's mechanics is the top priority; renewal has zero regression
-tolerance. The research method, the mode seam, and the writing rules for mode-aware code
-(including "never cite rAthena in Aesir code or docs") are owned by `aesir-game-modes`.
+over QUIC + Protobuf. It serves two first-class rulesets from one artifact, **renewal** and
+**pre-renewal** (trans-era classic), selected at boot by `AESIR_DB_MODE`. Correctness in both
+modes is the top priority, with zero regression tolerance in either. The research method, the
+mode seam, and the writing rules for mode-aware code (including how to cite rAthena) are owned
+by `aesir-game-modes`.
 
 ## Version control: colocated Jujutsu
 
@@ -178,11 +178,10 @@ Every flake the suite has had traces to one of these. Check them before diagnosi
 
 ## Engineering conventions not owned by another skill
 
-- **Interpreted content, never generated modules**: item scripts and NPC scripts compile to
-  interpreted AST/IR. The BEAM JIT dies above ~6-7k clauses in one function; the corpus
-  needs ~14k. Do not reintroduce per-item/per-NPC generated modules.
-- **Runtime catalogs in `:persistent_term`** with a `reload/0` (`Items`, `Mobs` are the
-  canonical shape); never bake large data into compile-time module attributes.
+- **Clause budget for generated code**: the BEAM JIT dies above ~6-7k clauses in one function.
+  Item `on_equip` scripts (~10k in renewal) are therefore interpreted IR (`EquipScript`); item
+  `on_use` scripts (~2.5k) are boot-compiled into the single `CompiledItemScripts` dispatch
+  module. Never generate one clause or module per item for a corpus that can exceed the budget.
 - **Restricted entry points over bypass booleans**: when a path must skip validations, add a
   separate narrow entry point documenting exactly what it skips (the skill Interpreter's
   `cast/4` vs `auto_cast/4` vs `item_cast/4`, see `aesir-skills`), never a bypass flag
@@ -191,8 +190,6 @@ Every flake the suite has had traces to one of these. Check them before diagnosi
   siblings (dead modifier keys, missing resolver entries) instead of patching one instance.
   An inert bug can mask a crash; when fixing "this value is never read", check what happens
   once it is.
-- rAthena research: skill logic is modular under `rathena/src/map/skills/<job>/`; grepping
-  only `skill.cpp` finds the usability check and misses the real logic. Grep both.
 
 ## Related skills
 

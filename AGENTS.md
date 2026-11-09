@@ -11,10 +11,13 @@ client over QUIC using a Protobuf wire protocol (it is not the legacy kRO TCP/pa
 
 ## Mechanics Parity: rAthena Is the Reference
 
-Game mechanics must be **identical to rAthena** (`~/Development/personal/rathena`) in both
-modes. This is a hard requirement, not a goal to approximate. It covers formulas and their
-rounding, step order, chances and how they are rolled, durations, costs and when they are
-spent, targeting, failure behaviour, and interactions with other skills and statuses.
+Game mechanics must be **identical to rAthena** in both modes. This is a hard requirement,
+not a goal to approximate. It covers formulas and their rounding, step order, chances and how
+they are rolled, durations, costs and when they are spent, targeting, failure behaviour, and
+interactions with other skills and statuses.
+
+The rAthena checkout location varies per machine: recall it from memory, otherwise ask the
+user, and never assume a path. Docs and skills write it as `<rathena>`.
 
 - **The source decides, not the spec.** A design, task brief, review finding or existing Aesir
   code is never evidence of how a mechanic works. Read the rAthena source for it: the skill's
@@ -108,12 +111,10 @@ Always verify the exact signature in the source before use; do not assume.
 
 ## Database Models
 
-Persistent state is small and lives in `Aesir.Commons.Models`:
-
-1. **Account** (`Aesir.Commons.Models.Account`) - Auth data (username, password hash), status, security.
-2. **Character** (`Aesir.Commons.Models.Character`) - Stats, position/map, appearance, zeny, char vars,
-   game state.
-3. **InventoryItem** (`Aesir.Commons.Models.InventoryItem`) - Per-character inventory rows.
+Ecto schemas live in `apps/commons/lib/aesir/commons/models/` (`Aesir.Commons.Models.*`). The core
+ones are `Account`, `Character` and `InventoryItem`; the rest cover storage and cart items,
+party/guild/castle data, quests, homunculi, persisted statuses and cooldowns, and script
+variables. List the directory rather than assuming a schema exists.
 
 Most zone-server runtime state (live unit state, status effects, map cells, NPC placements) is held
 in memory (ETS / `:persistent_term`) and only the durable bits are persisted back via
@@ -122,8 +123,8 @@ in memory (ETS / `:persistent_term`) and only the durable bits are persisted bac
 ## Zone Server Subsystems
 
 The zone server (`apps/zone_server/lib/aesir/zone_server/`) is where most work happens.
-`MechanicsSupervisor` boots the subsystems in order (load map cache, status definitions, item
-scripts, NPC registry/verifier, warps) and then starts the runtime supervisors.
+`MechanicsSupervisor` loads the runtime catalogs in order (map cache, items, NPC registry and
+verifiers, warps, shops, mob skills, castles, ...) and then starts the runtime supervisors.
 
 - **`unit/`** - Polymorphic entity system. The `Unit` behaviour abstracts players/mobs/NPCs;
   `UnitRegistry` (ETS) keys live units by `{unit_type, unit_id}`; `SpatialIndex` does proximity
@@ -133,8 +134,7 @@ scripts, NPC registry/verifier, warps) and then starts the runtime supervisors.
     health, experience, stats, warp, script effects). `PlayerState` is an immutable snapshot.
   - **`unit/mob/`** - `MobSession` (GenServer, 1 s lazy AI tick) per mob instance; the map's
     `Coordinator` drives the hard think per nearby player every 100 ms; `AIStateMachine` is the pure
-    hard-think body over the mob's skill state (idle/walk/berserk/angry/rush/follow). Note: `gen_state_machine` is a listed dep but is
-    **not** currently used.
+    hard-think body over the mob's skill state (idle/walk/berserk/angry/rush/follow).
 - **`mmo/`** - Game mechanics. `combat/` (melee + magic damage, hit/crit, element/race/size mods),
   `skill/` + `skills/` (skill behaviour, catalog, cast/cooldown interpreter, ground units, and the
   individual skill modules), `status_effect/` (definition behaviour, interpreter, registry, ETS
@@ -155,7 +155,7 @@ scripts, NPC registry/verifier, warps) and then starts the runtime supervisors.
 NPCs are declarative Elixir modules under `content/npc/<map>/` with no compile-time coupling to
 the engine: `Npc` (`use` macro with a `spawn:` placement list and an `on_talk/1` callback),
 `Npc.Registry` (boot-time `:persistent_term` index composed with the `GameMode` overlay),
-`Npc.Verifier`, `Npc.Warps` (from `priv/db/re/warps/*.yml`), and `Script.Dsl` / `Script.Ctx` /
+`Npc.Verifier`, `Npc.Warps` (from `priv/db/<mode>/warps/*.yml`), and `Script.Dsl` / `Script.Ctx` /
 `Script.Interaction` for dialog, effect, and read ops.
 
 Load the **aesir-npc** skill before writing or porting any NPC, warp, or script buildin.
@@ -163,21 +163,21 @@ Load the **aesir-npc** skill before writing or porting any NPC, warp, or script 
 ## Data & Content Pipeline
 
 Game data is imported from rAthena into YAML/cache files under each app's `priv/`, then loaded at
-boot. The mix tasks (in `apps/zone_server/lib/mix/tasks/`) are idempotent, deterministic importers:
+boot. The mix tasks in `apps/zone_server/lib/mix/tasks/` are idempotent, deterministic importers,
+one per domain (`aesir.import.items`, `.mobs`, `.mob_skills`, `.spawns`, `.warps`, `.jobs`,
+`.skill_tree`, `.quests`, `.shops`, `.refine`, `.random_options`, ...; list the directory for the
+rest). Run them from the repository root:
 
-- `mix aesir.gen.constants [<rathena_root>]` - Generates `mmo/constants/*.ex` from rAthena headers
-  (`status.hpp`, `script.hpp`).
-- `mix aesir.import.items [<rathena_root>]` - rAthena `item_db_*` -> `priv/db/re/items/*.yml`.
-- `mix aesir.import.jobs [<rathena_root>]` - Merges rAthena job tables -> `priv/db/re/jobs/*.yml`.
-- `mix aesir.import.mobs [<rathena_root>]` - rAthena `mob_db` -> `priv/db/re/mobs/mobs.yml`.
-- `mix aesir.import.spawns [<rathena_root>]` - rAthena mob-spawn scripts -> `priv/db/re/spawns/<map>.yml`.
-- `mix aesir.import.warps [<rathena_root>]` - rAthena warp scripts -> `priv/db/re/warps/<map>.yml`.
-- `mix aesir.import.quests [<rathena_root>]` - rAthena `quest_db` -> `priv/db/re/quests/quests.yml`.
-- `mix aesir.import.npcs [<rathena_root>] [--only <glob>] [--force]` - enabled shared, renewal,
-  and pre-renewal NPC graphs -> one scoped module corpus.
-- `mix aesir.import.mapcache [<gat_dir>] [<out>]` - `.gat` files -> `priv/maps.mcache` (zlib walkability).
+- Database importers take `mix aesir.import.<domain> <rathena_root> [--mode re|pre-re]` and write
+  `priv/db/<mode>/`. `--mode` defaults to `re`; they do **not** read `AESIR_DB_MODE`. Always pass
+  the rAthena root explicitly (see "Mechanics Parity"); the built-in default `../rathena` does
+  not resolve.
+- `mix aesir.gen.constants <rathena_root>` generates `mmo/constants/*.ex` from rAthena headers.
+- `mix aesir.import.npcs <rathena_root> [--only <glob>] [--force]` transpiles the enabled shared,
+  renewal, and pre-renewal NPC graphs into one scoped module corpus.
+- `mix aesir.import.mapcache [<gat_dir>] [<out>]` builds `priv/maps.mcache` from `.gat` files.
 
-Zone DBs use `:commons, :game_mode`: `AESIR_DB_MODE=renewal` selects `re/` and
+At runtime, zone DBs use `:commons, :game_mode`: `AESIR_DB_MODE=renewal` selects `re/` and
 `AESIR_DB_MODE=pre_renewal` the shipped `pre-re/` corpus. With the variable unset,
 `config/config.exs` boots pre-renewal, so set it explicitly whenever the mode matters. Its pinned source,
 complete regeneration sequence, and intentional exclusions are documented in
@@ -186,10 +186,9 @@ after shipped data: keyed rows override, maps merge, and spawns append-only per 
 kept, import spawns added); warps and shops append. Restart after edits, or call the relevant
 catalog's `reload/0`.
 
-NPC import has its own rules (all-scope runs independent of `AESIR_DB_MODE`, `--only` semantics,
-manifest ownership, `_conflicts/` and stale-output handling, helper resolution, and the pending
-pre-renewal corpus regeneration). Read the transpiler section of the **aesir-npc** skill before
-running `mix aesir.import.npcs`.
+NPC import has its own rules (all-scope runs, `--only` semantics, manifest ownership,
+`_conflicts/` and stale-output handling, helper resolution). Read the transpiler section of the
+**aesir-npc** skill before running `mix aesir.import.npcs`.
 
 ## Testing Approach
 

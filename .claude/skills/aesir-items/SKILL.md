@@ -14,8 +14,8 @@ before adding or changing a bonus key.
 - The item DB is **mode-scoped**: `apps/zone_server/priv/db/<mode>/items/{equip,usable,etc}.yml`
   where `<mode>` is `re/` or `pre-re/` (selected at boot by `AESIR_DB_MODE`; see
   `aesir-game-modes`). The files are **fully regenerated** by
-  `mix aesir.import.items [<rathena_root>]` — any hand-edit is erased on the next reimport;
-  the importer writes to the active mode's dir.
+  `mix aesir.import.items <rathena_root> [--mode re|pre-re]` (default `re`; it ignores
+  `AESIR_DB_MODE`), so any hand-edit is erased on the next reimport.
 - The seam for hand-authored scripts is the mode dir's `items/script_overrides.yml`:
   keyed by item id, merged over the
   generated `on_use` at load time by `ItemManagement.Loader`, never touched by the importer.
@@ -32,14 +32,15 @@ Item scripts (`on_use`, `on_equip`) are stored in YAML as **Elixir DSL source st
 (`bonus(ctx, :int, 3)`, `ctx` threading, `if ... do ... end`) — never nested-list YAML
 encodings.
 
-- `on_use` is compiled at boot by `ItemManagement.ScriptCompiler` into
-  `CompiledItemScripts` (reference it with `@compile {:no_warn_undefined, ...}` since it's
-  boot-generated).
+- `on_use` is compiled at boot by `ItemManagement.ScriptCompiler` into one `on_use/2` clause
+  per item in the single `CompiledItemScripts` module (reference it with
+  `@compile {:no_warn_undefined, ...}` since it's boot-generated).
 - `on_equip` runs through `EquipScript`: `parse!/1` (string_to_quoted + closed-vocabulary
   walk) → tuple program IR, `eval(program, refine)` at stats recompute; `to_source/1` is the
   importer-side inverse. The parser must keep folding unary minus (negative bonuses exist).
-- **Never compile item scripts to per-item module clauses** — the BEAM JIT dies above
-  ~6-7k clauses in one function; the corpus needs ~14k.
+- **Clause budget**: the BEAM JIT dies above ~6-7k clauses in one function. `on_use` (~2.5k
+  in renewal) fits; `on_equip` (~10k) does not, which is why it stays interpreted. Never move
+  `on_equip` (or anything else of that size) into generated clauses.
 - The rAthena front end is unified: item scripts parse via `Npc.Transpiler.Parser`
   (`RathenaScript.Transpiler`), with bonus vocabulary in the transpiler layer and constants
   in `rathena_script/resolver.ex`.
@@ -106,8 +107,8 @@ case-insensitive; `:item` params pass verbatim.
 
 - `itemskill` in an item script stages a client-selected cast (`ItemSkillReady`), never a direct
   effect. Only a `delay_consume` or a `no_consume` item can actually cast: the reference's
-  cast-begin item branch refuses any other item's pending cast silently
-  (`skill.cpp:8283-8300`), because an immediately consumed item no longer has a claimable slot.
+  cast-begin item branch (`skill_check_condition_castbegin`) refuses any other item's pending
+  cast silently, because an immediately consumed item no longer has a claimable slot.
 - The pending cast runs the player's cast stages; the item is claimed where the source claims it,
   after the chat-room refusal and before the weight limit. A plain item cast then bypasses the
   learned rank, weight, SP, zeny, spheres, HP, weapon, equipment and status requirements; with
@@ -126,7 +127,7 @@ case-insensitive; `:item` params pass verbatim.
   It is `Dsl.unitskilluseid/2`; the item's script effect is applied after the item is spent. The
   cast end is the ordinary one, minus its learned-rank re-check.
 - A `delay_consume`/`no_consume` item cannot be used while sitting or while a skill casts
-  (`pc.cpp:6493-6503`). The reference also refuses one under `SC_ALL_RIDING` (the new cash mounts);
+  (`pc_isUseitem`). The reference also refuses one under `SC_ALL_RIDING` (the new cash mounts);
   Aesir's `:riding` option is the Peco mount, which the reference allows, so that clause is not
   modelled until `SC_ALL_RIDING` exists.
 - A consumable that starts an `SC_*` status needs the resolver `@statuses` entry AND the
@@ -135,8 +136,8 @@ case-insensitive; `:item` params pass verbatim.
 
 ## Importer hazards (each has burned a session)
 
-- **Stale beams**: `mix aesir.import.items` executes whatever is compiled — run
-  `mix compile` first and verify the output actually changed.
+- **Stale beams**: `mix aesir.import.items` executes whatever is compiled. Run
+  `mix compile` first and verify the output actually changed (see `aesir-workflow`).
 - **Bootstrap hazard**: the importer loads the *existing* item DB while regenerating it, so
   an on-disk format older than the loader crashes the import. Migrate formats with a
   standalone `mix run --no-start` transform first, then rerun the importer canonically.

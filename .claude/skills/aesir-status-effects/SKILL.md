@@ -30,9 +30,9 @@ the gate for statuses that suppress the holder's other skill damage (classic Gra
 - One module per effect:
   `apps/zone_server/lib/aesir/zone_server/mmo/status_effect/effects/<name>.ex`, using
   `use Aesir.ZoneServer.Mmo.StatusEffect.Definition, id: :sc_<name>, ...`.
-- Register the module in `status_effect/effects.ex`, and if the status is referenced by item
-  scripts, add the `SC_*` symbol to `@statuses` in
-  `mmo/item_management/rathena_script/resolver.ex` **in the same commit** — a resolved
+- There is no registration step: `StatusEffect.Effects` discovers every module under the
+  `Effects` namespace. If the status is referenced by item scripts, add the `SC_*` symbol to
+  `@statuses` in `mmo/item_management/rathena_script/resolver.ex` **in the same commit** — a resolved
   symbol without a module fails at runtime with `{:error, :unknown_status}`.
   `resolver_completeness_test.exs` guards this rule.
 - `StatusEffect.Registry` indexes definitions; live instances are in `StatusStorage` (ETS),
@@ -149,16 +149,15 @@ source. `val1`-`val4` are persisted, including the values `on_apply` and `on_tic
   registry tests already guard it. A purely declarative effect needs no test file.
 - Regression tests for apply-path bugs must run the **real** `apply_status` (no boundary
   stub on the function under suspicion) against real unit shapes.
-- Tests driving `PlayerSession.init`/`terminate` must stub `StatusPersistence`
-  (`restore_on_spawn` identity, `save_statuses` :ok) or they hit the DB sandbox.
 - When fixing one status's bug (dead key, missing flag, missing resolver entry), grep the
   whole `effects/` tree for structural siblings — this subsystem's bugs come in classes.
+- Session-driving tests (the `StatusPersistence` stub), fixture shapes and Mimic traps are in
+  `aesir-workflow`.
 
 ## Game modes
 
 Several SC_ behaviors diverge between renewal and pre-renewal (element-field skills like
 Volcano/Deluge/Violent Gale, Steel Body, Kyrie, Angelus scaling, endows). Element bonuses are
-named `modifiers` of `Mechanics.Elements.adjust_damage/2`: renewal adds their points to the
-table ratio, classic adds each truncated percentage to the running damage before the table
-step. Where pre-re still runs renewal behaviour for one of these, that is a parity bug: fix it
-when you touch the status. The both-modes `@moduledoc` rule is in `aesir-game-modes`.
+named `modifiers` of `Mechanics.Elements.adjust_damage/2` (per-mode arithmetic in
+`aesir-skills`, "Integer element arithmetic"). Where pre-re still runs renewal behaviour for
+one of these, that is a parity bug: fix it when you touch the status.

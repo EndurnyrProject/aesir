@@ -5,7 +5,7 @@ description: How to identify renewal vs pre-renewal (trans-era classic) content 
 
 # Renewal vs pre-renewal in Aesir
 
-Aesir serves two rulesets from one artifact: **renewal** (the flagship) and **pre-renewal**
+Aesir serves two first-class rulesets from one artifact: **renewal** and **pre-renewal**
 (trans-era classic: levels 99/70, 2-2 + trans classes, no 3rd/4th jobs, no trait substats).
 The mode is chosen at boot by `AESIR_DB_MODE` (`renewal` | `pre_renewal`), frozen for the
 node's lifetime, and can never disagree between data and mechanics. Never introduce a
@@ -14,8 +14,8 @@ compile-time mode switch (`Application.compile_env`) — the seam is runtime, by
 
 ## Identifying mode differences in rAthena (the research method)
 
-rAthena (checkout `~/Development/personal/rathena`) is the reference: Aesir mechanics must
-match it exactly in both modes (`AGENTS.md`, "Mechanics Parity"). It implements both modes
+rAthena (`<rathena>`; recall the checkout from memory or ask the user) is the reference: Aesir
+mechanics must match it exactly in both modes (`AGENTS.md`, "Mechanics Parity"). It implements both modes
 with a compile-time split. When researching ANY mechanic, read the source (never recall it)
 and always check whether it is mode-gated:
 
@@ -34,8 +34,8 @@ and always check whether it is mode-gated:
   `Mode: Prerenewal` pointing into `db/re/` / `db/pre-re/`. A table present only under
   `db/re/` (e.g. `level_penalty.yml`, `elemental_db.yml`) means the system does not exist
   in pre-re at all — absence is the mechanic.
-- **NPCs/scripts**: `npc/` root categories are shared; `npc/re/` (475 files) and
-  `npc/pre-re/` (173 files) are mode overlays selected by
+- **NPCs/scripts**: `npc/` root categories are shared; `npc/re/` and `npc/pre-re/` are mode
+  overlays selected by
   `npc/{re,pre-re}/scripts_main.conf`. The `re/`-only delta is mostly 3rd-job content,
   instances, and newer quests.
 - **Runtime escapes** (rare): `battle.conf` toggles whose defaults differ per mode
@@ -73,35 +73,32 @@ and always check whether it is mode-gated:
   (excluded by skill trees / job data / content sets), not deleted.
 - **Race gotcha**: RC_DemiHuman gear does not affect players in renewal (players are
   `RC_Player_Human`); in pre-re players ARE demi-human, so anti-demihuman modifiers hit
-  players in PvP. A Phase-2 class of divergence — flag it when touching race modifiers.
+  players in PvP. `Mmo.Race.player_race/0` resolves this per mode; race-modifier code must go
+  through it, never hardcode `:player_human`.
 
 ## The Aesir seam
 
 - **Data** (live today): `Db.Layout` + `Db.Source` resolve every domain through the mode —
-  `priv/db/re/` vs `priv/db/pre-re/`, shared top-level domains ignore mode. Importers write
-  to the active mode's dir; run them under `AESIR_DB_MODE=pre_renewal` to produce pre-re
-  data. Mode-optional domains (declared with a `modes:` restriction in `Layout`) return no
-  sources instead of raising.
+  `priv/db/re/` vs `priv/db/pre-re/`, shared top-level domains ignore mode. Importers take
+  `--mode re|pre-re` (default `re`) and write that mode's dir; they ignore `AESIR_DB_MODE`.
+  Mode-optional domains (a mode list in `Layout`'s domain table, e.g. `level_penalty.yml` is
+  renewal-only) return no sources instead of raising.
 - **Mechanics** (shipped): `Aesir.Commons.GameMode.mode/0` is the single accessor;
   `Mmo.Mechanics` resolves the formula families (`PlayerFormulas`, `MobFormulas`,
   `HomunculusFormulas`, `PhysicalAttack`, `MagicDamage`, `CastTime`, `StatCost`, `Defense`,
   `Elements`, `Sizes`; see `@families` in `mmo/mechanics.ex`) to `.Renewal`/`.PreRenewal`
   modules at boot. Orchestration (`stats.ex`, damage calculators, interpreter) stays shared;
   only leaf formulas dispatch. Design: `specs/2026-08-24-pre-renewal-mode/` in the vault.
-- **Phasing**: Phase 1 (seam, core formulas, pre-re data) and the engine-parity pass (integer
-  element arithmetic, cast timing, logical divisions, stage-ordered status effects, owning
-  procs, both modes) are done. A skill or status that still runs renewal behaviour in pre-re
-  is a parity bug, not an accepted gap: fix it when you touch it. Phase 3 = classic NPC/content
-  corpus.
+- **Status**: the seam, formulas, data and NPC corpus exist for both modes. A skill or status
+  that still runs renewal behaviour in pre-re is a parity bug, not an accepted gap: fix it when
+  you touch it.
 
 ## Writing rules for mode-aware work
 
-- **Never** cite rAthena files/functions in Aesir code or docs — describe the mechanic.
-  (Vault spec/architecture docs and test comments citing the pre-re formula source are the
-  allowed exception for formula provenance.)
-- When implementing or touching a skill/status whose behavior differs by mode, document
-  BOTH behaviors in the `@moduledoc` even if only renewal is implemented — these notes are
-  the Phase-2 audit inventory (~130 modules carry them already).
+- Describe the mechanic in docs; citing the rAthena function, file or constant it comes from
+  is fine for provenance. **Never cite line numbers**: they go stale with every rAthena update.
+- A skill/status whose behaviour differs by mode implements both behaviours, and its
+  `@moduledoc` describes both.
 - New formula work goes through the `Mechanics` family seam, never inline
   `if mode == :renewal` branches scattered in orchestration code.
 - Mode-specific tests: a divergence gets one test pair on the formula impl modules

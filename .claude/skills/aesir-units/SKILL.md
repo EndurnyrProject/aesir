@@ -12,10 +12,9 @@ work lives in handler modules. Never add inline domain logic to a session module
 ## The Unit behaviour
 
 `unit/unit.ex` defines the polymorphic `@behaviour` implemented by `PlayerState`
-(`unit/player/player_state.ex`) and `MobState` (`unit/mob/mob_state.ex`). Callbacks:
-`get_race/1`, `get_element/1`, `is_boss?/1`, `get_size/1`, `get_stats/1`,
-`get_entity_info/1`, `get_unit_id/1`, `get_unit_type/1`, `get_process_pid/1`,
-`get_custom_immunities/1`, `to_combatant/1`, `living?/1`, `corpse?/1`. Combat/status/skills
+(`unit/player/player_state.ex`) and `MobState` (`unit/mob/mob_state.ex`): race, element, size,
+boss flag, stats, identity, process pid, immunities, `to_combatant/1`, liveness (read the
+`@callback`s for the current list). Combat/status/skills
 consume units through this behaviour, not by pattern-matching concrete struct keys — do the
 same in new code so a skill/status stays caster-generic across players and mobs.
 
@@ -47,20 +46,10 @@ observe another unit without messaging its process:
   `deferred_skill_result`, party/guild invite slots, homunculus + `homunculus_runtime`.
   Optional slots are real struct fields (default `nil`) — set/clear with struct updates,
   never dynamic map keys.
-- **Every handler threads `SessionState` in and out.** All ~46 handlers live in
-  `unit/player/handlers/` grouped by domain: packet routing (`PacketHandler`);
-  movement/warp/visibility (`MovementHandler`, `WarpHandler`, `VisibilityHandler`,
-  `MapLoadHandler`); combat/vitals (`CombatActionHandler`, `HealthHandler`,
-  `NaturalHealHandler`); skills (`SkillHandler`, `SkillLearningHandler`, `SkillMenuHandler`,
-  `SkillTextInputHandler`, `SpiritSphereHandler`, `SpiritExchangeHandler`); stats/status/
-  progression (`StatsManager`, `StatusManager`, `StatAllocationHandler`, `ExperienceHandler`,
-  `ProgressionHandler`); inventory/items (`InventoryManager`, `InventoryOps`,
-  `InventoryStaging`, `EquipmentHandler`, `ItemHandler`, `BreakOps`, `RefineOps`,
-  `PickupHandler`, `LootHandler`); cart/storage/vending (`CartHandler`/`CartOps`,
-  `StorageHandler`/`StorageOps`, `VendingHandler`); NPC/social (`NpcInteractionHandler`,
-  `NpcShopHandler`, `NpcOwnerEventHandler`, `ScriptEffectHandler`, `PartyHandler`,
-  `GuildHandler`, `SocialHandler`); appearance (`MountHandler`, `FalconHandler`,
-  `ChatHandler`, `EmoteHandler`, `NameHandler`).
+- **Every handler threads `SessionState` in and out.** The handlers live in
+  `unit/player/handlers/`, one module per domain (`PacketHandler` routes ingress; movement,
+  combat, skills, stats/status, inventory/equipment, cart/storage/vending, trade, NPC, party/
+  guild, chat, ...). List the directory and extend the owning handler before adding a new one.
 - **Committing state**: when a handler produces a new `PlayerState`, publish it with
   **`StateCommit.commit/2`** (`unit/player/state_commit.ex`) — it writes the snapshot to
   `UnitRegistry` and best-effort-syncs party/guild views, returning the session carrying the
@@ -73,13 +62,13 @@ observe another unit without messaging its process:
 
 - `unit/mob/mob_session.ex` is a shell over `unit/mob/handlers/`: **`AiHandler`** (AI tick /
   sleep-wake / targeting), **`CastingHandler`** (cast lifecycle), **`CombatHandler`**
-  (damage/death), **`MovementHandler`** (path/ticks/teleport/displacement). Put logic in
-  handlers, never new inline session clauses.
+  (damage/death), **`MovementHandler`** (path/ticks/teleport/displacement), **`StatsHandler`**
+  (recomputes the status snapshot after status changes).
+  Put logic in handlers, never new inline session clauses.
 - The mob's own `{:ai, :tick}` (1 s, lazy think) is self-armed by `AiHandler`; the hard
   think is driven per player by `Map.Coordinator` (100 ms); `AIStateMachine`
   (`unit/mob/ai_state_machine.ex`) is the pure hard-think body over the mob's skill state
-  (`MobState.skill_state`, see `aesir-mobs`; `gen_state_machine` is a listed dep but
-  intentionally unused).
+  (`MobState.skill_state`, see `aesir-mobs`).
 - Mob cast state is real: `CastingHandler.begin_cast/3` stores the row + timer, completion
   executes through the cast-end check or fails silently, `abort_cast/1` (forced interrupts)
   cancels the timer, broadcasts cancel, applies cooldown, and clears the descriptor. No

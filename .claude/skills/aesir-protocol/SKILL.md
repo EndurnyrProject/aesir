@@ -26,8 +26,8 @@ When a menu-like need recurs, prefer one generic message pair over per-feature o
 
 1. Edit `apps/commons/proto/aesir.proto`: add the `message`, then add it to the `Envelope`
    `oneof body` with a free field number in the right range — **16-31 control, 32-63 client
-   intents, 64+ authoritative/world**. (Recent world messages: Viewpoint 134, Cutin 135,
-   SoundEffect 136.)
+   intents, 64+ authoritative/world**. Take the next number after the highest one already used
+   in that range.
 2. **Annotate the oneof line** — this is mandatory, the build fails without it:
 
    ```proto
