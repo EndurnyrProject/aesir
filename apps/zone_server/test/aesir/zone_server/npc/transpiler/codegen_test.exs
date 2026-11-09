@@ -107,7 +107,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       """)
 
     assert src =~ ~S{ctx = mes(ctx, "a")}
-    assert src =~ ~S{ctx |> mes(to_string(char_name(ctx, 0))) |> close()}
+    assert src =~ ~S{ctx |> mes(char_name(ctx, 0)) |> close()}
   end
 
   test "strcharinfo renders exactly its one- and two-integer-argument forms" do
@@ -227,6 +227,67 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       """)
 
     assert src =~ "After the switch"
+  end
+
+  test "a script-local function declared after a label's end is still emitted" do
+    src =
+      gen!("""
+      function Cell;
+      OnTouch_:
+        Cell(.@sub$, 0);
+        end;
+        function Cell {
+          setcell "que_q" + getarg(0), 1, 2, 3, 4, cell_walkable, getarg(1);
+        }
+      """)
+
+    assert src =~ "defp fn_cell(ctx, args) do"
+    assert src =~ "{ctx, _} = fn_cell(ctx, [get_local(ctx, :\"sub$\", \"\"), 0])"
+  end
+
+  # rAthena stores into a variable without a `$` as a number (`set_reg_num`), and keeps a switch
+  # subject in the int variable `$@__SW…_VAL`, whose case labels may only be integers.
+  test "a string value stored in an int variable is converted to a number" do
+    src =
+      gen!("""
+      set .@in, charat("12", 1);
+      switch (.@in) {
+      case 1:
+        mes "one";
+      }
+      set .@name$, charat("12", 1);
+      close;
+      """)
+
+    assert src =~ ~s{Rathena.atoi(Rathena.charat("12", 1))}
+    assert src =~ "case"
+    assert src =~ "1 ->"
+    refute src =~ ~s{"1" ->}
+    # the `$` target keeps the character itself
+    assert src =~ ~s{set_local(:"name$", Rathena.charat("12", 1))}
+  end
+
+  test "a string switch subject is converted to a number before its cases are tested" do
+    src =
+      gen!("""
+      switch (charat("12", 1)) {
+      case 1:
+        mes "one";
+      }
+      close;
+      """)
+
+    assert src =~ ~s{Rathena.atoi(Rathena.charat("12", 1))}
+  end
+
+  test "string-returning buildins concatenate under +" do
+    src =
+      gen!("""
+      set .@s$, substr("abcd", 0, 2) + substr("ef", 0, 1);
+      close;
+      """)
+
+    assert src =~ ~s{Rathena.concat(Rathena.substr("abcd", 0, 2), Rathena.substr("ef", 0, 1))}
   end
 
   test "item-group commands resolve optional subgroup forms" do

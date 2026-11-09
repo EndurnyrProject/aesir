@@ -67,6 +67,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     "strtolower" => [1]
   }
 
+  # Buildins whose result is a string. rAthena converts such a value to a number when it is stored
+  # in a variable whose name has no `$`, and concatenates it under `+`.
+  @string_calls ~w(charat substr strcharinfo getitemname sprintf implode strtoupper strtolower
+                   delchar insertchar replacestr)
+
   # rAthena `e_questinfo_types` / `e_questinfo_markcolor` (script.hpp) → the
   # client icon/color ints the `questinfo` bubble carries. `QTYPE_NONE` (9999)
   # clears a bubble.
@@ -153,6 +158,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   # -- module assembly ---------------------------------------------------------
 
   defp build_module(ast, env, opts) do
+    ast = emit_local_functions(ast, env)
     {main, segments} = segment(ast, env, opts.kind)
     catch_return? = env.sub and needs_return_catch?(main)
     main_env = %{env | catch_return: catch_return?}
@@ -761,6 +767,60 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   # `:cont` (flow continues), `:stop` (close/end/goto/return — nothing runs
   # after), `:break` or `:continue` (loop control reached top level).
   # Statements after a terminal are dead code and dropped.
+  # Script-local functions are declarations, not statements: rAthena scripts declare them after a
+  # label (often after that label's `end`), and flow-order emission never reaches a statement that
+  # follows a terminal. Collect them from the whole body first, emit each one, and drop them from
+  # the statement tree so no other pass can see them.
+  defp emit_local_functions(ast, env) do
+    {ast, local_functions} = take_local_functions(ast)
+    Enum.each(local_functions, fn {name, stmts} -> emit_local_function(name, stmts, env) end)
+    ast
+  end
+
+  defp take_local_functions({:function, name, stmts}), do: {nil, [{name, stmts}]}
+
+  defp take_local_functions(list) when is_list(list) do
+    {nodes, functions} =
+      Enum.reduce(list, {[], []}, fn node, {nodes, functions} ->
+        {node, more} = take_local_functions(node)
+        {if(is_nil(node), do: nodes, else: nodes ++ [node]), functions ++ more}
+      end)
+
+    {nodes, functions}
+  end
+
+  defp take_local_functions(tuple) when is_tuple(tuple) do
+    {nodes, functions} =
+      tuple
+      |> Tuple.to_list()
+      |> Enum.reduce({[], []}, fn node, {nodes, functions} ->
+        {node, more} = take_local_functions(node)
+        {nodes ++ [node], functions ++ more}
+      end)
+
+    {List.to_tuple(nodes), functions}
+  end
+
+  defp take_local_functions(other), do: {other, []}
+
+  defp emit_local_function(name, stmts, env) do
+    catch_return? = needs_return_catch?(stmts)
+
+    {lines, terminal} =
+      emit_block(stmts, %{env | sub: true, break: nil, loop: nil, catch_return: catch_return?})
+
+    lines = lines ++ if terminal == :cont, do: ["{ctx, nil}"], else: []
+    args = if Enum.any?(lines, &String.contains?(&1, "args")), do: "args", else: "_args"
+
+    defer("""
+    defp #{local_fn_name(name)}(#{param(lines)}, #{args}) do
+      #{wrap_return_catch(join_body(lines), catch_return?)}
+    end
+    """)
+
+    :ok
+  end
+
   defp emit_block(stmts, env) do
     Enum.reduce_while(stmts, {[], :cont}, fn stmt, {lines, :cont} ->
       {new_lines, terminal} = emit_stmt(stmt, env)
@@ -780,24 +840,6 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp emit_stmt({:expr, expr}, env) do
     {pre, _expr} = hoist(expr, env)
     {pre, :cont}
-  end
-
-  defp emit_stmt({:function, name, stmts}, env) do
-    catch_return? = needs_return_catch?(stmts)
-
-    {lines, terminal} =
-      emit_block(stmts, %{env | sub: true, break: nil, loop: nil, catch_return: catch_return?})
-
-    lines = lines ++ if terminal == :cont, do: ["{ctx, nil}"], else: []
-    args = if Enum.any?(lines, &String.contains?(&1, "args")), do: "args", else: "_args"
-
-    defer("""
-    defp #{local_fn_name(name)}(#{param(lines)}, #{args}) do
-      #{wrap_return_catch(join_body(lines), catch_return?)}
-    end
-    """)
-
-    {[], :cont}
   end
 
   defp emit_stmt({:goto, label}, env) do
@@ -1979,12 +2021,21 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
         {name, [], if(cases?, do: [], else: ["_ = #{name}"])}
 
       _ when not cases? ->
-        {nil, [], ["_ = #{render_numeric(expr, env)}"]}
+        {nil, [], ["_ = #{switch_number(expr, env)}"]}
 
       _ ->
         tmp = tmp_var()
-        {tmp, ["#{tmp} = #{render_numeric(expr, env)}", ""], []}
+        {tmp, ["#{tmp} = #{switch_number(expr, env)}", ""], []}
     end
+  end
+
+  # rAthena keeps the switch subject in `$@__SW…_VAL`, a variable without `$`, so a string subject
+  # is converted to a number before the (integer-only) case labels are tested; `switch
+  # (charat(...))` therefore matches `case 1:`.
+  defp switch_number(expr, env) do
+    value = render_numeric(expr, env)
+
+    if stringy?(expr), do: "Rathena.atoi(#{value})", else: value
   end
 
   # rAthena ends the script when a menu is answered with its cancel code instead
@@ -2320,7 +2371,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     lines =
       case target do
         {:var, _, _, _} ->
-          [set_var(target, render(expr, env), env)]
+          [set_var(target, stored_value(target, expr, env), env)]
 
         {:name, name} ->
           case CommandMap.read(name) do
@@ -2329,7 +2380,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
               ["ctx = todo(ctx, :set_param, [#{inspect(name)}, #{render(expr, env)}])"]
 
             :error ->
-              [set_var(target, render(expr, env), env)]
+              [set_var(target, stored_value(target, expr, env), env)]
           end
 
         {:index, base, index} ->
@@ -2339,7 +2390,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
             set_var(
               base,
               "Rathena.put_at(#{read_var(base, "[]", env)}, #{render(index, env)}, " <>
-                "#{render(expr, env)}, #{pad_default(base)})",
+                "#{stored_value(base, expr, env)}, #{pad_default(base)})",
               env
             )
           ]
@@ -2350,6 +2401,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       end
 
     {pre ++ lines, :cont}
+  end
+
+  # rAthena stores an assignment into a variable whose name has no `$` as a number
+  # (`set_reg_num`, script.cpp): `set .@x, charat(...)` leaves the digit as an integer, so a later
+  # `switch (.@x) { case 1: }` matches. Values that cannot be a string are left untouched.
+  defp stored_value(target, expr, env) do
+    value = render(expr, env)
+
+    if stringy?(expr) and not str_target?(target),
+      do: "Rathena.atoi(#{value})",
+      else: value
   end
 
   # Writes routed by scope: local → ctx map, session → player session,
@@ -3110,6 +3172,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp stringy?({:str, _}), do: true
   defp stringy?({:var, _, _, :str}), do: true
   defp stringy?({:name, name}), do: String.ends_with?(name, "$")
+  defp stringy?({:call, name, _args}), do: name in @string_calls
   defp stringy?({:bin, :+, l, r}), do: stringy?(l) or stringy?(r)
   defp stringy?({:index, base, _}), do: stringy?(base)
   defp stringy?({:ternary, _, t, f}), do: stringy?(t) or stringy?(f)

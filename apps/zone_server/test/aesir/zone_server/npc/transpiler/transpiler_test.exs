@@ -260,7 +260,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.TranspilerTest do
              {:renewal, 852}
            ]
 
-    source_path = Path.join(out_root, "lib/aesir/zone_server/content/npc/floating/guardfloat.ex")
+    source_path =
+      Path.join(out_root, "lib/aesir/zone_server/content/npc/floating/shared/guard/guardfloat.ex")
+
     source = File.read!(source_path)
 
     assert length(Regex.scan(~r/map: "yuno"/, source)) == 2
@@ -471,18 +473,18 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.TranspilerTest do
 
     assert MapSet.member?(
              paths,
-             "lib/aesir/zone_server/content/npc/re/floating/overlay_float.ex"
+             "lib/aesir/zone_server/content/npc/re/floating/overlay/overlay_float.ex"
            )
 
     assert MapSet.member?(
              paths,
-             "lib/aesir/zone_server/content/npc/pre_re/floating/overlay_float.ex"
+             "lib/aesir/zone_server/content/npc/pre_re/floating/overlay/overlay_float.ex"
            )
 
     refute Enum.any?(result.written, &String.contains?(&1, "disabled"))
 
     guard_path =
-      "lib/aesir/zone_server/content/npc/floating/guardfloat.ex"
+      "lib/aesir/zone_server/content/npc/floating/shared/main/guardfloat.ex"
 
     guard_source = File.read!(Path.join(out_root, guard_path))
     assert guard_source =~ ~S|map: "prontera"|
@@ -554,7 +556,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.TranspilerTest do
       File.read!(
         Path.join(
           out_root,
-          "lib/aesir/zone_server/content/npc/re/floating/modeguard.ex"
+          "lib/aesir/zone_server/content/npc/re/floating/source/modeguard.ex"
         )
       )
 
@@ -562,7 +564,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.TranspilerTest do
       File.read!(
         Path.join(
           out_root,
-          "lib/aesir/zone_server/content/npc/pre_re/floating/modeguard.ex"
+          "lib/aesir/zone_server/content/npc/pre_re/floating/source/modeguard.ex"
         )
       )
 

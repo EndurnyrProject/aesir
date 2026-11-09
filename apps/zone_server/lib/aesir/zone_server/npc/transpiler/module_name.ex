@@ -39,6 +39,23 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ModuleName do
     end
   end
 
+  @doc """
+  The name a slug is derived from. A leading `#` marks an rAthena invisible NPC rather
+  than a display-name suffix, so `#Gate_manager_main` slugs as `gate_manager_main`; a `#`
+  after the name still separates the display name from its unique suffix.
+  """
+  @spec script_name(String.t()) :: String.t()
+  def script_name(name) do
+    # A few reference rows indent the name (` #paypuzz1`) or prefix it with a marker before the
+    # `#` (`¡¡#crypt`), so the first segment that actually has an alphanumeric character wins.
+    name
+    |> String.trim()
+    |> String.trim_leading(":")
+    |> String.trim_leading("#")
+    |> String.split("#")
+    |> Enum.find("", &String.match?(&1, ~r/[A-Za-z0-9]/))
+  end
+
   @doc "A filesystem/function-safe slug for an NPC or map name."
   @spec slug(String.t()) :: String.t()
   def slug(name) do
@@ -60,8 +77,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ModuleName do
   def module(:script, entry, slug, _scope),
     do: "#{@root}.#{namespace(entry)}.#{camelize(slug)}"
 
-  def module(:floating, _entry, slug, scope),
-    do: "#{module_root(scope)}.Floating.#{camelize(slug)}"
+  def module(:floating, entry, slug, scope),
+    do: "#{module_root(scope)}.Floating.#{namespace(entry, scope)}.#{camelize(slug)}"
 
   def module(:function, _entry, slug, scope),
     do: "#{module_root(scope)}.Functions.#{camelize(slug)}"
@@ -74,18 +91,23 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ModuleName do
   def path(:script, entry, slug, _scope),
     do: "lib/aesir/zone_server/content/npc/#{dir_slug(entry)}/#{slug}.ex"
 
-  def path(:floating, _entry, slug, scope), do: "#{output_root(scope)}/floating/#{slug}.ex"
+  def path(:floating, entry, slug, scope),
+    do: "#{output_root(scope)}/floating/#{dir_slug(entry, scope)}/#{slug}.ex"
+
   def path(:function, _entry, slug, scope), do: "#{output_root(scope)}/functions/#{slug}.ex"
 
   @doc """
   The slugged output folder for a placed script: its rAthena source directory
   plus file basename (e.g. `cities/morocc.txt` → `cities/morocc`).
   """
-  @spec dir_slug(map()) :: String.t()
-  def dir_slug(entry), do: entry.file |> dir_segments() |> Enum.join("/")
+  @spec dir_slug(map(), ContentScope.t() | nil) :: String.t()
+  def dir_slug(entry, scope \\ nil), do: entry.file |> dir_segments(scope) |> Enum.join("/")
 
-  defp namespace(entry) do
-    dir_slug(entry) |> String.split("/") |> Enum.map_join(".", &camelize/1)
+  # A floating body's output root already carries the scope directory (`content/npc/re`, ...), so
+  # the source path it mirrors drops that leading segment; a placed script keeps it, matching the
+  # `Re`/`PreRe` module roots.
+  defp namespace(entry, scope \\ nil) do
+    dir_slug(entry, scope) |> String.split("/") |> Enum.map_join(".", &camelize/1)
   end
 
   defp module_root(:shared), do: @root
@@ -96,11 +118,23 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ModuleName do
   defp output_root(:renewal), do: "lib/aesir/zone_server/content/npc/re"
   defp output_root(:pre_renewal), do: "lib/aesir/zone_server/content/npc/pre_re"
 
-  defp dir_segments(file) do
+  defp dir_segments(file, scope) do
     dirs = file |> Path.dirname() |> Path.split() |> Enum.reject(&(&1 in [".", "", "/"]))
 
-    Enum.map(dirs ++ [Path.basename(file, Path.extname(file))], &slug/1)
+    (dirs ++ [Path.basename(file, Path.extname(file))])
+    |> drop_scope_dir(scope)
+    |> Enum.map(&slug/1)
   end
+
+  defp drop_scope_dir([dir | rest], scope) when not is_nil(scope) do
+    if dir == scope_dir(scope), do: rest, else: [dir | rest]
+  end
+
+  defp drop_scope_dir(segments, _scope), do: segments
+
+  defp scope_dir(:renewal), do: "re"
+  defp scope_dir(:pre_renewal), do: "pre-re"
+  defp scope_dir(_scope), do: nil
 
   @doc "Conflict-namespaced variant of a module name and path."
   @spec conflict(String.t(), String.t()) :: {String.t(), String.t()}

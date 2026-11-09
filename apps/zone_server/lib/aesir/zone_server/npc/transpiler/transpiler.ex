@@ -539,7 +539,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
   defp dedupe_slugs(entries, owners, path_fun, build) do
     entries
     |> Enum.reduce({[], MapSet.new()}, fn entry, {units, seen} ->
-      base = ModuleName.slug(ModuleName.display_name(entry.name))
+      base = ModuleName.slug(ModuleName.script_name(entry.name))
 
       slug =
         [preferred_slug(entry, owners, path_fun), base, coord_slug(entry, base)]

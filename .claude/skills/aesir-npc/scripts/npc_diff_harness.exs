@@ -145,9 +145,12 @@ defmodule H.Core do
 
   def job_atoms, do: :persistent_term.get(:h_job_atoms, [])
 
-  # `Rathena.job_id/1` is a hashed atom in this model, so a variable holding a job id (`ADVJOB`)
-  # only reaches a `Rathena.job_id(:job)` comparison when its domain carries the same hashes.
-  def job_ids, do: Enum.map(job_atoms(), &:erlang.phash2/1)
+  # First-job ids (`enum e_job_types`), the numbers rAthena's `BaseClass` yields and the case
+  # labels that compare against it. Any other job atom keeps the hashed stand-in, so a variable
+  # holding a job id (`ADVJOB`) reaches a `Rathena.job_id(:job)` comparison with the same value.
+  @base_job_ids %{novice: 0, swordman: 1, mage: 2, archer: 3, acolyte: 4, merchant: 5, thief: 6}
+  def job_id_number(atom), do: Map.get(@base_job_ids, atom, :erlang.phash2(atom))
+  def job_ids, do: Enum.map(job_atoms(), &job_id_number/1)
 
   # Jobs the module itself compares against lead the domain: a gate like
   # `Class == Job_Swordman` is only reachable at all when the draw can land on
@@ -179,6 +182,44 @@ defmodule H.Core do
   def call(:set_temp_var, [ctx, key, value]) do
     ctx |> log({:set_temp_var, key, value}) |> Map.update!(:tempvars, &Map.put(&1, key, value))
   end
+
+  # `getd`/`setd` address a variable by a name built at runtime, so the model has to resolve the
+  # name the way the runtime does: `.@name` is a script local, the same slot `set_local`/`get_local`
+  # use, with `name[i]` addressing one element; `$@`/`$`/`#` names are stored variables. A read is
+  # not an effect, a write is. Unset locals default to a list or an integer, because the callers
+  # index and `length/1` them.
+  def call(:getd, [ctx, name]) when is_binary(name), do: getd_value(ctx, name, nil)
+  def call(:getd, [ctx, name, default]) when is_binary(name), do: getd_value(ctx, name, default)
+
+  def call(:setd, [ctx, name, value]) when is_binary(name) do
+    ctx = log(ctx, {:setd, name, value})
+    [_, local_name] = Regex.run(~r/^\.\@([A-Za-z_0-9]+\$?)$/, name) || [nil, nil]
+
+    case local_name do
+      nil -> Map.update!(ctx, :tempvars, &Map.put(&1, {:getd, name}, value))
+      key -> Map.update!(ctx, :locals, &Map.put(&1, String.to_atom(key), value))
+    end
+  end
+
+  defp getd_value(ctx, name, default) do
+    case Regex.run(~r/^\.\@([A-Za-z_0-9]+\$?)(?:\[(-?\d+)\])?$/, name) do
+      [_, key, index] ->
+        ctx.locals
+        |> Map.get(String.to_atom(key), default)
+        |> then(
+          &if(is_list(&1), do: Enum.at(&1, String.to_integer(index), default), else: default)
+        )
+
+      [_, key] ->
+        Map.get(ctx.locals, String.to_atom(key), local_default(name, default))
+
+      nil ->
+        Map.get(ctx.tempvars, {:getd, name}, pick({:getd, name}, @int_domain))
+    end
+  end
+
+  defp local_default(_name, nil), do: pick(:local_default, [[], [1, 2, 3, 4]])
+  defp local_default(_name, default), do: default
 
   def call(:get_npc_var, [ctx, key, default]) do
     case Map.fetch(ctx.npcvars, key) do
@@ -212,8 +253,9 @@ defmodule H.Core do
   def call(:get_server_var, [_ctx, key, default]),
     do: pick({:gstv, key}, [default, 0, 1, 2, 3, 20])
 
-  # `strnpcinfo(4)` is the NPC's map, the lookup key of map-keyed tables such as the Kafra menu.
-  def call(:strnpcinfo, [_ctx, 4]), do: pick(:strnpcinfo4, @maps)
+  # `strnpcinfo(4)` is the NPC's map, the lookup key of map-keyed tables such as the Kafra menu and
+  # the Okolnir castle suffixes, so castle maps are in the domain as well.
+  def call(:strnpcinfo, [_ctx, 4]), do: pick(:strnpcinfo4, @maps ++ @castle_maps)
 
   def call(:strnpcinfo, [_ctx, _n]), do: pick(:strnpcinfo_n, ["01", "02", "03", "04", "05"])
 
@@ -288,6 +330,9 @@ defmodule H.Core do
   def call(:weight, [_ctx]), do: pick(:weight, [0, 100, 5000, 20_000])
   def call(:char_name, [_ctx | args]), do: "Name#{inspect(args)}"
 
+  # Guild names only reach `announce`/`mes` text; any stable string keeps the comparison honest.
+  def call(:getguildname, [_ctx | args]), do: "Guild#{inspect(args)}"
+
   def call(:count_item, [_ctx | args]),
     do: pick({:count_item, args}, Enum.uniq([0, 1, 2, 3, 5, 10, 20, 60, 100] ++ ints()))
 
@@ -297,8 +342,12 @@ defmodule H.Core do
   # Basic-skill gate of every job change quest: 1 when the applicant meets it, 0 otherwise.
   def call(:can_change_job?, [_ctx]), do: pick(:can_change_job, [0, 1])
   def call(:getskilllv, [_ctx | args]), do: pick({:getskilllv, args}, [0, 1, 5, 10])
-  def call(:mobcount, [_ctx | args]), do: pick({:mobcount, args}, [0, 1, 2, 5])
-  def call(:getmapusers, [_ctx | args]), do: pick({:getmapusers, args}, [0, 1, 2, 5])
+  # Encounter thinning gates compare this against 7, so the domain spans both sides of it.
+  def call(:mobcount, [_ctx | args]), do: pick({:mobcount, args}, [0, 1, 2, 5, 6, 7, 8, 10])
+  # Crowd gates in the quest corpus compare these against 16..21, so the domain spans both sides.
+  def call(:getmapusers, [_ctx | args]),
+    do: pick({:getmapusers, args}, [0, 1, 2, 5, 16, 20, 21, 25])
+
   def call(:getcharid, [_ctx | args]), do: pick({:getcharid, args}, [0, 150_001, 150_002])
   # The DSL answers 1/0, like rAthena: gates spell `== 0` for "would not fit".
   def call(:checkweight, [_ctx | args]), do: pick({:checkweight, args}, [1, 0])
@@ -328,6 +377,13 @@ defmodule H.Core do
     do: {log(ctx, {:finsertplural, args}), "plural#{inspect(args)}"}
 
   def call(:fclearjobvar, [ctx | args]), do: {log(ctx, {:fclearjobvar, args}), nil}
+
+  # `F_Okolnir` derives the castle suffix that Okolnir scripts key map names, temporary
+  # variables and NPC names on: `<map>` for the que_* challenge maps, `al01`-style for castles.
+  def call(:fokolnir, [ctx | _args]),
+    do:
+      {log(ctx, :fokolnir),
+       pick(:fokolnir, ["aru01", "aru02", "sch01", "sch05", "al01", "ge01", "pr05"])}
 
   # Wall clock: `gettimetick(2)` is Unix epoch seconds, the form countdown NPCs subtract from.
   def call(:gettimetick, [_ctx, 2]), do: pick(:gettimetick, [0, 1000, 3600, 90_500])
@@ -442,9 +498,10 @@ defmodule H.Core do
   def short_strings, do: :persistent_term.get(:h_strings)
 
   def rathena(:concat, [a, b]), do: to_string(a) <> to_string(b)
-  def rathena(:atoi, [s]) when is_binary(s), do: s |> String.trim() |> String.to_integer()
+  # `atoi` is a pure C-style conversion whose empty and non-numeric inputs fall back to 0, so
+  # `rathena/2` delegates it to the real helper instead of fixing an answer here.
   def rathena(:job_id, [id]) when is_integer(id), do: id
-  def rathena(:job_id, [id]) when is_atom(id), do: :erlang.phash2(id)
+  def rathena(:job_id, [id]) when is_atom(id), do: job_id_number(id)
   def rathena(:truthy?, [x]), do: x not in [0, "", false, nil]
   def rathena(:getitemname, [id]), do: "Item#{id}"
   def rathena(:bool_int, [b]), do: if(b, do: 1, else: 0)

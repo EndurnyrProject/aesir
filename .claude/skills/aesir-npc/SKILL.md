@@ -196,7 +196,11 @@ Placed-script output continues to mirror the source path. Scoped floating script
 use separate namespaces: shared `Content.Npc.{Floating,Functions}` under `content/npc/{floating,functions}`;
 renewal `Content.Npc.Re.{Floating,Functions}` under `content/npc/re/{floating,functions}`; and
 pre-renewal `Content.Npc.PreRe.{Floating,Functions}` under
-`content/npc/pre_re/{floating,functions}`. A scope-independent target is a direct call. A shared
+`content/npc/pre_re/{floating,functions}`. Within `floating/` the source file still mirrors through
+(`quests/okolnir.txt` → `content/npc/floating/quests/okolnir/<slug>.ex`,
+`Content.Npc.Floating.Quests.Okolnir.<Slug>`), dropping the scope directory the output root already
+carries; a leading `#` in an rAthena name is the invisible-NPC marker, so `#Gate_manager_main` slugs
+to `gate_manager_main` rather than a `npc_N` placeholder. A scope-independent target is a direct call. A shared
 caller to one or more overlay targets emits `GameMode` branches even for one target and raises in a
 missing active mode. A known incompatible scope blocks import; a globally unknown helper remains a
 `Todo` stub.
@@ -221,6 +225,11 @@ Rules that repeatedly bite:
   approved cleanup, remove only files whose current hash still matches the recorded generated
   `output_hash`; preserve edited files and their records. Do not delete the directory or discard
   the manifest to work around conflicts. Corpus regeneration is separate from NPC refactoring.
+- Script-local functions (`function Cell;` + `function Cell { … }`) are declarations, so they are
+  hoisted out of the body before flow emission and become private `fn_cell/2` helpers even when they
+  sit after a label's `end`. A value stored into a variable whose name has no `$`, and a `switch`
+  subject (rAthena keeps it in `$@__SW…_VAL`), is converted to a number with `Rathena.atoi`, which is
+  why `switch (charat(strnpcinfo(2),9)) { case 1: }` compares integers.
 - Unsupported buildins become runtime-raising `todo(ctx, :name, args)` stubs. Implementing
   one = add a DSL op + a `CommandMap` entry (or `@call_reads`/`@functions` for reads and
   global callfuncs), then force-regen. Codegen-native reads must also be added to Analyzer

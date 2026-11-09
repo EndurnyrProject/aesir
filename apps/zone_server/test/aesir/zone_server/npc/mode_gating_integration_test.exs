@@ -11,7 +11,7 @@ defmodule Aesir.ZoneServer.Npc.ModeGatingIntegrationTest do
   @renewal_label "OnZzzTask8RenewalGate"
   @pre_renewal_label "OnZzzTask8PreRenewalGate"
 
-  @shared_module Aesir.ZoneServer.Content.Npc.Floating.Zzztask8modegatingsharedbody
+  @shared_module Aesir.ZoneServer.Content.Npc.Floating.ZzzTask8ModeGating.Shared.Zzztask8modegatingsharedbody
   @renewal_module Aesir.ZoneServer.Content.Npc.Re.ZzzTask8ModeGating.RenewalOnly.RenewalOnly
   @pre_renewal_module Aesir.ZoneServer.Content.Npc.PreRe.ZzzTask8ModeGating.PreRenewalOnly.PreRenewalOnly
   @generated_modules [@shared_module, @renewal_module, @pre_renewal_module]
