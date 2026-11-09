@@ -94,6 +94,7 @@ get_server_var/2
 get_server_var/3
 get_temp_var/2
 get_temp_var/3
+getareausers/6
 getbrokenid/2
 getcharid/2
 getd/2
@@ -123,6 +124,7 @@ getitembound3/13
 getiteminfo/3
 getlook/2
 getmapusers/2
+getmapxy/3
 getmonsterinfo/3
 getnpcid/1
 getnpcid/2

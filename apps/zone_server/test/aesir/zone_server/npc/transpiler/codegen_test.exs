@@ -2375,6 +2375,31 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ ~S|set_local(:x, v3)|
   end
 
+  test "getmapxy with a named NPC only writes the variables when it resolves" do
+    src =
+      gen!("""
+      getmapxy(.@m$,.@x,.@y,BL_NPC,strnpcinfo(3));
+      set .@n, getareausers(.@m$,.@x-8,.@y-8,.@x+8,.@y+8);
+      close;
+      """)
+
+    assert src =~ ~S|case getmapxy(ctx, :npc, strnpcinfo(ctx, 3)) do|
+    assert src =~ ~r/\{v1, v2, v3\} ->\s+ctx = ctx \|> set_local\(:"m\$", v1\)/
+    assert src =~ ~S|set_local(:y, v3)|
+    assert src =~ ~r/:error ->\s+ctx/
+
+    assert src =~
+             ~r/getareausers\(\s+ctx,\s+get_local\(ctx, :"m\$", ""\),\s+get_local\(ctx, :x, 0\) - 8/
+
+    refute src =~ "todo(:getmapxy"
+    refute src =~ "Todo.call!(:getareausers"
+
+    assert gen!("""
+           getmapxy(.@m$,.@x,.@y,BL_PC,"Someone");
+           close;
+           """) =~ "todo(:getmapxy"
+  end
+
   test "getmapxy defaults to the attached player and rejects non-reference args" do
     assert gen!("""
            getmapxy(.@m$,.@x,.@y);

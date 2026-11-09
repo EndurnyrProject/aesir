@@ -217,6 +217,21 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   end
 
   @doc """
+  Number of connected players inside the rectangle `{x1, y1}`-`{x2, y2}`
+  (inclusive, any corner order) of `map_name` (rAthena `getareausers`), or -1
+  when the map is unknown. Pure read over the spatial index; ignores the ctx.
+  """
+  @spec getareausers(Ctx.t(), String.t(), integer(), integer(), integer(), integer()) ::
+          integer()
+  def getareausers(%Ctx{}, map_name, x1, y1, x2, y2) do
+    if MapCache.exists?(map_name) do
+      length(SpatialIndex.get_players_in_area(map_name, x1, y1, x2, y2))
+    else
+      -1
+    end
+  end
+
+  @doc """
   Fires `"Name::OnLabel"` as a detached, fire-and-forget event (rAthena
   `donpcevent`). Delegates to `Npc.Events.trigger/1`: an unresolved name or
   undeclared label logs a warning and no-ops. Returns `ctx` unchanged; valid

@@ -772,6 +772,29 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
     end
   end
 
+  @doc """
+  The position of the NPC named `ref` (a unique name, rAthena `npc_name2id`)
+  or carrying gid `ref` as `{map_name, x, y}` (rAthena
+  `getmapxy(<map$>,<x>,<y>,BL_NPC,<npc>)`). An NPC that does not resolve
+  returns `:error`: the reference pushes -1, leaves the output variables
+  untouched and keeps the script running.
+  """
+  @spec getmapxy(Ctx.t(), :npc, String.t() | non_neg_integer()) ::
+          {String.t(), integer(), integer()} | :error
+  def getmapxy(%Ctx{}, :npc, name) when is_binary(name) do
+    case NpcRegistry.by_name(name) do
+      [{_module, placement} | _rest] -> {placement.map, placement.x, placement.y}
+      [] -> :error
+    end
+  end
+
+  def getmapxy(%Ctx{}, :npc, gid) when is_integer(gid) do
+    case NpcRegistry.module_for_unit(gid) do
+      {:ok, {_module, placement}} -> {placement.map, placement.x, placement.y}
+      :error -> :error
+    end
+  end
+
   @typedoc """
   Which `$@partymember*` array `getpartymember` fills: `:name` the member
   names (`$@partymembername$`), `:char_id` the character ids

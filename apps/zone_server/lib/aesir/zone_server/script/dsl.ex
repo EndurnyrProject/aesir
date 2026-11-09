@@ -437,6 +437,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate gettime(ctx, type), to: Reads
   defdelegate gettimestr(ctx, format, maxlen), to: Reads
   defdelegate getmapxy(ctx, type), to: Reads
+  defdelegate getmapxy(ctx, type, ref), to: Reads
   defdelegate getpartymember(ctx, party_id), to: Reads
   defdelegate getpartymember(ctx, party_id, field), to: Reads
   defdelegate getnpcid(ctx), to: Reads
@@ -478,6 +479,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate setcell(ctx, map, x1, y1, x2, y2, type, flag), to: NpcControl
   defdelegate mobcount(ctx, map, event), to: NpcControl
   defdelegate getmapusers(ctx, map_name), to: NpcControl
+  defdelegate getareausers(ctx, map_name, x1, y1, x2, y2), to: NpcControl
 
   defdelegate donpcevent(ctx, ref), to: NpcControl
   defdelegate doevent(ctx, ref), to: NpcControl

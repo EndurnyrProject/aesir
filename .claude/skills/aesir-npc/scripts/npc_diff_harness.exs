@@ -156,7 +156,7 @@ defmodule H.Core do
   # `Class == Job_Swordman` is only reachable at all when the draw can land on
   # `swordman`, and a job-quest module compares against a handful of them. Modules
   # that compare against no job keep the generic list plus the file's own atoms.
-  def call(name, [_ctx]) when name in [:base_job, :class] do
+  def call(name, [_ctx]) when name in [:base_job, :base_class, :class] do
     case job_atoms() do
       [] -> pick(name, @jobs ++ atoms())
       jobs -> pick(name, jobs ++ @jobs)
@@ -262,6 +262,15 @@ defmodule H.Core do
   # Position of the talking unit; castle maps and their sibling suffixes are the gates here.
   def call(:getmapxy, [_ctx, kind]), do: {pick({:getmapxy, kind}, @castle_maps), 100, 100}
 
+  # Named-NPC form: `:error` when the name does not resolve (the reference leaves the
+  # output variables untouched and keeps running).
+  def call(:getmapxy, [_ctx, kind, _ref]),
+    do: pick({:getmapxy3, kind}, [{"payon", 100, 100}, {"comodo", 50, 60}, :error])
+
+  # Players in a rectangle; the relay quests gate on 10/12/14 nearby players.
+  def call(:getareausers, [_ctx | args]),
+    do: pick({:getareausers, args}, [-1, 0, 3, 10, 11, 12, 13, 14, 20])
+
   def call(:castle_data, [_ctx, map, index]),
     do: pick({:castle_data, map, index}, [0, 0, 1, 2, 150_001, 150_002])
 
@@ -322,7 +331,7 @@ defmodule H.Core do
   def call(:sex, [_ctx]), do: pick(:sex, [0, 1])
   def call(:base_class, [_ctx]), do: pick(:base_class, atoms() ++ @base_classes)
   def call(:job_level, [_ctx]), do: pick(:job_level, [10, 39, 40, 41, 50] ++ ints())
-  def call(:base_level, [_ctx]), do: pick(:base_level, [10, 39, 40, 41, 50, 99])
+  def call(:base_level, [_ctx]), do: pick(:base_level, [10, 39, 40, 41, 50, 60, 70, 80, 90, 95, 99])
   def call(:skill_point, [_ctx]), do: pick(:skill_point, [0, 0, 0, 1])
   # Materials-heavy quests gate on quantities the fixed domain never reaches, so the file's own
   # literals widen both the purse and the item counts; otherwise every expensive path is a dead end.
@@ -333,8 +342,15 @@ defmodule H.Core do
   # Guild names only reach `announce`/`mes` text; any stable string keeps the comparison honest.
   def call(:getguildname, [_ctx | args]), do: "Guild#{inspect(args)}"
 
-  def call(:count_item, [_ctx | args]),
-    do: pick({:count_item, args}, Enum.uniq([0, 1, 2, 3, 5, 10, 20, 60, 100] ++ ints()))
+  # Half the seeds hold none of an item, so "not carrying any of these N tickets" gates
+  # (six ORed `countitem > 0` checks in the relay quests) are reachable.
+  def call(:count_item, [_ctx | args]) do
+    if pick({:count_item_none, args}, [true, false]) do
+      0
+    else
+      pick({:count_item, args}, Enum.uniq([0, 1, 2, 3, 5, 10, 20, 60, 100] ++ ints()))
+    end
+  end
 
   def call(:checkquest, [_ctx | args]), do: pick({:checkquest, args}, [-1, 0, 1, 2])
   def call(:isbegin_quest, [_ctx | args]), do: pick({:isbegin_quest, args}, [0, 1])
@@ -367,7 +383,7 @@ defmodule H.Core do
   def call(:eaclass, [_ctx]), do: pick(:eaclass, [0, 1, 768, 1_048_576, 2_097_152, 1_049_344])
 
   # Time components: hour values cover every day/night gate in the corpus.
-  def call(:gettime, [_ctx, type]), do: pick({:gettime, type}, [0, 5, 12, 18, 21, 23])
+  def call(:gettime, [_ctx, type]), do: pick({:gettime, type}, [0, 2, 5, 9, 12, 15, 18, 21, 23])
 
   # The DSL answers 1/0 for these cart, falcon and riding checks, like rAthena.
   def call(name, [_ctx]) when name in [:checkcart, :checkfalcon, :checkriding],
@@ -377,6 +393,7 @@ defmodule H.Core do
     do: {log(ctx, {:finsertplural, args}), "plural#{inspect(args)}"}
 
   def call(:fclearjobvar, [ctx | args]), do: {log(ctx, {:fclearjobvar, args}), nil}
+  def call(:fpartyrelayexp, [ctx | args]), do: {log(ctx, {:fpartyrelayexp, args}), nil}
 
   # `F_Okolnir` derives the castle suffix that Okolnir scripts key map names, temporary
   # variables and NPC names on: `<map>` for the que_* challenge maps, `al01`-style for castles.

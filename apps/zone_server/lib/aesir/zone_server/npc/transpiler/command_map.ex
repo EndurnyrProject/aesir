@@ -106,7 +106,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     optional type to be the `BL_PC`/`BL_NPC` constant or its ordinal; the
     emitted code binds the read tuple and writes the three references in the
     reference's order, so upstream's `getmapxy(.@m$,.@x,.@x,BL_NPC)` really
-    does overwrite x with y.
+    does overwrite x with y. A fifth argument is accepted for `BL_NPC` only
+    (the NPC's unique name or gid); an NPC that does not resolve leaves the
+    three references untouched, as the reference does. A named `BL_PC` form
+    stays a stub.
   - `:getpartymember` supports the self-array forms: one argument (names) and a
     literal type `0` (names) or `1` (character ids). Type `2` (account ids),
     which Aesir's party snapshot does not carry, and the explicit destination
@@ -418,6 +421,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "getguildname" => %{dsl: "getguildname", args: [:int]},
     "getlook" => %{dsl: "getlook", args: [:look]},
     "getmapusers" => %{dsl: "getmapusers", args: [:string]},
+    "getareausers" => %{dsl: "getareausers", args: [:string, :int, :int, :int, :int]},
     "mobcount" => %{dsl: "mobcount", args: [:string, :string]},
     "getbrokenid" => %{dsl: "getbrokenid", args: [:int]},
     "eaclass" => %{dsl: "eaclass", args: [:int]},

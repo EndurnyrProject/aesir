@@ -95,6 +95,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert CommandMap.supported?("Is_Party_Leader")
   end
 
+  test "getareausers is a call read over a map and a rectangle" do
+    assert {:ok, %{dsl: "getareausers", args: [:string, :int, :int, :int, :int]}} =
+             CommandMap.call_read("getareausers")
+
+    assert CommandMap.supported?("getareausers")
+  end
+
   test "setcell is a statement command with a cell_type arg" do
     assert {:ok, %{dsl: "setcell", args: [:string, :int, :int, :int, :int, :cell_type, :int]}} =
              CommandMap.command("setcell")

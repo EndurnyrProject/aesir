@@ -1192,15 +1192,16 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   # The three output arguments must be plain variable references (the
   # reference refuses anything else) and the optional type a BL_PC/BL_NPC
-  # constant or its ordinal.
+  # constant or its ordinal. A fifth argument (the unit to read) is accepted
+  # for BL_NPC only.
   defp getmapxy_args(args) do
     case Enum.split(args, 3) do
       {[map_ref, x_ref, y_ref], type_args} ->
         refs = [map_ref, x_ref, y_ref]
 
         with true <- Enum.all?(refs, &match?({:var, _, _, _}, &1)),
-             {:ok, type} <- getmapxy_type(type_args) do
-          {:ok, {map_ref, x_ref, y_ref}, type}
+             {:ok, type, target} <- getmapxy_type(type_args) do
+          {:ok, {map_ref, x_ref, y_ref}, type, target}
         else
           _other -> :error
         end
@@ -1210,19 +1211,35 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     end
   end
 
-  defp getmapxy_type([]), do: {:ok, ":player"}
+  defp getmapxy_type([]), do: {:ok, ":player", nil}
 
   defp getmapxy_type([type]) do
     case type do
-      {:int, 0} -> {:ok, ":player"}
-      {:int, 1} -> {:ok, ":npc"}
-      {:name, "BL_PC"} -> {:ok, ":player"}
-      {:name, "BL_NPC"} -> {:ok, ":npc"}
+      {:int, 0} -> {:ok, ":player", nil}
+      {:int, 1} -> {:ok, ":npc", nil}
+      {:name, "BL_PC"} -> {:ok, ":player", nil}
+      {:name, "BL_NPC"} -> {:ok, ":npc", nil}
+      _other -> :error
+    end
+  end
+
+  defp getmapxy_type([type, target]) do
+    case getmapxy_type([type]) do
+      {:ok, ":npc", nil} -> {:ok, ":npc", target}
       _other -> :error
     end
   end
 
   defp getmapxy_type(_longer), do: :error
+
+  defp getmapxy_writes({map_ref, x_ref, y_ref}, env) do
+    v_map = tmp_var()
+    v_x = tmp_var()
+    v_y = tmp_var()
+
+    {"{#{v_map}, #{v_x}, #{v_y}}",
+     [set_var(map_ref, v_map, env), set_var(x_ref, v_x, env), set_var(y_ref, v_y, env)]}
+  end
 
   defp getpartymember_args([party_id], env), do: {:ok, render(party_id, env)}
 
@@ -1544,19 +1561,25 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   # `getmapxy(<map$>,<x>,<y>{,<type>})` writes its three output variables in
   # the reference's order (map, x, then y) from the position read, so the
   # upstream `getmapxy(.@m$,.@x,.@x,BL_NPC)` really does overwrite x with y.
+  #
+  # The named `BL_NPC` form reads another NPC; when it does not resolve the
+  # reference pushes -1 and leaves the three variables untouched, so the
+  # writes are wrapped in a `case` and the `:error` branch keeps `ctx`.
   defp emit_mapped(name, %{shape: :getmapxy, dsl: dsl}, args, env) do
     case getmapxy_args(args) do
-      {:ok, {map_ref, x_ref, y_ref}, type} ->
-        v_map = tmp_var()
-        v_x = tmp_var()
-        v_y = tmp_var()
+      {:ok, refs, type, nil} ->
+        {tuple, writes} = getmapxy_writes(refs, env)
+        {["#{tuple} = #{dsl}(ctx, #{type})" | writes], :cont}
 
-        {[
-           "{#{v_map}, #{v_x}, #{v_y}} = #{dsl}(ctx, #{type})",
-           set_var(map_ref, v_map, env),
-           set_var(x_ref, v_x, env),
-           set_var(y_ref, v_y, env)
-         ], :cont}
+      {:ok, refs, type, target} ->
+        {pre, target} = hoist(target, env)
+        {tuple, writes} = getmapxy_writes(refs, env)
+
+        {pre ++
+           [
+             "ctx = case #{dsl}(ctx, #{type}, #{render(target, env)}) do",
+             "#{tuple} ->"
+           ] ++ writes ++ ["ctx", ":error -> ctx", "end"], :cont}
 
       :error ->
         {[todo_stmt(name, args, env)], :cont}

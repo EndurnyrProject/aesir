@@ -677,6 +677,22 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
   end
 
+  describe "getareausers/6" do
+    test "counts the players inside the rectangle of a known map" do
+      stub(MapCache, :exists?, fn "morocc" -> true end)
+      expect(SpatialIndex, :get_players_in_area, fn "morocc", 10, 20, 30, 40 -> [1, 2, 3] end)
+
+      assert Dsl.getareausers(build_ctx(), "morocc", 10, 20, 30, 40) == 3
+    end
+
+    test "returns -1 for an unknown map" do
+      stub(MapCache, :exists?, fn "nope" -> false end)
+      reject(&SpatialIndex.get_players_in_area/5)
+
+      assert Dsl.getareausers(build_ctx(), "nope", 0, 0, 1, 1) == -1
+    end
+  end
+
   describe "party_leader?" do
     test "returns 1 when the player leads their own party" do
       ctx = build_ctx()
@@ -802,6 +818,16 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       end)
 
       assert Dsl.getmapxy(%{build_ctx() | npc_gid: 7777}, :npc) == {"payg_cas01", 87, 35}
+    end
+
+    test "reads a named NPC's position and returns :error when it does not resolve" do
+      stub(NpcRegistry, :by_name, fn
+        "Lospii#prt" -> [{__MODULE__, %{map: "prontera", x: 1, y: 2}}]
+        _other -> []
+      end)
+
+      assert Dsl.getmapxy(build_ctx(), :npc, "Lospii#prt") == {"prontera", 1, 2}
+      assert Dsl.getmapxy(build_ctx(), :npc, "Nobody") == :error
     end
 
     test "ends the script when the requested unit is not attached" do
