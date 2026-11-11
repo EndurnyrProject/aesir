@@ -30,18 +30,20 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusSyncTest do
       },
       combat_stats: %UnitStats.CombatStats{
         atk: 1,
+        physical_attack: %{status_atk: 7, flat_atk: 0, mastery_atk: 0, str: 1, dex: 1},
         matk: 1,
         matk_min: 1,
         matk_max: 1,
         heal_matk_min: 1,
         heal_matk_max: 1,
-        def: 1,
+        def: 9,
+        soft_def: 4,
         mdef: 1,
         soft_mdef: 1,
         hit: 1,
         flee: 1,
         critical: 1,
-        perfect_dodge: 1,
+        perfect_dodge: 25,
         passive_atk: 1,
         patk: 11,
         smatk: 22,
@@ -99,6 +101,33 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusSyncTest do
     assert params[StatusParams.trait_point()] == 12
     assert params[StatusParams.ap()] == 25
     assert params[StatusParams.max_ap()] == 70
+  end
+
+  test "emits the status window parts and whole perfect dodge points" do
+    StatusSync.send_stat_updates(self(), stats())
+
+    params = collect_params()
+
+    # An unarmed player's status ATK is the whole left value in both modes.
+    assert params[StatusParams.atk1()] == 7
+    assert params[StatusParams.atk2()] == 0
+    assert Enum.sort([params[StatusParams.def1()], params[StatusParams.def2()]]) == [4, 9]
+    assert params[StatusParams.mdef1()] == 1
+    assert params[StatusParams.mdef2()] == 1
+    assert params[StatusParams.matk2()] == 1
+    assert params[StatusParams.flee2()] == 2
+  end
+
+  test "a defense replacement status sets both window DEF parts" do
+    replaced =
+      stats(%{modifiers: %Stats.Modifiers{equipment: %{}, status_effects: %{def_set: 30}}})
+
+    StatusSync.send_stat_updates(self(), replaced)
+
+    params = collect_params()
+
+    assert params[StatusParams.def1()] == 30
+    assert params[StatusParams.def2()] == 30
   end
 
   test "pushes derived combat stats for a non-trait job (SP-A gap closed)" do
@@ -170,8 +199,6 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusSyncTest do
     assert params[StatusParams.hit()] == 1
     assert params[StatusParams.flee1()] == 1
     assert params[StatusParams.critical()] == 1
-    assert params[StatusParams.atk1()] == 1
-    assert params[StatusParams.def1()] == 1
 
     assert params[StatusParams.base_level()] == 200
     assert params[StatusParams.job_level()] == 70

@@ -12,6 +12,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusSync do
 
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.ParamChange
+  alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
+  alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.Stats
 
@@ -44,6 +46,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusSync do
   """
   @spec send_stat_updates(pid(), Stats.t()) :: :ok
   def send_stat_updates(connection_pid, stats) do
+    window = status_window(stats)
+
     send_params(connection_pid, %{
       # Base stats
       StatusParams.str() => stats.base_stats.str,
@@ -64,9 +68,17 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusSync do
       # Combat stats
       StatusParams.hit() => stats.combat_stats.hit,
       StatusParams.flee1() => stats.combat_stats.flee,
+      # Perfect dodge is held in tenths; the window shows whole points.
+      StatusParams.flee2() => div(stats.combat_stats.perfect_dodge, 10),
       StatusParams.critical() => stats.combat_stats.critical,
-      StatusParams.atk1() => stats.combat_stats.atk,
-      StatusParams.def1() => stats.combat_stats.def,
+      StatusParams.atk1() => window.atk1,
+      StatusParams.atk2() => window.atk2,
+      StatusParams.matk1() => window.matk1,
+      StatusParams.matk2() => window.matk2,
+      StatusParams.def1() => window.def1,
+      StatusParams.def2() => window.def2,
+      StatusParams.mdef1() => window.mdef1,
+      StatusParams.mdef2() => window.mdef2,
 
       # Progression
       StatusParams.base_level() => stats.progression.base_level,
@@ -96,4 +108,53 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusSync do
       StatusParams.max_ap() => stats.derived_stats.max_ap
     })
   end
+
+  # The two-part ATK, MATK, DEF and MDEF values of the active mode's status
+  # window. The wire value is unsigned, so a negative part shows as 0.
+  defp status_window(%Stats{} = stats) do
+    combat = stats.combat_stats
+    attack = combat.physical_attack
+    equipment = stats.modifiers.equipment
+    wmatk_min = Map.get(equipment, :wmatk_min, 0)
+    wmatk_max = Map.get(equipment, :wmatk_max, 0)
+    {hard_def, soft_def} = DamageInputs.status_window_defense(stats)
+    {hard_mdef, soft_mdef} = DamageInputs.status_window_magic_defense(stats)
+    right = hand(stats.right_hand)
+    left = hand(stats.left_hand)
+
+    %{
+      status_atk: attack.status_atk,
+      hilt_binding_atk: Map.get(attack, :hilt_binding_atk, 0),
+      bonus_atk: attack.flat_atk,
+      right_atk: right.atk,
+      right_refine_atk: right.refine_atk,
+      right_level: right.level,
+      left_atk: left.atk,
+      left_refine_atk: left.refine_atk,
+      left_level: left.level,
+      status_watk: Stats.get_status_modifier(stats, :watk),
+      level4_watk: Stats.get_status_modifier(stats, :level4_watk),
+      hard_def: hard_def,
+      soft_def: soft_def,
+      hard_mdef: hard_mdef,
+      soft_mdef: soft_mdef,
+      vit: Stats.get_effective_stat(stats, :vit),
+      # Heal MATK is the status formula plus the weapon band's lower end.
+      status_matk: combat.heal_matk_min - wmatk_min,
+      # The band is symmetric around weapon MATK with refine.
+      weapon_matk: div(wmatk_min + wmatk_max, 2),
+      flat_matk:
+        Stats.get_equipment_modifier(stats, :matk) + Stats.get_status_modifier(stats, :matk),
+      matk_min: combat.matk_min,
+      matk_max: combat.matk_max,
+      matk_amp_rate: Stats.get_status_modifier(stats, :base_matk_rate)
+    }
+    |> Mechanics.status_window().values()
+    |> Map.new(fn {param, value} -> {param, max(value, 0)} end)
+  end
+
+  defp hand(nil), do: %{atk: 0, refine_atk: 0, level: 0}
+
+  defp hand(hand),
+    do: %{atk: hand.base_atk, refine_atk: hand.refine_atk, level: hand.weapon_level}
 end

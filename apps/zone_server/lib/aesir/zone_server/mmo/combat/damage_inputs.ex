@@ -217,6 +217,47 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
 
   defp critical_base(base, false), do: base
 
+  @doc """
+  A player's status-window DEF as `{hard, soft}`: the battle values with every
+  equipment and status modifier, before any attacker-dependent step.
+  """
+  @spec status_window_defense(PlayerStats.t()) :: {integer(), integer()}
+  def status_window_defense(%PlayerStats{} = stats) do
+    modifiers = stats.modifiers.status_effects
+
+    case Map.get(modifiers, :def_set) do
+      nil ->
+        defender = %{
+          unit_type: :player,
+          combat_stats: stats.combat_stats,
+          equip_modifiers: stats.modifiers.equipment
+        }
+
+        apply_status_effect_defense_modifiers(
+          stats.combat_stats.def,
+          calculate_soft_defense(defender),
+          modifiers
+        )
+
+      value ->
+        {value, value}
+    end
+  end
+
+  @doc """
+  A player's status-window MDEF as `{hard, soft}`: the battle values with every
+  status modifier, before any attacker-dependent step.
+  """
+  @spec status_window_magic_defense(PlayerStats.t()) :: {integer(), integer()}
+  def status_window_magic_defense(%PlayerStats{} = stats) do
+    modifiers = stats.modifiers.status_effects
+
+    case Map.get(modifiers, :mdef_set) do
+      nil -> ordinary_mdef_values(stats.combat_stats, modifiers)
+      value -> {value, value}
+    end
+  end
+
   @doc "Resolves physical DEF using the existing status and equipment omission modes."
   @spec physical_defense(map(), map() | nil, atom(), atom(), map()) :: {integer(), integer()}
   def physical_defense(defender, attacker, status_def_mode, def_ignore_mode, modifiers) do
@@ -434,10 +475,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
         {value, value}
 
       _missing ->
-        mdef_rate = Map.get(modifiers, :mdef_rate, 0)
-        hard = trunc(defender.combat_stats.mdef * (100 + mdef_rate) / 100)
-        {hard, defender.combat_stats.soft_mdef}
+        ordinary_mdef_values(defender.combat_stats, modifiers)
     end
+  end
+
+  defp ordinary_mdef_values(combat_stats, modifiers) do
+    mdef_rate = Map.get(modifiers, :mdef_rate, 0)
+    hard = trunc(combat_stats.mdef * (100 + mdef_rate) / 100)
+    {hard, combat_stats.soft_mdef}
   end
 
   defp equipment_rates(

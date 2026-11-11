@@ -69,6 +69,8 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase1IntegrationTest do
     baseline = get_player_state(player.pid).stats
     baseline_str = Stats.get_effective_stat(baseline, :str)
     baseline_atk = baseline.combat_stats.atk
+    # An unarmed player's left status-window ATK is their status ATK in both modes.
+    baseline_window_atk = baseline.combat_stats.physical_attack.status_atk
     flush_packets()
 
     state = %{game_state: get_player_state(player.pid), connection_pid: player.connection_pid}
@@ -88,8 +90,8 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase1IntegrationTest do
 
     atk_id = StatusParams.atk1()
     assert_receive {:packet_sent, %ParamChange{var_id: ^atk_id, value: buffed_atk}, _}, 1_000
-    assert buffed_atk == buffed.combat_stats.atk
-    assert buffed_atk > baseline_atk
+    assert buffed_atk == buffed.combat_stats.physical_attack.status_atk
+    assert buffed_atk > baseline_window_atk
     flush_packets()
 
     # Expiry: the StatusTickManager removes the entry and recalcs the session;
@@ -101,7 +103,7 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase1IntegrationTest do
     assert reverted.combat_stats.atk == baseline_atk
 
     assert_receive {:packet_sent, %ParamChange{var_id: ^atk_id, value: reverted_atk}, _}, 1_000
-    assert reverted_atk == baseline_atk
+    assert reverted_atk == baseline_window_atk
   end
 
   defp food_item, do: %InventoryItem{id: 1, nameid: @food_id, amount: 5}

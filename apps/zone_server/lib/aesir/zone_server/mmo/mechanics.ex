@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics do
   alias Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas
   alias Aesir.ZoneServer.Mmo.Mechanics.Sizes
   alias Aesir.ZoneServer.Mmo.Mechanics.StatCost
+  alias Aesir.ZoneServer.Mmo.Mechanics.StatusWindow
 
   @pt_key __MODULE__
   @families %{
@@ -57,6 +58,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics do
     sizes: %{
       renewal: Sizes.Renewal,
       pre_renewal: Sizes.PreRenewal
+    },
+    status_window: %{
+      renewal: StatusWindow.Renewal,
+      pre_renewal: StatusWindow.PreRenewal
     }
   }
 
@@ -114,6 +119,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics do
   @doc "Returns the active size implementation."
   @spec sizes() :: module()
   def sizes, do: implementation(:sizes)
+
+  @doc "Returns the active status-window implementation."
+  @spec status_window() :: module()
+  def status_window, do: implementation(:status_window)
 
   defp implementation(family) do
     case :persistent_term.get(@pt_key, nil) do
