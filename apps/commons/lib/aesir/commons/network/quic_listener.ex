@@ -22,7 +22,9 @@ defmodule Aesir.Commons.Network.QuicListener do
     * `:port` - required, listen port (`0` for an ephemeral port)
     * `:impl_module` - required, module implementing `c:Aesir.Commons.Network.QuicConnection.handle_message/3`
     * `:conn_sup` - required, the `DynamicSupervisor` connections are started under
-    * `:alpn` - ALPN protocol id binary, default `"aesir/1"`
+    * `:alpn` - list of accepted ALPN protocol ids, default `[]`. An empty list disables
+      the ALPN check, which `quic` 2.6+ enforces strictly (RFC 9001); the Lifthrasir client
+      (bevy_quinnet 0.22) offers no ALPN, so a non-empty list rejects it with TLS alert 120
     * `:cert_dir` - directory holding `cert.der`/`key.der`, default the commons `priv/quic_cert`
     * `:max_datagram_frame_size` - default `65_535`
     * `:idle_timeout` - max idle timeout in ms before the connection is closed, default `30_000`
@@ -31,7 +33,7 @@ defmodule Aesir.Commons.Network.QuicListener do
   """
   alias Aesir.Commons.Network.QuicConnection
 
-  @default_alpn "aesir/1"
+  @default_alpn []
   @default_max_datagram_frame_size 65_535
   @default_idle_timeout 30_000
   @default_keep_alive_interval :auto
@@ -47,7 +49,7 @@ defmodule Aesir.Commons.Network.QuicListener do
     quic_opts = %{
       cert: cert,
       key: key,
-      alpn: [Keyword.get(opts, :alpn, @default_alpn)],
+      alpn: Keyword.get(opts, :alpn, @default_alpn),
       max_datagram_frame_size:
         Keyword.get(opts, :max_datagram_frame_size, @default_max_datagram_frame_size),
       idle_timeout: Keyword.get(opts, :idle_timeout, @default_idle_timeout),
