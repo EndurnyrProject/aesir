@@ -16,6 +16,7 @@ defmodule Aesir.AccountServer do
   alias Aesir.Commons.GameMode, as: CommonsGameMode
   alias Aesir.Commons.InterServer.PubSub
   alias Aesir.Commons.SessionManager
+  alias Aesir.Net.CharServerHero
   alias Aesir.Net.CharServerInfo
   alias Aesir.Net.Hello
   alias Aesir.Net.HelloAck
@@ -69,7 +70,7 @@ defmodule Aesir.AccountServer do
   defp handle_successful_login(account, session_data) do
     with {:ok, char_servers} <- available_char_servers(),
          :ok <- refuse_if_online(account) do
-      proceed_with_login(account, char_servers, session_data)
+      proceed_with_login(account, with_details(char_servers, account.id), session_data)
     else
       {:error, reason} -> handle_failed_login(reason, session_data)
     end
@@ -123,7 +124,8 @@ defmodule Aesir.AccountServer do
           login_id2: login_id2,
           sex: sex_code(account.sex),
           auth_token: auth_token(),
-          char_servers: char_servers
+          char_servers: char_servers,
+          server_time: System.os_time(:second)
         }
 
         Logger.info("Login successful for account: #{account.userid} (ID: #{account.id})")
@@ -187,17 +189,22 @@ defmodule Aesir.AccountServer do
         servers
         |> Enum.filter(&(&1.status == :online))
         |> Enum.group_by(& &1.metadata[:cluster_id])
-        |> Enum.map(fn {_cluster_id, cluster_servers} ->
+        |> Enum.map(fn {cluster_id, cluster_servers} ->
           best_server = Enum.min_by(cluster_servers, & &1.player_count)
 
-          %CharServerInfo{
+          info = %CharServerInfo{
             name: best_server.metadata[:name],
             ip: ip_to_string(best_server.ip),
             port: best_server.port,
             user_count: best_server.player_count,
             server_type: Map.get(best_server.metadata, :type, 0),
-            is_new: Map.get(best_server.metadata, :new, false)
+            is_new: Map.get(best_server.metadata, :new, false),
+            max_users: Map.get(best_server, :max_players) || 0,
+            region: Map.get(best_server.metadata, :region, ""),
+            description: Map.get(best_server.metadata, :description, "")
           }
+
+          {cluster_id, info}
         end)
         |> case do
           [] -> {:error, :no_char_servers}
@@ -205,6 +212,52 @@ defmodule Aesir.AccountServer do
         end
     end
   end
+
+  # Fills what only a granted login needs: the account's heroes and each cluster's
+  # rates. Characters are stored account-wide, so every char server lists the same
+  # heroes.
+  defp with_details(char_servers, account_id) do
+    heroes = heroes(account_id)
+    rates = cluster_rates()
+
+    Enum.map(char_servers, fn {cluster_id, info} ->
+      cluster = Map.get(rates, cluster_id, %{})
+
+      %{
+        info
+        | heroes: heroes,
+          base_exp_rate: Map.get(cluster, :base_exp, 0),
+          job_exp_rate: Map.get(cluster, :job_exp, 0),
+          drop_rate: Map.get(cluster, :drop, 0)
+      }
+    end)
+  end
+
+  defp heroes(account_id) do
+    account_id
+    |> Auth.list_character_summaries()
+    |> Enum.map(fn summary ->
+      %CharServerHero{
+        name: summary.name,
+        job: summary.class,
+        base_level: summary.base_level,
+        last_login: unix_seconds(summary.last_login)
+      }
+    end)
+  end
+
+  # Rates are zone-server config, published in each zone's registry metadata.
+  defp cluster_rates do
+    :zone_server
+    |> SessionManager.get_servers()
+    |> Enum.filter(&(&1.status == :online))
+    |> Map.new(&{&1.metadata[:cluster_id], Map.get(&1.metadata, :rates, %{})})
+  end
+
+  defp unix_seconds(nil), do: 0
+
+  defp unix_seconds(%NaiveDateTime{} = at),
+    do: at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
 
   defp ip_to_string(ip) when is_tuple(ip), do: ip |> :inet.ntoa() |> List.to_string()
   defp ip_to_string(ip) when is_binary(ip), do: ip

@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Application do
   require Logger
 
   alias Aesir.Commons.SessionManager
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Config.Network, as: NetworkConfig
   alias Aesir.ZoneServer.Config.ServerInfo, as: ServerInfoConfig
 
@@ -44,8 +45,14 @@ defmodule Aesir.ZoneServer.Application do
         cluster_id = ServerInfoConfig.cluster_id()
         server_id = "zone_server_#{cluster_id}_#{Node.self()}"
 
+        # The login server shows these on server select; percentages, 100 = 1x.
         metadata = %{
-          cluster_id: cluster_id
+          cluster_id: cluster_id,
+          rates: %{
+            base_exp: Config.base_exp_rate(),
+            job_exp: Config.job_exp_rate(),
+            drop: Config.item_drop_rate(:common)
+          }
         }
 
         SessionManager.register_server(

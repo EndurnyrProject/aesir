@@ -3,7 +3,10 @@ defmodule Aesir.Commons.Auth do
   Authentication context for user login and account management.
   """
 
+  import Ecto.Query, only: [from: 2]
+
   alias Aesir.Commons.Models.Account
+  alias Aesir.Commons.Models.Character
   alias Aesir.Repo
 
   @doc """
@@ -38,6 +41,35 @@ defmodule Aesir.Commons.Auth do
   Gets an account by id.
   """
   def get_account!(id), do: Repo.get!(Account, id)
+
+  @doc """
+  Lists the name, class, base level and last login of an account's characters in
+  slot order.
+
+  The login server sends these with the char-server list so the client can show
+  them before a char server is chosen.
+  """
+  @spec list_character_summaries(integer()) :: [
+          %{
+            name: String.t(),
+            class: integer(),
+            base_level: integer(),
+            last_login: NaiveDateTime.t() | nil
+          }
+        ]
+  def list_character_summaries(account_id) do
+    Repo.all(
+      from c in Character,
+        where: c.account_id == ^account_id,
+        order_by: c.char_num,
+        select: %{
+          name: c.name,
+          class: c.class,
+          base_level: c.base_level,
+          last_login: c.last_login
+        }
+    )
+  end
 
   @doc """
   Creates a new account.

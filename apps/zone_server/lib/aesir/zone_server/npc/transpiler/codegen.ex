@@ -170,9 +170,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
           main_lines ++ main_fall_through(:function, main_terminal, segments, env)
 
         _ ->
-          tail_return(
-            main_lines ++ main_fall_through(opts.kind, main_terminal, segments, env)
-          )
+          tail_return(main_lines ++ main_fall_through(opts.kind, main_terminal, segments, env))
       end
 
     segment_defs = emit_segments(segments, env)

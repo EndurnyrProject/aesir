@@ -20,6 +20,7 @@ defmodule Aesir.AccountServer.DuplicateLoginTest do
   setup do
     ClusterTestHelper.clear_all()
     PubSub.subscribe_to_player_events()
+    stub(Auth, :list_character_summaries, fn _account_id -> [] end)
 
     :ok
   end
@@ -50,23 +51,27 @@ defmodule Aesir.AccountServer.DuplicateLoginTest do
         {:ok, account}
       end)
 
-      stub(SessionManager, :get_servers, fn :char_server ->
-        [
-          %{
-            server_id: "char-01",
-            server_type: :char_server,
-            status: :online,
-            ip: {127, 0, 0, 1},
-            port: 6121,
-            player_count: 0,
-            metadata: %{
-              name: "Test Char Server",
-              cluster_id: 0,
-              type: 0,
-              new: false
+      stub(SessionManager, :get_servers, fn
+        :char_server ->
+          [
+            %{
+              server_id: "char-01",
+              server_type: :char_server,
+              status: :online,
+              ip: {127, 0, 0, 1},
+              port: 6121,
+              player_count: 0,
+              metadata: %{
+                name: "Test Char Server",
+                cluster_id: 0,
+                type: 0,
+                new: false
+              }
             }
-          }
-        ]
+          ]
+
+        :zone_server ->
+          []
       end)
 
       login = %LoginRequest{
@@ -161,23 +166,27 @@ defmodule Aesir.AccountServer.DuplicateLoginTest do
         {:ok, account}
       end)
 
-      stub(SessionManager, :get_servers, fn :char_server ->
-        [
-          %{
-            server_id: "char-01",
-            server_type: :char_server,
-            status: :online,
-            ip: {127, 0, 0, 1},
-            port: 6121,
-            player_count: 0,
-            metadata: %{
-              name: "Test Char Server",
-              cluster_id: 0,
-              type: 0,
-              new: false
+      stub(SessionManager, :get_servers, fn
+        :char_server ->
+          [
+            %{
+              server_id: "char-01",
+              server_type: :char_server,
+              status: :online,
+              ip: {127, 0, 0, 1},
+              port: 6121,
+              player_count: 0,
+              metadata: %{
+                name: "Test Char Server",
+                cluster_id: 0,
+                type: 0,
+                new: false
+              }
             }
-          }
-        ]
+          ]
+
+        :zone_server ->
+          []
       end)
 
       login = %LoginRequest{
@@ -232,23 +241,27 @@ defmodule Aesir.AccountServer.DuplicateLoginTest do
         {:ok, account}
       end)
 
-      stub(SessionManager, :get_servers, fn :char_server ->
-        [
-          %{
-            server_id: "char-01",
-            server_type: :char_server,
-            status: :online,
-            ip: {127, 0, 0, 1},
-            port: 6121,
-            player_count: 0,
-            metadata: %{
-              name: "Test Char Server",
-              cluster_id: 0,
-              type: 0,
-              new: false
+      stub(SessionManager, :get_servers, fn
+        :char_server ->
+          [
+            %{
+              server_id: "char-01",
+              server_type: :char_server,
+              status: :online,
+              ip: {127, 0, 0, 1},
+              port: 6121,
+              player_count: 0,
+              metadata: %{
+                name: "Test Char Server",
+                cluster_id: 0,
+                type: 0,
+                new: false
+              }
             }
-          }
-        ]
+          ]
+
+        :zone_server ->
+          []
       end)
 
       login = %LoginRequest{

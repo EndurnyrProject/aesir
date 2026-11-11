@@ -148,9 +148,13 @@ defmodule Aesir.CharServer.Characters do
 
   @doc """
   Selects a character and prepares for zone transfer.
+
+  Stamps the character's `last_login`, which the login server reports as its
+  last played time.
   """
   def select_character(account_id, slot) do
     with {:ok, character} <- get_character_by_slot(account_id, slot),
+         {:ok, character} <- touch_last_login(character),
          :ok <- update_character_location(character),
          :ok <- broadcast_character_selected(account_id, character) do
       {:ok, character}
@@ -301,6 +305,15 @@ defmodule Aesir.CharServer.Characters do
 
       _ ->
         {:error, :invalid_session}
+    end
+  end
+
+  defp touch_last_login(character) do
+    now = NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
+
+    case character |> Ecto.Changeset.change(last_login: now) |> Repo.update() do
+      {:ok, character} -> {:ok, character}
+      {:error, _changeset} -> {:error, :database_error}
     end
   end
 

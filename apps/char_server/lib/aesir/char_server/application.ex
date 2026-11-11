@@ -36,6 +36,8 @@ defmodule Aesir.CharServer.Application do
 
         metadata = %{
           name: ServerInfoConfig.name(),
+          region: ServerInfoConfig.region(),
+          description: ServerInfoConfig.description(),
           type: 0,
           new: false,
           cluster_id: cluster_id
