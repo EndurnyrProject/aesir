@@ -40,6 +40,11 @@ defmodule Aesir.ZoneServer.Integration.HomunculusCommandsIntegrationTest do
     moved = assert_success(move, 2, {:move, %HomunculusMoveCommand{x: 151, y: 150}})
     assert moved.activity == :HOMUNCULUS_ACTIVITY_MOVING
 
+    assert_eventually(fn ->
+      homunculus = PlayerSession.get_state(move.pid).homunculus
+      {homunculus.x, homunculus.y, homunculus.dir} == {151, 150, 6}
+    end)
+
     follow = start_owner(position: {155, 150})
     before_follow = PlayerSession.get_state(follow.pid).homunculus
     followed = assert_success(follow, 3, {:follow, %HomunculusFollowCommand{}})

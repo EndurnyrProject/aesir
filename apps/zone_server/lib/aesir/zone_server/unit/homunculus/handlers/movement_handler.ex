@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
 
   alias Aesir.Net.Knockback
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats
@@ -294,6 +295,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
         homunculus
         | x: elem(next, 0),
           y: elem(next, 1),
+          dir:
+            Geometry.calculate_direction(homunculus.x, homunculus.y, elem(next, 0), elem(next, 1)),
           action_state: if(moving?, do: :moving, else: :idle),
           movement_state: if(moving?, do: :moving, else: :standing)
       }
