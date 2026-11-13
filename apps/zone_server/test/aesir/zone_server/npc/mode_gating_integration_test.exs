@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Npc.ModeGatingIntegrationTest do
   use ExUnit.Case, async: false
 
+  alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Npc.Registry
   alias Aesir.ZoneServer.Npc.SessionDynamicSupervisor
   alias Aesir.ZoneServer.Npc.Transpiler
@@ -51,6 +53,10 @@ defmodule Aesir.ZoneServer.Npc.ModeGatingIntegrationTest do
 
       on_exit(fn -> unload_modules(@generated_modules) end)
       unload_modules(@generated_modules)
+
+      map_cache = EtsTable.table_for(:map_cache)
+      :ets.insert(map_cache, {@map, MapData.new(@map, 400, 400)})
+      on_exit(fn -> :ets.delete(map_cache, @map) end)
 
       write_fixture!(rathena_root)
 

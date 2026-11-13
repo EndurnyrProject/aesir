@@ -29,7 +29,10 @@ defmodule Aesir.ZoneServer.Npc.Registry do
   by movement's `OnTouch` check).
   """
 
+  require Logger
+
   alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Npc
   alias Aesir.ZoneServer.Npc.ContentScope
   alias Aesir.ZoneServer.Npc.Placement
@@ -102,7 +105,8 @@ defmodule Aesir.ZoneServer.Npc.Registry do
 
   `reload/0` and `reload/1` resolve the configured `GameMode`; `reload/2`
   accepts an explicit mode for deterministic composition. Inactive NPC bodies
-  and placements are excluded before any index is built.
+  and placements are excluded before any index is built, as are placements on a
+  map missing from the `MapCache` (one warning is logged per such map).
 
   Does **not** run `OnInit` itself — callers that want rAthena's full
   `@reloadscript` semantics call `Events.run_on_init/0` afterwards.
@@ -124,7 +128,7 @@ defmodule Aesir.ZoneServer.Npc.Registry do
           ContentScope.active?(placement.scope, mode),
           do: {module, placement}
 
-    registry = build(entries)
+    registry = entries |> drop_uncached_maps() |> build()
     :persistent_term.put(@pt_key, registry)
     registry
   end
@@ -310,6 +314,21 @@ defmodule Aesir.ZoneServer.Npc.Registry do
       by_label: by_label,
       touch_rects: touch_rects
     }
+  end
+
+  @spec drop_uncached_maps([entry()]) :: [entry()]
+  defp drop_uncached_maps(entries) do
+    {placed, dropped} = Enum.split_with(entries, fn {_module, p} -> MapCache.exists?(p.map) end)
+
+    dropped
+    |> Enum.frequencies_by(fn {_module, p} -> p.map end)
+    |> Enum.each(fn {map, count} ->
+      Logger.warning(
+        "map #{inspect(map)} has no map cache; not placing its #{count} NPC placement(s)"
+      )
+    end)
+
+    placed
   end
 
   @spec touch_rect(Placement.t()) :: touch_rect()

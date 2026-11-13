@@ -1,5 +1,6 @@
 defmodule Aesir.ZoneServer.Npc.RegistryTest do
   use ExUnit.Case, async: false
+  import ExUnit.CaptureLog
   import Mimic
 
   alias Aesir.ZoneServer.Map.MapCache
@@ -21,6 +22,17 @@ defmodule Aesir.ZoneServer.Npc.RegistryTest do
     use Aesir.ZoneServer.Npc,
       spawn: [
         %{map: "prontera", x: 199, y: 201, dir: 0, sprite: 58, name: "C", unique_name: "T"}
+      ]
+
+    @impl true
+    def on_talk(ctx), do: ctx
+  end
+
+  defmodule UncachedMapNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [
+        %{map: "no_such_map", x: 5, y: 5, sprite: 58, name: "Lost"},
+        %{map: "prontera", x: 6, y: 6, sprite: 58, name: "Found"}
       ]
 
     @impl true
@@ -199,6 +211,14 @@ defmodule Aesir.ZoneServer.Npc.RegistryTest do
 
       assert DiscoverableNpc in modules
       refute NotAnNpc in modules
+    end
+
+    test "warns and skips placements on a map without map cache" do
+      log = capture_log(fn -> Registry.reload([UncachedMapNpc]) end)
+
+      assert [{UncachedMapNpc, %Placement{map: "prontera"}}] = Registry.entries()
+      assert Registry.module_at("no_such_map", 5, 5) == :error
+      assert log =~ ~s[map "no_such_map" has no map cache; not placing its 1 NPC placement(s)]
     end
 
     test "terminates every running Npc.Session before rebuilding" do
