@@ -241,7 +241,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
       assert target_id == target.unit_id
       assert opts[:skill_level] == 1
       assert opts[:skill_ratio] == mode_value(500, 100)
-      assert opts[:bonus_atk] == 30
+      assert opts[:bonus_atk] == nil
       {:ok, %{hit?: false, damage: 0, target_survives?: true}}
     end)
 

@@ -902,6 +902,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   defp empty_equipment_bonuses do
     %{
       atk: 0,
+      ammo_atk: 0,
       rh_range: 0,
       lh_range: 0,
       def: 0,
@@ -984,6 +985,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
 
     granted = Map.new(granted_pairs, fn {{:granted_skill, id}, level} -> {id, level} end)
     {Map.new(bonus_pairs), granted}
+  end
+
+  defp accumulate_item_bonus(acc, %ItemDefinition{type: :ammo} = item, _refine) do
+    acc
+    |> Map.update!(:ammo_atk, &(&1 + item.attack))
+    |> Map.put(:ammo_subtype, item.subtype)
+    |> Map.update!(:def, &(&1 + item.defense))
+    |> Map.update!(:matk, &(&1 + item.magic_attack))
   end
 
   # Weapon MATK variance is weapon MATK times weapon level divided by ten.

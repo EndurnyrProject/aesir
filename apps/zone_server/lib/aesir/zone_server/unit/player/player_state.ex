@@ -1190,6 +1190,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         element: weapon_element(state.stats),
         size: :medium
       },
+      ammo_atk: Map.get(state.stats.modifiers.equipment, :ammo_atk, 0),
       right_hand: state.stats.right_hand,
       left_hand: state.stats.left_hand,
       attack_range: PlayerStats.attack_range(state.stats),

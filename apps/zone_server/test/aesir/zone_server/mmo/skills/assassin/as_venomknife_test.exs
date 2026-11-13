@@ -72,7 +72,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknifeTest do
                skill_id: 1004,
                skill_level: 1,
                skill_ratio: 500,
-               bonus_atk: 30,
                skip_crit: true,
                report_hit: true,
                skip_range: true

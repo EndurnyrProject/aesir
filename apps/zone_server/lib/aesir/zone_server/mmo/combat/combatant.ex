@@ -90,6 +90,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
 
     # Weapon information
     weapon: nil,
+    ammo_atk: 0,
     right_hand: nil,
     left_hand: nil,
 
@@ -208,6 +209,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
             element: atom(),
             size: atom()
           },
+          ammo_atk: non_neg_integer(),
           right_hand: WeaponHand.t() | nil,
           left_hand: WeaponHand.t() | nil,
           attack_range: integer(),

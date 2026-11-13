@@ -2,12 +2,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknife do
   @moduledoc """
   Throw Venom Knife (AS_VENOMKNIFE). The Assassin platinum skill: throws one
   equipped dagger-class ammunition at 9 cells as a forced ranged hit that
-  always poisons, its attack added to the hit. Guard never blocks it.
+  always poisons. Guard never blocks it.
 
   The cast end requires one ammunition unit whose subtype is a dagger.
 
-  Renewal: 500% weapon damage, 35 SP, poison 18 s. Pre-renewal: 100% weapon
-  damage, 15 SP, poison 60 s.
+  Renewal: 500% weapon damage, 35 SP, poison 18 s; ammunition ATK joins the
+  equipment component. Pre-renewal: 100% weapon damage, 15 SP, poison 60 s;
+  dagger-equipped hits do not add ammunition ATK.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -39,12 +40,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknife do
 
   @impl Active
   def cast(%PlayerState{} = caster, {:unit, target}, level, definition) do
-    with {:ok, _row, ammo} <- Ammo.equipped_ammo(caster.inventory) do
+    with {:ok, _row, _ammo} <- Ammo.equipped_ammo(caster.inventory) do
       opts = [
         skill_id: definition.id,
         skill_level: level,
         skill_ratio: skill_ratio(),
-        bonus_atk: ammo.attack,
         skip_crit: true,
         report_hit: true,
         skip_range: true

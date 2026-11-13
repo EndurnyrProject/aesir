@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.Mechanics.MagicDamage
   alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
@@ -79,26 +80,35 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
       hand: if(hand, do: hand.slot, else: :right_hand),
       source: :weapon,
       weapon_atk: 0,
+      ammo_atk: 0,
       refine_atk: 0,
       overrefine_atk: 0
     }
 
     case Keyword.get(opts, :shield_base) do
-      nil -> roll_player_weapon(parts, snapshot, hand, attacker, critical?)
+      nil -> roll_player_weapon(parts, snapshot, hand, attacker, opts, critical?)
       shield -> %{parts | source: :shield, weapon_atk: shield, flat_atk: 0, mastery_atk: 0}
     end
   end
 
   # A classic bare hand still rolls its status weapon ATK as its maximum, from
   # an unscaled DEX minimum; a renewal empty hand reads zero.
-  defp roll_player_weapon(parts, snapshot, nil, attacker, critical?) do
+  defp roll_player_weapon(parts, snapshot, nil, attacker, opts, critical?) do
+    inputs = %{
+      arrow?:
+        GameMode.mode() == :renewal and arrow_attack?(attacker, Keyword.get(opts, :skill_id)),
+      critical?: critical?
+    }
+
+    parts = %{parts | ammo_atk: ammo_attack(attacker, inputs)}
+
     case bare_hand_watk(attacker) do
       0 -> parts
       maximum -> %{parts | weapon_atk: bare_hand_roll(maximum, snapshot.dex, attacker, critical?)}
     end
   end
 
-  defp roll_player_weapon(parts, snapshot, hand, attacker, critical?) do
+  defp roll_player_weapon(parts, snapshot, hand, attacker, opts, critical?) do
     combat_stats = attacker.combat_stats
 
     inputs = %{
@@ -109,7 +119,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
       primary_stat:
         if(WeaponTypes.is_ranged?(hand.subtype), do: snapshot.dex, else: snapshot.str),
       dex: snapshot.dex,
-      arrow?: WeaponTypes.requires_ammo?(hand.subtype),
+      arrow?:
+        arrow_attack?(attacker, Keyword.get(opts, :skill_id)) and
+          (GameMode.mode() == :renewal or
+             (WeaponTypes.requires_ammo?(hand.subtype) and
+                (hand.subtype == :bow or not critical?))),
       critical?: critical?,
       max_weapon_damage?: Map.get(combat_stats, :max_weapon_damage, false)
     }
@@ -119,9 +133,33 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
     %{
       parts
       | weapon_atk: DamageShared.roll(minimum, maximum + 1),
+        ammo_atk: ammo_attack(attacker, inputs),
         refine_atk: hand.refine_atk,
         overrefine_atk: DamageShared.overrefine_roll(hand.overrefine_band)
     }
+  end
+
+  @doc "Whether a hit uses ammunition: an ammo-consuming normal attack or an ammo-requiring skill."
+  @spec arrow_attack?(map(), non_neg_integer() | nil) :: boolean()
+  def arrow_attack?(%{right_hand: %{subtype: subtype}}, nil),
+    do: WeaponTypes.requires_ammo?(subtype)
+
+  def arrow_attack?(attacker, nil),
+    do: attacker.weapon |> Map.get(:type) |> WeaponTypes.requires_ammo?()
+
+  def arrow_attack?(_attacker, skill_id),
+    do: match?({:ok, %{require_ammo: [_ | _]}}, Catalog.by_id(skill_id))
+
+  defp ammo_attack(_attacker, %{arrow?: false}), do: 0
+
+  defp ammo_attack(attacker, inputs) do
+    ammo_atk = Map.get(attacker, :ammo_atk, 0)
+
+    case {GameMode.mode(), attacker} do
+      {:renewal, %{equip_modifiers: %{ammo_subtype: :cannonball}}} -> 0
+      {:pre_renewal, _} when not inputs.critical? -> DamageShared.roll(0, ammo_atk)
+      _ -> ammo_atk
+    end
   end
 
   defp bare_hand_watk(attacker) do

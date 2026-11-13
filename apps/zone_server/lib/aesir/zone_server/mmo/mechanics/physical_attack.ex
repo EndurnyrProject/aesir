@@ -49,8 +49,13 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
           max_weapon_damage?: boolean()
         }
 
-  @typedoc "Hand-local damage inputs; Renewal's weapon roll already includes refine."
+  @typedoc """
+  Hand-local damage inputs; Renewal's weapon roll already includes refine.
+  `ammo_atk` is the applicable ammunition contribution, already rolled for a
+  classic non-critical hit, before its mode-specific size or attribute step.
+  """
   @type parts :: %{
+          optional(:ammo_atk) => non_neg_integer(),
           status_atk: integer(),
           flat_atk: integer(),
           weapon_atk: integer(),

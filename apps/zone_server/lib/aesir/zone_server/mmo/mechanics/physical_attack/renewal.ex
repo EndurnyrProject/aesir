@@ -45,7 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
     %{
       status_atk: parts.status_atk,
       weapon_atk: div(weapon * context.size_rate, 100),
-      flat_atk: parts.flat_atk + Map.get(context, :flat_bonus, 0),
+      flat_atk: parts.flat_atk + Map.get(parts, :ammo_atk, 0) + Map.get(context, :flat_bonus, 0),
       mastery_atk: parts.mastery_atk,
       percent_atk: 0,
       hand: parts.hand,
@@ -180,8 +180,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
   def base_attack(parts) do
     status_multiplier = if parts.hand == :right_hand and parts.source == :weapon, do: 2, else: 1
 
-    parts.status_atk * status_multiplier + parts.flat_atk + parts.weapon_atk +
-      parts.overrefine_atk + parts.mastery_atk
+    parts.status_atk * status_multiplier + parts.flat_atk + Map.get(parts, :ammo_atk, 0) +
+      parts.weapon_atk + parts.overrefine_atk + parts.mastery_atk
   end
 
   @impl true
