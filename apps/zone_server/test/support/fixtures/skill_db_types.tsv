@@ -434,3 +434,4 @@
 10017	GD_CHARGESHOUT_FLAG	None	true	-	-	none	-	none	0	-	-
 10018	GD_CHARGESHOUT_BEATING	None	true	-	-	none	-	none	0	-	-
 10019	GD_EMERGENCY_MOVE	None	true	-	-	none	-	none	0	-	-
+503	GS_BULLSEYE	Weapon	false	Weapon	false	none	none	Arrow,Bullet,Cannonball,Dagger,Grenade,Kunai,Shell,Shuriken,Throwweapon	1	Arrow,Bullet,Cannonball,Dagger,Grenade,Kunai,Shell,Shuriken,Throwweapon	1

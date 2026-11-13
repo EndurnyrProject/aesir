@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.Tarot do
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.Coma
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Skill.Caster
@@ -133,12 +134,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.Tarot do
   end
 
   def apply(:death, caster, {type, id} = target, _level) do
-    with {:ok, {_module, unit, pid}} when is_pid(pid) <- UnitRegistry.get_unit(type, id),
-         true <- Unit.living?(unit),
-         false <- status_immune?(unit) do
-      coma(type, pid, caster_ref(caster))
-    end
-
+    Coma.attempt(type, id, rate: 10_000)
     status(caster, target, :sc_curse, [])
     status(caster, target, :sc_poison, [])
   end
@@ -157,15 +153,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.Tarot do
 
   defp warp(:mob, _unit, pid), do: MobSession.teleport(pid)
   defp warp(_type, _unit, _pid), do: :ok
-
-  # Death zaps HP and SP down to 1 as passive loss: nothing breaks on it.
-  defp coma(:player, pid, source), do: PlayerSession.apply_coma(pid, source, %{passive?: true})
-  defp coma(:mob, pid, source), do: MobSession.apply_coma(pid, source, %{passive?: true})
-  defp coma(_type, _pid, _source), do: :ok
-
-  # SC_COMA is BossResist: a status-immune monster resists it.
-  defp status_immune?(%MobState{} = mob), do: MobState.status_immune?(mob)
-  defp status_immune?(_unit), do: false
 
   defp caster_ref(caster) do
     adapter = Caster.for(caster)

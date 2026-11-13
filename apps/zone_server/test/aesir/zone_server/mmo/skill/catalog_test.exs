@@ -340,6 +340,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
                :am_demonstration,
                :as_venomknife,
                :asc_meteorassault,
+               :gs_bullseye,
                :pa_sacrifice
              ])
 
@@ -349,6 +350,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
                :am_demonstration,
                :as_venomknife,
                :asc_meteorassault,
+               :gs_bullseye,
                :ws_carttermination
              ])
   end

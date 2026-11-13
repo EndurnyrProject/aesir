@@ -271,7 +271,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.TarotTest do
     prepare_curse_target()
     stub(TarotDeck, :draw, fn -> :death end)
 
-    expect(PlayerSession, :apply_coma, fn pid, {:player, 17}, %{passive?: true} ->
+    expect(PlayerSession, :apply_coma, fn pid, nil, %{passive?: true} ->
       assert pid == self()
       :ok
     end)
@@ -317,6 +317,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.TarotTest do
     stub(TarotDeck, :draw, fn -> :star end)
     assert {:ok, :star} = Tarot.play(caster, {:player, 18}, 5)
     assert StatusStorage.has_status?(:player, 18, :sc_stun)
+  end
+
+  test "tarot_coma_mvp_test: Death skips coma on an MVP and still comas a normal mob", %{
+    caster: caster
+  } do
+    target = mob(42, 1002)
+    mvp = Aesir.TestMob.publish(put_in(target.mob_data.modes, [:mvp | target.mob_data.modes]))
+    :ok = UnitRegistry.register_unit(:mob, 42, MobState, mvp, self())
+    :ok = UnitRegistry.register_unit(:mob, 43, MobState, mob(43, 1002), self())
+    stub(TarotDeck, :draw, fn -> :death end)
+    expect(MobSession, :apply_coma, fn _pid, nil, %{passive?: true} -> :ok end)
+    assert {:ok, :death} = Tarot.play(caster, {:mob, 42}, 5)
+    assert {:ok, :death} = Tarot.play(caster, {:mob, 43}, 5)
   end
 
   defp prepare_curse_target do
