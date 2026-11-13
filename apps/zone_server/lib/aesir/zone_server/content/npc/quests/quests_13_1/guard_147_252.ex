@@ -70,8 +70,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Guard147252 do
     :throw, {:script_end, ctx} -> ctx
   end
 
-  defp enter(ctx, touch) do
-    {ctx, _} = Guard131.call(ctx, [touch | @gate])
-    ctx
-  end
+  @spec enter(Ctx.t(), 0 | 1) :: no_return()
+  defp enter(ctx, touch), do: Guard131.call(ctx, [touch | @gate])
 end

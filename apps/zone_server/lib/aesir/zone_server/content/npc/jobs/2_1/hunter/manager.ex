@@ -132,7 +132,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Manager do
 
   # The reference's `OnReset` body has no terminator, so a reset also runs the
   # `OnDisable` cleanup below.
-  def on_event("OnReset", ctx), do: ctx |> stopnpctimer() |> on_event("OnDisable")
+  def on_event("OnReset", ctx), do: on_event("OnDisable", stopnpctimer(ctx))
 
   def on_event("OnDisable", ctx) do
     ctx

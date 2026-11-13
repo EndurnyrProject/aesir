@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.PromotionalStaff127138 d
       }
     ]
 
+  alias Aesir.ZoneServer.Content.Npc.Functions.PromotionalStaff
   alias Aesir.ZoneServer.Script.Ctx
 
   @jellopy 909
@@ -178,8 +179,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.PromotionalStaff127138 d
     |> close()
   end
 
-  defp shared_pitch(ctx) do
-    {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.PromotionalStaff.call(ctx, [])
-    ctx
-  end
+  @spec shared_pitch(Ctx.t()) :: no_return()
+  defp shared_pitch(ctx), do: PromotionalStaff.call(ctx, [])
 end

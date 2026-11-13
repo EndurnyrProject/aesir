@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.PromotionalStaff9067 do
       }
     ]
 
+  alias Aesir.ZoneServer.Content.Npc.Functions.PromotionalStaff
   alias Aesir.ZoneServer.Script.Ctx
 
   @emerald 721
@@ -208,8 +209,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.PromotionalStaff9067 do
     |> close()
   end
 
-  defp shared_pitch(ctx) do
-    {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.PromotionalStaff.call(ctx, [])
-    ctx
-  end
+  @spec shared_pitch(Ctx.t()) :: no_return()
+  defp shared_pitch(ctx), do: PromotionalStaff.call(ctx, [])
 end

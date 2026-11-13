@@ -114,8 +114,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests131.Promotionalstaf
         first_test(ctx)
 
       _step ->
-        {ctx, _} = PromotionalStaff.call(ctx, [])
-        ctx
+        PromotionalStaff.call(ctx, [])
     end
   catch
     :throw, {:script_end, ctx} -> ctx

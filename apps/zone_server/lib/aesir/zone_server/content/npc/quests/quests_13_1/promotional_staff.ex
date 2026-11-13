@@ -38,8 +38,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.PromotionalStaff do
   @impl true
   @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
-    {ctx, _} = PromotionalStaff.call(ctx, [])
-    ctx
+    PromotionalStaff.call(ctx, [])
   catch
     :throw, {:script_end, ctx} -> ctx
   end

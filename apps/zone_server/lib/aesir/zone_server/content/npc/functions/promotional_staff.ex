@@ -53,6 +53,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.PromotionalStaff do
     end
   end
 
+  @spec tell_story(Ctx.t()) :: no_return()
   defp tell_story(ctx) do
     ctx
     |> mes("[Promotional Staff]")
@@ -93,6 +94,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.PromotionalStaff do
     |> halt()
   end
 
+  @spec mock(Ctx.t()) :: no_return()
   defp mock(ctx) do
     ctx
     |> mes("[Promotional Staff]")
@@ -103,5 +105,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.PromotionalStaff do
     |> halt()
   end
 
+  @spec halt(Ctx.t()) :: no_return()
   defp halt(ctx), do: throw({:script_end, ctx})
 end

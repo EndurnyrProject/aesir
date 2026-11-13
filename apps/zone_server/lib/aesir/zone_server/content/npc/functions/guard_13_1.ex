@@ -48,6 +48,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.Guard131 do
     end
   end
 
+  @spec turn_away(Ctx.t(), [integer()]) :: no_return()
   defp turn_away(ctx, args) do
     ctx
     |> mes("You're not allowed to enter.")
@@ -61,6 +62,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.Guard131 do
     |> halt()
   end
 
+  @spec admit(Ctx.t()) :: no_return()
   defp admit(ctx) do
     ctx
     |> mes("You've come here")
@@ -72,6 +74,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.Guard131 do
     |> halt()
   end
 
+  @spec refuse(Ctx.t(), [integer()]) :: no_return()
   defp refuse(ctx, args) do
     ctx = ctx |> mes("You are not allowed") |> mes("to enter.")
 
@@ -86,5 +89,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.Guard131 do
     warp(ctx, @destination, Enum.at(args, 1, 0), Enum.at(args, 2, 0))
   end
 
+  @spec halt(Ctx.t()) :: no_return()
   defp halt(ctx), do: throw({:script_end, ctx})
 end
