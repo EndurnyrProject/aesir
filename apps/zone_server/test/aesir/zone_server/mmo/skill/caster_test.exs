@@ -420,6 +420,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
     end
   end
 
+  test "sphere shortfalls distinguish coins from spirits" do
+    for {job_id, reason} <- [{24, :coins}, {15, :spirits}] do
+      caster = potion_caster(0)
+      progression = %{caster.stats.progression | job_id: job_id}
+      caster = %{caster | stats: %{caster.stats | progression: progression}}
+      cost = %Cost{spheres: 1, sp_requirement: 0}
+
+      assert {:error, {^reason, 1}} =
+               Caster.Player.prepare_begin_cost(
+                 caster,
+                 __MODULE__,
+                 weight_definition(),
+                 cost,
+                 0,
+                 1
+               )
+    end
+  end
+
   defp potion_caster(potions) do
     PlayerStateFixture.build(%{
       character_id: 101,

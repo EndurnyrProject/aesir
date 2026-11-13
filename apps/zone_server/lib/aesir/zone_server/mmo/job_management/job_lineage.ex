@@ -331,6 +331,17 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobLineage do
     end
   end
 
+  @doc "Whether `job_id` is Gunslinger-classed, including its descendants."
+  @spec gunslinger_classed?(integer() | nil) :: boolean()
+  def gunslinger_classed?(nil), do: false
+
+  def gunslinger_classed?(job_id) do
+    case AvailableJobs.job_id_to_name(job_id) do
+      {:ok, job} -> base_job(job) == :gunslinger
+      {:error, _unknown_job} -> false
+    end
+  end
+
   @doc """
   Whether `job_id` is Super Novice-classed: a Super Novice or Super Baby, or a
   job descending from one (the expanded Super Novice line). Unknown ids and

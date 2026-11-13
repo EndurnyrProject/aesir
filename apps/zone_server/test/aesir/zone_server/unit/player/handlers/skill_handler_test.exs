@@ -3300,6 +3300,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     end
   end
 
+  test "reports coin and spirit shortfalls with their own reason and required count" do
+    test_pid = self()
+    stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:packet, packet}) end)
+
+    for {reason, wire_reason} <- [
+          {:coins, :SKILL_CAST_FAILURE_REASON_COINS},
+          {:spirits, :SKILL_CAST_FAILURE_REASON_SPIRITS}
+        ] do
+      SkillHandler.report_cast_failure(41, 1000, {reason, 1})
+      assert_received {:packet, %SkillCastFailed{reason: ^wire_reason, detail: 1}}
+    end
+  end
+
   describe "report_cast_failure/3 with a text line" do
     test "sends the line to the caster, then the failure" do
       test_pid = self()

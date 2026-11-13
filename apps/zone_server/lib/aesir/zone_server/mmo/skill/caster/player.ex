@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.State, as: GuildState
+  alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -244,7 +245,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   @doc """
   Checks a resolved cost's cast-begin requirements in order: the 90% weight
   limit, the recovered-weight state, SP, zeny, then spirit spheres (too few
-  report `{:spirits, required}`). HP, ammo and items wait for the cast end.
+  report `{:coins, required}` for Gunslingers or `{:spirits, required}` otherwise).
+  HP, ammo and items wait for the cast end.
   """
   @spec prepare_begin_cost(
           PlayerState.t(),
@@ -687,8 +689,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   # Too few spheres reports how many the skill needs.
   defp check_spheres(caster, cost) do
     case Cost.check_spheres(caster, cost) do
-      :ok -> :ok
-      {:error, :insufficient_spirit_spheres} -> {:error, {:spirits, cost.spheres}}
+      :ok ->
+        :ok
+
+      {:error, :insufficient_spirit_spheres} ->
+        reason =
+          if JobLineage.gunslinger_classed?(caster.stats.progression.job_id),
+            do: :coins,
+            else: :spirits
+
+        {:error, {reason, cost.spheres}}
     end
   end
 

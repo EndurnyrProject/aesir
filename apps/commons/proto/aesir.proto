@@ -2829,6 +2829,8 @@ enum SkillCastFailureReason {
   // A production skill lacks its materials, cannot fit the product, or the
   // attempt failed (Create Deadly Poison).
   SKILL_CAST_FAILURE_REASON_STUFF_INSUFFICIENT = 21;
+  // Coin or spirit-ball shortfall for Gunslinger-classed casters.
+  SKILL_CAST_FAILURE_REASON_COINS = 22;
 }
 
 // Server -> client, caster-only feedback when an attempted skill cast is rejected.

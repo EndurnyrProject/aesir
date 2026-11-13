@@ -53,6 +53,16 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobLineageTest do
     end
   end
 
+  test "gunslinger classed lineage" do
+    for job_id <- [24, 4228, 4215, 4229, 4306] do
+      assert JobLineage.gunslinger_classed?(job_id)
+    end
+
+    for job_id <- [15, 0, 999_999, nil] do
+      refute JobLineage.gunslinger_classed?(job_id)
+    end
+  end
+
   describe "monk_classed?/1" do
     test "is true for Monk, Champion, Baby Monk and the Sura line" do
       for job_id <- [15, 4016, 4038, 4070, 4077, 4106] do

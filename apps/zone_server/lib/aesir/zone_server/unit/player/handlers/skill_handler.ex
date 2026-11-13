@@ -2369,7 +2369,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   # Spheres required and the missing equipment carry their number to the client.
-  defp failure_detail({:spirits, count}), do: {:spirits, count}
+  defp failure_detail({reason, count}) when reason in [:coins, :spirits], do: {reason, count}
   defp failure_detail({:need_equipment, item_id}), do: {:need_equipment, item_id}
   defp failure_detail(reason), do: {reason, 0}
 
@@ -2396,6 +2396,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp failure_reason(reason) when reason in [:hp_insufficient, :insufficient_hp],
     do: :SKILL_CAST_FAILURE_REASON_HP_INSUFFICIENT
 
+  defp failure_reason(:coins), do: :SKILL_CAST_FAILURE_REASON_COINS
   defp failure_reason(:spirits), do: :SKILL_CAST_FAILURE_REASON_SPIRITS
   defp failure_reason(:cart), do: :SKILL_CAST_FAILURE_REASON_CART
   defp failure_reason(:need_equipment), do: :SKILL_CAST_FAILURE_REASON_NEED_EQUIPMENT
