@@ -42,6 +42,14 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.Combat do
         attack = base_attack(calculated.str, level, mode)
         residual = base.batk - base_attack(base.str, level, mode)
         attack = attack + residual + value(entries, :sc_volcano, :val2)
+
+        attack =
+          if mode == :pre_renewal,
+            do:
+              attack + value(entries, :sc_gatlingfever, :val3) +
+                fixed(entries, :sc_madnesscancel, 100),
+            else: attack
+
         attack = if mode == :renewal, do: attack + fixed(entries, :sc_loud, 30), else: attack
 
         attack =

@@ -13,14 +13,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.QuagmireTest do
       assert Quagmire.modifiers(player, %{}) == %{
                agi: -5 * level,
                dex: -5 * level,
-               aspd: 5 * level,
                movement_speed: 50
              }
 
       assert Quagmire.modifiers(mob, %{}) == %{
                agi: -10 * level,
                dex: -10 * level,
-               aspd: 10 * level,
                movement_speed: 50
              }
     end

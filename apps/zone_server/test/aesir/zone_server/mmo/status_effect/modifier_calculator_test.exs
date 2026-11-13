@@ -2,6 +2,26 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculatorTest do
   use ExUnit.Case, async: true
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
+  alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
+  alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  describe "get_all_modifiers_with_target/3" do
+    setup {Aesir.TestEtsSetup, :setup_ets_tables}
+
+    test "an unregistered status-free player has no modifiers" do
+      assert {:error, :not_found} = UnitRegistry.get_unit_info(:player, 1000)
+      assert ModifierCalculator.get_all_modifiers(:player, 1000) == %{}
+
+      assert ModifierCalculator.get_all_modifiers_with_target(:player, 1000, %{weapon_type: :fist}) ==
+               %{}
+
+      stats = Calculator.apply_status_effects(%Stats{equipment: %Equipment{}}, 1000)
+      assert stats.modifiers.status_effects == %{}
+      refute stats.modifiers.statuses_active?
+    end
+  end
 
   describe "merge_modifiers/2" do
     test "sums numeric values present in both maps" do

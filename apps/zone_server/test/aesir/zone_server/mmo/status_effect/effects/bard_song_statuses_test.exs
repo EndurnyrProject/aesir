@@ -48,7 +48,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BardSongStatusesTest do
     bragi = %StatusEntry{type: :sc_poembragi, val1: 10, val2: 20, val3: 30, state: %{}}
 
     assert Whistle.modifiers(whistle, %{}) == %{flee: 38, perfect_dodge: 50}
-    assert AssassinCross.modifiers(sunset, %{}) == %{aspd: 20}
+    assert AssassinCross.modifiers(sunset, %{}) == %{aspd_assncross: 20}
     assert AppleIdun.modifiers(idun, %{}) == %{max_hp_rate: 20}
 
     assert {:ok, %StatusEntry{state: %{cast_time_reduction: 20, delay_reduction: 30}}} =
@@ -146,6 +146,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BardSongStatusesTest do
   @tag game_mode: :pre_renewal
   test "classic Assassin Cross reads its snapshot as an attack speed rate" do
     sunset = %StatusEntry{type: :sc_assncross, val1: 10, val2: 20, state: %{}}
-    assert AssassinCross.modifiers(sunset, %{}) == %{aspd_rate: 20}
+    assert AssassinCross.modifiers(sunset, %{}) == %{aspd_rate_max: 20}
   end
 end

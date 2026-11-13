@@ -41,7 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AdrenalineTest do
   @tag game_mode: :renewal
   test "Adrenaline Rush grants flat ASPD and level-scaled HIT" do
     for {level, hit} <- Enum.zip(1..5, [8, 11, 14, 17, 20]) do
-      assert %{aspd: 7, hit: hit} ==
+      assert %{aspd_fixed_max: 7, hit: hit} ==
                Adrenaline.modifiers(%StatusEntry{type: :sc_adrenaline, val1: level}, %{})
     end
   end
@@ -49,23 +49,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AdrenalineTest do
   @tag game_mode: :renewal
   test "Adrenaline Rush II grants flat ASPD" do
     for level <- [1, 5] do
-      assert %{aspd: 6} ==
+      assert %{aspd_fixed_max: 6} ==
                Adrenaline2.modifiers(%StatusEntry{type: :sc_adrenaline2, val1: level}, %{})
     end
   end
 
   @tag game_mode: :pre_renewal
   test "classic Adrenaline Rush is a 30 percent own-cast rate and 20 percent otherwise, with no HIT" do
-    assert %{aspd_rate: 30} ==
+    assert %{aspd_rate_max: 30} ==
              Adrenaline.modifiers(%StatusEntry{type: :sc_adrenaline, val1: 5, val2: 1}, %{})
 
-    assert %{aspd_rate: 20} ==
+    assert %{aspd_rate_max: 20} ==
              Adrenaline.modifiers(%StatusEntry{type: :sc_adrenaline, val1: 5, val2: 0}, %{})
 
-    assert %{aspd_rate: 30} ==
+    assert %{aspd_rate_max: 30} ==
              Adrenaline2.modifiers(%StatusEntry{type: :sc_adrenaline2, val1: 1, val2: 1}, %{})
 
-    assert %{aspd_rate: 20} ==
+    assert %{aspd_rate_max: 20} ==
              Adrenaline2.modifiers(%StatusEntry{type: :sc_adrenaline2, val1: 1, val2: 0}, %{})
   end
 

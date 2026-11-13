@@ -32,8 +32,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Adrenaline do
   @impl true
   def modifiers(instance, _context) do
     case GameMode.mode() do
-      :renewal -> %{aspd: 7, hit: 5 + 3 * instance.val1}
-      :pre_renewal -> %{aspd_rate: classic_rate(instance)}
+      :renewal -> %{aspd_fixed_max: 7, hit: 5 + 3 * instance.val1}
+      :pre_renewal -> %{aspd_rate_max: classic_rate(instance)}
     end
   end
 

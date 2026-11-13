@@ -194,6 +194,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas do
   defp aspd_rate(rate, held, mode) do
     rate
     |> Kernel.-(quicken_rate(held, mode))
+    |> Kernel.-(berserk_madness_rate(held))
     |> Kernel.-(aspd_potion(held))
     |> aspd_penalties(held, mode)
     |> clamp(0, @max_aspd_rate)
@@ -215,6 +216,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas do
       value(held, :sc_adrenaline2, :val3),
       value(held, :sc_adrenaline, :val3),
       mode_restricted_quicken(held, mode),
+      value(held, :sc_gatlingfever, :val2),
       value(held, :sc_fleet, :val2),
       value(held, :sc_assncross, :val2)
     ]
@@ -223,6 +225,14 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas do
 
   defp mode_restricted_quicken(held, :pre_renewal), do: value(held, :sc_spearquicken, :val2)
   defp mode_restricted_quicken(_held, :renewal), do: 0
+
+  defp berserk_madness_rate(held) do
+    cond do
+      Map.has_key?(held, :sc_berserk) -> 300
+      Map.has_key?(held, :sc_madnesscancel) -> 200
+      true -> 0
+    end
+  end
 
   defp aspd_potion(held) do
     Enum.find_value(@aspd_potions, 0, fn type ->

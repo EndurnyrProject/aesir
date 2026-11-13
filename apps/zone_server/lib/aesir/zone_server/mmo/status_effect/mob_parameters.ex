@@ -109,6 +109,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.MobParameters do
       when type in [:sc_aspdpotion0, :sc_aspdpotion1, :sc_aspdpotion2, :sc_aspdpotion3],
       do: %{entry | val2: Map.fetch!(@aspd_potion_tiers, type)}
 
+  def initialize(%{type: :sc_gatlingfever} = entry, _mode, _target),
+    do: %{entry | val2: 20 * entry.val1, val3: 20 + 10 * entry.val1, val4: 5 * entry.val1}
+
   def initialize(%{type: :sc_fleet} = entry, _mode, _target), do: %{entry | val2: 30 * entry.val1}
 
   def initialize(%{type: :sc_avoid} = entry, _mode, _target), do: %{entry | val2: 10 * entry.val1}

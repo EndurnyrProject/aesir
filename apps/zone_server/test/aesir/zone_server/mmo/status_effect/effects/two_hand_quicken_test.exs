@@ -19,18 +19,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.TwoHandQuickenTest do
   describe "modifiers/2" do
     @tag game_mode: :renewal
     test "lv1: crit +3, hit +2, aspd flat 7" do
-      assert %{aspd: 7, hit: 2, critical: 3} == TwoHandQuicken.modifiers(entry(1, 7), %{})
+      assert %{aspd_fixed_max: 7, hit: 2, critical: 3} ==
+               TwoHandQuicken.modifiers(entry(1, 7), %{})
     end
 
     @tag game_mode: :pre_renewal
     test "classic grants a 30 percent attack speed rate and no HIT or CRIT" do
-      assert %{aspd_rate: 30} == TwoHandQuicken.modifiers(entry(1, 7), %{})
-      assert %{aspd_rate: 30} == TwoHandQuicken.modifiers(entry(10, 7), %{})
+      assert %{aspd_rate_max: 30} == TwoHandQuicken.modifiers(entry(1, 7), %{})
+      assert %{aspd_rate_max: 30} == TwoHandQuicken.modifiers(entry(10, 7), %{})
     end
 
     @tag game_mode: :renewal
     test "lv10: crit +12, hit +20, aspd flat 7" do
-      assert %{aspd: 7, hit: 20, critical: 12} == TwoHandQuicken.modifiers(entry(10, 7), %{})
+      assert %{aspd_fixed_max: 7, hit: 20, critical: 12} ==
+               TwoHandQuicken.modifiers(entry(10, 7), %{})
     end
   end
 

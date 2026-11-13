@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AssassinCross do
   field buff that lingers on exit.
 
   Renewal reads the snapshot as a flat attack speed bonus; pre-renewal reads it
-  as an attack speed rate in percent.
+  as an attack speed rate in percent, except on players wielding bows or guns.
   """
 
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
@@ -25,11 +25,19 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AssassinCross do
 
   alias Aesir.Commons.GameMode
 
+  @excluded_weapons [:bow, :revolver, :rifle, :gatling, :shotgun, :grenade]
+
   @impl true
-  def modifiers(instance, _context) do
+  def modifiers(instance, context) do
     case GameMode.mode() do
-      :renewal -> %{aspd: instance.val2}
-      :pre_renewal -> %{aspd_rate: instance.val2}
+      :renewal -> %{aspd_assncross: instance.val2}
+      :pre_renewal -> %{aspd_rate_max: if(excluded_weapon?(context), do: 0, else: instance.val2)}
     end
   end
+
+  defp excluded_weapon?(%{unit_type: :player} = context) do
+    Map.get(context.target, :weapon_type) in @excluded_weapons
+  end
+
+  defp excluded_weapon?(_context), do: false
 end

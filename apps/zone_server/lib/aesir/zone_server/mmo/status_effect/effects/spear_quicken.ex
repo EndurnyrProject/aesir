@@ -24,8 +24,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SpearQuicken do
   @impl true
   def modifiers(instance, _context) do
     case GameMode.mode() do
-      :renewal -> %{aspd: instance.val2, flee: instance.val1 * 2, critical: instance.val1 * 3}
-      :pre_renewal -> %{aspd_rate: 20 + instance.val1}
+      :renewal ->
+        %{aspd_fixed_max: instance.val2, flee: instance.val1 * 2, critical: instance.val1 * 3}
+
+      :pre_renewal ->
+        %{aspd_rate_max: 20 + instance.val1}
     end
   end
 end

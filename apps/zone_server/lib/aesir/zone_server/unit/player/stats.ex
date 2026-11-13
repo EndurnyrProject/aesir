@@ -351,7 +351,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   def to_formula_map(%__MODULE__{} = stats) do
     total = total_stats(stats)
 
-    %{
+    formula = %{
       # Base stats
       str: stats.base_stats.str,
       agi: stats.base_stats.agi,
@@ -399,6 +399,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       heal_power: get_equipment_modifier(stats, :heal_power),
       aspd: stats.derived_stats.aspd
     }
+
+    case stats.equipment do
+      %Equipment{} = equipment -> Map.put(formula, :weapon_type, weapon_type(equipment))
+      nil -> formula
+    end
   end
 
   @doc """

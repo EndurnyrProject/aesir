@@ -439,7 +439,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   # The effective STR..LUK of a player who never died minus one who died once.
   defp never_died_bonus(job_id, job_level) do
     player_id = 92_001
-    stub(Interpreter, :get_all_modifiers, fn :player, ^player_id -> %{} end)
+    stub(Interpreter, :get_all_modifiers, fn :player, ^player_id, _target -> %{} end)
 
     for deaths <- [0, 1] do
       player = %PlayerState{character_id: player_id, vars: %{DieCounter.var() => deaths}}
@@ -534,7 +534,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
     test "a status that forces a full recalculation bumps the generation, others do not" do
       player_id = 91_001
-      stub(Interpreter, :get_all_modifiers, fn :player, ^player_id -> %{} end)
+      stub(Interpreter, :get_all_modifiers, fn :player, ^player_id, _target -> %{} end)
 
       stats = %Stats{
         base_stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},

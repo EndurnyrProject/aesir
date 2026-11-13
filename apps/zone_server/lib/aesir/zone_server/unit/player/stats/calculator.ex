@@ -313,7 +313,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
   @spec apply_status_effects(Stats.t(), integer() | nil) :: Stats.t()
   def apply_status_effects(%Stats{} = stats, player_id) when is_integer(player_id) do
     # Get all status effect modifiers for this player
-    status_modifiers = Interpreter.get_all_modifiers(:player, player_id)
+    status_modifiers =
+      Interpreter.get_all_modifiers(:player, player_id, %{
+        weapon_type: equipped_weapon_type(stats)
+      })
 
     statuses_active? = StatusStorage.count_unit_statuses(:player, player_id) > 0
 
@@ -678,7 +681,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
       Stats.get_equipment_modifier(stats, :all_stats)
   end
 
-  @doc "Calculates ASPD under the active ruleset."
+  @doc """
+  Calculates ASPD under the active ruleset.
+
+  Renewal takes the quicken maximum, conditionally adds Assassin Cross, then
+  applies the Berserk/Madness floor. Classic adds the strongest Berserk/Madness
+  percentage after its quicken maximum. Ordinary flat and rate bonuses remain
+  additive outside those groups.
+  """
   @spec calculate_aspd(Stats.t()) :: integer()
   def calculate_aspd(%Stats{} = stats) do
     weapon_atom = equipped_weapon_type(stats)
@@ -701,7 +711,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
           left_weapon_delay: left_weapon_delay(stats, job_name),
           ranged?: weapon_atom in @ranged_weapons,
           flat_bonus:
-            Stats.get_status_modifier(stats, :aspd) + Stats.get_equipment_modifier(stats, :aspd) +
+            aspd_status_flat_bonus(stats) + Stats.get_equipment_modifier(stats, :aspd) +
               Passives.aspd_bonus(stats),
           rate_bonus: aspd_percent_bonus(stats),
           penalty_rate: Stats.get_status_modifier(stats, :aspd_penalty_rate),
@@ -713,6 +723,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
       err ->
         raise "Failed to get job name for ASPD calculation: #{inspect(err)}"
     end
+  end
+
+  defp aspd_status_flat_bonus(stats) do
+    quicken = Stats.get_status_modifier(stats, :aspd_fixed_max)
+    song = Stats.get_status_modifier(stats, :aspd_assncross)
+    quicken = if quicken < song, do: quicken + song, else: quicken
+    strongest = Stats.get_status_modifier(stats, :aspd_rate_strongest)
+    group = if GameMode.mode() == :renewal, do: max(quicken, strongest), else: 0
+
+    group + Stats.get_status_modifier(stats, :aspd)
   end
 
   defp left_weapon_delay(
@@ -808,7 +828,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
     equipment_percent = Map.get(modifiers.equipment, :aspd_rate, 100) - 100
     status_percent = Map.get(modifiers.status_effects, :aspd_rate, 0)
 
-    equipment_percent + status_percent + Passives.aspd_rate_bonus(stats)
+    group =
+      if GameMode.mode() == :pre_renewal do
+        Stats.get_status_modifier(stats, :aspd_rate_max) +
+          Stats.get_status_modifier(stats, :aspd_rate_strongest)
+      else
+        0
+      end
+
+    equipment_percent + status_percent + group + Passives.aspd_rate_bonus(stats)
   end
 
   defp get_hp_bonus_flat(%Stats{} = stats),

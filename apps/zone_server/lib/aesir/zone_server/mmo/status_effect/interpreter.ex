@@ -386,6 +386,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   @doc """
+  Returns status modifiers using current target fields over the committed snapshot.
+
+  Target overrides are applied when building each held status's context, so an
+  empty status set requires no registry lookup. Use this during recalculation
+  before the owning session publishes changed equipment.
+  """
+  @spec get_all_modifiers(unit_type(), integer(), map()) :: map()
+  def get_all_modifiers(unit_type, unit_id, target_overrides) when is_map(target_overrides) do
+    ModifierCalculator.get_all_modifiers_with_target(unit_type, unit_id, target_overrides)
+  end
+
+  @doc """
   Checks if a status has a specific property.
   """
   @spec has_property?(atom(), atom()) :: boolean()

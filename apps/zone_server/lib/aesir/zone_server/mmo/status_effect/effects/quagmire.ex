@@ -2,8 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Quagmire do
   @moduledoc """
   Quagmire (SC_QUAGMIRE).
 
-  Reduces AGI and DEX (val2), slows attack and movement speed, and strips
-  active speed buffs when applied.
+  Reduces AGI and DEX (val2), lowering attack speed through those stats, slows
+  movement, and strips active speed buffs when applied.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_quagmire,
@@ -39,7 +39,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Quagmire do
     %{
       agi: -instance.val2,
       dex: -instance.val2,
-      aspd: instance.val2,
       movement_speed: 50
     }
   end

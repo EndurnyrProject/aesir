@@ -26,8 +26,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.TwoHandQuicken do
   @impl true
   def modifiers(instance, _context) do
     case GameMode.mode() do
-      :renewal -> %{aspd: instance.val2, hit: instance.val1 * 2, critical: 2 + instance.val1}
-      :pre_renewal -> %{aspd_rate: @classic_aspd_rate}
+      :renewal ->
+        %{aspd_fixed_max: instance.val2, hit: instance.val1 * 2, critical: 2 + instance.val1}
+
+      :pre_renewal ->
+        %{aspd_rate_max: @classic_aspd_rate}
     end
   end
 end

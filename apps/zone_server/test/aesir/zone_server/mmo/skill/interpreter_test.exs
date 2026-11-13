@@ -2068,6 +2068,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)
 
+      stub(ModifierCalculator, :get_all_modifiers_with_target, fn :player, 1000, _target ->
+        %{}
+      end)
+
       :ok =
         StatusStorage.apply_status(:player, 1000, :sc_memorize,
           val2: 5,
@@ -2376,6 +2380,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     test "Suffragium reduces variable timing without changing fixed time" do
       reject(&StatusInterpreter.apply_status/4)
       stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)
+
+      stub(ModifierCalculator, :get_all_modifiers_with_target, fn :player, 1000, _target ->
+        %{}
+      end)
+
       gs = cast_ready_state(100, %{29 => 1})
 
       stub(StatusStorage, :get_unit_statuses, fn :player, 1000 -> [] end)
@@ -2457,6 +2466,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     test "Bragi and Suffragium apply at their distinct source stages" do
       reject(&StatusInterpreter.apply_status/4)
       stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)
+
+      stub(ModifierCalculator, :get_all_modifiers_with_target, fn :player, 1000, _target ->
+        %{}
+      end)
+
       gs = cast_ready_state(100, %{29 => 1})
 
       stub(StatusStorage, :get_unit_statuses, fn :player, 1000 -> [] end)

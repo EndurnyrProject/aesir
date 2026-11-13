@@ -5,8 +5,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator do
   Each status module computes its own modifiers from its instance and context;
   this module merges them, summing numeric values for modifiers contributed by
   more than one status. Movement slows and hastes and walk-speed floors keep
-  the strongest value. Overrides and non-numeric modifiers (e.g. the
-  atom-valued `attack_element`) take the newer value.
+  the strongest value. Attack-speed group keys also keep their maximum.
+  Overrides and non-numeric modifiers (e.g. the atom-valued `attack_element`)
+  take the newer value.
   """
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder
@@ -14,6 +15,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator do
   alias Aesir.ZoneServer.Mmo.StatusStorage
 
   @strongest_wins [
+    :aspd_fixed_max,
+    :aspd_assncross,
+    :aspd_rate_max,
+    :aspd_rate_strongest,
     :walk_speed_floor,
     :haste_rate,
     :movement_speed,
@@ -66,21 +71,43 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator do
     end)
   end
 
-  defp calculate_modifiers(unit_type, unit_id, context_builder, transform \\ &keep_all/2) do
-    unit_type
-    |> StatusStorage.get_unit_statuses(unit_id)
-    |> Enum.sort_by(&{&1.started_at, &1.type})
-    |> Enum.reduce(%{}, fn instance, acc ->
-      case Registry.get_definition(instance.type) do
-        nil ->
-          acc
+  @doc """
+  Returns merged modifiers with current target fields overriding the snapshot.
 
-        definition ->
-          context = context_builder.(instance)
-          contributed = definition.module.modifiers(instance, context)
-          merge_modifiers(acc, transform.(instance.type, contributed))
-      end
+  Builds contexts lazily for held statuses and leaves explicit full target maps
+  passed to `get_all_modifiers/3` independent of the registry snapshot.
+  """
+  @spec get_all_modifiers_with_target(atom(), integer(), map()) :: map()
+  def get_all_modifiers_with_target(unit_type, unit_id, target_overrides)
+      when is_map(target_overrides) do
+    calculate_modifiers(unit_type, unit_id, fn instance ->
+      unit_type
+      |> ContextBuilder.build_context(unit_id, instance.source_id, instance)
+      |> Map.update!(:target, &Map.merge(&1, target_overrides))
     end)
+  end
+
+  defp calculate_modifiers(unit_type, unit_id, context_builder, transform \\ &keep_all/2) do
+    statuses = StatusStorage.get_unit_statuses(unit_type, unit_id)
+
+    modifiers =
+      statuses
+      |> Enum.sort_by(&{&1.started_at, &1.type})
+      |> Enum.reduce(%{}, fn instance, acc ->
+        case Registry.get_definition(instance.type) do
+          nil ->
+            acc
+
+          definition ->
+            context = context_builder.(instance)
+            contributed = definition.module.modifiers(instance, context)
+            merge_modifiers(acc, transform.(instance.type, contributed))
+        end
+      end)
+
+    if Enum.any?(statuses, &(&1.type == :sc_quagmire)),
+      do: Map.delete(modifiers, :aspd_fixed_max),
+      else: modifiers
   end
 
   @doc """
@@ -123,7 +150,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator do
   `:walk_speed_floor` is a minimum cell delay, so the slowest floor wins.
   `:movement_speed` (slow), `:haste_rate` and `:move_haste2` (hastes) and
   `:speed_rate_bonus` (a status bonus speed rate) are percentages of which
-  only the strongest counts.
+  only the strongest counts. The four `aspd_*` group keys also keep their maximum.
   `:def_override` and `:mdef_override` replace the computed hard DEF and MDEF, so
   the most recently merged value wins.
 

@@ -49,7 +49,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Berserk do
       no_regen: true
     }
 
-    Map.merge(shared, if(GameMode.mode() == :renewal, do: %{aspd: 15}, else: %{aspd_rate: 30}))
+    Map.merge(
+      shared,
+      if(GameMode.mode() == :renewal,
+        do: %{aspd_rate_strongest: 15},
+        else: %{aspd_rate_strongest: 30}
+      )
+    )
   end
 
   @impl true

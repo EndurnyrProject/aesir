@@ -42,7 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ConsumableStatusBatchTest do
   end
 
   test "same-millisecond scripted-status refresh still restarts periodic recovery" do
-    stub(Interpreter, :get_all_modifiers, fn :player, 88_102 -> %{} end)
+    stub(Interpreter, :get_all_modifiers, fn :player, 88_102, _target -> %{} end)
     stats = Stats.from_character(%Character{class: 0})
     base = Calculator.calculate_stats(stats, 88_102, [])
 
@@ -82,7 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ConsumableStatusBatchTest do
       ]
       |> Enum.reduce(%{}, &ModifierCalculator.merge_modifiers(&2, &1))
 
-    stub(Interpreter, :get_all_modifiers, fn :player, 88_102 -> modifiers end)
+    stub(Interpreter, :get_all_modifiers, fn :player, 88_102, _target -> modifiers end)
     stats = Stats.from_character(%Character{class: 0, base_level: 99})
     calculated = Calculator.calculate_stats(stats, 88_102, [])
     {:ok, table} = JobManagement.get_base_stats_for_level(:novice, 99)
