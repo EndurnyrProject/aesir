@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.CombatHooks do
     :sc_raid,
     :sc_assumptio,
     :sc_defender,
+    :sc_adjustment,
     :sc_fogwall,
     :sc_energycoat,
     :sc_steelbody

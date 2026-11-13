@@ -8,6 +8,7 @@ sc_acaraje	survives	survives
 sc_adaptation	ends	absent
 sc_add_atk_damage	ends	ends
 sc_add_matk_damage	ends	ends
+sc_adjustment	ends	ends
 sc_adrenaline	ends	ends
 sc_adrenaline2	ends	ends
 sc_agifood	ends	ends
@@ -132,6 +133,8 @@ sc_hiding	ends	ends
 sc_hitfood	ends	ends
 sc_change	ends	ends
 sc_defence	ends	ends
+sc_increasing	ends	ends
+sc_madnesscancel	ends	ends
 sc_speed	ends	ends
 sc_humming	survives	survives
 sc_impositio	ends	ends
