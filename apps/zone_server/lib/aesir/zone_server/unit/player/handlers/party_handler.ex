@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.State, as: PartyState
+  alias Aesir.ZoneServer.Party.View, as: PartyView
   alias Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -195,7 +196,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
       MessageRouter.send_to(state.connection_pid, %PartyInviteNotify{
         party_id: invite.party_id,
         party_name: invite.party_name,
-        inviter_name: invite.inviter_name
+        inviter_name: invite.inviter_name,
+        party: invite.party,
+        inviter_char_id: invite.inviter_char_id
       })
 
       pending = %{
@@ -264,7 +267,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
       party_id: party_state.party_id,
       party_name: party_state.name,
       inviter_char_id: requester.id,
-      inviter_name: requester.name
+      inviter_name: requester.name,
+      party: PartyView.party_info(party_state)
     }
 
     PlayerSession.deliver_party_invite(target_pid, invite)

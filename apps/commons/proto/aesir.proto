@@ -1945,6 +1945,11 @@ message PartyInviteNotify {
   uint32 party_id = 1;
   string party_name = 2;
   string inviter_name = 3;
+  // The inviting party as its members see it (leader, sharing options, roster),
+  // so the invitee can judge the invite before answering.
+  PartyInfo party = 4;
+  // Who sent the invite; one of `party.members`.
+  uint32 inviter_char_id = 5;
 }
 
 // Client -> server, the invitee's accept/decline response to a PartyInviteNotify.

@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandlerTest do
   alias Aesir.Net.PartyActionResult
   alias Aesir.Net.PartyCreateRequest
   alias Aesir.Net.PartyInfo
+  alias Aesir.Net.PartyInviteNotify
   alias Aesir.Net.PartyInviteRequest
   alias Aesir.Net.PartyInviteResponse
   alias Aesir.Net.PartyKickRequest
@@ -371,6 +372,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandlerTest do
       assert_received {:send, :gameplay,
                        {:party_action_result,
                         %PartyActionResult{action: "invite", success: true, error: :NONE}}}
+    end
+
+    test "the notify carries the party snapshot and the inviter" do
+      {leader, party} = party_fixture("Ursa")
+      target = character_fixture("Vito", %{})
+      register_online(target)
+
+      expect(PlayerSession, :deliver_party_invite, fn _pid, invite ->
+        {:reply, reply, _state} = PartyHandler.handle_invite_delivery(invite, state_for(target))
+        reply
+      end)
+
+      PartyHandler.handle_invite_request(
+        %PartyInviteRequest{target_char_id: target.id, target_name: ""},
+        state_for(leader)
+      )
+
+      leader_id = leader.id
+      party_id = party.party_id
+
+      assert_received {:send, :gameplay,
+                       {:party_invite_notify,
+                        %PartyInviteNotify{
+                          inviter_char_id: ^leader_id,
+                          party: %PartyInfo{
+                            party_id: ^party_id,
+                            leader_char_id: ^leader_id,
+                            members: [%{char_id: ^leader_id}]
+                          }
+                        }}}
     end
   end
 
