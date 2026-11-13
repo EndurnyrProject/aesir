@@ -17,11 +17,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
+  alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.SpDrain
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -146,6 +148,62 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
 
   describe "execute_attack/3 confirmed ordinary hits" do
     setup :setup_mob_hit
+
+    test "a player-shaped map without a weapon type attacks short regardless of reach",
+         %{attacker: stats, player_state: player_state} do
+      attacker =
+        player_state
+        |> PlayerState.to_combatant()
+        |> Map.from_struct()
+        |> Map.put(:weapon, %{element: :neutral})
+        |> Map.put(:attack_range, 9)
+
+      player_state = %FakeUnit{combatant: attacker, stats: stats, x: 150, y: 150}
+
+      expect(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, attack_info ->
+        assert attack_info.attacker_short?
+        {:intercept, :blade_stop}
+      end)
+
+      assert :intercepted = Combat.execute_attack(stats, player_state, 2001)
+    end
+
+    test "range_class_distance_independence_test", %{attacker: stats, player_state: player_state} do
+      test_pid = self()
+      stub(HitCalculations, :calculate_hit_result, fn _, _ -> :hit end)
+
+      stub(UnitRegistry, :get_player_pid, fn
+        1001 -> {:ok, test_pid}
+        _ -> {:error, :not_found}
+      end)
+
+      for {weapon, x, extra_range, range} <- [
+            {:bow, 149, 0, :long},
+            {:dagger, 145, 4, :short},
+            {:whip, 149, 0, :short},
+            {:musical, 149, 0, :short}
+          ] do
+        item = %ItemDefinition{id: 999, aegis_name: "test", name: "test", subtype: weapon}
+        stub(ItemManagement, :get_item_by_id, fn 999 -> {:ok, item} end)
+        key = {10, 0}
+        flag = BattleFlags.build(:weapon, range, false)
+        equipment = %{stats.equipment | right_hand: 999}
+        modifiers = %{stats.modifiers | passive: %{range: extra_range}}
+
+        stats = %{
+          stats
+          | equipment: equipment,
+            modifiers: modifiers,
+            equip_autobonuses: %{key => autobonus(:attack, flag, 0)}
+        }
+
+        capture_log(fn ->
+          assert :ok = Combat.execute_attack(stats, %{player_state | x: x}, 2001)
+        end)
+
+        assert_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^key, {:host, 1}}}}
+      end
+    end
 
     test "dispatches after_normal_hit exactly once with target identity and pre-hit position",
          %{attacker: attacker, player_state: player_state} do

@@ -2043,6 +2043,23 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
                        }}
     end
 
+    test "mob normal attacks use the range 3 and 4 boundary" do
+      stub(HitCalculations, :calculate_hit_result, fn _, _ -> :hit end)
+
+      stub(StatusInterpreter, :absorb_hit, fn :player, 2001, damage, hit_info ->
+        send(self(), {:range_class, hit_info.is_short})
+        {damage, :hit}
+      end)
+
+      stub(PlayerSession, :apply_damage, fn _, _, _, _ -> :ok end)
+
+      for {range, short?} <- [{3, true}, {4, false}] do
+        mob = combatant(3001, :mob, attack_range: range, position: {150, 150})
+        assert :ok = Combat.execute_mob_attack(%FakeUnit{combatant: mob, x: 150, y: 150}, 2001)
+        assert_received {:range_class, ^short?}
+      end
+    end
+
     test "a ranged mob attack is marked long-range in hit_info" do
       test_pid = self()
 

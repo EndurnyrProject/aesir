@@ -79,6 +79,10 @@ defmodule Aesir.ZoneServer.Mmo.WeaponTypes do
     weapon in [:bow, :revolver, :rifle, :gatling, :shotgun, :grenade]
   end
 
+  @doc "Returns whether normal attacks with this weapon are long-range."
+  @spec long_range_attack?(integer() | atom()) :: boolean()
+  def long_range_attack?(weapon), do: requires_ammo?(weapon)
+
   @doc """
   Get the attack range for a weapon type.
 

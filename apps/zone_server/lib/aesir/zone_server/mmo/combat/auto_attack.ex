@@ -41,6 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoison
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -640,7 +641,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         attacker_boss?: attacker.class == :boss,
         attacker_root_level: attacker_root_level,
         attacker_position: attacker.position,
-        attacker_short?: attacker.attack_range <= 3,
+        attacker_short?: not long_range_attack?(attacker),
         distance: cell_distance(attacker, target),
         basic_attack?: true,
         element: primary_attack_element(attacker_type, attacker)
@@ -910,7 +911,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
     hit_info = %{
       dmg_type: :physical,
-      is_short: attacker.attack_range <= 3,
+      is_short: not long_range_attack?(attacker),
       element: swing.primary_element,
       skill_id: nil,
       skill_level: nil,
@@ -1044,12 +1045,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     })
   end
 
-  # Classifies a swing for the trigger-flagged equipment bonuses: always a
-  # weapon attack of normal (non-skill) origin, melee or ranged by the same
-  # attack-range rule that sets `is_short` on the delivered hit.
+  defp long_range_attack?(%{unit_type: :player, weapon: %{type: type}}) when is_atom(type),
+    do: WeaponTypes.long_range_attack?(type)
+
+  defp long_range_attack?(%{unit_type: :player}), do: false
+
+  defp long_range_attack?(%{attack_range: range}), do: range > 3
+
+  # Classifies trigger-flagged bonuses using the delivered hit's range class.
   @spec normal_attack_flag(Combatant.t()) :: BattleFlags.flag()
   defp normal_attack_flag(attacker) do
-    range = if Map.get(attacker, :attack_range, 1) <= 3, do: :short, else: :long
+    range = if long_range_attack?(attacker), do: :long, else: :short
     BattleFlags.build(:weapon, range, false)
   end
 
@@ -1227,7 +1233,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       :mob ->
         hit_info = %{
           dmg_type: :physical,
-          is_short: attacker_combatant.attack_range <= 3,
+          is_short: not long_range_attack?(attacker_combatant),
           element: attacker_combatant.weapon.element,
           skill_id: nil,
           skill_level: nil,
@@ -1269,7 +1275,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       :player ->
         hit_info = %{
           dmg_type: :physical,
-          is_short: attacker_combatant.attack_range <= 3,
+          is_short: not long_range_attack?(attacker_combatant),
           element: attacker_combatant.weapon.element,
           skill_id: nil,
           skill_level: nil,
@@ -1310,7 +1316,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       :homunculus ->
         hit_info = %{
           dmg_type: :physical,
-          is_short: attacker_combatant.attack_range <= 3,
+          is_short: not long_range_attack?(attacker_combatant),
           element: attacker_combatant.weapon.element,
           skill_id: nil,
           skill_level: nil,
@@ -1500,7 +1506,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     # SP_HP update (and any death) follows the visible strike.
     hit_info = %{
       dmg_type: :physical,
-      is_short: attacker_combatant.attack_range <= 3,
+      is_short: not long_range_attack?(attacker_combatant),
       element: attacker_combatant.weapon.element,
       skill_id: nil,
       skill_level: nil,
@@ -1589,7 +1595,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
        ) do
     hit_info = %{
       dmg_type: :physical,
-      is_short: attacker.attack_range <= 3,
+      is_short: not long_range_attack?(attacker),
       element: attacker.weapon.element,
       skill_id: nil,
       skill_level: nil,
