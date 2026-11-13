@@ -105,6 +105,7 @@ sc_extremityfist	ends	ends
 sc_fireweapon	ends	ends
 sc_fleefood	ends	ends
 sc_fleet	ends	ends
+sc_fling	ends	ends
 sc_fogwall	ends	ends
 sc_food_agi_cash	survives	survives
 sc_food_dex_cash	survives	survives

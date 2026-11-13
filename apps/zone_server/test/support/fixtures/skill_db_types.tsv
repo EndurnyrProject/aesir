@@ -356,7 +356,14 @@
 496	AM_TWILIGHT1	None	true	None	true	none	none	none	0	none	0
 497	AM_TWILIGHT2	None	true	None	true	none	none	none	0	none	0
 498	AM_TWILIGHT3	None	true	None	true	none	none	none	0	none	0
+500	GS_GLITTERING	Misc	true	Misc	true	IgnoreFlee	IgnoreFlee	none	0,0,0,0,0	none	0,0,0,0,0
+501	GS_FLING	Misc	false	Misc	false	IgnoreElement,IgnoreFlee	IgnoreElement,IgnoreFlee	none	0	none	0
+502	GS_TRIPLEACTION	Weapon	false	Weapon	false	none	none	Arrow,Bullet,Cannonball,Dagger,Grenade,Kunai,Shell,Shuriken,Throwweapon	1	Arrow,Bullet,Cannonball,Dagger,Grenade,Kunai,Shell,Shuriken,Throwweapon	1
+509	GS_SINGLEACTION	None	false	None	false	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
+510	GS_SNAKEEYE	None	false	None	false	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 511	GS_CHAINACTION	Weapon	false	Weapon	false	none	none	none	0	none	0
+512	GS_TRACKING	Weapon	false	Weapon	false	none	none	Bullet	1,1,1,1,1,1,1,1,1,1	Bullet	1,1,1,1,1,1,1,1,1,1
+515	GS_RAPIDSHOWER	Weapon	false	Weapon	false	none	none	Bullet	1,1,1,1,1,1,1,1,1,1	Bullet	5,5,5,5,5,5,5,5,5,5
 653	NPC_EARTHQUAKE	Magic	false	Magic	false	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 660	NPC_BLEEDING	Weapon	false	Weapon	false	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 663	NPC_WIDESILENCE	None	true	None	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
