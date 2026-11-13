@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Guild.ProgressionTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Guild, as: GuildModel
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Guild.Activity
   alias Aesir.ZoneServer.Guild.Manager
   alias Aesir.ZoneServer.Guild.View
 
@@ -40,12 +41,12 @@ defmodule Aesir.ZoneServer.Guild.ProgressionTest do
     {master, state}
   end
 
-  describe "contribute_exp/2" do
+  describe "contribute_exp/3" do
     test "accumulates exp below the first threshold without leveling" do
       {_master, state} = guild_fixture("ExpAccum")
       contribution = first_threshold() - 1
 
-      assert :ok = Manager.contribute_exp(state.guild_id, contribution)
+      assert :ok = Manager.contribute_exp(state.guild_id, state.master_char_id, contribution)
 
       {:ok, after_state} = Manager.get(state.guild_id)
       assert after_state.level == 1
@@ -57,7 +58,8 @@ defmodule Aesir.ZoneServer.Guild.ProgressionTest do
       {_master, state} = guild_fixture("ExpLevel")
       Phoenix.PubSub.subscribe(Aesir.PubSub, "guild:#{state.guild_id}")
 
-      assert :ok = Manager.contribute_exp(state.guild_id, first_threshold() + 5)
+      assert :ok =
+               Manager.contribute_exp(state.guild_id, state.master_char_id, first_threshold() + 5)
 
       {:ok, after_state} = Manager.get(state.guild_id)
       assert after_state.level == 2
@@ -76,7 +78,11 @@ defmodule Aesir.ZoneServer.Guild.ProgressionTest do
       {_master, state} = guild_fixture("ExpJump")
 
       assert :ok =
-               Manager.contribute_exp(state.guild_id, first_threshold() + second_threshold() + 7)
+               Manager.contribute_exp(
+                 state.guild_id,
+                 state.master_char_id,
+                 first_threshold() + second_threshold() + 7
+               )
 
       {:ok, after_state} = Manager.get(state.guild_id)
       assert after_state.level == 3
@@ -89,7 +95,12 @@ defmodule Aesir.ZoneServer.Guild.ProgressionTest do
       Application.put_env(:zone_server, :guild_exp_rate, 200)
       on_exit(fn -> Application.delete_env(:zone_server, :guild_exp_rate) end)
 
-      assert :ok = Manager.contribute_exp(state.guild_id, div(first_threshold(), 2))
+      assert :ok =
+               Manager.contribute_exp(
+                 state.guild_id,
+                 state.master_char_id,
+                 div(first_threshold(), 2)
+               )
 
       {:ok, after_state} = Manager.get(state.guild_id)
       assert after_state.level == 2
@@ -106,7 +117,7 @@ defmodule Aesir.ZoneServer.Guild.ProgressionTest do
       ClusterTestHelper.clear_all()
       {:ok, _} = Manager.ensure_started(state.guild_id)
 
-      assert :ok = Manager.contribute_exp(state.guild_id, 1_000_000)
+      assert :ok = Manager.contribute_exp(state.guild_id, state.master_char_id, 1_000_000)
 
       {:ok, after_state} = Manager.get(state.guild_id)
       assert after_state.level == 50
@@ -115,12 +126,14 @@ defmodule Aesir.ZoneServer.Guild.ProgressionTest do
     end
 
     test "contribution to an unknown guild is dropped" do
-      assert :ok = Manager.contribute_exp(999_999, 1_000)
+      assert :ok = Manager.contribute_exp(999_999, 1, 1_000)
     end
 
     test "progression survives an entry restart" do
       {_master, state} = guild_fixture("ExpRestart")
-      assert :ok = Manager.contribute_exp(state.guild_id, first_threshold() + 5)
+
+      assert :ok =
+               Manager.contribute_exp(state.guild_id, state.master_char_id, first_threshold() + 5)
 
       ClusterTestHelper.clear_all()
       assert {:ok, rebuilt} = Manager.ensure_started(state.guild_id)
@@ -128,12 +141,76 @@ defmodule Aesir.ZoneServer.Guild.ProgressionTest do
       assert rebuilt.exp == 5
       assert rebuilt.skill_points == 1
     end
+
+    test "credits the paying member the amount before the guild exp rate" do
+      {master, state} = guild_fixture("ExpMember")
+      Application.put_env(:zone_server, :guild_exp_rate, 200)
+      on_exit(fn -> Application.delete_env(:zone_server, :guild_exp_rate) end)
+
+      assert :ok = Manager.contribute_exp(state.guild_id, master.id, 300)
+      assert :ok = Manager.contribute_exp(state.guild_id, master.id, 50)
+
+      {:ok, after_state} = Manager.get(state.guild_id)
+      assert after_state.members[master.id].exp == 350
+      assert after_state.exp == 700
+      assert Repo.get!(Character, master.id).guild_exp == 350
+    end
+
+    test "a member's contribution survives an entry restart" do
+      {master, state} = guild_fixture("ExpMemberRestart")
+      assert :ok = Manager.contribute_exp(state.guild_id, master.id, 300)
+
+      ClusterTestHelper.clear_all()
+      assert {:ok, rebuilt} = Manager.ensure_started(state.guild_id)
+      assert rebuilt.members[master.id].exp == 300
+    end
+
+    test "a member's contribution is capped at MAX_GUILD_EXP, and so is what the guild gains" do
+      {master, state} = guild_fixture("ExpMemberCap")
+
+      {1, nil} =
+        from(c in Character, where: c.id == ^master.id)
+        |> Repo.update_all(set: [guild_exp: 2_147_483_600])
+
+      ClusterTestHelper.clear_all()
+      {:ok, _} = Manager.ensure_started(state.guild_id)
+
+      assert :ok = Manager.contribute_exp(state.guild_id, master.id, 1_000)
+
+      {:ok, after_state} = Manager.get(state.guild_id)
+      assert after_state.members[master.id].exp == 2_147_483_647
+      assert after_state.exp == 47
+    end
+
+    test "a contribution from a character that is not a member is dropped" do
+      {_master, state} = guild_fixture("ExpStranger")
+      stranger = char_fixture("ExpStrangerChar")
+
+      assert :ok = Manager.contribute_exp(state.guild_id, stranger.id, 1_000)
+
+      assert {:ok, ^state} = Manager.get(state.guild_id)
+      assert Repo.get!(Character, stranger.id).guild_exp == 0
+    end
+
+    test "a level-up is written to the activity log with the level reached" do
+      {master, state} = guild_fixture("ExpLogged")
+
+      assert :ok =
+               Manager.contribute_exp(
+                 state.guild_id,
+                 master.id,
+                 first_threshold() + second_threshold()
+               )
+
+      {:ok, after_state} = Manager.get(state.guild_id)
+      assert [%Activity{kind: :level_up, level: 3} | _older] = after_state.activity
+    end
   end
 
   describe "View.guild_info/1 progression fields" do
     test "carries level, exp, next_exp, points, and learned skills" do
       {_master, state} = guild_fixture("ViewProg")
-      :ok = Manager.contribute_exp(state.guild_id, first_threshold() + 5)
+      :ok = Manager.contribute_exp(state.guild_id, state.master_char_id, first_threshold() + 5)
       {:ok, after_state} = Manager.get(state.guild_id)
 
       info = View.guild_info(%{after_state | learned_skills: %{10_004 => 3}})

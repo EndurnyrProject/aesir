@@ -1,19 +1,28 @@
 defmodule Aesir.ZoneServer.Guild.View do
   @moduledoc """
   Converts guild domain snapshots to their Protobuf messages.
+
+  `guild_info/1` also reads what a guild's own state does not carry: castle
+  ownership from `Aesir.ZoneServer.Mmo.Woe.CastleStore` and, for each relation,
+  the other guild's live entry. Both are in-memory reads; nothing here touches
+  the database.
   """
 
+  alias Aesir.Net.GuildActivity
   alias Aesir.Net.GuildInfo
   alias Aesir.Net.GuildMember
   alias Aesir.Net.GuildMemberUpdate
   alias Aesir.Net.GuildPosition
   alias Aesir.Net.GuildRelation
   alias Aesir.Net.GuildSkillEntry
+  alias Aesir.ZoneServer.Guild.Activity
+  alias Aesir.ZoneServer.Guild.Manager
   alias Aesir.ZoneServer.Guild.Member
   alias Aesir.ZoneServer.Guild.Position
   alias Aesir.ZoneServer.Guild.Progression.Data
   alias Aesir.ZoneServer.Guild.Relation
   alias Aesir.ZoneServer.Guild.State
+  alias Aesir.ZoneServer.Mmo.Woe.CastleStore
 
   @doc "Converts one complete guild member snapshot to its Protobuf message."
   @spec member(Member.t()) :: GuildMember.t()
@@ -31,7 +40,9 @@ defmodule Aesir.ZoneServer.Guild.View do
       sp: member.sp,
       max_sp: member.max_sp,
       ap: member.ap,
-      max_ap: member.max_ap
+      max_ap: member.max_ap,
+      exp: member.exp,
+      last_seen: member.last_seen
     }
   end
 
@@ -44,13 +55,17 @@ defmodule Aesir.ZoneServer.Guild.View do
       can_invite: position.can_invite,
       can_expel: position.can_expel,
       can_storage: position.can_storage,
-      tax: position.tax
+      tax: position.tax,
+      can_notice: position.can_notice,
+      can_relations: position.can_relations
     }
   end
 
   @doc "Converts a complete guild state to its Protobuf roster message."
   @spec guild_info(State.t()) :: GuildInfo.t()
   def guild_info(%State{} = guild) do
+    castles = CastleStore.names_by_owner()
+
     %GuildInfo{
       guild_id: guild.guild_id,
       name: guild.name,
@@ -69,7 +84,12 @@ defmodule Aesir.ZoneServer.Guild.View do
       next_exp: next_exp(guild.level),
       skill_points: guild.skill_points,
       skills: skills(guild.learned_skills),
-      relations: relations(guild.relations)
+      relations: relations(guild.relations, castles),
+      max_members: State.max_members(guild),
+      notice_author: guild.notice_author,
+      notice_posted_at: guild.notice_posted_at,
+      castles: Map.get(castles, guild.guild_id, []),
+      activity: Enum.map(guild.activity, &activity/1)
     }
   end
 
@@ -101,23 +121,80 @@ defmodule Aesir.ZoneServer.Guild.View do
     end)
   end
 
-  defp relations(relations) do
+  defp relations(relations, castles) do
     relations
     |> Map.values()
     |> Enum.sort_by(& &1.guild_id)
-    |> Enum.map(&relation/1)
+    |> Enum.map(&relation(&1, castles))
   end
 
-  defp relation(%Relation{} = relation) do
+  defp relation(%Relation{} = relation, castles) do
+    other = other_guild(relation)
+
     %GuildRelation{
       guild_id: relation.guild_id,
       name: relation.name,
-      kind: relation_kind(relation.kind)
+      kind: relation_kind(relation.kind),
+      level: other.level,
+      member_count: other.member_count,
+      master_name: other.master_name,
+      emblem_id: other.emblem_id,
+      castles: Map.get(castles, relation.guild_id, [])
     }
+  end
+
+  # The other guild as its live entry has it, or, while it has none, as its
+  # rows stood when the relation was loaded.
+  defp other_guild(%Relation{} = relation) do
+    case Manager.get(relation.guild_id) do
+      {:ok, %State{} = other} ->
+        %{
+          level: other.level,
+          member_count: State.member_count(other),
+          master_name: master_name(other),
+          emblem_id: other.emblem_id
+        }
+
+      {:error, :not_found} ->
+        relation
+    end
+  end
+
+  defp master_name(%State{members: members, master_char_id: master_char_id}) do
+    case Map.get(members, master_char_id) do
+      %Member{name: name} -> name
+      nil -> ""
+    end
   end
 
   defp relation_kind(:ally), do: :GUILD_RELATION_ALLY
   defp relation_kind(:antagonist), do: :GUILD_RELATION_ANTAGONIST
+
+  defp activity(%Activity{} = activity) do
+    %GuildActivity{
+      kind: activity_kind(activity.kind),
+      subject: activity.subject,
+      actor: activity.actor,
+      detail: activity.detail,
+      skill_id: activity.skill_id,
+      level: activity.level,
+      at: activity.at
+    }
+  end
+
+  defp activity_kind(:created), do: :GUILD_ACTIVITY_CREATED
+  defp activity_kind(:joined), do: :GUILD_ACTIVITY_JOINED
+  defp activity_kind(:left), do: :GUILD_ACTIVITY_LEFT
+  defp activity_kind(:expelled), do: :GUILD_ACTIVITY_EXPELLED
+  defp activity_kind(:position_changed), do: :GUILD_ACTIVITY_POSITION_CHANGED
+  defp activity_kind(:skill_learned), do: :GUILD_ACTIVITY_SKILL_LEARNED
+  defp activity_kind(:level_up), do: :GUILD_ACTIVITY_LEVEL_UP
+  defp activity_kind(:alliance_formed), do: :GUILD_ACTIVITY_ALLIANCE_FORMED
+  defp activity_kind(:alliance_broken), do: :GUILD_ACTIVITY_ALLIANCE_BROKEN
+  defp activity_kind(:antagonist_declared), do: :GUILD_ACTIVITY_ANTAGONIST_DECLARED
+  defp activity_kind(:antagonist_removed), do: :GUILD_ACTIVITY_ANTAGONIST_REMOVED
+  defp activity_kind(:castle_taken), do: :GUILD_ACTIVITY_CASTLE_TAKEN
+  defp activity_kind(:castle_lost), do: :GUILD_ACTIVITY_CASTLE_LOST
 
   @doc "Builds a complete single-member update for a guild."
   @spec member_update(non_neg_integer(), Member.t()) :: GuildMemberUpdate.t()

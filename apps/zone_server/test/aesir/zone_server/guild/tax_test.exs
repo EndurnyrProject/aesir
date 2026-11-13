@@ -28,22 +28,22 @@ defmodule Aesir.ZoneServer.Guild.TaxTest do
     end
   end
 
-  describe "contribute_async/2" do
-    test "forwards a positive amount to the guild manager off-process" do
+  describe "contribute_async/3" do
+    test "forwards a positive amount and the paying member to the guild manager off-process" do
       test_pid = self()
 
-      expect(Manager, :contribute_exp, fn 5, 300 ->
+      expect(Manager, :contribute_exp, fn 5, 9, 300 ->
         send(test_pid, :contributed)
         :ok
       end)
 
-      assert :ok = Tax.contribute_async(5, 300)
+      assert :ok = Tax.contribute_async(5, 9, 300)
       assert_receive :contributed
     end
 
     test "zero taxed amount never touches the manager" do
-      reject(&Manager.contribute_exp/2)
-      assert :ok = Tax.contribute_async(5, 0)
+      reject(&Manager.contribute_exp/3)
+      assert :ok = Tax.contribute_async(5, 9, 0)
     end
   end
 end

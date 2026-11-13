@@ -527,6 +527,63 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServerTest do
     end
   end
 
+  describe "conquest activity" do
+    test "names the castle, the guild that took it and the guild that held it before" do
+      test_pid = self()
+
+      stub(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, _opts ->
+        {:ok, System.unique_integer([:positive])}
+      end)
+
+      stub(Announcement, :to_all, fn _opts -> :ok end)
+      stub(Guardians, :on_conquest, fn _castle, _guild_id -> :ok end)
+      stub(Services, :on_conquest, fn _castle -> :ok end)
+      stub(Persistence, :persist, fn _castle_id, _guild_id -> :ok end)
+      stub(Persistence, :persist_economy, fn _castle_id, _state -> :ok end)
+
+      stub(Manager, :get, fn guild_id ->
+        {:ok,
+         %State{
+           guild_id: guild_id,
+           name: "TestGuild",
+           master_char_id: 501,
+           learned_skills: %{@approval_skill_id => 1}
+         }}
+      end)
+
+      expect(Persistence, :persist_conquest_activity, fn castle_name, guild_id, previous_owner ->
+        send(test_pid, {:conquest_activity, castle_name, guild_id, previous_owner})
+        :ok
+      end)
+
+      castle = hd(CastleDb.all())
+
+      :ok =
+        CastleStore.hydrate(%{
+          castle.id => %{
+            guild_id: 9,
+            economy: 0,
+            defense: 0,
+            invested_economy: 0,
+            invested_defense: 0
+          }
+        })
+
+      assert :ok = Server.start()
+      live_unit_id = CastleStore.get(castle.id).emperium_unit_id
+
+      assert :ok =
+               Lifecycle.publish_death(:mob, live_unit_id, castle.map, %{
+                 attacker: {:player, 501},
+                 character_id: 501,
+                 guild_id: 7
+               })
+
+      castle_name = castle.name
+      assert_receive {:conquest_activity, ^castle_name, 7, 9}
+    end
+  end
+
   describe "retained ownership skips guardian transfer" do
     test "an Emperium break without eligible guild credit never calls Guardians.on_conquest/2" do
       stub(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, _opts ->

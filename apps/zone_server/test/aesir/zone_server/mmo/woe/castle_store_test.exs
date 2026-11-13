@@ -93,6 +93,19 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStoreTest do
     end
   end
 
+  describe "names_by_owner/0" do
+    test "lists each owning guild's castle names in castle id order and omits unowned castles" do
+      [first, second, third | _] = Enum.sort_by(CastleDb.all(), & &1.id)
+
+      :ok = CastleStore.hydrate(%{third.id => row(10), first.id => row(10), second.id => row(20)})
+
+      assert CastleStore.names_by_owner() == %{
+               10 => [first.name, third.name],
+               20 => [second.name]
+             }
+    end
+  end
+
   describe "hydrate/1" do
     test "sets owner and all four economy fields from a full-row map" do
       [castle_a, castle_b | _] = CastleDb.all()

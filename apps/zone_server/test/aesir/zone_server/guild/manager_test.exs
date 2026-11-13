@@ -10,12 +10,14 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Guild, as: GuildModel
+  alias Aesir.Commons.Models.GuildActivityLog
   alias Aesir.Commons.Models.GuildExpulsion
   alias Aesir.Commons.Models.GuildPosition
   alias Aesir.Commons.Models.GuildRelation
   alias Aesir.Commons.Models.GuildStorageLog
   alias Aesir.Net.StorageResult
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Guild.Activity
   alias Aesir.ZoneServer.Guild.Lifecycle
   alias Aesir.ZoneServer.Guild.Manager
   alias Aesir.ZoneServer.Guild.Member
@@ -867,6 +869,294 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
     test "returns {:error, :not_found} when no entry is running" do
       member = Member.new(1, "Ghost", 1, true, @newbie_position)
       assert {:error, :not_found} = Manager.sync_member(999_999, 1, member)
+    end
+
+    test "a presence projection keeps the member's stored contribution" do
+      {master, created} = guild_fixture("SyncExp")
+      :ok = Manager.contribute_exp(created.guild_id, master.id, 300)
+      pushed = Member.new(master.id, master.name, 99, true, 0, "morocc")
+
+      assert {:ok, state} = Manager.sync_member(created.guild_id, master.id, pushed)
+
+      assert state.members[master.id].exp == 300
+    end
+  end
+
+  describe "member last_seen" do
+    test "a rebuilt entry carries each offline member's last login, 0 when it never logged in" do
+      master = char_fixture("SeenMaster", %{last_login: ~N[2026-11-11 20:58:00]})
+      {:ok, created} = Manager.create("SeenGuild", master)
+      joiner = char_fixture("SeenNever")
+      {:ok, _} = Manager.add_member(created.guild_id, joiner)
+
+      ClusterTestHelper.clear_all()
+      assert {:ok, rebuilt} = Manager.ensure_started(created.guild_id)
+
+      assert rebuilt.members[master.id].last_seen == 1_794_430_680
+      assert rebuilt.members[joiner.id].last_seen == 0
+    end
+
+    test "coming online stamps it and going offline keeps the stamp" do
+      master = char_fixture("SeenOnline")
+      {:ok, created} = Manager.create("SeenOnlineGuild", master)
+      ClusterTestHelper.clear_all()
+      {:ok, _rebuilt} = Manager.ensure_started(created.guild_id)
+
+      before = System.os_time(:second)
+      online = Member.new(master.id, master.name, 1, true, 0)
+      assert {:ok, state} = Manager.sync_member(created.guild_id, master.id, online)
+      stamped = state.members[master.id].last_seen
+      assert stamped >= before
+
+      offline = Member.new(master.id, master.name, 1, false, 0)
+      assert {:ok, state} = Manager.sync_member(created.guild_id, master.id, offline)
+
+      assert %Member{online: false, last_seen: ^stamped} = state.members[master.id]
+    end
+  end
+
+  describe "member contribution reset" do
+    test "leaving and being expelled both zero the character's guild_exp" do
+      {master, created} = guild_fixture("ExpReset")
+      leaver = char_fixture("ExpLeaver")
+      expelled = char_fixture("ExpExpelled")
+      {:ok, _} = Manager.add_member(created.guild_id, leaver)
+      {:ok, _} = Manager.add_member(created.guild_id, expelled)
+      :ok = Manager.contribute_exp(created.guild_id, leaver.id, 100)
+      :ok = Manager.contribute_exp(created.guild_id, expelled.id, 200)
+      assert Repo.get(Character, leaver.id).guild_exp == 100
+
+      {:ok, _} = Manager.remove_member(created.guild_id, leaver.id)
+      {:ok, _} = Manager.expel(created.guild_id, master.id, expelled.id, "spam")
+
+      assert Repo.get(Character, leaver.id).guild_exp == 0
+      assert Repo.get(Character, expelled.id).guild_exp == 0
+    end
+
+    test "disbanding zeroes every member's guild_exp" do
+      {master, created} = guild_fixture("ExpDisband")
+      :ok = Manager.contribute_exp(created.guild_id, master.id, 100)
+
+      assert :ok = Manager.disband(created.guild_id, "gm_action")
+
+      assert Repo.get(Character, master.id).guild_exp == 0
+    end
+  end
+
+  describe "notice author" do
+    test "an edit records the editor's name and the edit time, and both survive a rebuild" do
+      {master, created} = guild_fixture("NoticeAuthor")
+      assert created.notice_author == ""
+      assert created.notice_posted_at == 0
+
+      before = System.os_time(:second)
+
+      assert {:ok, state} =
+               Manager.set_notice(created.guild_id, master.id, %{subject: "s", body: "b"})
+
+      assert state.notice_author == master.name
+      assert state.notice_posted_at >= before
+
+      ClusterTestHelper.clear_all()
+      assert {:ok, rebuilt} = Manager.ensure_started(created.guild_id)
+      assert rebuilt.notice_author == master.name
+      assert rebuilt.notice_posted_at == state.notice_posted_at
+    end
+
+    test "a member whose position grants can_notice edits the notice" do
+      {master, created} = guild_fixture("NoticeGranted")
+      member = char_fixture("NoticeScribe")
+      {:ok, _} = Manager.add_member(created.guild_id, member)
+
+      {:ok, _} =
+        Manager.edit_position(created.guild_id, master.id, %{
+          index: @newbie_position,
+          name: "Scribe",
+          can_invite: false,
+          can_expel: false,
+          can_notice: true
+        })
+
+      assert {:ok, state} =
+               Manager.set_notice(created.guild_id, member.id, %{subject: "s", body: "b"})
+
+      assert state.notice_author == member.name
+    end
+  end
+
+  describe "edit_position/3 notice and relations flags" do
+    test "sets and persists both flags, and an edit that omits them leaves them unchanged" do
+      {master, created} = guild_fixture("FlagEditors")
+
+      assert {:ok, state} =
+               Manager.edit_position(created.guild_id, master.id, %{
+                 index: 5,
+                 name: "Diplomat",
+                 can_invite: false,
+                 can_expel: false,
+                 can_notice: true,
+                 can_relations: true
+               })
+
+      assert %{can_notice: true, can_relations: true} = state.positions[5]
+      row = Repo.get_by(GuildPosition, guild_id: created.guild_id, index: 5)
+      assert row.can_notice and row.can_relations
+
+      assert {:ok, state} =
+               Manager.edit_position(created.guild_id, master.id, %{
+                 index: 5,
+                 name: "Envoy",
+                 can_invite: false,
+                 can_expel: false,
+                 can_notice: nil,
+                 can_relations: false
+               })
+
+      assert %{name: "Envoy", can_notice: true, can_relations: false} = state.positions[5]
+    end
+
+    test "new guilds seed every position without either flag" do
+      {_master, created} = guild_fixture("FlagDefaults")
+
+      refute Enum.any?(Map.values(created.positions), &(&1.can_notice or &1.can_relations))
+    end
+  end
+
+  describe "activity log" do
+    test "founding is the guild's first entry, with the founder as actor" do
+      {master, created} = guild_fixture("LogFounded")
+      founder = master.name
+
+      assert [%Activity{kind: :created, actor: ^founder, at: at}] = created.activity
+      assert at > 0
+    end
+
+    test "membership and position changes are logged newest first and survive a rebuild" do
+      {master, created} = guild_fixture("LogMembers")
+      joiner = char_fixture("LogJoiner")
+      expelled = char_fixture("LogExpelled")
+      {:ok, _} = Manager.add_member(created.guild_id, joiner, master.id)
+      {:ok, _} = Manager.add_member(created.guild_id, expelled)
+
+      {:ok, _} =
+        Manager.edit_position(created.guild_id, master.id, %{
+          index: 3,
+          name: "Officer",
+          can_invite: true,
+          can_expel: false
+        })
+
+      {:ok, _} = Manager.assign_member_position(created.guild_id, master.id, joiner.id, 3)
+      {:ok, _} = Manager.expel(created.guild_id, master.id, expelled.id, "spam")
+      {:ok, state} = Manager.remove_member(created.guild_id, joiner.id)
+
+      founder = master.name
+      joiner_name = joiner.name
+      expelled_name = expelled.name
+
+      assert [
+               %Activity{kind: :left, subject: ^joiner_name, actor: ""},
+               %Activity{kind: :expelled, subject: ^expelled_name, actor: ^founder},
+               %Activity{
+                 kind: :position_changed,
+                 subject: ^joiner_name,
+                 actor: ^founder,
+                 detail: "Officer"
+               },
+               %Activity{kind: :joined, subject: ^expelled_name, actor: ""},
+               %Activity{kind: :joined, subject: ^joiner_name, actor: ^founder},
+               %Activity{kind: :created}
+             ] = state.activity
+
+      ClusterTestHelper.clear_all()
+      assert {:ok, rebuilt} = Manager.ensure_started(created.guild_id)
+      assert rebuilt.activity == state.activity
+    end
+
+    test "re-assigning a member to the position it already holds logs nothing" do
+      {master, created} = guild_fixture("LogSamePosition")
+      joiner = char_fixture("LogStays")
+      {:ok, joined} = Manager.add_member(created.guild_id, joiner)
+
+      {:ok, state} =
+        Manager.assign_member_position(created.guild_id, master.id, joiner.id, @newbie_position)
+
+      assert state.activity == joined.activity
+    end
+
+    test "a raised guild skill is logged with the master, the skill and its new level" do
+      {master, created} = guild_fixture("LogSkill")
+
+      {1, nil} =
+        from(g in GuildModel, where: g.id == ^created.guild_id)
+        |> Repo.update_all(set: [skill_points: 1])
+
+      ClusterTestHelper.clear_all()
+      {:ok, _} = Manager.ensure_started(created.guild_id)
+
+      {:ok, state} = Manager.allocate_skill_point(created.guild_id, master.id, 10_000)
+
+      founder = master.name
+
+      assert [%Activity{kind: :skill_learned, actor: ^founder, skill_id: 10_000, level: 1} | _] =
+               state.activity
+    end
+
+    test "the entry keeps only the newest 30 entries" do
+      {_master, created} = guild_fixture("LogCapped")
+
+      for n <- 1..31 do
+        :ok = Manager.record_activity(created.guild_id, :castle_taken, %{subject: "Castle #{n}"})
+      end
+
+      {:ok, state} = Manager.get(created.guild_id)
+      assert length(state.activity) == 30
+      assert %Activity{subject: "Castle 31"} = hd(state.activity)
+      refute Enum.any?(state.activity, &(&1.kind == :created))
+    end
+
+    test "record_activity/3 broadcasts the updated state of a live entry" do
+      {_master, created} = guild_fixture("LogBroadcast")
+      Phoenix.PubSub.subscribe(Aesir.PubSub, "guild:#{created.guild_id}")
+
+      assert :ok =
+               Manager.record_activity(created.guild_id, :castle_lost, %{subject: "Kriemhild"})
+
+      assert_receive {:social,
+                      {:guild_updated,
+                       %State{activity: [%Activity{kind: :castle_lost, subject: "Kriemhild"} | _]}}}
+    end
+
+    test "record_activity/3 still writes the row of a guild whose entry is not running" do
+      {_master, created} = guild_fixture("LogOffline")
+      ClusterTestHelper.clear_all()
+
+      assert :ok =
+               Manager.record_activity(created.guild_id, :castle_lost, %{subject: "Kriemhild"})
+
+      assert {:ok, rebuilt} = Manager.ensure_started(created.guild_id)
+      assert [%Activity{kind: :castle_lost, subject: "Kriemhild"} | _] = rebuilt.activity
+    end
+
+    test "disbanding deletes the guild's rows and logs the lost relation on its peers" do
+      {_master, disbanded} = guild_fixture("LogDisbanded")
+      {_ally_master, ally} = guild_fixture("LogDisbandAlly")
+      {_foe_master, foe} = guild_fixture("LogDisbandFoe")
+      assert :ok = Relations.ally(disbanded.guild_id, ally.guild_id)
+      assert :ok = Relations.declare_antagonist(foe.guild_id, disbanded.guild_id)
+
+      assert :ok = Manager.disband(disbanded.guild_id, "gm_action")
+
+      assert Repo.aggregate(
+               from(a in GuildActivityLog, where: a.guild_id == ^disbanded.guild_id),
+               :count
+             ) == 0
+
+      name = disbanded.name
+      {:ok, ally_state} = Manager.get(ally.guild_id)
+      assert [%Activity{kind: :alliance_broken, subject: ^name} | _] = ally_state.activity
+      {:ok, foe_state} = Manager.get(foe.guild_id)
+      assert [%Activity{kind: :antagonist_removed, subject: ^name} | _] = foe_state.activity
     end
   end
 end

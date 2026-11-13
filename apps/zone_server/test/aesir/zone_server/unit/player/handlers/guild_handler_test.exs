@@ -99,6 +99,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
     Repo.get(Character, member.id)
   end
 
+  # A guild whose Newbie position grants `can_relations`, and a member holding it.
+  defp diplomat_fixture(master_name, member_name) do
+    {master, guild} = guild_fixture(master_name)
+    diplomat = add_member(guild.guild_id, member_name)
+
+    {:ok, _state} =
+      GuildManager.edit_position(guild.guild_id, master.id, %{
+        index: @newbie_position,
+        name: "Diplomat",
+        can_invite: false,
+        can_expel: false,
+        can_relations: true
+      })
+
+    {diplomat, guild}
+  end
+
   defp state_for(%Character{} = character, overrides \\ %{}) do
     game_state = PlayerState.new(character)
 
@@ -370,6 +387,38 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
       assert {:reply, {:error, :invite_pending}, ^state} =
                GuildHandler.handle_invite_delivery(invite, state)
     end
+
+    test "the notify carries the inviting guild's snapshot and the inviter's id" do
+      {master, guild} = guild_fixture("Olwen")
+      invitee = character_fixture("Orrin", %{})
+      guild_id = guild.guild_id
+      master_id = master.id
+
+      invite = %{
+        guild_id: guild_id,
+        guild_name: guild.name,
+        inviter_char_id: master_id,
+        inviter_name: master.name
+      }
+
+      assert {:reply, :ok, _state} =
+               GuildHandler.handle_invite_delivery(invite, state_for(invitee))
+
+      assert_received {:send, :gameplay,
+                       {:guild_invite_notify,
+                        %GuildInviteNotify{
+                          guild_id: ^guild_id,
+                          inviter_name: "Olwen",
+                          inviter_char_id: ^master_id,
+                          guild: %GuildInfo{
+                            guild_id: ^guild_id,
+                            name: "Guild-Olwen",
+                            master_char_id: ^master_id,
+                            max_members: 16,
+                            members: [%{char_id: ^master_id}]
+                          }
+                        }}}
+    end
   end
 
   describe "handle_invite_response/2" do
@@ -411,6 +460,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
       persisted = Repo.get(Character, invitee.id)
       assert persisted.guild_id == guild.guild_id
       assert persisted.guild_position == @newbie_position
+    end
+
+    test "accept logs the join with the inviter as actor" do
+      {master, guild} = guild_fixture("Perrin")
+      invitee = character_fixture("Quenby", %{})
+
+      pending = %{
+        pending_guild_invite: %{
+          guild_id: guild.guild_id,
+          inviter_char_id: master.id,
+          expires_at: System.monotonic_time(:millisecond) + 30_000
+        }
+      }
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_invite_response(
+                 %GuildInviteResponse{guild_id: guild.guild_id, accept: true},
+                 Map.merge(state_for(invitee), pending)
+               )
+
+      assert_received {:send, :gameplay, {:guild_info, %GuildInfo{activity: [joined | _]}}}
+
+      assert %{kind: :GUILD_ACTIVITY_JOINED, subject: "Quenby", actor: "Perrin"} = joined
     end
 
     test "decline clears the pending invite and acks success without joining" do
@@ -899,6 +971,98 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
     end
   end
 
+  describe "a member whose position grants can_relations" do
+    test "requests an alliance, which is delivered to the target guild's master" do
+      {diplomat, guild} = diplomat_fixture("Eamon", "Edda")
+      {target_master, _target_guild} = guild_fixture("Faris")
+      register_online(target_master)
+      target_pid = self()
+
+      expect(PlayerSession, :deliver_alliance_request, fn ^target_pid, request ->
+        assert request.from_guild_id == guild.guild_id
+        assert request.requester_char_id == diplomat.id
+        :ok
+      end)
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_alliance_request(
+                 %GuildAllianceRequest{target_char_id: target_master.id, target_name: ""},
+                 state_for(diplomat)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{action: "alliance_request", success: true}}}
+    end
+
+    test "breaks an alliance and declares and removes an antagonist" do
+      {diplomat, guild} = diplomat_fixture("Garrick", "Gytha")
+      {other_master, other_guild} = guild_fixture("Hakon")
+      register_online(other_master)
+      assert :ok = Relations.ally(guild.guild_id, other_guild.guild_id)
+      state = state_for(diplomat)
+
+      GuildHandler.handle_alliance_break_request(
+        %GuildAllianceBreakRequest{guild_id: other_guild.guild_id},
+        state
+      )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{action: "alliance_break", success: true}}}
+
+      GuildHandler.handle_antagonist_request(
+        %GuildAntagonistRequest{target_char_id: other_master.id, target_name: ""},
+        state
+      )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{action: "antagonist", success: true}}}
+
+      GuildHandler.handle_antagonist_remove_request(
+        %GuildAntagonistRemoveRequest{guild_id: other_guild.guild_id},
+        state
+      )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{action: "antagonist_remove", success: true}}}
+
+      assert {:ok, %{relations: relations}} = GuildManager.get(guild.guild_id)
+      assert relations == %{}
+    end
+
+    test "still cannot answer an alliance request, which only the master does" do
+      {diplomat, _guild} = diplomat_fixture("Ivar", "Idunn")
+
+      pending = %{
+        pending_alliance_request: %{
+          from_guild_id: 77,
+          from_guild_name: "Requesters",
+          requester_char_id: 5,
+          expires_at: System.monotonic_time(:millisecond) + 30_000
+        }
+      }
+
+      reject(&Relations.ally/2)
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_alliance_response(
+                 %GuildAllianceResponse{guild_id: 77, accept: true},
+                 Map.merge(state_for(diplomat), pending)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "alliance_response",
+                          success: false,
+                          error: :GUILD_ERR_NO_PERMISSION
+                        }}}
+    end
+  end
+
   describe "alliance_request_expired/1" do
     test "an expired pending request notifies the requester and clears itself" do
       requester = character_fixture("Finn", %{})
@@ -1107,6 +1271,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
 
       {:ok, live} = GuildManager.get(guild.guild_id)
       assert live.positions[5].can_storage
+    end
+
+    test "sets can_notice and can_relations, and a request that omits them preserves both" do
+      {master, guild} = guild_fixture("Eirik")
+
+      GuildHandler.handle_position_edit_request(
+        %GuildPositionEditRequest{
+          index: 5,
+          name: "Envoy",
+          can_invite: false,
+          can_expel: false,
+          can_notice: true,
+          can_relations: true
+        },
+        state_for(master)
+      )
+
+      {:ok, live} = GuildManager.get(guild.guild_id)
+      assert live.positions[5].can_notice and live.positions[5].can_relations
+
+      GuildHandler.handle_position_edit_request(
+        %GuildPositionEditRequest{index: 5, name: "Herald", can_invite: false, can_expel: false},
+        state_for(master)
+      )
+
+      {:ok, live} = GuildManager.get(guild.guild_id)
+      assert %{name: "Herald", can_notice: true, can_relations: true} = live.positions[5]
     end
 
     test "a non-master member is rejected with NO_PERMISSION" do

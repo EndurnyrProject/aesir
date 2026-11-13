@@ -56,5 +56,21 @@ defmodule Aesir.ZoneServer.Guild.MemberTest do
       assert member.position_index == 0
       refute member.online
     end
+
+    test "carries the guild contribution and the last login as unix seconds, 0 when never logged in" do
+      seen = %Character{
+        id: 1,
+        name: "Veteran",
+        guild_exp: 4_200,
+        last_login: ~N[2026-11-11 20:58:00]
+      }
+
+      assert %Member{exp: 4_200, last_seen: 1_794_430_680} =
+               Member.from_character(seen, false, 3)
+
+      never = %Character{id: 2, name: "Newcomer"}
+
+      assert %Member{exp: 0, last_seen: 0} = Member.from_character(never, false, 19)
+    end
   end
 end

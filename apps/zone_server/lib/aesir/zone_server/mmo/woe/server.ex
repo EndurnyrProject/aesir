@@ -9,7 +9,9 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   still without an owner. Attributed mob-death lifecycle events claim a
   matching live Emperium before eligible conquest is persisted and
   announced, and a captured castle's guardians are kept or wiped per the new
-  owner's Guardian Research skill.
+  owner's Guardian Research skill. The conquest is written to the activity log
+  of the guild that took the castle and of the one that lost it, which also
+  sends their members a fresh `GuildInfo`.
 
   A disbanded guild's owned castles are released (store, guardians, services,
   persistence, announcement, and, outside an active agit, an unowned mob
@@ -290,10 +292,12 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
 
   defp handle_emperium_break(castle, unit_id, kill_credit, state) do
     guild_id = eligible_conqueror(castle.id, kill_credit)
+    previous_owner = CastleStore.owner(castle.id)
 
     case CastleStore.claim_break(castle.id, unit_id, guild_id) do
       {:ok, castle_state} ->
         record_conquest(castle.id, guild_id)
+        log_conquest(castle, guild_id, previous_owner)
         queue_castle_ejections(castle, guild_id, castle_state.epoch)
 
         timers =
@@ -340,6 +344,11 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
     Persistence.persist(castle_id, guild_id)
     announce_conquest(castle_id, guild_id)
   end
+
+  defp log_conquest(_castle, nil, _previous_owner), do: :ok
+
+  defp log_conquest(%Castle{name: name}, guild_id, previous_owner),
+    do: Persistence.persist_conquest_activity(name, guild_id, previous_owner)
 
   defp release_castle(%Castle{id: castle_id} = castle, guild_id, active?) do
     case CastleStore.release(castle_id, guild_id) do

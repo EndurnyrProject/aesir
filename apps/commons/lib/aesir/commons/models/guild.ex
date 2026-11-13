@@ -5,7 +5,9 @@ defmodule Aesir.Commons.Models.Guild do
 
   Membership itself lives on the existing `characters.guild_id` /
   `characters.guild_position` columns; this schema only tracks the guild's
-  name, master, emblem, and notice board.
+  name, master, emblem, and notice board. `notice_author` and
+  `notice_posted_at` record who last edited the notice and when; both are
+  `nil` until the first edit.
   """
 
   use Ecto.Schema
@@ -19,6 +21,8 @@ defmodule Aesir.Commons.Models.Guild do
           emblem_data: binary() | nil,
           notice_subject: String.t() | nil,
           notice_body: String.t() | nil,
+          notice_author: String.t() | nil,
+          notice_posted_at: DateTime.t() | nil,
           level: pos_integer(),
           exp: non_neg_integer(),
           skill_points: non_neg_integer(),
@@ -34,6 +38,8 @@ defmodule Aesir.Commons.Models.Guild do
     field :emblem_data, :binary
     field :notice_subject, :string
     field :notice_body, :string
+    field :notice_author, :string
+    field :notice_posted_at, :utc_datetime
     field :level, :integer, default: 1
     field :exp, :integer, default: 0
     field :skill_points, :integer, default: 0
@@ -55,6 +61,8 @@ defmodule Aesir.Commons.Models.Guild do
       :emblem_data,
       :notice_subject,
       :notice_body,
+      :notice_author,
+      :notice_posted_at,
       :level,
       :exp,
       :skill_points,

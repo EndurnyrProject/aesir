@@ -2144,6 +2144,10 @@ message GuildPositionEditRequest {
   optional uint32 tax = 5;
   // Absent = leave the position's storage permission unchanged.
   optional bool can_storage = 6;
+  // Absent = leave the position's notice permission unchanged.
+  optional bool can_notice = 7;
+  // Absent = leave the position's relations permission unchanged.
+  optional bool can_relations = 8;
 }
 
 // Client -> server, master-only request to assign a member to a position slot.
@@ -2212,10 +2216,13 @@ message GuildInviteNotify {
   uint32 guild_id = 1;
   string guild_name = 2;
   string inviter_name = 3;
+  // Snapshot of the inviting guild, so the invitee sees what they would join.
+  GuildInfo guild = 4;
+  // The inviter's character id, a member of `guild`.
+  uint32 inviter_char_id = 5;
 }
 
-// One position slot within a GuildInfo. `can_storage` gates guild storage access;
-// `tax` is still inert.
+// One position slot within a GuildInfo. `can_storage` gates guild storage access.
 message GuildPosition {
   uint32 index = 1;
   string name = 2;
@@ -2223,6 +2230,11 @@ message GuildPosition {
   bool can_expel = 4;
   bool can_storage = 5;
   uint32 tax = 6;
+  // May edit the guild notice.
+  bool can_notice = 7;
+  // May request and break alliances and declare or remove antagonists. An
+  // alliance request is still answered by the target guild's master.
+  bool can_relations = 8;
 }
 
 // One member entry within a GuildInfo snapshot.
@@ -2240,6 +2252,11 @@ message GuildMember {
   uint64 max_sp = 11;
   uint32 ap = 12;
   uint32 max_ap = 13;
+  // Base EXP this member has paid to the guild through the position tax.
+  uint64 exp = 14;
+  // Unix seconds of the member's last login, as rAthena's guild_member
+  // last_login; 0 when unknown. Meaningful only while `online` is false.
+  uint64 last_seen = 15;
 }
 
 // Server -> client, full guild snapshot sent on any membership, position, or
@@ -2265,6 +2282,62 @@ message GuildInfo {
   repeated GuildSkillEntry skills = 13;
   // This guild's ally and antagonist relations, sorted by guild id.
   repeated GuildRelation relations = 14;
+  // Member capacity: 16 plus 6 per Guild Extension level.
+  uint32 max_members = 15;
+  // Name of the member who last edited the notice; empty when never edited.
+  string notice_author = 16;
+  // Unix seconds of the last notice edit; 0 when never edited.
+  uint64 notice_posted_at = 17;
+  // Display names of the castles this guild holds, sorted by castle id.
+  repeated string castles = 18;
+  // The guild's most recent activity, newest first, capped server-side.
+  repeated GuildActivity activity = 19;
+}
+
+// What a GuildActivity entry records.
+enum GuildActivityKind {
+  // The guild was founded; `actor` is the founder.
+  GUILD_ACTIVITY_CREATED = 0;
+  // `subject` joined; `actor` is the inviter.
+  GUILD_ACTIVITY_JOINED = 1;
+  // `subject` left on their own.
+  GUILD_ACTIVITY_LEFT = 2;
+  // `subject` was expelled by `actor`.
+  GUILD_ACTIVITY_EXPELLED = 3;
+  // `subject` was moved to the position named `detail` by `actor`.
+  GUILD_ACTIVITY_POSITION_CHANGED = 4;
+  // `actor` raised guild skill `skill_id` to `level`.
+  GUILD_ACTIVITY_SKILL_LEARNED = 5;
+  // The guild reached guild level `level`.
+  GUILD_ACTIVITY_LEVEL_UP = 6;
+  // An alliance with the guild named `subject` was formed.
+  GUILD_ACTIVITY_ALLIANCE_FORMED = 7;
+  // The alliance with the guild named `subject` ended.
+  GUILD_ACTIVITY_ALLIANCE_BROKEN = 8;
+  // The guild named `subject` was declared an antagonist.
+  GUILD_ACTIVITY_ANTAGONIST_DECLARED = 9;
+  // The guild named `subject` is no longer an antagonist.
+  GUILD_ACTIVITY_ANTAGONIST_REMOVED = 10;
+  // The guild took the castle named `subject`.
+  GUILD_ACTIVITY_CASTLE_TAKEN = 11;
+  // The guild lost the castle named `subject`.
+  GUILD_ACTIVITY_CASTLE_LOST = 12;
+}
+
+// One entry of a guild's activity log. Unused fields are left at their defaults;
+// GuildActivityKind says which ones each kind fills.
+message GuildActivity {
+  GuildActivityKind kind = 1;
+  // Who or what it happened to: a member, another guild or a castle, by name.
+  string subject = 2;
+  // The member who did it, by name; empty when nobody did.
+  string actor = 3;
+  // Free text the kind needs (the new position's name).
+  string detail = 4;
+  uint32 skill_id = 5;
+  uint32 level = 6;
+  // Unix seconds the entry was recorded.
+  uint64 at = 7;
 }
 
 // One learned (or learnable) guild skill in a GuildInfo snapshot.
@@ -2280,11 +2353,19 @@ enum GuildRelationKind {
   GUILD_RELATION_ANTAGONIST = 1;
 }
 
-// One ally or antagonist entry within a GuildInfo snapshot.
+// One ally or antagonist entry within a GuildInfo snapshot. Everything past
+// `kind` describes the other guild as it is when the snapshot is built.
 message GuildRelation {
   uint32 guild_id = 1;
   string name = 2;
   GuildRelationKind kind = 3;
+  uint32 level = 4;
+  uint32 member_count = 5;
+  string master_name = 6;
+  // The other guild's emblem version, for GuildEmblemRequest; 0 = no emblem.
+  uint32 emblem_id = 7;
+  // Display names of the castles the other guild holds, sorted by castle id.
+  repeated string castles = 8;
 }
 
 // Client -> server, guild master spends one guild skill point on skill_id.

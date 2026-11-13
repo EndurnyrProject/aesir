@@ -1,6 +1,9 @@
 defmodule Aesir.ZoneServer.Guild.ViewTest do
   use ExUnit.Case, async: true
 
+  alias Aesir.Net.GuildActivity
+  alias Aesir.Net.GuildActivityKind
+  alias Aesir.ZoneServer.Guild.Activity
   alias Aesir.ZoneServer.Guild.Member
   alias Aesir.ZoneServer.Guild.Position
   alias Aesir.ZoneServer.Guild.Relation
@@ -177,6 +180,109 @@ defmodule Aesir.ZoneServer.Guild.ViewTest do
     result = View.guild_info(guild)
 
     assert result.relations == []
+  end
+
+  test "member/1 and position/1 carry the contribution, last seen time and new flags" do
+    member = %Member{
+      char_id: 42,
+      name: "Alice",
+      base_level: 99,
+      online: false,
+      exp: 1_234,
+      last_seen: 1_794_430_680
+    }
+
+    assert %{exp: 1_234, last_seen: 1_794_430_680} = View.member(member)
+
+    position = %Position{index: 4, name: "Scribe", can_notice: true, can_relations: false}
+
+    assert %{can_notice: true, can_relations: false} = View.position(position)
+  end
+
+  test "guild_info/1 carries capacity, the notice author and time, and the activity log in order" do
+    guild = %State{
+      guild_id: 10,
+      name: "Aesir",
+      master_char_id: 42,
+      learned_skills: %{10_004 => 2},
+      notice_author: "Alice",
+      notice_posted_at: 1_794_430_680,
+      activity: [
+        %Activity{kind: :skill_learned, actor: "Alice", skill_id: 10_004, level: 2, at: 30},
+        %Activity{
+          kind: :position_changed,
+          subject: "Bob",
+          actor: "Alice",
+          detail: "Officer",
+          at: 20
+        },
+        %Activity{kind: :created, actor: "Alice", at: 10}
+      ]
+    }
+
+    result = View.guild_info(guild)
+
+    assert result.max_members == 28
+    assert result.notice_author == "Alice"
+    assert result.notice_posted_at == 1_794_430_680
+
+    assert [
+             %GuildActivity{
+               kind: :GUILD_ACTIVITY_SKILL_LEARNED,
+               actor: "Alice",
+               skill_id: 10_004,
+               level: 2,
+               at: 30
+             },
+             %GuildActivity{
+               kind: :GUILD_ACTIVITY_POSITION_CHANGED,
+               subject: "Bob",
+               actor: "Alice",
+               detail: "Officer",
+               at: 20
+             },
+             %GuildActivity{kind: :GUILD_ACTIVITY_CREATED, actor: "Alice", at: 10}
+           ] = result.activity
+  end
+
+  test "guild_info/1 maps every activity kind to a kind the schema defines" do
+    kinds =
+      ~w(created joined left expelled position_changed skill_learned level_up alliance_formed
+         alliance_broken antagonist_declared antagonist_removed castle_taken castle_lost)a
+
+    guild = %State{
+      guild_id: 10,
+      name: "Aesir",
+      master_char_id: 42,
+      activity: Enum.map(kinds, &%Activity{kind: &1, at: 1})
+    }
+
+    mapped = Enum.map(View.guild_info(guild).activity, & &1.kind)
+    defined = Enum.map(GuildActivityKind.constants(), &elem(&1, 1))
+
+    assert Enum.sort(mapped) == Enum.sort(defined)
+  end
+
+  test "guild_info/1 describes a guild with no live entry by what its relation was loaded with" do
+    guild = %State{
+      guild_id: 10,
+      name: "Aesir",
+      master_char_id: 42,
+      relations: %{
+        20 => %Relation{
+          guild_id: 20,
+          name: "Bragi",
+          kind: :ally,
+          level: 12,
+          member_count: 31,
+          master_name: "Brynhild",
+          emblem_id: 5
+        }
+      }
+    }
+
+    assert [%{level: 12, member_count: 31, master_name: "Brynhild", emblem_id: 5, castles: []}] =
+             View.guild_info(guild).relations
   end
 
   test "member_update/2 includes the guild id and complete member" do

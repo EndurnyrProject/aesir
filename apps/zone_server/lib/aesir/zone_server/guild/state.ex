@@ -6,8 +6,13 @@ defmodule Aesir.ZoneServer.Guild.State do
 
   The emblem blob is intentionally not held here: it lives only in Postgres
   and is fetched on demand. Only the `emblem_id` version counter is carried.
+
+  `notice_author`/`notice_posted_at` (unix seconds) say who last edited the
+  notice and when, `""` and `0` until the first edit. `activity` is the newest
+  entries of the guild's activity log, newest first.
   """
 
+  alias Aesir.ZoneServer.Guild.Activity
   alias Aesir.ZoneServer.Guild.Member
   alias Aesir.ZoneServer.Guild.Position
   alias Aesir.ZoneServer.Guild.Relation
@@ -22,13 +27,16 @@ defmodule Aesir.ZoneServer.Guild.State do
             master_char_id: nil,
             emblem_id: 0,
             notice: %{subject: "", body: ""},
+            notice_author: "",
+            notice_posted_at: 0,
             positions: %{},
             members: %{},
             level: 1,
             exp: 0,
             skill_points: 0,
             learned_skills: %{},
-            relations: %{}
+            relations: %{},
+            activity: []
 
   @type t() :: %__MODULE__{
           guild_id: non_neg_integer(),
@@ -36,13 +44,16 @@ defmodule Aesir.ZoneServer.Guild.State do
           master_char_id: non_neg_integer(),
           emblem_id: non_neg_integer(),
           notice: %{subject: String.t(), body: String.t()},
+          notice_author: String.t(),
+          notice_posted_at: non_neg_integer(),
           positions: %{non_neg_integer() => Position.t()},
           members: %{non_neg_integer() => Member.t()},
           level: pos_integer(),
           exp: non_neg_integer(),
           skill_points: non_neg_integer(),
           learned_skills: %{non_neg_integer() => pos_integer()},
-          relations: %{pos_integer() => Relation.t()}
+          relations: %{pos_integer() => Relation.t()},
+          activity: [Activity.t()]
         }
 
   @doc "Total number of members, online or offline."

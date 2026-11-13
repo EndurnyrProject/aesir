@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Integration.GuildAlliancesIntegrationTest do
   alias Aesir.Net.GuildInviteRequest
   alias Aesir.Net.GuildInviteResponse
   alias Aesir.Net.GuildLeaveRequest
+  alias Aesir.Net.GuildPositionEditRequest
   alias Aesir.Repo
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.Relations
@@ -142,6 +143,72 @@ defmodule Aesir.ZoneServer.Integration.GuildAlliancesIntegrationTest do
              from(r in GuildRelation, where: r.guild_id in ^[guild_a, guild_b]),
              :count
            ) == 2
+  end
+
+  test "a relation describes the other guild, and a member granted can_relations may break it",
+       %{
+         castle: castle,
+         master_a: master_a,
+         member_a: member_a,
+         guild_a: guild_a,
+         guild_b: guild_b
+       } do
+    :ok = Persistence.persist(@castle_id, guild_b)
+    :ok = CastleStore.hydrate(Persistence.load_all())
+    flush_packets()
+
+    assert :ok = Relations.ally(guild_a, guild_b)
+
+    a_info =
+      GuildInfo
+      |> collect_packets_of_type(500)
+      |> Enum.filter(&(&1.guild_id == guild_a))
+      |> List.last()
+
+    castle_name = castle.name
+
+    assert [
+             %{
+               guild_id: ^guild_b,
+               kind: :GUILD_RELATION_ALLY,
+               level: 1,
+               member_count: 2,
+               master_name: "MasterB",
+               castles: [^castle_name]
+             }
+           ] = a_info.relations
+
+    assert [%{kind: :GUILD_ACTIVITY_ALLIANCE_FORMED, subject: subject} | _] = a_info.activity
+    assert subject == Repo.get!(GuildModel, guild_b).name
+
+    simulate_incoming_message(member_a.pid, %GuildAllianceBreakRequest{guild_id: guild_b})
+
+    assert_receive {:packet_sent,
+                    %GuildActionResult{
+                      action: "alliance_break",
+                      success: false,
+                      error: :GUILD_ERR_NO_PERMISSION
+                    }, _},
+                   1_000
+
+    simulate_incoming_message(master_a.pid, %GuildPositionEditRequest{
+      index: 19,
+      name: "Envoy",
+      can_invite: false,
+      can_expel: false,
+      can_relations: true
+    })
+
+    assert_receive {:packet_sent, %GuildActionResult{action: "position_edit", success: true}, _},
+                   1_000
+
+    simulate_incoming_message(member_a.pid, %GuildAllianceBreakRequest{guild_id: guild_b})
+
+    assert_receive {:packet_sent, %GuildActionResult{action: "alliance_break", success: true}, _},
+                   1_000
+
+    assert {:ok, %{relations: relations}} = GuildManager.get(guild_a)
+    assert relations == %{}
   end
 
   test "siege-ground hostility flips on alliance and restores on break", %{

@@ -3,9 +3,10 @@ defmodule Aesir.ZoneServer.Guild.Position do
   One of a guild's 20 position slots (0-19).
 
   Pure value derived from `Aesir.Commons.Models.GuildPosition`. `can_storage`
-  gates access to the guild's shared storage; `tax` is carried for parity but
-  still inert. Index 0 is always the guild master slot; index 19 is where new
-  members join.
+  gates access to the guild's shared storage, `can_notice` editing the notice,
+  and `can_relations` managing alliances and antagonists; `tax` is the share of
+  base EXP its holders pay to the guild. Index 0 is always the guild master
+  slot; index 19 is where new members join.
   """
 
   alias Aesir.Commons.Models.GuildPosition
@@ -15,7 +16,14 @@ defmodule Aesir.ZoneServer.Guild.Position do
   @newbie_index 19
 
   @enforce_keys [:index]
-  defstruct index: nil, name: "", can_invite: false, can_expel: false, can_storage: false, tax: 0
+  defstruct index: nil,
+            name: "",
+            can_invite: false,
+            can_expel: false,
+            can_storage: false,
+            can_notice: false,
+            can_relations: false,
+            tax: 0
 
   @type t() :: %__MODULE__{
           index: non_neg_integer(),
@@ -23,6 +31,8 @@ defmodule Aesir.ZoneServer.Guild.Position do
           can_invite: boolean(),
           can_expel: boolean(),
           can_storage: boolean(),
+          can_notice: boolean(),
+          can_relations: boolean(),
           tax: non_neg_integer()
         }
 
@@ -35,6 +45,8 @@ defmodule Aesir.ZoneServer.Guild.Position do
       can_invite: model.can_invite,
       can_expel: model.can_expel,
       can_storage: model.can_storage,
+      can_notice: model.can_notice,
+      can_relations: model.can_relations,
       tax: model.tax
     }
   end

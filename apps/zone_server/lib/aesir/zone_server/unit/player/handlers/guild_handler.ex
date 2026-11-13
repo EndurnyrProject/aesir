@@ -28,8 +28,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   already guilded, target online), then handed to the *invitee's* session via
   `PlayerSession.deliver_guild_invite/2` -- a synchronous call, so the
   requester's ack reflects whether the invite was accepted for delivery. Storing
-  `%{guild_id, inviter_char_id, expires_at}`, sending the `GuildInviteNotify`,
-  and arming the 30s expiry timer all happen inside `handle_invite_delivery/2`,
+  `%{guild_id, inviter_char_id, expires_at}`, sending the `GuildInviteNotify`
+  (with a snapshot of the inviting guild, so the invitee sees what they would
+  join), and arming the 30s expiry timer all happen inside `handle_invite_delivery/2`,
   which runs on the invitee's session; the enveloped
   `{:social, :guild_invite_expired}` timer routes through `PlayerSession`'s
   single `:social` clause into `SocialHandler.guild_invite_expired/1`, which
@@ -66,6 +67,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   alias Aesir.ZoneServer.Guild.Permissions
   alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Guild.State, as: GuildState
+  alias Aesir.ZoneServer.Guild.View, as: GuildView
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
@@ -145,7 +147,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
           {:noreply, SessionState.t()}
   def handle_invite_response(%GuildInviteResponse{guild_id: guild_id, accept: accept}, state) do
     case take_pending_invite(state, guild_id) do
-      {:ok, _invite, cleared_state} -> resolve_invite(accept, guild_id, cleared_state)
+      {:ok, invite, cleared_state} -> resolve_invite(accept, invite, cleared_state)
       :error -> ack_result(state, "invite_response", {:error, :not_member})
     end
   end
@@ -205,7 +207,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
           can_invite: can_invite,
           can_expel: can_expel,
           tax: tax,
-          can_storage: can_storage
+          can_storage: can_storage,
+          can_notice: can_notice,
+          can_relations: can_relations
         },
         state
       ) do
@@ -219,7 +223,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
           can_invite: can_invite,
           can_expel: can_expel,
           tax: tax,
-          can_storage: can_storage
+          can_storage: can_storage,
+          can_notice: can_notice,
+          can_relations: can_relations
         })
       end
 
@@ -291,8 +297,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   @doc """
   Runs on the invitee's session, invoked from `PlayerSession`'s
   `handle_call({:social, {:deliver_guild_invite, invite}}, _from, state)`: stores the
-  pending invite, sends the `GuildInviteNotify`, and arms the expiry timer.
-  Rejects a second invite while one is already pending and unexpired.
+  pending invite, sends the `GuildInviteNotify` with the inviting guild's
+  current snapshot, and arms the expiry timer. Rejects a second invite while
+  one is already pending and unexpired.
   """
   @spec handle_invite_delivery(map(), SessionState.t()) ::
           {:reply, :ok | {:error, :invite_pending}, SessionState.t()}
@@ -305,7 +312,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
       MessageRouter.send_to(state.connection_pid, %GuildInviteNotify{
         guild_id: invite.guild_id,
         guild_name: invite.guild_name,
-        inviter_name: invite.inviter_name
+        inviter_name: invite.inviter_name,
+        guild: inviting_guild_info(invite.guild_id),
+        inviter_char_id: invite.inviter_char_id
       })
 
       pending = %{
@@ -318,8 +327,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
     end
   end
 
+  # The invite is delivered right after the inviter's session validated it
+  # against the live entry, so a missing entry means the guild disbanded in
+  # between; the invite then carries no snapshot and its accept fails.
+  defp inviting_guild_info(guild_id) do
+    case GuildManager.get(guild_id) do
+      {:ok, %GuildState{} = guild_state} -> GuildView.guild_info(guild_state)
+      {:error, :not_found} -> nil
+    end
+  end
+
   @doc """
-  Master-only alliance request against another guild, identified by the
+  `:relations`-gated alliance request against another guild, identified by the
   target character (or name when the id is 0), who must be that other
   guild's own master. Delivery and pending-request bookkeeping happen in
   the target's session via `deliver_alliance_request/2`, mirroring the
@@ -334,7 +353,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
     char_id = requester_char_id(state)
 
     result =
-      with {:ok, requester, guild_state} <- require_master(char_id),
+      with {:ok, requester, guild_state} <- require_relations(char_id),
            {:ok, resolved_target_id} <- resolve_target(target_char_id, target_name),
            {:ok, target} <- fetch_character(resolved_target_id),
            :ok <- require_in_guild(target),
@@ -404,14 +423,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
     end
   end
 
-  @doc "Master-only break of an existing alliance with `guild_id`."
+  @doc "`:relations`-gated break of an existing alliance with `guild_id`."
   @spec handle_alliance_break_request(GuildAllianceBreakRequest.t(), SessionState.t()) ::
           {:noreply, SessionState.t()}
   def handle_alliance_break_request(%GuildAllianceBreakRequest{guild_id: guild_id}, state) do
     char_id = requester_char_id(state)
 
     result =
-      with {:ok, _requester, guild_state} <- require_master(char_id) do
+      with {:ok, _requester, guild_state} <- require_relations(char_id) do
         Relations.break(guild_state.guild_id, guild_id)
       end
 
@@ -419,7 +438,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   end
 
   @doc """
-  Master-only antagonist declaration against another guild, identified by
+  `:relations`-gated antagonist declaration against another guild, identified by
   the target character (or name when the id is 0). Unlike an alliance
   request, this is unilateral and does not require the target to be online
   or their guild's master.
@@ -433,7 +452,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
     char_id = requester_char_id(state)
 
     result =
-      with {:ok, _requester, guild_state} <- require_master(char_id),
+      with {:ok, _requester, guild_state} <- require_relations(char_id),
            {:ok, resolved_target_id} <- resolve_target(target_char_id, target_name),
            {:ok, target} <- fetch_character(resolved_target_id),
            :ok <- require_in_guild(target) do
@@ -443,14 +462,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
     ack_result(state, "antagonist", result)
   end
 
-  @doc "Master-only removal of an existing antagonist declaration against `guild_id`."
+  @doc "`:relations`-gated removal of an existing antagonist declaration against `guild_id`."
   @spec handle_antagonist_remove_request(GuildAntagonistRemoveRequest.t(), SessionState.t()) ::
           {:noreply, SessionState.t()}
   def handle_antagonist_remove_request(%GuildAntagonistRemoveRequest{guild_id: guild_id}, state) do
     char_id = requester_char_id(state)
 
     result =
-      with {:ok, _requester, guild_state} <- require_master(char_id) do
+      with {:ok, _requester, guild_state} <- require_relations(char_id) do
         Relations.remove_antagonist(guild_state.guild_id, guild_id)
       end
 
@@ -515,15 +534,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
     if GuildState.full?(guild_state), do: {:error, :guild_full}, else: :ok
   end
 
-  # Requester gating shared by every alliance/antagonist request: the
-  # requester must be a guild member and their own guild's master. Returns
-  # the requester `Character` and their live `GuildState` on success.
-  defp require_master(char_id) do
+  # The requester `Character` and the live `GuildState` of the guild they
+  # belong to.
+  defp own_guild(char_id) do
     with {:ok, requester} <- fetch_character(char_id),
          :ok <- require_in_guild(requester),
-         {:ok, guild_state} <- GuildManager.ensure_started(requester.guild_id),
+         {:ok, guild_state} <- GuildManager.ensure_started(requester.guild_id) do
+      {:ok, requester, guild_state}
+    end
+  end
+
+  # Gating of the alliance answer: only the guild's own master responds.
+  defp require_master(char_id) do
+    with {:ok, requester, guild_state} <- own_guild(char_id),
          :ok <- require_is_master(guild_state, char_id) do
       {:ok, requester, guild_state}
+    end
+  end
+
+  # Requester gating shared by every alliance/antagonist request: the master,
+  # or a member whose position grants `can_relations`.
+  defp require_relations(char_id) do
+    with {:ok, requester, guild_state} <- own_guild(char_id) do
+      if Permissions.can?(guild_state, char_id, :relations) do
+        {:ok, requester, guild_state}
+      else
+        {:error, :no_permission}
+      end
     end
   end
 
@@ -589,14 +626,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   defp pending_invite_active?(%{pending_guild_invite: invite}), do: not invite_expired?(invite)
   defp pending_invite_active?(_state), do: false
 
-  defp resolve_invite(false, _guild_id, state) do
+  defp resolve_invite(false, _invite, state) do
     ack_result(state, "invite_response", :ok)
   end
 
-  defp resolve_invite(true, guild_id, state) do
+  defp resolve_invite(true, invite, state) do
     result =
       with {:ok, character} <- fetch_character(requester_char_id(state)) do
-        GuildManager.add_member(guild_id, character)
+        GuildManager.add_member(invite.guild_id, character, invite.inviter_char_id)
       end
 
     ack_and_attach(state, "invite_response", result)

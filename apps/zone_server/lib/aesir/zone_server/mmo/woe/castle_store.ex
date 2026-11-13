@@ -114,6 +114,18 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStore do
   end
 
   @doc """
+  The display names of the castles each guild owns, sorted by castle id.
+  Guilds that own none have no key.
+  """
+  @spec names_by_owner() :: %{pos_integer() => [String.t()]}
+  def names_by_owner do
+    CastleDb.all()
+    |> Enum.sort_by(& &1.id)
+    |> Enum.group_by(&owner(&1.id), & &1.name)
+    |> Map.delete(nil)
+  end
+
+  @doc """
   Whether `map` is a guild castle map currently owned by `guild_id`. False for
   guild 0, maps without the `gvg_castle` flag, and castles without an owner.
   """

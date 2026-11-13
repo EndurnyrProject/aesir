@@ -1,6 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Woe.PersistenceTest do
   use Aesir.DataCase, async: false
 
+  import Ecto.Query
+
+  alias Aesir.Commons.Models.Guild
+  alias Aesir.Commons.Models.GuildActivityLog
   alias Aesir.Commons.Models.GuildCastle
   alias Aesir.Repo
   alias Aesir.ZoneServer.Mmo.Woe.Persistence
@@ -152,6 +156,39 @@ defmodule Aesir.ZoneServer.Mmo.Woe.PersistenceTest do
     test "on a missing row, logs and returns :ok" do
       assert :ok = Persistence.persist_release(9_999)
     end
+  end
+
+  describe "persist_conquest_activity/3" do
+    test "logs the castle as taken by the new owner and lost by the previous one" do
+      taker = guild!("Takers")
+      loser = guild!("Losers")
+
+      assert :ok = Persistence.persist_conquest_activity("Kriemhild", taker.id, loser.id)
+
+      assert activity(taker) == [{"castle_taken", "Kriemhild"}]
+      assert activity(loser) == [{"castle_lost", "Kriemhild"}]
+    end
+
+    test "logs only the capture when the castle had no owner" do
+      taker = guild!("FirstOwners")
+
+      assert :ok = Persistence.persist_conquest_activity("Kriemhild", taker.id, nil)
+
+      assert activity(taker) == [{"castle_taken", "Kriemhild"}]
+    end
+  end
+
+  defp guild!(name) do
+    {:ok, guild} =
+      %Guild{} |> Guild.changeset(%{name: name, master_char_id: 1}) |> Repo.insert()
+
+    guild
+  end
+
+  defp activity(guild) do
+    Repo.all(
+      from(a in GuildActivityLog, where: a.guild_id == ^guild.id, select: {a.kind, a.subject})
+    )
   end
 
   defp wait_for_ownership(castle_id, expected_guild_id, retries, delay_ms) do

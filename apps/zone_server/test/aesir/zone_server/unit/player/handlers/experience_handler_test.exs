@@ -90,7 +90,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandlerTest do
   defp capture_taxed_grant(amount, tax, modifiers) do
     test_pid = self()
 
-    stub(Tax, :contribute_async, fn guild_id, taxed ->
+    stub(Tax, :contribute_async, fn guild_id, 1000, taxed ->
       send(test_pid, {:taxed, guild_id, taxed})
       :ok
     end)

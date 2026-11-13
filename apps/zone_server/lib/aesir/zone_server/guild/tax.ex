@@ -5,8 +5,9 @@ defmodule Aesir.ZoneServer.Guild.Tax do
   A member's tax rate is the `tax` percentage of their guild position, cached
   on `PlayerState.guild_tax` by the social handler (refreshed on guild attach
   and on every guild broadcast). `apply/2` diverts that share of earned base
-  EXP; `contribute_async/2` forwards it to the guild entry without blocking
-  the member's session. Job EXP is never taxed.
+  EXP; `contribute_async/3` forwards it to the guild entry, which credits both
+  the paying member and the guild, without blocking the member's session. Job
+  EXP is never taxed.
   """
 
   alias Aesir.ZoneServer.Guild.Manager
@@ -30,16 +31,16 @@ defmodule Aesir.ZoneServer.Guild.Tax do
   end
 
   @doc """
-  Fire-and-forget credit of a taxed amount to the guild entry.
+  Fire-and-forget credit of the amount `char_id` was taxed to the guild entry.
 
-  Runs `Manager.contribute_exp/2` on a throwaway task so the member's session
+  Runs `Manager.contribute_exp/3` on a throwaway task so the member's session
   never blocks on the guild entry or its DB write; a zero amount is a no-op.
   """
-  @spec contribute_async(non_neg_integer(), non_neg_integer()) :: :ok
-  def contribute_async(_guild_id, 0), do: :ok
+  @spec contribute_async(non_neg_integer(), non_neg_integer(), non_neg_integer()) :: :ok
+  def contribute_async(_guild_id, _char_id, 0), do: :ok
 
-  def contribute_async(guild_id, taxed) do
-    {:ok, _pid} = Task.start(fn -> Manager.contribute_exp(guild_id, taxed) end)
+  def contribute_async(guild_id, char_id, taxed) do
+    {:ok, _pid} = Task.start(fn -> Manager.contribute_exp(guild_id, char_id, taxed) end)
     :ok
   end
 end

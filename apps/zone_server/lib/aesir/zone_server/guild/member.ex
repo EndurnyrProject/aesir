@@ -10,6 +10,12 @@ defmodule Aesir.ZoneServer.Guild.Member do
   entry: a rebuilt entry numbers its members by position index (then character
   id), a joining member takes the lowest free slot, and a leaving member leaves
   its slot empty. Snapshots pushed by a session carry `nil`.
+
+  `exp` is the base EXP the member has paid to the guild through the position
+  tax (`characters.guild_exp`). `last_seen` is the unix time, in seconds, of
+  the member's last login (`characters.last_login`), `0` when unknown. Both are
+  owned by the guild entry like `slot`: snapshots pushed by a session carry
+  their defaults and `Guild.Manager.sync_member/3` keeps the stored values.
   """
 
   alias Aesir.Commons.Models.Character
@@ -30,7 +36,9 @@ defmodule Aesir.ZoneServer.Guild.Member do
             max_ap: 0,
             online: nil,
             map_name: nil,
-            slot: nil
+            slot: nil,
+            exp: 0,
+            last_seen: 0
 
   @type t() :: %__MODULE__{
           char_id: non_neg_integer(),
@@ -46,7 +54,9 @@ defmodule Aesir.ZoneServer.Guild.Member do
           max_ap: non_neg_integer(),
           online: boolean(),
           map_name: String.t() | nil,
-          slot: non_neg_integer() | nil
+          slot: non_neg_integer() | nil,
+          exp: non_neg_integer(),
+          last_seen: non_neg_integer()
         }
 
   @doc """
@@ -89,7 +99,14 @@ defmodule Aesir.ZoneServer.Guild.Member do
       ap: character.ap || 0,
       max_ap: character.max_ap || 0,
       online: online,
-      map_name: character.last_map
+      map_name: character.last_map,
+      exp: character.guild_exp,
+      last_seen: unix_seconds(character.last_login)
     }
   end
+
+  defp unix_seconds(nil), do: 0
+
+  defp unix_seconds(%NaiveDateTime{} = at),
+    do: at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
 end

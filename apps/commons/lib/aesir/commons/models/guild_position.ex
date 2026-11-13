@@ -4,8 +4,9 @@ defmodule Aesir.Commons.Models.GuildPosition do
 
   Keyed by `{guild_id, index}`. Index 0 is always the guild master slot;
   index 19 is where new members join. `can_storage` gates access to the guild's
-  shared storage; `tax` is tracked for parity but is still inert (no guild tax
-  mechanic yet).
+  shared storage, `can_notice` editing the notice, and `can_relations` managing
+  alliances and antagonists; `tax` is the share of base EXP its holders pay to
+  the guild.
   """
 
   use Ecto.Schema
@@ -18,6 +19,8 @@ defmodule Aesir.Commons.Models.GuildPosition do
           can_invite: boolean(),
           can_expel: boolean(),
           can_storage: boolean(),
+          can_notice: boolean(),
+          can_relations: boolean(),
           tax: integer()
         }
 
@@ -29,6 +32,8 @@ defmodule Aesir.Commons.Models.GuildPosition do
     field :can_invite, :boolean, default: false
     field :can_expel, :boolean, default: false
     field :can_storage, :boolean, default: false
+    field :can_notice, :boolean, default: false
+    field :can_relations, :boolean, default: false
     field :tax, :integer, default: 0
   end
 
@@ -38,7 +43,17 @@ defmodule Aesir.Commons.Models.GuildPosition do
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(guild_position, attrs) do
     guild_position
-    |> cast(attrs, [:guild_id, :index, :name, :can_invite, :can_expel, :can_storage, :tax])
+    |> cast(attrs, [
+      :guild_id,
+      :index,
+      :name,
+      :can_invite,
+      :can_expel,
+      :can_storage,
+      :can_notice,
+      :can_relations,
+      :tax
+    ])
     |> validate_required([:guild_id, :index])
     |> validate_inclusion(:index, 0..19)
     |> unique_constraint([:guild_id, :index], name: :guild_positions_pkey)

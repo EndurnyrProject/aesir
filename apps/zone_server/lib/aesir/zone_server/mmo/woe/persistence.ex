@@ -8,9 +8,11 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Persistence do
   and the two daily investment counters; `persist_guardians/2` asynchronously
   writes the sorted list of hired guardian slots; `persist_kafra/2`
   asynchronously writes whether the castle's Kafra is hired; `persist_release/1`
-  asynchronously clears ownership, guardians, and Kafra together. All are
-  fire-and-forget, via the supervised `TaskSupervisor`. `load_all/0` reads
-  every castle's full row for boot-time `CastleStore.hydrate/1`.
+  asynchronously clears ownership, guardians, and Kafra together;
+  `persist_conquest_activity/3` asynchronously writes a conquest to the
+  activity logs of the guilds involved. All are fire-and-forget, via the
+  supervised `TaskSupervisor`. `load_all/0` reads every castle's full row for
+  boot-time `CastleStore.hydrate/1`.
 
   Ownership, economy, guardian, and Kafra state are authoritative in
   `CastleStore` during a live node; the row is the restart-durable copy.
@@ -22,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Persistence do
 
   alias Aesir.Commons.Models.GuildCastle
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Mmo.Woe.CastleStore
 
   @task_supervisor Aesir.ZoneServer.TaskSupervisor
@@ -122,6 +125,30 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Persistence do
   @spec do_persist_release(non_neg_integer()) :: :ok
   defp do_persist_release(castle_id) do
     write_row(castle_id, %{guild_id: nil, guardians: [], kafra: false}, "release")
+  end
+
+  @doc """
+  Asynchronously writes the conquest of the castle named `castle_name` to the
+  activity log of `guild_id`, which took it, and of `previous_owner`, which
+  lost it (`nil` when the castle was unowned). A guild with a live entry also
+  broadcasts its updated state, so its members get a `GuildInfo` listing the
+  castles it now holds.
+
+  Fire-and-forget, on the same async/inline path as `persist/2`.
+  """
+  @spec persist_conquest_activity(String.t(), pos_integer(), pos_integer() | nil) :: :ok
+  def persist_conquest_activity(castle_name, guild_id, previous_owner) do
+    run_async(fn ->
+      GuildManager.record_activity(guild_id, :castle_taken, %{subject: castle_name})
+
+      if previous_owner do
+        GuildManager.record_activity(previous_owner, :castle_lost, %{subject: castle_name})
+      end
+
+      :ok
+    end)
+
+    :ok
   end
 
   @doc """

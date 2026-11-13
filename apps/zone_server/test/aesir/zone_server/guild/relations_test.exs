@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Guild.RelationsTest do
   alias Aesir.Commons.ClusterTestHelper
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
+  alias Aesir.Commons.Models.Guild, as: GuildModel
   alias Aesir.Commons.Models.GuildRelation
   alias Aesir.Repo
   alias Aesir.ZoneServer.Guild.Manager
@@ -52,6 +53,11 @@ defmodule Aesir.ZoneServer.Guild.RelationsTest do
     master = char_fixture(master_name)
     {:ok, state} = Manager.create("Guild-#{master_name}", master)
     state.guild_id
+  end
+
+  defp activity(guild_id) do
+    {:ok, %State{activity: activity}} = Manager.get(guild_id)
+    Enum.map(activity, &{&1.kind, &1.subject})
   end
 
   defp relation_rows(guild_id) do
@@ -124,6 +130,24 @@ defmodule Aesir.ZoneServer.Guild.RelationsTest do
 
       assert %{^b => %Relation{guild_id: ^b, name: "Guild-LoadB", kind: :ally}} =
                Relations.load(a)
+    end
+
+    test "carries the other guild's level, member count, master name and emblem version" do
+      a = guild_fixture("LoadSummaryA")
+      b = guild_fixture("LoadSummaryB")
+      {:ok, _} = Manager.add_member(b, char_fixture("LoadSummaryMember"))
+      Repo.update_all(from(g in GuildModel, where: g.id == ^b), set: [level: 7, emblem_id: 4])
+      assert :ok = Relations.declare_antagonist(a, b)
+
+      assert %{
+               ^b => %Relation{
+                 kind: :antagonist,
+                 level: 7,
+                 member_count: 2,
+                 master_name: "LoadSummaryB",
+                 emblem_id: 4
+               }
+             } = Relations.load(a)
     end
   end
 
@@ -399,6 +423,72 @@ defmodule Aesir.ZoneServer.Guild.RelationsTest do
       b = guild_fixture("RemoveAntagNoneB")
 
       assert {:error, :not_related} = Relations.remove_antagonist(a, b)
+    end
+  end
+
+  describe "activity log" do
+    test "forming and breaking an alliance is logged on both guilds with the other's name" do
+      a = guild_fixture("LogAllyA")
+      b = guild_fixture("LogAllyB")
+
+      assert :ok = Relations.ally(a, b)
+      assert :ok = Relations.break(b, a)
+
+      assert [{:alliance_broken, "Guild-LogAllyB"}, {:alliance_formed, "Guild-LogAllyB"} | _] =
+               activity(a)
+
+      assert [{:alliance_broken, "Guild-LogAllyA"}, {:alliance_formed, "Guild-LogAllyA"} | _] =
+               activity(b)
+    end
+
+    test "declaring and removing an antagonist is logged on the declaring guild only" do
+      a = guild_fixture("LogAntagA")
+      b = guild_fixture("LogAntagB")
+
+      assert :ok = Relations.declare_antagonist(a, b)
+      assert :ok = Relations.remove_antagonist(a, b)
+
+      assert [
+               {:antagonist_removed, "Guild-LogAntagB"},
+               {:antagonist_declared, "Guild-LogAntagB"},
+               {:created, ""}
+             ] = activity(a)
+
+      assert [{:created, ""}] = activity(b)
+    end
+
+    test "an alliance that replaces an antagonist declaration logs its removal" do
+      a = guild_fixture("LogReplaceA")
+      b = guild_fixture("LogReplaceB")
+      assert :ok = Relations.declare_antagonist(a, b)
+
+      assert :ok = Relations.ally(a, b)
+
+      assert [{:alliance_formed, _}, {:antagonist_removed, _}, {:antagonist_declared, _} | _] =
+               activity(a)
+
+      assert [{:alliance_formed, "Guild-LogReplaceA"}, {:created, ""}] = activity(b)
+    end
+
+    test "an antagonist declaration that replaces an alliance logs the break on both guilds" do
+      a = guild_fixture("LogTurnA")
+      b = guild_fixture("LogTurnB")
+      assert :ok = Relations.ally(a, b)
+
+      assert :ok = Relations.declare_antagonist(a, b)
+
+      assert [{:antagonist_declared, _}, {:alliance_broken, _} | _] = activity(a)
+      assert [{:alliance_broken, "Guild-LogTurnA"} | _] = activity(b)
+    end
+
+    test "a refused write logs nothing" do
+      a = guild_fixture("LogRefusedA")
+      b = guild_fixture("LogRefusedB")
+
+      assert {:error, :not_related} = Relations.break(a, b)
+
+      assert [{:created, ""}] = activity(a)
+      assert [{:created, ""}] = activity(b)
     end
   end
 end

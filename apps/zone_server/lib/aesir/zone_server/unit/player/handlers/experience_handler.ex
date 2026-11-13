@@ -78,7 +78,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
     # Guild tax is deducted from the rate-scaled reward BEFORE personal
     # status/equipment EXP bonuses; the boosts then apply to the remainder.
     {base_amount, guild_taxed} = Tax.apply(game_state, base_amount)
-    Tax.contribute_async(game_state.guild_id, guild_taxed)
+    Tax.contribute_async(game_state.guild_id, char_id, guild_taxed)
 
     base_amount = boost_exp(base_amount, 100 + exp_rate)
     job_amount = boost_exp(job_amount, 100 + exp_rate + job_exp_rate)

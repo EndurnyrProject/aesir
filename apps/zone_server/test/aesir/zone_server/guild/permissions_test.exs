@@ -100,4 +100,39 @@ defmodule Aesir.ZoneServer.Guild.PermissionsTest do
       end
     end
   end
+
+  describe "notice" do
+    test "allowed only when the member's position grants can_notice" do
+      positions = %{
+        5 => %Position{index: 5, can_notice: true},
+        6 => %Position{index: 6, can_relations: true}
+      }
+
+      guild = state([member(1, 0), member(2, 5), member(3, 6)], positions)
+
+      assert Permissions.can?(guild, 2, :notice)
+      refute Permissions.can?(guild, 3, :notice)
+    end
+  end
+
+  describe "relations" do
+    test "allowed only when the member's position grants can_relations" do
+      positions = %{
+        5 => %Position{index: 5, can_relations: true},
+        6 => %Position{index: 6, can_notice: true}
+      }
+
+      guild = state([member(1, 0), member(2, 5), member(3, 6)], positions)
+
+      assert Permissions.can?(guild, 2, :relations)
+      refute Permissions.can?(guild, 3, :relations)
+    end
+
+    test "the master is allowed and a non-member is denied" do
+      guild = state([member(1, 0)], Map.new(Position.defaults(), &{&1.index, &1}))
+
+      assert Permissions.can?(guild, 1, :relations)
+      refute Permissions.can?(guild, 999, :relations)
+    end
+  end
 end

@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Integration.WoeSiegeIntegrationTest do
   alias Aesir.Net.Announcement, as: AnnouncementMsg
   alias Aesir.Net.GuildActionResult
   alias Aesir.Net.GuildCreateRequest
+  alias Aesir.Net.GuildInfo
   alias Aesir.Net.Respawn
   alias Aesir.Net.SkillCast
   alias Aesir.Net.SkillCastFailed
@@ -106,6 +107,34 @@ defmodule Aesir.ZoneServer.Integration.WoeSiegeIntegrationTest do
           2_000
         )
       end)
+    end
+
+    test "a capture sends the conquering guild a GuildInfo listing the castle and logging it" do
+      start_per_test_map(castle().map)
+      start_supervised!({WoeServer, []})
+
+      {master_on_prontera, guild_id} = create_guild("CastleHolders", "CastleMaster")
+      seed_learned_skills(guild_id, %{"#{@approval_skill_id}" => 1})
+      killer = relocate_character(master_on_prontera, castle().map, castle().emperium)
+
+      :ok = WoeServer.start()
+      %{emperium_unit_id: unit_id} = CastleStore.get(@castle_id)
+      {:ok, {_module, _mob, mob_pid}} = UnitRegistry.get_unit(:mob, unit_id)
+      flush_packets()
+
+      :ok = MobSession.apply_damage(mob_pid, 999_999, killer.character.id)
+
+      castle_name = castle().name
+
+      assert_receive {:packet_sent,
+                      %GuildInfo{
+                        guild_id: ^guild_id,
+                        castles: [^castle_name],
+                        activity: [
+                          %{kind: :GUILD_ACTIVITY_CASTLE_TAKEN, subject: ^castle_name} | _
+                        ]
+                      }, _},
+                     2_000
     end
 
     test "ownership survives a simulated restart by re-hydrating from the persisted row" do

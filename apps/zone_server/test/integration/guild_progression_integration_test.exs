@@ -105,6 +105,42 @@ defmodule Aesir.ZoneServer.Integration.GuildProgressionIntegrationTest do
       assert_receive {:packet_sent, %GuildLevelUp{guild_id: ^guild_id, level: 2}, _}, 1_000
       assert_receive {:packet_sent, %GuildInfo{guild_id: ^guild_id, level: 2}, _}, 1_000
     end
+
+    test "a taxed kill is credited to the member's own contribution and persisted" do
+      {master_session, guild_id} = create_guild("TaxCredit", "CreditMaster")
+
+      member = character_fixture("CreditedMember", %{base_level: 98})
+      member_session = start_session(member)
+      invite_and_accept(master_session, member_session, member, guild_id)
+
+      simulate_incoming_message(master_session.pid, %GuildPositionEditRequest{
+        index: @newbie_position,
+        name: "Taxed Newbie",
+        can_invite: false,
+        can_expel: false,
+        tax: 50
+      })
+
+      assert_receive {:packet_sent, %GuildActionResult{action: "position_edit", success: true},
+                      _},
+                     1_000
+
+      assert eventually(fn -> get_player_state(member_session.pid).guild_tax == 50 end)
+
+      send(member_session.pid, {:progression, {:mob_kill_exp, 1_000, 0, nil, nil}})
+
+      assert eventually(fn ->
+               case GuildManager.get(guild_id) do
+                 {:ok, state} -> state.members[member.id].exp == 500
+                 _ -> false
+               end
+             end)
+
+      {:ok, guild_state} = GuildManager.get(guild_id)
+      assert guild_state.exp == 500
+      assert guild_state.members[master_session.character.id].exp == 0
+      assert Repo.get!(Character, member.id).guild_exp == 500
+    end
   end
 
   describe "skill allocation through the wire" do

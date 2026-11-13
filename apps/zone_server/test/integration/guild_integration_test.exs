@@ -173,6 +173,48 @@ defmodule Aesir.ZoneServer.Integration.GuildIntegrationTest do
       invite_and_accept(master_session, member_session, member, guild_id)
       assert Repo.get(Character, member.id).guild_id == guild_id
     end
+
+    test "the invite shows the invitee the guild, and the roster then logs who invited them" do
+      {master_session, guild_id} = create_guild("Recruiters", "Recruiter")
+      master_id = master_session.character.id
+
+      member = character_fixture("Hopeful", %{})
+      member_session = start_session(member)
+
+      simulate_incoming_message(master_session.pid, %GuildInviteRequest{
+        target_char_id: member.id,
+        target_name: ""
+      })
+
+      assert_receive {:packet_sent,
+                      %GuildInviteNotify{
+                        guild_id: ^guild_id,
+                        inviter_char_id: ^master_id,
+                        guild: %GuildInfo{
+                          guild_id: ^guild_id,
+                          name: "Recruiters",
+                          max_members: 16,
+                          members: [%{char_id: ^master_id}],
+                          activity: [%{kind: :GUILD_ACTIVITY_CREATED, actor: "Recruiter"}]
+                        }
+                      }, _},
+                     1_000
+
+      simulate_incoming_message(member_session.pid, %GuildInviteResponse{
+        guild_id: guild_id,
+        accept: true
+      })
+
+      assert_receive {:packet_sent,
+                      %GuildInfo{
+                        guild_id: ^guild_id,
+                        activity: [
+                          %{kind: :GUILD_ACTIVITY_JOINED, subject: "Hopeful", actor: "Recruiter"}
+                          | _
+                        ]
+                      }, _},
+                     1_000
+    end
   end
 
   describe "emblem upload and fetch" do
