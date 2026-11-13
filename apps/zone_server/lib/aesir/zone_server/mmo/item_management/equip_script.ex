@@ -839,6 +839,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     end
   end
 
+  defp eval_instr({:set, :atk_ele, value}, %{lr_flag: :arrow}, %Result{} = result) do
+    %{result | modifiers: Map.put(result.modifiers, :arrow_ele, value)}
+  end
+
   defp eval_instr({:set, key, value}, _inputs, %Result{} = result) do
     %{result | modifiers: Map.put(result.modifiers, key, value)}
   end

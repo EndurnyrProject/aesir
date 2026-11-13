@@ -118,6 +118,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
           send_packet(state, equip_failure_result(server_index, :fail))
           {:noreply, state}
         else
+          {new_inventory, change} = unequip_incompatible_ammo(new_inventory, change)
           commit_equip(server_index, new_inventory, change, state)
         end
 
@@ -272,6 +273,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
     case equipped_item_in_slot(game_state.inventory, slot) do
       {server_index, _item} -> handle_unequip(server_index, state)
       nil -> {:noreply, state}
+    end
+  end
+
+  defp unequip_incompatible_ammo(inventory, {:equipped, index, mask, removed} = change) do
+    {:ok, equipped_def} = ItemManagement.get_item_by_id(inventory[index].nameid)
+
+    with %ItemDefinition{type: :weapon, subtype: weapon} <- equipped_def,
+         {ammo_index, ammo} <- equipped_item_in_slot(inventory, :ammo) do
+      {:ok, ammo_def} = ItemManagement.get_item_by_id(ammo.nameid)
+
+      case Inventory.validate_ammo_weapon(ammo_def, weapon) do
+        :ok ->
+          {inventory, change}
+
+        {:error, :wrong_ammo} ->
+          {:ok, inventory, {:unequipped, ^ammo_index}} = Inventory.unequip(inventory, ammo_index)
+          {inventory, {:equipped, index, mask, [ammo_index | removed]}}
+      end
+    else
+      _not_a_weapon_or_no_ammo -> {inventory, change}
     end
   end
 

@@ -43,6 +43,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
   - Timing: attack_range, attack_delay_ms
   - Positioning: position, map_name
 
+  `arrow_element` is the unpromoted ammo element, used only by ammo-using hits.
+  Bows and guns promote their ammo element into `weapon.element` instead.
+
   `combat_stats.soft_def` is required for `:mob` combatants; it is optional for
   other unit types.
   """
@@ -91,6 +94,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
     # Weapon information
     weapon: nil,
     ammo_atk: 0,
+    arrow_element: nil,
     right_hand: nil,
     left_hand: nil,
 
@@ -210,6 +214,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
             size: atom()
           },
           ammo_atk: non_neg_integer(),
+          arrow_element: atom() | nil,
           right_hand: WeaponHand.t() | nil,
           left_hand: WeaponHand.t() | nil,
           attack_range: integer(),

@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   alias Aesir.ZoneServer.Mmo.Race
   alias Aesir.ZoneServer.Mmo.Skill.ForcedMovement
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
+  alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.ItemContainer
@@ -1191,6 +1192,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         size: :medium
       },
       ammo_atk: Map.get(state.stats.modifiers.equipment, :ammo_atk, 0),
+      arrow_element:
+        if(WeaponTypes.requires_ammo?(weapon_type), do: nil, else: ammo_element(state.stats)),
       right_hand: state.stats.right_hand,
       left_hand: state.stats.left_hand,
       attack_range: PlayerStats.attack_range(state.stats),
@@ -1230,13 +1233,21 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
   defp defense_element(_stats), do: {:neutral, 1}
 
-  # Ammo element wins, then the equipped weapon's own `attack_element`, then the
+  # Bow/gun ammo element wins, then the equipped weapon's own `attack_element`, then the
   # equipment-script `:atk_ele` (`bonus bAtkEle`), then its forged element and
   # the neutral default. A status endow outranks all of them, applied by the
   # damage calculators through the `:attack_element` modifier.
   defp weapon_element(%PlayerStats{} = stats) do
-    item_element(stats.equipment.ammo) || item_element(stats.equipment.right_hand) ||
+    promoted =
+      if WeaponTypes.requires_ammo?(PlayerStats.weapon_type(stats.equipment)),
+        do: ammo_element(stats)
+
+    promoted || item_element(stats.equipment.right_hand) ||
       equip_atk_element(stats) || forged_weapon_element(stats.worn_items) || :neutral
+  end
+
+  defp ammo_element(%PlayerStats{} = stats) do
+    Map.get(stats.modifiers.equipment, :arrow_ele) || item_element(stats.equipment.ammo)
   end
 
   @spec forged_weapon_element([map()]) :: atom() | nil

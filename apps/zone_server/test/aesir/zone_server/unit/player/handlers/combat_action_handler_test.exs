@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Id, as: SkillUnitId
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
@@ -600,6 +602,80 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
         :player, 2000 -> {:error, :not_found}
         :mob, 2000 -> {:ok, {10, 11, "prontera"}}
       end)
+    end
+
+    test "basic_attack_wrong_ammo_test" do
+      stub(Stats, :weapon_type, fn _equipment -> :shotgun end)
+      stub_target_in_range()
+
+      stub(Combat, :execute_attack, fn _stats, game_state, _target, _recalculate ->
+        send(self(), :struck)
+        {:ok, game_state}
+      end)
+
+      stub(InventoryOps, :apply_change, fn _char, _old, new, _change -> {:ok, new} end)
+
+      for subtype <- [:arrow, :shell] do
+        stub(Items, :by_id, fn 90_001 ->
+          {:ok,
+           %ItemDefinition{
+             id: 90_001,
+             aegis_name: "WrongAmmo",
+             name: "Wrong Ammo",
+             type: :ammo,
+             subtype: subtype
+           }}
+        end)
+
+        ammo = %InventoryItem{nameid: 90_001, amount: 10, equip: @ammo_bit}
+        state = combat_state(%{0 => ammo})
+
+        capture_log(fn ->
+          assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 2000, 0)
+          assert returned.game_state.inventory == state.game_state.inventory
+        end)
+
+        refute_received :struck
+        refute_received {:send, :gameplay, {:item_removed, _}}
+      end
+
+      Mimic.stub(Items, :by_id, fn 13_200 ->
+        {:ok,
+         %ItemDefinition{
+           id: 13_200,
+           aegis_name: "Bullet",
+           name: "Bullet",
+           type: :ammo,
+           subtype: :bullet
+         }}
+      end)
+
+      bullet = %InventoryItem{nameid: 13_200, amount: 10, equip: @ammo_bit}
+
+      capture_log(fn ->
+        assert {:noreply, returned} =
+                 CombatActionHandler.handle_attack_request(combat_state(%{0 => bullet}), 2000, 0)
+
+        assert returned.game_state.inventory[0].amount == 9
+      end)
+
+      assert_received :struck
+      assert_received {:send, :gameplay, {:item_removed, %ItemRemoved{amount: 1}}}
+    end
+
+    test "an intercepted gun swing consumes no ammunition" do
+      stub(Stats, :weapon_type, fn _equipment -> :shotgun end)
+      stub_target_in_range()
+
+      expect(Combat, :execute_attack, fn _stats, game_state, _target, _recalculate ->
+        {:intercepted, game_state}
+      end)
+
+      bullet = %InventoryItem{nameid: 13_200, amount: 10, equip: @ammo_bit}
+      state = combat_state(%{0 => bullet})
+      assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 2000, 0)
+      assert returned.game_state.inventory == state.game_state.inventory
+      refute_received {:send, :gameplay, {:item_removed, _}}
     end
 
     test "a bow attack with no arrows fails with :no_ammo and never strikes" do

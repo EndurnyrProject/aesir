@@ -1260,7 +1260,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     case Keyword.get(opts, :element) do
       nil ->
         endow = DamageShared.endow_element(modifiers)
-        {resolve_attack_element(attacker, modifiers), endow || left_weapon_element(attacker)}
+
+        {resolve_attack_element(attacker, modifiers, opts),
+         endow || left_weapon_element(attacker)}
 
       forced ->
         {forced, forced}
@@ -1273,7 +1275,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   defp left_weapon_element(_attacker), do: :neutral
 
   defp hit_element(attacker, modifiers, opts),
-    do: Keyword.get(opts, :element) || resolve_attack_element(attacker, modifiers)
+    do: Keyword.get(opts, :element) || resolve_attack_element(attacker, modifiers, opts)
 
   defp attacker_status_modifiers(attacker) do
     {unit_type, unit_id} = get_unit_type_and_id(attacker)
@@ -1285,7 +1287,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     {defender_type, defender_id} = get_unit_type_and_id(defender)
     attacker_modifiers = ModifierCalculator.get_battle_modifiers(attacker_type, attacker_id)
     defender_modifiers = ModifierCalculator.get_battle_modifiers(defender_type, defender_id)
-    element = Keyword.get(opts, :element) || resolve_attack_element(attacker, attacker_modifiers)
+    element = hit_element(attacker, attacker_modifiers, opts)
     skill_id = Keyword.get(opts, :skill_id)
 
     elements =
@@ -1425,7 +1427,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   # skill's element, an endow, or the right weapon's own.
   defp right_attack_element(attacker, modifiers, opts) do
     Keyword.get(opts, :element) || DamageShared.endow_element(modifiers) ||
-      right_weapon_element(attacker)
+      arrow_element(attacker, opts) || right_weapon_element(attacker)
   end
 
   defp right_weapon_element(%{right_hand: %WeaponHand{element: element}})
@@ -1877,8 +1879,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     end
   end
 
-  defp resolve_attack_element(attacker, attacker_modifiers) do
-    DamageShared.endow_element(attacker_modifiers) || Map.get(attacker.weapon, :element, :neutral)
+  defp resolve_attack_element(attacker, attacker_modifiers, opts) do
+    DamageShared.endow_element(attacker_modifiers) || arrow_element(attacker, opts) ||
+      Map.get(attacker.weapon, :element, :neutral)
+  end
+
+  defp arrow_element(attacker, opts) do
+    if DamageInputs.arrow_attack?(attacker, Keyword.get(opts, :skill_id)) do
+      case Map.get(attacker, :arrow_element) do
+        :neutral -> nil
+        element -> element
+      end
+    end
   end
 
   defp apply_size_modifier(damage, attacker, defender, opts) do

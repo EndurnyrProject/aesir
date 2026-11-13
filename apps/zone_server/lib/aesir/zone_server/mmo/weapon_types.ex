@@ -79,6 +79,17 @@ defmodule Aesir.ZoneServer.Mmo.WeaponTypes do
     weapon in [:bow, :revolver, :rifle, :gatling, :shotgun, :grenade]
   end
 
+  @doc "Returns the ammunition subtypes used by the weapon in the given game mode."
+  @spec ammo_subtypes_for(atom(), :renewal | :pre_renewal) :: [atom()]
+  def ammo_subtypes_for(weapon, _mode) when weapon in [:bow, :musical, :whip], do: [:arrow]
+
+  def ammo_subtypes_for(weapon, _mode) when weapon in [:revolver, :rifle, :gatling, :shotgun],
+    do: [:bullet]
+
+  def ammo_subtypes_for(:grenade, :renewal), do: [:bullet]
+  def ammo_subtypes_for(:grenade, :pre_renewal), do: [:grenade]
+  def ammo_subtypes_for(_weapon, _mode), do: []
+
   @doc "Returns whether normal attacks with this weapon are long-range."
   @spec long_range_attack?(integer() | atom()) :: boolean()
   def long_range_attack?(weapon), do: requires_ammo?(weapon)

@@ -650,6 +650,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       # Arrow 1750 is available in both modes and requires an Archer-family job.
       character = %{character | class: 3}
       seed_item(character.id, 1750, 1)
+      seed_equipped(character.id, 1701, 34)
       {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
 
       server_index = index_of(state.game_state.inventory, 1750)

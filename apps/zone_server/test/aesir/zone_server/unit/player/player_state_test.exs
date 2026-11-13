@@ -764,8 +764,25 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       assert combatant.weapon.element == :neutral
     end
 
-    test "weapon.element is :fire when Fire Arrow (1752) is in the ammo slot", %{state: state} do
+    test "weapon.element is :neutral when Fire Arrow (1752) is in the ammo slot without a weapon",
+         %{state: state} do
       combatant = PlayerState.to_combatant(with_ammo(state, 1752))
+      assert combatant.weapon.element == :neutral
+      assert combatant.arrow_element == :fire
+    end
+
+    test "weapon.element is :fire when a bow promotes Fire Arrow's element", %{state: state} do
+      equipment =
+        Stats.equipment_from_inventory([
+          %InventoryItem{nameid: 1701, amount: 1, equip: 34, identify: 1},
+          %InventoryItem{nameid: 1752, amount: 1, equip: 32_768, identify: 1}
+        ])
+
+      combatant =
+        state
+        |> put_in([Access.key(:stats), Access.key(:equipment)], equipment)
+        |> PlayerState.to_combatant()
+
       assert combatant.weapon.element == :fire
     end
 

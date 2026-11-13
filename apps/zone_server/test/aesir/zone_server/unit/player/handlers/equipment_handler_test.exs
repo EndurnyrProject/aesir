@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
 
   @moduletag :capture_log
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
@@ -36,6 +37,111 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
   setup do
     Aesir.TestEtsSetup.setup_ets_tables(%{})
     :ok
+  end
+
+  test "weapon_swap_unequips_ammo_test" do
+    definitions = %{
+      90_001 => %ItemDefinition{
+        id: 90_001,
+        aegis_name: "Launcher",
+        name: "Launcher",
+        type: :weapon,
+        subtype: :grenade,
+        locations: [:right_hand, :left_hand]
+      },
+      90_002 => %ItemDefinition{
+        id: 90_002,
+        aegis_name: "Bullet",
+        name: "Bullet",
+        type: :ammo,
+        subtype: :bullet,
+        locations: [:ammo]
+      },
+      90_003 => %ItemDefinition{
+        id: 90_003,
+        aegis_name: "Grenade",
+        name: "Grenade",
+        type: :ammo,
+        subtype: :grenade,
+        locations: [:ammo]
+      },
+      90_004 => %ItemDefinition{
+        id: 90_004,
+        aegis_name: "Shield",
+        name: "Shield",
+        type: :armor,
+        locations: [:left_hand]
+      },
+      90_005 => %ItemDefinition{
+        id: 90_005,
+        aegis_name: "Dagger",
+        name: "Dagger",
+        type: :weapon,
+        subtype: :dagger,
+        locations: [:right_hand]
+      },
+      90_006 => %ItemDefinition{
+        id: 90_006,
+        aegis_name: "Arrow",
+        name: "Arrow",
+        type: :ammo,
+        subtype: :arrow,
+        locations: [:ammo]
+      },
+      90_007 => %ItemDefinition{
+        id: 90_007,
+        aegis_name: "Shell",
+        name: "Shell",
+        type: :ammo,
+        subtype: :shell,
+        locations: [:ammo]
+      },
+      90_008 => %ItemDefinition{
+        id: 90_008,
+        aegis_name: "Kunai",
+        name: "Kunai",
+        type: :ammo,
+        subtype: :kunai,
+        locations: [:ammo]
+      }
+    }
+
+    stub(ItemManagement, :get_item_by_id, &Map.fetch(definitions, &1))
+    stub(InventoryOps, :apply_change, fn 1000, _old, new, _change -> {:ok, new} end)
+    stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+    stub(UnitRegistry, :update_unit_state, fn :player, 1000, _game_state -> :ok end)
+    stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+    stub(StatusSync, :send_params, fn _connection, _params -> :ok end)
+
+    for {weapon, mask, ammo, kept?} <- [
+          {90_001, 34, 90_002, GameMode.mode() == :renewal},
+          {90_001, 34, 90_007, GameMode.mode() == :renewal},
+          {90_001, 34, 90_003, true},
+          {90_005, 2, 90_003, GameMode.mode() == :renewal},
+          {90_005, 2, 90_002, false},
+          {90_005, 2, 90_006, false},
+          {90_005, 2, 90_008, true}
+        ] do
+      game_state = PlayerState.new(%{character() | class: 0, base_level: 99})
+
+      inventory = %{
+        0 => %InventoryItem{nameid: weapon, amount: 1, identify: 1},
+        1 => %InventoryItem{nameid: ammo, amount: 10, equip: 32_768, identify: 1},
+        2 => %InventoryItem{nameid: 90_004, amount: 1, equip: 32, identify: 1}
+      }
+
+      state = %{connection_pid: self(), game_state: %{game_state | inventory: inventory}}
+      assert {:noreply, returned} = EquipmentHandler.handle_equip(0, mask, state)
+      assert returned.game_state.inventory[0].equip == mask
+      assert returned.game_state.inventory[1].equip == if(kept?, do: 32_768, else: 0)
+      assert returned.game_state.inventory[2].equip == if(mask == 34, do: 0, else: 32)
+
+      if kept? do
+        refute_received {:send, :gameplay, {:unequip_result, %UnequipResult{index: 3}}}
+      else
+        assert_received {:send, :gameplay, {:unequip_result, %UnequipResult{index: 3, result: 0}}}
+      end
+    end
   end
 
   test "publishes inventory changes after equip, replacement, and unequip commits" do

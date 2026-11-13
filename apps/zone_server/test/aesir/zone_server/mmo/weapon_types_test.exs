@@ -3,6 +3,24 @@ defmodule Aesir.ZoneServer.Mmo.WeaponTypesTest do
 
   alias Aesir.ZoneServer.Mmo.WeaponTypes
 
+  test "ammo_subtypes_test" do
+    for mode <- [:renewal, :pre_renewal] do
+      for weapon <- [:bow, :musical, :whip] do
+        assert WeaponTypes.ammo_subtypes_for(weapon, mode) == [:arrow]
+      end
+
+      for weapon <- [:revolver, :rifle, :gatling, :shotgun] do
+        assert WeaponTypes.ammo_subtypes_for(weapon, mode) == [:bullet]
+      end
+
+      assert WeaponTypes.ammo_subtypes_for(:dagger, mode) == []
+      assert WeaponTypes.ammo_subtypes_for(:fist, mode) == []
+    end
+
+    assert WeaponTypes.ammo_subtypes_for(:grenade, :renewal) == [:bullet]
+    assert WeaponTypes.ammo_subtypes_for(:grenade, :pre_renewal) == [:grenade]
+  end
+
   describe "get_attack_range/1" do
     test "returns correct range for melee weapons" do
       # Basic melee weapons have range 1

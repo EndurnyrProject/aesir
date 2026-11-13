@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   effects, so they stay inside the core.
   """
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.Eligibility
@@ -23,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Roller, as: RandomOptionRoller
   alias Aesir.ZoneServer.Mmo.JobManagement.ItemEligibility
+  alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.ItemContainer
@@ -352,6 +354,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
          :ok <- validate_requirements(item_def, ctx),
          :ok <- validate_not_broken(item),
          :ok <- validate_identified(item),
+         :ok <- validate_ammo_weapon(item_def, equipped_weapon_type(inventory)),
          {:ok, worn_mask} <- resolve_worn_mask(inventory, item_def, position, ctx) do
       {inventory, unequipped} = unequip_conflicts(inventory, index, worn_mask)
       equipped = %{item | equip: worn_mask}
@@ -461,6 +464,28 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
 
   defp validate_equippable(%ItemDefinition{type: type}) do
     if type in @equippable_types, do: :ok, else: {:error, :cannot_equip}
+  end
+
+  @doc "Checks weapon restrictions for equipping ammo, including shells but not skill-only ammo."
+  @spec validate_ammo_weapon(ItemDefinition.t(), atom()) :: :ok | {:error, :wrong_ammo}
+  def validate_ammo_weapon(%ItemDefinition{type: :ammo, subtype: subtype}, weapon) do
+    mode = GameMode.mode()
+
+    restricted? =
+      subtype in [:arrow, :bullet, :shell] or
+        (subtype == :grenade and mode == :pre_renewal)
+
+    subtype = if subtype == :shell, do: :bullet, else: subtype
+
+    if restricted? and subtype not in WeaponTypes.ammo_subtypes_for(weapon, mode),
+      do: {:error, :wrong_ammo},
+      else: :ok
+  end
+
+  def validate_ammo_weapon(_item_def, _weapon), do: :ok
+
+  defp equipped_weapon_type(inventory) do
+    inventory |> equipped_items() |> Stats.equipment_from_inventory() |> Stats.weapon_type()
   end
 
   @doc "Whether `item_def` may be equipped by the given character identity."

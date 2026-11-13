@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
 
   require Logger
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Net.MoveStop
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Config
@@ -422,8 +423,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   defp handle_attack_execution(state, target_id, transitioned_state) do
     weapon_type = Stats.weapon_type(transitioned_state.stats.equipment)
 
+    allowed = WeaponTypes.ammo_subtypes_for(weapon_type, GameMode.mode())
+
     if WeaponTypes.requires_ammo?(weapon_type) and
-         Ammo.equipped_ammo_index(transitioned_state.inventory) == nil do
+         Ammo.check(transitioned_state.inventory, allowed, 1) != :ok do
       handle_attack_failure(state, transitioned_state, :no_ammo)
     else
       do_execute_attack(state, target_id, transitioned_state, weapon_type)
