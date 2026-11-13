@@ -81,6 +81,7 @@ defmodule Aesir.ZoneServer.Script.DslItemCountsTest do
                       %{nameid: @stone, identify: 1, cards: [254, 0, 5, 0], options: nil}, 1}}
   end
 
+  @tag :capture_log
   test "an unknown item or an offline target ends the script, a zero amount does nothing", %{
     ctx: ctx
   } do

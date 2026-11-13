@@ -16,6 +16,8 @@ defmodule Aesir.ZoneServer.Script.DetachedCtxTest do
 
   use ExUnit.Case, async: true
 
+  @moduletag :capture_log
+
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
   alias Aesir.ZoneServer.Unit.Player.PlayerState

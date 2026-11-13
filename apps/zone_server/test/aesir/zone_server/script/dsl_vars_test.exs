@@ -120,6 +120,7 @@ defmodule Aesir.ZoneServer.Script.DslVarsTest do
       assert Dsl.get_account_var(ctx(account_id: account.id + 999), "#points", 0) == 0
     end
 
+    @tag :capture_log
     test "end the script without a player" do
       detached = %{ctx() | account_id: nil}
 
@@ -235,6 +236,7 @@ defmodule Aesir.ZoneServer.Script.DslVarsTest do
       assert_received {:script_apply, {:set_char_var, :quest, 2}}
     end
 
+    @tag :capture_log
     test "char/temp getd ends the script on a detached ctx; other scopes work" do
       detached = %{ctx() | game_state: nil, account_id: nil, session_pid: nil}
 
@@ -247,6 +249,7 @@ defmodule Aesir.ZoneServer.Script.DslVarsTest do
                catch_throw(Dsl.getd(detached, "quest"))
     end
 
+    @tag :capture_log
     test "char/temp setd ends the script with :no_player on a detached ctx" do
       detached = %{ctx() | game_state: nil, account_id: nil, session_pid: nil}
 

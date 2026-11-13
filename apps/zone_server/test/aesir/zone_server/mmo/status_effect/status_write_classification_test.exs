@@ -16,28 +16,31 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusWriteClassificationTest do
   ]
 
   @interpreter "mmo/status_effect/interpreter.ex"
+  @applier "mmo/status_effect/applier.ex"
+  @removal "mmo/status_effect/removal.ex"
+  @combat_hooks "mmo/status_effect/combat_hooks.ex"
   @classified %{
-    {@interpreter, :remove_current_status_and_notify, :remove_status_if_current} =>
+    {@removal, :remove_current_status_and_notify, :remove_status_if_current} =>
       :remove_current_status_and_notify,
     {@interpreter, :restart_status_if_current, :replace_status_if_current} =>
       :restart_status_if_current,
-    {@interpreter, :end_status_events, :remove_status} => :end_status_events,
-    {@interpreter, :store_end_outcome, :replace_status_if_current} => :silent_keep,
-    {@interpreter, :store_end_outcome, :remove_status_if_current} => :finish_requested_end,
-    {@interpreter, :end_removed_unit_statuses, :clear_unit_statuses} => :silent_teardown,
-    {@interpreter, :end_removed, :remove_status_if_current} => :finish_removal,
-    {@interpreter, :store_applied_status, :apply_status_with_entry} => :finish_application,
-    {@interpreter, :rollback_application, :remove_status_if_current} => :silent_unstarted,
-    {@interpreter, :discard_application, :remove_status_if_current} => :silent_unstarted,
-    {@interpreter, :expire_status_events_if_current, :remove_status_if_current} =>
+    {@removal, :end_status_events, :remove_status} => :end_status_events,
+    {@removal, :store_end_outcome, :replace_status_if_current} => :silent_keep,
+    {@removal, :store_end_outcome, :remove_status_if_current} => :finish_requested_end,
+    {@removal, :end_removed_unit_statuses, :clear_unit_statuses} => :silent_teardown,
+    {@removal, :end_removed, :remove_status_if_current} => :finish_removal,
+    {@applier, :store_applied_status, :apply_status_with_entry} => :finish_application,
+    {@applier, :rollback_application, :remove_status_if_current} => :silent_unstarted,
+    {@applier, :discard_application, :remove_status_if_current} => :silent_unstarted,
+    {@removal, :expire_status_events_if_current, :remove_status_if_current} =>
       :expire_status_events_if_current,
-    {@interpreter, :apply_committed_action_result, :replace_status_if_current} =>
+    {@combat_hooks, :apply_committed_action_result, :replace_status_if_current} =>
       :apply_committed_action_result,
-    {@interpreter, :store_movement_changes_if_current, :replace_status_if_current} =>
+    {@combat_hooks, :store_movement_changes_if_current, :replace_status_if_current} =>
       :store_movement_changes_if_current,
-    {@interpreter, :settle_absorb, :take_status} => :settle_absorb,
+    {@combat_hooks, :settle_absorb, :take_status} => :settle_absorb,
     {@interpreter, :update_link_status, :apply_status_with_entry} => :silent_values,
-    {@interpreter, :store_instance_changes, :update_status} => :silent_values,
+    {@combat_hooks, :store_instance_changes, :update_status} => :silent_values,
     {@interpreter, :store_instance_changes_if_current, :update_status} => :silent_values,
     {"mmo/status_effect/dispel.ex", :disarm_penalties, :update_status} => :silent_disarm,
     {"mmo/status_effect/clear_buffs.ex", :disarm_berserk, :update_status} => :silent_disarm,
@@ -52,6 +55,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusWriteClassificationTest do
     {"mmo/skills/professor/pf_spiderweb.ex", :release, :replace_status_if_current} =>
       :silent_values
   }
+  @notifiers [
+    :notify_mob_status_write,
+    :notify_unit_status_applied,
+    :notify_unit_status_removed
+  ]
   @silent [
     :silent_keep,
     :silent_teardown,
@@ -129,14 +137,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusWriteClassificationTest do
   defp notifies?(body) do
     {_, found?} =
       Macro.prewalk(body, false, fn
+        {{:., _, [{:__aliases__, _, [:Notifications]}, call]}, _, args} = node, found?
+        when is_list(args) ->
+          {node, found? or call in @notifiers}
+
         {call, _, args} = node, found? when is_atom(call) and is_list(args) ->
-          {node,
-           found? or
-             call in [
-               :notify_mob_status_write,
-               :notify_unit_status_applied,
-               :notify_unit_status_removed
-             ]}
+          {node, found? or call in @notifiers}
 
         node, found? ->
           {node, found?}

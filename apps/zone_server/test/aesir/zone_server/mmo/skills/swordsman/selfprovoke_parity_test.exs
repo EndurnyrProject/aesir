@@ -226,7 +226,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SelfprovokeParityTest do
                val3: 23
              )
 
-    held = StatusStorage.get_status(:player, player.character_id, :sc_provoke)
+    %StatusEntry{} = held = StatusStorage.get_status(:player, player.character_id, :sc_provoke)
     assert {held.val2, held.val3} == {17, 23}
 
     stub(UnitRegistry, :unit_exists?, fn :mob, 5_006 -> true end)

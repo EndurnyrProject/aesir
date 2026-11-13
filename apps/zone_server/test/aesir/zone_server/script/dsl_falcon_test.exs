@@ -54,6 +54,7 @@ defmodule Aesir.ZoneServer.Script.DslFalconTest do
       assert Dsl.checkfalcon(ctx()) == 0
     end
 
+    @tag :capture_log
     test "ends the script without an attached player" do
       assert {:script_end, %{status: {:error, :no_player}}} =
                catch_throw(Dsl.checkfalcon(%{ctx() | game_state: nil}))
@@ -105,6 +106,7 @@ defmodule Aesir.ZoneServer.Script.DslFalconTest do
       assert_received {:script_apply, {:set_falcon, true}}
     end
 
+    @tag :capture_log
     test "ends the script on detached contexts without mutating their snapshots" do
       detached = %{ctx() | game_state: nil}
 

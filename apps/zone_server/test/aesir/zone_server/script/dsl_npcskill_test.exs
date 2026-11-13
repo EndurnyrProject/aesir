@@ -138,6 +138,7 @@ defmodule Aesir.ZoneServer.Script.DslNpcskillTest do
     refute_received {:packet, _}
   end
 
+  @tag :capture_log
   test "ends the script on detached contexts and warns when no NPC is attached" do
     ctx = register_player()
     detached = %{ctx | game_state: nil}

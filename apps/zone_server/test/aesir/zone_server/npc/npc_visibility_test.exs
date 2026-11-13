@@ -184,6 +184,7 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
       assert NpcSession.visible?(gid)
     end
 
+    @tag :capture_log
     test "cloakoffnpcself is a per-player cloak, so a detached ctx ends the script" do
       ctx = npc_ctx(gid_for(ToggleNpc))
 

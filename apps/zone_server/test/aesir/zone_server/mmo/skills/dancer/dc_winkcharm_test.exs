@@ -55,7 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcWinkcharmTest do
       )
       |> File.read!()
 
-    assert platinum_source =~ "skill(ctx, 1011, 1, :permanent)"
+    assert platinum_source =~ "dancer: [1011]"
   end
 
   test "a player's use on a Demihuman boss is refused before the cast begins with TOTARGET" do

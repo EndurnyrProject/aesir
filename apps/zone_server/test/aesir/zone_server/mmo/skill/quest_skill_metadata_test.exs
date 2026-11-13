@@ -23,24 +23,40 @@ defmodule Aesir.ZoneServer.Mmo.Skill.QuestSkillMetadataTest do
                      __DIR__
                    )
 
-  # The generated function references implemented skills by resolved integer
-  # id (`skill(ctx, 142, 1, :permanent)` or piped `|> skill(147, 1, :permanent)`)
-  # and skills the transpile-time resolver could not resolve by their downcased
-  # atom fallback (`skill(ctx, :mc_cartdecorate, ...)`).
+  # The function keeps resolved skill ids as integers in module attributes
+  # (`@first_aid 142`, `@class_skills %{archer: [147, 148]}`) and names skills
+  # the transpile-time resolver could not resolve by their downcased atom
+  # (`skill(ctx, :mc_cartdecorate, ...)`).
   defp referenced_skill_names do
-    source = File.read!(@platinum_source)
+    {_, references} =
+      @platinum_source
+      |> File.read!()
+      |> Code.string_to_quoted!()
+      |> Macro.prewalk([], fn
+        {:@, _, [{_name, _, [value]}]} = node, acc ->
+          {node, integer_literals(value) ++ acc}
 
-    ids =
-      ~r/skill\((?:ctx, )?(\d+),/
-      |> Regex.scan(source)
-      |> Enum.map(fn [_full, id] -> String.to_integer(id) end)
+        {:skill, _, [_ctx, name | _]} = node, acc when is_atom(name) ->
+          {node, [name | acc]}
 
-    atoms =
-      ~r/skill\((?:ctx, )?:([a-z0-9_]+),/
-      |> Regex.scan(source)
-      |> Enum.map(fn [_full, name] -> String.to_atom(name) end)
+        {:skill, _, [name | _]} = node, acc when is_atom(name) ->
+          {node, [name | acc]}
 
-    Enum.uniq(ids ++ atoms)
+        node, acc ->
+          {node, acc}
+      end)
+
+    Enum.uniq(references)
+  end
+
+  defp integer_literals(ast) do
+    {_, integers} =
+      Macro.prewalk(ast, [], fn
+        integer, acc when is_integer(integer) -> {integer, [integer | acc]}
+        node, acc -> {node, acc}
+      end)
+
+    integers
   end
 
   defp catalog_lookup(skill_id) when is_integer(skill_id), do: Catalog.by_id(skill_id)

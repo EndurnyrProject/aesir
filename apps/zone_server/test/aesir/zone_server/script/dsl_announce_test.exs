@@ -88,6 +88,7 @@ defmodule Aesir.ZoneServer.Script.DslAnnounceTest do
       assert opts.color == 0xFF0000
     end
 
+    @tag :capture_log
     test "detached ctx with self scope ends the script and delivers nothing" do
       ctx = detached_ctx()
 
@@ -99,6 +100,7 @@ defmodule Aesir.ZoneServer.Script.DslAnnounceTest do
       refute_received {:to_area, _, _, _}
     end
 
+    @tag :capture_log
     test "detached ctx with area scope ends the script and delivers nothing" do
       ctx = detached_ctx()
 
@@ -215,6 +217,7 @@ defmodule Aesir.ZoneServer.Script.DslAnnounceTest do
       assert opts.color == 0xFF0000
     end
 
+    @tag :capture_log
     test "ends the script on a detached ctx" do
       ctx = detached_ctx()
 

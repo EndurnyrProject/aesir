@@ -174,6 +174,7 @@ defmodule Aesir.ZoneServer.Script.DslExtendedItemGrantsTest do
                        ], 11, 10}
     end
 
+    @tag :capture_log
     test "an unknown map does nothing, an unknown item fails the command, a detached `this` ends the script",
          %{session: s} do
       assert %Ctx{status: :ok} =
@@ -260,6 +261,7 @@ defmodule Aesir.ZoneServer.Script.DslExtendedItemGrantsTest do
       refute_received {:script_apply, _pid, _op}
     end
 
+    @tag :capture_log
     test "a detached ctx with no target account ends the script", %{session: s} do
       detached = %{ctx(s) | game_state: nil, session_pid: nil}
 

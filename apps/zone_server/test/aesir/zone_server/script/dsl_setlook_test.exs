@@ -71,6 +71,7 @@ defmodule Aesir.ZoneServer.Script.DslSetlookTest do
       end
     end
 
+    @tag :capture_log
     test "ends the script on a detached context" do
       detached = %{register_player() | game_state: nil}
 
@@ -129,6 +130,7 @@ defmodule Aesir.ZoneServer.Script.DslSetlookTest do
       refute_received {:script_apply, _}
     end
 
+    @tag :capture_log
     test "ends the script on a detached context" do
       detached = %{register_player() | game_state: nil}
 

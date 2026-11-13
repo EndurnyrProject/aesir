@@ -77,6 +77,7 @@ defmodule Aesir.ZoneServer.Script.DslSkillGrantTest do
       assert_received {:script_apply, {:grant_skill, 9001, 1}}
     end
 
+    @tag :capture_log
     test "ends the script with :no_player without calling the session on a detached ctx" do
       detached = %{ctx() | game_state: nil}
 

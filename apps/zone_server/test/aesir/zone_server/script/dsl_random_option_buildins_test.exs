@@ -62,6 +62,7 @@ defmodule Aesir.ZoneServer.Script.DslRandomOptionBuildinsTest do
       assert Dsl.getequiprandomoption(ctx(), @hand_r, 0, 0, 999_999) == -1
     end
 
+    @tag :capture_log
     test "a detached script ends" do
       assert {:script_end, %Ctx{status: {:error, :no_player}}} =
                catch_throw(Dsl.getequiprandomoption(%{ctx() | game_state: nil}, @hand_r, 0, 0))
@@ -69,6 +70,7 @@ defmodule Aesir.ZoneServer.Script.DslRandomOptionBuildinsTest do
   end
 
   describe "getrandomoptinfo" do
+    @tag :capture_log
     test "reads 0 outside an option's script and ends a detached script" do
       assert Dsl.getrandomoptinfo(ctx(), 1) == 0
 
@@ -140,6 +142,7 @@ defmodule Aesir.ZoneServer.Script.DslRandomOptionBuildinsTest do
       refute_received {:script_apply, _op}
     end
 
+    @tag :capture_log
     test "a detached script ends" do
       assert {:script_end, %Ctx{status: {:error, :no_player}}} =
                catch_throw(

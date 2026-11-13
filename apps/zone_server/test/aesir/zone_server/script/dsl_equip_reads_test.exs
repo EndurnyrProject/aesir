@@ -285,6 +285,7 @@ defmodule Aesir.ZoneServer.Script.DslEquipReadsTest do
   end
 
   describe "detached ctx" do
+    @tag :capture_log
     test "equip reads end the script on a detached ctx" do
       detached = detached_ctx()
 

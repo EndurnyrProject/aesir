@@ -57,6 +57,7 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
       assert Dsl.checkcart(ctx()) == 0
     end
 
+    @tag :capture_log
     test "ends the script on a detached ctx" do
       assert {:script_end, %{status: {:error, :no_player}}} =
                catch_throw(Dsl.checkcart(%{ctx() | game_state: nil}))
@@ -84,6 +85,7 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
       assert Dsl.getcharid(ctx(), 9) == 0
     end
 
+    @tag :capture_log
     test "ends the script on a detached ctx" do
       assert {:script_end, %{status: {:error, :no_player}}} =
                catch_throw(Dsl.getcharid(%{ctx() | game_state: nil}, 0))
@@ -167,6 +169,7 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
       for job_id <- [0, 7, 4054], do: assert(Dsl.upper(ctx(job_id: job_id)) == 0)
     end
 
+    @tag :capture_log
     test "ends the script on a detached ctx" do
       assert {:script_end, %{status: {:error, :no_player}}} =
                catch_throw(Dsl.upper(%{ctx() | game_state: nil}))
@@ -179,6 +182,7 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
       assert Dsl.skill_point(ctx()) == 0
     end
 
+    @tag :capture_log
     test "ends the script on a detached ctx" do
       assert {:script_end, %{status: {:error, :no_player}}} =
                catch_throw(Dsl.skill_point(%{ctx() | game_state: nil}))
@@ -296,6 +300,7 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
       assert Dsl.getpartnerid(ctx()) == 0
     end
 
+    @tag :capture_log
     test "ends the script on a detached ctx (no player state)" do
       assert {:script_end, %{status: {:error, :no_player}}} =
                catch_throw(Dsl.getpartnerid(%{ctx() | game_state: nil}))

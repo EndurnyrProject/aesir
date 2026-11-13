@@ -347,6 +347,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.consumeitem(ctx, 0) == ctx
     end
 
+    @tag :capture_log
     test "an item script that ends the script does not end or latch the calling script" do
       # Item 501's `item_heal` halts :no_player on a detached ctx, ending the
       # item's own script; the script that consumed it carries on.
@@ -470,6 +471,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.mobcount(build_ctx(), "nope", "all") == -1
     end
 
+    @tag :capture_log
     test "ends the script for \"this\" on a detached ctx" do
       reject(&MobSupervisor.count_by_event/2)
       ctx = %{build_ctx() | game_state: nil}
@@ -488,6 +490,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert System.monotonic_time(:millisecond) - started >= 20
     end
 
+    @tag :capture_log
     test "ends the script with :no_player when the session died while sleeping" do
       pid = spawn(fn -> :ok end)
       ref = Process.monitor(pid)
@@ -497,6 +500,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert {:script_end, %{status: {:error, :no_player}}} = catch_throw(Dsl.sleep2(ctx, 1))
     end
 
+    @tag :capture_log
     test "fails the command and goes on without pausing on a detached ctx" do
       ctx = %{build_ctx() | game_state: nil}
       started = System.monotonic_time(:millisecond)
@@ -539,6 +543,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.progressbar(ctx, "ffff00", 5) == ctx
     end
 
+    @tag :capture_log
     test "fails the command and goes on when the bar cannot start" do
       expect(PlayerSession, :script_apply, fn _pid, {:progressbar, _, _, _} ->
         {:error, :no_player}
@@ -551,6 +556,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert result.failures == [{:progressbar, :no_player}]
     end
 
+    @tag :capture_log
     test "ends the script with :no_player on a detached ctx" do
       ctx = %{build_ctx() | game_state: nil}
 
@@ -654,6 +660,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.getbrokenid(ctx, -1) == 0
     end
 
+    @tag :capture_log
     test "ends the script on a detached ctx" do
       ctx = %{build_ctx() | game_state: nil}
 
@@ -740,6 +747,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.party_leader?(build_ctx()) == 0
     end
 
+    @tag :capture_log
     test "ends the script on a detached ctx" do
       ctx = %{build_ctx() | game_state: nil}
 
@@ -830,6 +838,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.getmapxy(build_ctx(), :npc, "Nobody") == :error
     end
 
+    @tag :capture_log
     test "ends the script when the requested unit is not attached" do
       assert {:script_end, %{status: {:error, :no_player}}} =
                catch_throw(Dsl.getmapxy(build_ctx(), :npc))
@@ -1399,6 +1408,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert result.failures == [{:unitskilluseid, :skill_not_learned}]
     end
 
+    @tag :capture_log
     test "fails the command and goes on in a detached context" do
       assert Dsl.unitskilluseid(Ctx.detached(DetachedNpc, 1), 10_015, []).failures ==
                [{:unitskilluseid, :no_player}]
@@ -1931,6 +1941,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.char_name(ctx, 2) == ""
     end
 
+    @tag :capture_log
     test "char_name/2 ends the script on a detached ctx" do
       assert {:script_end, %{status: {:error, :no_player}}} =
                catch_throw(Dsl.char_name(%{build_ctx() | game_state: nil}, 0))
@@ -1964,6 +1975,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   end
 
   describe "mapid job reads" do
+    @tag :capture_log
     test "eaclass/1 reads the player's job mapid, ending the script when detached" do
       assert Dsl.eaclass(build_ctx(job_id: 4054)) == 0x1101
 
