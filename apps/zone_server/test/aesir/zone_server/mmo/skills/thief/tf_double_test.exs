@@ -12,10 +12,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfDoubleTest do
   @tag game_mode: :renewal
   test "a successful dagger proc carries learned HIT with its two hits" do
     assert TfDouble.attack_proc(5, %{weapon_type: :dagger}) ==
-             %{multi_hit: 2, chance: 35, hit_bonus: 5}
+             %{multi_hit: 2, chance: 35, hit_bonus: 5, critical: true}
 
     assert TfDouble.attack_proc(10, %{weapon_type: :dagger}) ==
-             %{multi_hit: 2, chance: 70, hit_bonus: 10}
+             %{multi_hit: 2, chance: 70, hit_bonus: 10, critical: true}
   end
 
   test "attack_proc is empty for other weapons" do

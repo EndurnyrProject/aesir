@@ -108,8 +108,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalTest do
       refute Critical.normal_attack?(player(40), mob(luk: 20), [])
     end
 
-    test "a Double Attack swing never crits" do
-      refute Critical.normal_attack?(player(2_000), mob(luk: 0), multi_hit: true)
+    test "a proc without critical permission never crits" do
+      refute Critical.normal_attack?(player(2_000), mob(luk: 0), critical_allowed: false)
     end
 
     test "a holder of Auto Counter crits for certain and ends the stance" do
@@ -122,7 +122,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalTest do
     test "Auto Counter is kept when the swing cannot crit" do
       StatusStorage.apply_status(:player, 1001, :sc_auto_counter, val1: 5)
 
-      refute Critical.normal_attack?(player(500), mob(luk: 0), multi_hit: true)
+      refute Critical.normal_attack?(player(500), mob(luk: 0), critical_allowed: false)
       refute Critical.normal_attack?(player(0), mob(luk: 0), [])
       assert StatusStorage.has_status?(:player, 1001, :sc_auto_counter)
     end

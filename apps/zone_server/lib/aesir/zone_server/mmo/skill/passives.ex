@@ -545,14 +545,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   @doc """
   Folds the on-normal-attack procs of every learned passive into one map.
 
-  Keeps the proc with the highest `:multi_hit` (carrying its own `:chance` and
-  `:hit_bonus` metadata along with it), since only one multi-hit source exists
-  at first job. Returns `%{}` when nothing procs.
+  Keeps the proc with the highest `:multi_hit`, carrying its own `:chance`,
+  `:hit_bonus` and `:critical` permission unchanged. Ties retain the first proc,
+  so a selected multi-hit is not followed by another proc roll. Returns `%{}`
+  when nothing procs.
   """
   @spec attack_procs(PlayerState.t() | PlayerStats.t()) :: %{
           optional(:multi_hit) => pos_integer(),
           optional(:chance) => 1..100,
-          optional(:hit_bonus) => non_neg_integer()
+          optional(:hit_bonus) => non_neg_integer(),
+          optional(:critical) => boolean()
         }
   def attack_procs(%PlayerState{stats: stats}), do: attack_procs(stats)
 

@@ -45,6 +45,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   the skill's physical hits never receive the equipment non-critical damage
   rate. It is mode-keyable.
 
+  `critical` mirrors the source's Critical damage flag: a passive multi-hit
+  proc carrying this permission may roll criticals. It is mode-keyable.
+
   `ignore_auto_guard` mirrors the source's IgnoreAutoGuard flag: the skill's
   weapon hits are never blocked by Guard. It is mode-keyable.
 
@@ -204,6 +207,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             ignore_def_card: false,
             ignore_element: false,
             ignore_flee: false,
+            critical: false,
             cast_cancel: true,
             target_hidden: false,
             is_npc: false,
@@ -275,6 +279,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           ignore_def_card: boolean(),
           ignore_element: boolean(),
           ignore_flee: boolean(),
+          critical: boolean(),
           cast_cancel: boolean(),
           target_hidden: boolean(),
           is_npc: boolean(),
@@ -354,6 +359,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     ignore_def_card: :boolean,
     ignore_element: :boolean,
     ignore_flee: :boolean,
+    critical: :boolean,
     cast_cancel: :boolean,
     target_hidden: :boolean,
     is_npc: :boolean,
@@ -417,6 +423,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     ignore_def_card: false,
     ignore_element: false,
     ignore_flee: false,
+    critical: false,
     cast_cancel: true,
     target_hidden: false,
     is_npc: false,
@@ -477,6 +484,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     :ignore_def_card,
     :ignore_element,
     :ignore_flee,
+    :critical,
     :cast_cancel,
     :target_hidden,
     :is_npc,

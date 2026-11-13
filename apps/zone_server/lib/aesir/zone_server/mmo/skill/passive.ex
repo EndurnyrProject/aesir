@@ -127,11 +127,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
   path. A `:multi_hit` value of `n` delivers the basic attack as `n` hits;
   `:chance` (1-100) is the percent chance the multi-hit rolls, defaulting to 100
   (always) when absent. `:hit_bonus` applies only when the proc succeeds.
+  `:critical` permits the proc to crit, mirroring its skill DB Critical damage
+  flag; absent or false suppresses criticals only on a successful proc.
   """
   @callback attack_proc(level :: pos_integer(), ctx()) :: %{
               optional(:multi_hit) => pos_integer(),
               optional(:chance) => 1..100,
-              optional(:hit_bonus) => non_neg_integer()
+              optional(:hit_bonus) => non_neg_integer(),
+              optional(:critical) => boolean()
             }
 
   @typedoc """

@@ -82,19 +82,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Critical do
   @doc """
   Decides a normal attack's critical.
 
-  A unit without a critical rate never crits. A Double Attack swing
-  (`multi_hit: true`) never crits. A holder of Auto Counter that swings
+  A unit without a critical rate never crits. A multi-hit proc without its
+  skill DB Critical permission cannot crit. A holder of Auto Counter that swings
   normally plays the Auto Counter effect, ends the stance and crits for
   certain. Otherwise the chance is rolled.
 
   ## Options
-    - `:multi_hit` - the swing is a Double Attack (default `false`).
+    - `:critical_allowed` - the proc permits a critical roll; ordinary swings
+      allow it by default (`true`).
   """
   @spec normal_attack?(Combatant.t(), Combatant.t(), keyword()) :: boolean()
   def normal_attack?(%Combatant{} = attacker, %Combatant{} = defender, opts) do
     cond do
       critical_rate(attacker) == 0 -> false
-      Keyword.get(opts, :multi_hit, false) -> false
+      not Keyword.get(opts, :critical_allowed, true) -> false
       AutoCounter.claim_by_swing(attacker.unit_type, attacker.unit_id) -> true
       true -> roll?(attacker, defender, normal_attack: true)
     end

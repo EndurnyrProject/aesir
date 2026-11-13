@@ -115,6 +115,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
              HandedAttack.calculate(%PlayerState{}, attacker, target)
   end
 
+  @tag game_mode: :pre_renewal
   test "successful Double Attack adds HIT before the shared roll and disables criticals" do
     attacker =
       with_hands(hand(:right_hand, 100), nil)

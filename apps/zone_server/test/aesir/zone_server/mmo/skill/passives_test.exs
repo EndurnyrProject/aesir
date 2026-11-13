@@ -615,7 +615,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
     test "preserves Double Attack HIT on its successful proc metadata" do
       player = build_player(%{48 => 7}, :dagger)
 
-      assert Passives.attack_procs(player) == %{multi_hit: 2, chance: 49, hit_bonus: 7}
+      assert Passives.attack_procs(player) == %{
+               multi_hit: 2,
+               chance: 49,
+               hit_bonus: 7,
+               critical: true
+             }
+
       assert Passives.hit_bonus(player) == 0
     end
 

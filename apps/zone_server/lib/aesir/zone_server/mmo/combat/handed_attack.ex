@@ -58,9 +58,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
   @spec calculate(PlayerState.t(), Combatant.t(), Combatant.t(), keyword()) ::
           {:ok, t()} | {:error, atom()}
   def calculate(player_state, %Combatant{} = attacker, %Combatant{} = defender, opts \\ []) do
-    {attacker, divisions, double_attack?} = resolve_attack_proc(player_state, attacker, opts)
+    {attacker, divisions, critical_allowed?} = resolve_attack_proc(player_state, attacker, opts)
 
-    case swing_result(attacker, defender, double_attack?) do
+    case swing_result(attacker, defender, critical_allowed?) do
       :critical -> calculate_hit(player_state, attacker, defender, divisions, true)
       :hit -> calculate_hit(player_state, attacker, defender, divisions, false)
       :miss -> calculate_fled(player_state, attacker, defender, divisions)
@@ -77,24 +77,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
         if rng.(100) <= chance do
           hit_bonus = Map.get(proc, :hit_bonus, 0)
           combat_stats = Map.update!(attacker.combat_stats, :hit, &(&1 + hit_bonus))
-          {%{attacker | combat_stats: combat_stats}, 2, true}
+          {%{attacker | combat_stats: combat_stats}, 2, Map.get(proc, :critical, false)}
         else
-          {attacker, 1, false}
+          {attacker, 1, true}
         end
 
       _other ->
-        {attacker, 1, false}
+        {attacker, 1, true}
     end
   end
 
-  defp resolve_attack_proc(_player_state, attacker, _opts), do: {attacker, 1, false}
+  defp resolve_attack_proc(_player_state, attacker, _opts), do: {attacker, 1, true}
 
-  defp swing_result(attacker, defender, multi_hit?) do
+  defp swing_result(attacker, defender, critical_allowed?) do
     HitCalculations.calculate_hit_result(
       %{
         hit: attacker.combat_stats.hit,
         char_id: attacker.unit_id,
-        critical: fn -> Critical.normal_attack?(attacker, defender, multi_hit: multi_hit?) end,
+        critical: fn ->
+          Critical.normal_attack?(attacker, defender, critical_allowed: critical_allowed?)
+        end,
         perfect_hit: EquipmentBonuses.perfect_hit_rate(attacker),
         hit_rate_bonus_pct: Map.get(attacker.combat_stats, :hit_rate_bonus_pct, 0)
       },
