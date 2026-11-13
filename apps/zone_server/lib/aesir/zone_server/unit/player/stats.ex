@@ -47,7 +47,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Learned
-  alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
@@ -443,11 +442,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   to some of them and not others.
   """
   @spec attack_range(t()) :: non_neg_integer()
-  def attack_range(%{equipment: equipment} = stats) do
-    range = equipment |> weapon_type() |> WeaponTypes.get_attack_range()
+  def attack_range(stats), do: weapon_range(stats) + passive_range(stats)
 
-    range + passive_range(stats)
+  @doc "Returns the equipped weapons' reach before passive bonuses."
+  @spec weapon_range(t()) :: pos_integer()
+  def weapon_range(%{modifiers: %{equipment: equipment}}) do
+    max(max(Map.get(equipment, :rh_range, 0), Map.get(equipment, :lh_range, 0)), 1)
   end
+
+  def weapon_range(_stats), do: 1
 
   @spec passive_range(t()) :: integer()
   defp passive_range(%{modifiers: %{passive: passive}}) when is_map(passive),

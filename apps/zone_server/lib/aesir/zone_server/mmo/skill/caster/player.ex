@@ -62,6 +62,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   def position(%PlayerState{map_name: map_name, x: x, y: y}), do: {map_name, x, y}
 
   @impl true
+  def attack_range(%PlayerState{
+        stats: %PlayerStats{modifiers: %{equipment: %{rh_range: _, lh_range: _}}} = stats
+      }),
+      do: PlayerStats.weapon_range(stats)
+
   def attack_range(%PlayerState{stats: %{equipment: equipment}}) do
     equipment
     |> PlayerStats.weapon_type()

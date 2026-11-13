@@ -741,10 +741,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
     }
   end
 
-  defp accumulate_host_bonus(bonuses, %{card_slot: nil, host_def: item_def, item: item}),
-    do: accumulate_item_bonus(bonuses, item_def, item.refine)
+  defp accumulate_host_bonus(bonuses, %{card_slot: nil, host_def: item_def, item: item}) do
+    bonuses
+    |> accumulate_item_bonus(item_def, item.refine)
+    |> accumulate_weapon_range(item_def, item.equip)
+  end
 
   defp accumulate_host_bonus(bonuses, _card_source), do: bonuses
+
+  defp accumulate_weapon_range(bonuses, %ItemDefinition{type: :weapon, range: range}, equip) do
+    locations = EquipLocation.bitmask_to_location_atoms(equip)
+    key = if :right_hand in locations, do: :rh_range, else: :lh_range
+    Map.update!(bonuses, key, &(&1 + range))
+  end
+
+  defp accumulate_weapon_range(bonuses, _item, _equip), do: bonuses
 
   defp install_card_cleanup(cleanups, _source_def, nil, _item, _inputs, _worn_ordinal),
     do: cleanups
@@ -891,6 +902,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   defp empty_equipment_bonuses do
     %{
       atk: 0,
+      rh_range: 0,
+      lh_range: 0,
       def: 0,
       matk: 0,
       wmatk_min: 0,
