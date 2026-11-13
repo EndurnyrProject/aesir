@@ -70,16 +70,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillRange do
 
   The database range counts its absolute value (a negative range does not ask
   for the weapon's reach on this server) and is capped at 14 cells. A player
-  then adds their Vulture's Eye level to a skill that trains with it. A
-  non-player whose skill has no range reaches 9 cells. An unknown skill has no
-  range.
+  then adds their Vulture's Eye and Snake Eye levels for each respective flag,
+  regardless of weapon type. A non-player whose skill has no range reaches
+  9 cells. An unknown skill has no range.
   """
   @spec server_range(map(), integer(), non_neg_integer()) :: non_neg_integer()
   def server_range(attacker, skill_id, skill_level) do
     range =
       case Catalog.by_id(skill_id) do
         {:ok, definition} ->
-          database_range(definition, skill_level) + vulture_bonus(attacker, definition)
+          database_range(definition, skill_level) + eye_range_bonus(attacker, definition)
 
         :error ->
           0
@@ -90,7 +90,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillRange do
 
   @doc """
   A skill's database range at `skill_level` as the server counts it: its
-  absolute value, capped at 14 cells. Caster bonuses such as Vulture's Eye come
+  absolute value, capped at 14 cells. Vulture's Eye and Snake Eye bonuses come
   on top.
   """
   @spec database_range(Definition.t(), non_neg_integer()) :: non_neg_integer()
@@ -119,8 +119,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillRange do
     if server_range(attacker, skill_id, skill_level) < 4, do: :short, else: :long
   end
 
-  defp vulture_bonus(%{unit_type: :player} = attacker, %Definition{vulture_range: true}),
-    do: Map.get(attacker, :vulture_eye_level, 0)
+  defp eye_range_bonus(%{unit_type: :player} = attacker, definition) do
+    Enum.reduce([vulture_range: :vulture_eye_level, snake_eye_range: :snake_eye_level], 0, fn
+      {flag, level}, bonus ->
+        if Map.fetch!(definition, flag), do: bonus + Map.get(attacker, level, 0), else: bonus
+    end)
+  end
 
-  defp vulture_bonus(_attacker, _definition), do: 0
+  defp eye_range_bonus(_attacker, _definition), do: 0
 end

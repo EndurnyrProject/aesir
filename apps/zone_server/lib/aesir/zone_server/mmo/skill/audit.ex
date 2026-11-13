@@ -126,7 +126,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Audit do
       compare_element(definition, source_row, max_level) ++
       compare_ammo(definition, source_row, max_level) ++
       compare_require_weapon(definition, source_row) ++
-      compare_vulture_range(definition, source_row) ++
+      compare_eye_ranges(definition, source_row) ++
       compare_ignore_cicada(definition, source_row) ++
       compare_item_cost(definition, source_row)
   end
@@ -392,16 +392,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Audit do
     end
   end
 
-  # The source marks a skill whose range trains with Vulture's Eye by a flag on
-  # the row; Aesir declares the same thing as a boolean definition field.
-  @spec compare_vulture_range(Definition.t(), map()) :: [finding()]
-  defp compare_vulture_range(%Definition{vulture_range: aesir_flag}, source_row) do
-    source_flag =
-      source_row |> fetch_path(["Flags", "AlterRangeVulture"], false) |> then(&(&1 == true))
+  @spec compare_eye_ranges(Definition.t(), map()) :: [finding()]
+  defp compare_eye_ranges(definition, source_row) do
+    Enum.flat_map(
+      [vulture_range: "AlterRangeVulture", snake_eye_range: "AlterRangeSnakeEye"],
+      fn {field, source_key} ->
+        aesir_flag = Map.fetch!(definition, field)
+        source_flag = fetch_path(source_row, ["Flags", source_key], false) == true
 
-    if source_flag == aesir_flag,
-      do: [],
-      else: [%{field: :vulture_range, aesir: aesir_flag, source: source_flag}]
+        if source_flag == aesir_flag,
+          do: [],
+          else: [%{field: field, aesir: aesir_flag, source: source_flag}]
+      end
+    )
   end
 
   @spec compare_ignore_cicada(Definition.t(), map()) :: [finding()]

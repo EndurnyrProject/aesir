@@ -125,9 +125,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
     advanced_katar_level: 0,
     faith_level: 0,
     skin_temper_level: 0,
-    # Vulture's Eye level, which extends the range of the archer skills that
-    # train with it (0 for non-players).
+    # Learned levels that extend flagged skill ranges (0 for non-players).
     vulture_eye_level: 0,
+    snake_eye_level: 0,
 
     # Monster class for the class-keyed bonuses and rules. Players are always
     # :normal; a mob's class is derived from its modes (`MobMode.class/1`).
@@ -230,6 +230,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
           faith_level: integer(),
           skin_temper_level: integer(),
           vulture_eye_level: non_neg_integer(),
+          snake_eye_level: non_neg_integer(),
           class: MobMode.class(),
           status_immune: boolean(),
           detector: boolean(),

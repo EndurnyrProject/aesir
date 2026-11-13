@@ -30,8 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastConditions do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
-  # Vulture's Eye: the passive whose learned level widens a `vulture_range` skill.
-  @vulture_skill_id 44
+  @eye_range_skills [vulture_range: 44, snake_eye_range: 510]
   @fire_wall_skill_id 18
   @sight_cells 14
 
@@ -570,11 +569,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastConditions do
 
   Resolves the definition's declared range at `level` as the server counts it
   (`SkillRange.database_range/2`: its absolute value, so a negative range does not
-  take the weapon's reach, capped at 14 cells). A skill declaring
-  `vulture_range: true` (the bow skills whose reach trains with Vulture's Eye) then
-  adds a player caster's learned Vulture's Eye level; no other caster kind gains
-  anything. Exposed so the session handler can size the move-to-range approach for
-  an out-of-range cast.
+  take the weapon's reach, capped at 14 cells). The `vulture_range` and
+  `snake_eye_range` flags then add a player caster's respective learned levels,
+  regardless of weapon type; no other caster kind gains anything. Exposed so
+  the session handler can size the move-to-range approach for an out-of-range cast.
   """
   @spec effective_range(Definition.t(), Active.caster(), non_neg_integer()) :: non_neg_integer()
   def effective_range(definition, game_state, level) do
@@ -587,13 +585,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastConditions do
   end
 
   defp base_range(definition, game_state, level),
-    do: SkillRange.database_range(definition, level) + vulture_range_bonus(definition, game_state)
+    do: SkillRange.database_range(definition, level) + eye_range_bonus(definition, game_state)
 
-  defp vulture_range_bonus(%{vulture_range: true}, %PlayerState{} = game_state) do
-    PlayerStats.skill_level(game_state.stats, @vulture_skill_id)
+  defp eye_range_bonus(definition, %PlayerState{} = game_state) do
+    Enum.reduce(@eye_range_skills, 0, fn {flag, skill_id}, bonus ->
+      if Map.fetch!(definition, flag),
+        do: bonus + PlayerStats.skill_level(game_state.stats, skill_id),
+        else: bonus
+    end)
   end
 
-  defp vulture_range_bonus(_definition, _game_state), do: 0
+  defp eye_range_bonus(_definition, _game_state), do: 0
 
   defp skill_effective_range(module, game_state, level, definition, base_range) do
     if function_exported?(module, :effective_range, 4) do

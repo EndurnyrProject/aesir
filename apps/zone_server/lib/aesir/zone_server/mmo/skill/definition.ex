@@ -96,9 +96,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   whose DB TargetType is Support (every `:target_ally` skill is); see
   `support?/1`.
 
-  `vulture_range` marks a skill whose cast range grows with the caster's
-  Vulture's Eye: the interpreter adds that skill's learned level to the
-  declared range for a player caster. It is mode-invariant.
+  `vulture_range` and `snake_eye_range` mark skills whose cast range grows with
+  the caster's Vulture's Eye and Snake Eye, respectively. Their learned levels
+  are added after the 14-cell server cap for player casters, regardless of
+  weapon type. Both flags are mode-invariant and their bonuses add together.
 
   Any mode-keyable option (see `resolve_mode/2`) may be given as
   `[renewal: value, pre_renewal: value]` instead of a plain value, so a skill
@@ -232,6 +233,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             require_weapon: [],
             require_recovered_weight: false,
             vulture_range: false,
+            snake_eye_range: false,
             status: nil,
             toggleable: false,
             no_target_self: false,
@@ -297,6 +299,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           require_weapon: [atom()],
           require_recovered_weight: boolean(),
           vulture_range: boolean(),
+          snake_eye_range: boolean(),
           status: atom() | nil,
           toggleable: boolean(),
           no_target_self: boolean(),
@@ -375,6 +378,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     require_weapon: {:list, :atom},
     require_recovered_weight: :boolean,
     vulture_range: :boolean,
+    snake_eye_range: :boolean,
     status: :atom,
     toggleable: :boolean,
     no_target_self: :boolean,
@@ -437,6 +441,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     require_weapon: [],
     require_recovered_weight: false,
     vulture_range: false,
+    snake_eye_range: false,
     status: nil,
     toggleable: false,
     no_target_self: false,

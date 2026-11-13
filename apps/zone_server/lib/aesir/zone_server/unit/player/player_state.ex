@@ -1209,6 +1209,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       faith_level: PlayerStats.skill_level(state.stats, 248),
       skin_temper_level: PlayerStats.skill_level(state.stats, 109),
       vulture_eye_level: PlayerStats.skill_level(state.stats, 44),
+      snake_eye_level: PlayerStats.skill_level(state.stats, 510),
       class: :normal,
       riding: riding?(state.option),
       equip_modifiers: state.stats.modifiers.equipment,
