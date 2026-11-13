@@ -1,8 +1,9 @@
 defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
   @moduledoc """
-  Covers the `npctalk` overhead chat op: it broadcasts a `ChatMessage` in view
-  range of the NPC's own placement, identically on an attached or detached ctx,
-  and no-ops when there is no `npc_gid` or no resolvable placement.
+  Covers the `npctalk` overhead chat op: it broadcasts a local `ChatLine`, the
+  NPC's name in its own field, in view range of the NPC's own placement,
+  identically on an attached or detached ctx, and no-ops when there is no
+  `npc_gid` or no resolvable placement.
 
   The `/3` arity adds rAthena's optional tail — a `:npc` name picking a
   different speaker and a `:target` scope (`:area`/`:map`/`:all`/`:self`, or
@@ -16,7 +17,7 @@ defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
 
   alias Aesir.Commons.InterServer.PubSub
   alias Aesir.Commons.Models.Character
-  alias Aesir.Net.ChatMessage
+  alias Aesir.Net.ChatLine
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
@@ -55,14 +56,20 @@ defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
   end
 
   describe "npctalk/2" do
-    test "delivers a ChatMessage to a player in range from a detached ctx", %{gid: gid} do
+    test "delivers a local ChatLine to a player in range from a detached ctx", %{gid: gid} do
       register_player(1, x: 152, y: 150)
       ctx = Ctx.detached(TalkerNpc, gid)
 
       assert Dsl.npctalk(ctx, "Buy something?") == ctx
 
       assert_receive {:"$gen_cast",
-                      {:send_packet, %ChatMessage{gid: ^gid, message: "Talker : Buy something?"}}}
+                      {:send_packet,
+                       %ChatLine{
+                         channel: :CHAT_LOCAL,
+                         sender_gid: ^gid,
+                         sender_name: "Talker",
+                         text: "Buy something?"
+                       }}}
     end
 
     test "a player out of range receives nothing", %{gid: gid} do
@@ -71,14 +78,14 @@ defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
 
       assert Dsl.npctalk(ctx, "Buy something?") == ctx
 
-      refute_received {:"$gen_cast", {:send_packet, %ChatMessage{}}}
+      refute_received {:"$gen_cast", {:send_packet, %ChatLine{}}}
     end
 
     test "an empty map is a no-op returning ctx", %{gid: gid} do
       ctx = Ctx.detached(TalkerNpc, gid)
 
       assert Dsl.npctalk(ctx, "Anyone there?") == ctx
-      refute_received {:"$gen_cast", {:send_packet, %ChatMessage{}}}
+      refute_received {:"$gen_cast", {:send_packet, %ChatLine{}}}
     end
 
     test "works identically from an attached ctx, using the NPC's placement not the player's",
@@ -90,7 +97,8 @@ defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
       assert Dsl.npctalk(ctx, "Hello there") == ctx
 
       assert_receive {:"$gen_cast",
-                      {:send_packet, %ChatMessage{gid: ^gid, message: "Talker : Hello there"}}}
+                      {:send_packet,
+                       %ChatLine{sender_gid: ^gid, sender_name: "Talker", text: "Hello there"}}}
     end
 
     test "a nil npc_gid warns and no-ops" do
@@ -100,7 +108,7 @@ defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
       log = capture_log(fn -> assert Dsl.npctalk(detached_ctx, "Hi") == detached_ctx end)
 
       assert log =~ "no npc_gid"
-      refute_received {:"$gen_cast", {:send_packet, %ChatMessage{}}}
+      refute_received {:"$gen_cast", {:send_packet, %ChatLine{}}}
     end
 
     test "an unresolved npc_gid warns and no-ops" do
@@ -109,7 +117,7 @@ defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
       log = capture_log(fn -> assert Dsl.npctalk(ctx, "Hi") == ctx end)
 
       assert log =~ "not registered"
-      refute_received {:"$gen_cast", {:send_packet, %ChatMessage{}}}
+      refute_received {:"$gen_cast", {:send_packet, %ChatLine{}}}
     end
 
     test "short-circuits on an already-halted ctx", %{gid: gid} do
@@ -117,7 +125,7 @@ defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
       ctx = %{Ctx.detached(TalkerNpc, gid) | status: {:error, :boom}}
 
       assert Dsl.npctalk(ctx, "Hi") == ctx
-      refute_received {:"$gen_cast", {:send_packet, %ChatMessage{}}}
+      refute_received {:"$gen_cast", {:send_packet, %ChatLine{}}}
     end
   end
 
@@ -132,9 +140,10 @@ defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
       assert Dsl.npctalk(ctx, "Just for you", target: :self) == ctx
 
       assert_receive {:"$gen_cast",
-                      {:send_packet, %ChatMessage{gid: ^gid, message: "Talker : Just for you"}}}
+                      {:send_packet,
+                       %ChatLine{sender_gid: ^gid, sender_name: "Talker", text: "Just for you"}}}
 
-      refute_received {:"$gen_cast", {:send_packet, %ChatMessage{}}}
+      refute_received {:"$gen_cast", {:send_packet, %ChatLine{}}}
     end
 
     test "the raw bc_self flag decodes to the same self target", %{gid: gid} do
@@ -144,7 +153,8 @@ defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
       assert Dsl.npctalk(ctx, "Out of range", target: 3) == ctx
 
       assert_receive {:"$gen_cast",
-                      {:send_packet, %ChatMessage{gid: ^gid, message: "Talker : Out of range"}}}
+                      {:send_packet,
+                       %ChatLine{sender_gid: ^gid, sender_name: "Talker", text: "Out of range"}}}
     end
 
     test "target: :self on a detached ctx warns and no-ops", %{gid: gid} do
@@ -154,7 +164,7 @@ defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
       log = capture_log(fn -> assert Dsl.npctalk(ctx, "Hi", target: :self) == ctx end)
 
       assert log =~ "no attached player"
-      refute_received {:"$gen_cast", {:send_packet, %ChatMessage{}}}
+      refute_received {:"$gen_cast", {:send_packet, %ChatLine{}}}
     end
 
     test "target: :map reaches a player outside view range on the same map", %{gid: gid} do
@@ -164,7 +174,8 @@ defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
       assert Dsl.npctalk(ctx, "Map wide", target: :map) == ctx
 
       assert_receive {:"$gen_cast",
-                      {:send_packet, %ChatMessage{gid: ^gid, message: "Talker : Map wide"}}}
+                      {:send_packet,
+                       %ChatLine{sender_gid: ^gid, sender_name: "Talker", text: "Map wide"}}}
     end
 
     test "target: :all publishes to the inter-server announce fan-out", %{gid: gid} do
@@ -173,7 +184,8 @@ defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
 
       assert Dsl.npctalk(ctx, "Everywhere", target: :all) == ctx
 
-      assert_receive {:announcement, %ChatMessage{gid: ^gid, message: "Talker : Everywhere"}}
+      assert_receive {:announcement,
+                      %ChatLine{sender_gid: ^gid, sender_name: "Talker", text: "Everywhere"}}
     end
 
     test "an unknown target warns and falls back to the area default", %{gid: gid} do
@@ -183,7 +195,7 @@ defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
       log = capture_log(fn -> assert Dsl.npctalk(ctx, "Hi", target: :nope) == ctx end)
 
       assert log =~ "unknown target"
-      assert_receive {:"$gen_cast", {:send_packet, %ChatMessage{gid: ^gid}}}
+      assert_receive {:"$gen_cast", {:send_packet, %ChatLine{sender_gid: ^gid}}}
     end
   end
 
@@ -196,7 +208,8 @@ defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
       assert Dsl.npctalk(ctx, "Hear ye", npc: "Herald") == ctx
 
       assert_receive {:"$gen_cast",
-                      {:send_packet, %ChatMessage{gid: ^herald_gid, message: "Herald : Hear ye"}}}
+                      {:send_packet,
+                       %ChatLine{sender_gid: ^herald_gid, sender_name: "Herald", text: "Hear ye"}}}
     end
 
     test "an empty npc: name keeps the attached NPC as the speaker", %{gid: gid} do
@@ -206,7 +219,8 @@ defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
       assert Dsl.npctalk(ctx, "Still me", npc: "") == ctx
 
       assert_receive {:"$gen_cast",
-                      {:send_packet, %ChatMessage{gid: ^gid, message: "Talker : Still me"}}}
+                      {:send_packet,
+                       %ChatLine{sender_gid: ^gid, sender_name: "Talker", text: "Still me"}}}
     end
 
     test "an unknown npc: name warns and no-ops", %{gid: gid} do
@@ -216,7 +230,7 @@ defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
       log = capture_log(fn -> assert Dsl.npctalk(ctx, "Hi", npc: "Ghost") == ctx end)
 
       assert log =~ "unknown name"
-      refute_received {:"$gen_cast", {:send_packet, %ChatMessage{}}}
+      refute_received {:"$gen_cast", {:send_packet, %ChatLine{}}}
     end
   end
 

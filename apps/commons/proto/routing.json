@@ -30,8 +30,8 @@
     {"field": 40, "tag": "unit_despawn", "message": "UnitDespawn", "direction": "s2c", "servers": ["zone"], "channel": "world"},
     {"field": 41, "tag": "name_request", "message": "NameRequest", "direction": "c2s", "servers": ["zone"]},
     {"field": 42, "tag": "name_response", "message": "NameResponse", "direction": "s2c", "servers": ["zone"], "channel": "world"},
-    {"field": 43, "tag": "chat_request", "message": "ChatRequest", "direction": "c2s", "servers": ["zone"]},
-    {"field": 44, "tag": "chat_message", "message": "ChatMessage", "direction": "s2c", "servers": ["zone"], "channel": "world"},
+    {"field": 43, "tag": "chat_send", "message": "ChatSend", "direction": "c2s", "servers": ["zone"]},
+    {"field": 44, "tag": "chat_line", "message": "ChatLine", "direction": "s2c", "servers": ["zone"], "channel": "world"},
     {"field": 45, "tag": "snapshot", "message": "Snapshot", "direction": "s2c", "servers": ["zone"], "channel": "snapshots"},
     {"field": 46, "tag": "action_request", "message": "ActionRequest", "direction": "c2s", "servers": ["zone"]},
     {"field": 47, "tag": "damage_dealt", "message": "DamageDealt", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
@@ -218,6 +218,8 @@
     {"field": 228, "tag": "respawn_result", "message": "RespawnResult", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
     {"field": 229, "tag": "ranking_request", "message": "RankingRequest", "direction": "c2s", "servers": ["zone"]},
     {"field": 230, "tag": "ranking_response", "message": "RankingResponse", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
-    {"field": 231, "tag": "fame_update", "message": "FameUpdate", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"}
+    {"field": 231, "tag": "fame_update", "message": "FameUpdate", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
+    {"field": 232, "tag": "gm_command", "message": "GmCommand", "direction": "c2s", "servers": ["zone"]},
+    {"field": 233, "tag": "chat_notice", "message": "ChatNotice", "direction": "s2c", "servers": ["zone"], "channel": "world"}
   ]
 }

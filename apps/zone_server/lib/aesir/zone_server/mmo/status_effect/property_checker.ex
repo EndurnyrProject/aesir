@@ -88,7 +88,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker do
   @spec prevents_items?(atom()) :: boolean()
   def prevents_items?(status_id), do: has_property?(status_id, :prevents_items)
 
-  @doc "Returns whether a status prevents area chat."
+  @doc "Returns whether a status prevents chat, on every channel."
   @spec prevents_chat?(atom()) :: boolean()
   def prevents_chat?(status_id), do: has_property?(status_id, :prevents_chat)
 

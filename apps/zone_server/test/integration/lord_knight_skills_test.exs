@@ -12,8 +12,8 @@ defmodule Aesir.ZoneServer.Integration.LordKnightSkillsTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.ActionRequest
   alias Aesir.Net.CastCancel
-  alias Aesir.Net.ChatMessage
-  alias Aesir.Net.ChatRequest
+  alias Aesir.Net.ChatLine
+  alias Aesir.Net.ChatSend
   alias Aesir.Net.EquipItem
   alias Aesir.Net.EquipResult
   alias Aesir.Net.ItemUseResult
@@ -90,9 +90,8 @@ defmodule Aesir.ZoneServer.Integration.LordKnightSkillsTest do
     assert result != 0
     assert get_player_state(knight.pid).inventory[sword_index].equip == 0
 
-    message = "#{knight.character.name} : berserk chat"
-    simulate_incoming_message(knight.pid, %ChatRequest{message: message})
-    refute_receive {:packet_sent, %ChatMessage{message: ^message}, _}, 200
+    simulate_incoming_message(knight.pid, %ChatSend{channel: :CHAT_LOCAL, text: "berserk chat"})
+    refute_receive {:packet_sent, %ChatLine{}, _}, 200
 
     sp = get_player_state(knight.pid).stats.current_state.sp
     cast(knight, 355, 1)

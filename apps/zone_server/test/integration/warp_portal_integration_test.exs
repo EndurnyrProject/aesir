@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Integration.WarpPortalIntegrationTest do
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.Net.ChatMessage
+  alias Aesir.Net.ChatNotice
   alias Aesir.Net.GroundSkillCast
   alias Aesir.Net.MapMove
   alias Aesir.Net.MemoRequest
@@ -66,7 +66,10 @@ defmodule Aesir.ZoneServer.Integration.WarpPortalIntegrationTest do
     simulate_incoming_message(player.pid, %MemoRequest{})
 
     assert_receive {:packet_sent,
-                    %ChatMessage{message: "Saved location as a Memo Point for Warp skill."}, _},
+                    %ChatNotice{
+                      kind: :INFO,
+                      text: "Saved location as a Memo Point for Warp skill."
+                    }, _},
                    1000
 
     assert Repo.get!(Character, character.id).memo_points == [

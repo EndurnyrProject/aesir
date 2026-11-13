@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.NpcEventsIntegrationTest do
   @moduletag :capture_log
 
   alias Aesir.Commons.Models.Character
-  alias Aesir.Net.ChatMessage
+  alias Aesir.Net.ChatLine
   alias Aesir.Net.MapLoaded
   alias Aesir.Net.MoveRequest
   alias Aesir.Net.UnitSpawn
@@ -238,7 +238,8 @@ defmodule Aesir.ZoneServer.NpcEventsIntegrationTest do
       assert :ok = Events.run_on_init()
 
       assert_receive {:"$gen_cast",
-                      {:send_packet, %ChatMessage{gid: ^gid, message: "TimerTalker : Tick!"}}},
+                      {:send_packet,
+                       %ChatLine{sender_gid: ^gid, sender_name: "TimerTalker", text: "Tick!"}}},
                      400
 
       refute_receive :should_not_fire, 400

@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.Net.ChatMessage
+  alias Aesir.Net.ChatNotice
   alias Aesir.Net.ItemOption
   alias Aesir.Net.SkillCastFailed
   alias Aesir.Net.VendingBoardRemoved
@@ -417,7 +417,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
       assert_received {:board, %VendingBoardRemoved{reason: :VEND_CLOSURE_RELOCATED}}
 
       assert_received {:send, _channel,
-                       {_tag, %ChatMessage{message: "You can't open a shop on this map"}}}
+                       {_tag,
+                        %ChatNotice{kind: :ERROR, text: "You can't open a shop on this map"}}}
     end
 
     test "the vendor's own map flag does not close a same-map relocation", %{opened: opened} do
@@ -438,7 +439,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
       assert closed.game_state.vending_shop == nil
 
       assert_received {:send, _channel,
-                       {_tag, %ChatMessage{message: "You can't open a shop on this cell."}}}
+                       {_tag,
+                        %ChatNotice{kind: :ERROR, text: "You can't open a shop on this cell."}}}
     end
   end
 

@@ -5,8 +5,8 @@ defmodule Aesir.ZoneServer.Integration.TradeIntegrationTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.ActionRequest
-  alias Aesir.Net.ChatMessage
-  alias Aesir.Net.ChatRequest
+  alias Aesir.Net.ChatLine
+  alias Aesir.Net.ChatSend
   alias Aesir.Net.EmoteRequest
   alias Aesir.Net.Emotion
   alias Aesir.Net.EquipItem
@@ -606,8 +606,10 @@ defmodule Aesir.ZoneServer.Integration.TradeIntegrationTest do
 
     refute_receive {:packet_sent, _, _}, 100
 
-    simulate_incoming_message(trader.pid, %ChatRequest{message: "FreezeTrader : still here"})
-    assert_receive {:packet_sent, %ChatMessage{message: "FreezeTrader : still here"}, _}, 1_000
+    simulate_incoming_message(trader.pid, %ChatSend{channel: :CHAT_LOCAL, text: "still here"})
+
+    assert_receive {:packet_sent, %ChatLine{sender_name: "FreezeTrader", text: "still here"}, _},
+                   1_000
 
     simulate_incoming_message(trader.pid, %EmoteRequest{type: 0})
     assert_receive {:packet_sent, %Emotion{}, _}, 1_000

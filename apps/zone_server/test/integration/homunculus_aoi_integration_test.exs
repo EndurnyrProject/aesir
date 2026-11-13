@@ -6,7 +6,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAoiIntegrationTest do
   alias Aesir.Commons.Models.Homunculus
 
   alias Aesir.Net.CastCancel
-  alias Aesir.Net.ChatMessage
+  alias Aesir.Net.ChatLine
   alias Aesir.Net.DamageDealt
   alias Aesir.Net.Emotion
   alias Aesir.Net.EstimationResult
@@ -410,7 +410,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAoiIntegrationTest do
   defp hom_delta_mentions?(%UnitStateChange{unit_id: gid}, gid), do: true
   defp hom_delta_mentions?(%SpecialEffect{source_id: gid}, gid), do: true
   defp hom_delta_mentions?(%NameResponse{gid: gid}, gid), do: true
-  defp hom_delta_mentions?(%ChatMessage{gid: gid}, gid), do: true
+  defp hom_delta_mentions?(%ChatLine{sender_gid: gid}, gid), do: true
   defp hom_delta_mentions?(%Emotion{gid: gid}, gid), do: true
   defp hom_delta_mentions?(%DamageDealt{src_id: gid}, gid), do: true
   defp hom_delta_mentions?(%DamageDealt{target_id: gid}, gid), do: true

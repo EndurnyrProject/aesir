@@ -1,12 +1,13 @@
 defmodule Aesir.ZoneServer.Gm.Dispatcher do
   @moduledoc """
-  Parses a `@`-prefixed GM command, looks up the command module, gates on the
-  caller's account `gm_level`, executes it, and sends the result back to the GM
-  as a private `ChatMessage`.
+  Parses a GM command line (a leading `@` is optional), looks up the command
+  module, gates on the caller's account `gm_level`, executes it, and sends the
+  result back to the GM as a private `ChatNotice`: `INFO` when the command
+  succeeded, `ERROR` when it failed, is unknown or is not permitted.
   """
 
   alias Aesir.Commons.Auth
-  alias Aesir.Net.ChatMessage
+  alias Aesir.Net.ChatNotice
   alias Aesir.ZoneServer.Network.MessageRouter
 
   # Registered commands keyed by their lowercase token.
@@ -45,9 +46,9 @@ defmodule Aesir.ZoneServer.Gm.Dispatcher do
 
     with {:ok, module} <- lookup(commands, token),
          :ok <- authorize(module, ctx) do
-      reply(ctx, run(module, args, ctx))
+      reply(ctx, module.execute(args, ctx))
     else
-      {:error, reason} -> reply(ctx, reason)
+      {:error, _reason} = error -> reply(ctx, error)
     end
   end
 
@@ -68,15 +69,9 @@ defmodule Aesir.ZoneServer.Gm.Dispatcher do
     end
   end
 
-  defp run(module, args, ctx) do
-    case module.execute(args, ctx) do
-      {:ok, msg} -> msg
-      {:error, msg} -> msg
-    end
-  end
+  defp reply(ctx, {:ok, text}),
+    do: MessageRouter.send_to(ctx.connection_pid, %ChatNotice{kind: :INFO, text: text})
 
-  defp reply(ctx, message) do
-    packet = %ChatMessage{gid: ctx.game_state.character_id, message: message}
-    MessageRouter.send_to(ctx.connection_pid, packet)
-  end
+  defp reply(ctx, {:error, text}),
+    do: MessageRouter.send_to(ctx.connection_pid, %ChatNotice{kind: :ERROR, text: text})
 end

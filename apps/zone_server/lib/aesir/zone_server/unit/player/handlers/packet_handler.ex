@@ -14,9 +14,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.ActionRequest
   alias Aesir.Net.CardComposeRequest
   alias Aesir.Net.CartMountRequest
-  alias Aesir.Net.ChatRequest
+  alias Aesir.Net.ChatSend
   alias Aesir.Net.EmoteRequest
   alias Aesir.Net.EquipItem
+  alias Aesir.Net.GmCommand
   alias Aesir.Net.GroundSkillCast
   alias Aesir.Net.GuildAllianceBreakRequest
   alias Aesir.Net.GuildAllianceRequest
@@ -90,6 +91,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.WaitingRoomJoinRequest
   alias Aesir.Net.WaitingRoomKickRequest
   alias Aesir.Net.WaitingRoomLeaveRequest
+  alias Aesir.ZoneServer.Gm.Dispatcher, as: GmDispatcher
   alias Aesir.ZoneServer.Mmo.Skills.Novice.NvBasic
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
@@ -477,10 +479,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     HealthHandler.handle_restart(type, state)
   end
 
-  # ChatRequest - Player sends an area chat message (protobuf analogue of
-  # CZ_REQUEST_CHAT 0x008C).
-  def handle_message(%ChatRequest{message: raw_message}, state) do
-    ChatHandler.handle_chat(raw_message, state)
+  # ChatSend - Player says something on a chat channel.
+  def handle_message(%ChatSend{} = msg, state) do
+    ChatHandler.handle_chat(msg, state)
+  end
+
+  # GmCommand - Player runs a GM command line; the reply is a ChatNotice.
+  def handle_message(%GmCommand{command: command}, state) do
+    GmDispatcher.dispatch(command, %{
+      game_state: state.game_state,
+      connection_pid: state.connection_pid
+    })
+
+    {:noreply, state}
   end
 
   # EmoteRequest - Player fires an emote bubble (protobuf analogue of

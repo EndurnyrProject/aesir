@@ -1,7 +1,7 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.MemoHandler do
   @moduledoc "Captures Warp Portal memo points through the owning player session."
 
-  alias Aesir.Net.ChatMessage
+  alias Aesir.Net.ChatNotice
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapFlags
@@ -52,7 +52,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MemoHandler do
   end
 
   defp reply(state, result) do
-    message =
+    text =
       case result do
         :ok -> "Saved location as a Memo Point for Warp skill."
         :insufficient_level -> "Skill Level is not high enough."
@@ -62,9 +62,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MemoHandler do
         :persistence_failed -> "Unable to save the memo point."
       end
 
-    MessageRouter.send_to(state.connection_pid, %ChatMessage{
-      gid: state.game_state.character_id,
-      message: message
-    })
+    kind = if result == :ok, do: :INFO, else: :ERROR
+    MessageRouter.send_to(state.connection_pid, %ChatNotice{kind: kind, text: text})
   end
 end

@@ -175,7 +175,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Permissions do
     |> Enum.any?(&(locking_body_state?(&1) or &1.type in @lose_target_statuses))
   end
 
-  @doc "Returns whether a unit may send area chat while status effects are active."
+  @doc "Returns whether a unit may chat, on any channel, while status effects are active."
   @spec can_chat?(unit_type(), integer()) :: boolean()
   def can_chat?(unit_type, unit_id),
     do: not restricted?(unit_type, unit_id, &PropertyChecker.prevents_chat?/1)

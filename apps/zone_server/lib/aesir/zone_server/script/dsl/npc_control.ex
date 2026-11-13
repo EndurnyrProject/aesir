@@ -14,7 +14,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   import Aesir.ZoneServer.Script.Dsl.Internal, only: [no_player!: 2]
 
   alias Aesir.Commons.InterServer.PubSub
-  alias Aesir.Net.ChatMessage
+  alias Aesir.Net.ChatLine
   alias Aesir.Net.WaitingRoomInfo
   alias Aesir.Net.WaitingRoomRemoved
   alias Aesir.ZoneServer.Announcement.Flags
@@ -393,16 +393,12 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
     the inter-server announce fan-out, and `:self` only to the attached
     player (a detached ctx warns and no-ops, as rAthena fails there too).
 
-  rAthena's `<color>` argument has no counterpart in the `ChatMessage` wire
+  rAthena's `<color>` argument has no counterpart in the `ChatLine` wire
   message and is dropped.
 
-  Unlike player chat (`ChatHandler`), where the client already typed the
-  `"Name : text"` prefix into the wire message before the server ever sees
-  it, an NPC has no client-typed input to echo, and the client does not
-  render a display name from `gid` on its own. The `"Name : text"` prefix
-  (rAthena's overhead-chat format) is therefore built here from the
-  placement's `name`, matching what the client already expects to display
-  verbatim for a `ChatMessage`.
+  The line is a local `ChatLine`, the same message player speech uses: the
+  speaker's gid and the placement's `name` travel in their own fields and
+  `text` is the words only, so the client formats it like any other speaker.
 
   A ctx with no `npc_gid` (e.g. an item script), or a `npc_gid`/`:npc` name
   that does not resolve to a registered placement, logs a warning and
@@ -415,7 +411,13 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   def npctalk(%Ctx{} = ctx, text, opts) do
     case resolve_talker(ctx, Keyword.get(opts, :npc)) do
       {:ok, gid, placement} ->
-        packet = %ChatMessage{gid: gid, message: "#{placement.name} : #{text}"}
+        packet = %ChatLine{
+          channel: :CHAT_LOCAL,
+          sender_gid: gid,
+          sender_name: placement.name,
+          text: text
+        }
+
         deliver_npctalk(ctx, packet, placement, npctalk_target(opts))
         ctx
 

@@ -20,7 +20,7 @@ defmodule Aesir.ZoneServer.Integration.VendingLifecycleIntegrationTest do
   alias Aesir.Net.CartItemAdded
   alias Aesir.Net.CartItemRemoved
   alias Aesir.Net.CartMountRequest
-  alias Aesir.Net.ChatMessage
+  alias Aesir.Net.ChatNotice
   alias Aesir.Net.LearnSkill
   alias Aesir.Net.MapLoaded
   alias Aesir.Net.MapMove
@@ -167,8 +167,7 @@ defmodule Aesir.ZoneServer.Integration.VendingLifecycleIntegrationTest do
       PlayerSession.warp(seller.pid, "geffen", 119, 59)
 
       assert_receive {:packet_sent,
-                      %ChatMessage{gid: ^seller_id, message: "You can't open a shop on this map"},
-                      _},
+                      %ChatNotice{kind: :ERROR, text: "You can't open a shop on this map"}, _},
                      1_000
 
       assert_receive {:packet_sent,

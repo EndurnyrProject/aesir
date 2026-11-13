@@ -146,8 +146,8 @@ verifiers, warps, shops, mob skills, castles, ...) and then starts the runtime s
   (build the cache from `.gat`), `Coordinator` (per-map game loop: spatial index, spawns, snapshot
   broadcast), `MapManager` (lifecycle). `Pathfinding` (A*) and `Geometry` live at the app root.
 - **`npc/` + `script/`** - The NPC system and scripting engine (see below).
-- **`gm/`** - `Dispatcher` parses `@`-prefixed commands, gates on GM level, runs `Command` modules
-  (e.g. `@item`, `@warp`).
+- **`gm/`** - `Dispatcher` parses a `GmCommand` line, gates on GM level, runs `Command` modules
+  (e.g. `@item`, `@warp`) and replies with a `ChatNotice`.
 - **`content/`** - Concrete game content, e.g. bespoke NPC modules under `content/npc/<map>/`.
 
 ## NPC System & Scripting DSL

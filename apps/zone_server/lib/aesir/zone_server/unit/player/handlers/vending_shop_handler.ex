@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingShopHandler do
   import Bitwise, only: [band: 2]
 
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.Net.ChatMessage
+  alias Aesir.Net.ChatNotice
   alias Aesir.Net.VendingBoardRemoved
   alias Aesir.Net.VendingBoardShown
   alias Aesir.Net.VendingCloseRequest
@@ -433,10 +433,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingShopHandler do
   end
 
   defp close_relocated(state, notice) do
-    MessageRouter.send_to(state.connection_pid, %ChatMessage{
-      gid: state.game_state.character_id,
-      message: notice
-    })
+    MessageRouter.send_to(state.connection_pid, %ChatNotice{kind: :ERROR, text: notice})
 
     {:ok, closed} = close_shop(state, :relocated)
     closed

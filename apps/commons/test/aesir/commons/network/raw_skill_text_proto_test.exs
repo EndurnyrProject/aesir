@@ -1,7 +1,7 @@
 defmodule Aesir.Commons.Network.RawSkillTextProtoTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.Net.ChatMessage
+  alias Aesir.Net.ChatLine
   alias Aesir.Net.Envelope
   alias Aesir.Net.SkillTextInputReply
   alias Aesir.Net.SkillUnitGroupState
@@ -12,7 +12,7 @@ defmodule Aesir.Commons.Network.RawSkillTextProtoTest do
           {:skill_text_input_reply,
            %SkillTextInputReply{request_id: 42, outcome: {:raw_text, <<255, 1, 0, 2>>}}},
           {:skill_unit_spawn, %SkillUnitSpawn{group: %SkillUnitGroupState{message: <<255, 1>>}}},
-          {:chat_message, %ChatMessage{gid: 123, raw_message: <<255, 1>>}}
+          {:chat_line, %ChatLine{sender_gid: 123, raw_text: <<255, 1>>}}
         ] do
       envelope = %Envelope{body: {tag, message}}
       assert {:ok, encoded, _size} = Envelope.encode(envelope)

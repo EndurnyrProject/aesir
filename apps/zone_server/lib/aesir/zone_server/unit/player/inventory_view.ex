@@ -114,6 +114,15 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
   end
 
   @doc """
+  Builds the item a chat link shows. A link shows an item, not a slot, so the
+  slot fields (`index`, `amount`, `location`, `favorite`) are zeroed.
+  """
+  @spec chat_link(InventoryItem.t()) :: Aesir.Net.InventoryItem.t()
+  def chat_link(%InventoryItem{} = item) do
+    %{trade_item(0, item, item.amount) | amount: 0, location: 0, favorite: false}
+  end
+
+  @doc """
   Builds the full `InventoryList` dump for an inventory map (sent on map load).
 
   Collapses the legacy 4-packet inventory dump (ZC_INVENTORY_START/ITEMLIST_NORMAL/

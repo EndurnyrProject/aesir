@@ -18,8 +18,8 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.CharList
   alias Aesir.Net.CharListRefresh
   alias Aesir.Net.CharServerInfo
-  alias Aesir.Net.ChatMessage
-  alias Aesir.Net.ChatRequest
+  alias Aesir.Net.ChatLine
+  alias Aesir.Net.ChatSend
   alias Aesir.Net.CreateChar
   alias Aesir.Net.DamageDealt
   alias Aesir.Net.DeleteCharAck
@@ -900,23 +900,38 @@ defmodule Aesir.Commons.Network.ProtoTest do
             }} = Envelope.decode(IO.iodata_to_binary(iodata))
   end
 
-  test "chat_request round-trips through envelope oneof" do
-    env = %Envelope{body: {:chat_request, %ChatRequest{message: "hello world"}}}
+  test "chat_send round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:chat_send,
+         %ChatSend{
+           channel: :CHAT_WHISPER,
+           text: "look ￼",
+           whisper_to: "Friend",
+           link_indices: [2]
+         }}
+    }
 
     {:ok, iodata, _size} = Envelope.encode(env)
 
-    assert {:ok, %Envelope{body: {:chat_request, %ChatRequest{message: "hello world"}}}} =
-             Envelope.decode(IO.iodata_to_binary(iodata))
+    assert {:ok, ^env} = Envelope.decode(IO.iodata_to_binary(iodata))
   end
 
-  test "chat_message round-trips through envelope oneof" do
-    env = %Envelope{body: {:chat_message, %ChatMessage{gid: 10_001, message: "hello world"}}}
+  test "chat_line round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:chat_line,
+         %ChatLine{
+           channel: :CHAT_PARTY,
+           sender_gid: 10_001,
+           sender_name: "Speaker",
+           text: "hello world"
+         }}
+    }
 
     {:ok, iodata, _size} = Envelope.encode(env)
 
-    assert {:ok,
-            %Envelope{body: {:chat_message, %ChatMessage{gid: 10_001, message: "hello world"}}}} =
-             Envelope.decode(IO.iodata_to_binary(iodata))
+    assert {:ok, ^env} = Envelope.decode(IO.iodata_to_binary(iodata))
   end
 
   test "snapshot with nested entities round-trips through envelope oneof" do

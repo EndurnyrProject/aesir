@@ -1286,7 +1286,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   # form speaks as the running NPC in its own view range; the optional tail
   # becomes keyword options. An empty NPC name means the attached NPC (rAthena
   # checks `strlen > 0`) and is dropped, and the `<color>` argument is hoisted
-  # then dropped: the `ChatMessage` wire message carries no color.
+  # then dropped: the `ChatLine` wire message carries no color.
   defp emit_mapped(_name, %{shape: :npctalk, dsl: dsl}, [text], env) do
     {pre, [text]} = hoist_all([text], env)
     {pre ++ ["ctx = #{dsl}(ctx, #{render(text, env)})"], :cont}

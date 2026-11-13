@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
   import Mimic
   import Aesir.ZoneServer.TrapTestHelper
 
-  alias Aesir.Net.ChatMessage
+  alias Aesir.Net.ChatLine
   alias Aesir.ZoneServer.Mmo.Skill.Unit, as: SkillUnit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -208,7 +208,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
       end)
 
       expect(Broadcast, :to_in_range, fn "prontera", 50, 50, _range, packet ->
-        assert %ChatMessage{gid: 777, message: "hello there", raw_message: "hello there"} = packet
+        assert %ChatLine{
+                 channel: :CHAT_LOCAL,
+                 sender_gid: 777,
+                 sender_name: "",
+                 text: "hello there",
+                 raw_text: "hello there"
+               } = packet
+
         :ok
       end)
 
@@ -224,7 +231,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
       end)
 
       expect(Broadcast, :to_in_range, fn "prontera", 50, 50, _range, packet ->
-        assert %ChatMessage{gid: 777, message: "", raw_message: <<255, 1>>} = packet
+        assert %ChatLine{sender_gid: 777, text: "", raw_text: <<255, 1>>} = packet
         :ok
       end)
 

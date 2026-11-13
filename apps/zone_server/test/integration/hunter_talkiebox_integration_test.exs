@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
   @moduletag :capture_log
 
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.Net.ChatMessage
+  alias Aesir.Net.ChatLine
   alias Aesir.Net.GroundSkillCast
   alias Aesir.Net.ItemOnGround
   alias Aesir.Net.MoveRequest
@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
   @map "prontera"
 
   describe "successful staging, placement, activation, and cleanup" do
-    test "places atomically, a non-owner walker materializes the used cell before the ChatMessage, then it expires without returning an item" do
+    test "places atomically, a non-owner walker materializes the used cell before the ChatLine, then it expires without returning an item" do
       caster = start_caster(id: 98_500, position: {150, 150})
       walker = start_player_session(id: 98_501, name: "TalkieWalker", position: {149, 150})
 
@@ -72,17 +72,17 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
       assert %{visibility: visibility, state: %{trap: %{phase: :armed}}} = trap
       assert visibility == Trap.visibility(:ht_talkiebox)
       seen_at_placement = if visibility == :public, do: assert_unit_spawn()
-      refute_received {:packet_sent, %ChatMessage{}, _}
+      refute_received {:packet_sent, %ChatLine{}, _}
 
       move_to(walker, {150, 150})
 
       assert eventually(fn ->
                {:messages, messages} = Process.info(self(), :messages)
-               Enum.any?(messages, &match?({:packet_sent, %ChatMessage{}, _}, &1))
+               Enum.any?(messages, &match?({:packet_sent, %ChatLine{}, _}, &1))
              end)
 
       {:messages, mailbox} = Process.info(self(), :messages)
-      chat_at = Enum.find_index(mailbox, &match?({:packet_sent, %ChatMessage{}, _}, &1))
+      chat_at = Enum.find_index(mailbox, &match?({:packet_sent, %ChatLine{}, _}, &1))
 
       spawn_at =
         Enum.find_index(
@@ -98,7 +98,9 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
       {group_id, cell} = seen_at_placement || assert_unit_spawn()
       assert group_id == trap.group_id
 
-      assert_receive {:packet_sent, %ChatMessage{gid: cell_id, message: "hello there"}, _}
+      assert_receive {:packet_sent,
+                      %ChatLine{sender_gid: cell_id, sender_name: "", text: "hello there"}, _}
+
       assert cell_id == cell.cell_id
 
       assert %{visibility: :public, state: %{trap: %{phase: :used}}} = Storage.get(group_id)
@@ -122,7 +124,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
 
       assert visibility == Trap.visibility(:ht_talkiebox)
 
-      refute_received {:packet_sent, %ChatMessage{}, _}
+      refute_received {:packet_sent, %ChatLine{}, _}
     end
 
     test "an untouched armed trap returns one floor trap on natural expiry" do

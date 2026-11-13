@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Gm.DispatcherTest do
   use Mimic
 
   alias Aesir.Commons.Models.Account
-  alias Aesir.Net.ChatMessage
+  alias Aesir.Net.ChatNotice
   alias Aesir.ZoneServer.Gm.Dispatcher
   alias Aesir.ZoneServer.Mmo.Woe.Server
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -72,62 +72,62 @@ defmodule Aesir.ZoneServer.Gm.DispatcherTest do
     }
   end
 
-  defp receive_chat_message(timeout \\ 1000) do
+  defp receive_notice(timeout \\ 1000) do
     receive do
-      {:send, _channel, {_tag, %ChatMessage{} = message}} -> message
+      {:send, :world, {:chat_notice, %ChatNotice{} = notice}} -> notice
     after
-      timeout -> flunk("Expected a ChatMessage within #{timeout}ms")
+      timeout -> flunk("Expected a ChatNotice within #{timeout}ms")
     end
   end
 
   test "replies 'Unknown command' for an unregistered token" do
     ctx = ctx_for(seed_account(99))
 
-    Dispatcher.dispatch("@nope 1 2", ctx, %{})
+    Dispatcher.dispatch("nope 1 2", ctx, %{})
 
-    assert %ChatMessage{gid: 1000, message: "Unknown command"} = receive_chat_message()
+    assert %ChatNotice{kind: :ERROR, text: "Unknown command"} = receive_notice()
   end
 
   test "denies a caller below required_level and does not call execute" do
     ctx = ctx_for(seed_account(10))
 
-    Dispatcher.dispatch("@boom", ctx, %{"boom" => ExplodingCommand})
+    Dispatcher.dispatch("boom", ctx, %{"boom" => ExplodingCommand})
 
-    assert %ChatMessage{gid: 1000, message: "Insufficient permission"} = receive_chat_message()
+    assert %ChatNotice{kind: :ERROR, text: "Insufficient permission"} = receive_notice()
   end
 
   test "runs the command and replies with its {:ok, msg} when gm_level is sufficient" do
     ctx = ctx_for(seed_account(60))
 
-    Dispatcher.dispatch("@stub 501 10", ctx, %{"stub" => StubCommand})
+    Dispatcher.dispatch("stub 501 10", ctx, %{"stub" => StubCommand})
 
-    assert %ChatMessage{gid: 1000, message: "ran 501,10"} = receive_chat_message()
+    assert %ChatNotice{kind: :INFO, text: "ran 501,10"} = receive_notice()
   end
 
   test "replies with the command's {:error, msg}" do
     ctx = ctx_for(seed_account(0))
 
-    Dispatcher.dispatch("@fail", ctx, %{"fail" => FailingStubCommand})
+    Dispatcher.dispatch("fail", ctx, %{"fail" => FailingStubCommand})
 
-    assert %ChatMessage{gid: 1000, message: "boom"} = receive_chat_message()
+    assert %ChatNotice{kind: :ERROR, text: "boom"} = receive_notice()
   end
 
   test "routes @zeny to the calling GM's session" do
     ctx = ctx_for(seed_account(60))
     ctx = put_in(ctx.game_state.character_name, "GmChar")
 
-    Dispatcher.dispatch("@zeny 500", ctx)
+    Dispatcher.dispatch("zeny 500", ctx)
 
-    assert %ChatMessage{gid: 1000, message: "Gave 500 Zeny to GmChar"} = receive_chat_message()
+    assert %ChatNotice{kind: :INFO, text: "Gave 500 Zeny to GmChar"} = receive_notice()
     assert_receive {:"$gen_cast", {:npc, {:credit_zeny, 500}}}
   end
 
   test "denies @zeny below GM level 60" do
     ctx = ctx_for(seed_account(59))
 
-    Dispatcher.dispatch("@zeny 500", ctx)
+    Dispatcher.dispatch("zeny 500", ctx)
 
-    assert %ChatMessage{message: "Insufficient permission"} = receive_chat_message()
+    assert %ChatNotice{kind: :ERROR, text: "Insufficient permission"} = receive_notice()
     refute_received {:"$gen_cast", {:npc, {:credit_zeny, _}}}
   end
 
@@ -135,9 +135,9 @@ defmodule Aesir.ZoneServer.Gm.DispatcherTest do
     ctx = ctx_for(seed_account(60))
     Phoenix.PubSub.subscribe(Aesir.PubSub, "player:1000")
 
-    Dispatcher.dispatch("@giveallskills", ctx)
+    Dispatcher.dispatch("giveallskills", ctx)
 
-    assert %ChatMessage{gid: 1000, message: "Skills maximized"} = receive_chat_message()
+    assert %ChatNotice{kind: :INFO, text: "Skills maximized"} = receive_notice()
     assert_receive {:progression, {:give_all_skills}}
   end
 
@@ -145,9 +145,9 @@ defmodule Aesir.ZoneServer.Gm.DispatcherTest do
     ctx = ctx_for(seed_account(59))
     Phoenix.PubSub.subscribe(Aesir.PubSub, "player:1000")
 
-    Dispatcher.dispatch("@giveallskills", ctx)
+    Dispatcher.dispatch("giveallskills", ctx)
 
-    assert %ChatMessage{message: "Insufficient permission"} = receive_chat_message()
+    assert %ChatNotice{kind: :ERROR, text: "Insufficient permission"} = receive_notice()
     refute_receive {:progression, {:give_all_skills}}
   end
 
@@ -155,27 +155,27 @@ defmodule Aesir.ZoneServer.Gm.DispatcherTest do
     ctx = ctx_for(seed_account(99))
     expect(Server, :start, fn -> :ok end)
 
-    Dispatcher.dispatch("@agitstart", ctx)
+    Dispatcher.dispatch("agitstart", ctx)
 
-    assert %ChatMessage{gid: 1000, message: "WoE started."} = receive_chat_message()
+    assert %ChatNotice{kind: :INFO, text: "WoE started."} = receive_notice()
   end
 
   test "routes @agitend to AgitEnd, which stops WoE and replies" do
     ctx = ctx_for(seed_account(99))
     expect(Server, :stop, fn -> :ok end)
 
-    Dispatcher.dispatch("@agitend", ctx)
+    Dispatcher.dispatch("agitend", ctx)
 
-    assert %ChatMessage{gid: 1000, message: "WoE ended."} = receive_chat_message()
+    assert %ChatNotice{kind: :INFO, text: "WoE ended."} = receive_notice()
   end
 
   test "denies @agitstart below GM level 99 without invoking Woe.Server" do
     ctx = ctx_for(seed_account(10))
     reject(&Server.start/0)
 
-    Dispatcher.dispatch("@agitstart", ctx)
+    Dispatcher.dispatch("agitstart", ctx)
 
-    assert %ChatMessage{gid: 1000, message: "Insufficient permission"} = receive_chat_message()
+    assert %ChatNotice{kind: :ERROR, text: "Insufficient permission"} = receive_notice()
   end
 
   test "routes @PVPON case-insensitively to PvpOn; a bogus arg yields the usage reply" do
@@ -183,23 +183,23 @@ defmodule Aesir.ZoneServer.Gm.DispatcherTest do
 
     Dispatcher.dispatch("@PVPON bogus", ctx)
 
-    assert %ChatMessage{gid: 1000, message: "Usage: @pvpon [noparty] [noguild]"} =
-             receive_chat_message()
+    assert %ChatNotice{kind: :ERROR, text: "Usage: @pvpon [noparty] [noguild]"} =
+             receive_notice()
   end
 
   test "denies @pvpon below GM level 99 without invoking PvpOn" do
     ctx = ctx_for(seed_account(10))
 
-    Dispatcher.dispatch("@pvpon noparty", ctx)
+    Dispatcher.dispatch("pvpon noparty", ctx)
 
-    assert %ChatMessage{gid: 1000, message: "Insufficient permission"} = receive_chat_message()
+    assert %ChatNotice{kind: :ERROR, text: "Insufficient permission"} = receive_notice()
   end
 
   test "denies @pvpoff below GM level 99 without invoking PvpOff" do
     ctx = ctx_for(seed_account(10))
 
-    Dispatcher.dispatch("@pvpoff", ctx)
+    Dispatcher.dispatch("pvpoff", ctx)
 
-    assert %ChatMessage{gid: 1000, message: "Insufficient permission"} = receive_chat_message()
+    assert %ChatNotice{kind: :ERROR, text: "Insufficient permission"} = receive_notice()
   end
 end

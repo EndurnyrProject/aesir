@@ -11,7 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkiebox do
   Going off turns it into a visible used trap for 5 s (never past its own
   lifetime) and makes it due at once, so its interval in the same manager tick,
   right after the used trap is published, broadcasts the stored text as a
-  `ChatMessage` keyed on its cell.
+  local `ChatLine` spoken by its cell, with no sender name.
 
   Renewal and pre-renewal agree: a message trap lasting 10 minutes for 1 SP and one trap.
   """
@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkiebox do
     item_cost: [%{id: 1065, amount: 1}],
     damage_kind: :misc
 
-  alias Aesir.Net.ChatMessage
+  alias Aesir.Net.ChatLine
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -163,10 +163,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkiebox do
       [%Cell{cell_id: cell_id} | _] ->
         {cx, cy} = group.center
 
-        packet = %ChatMessage{
-          gid: cell_id,
-          message: if(String.valid?(message), do: message, else: ""),
-          raw_message: message
+        packet = %ChatLine{
+          channel: :CHAT_LOCAL,
+          sender_gid: cell_id,
+          sender_name: "",
+          text: if(String.valid?(message), do: message, else: ""),
+          raw_text: message
         }
 
         Broadcast.to_in_range(group.map_name, cx, cy, Config.view_range(), packet)

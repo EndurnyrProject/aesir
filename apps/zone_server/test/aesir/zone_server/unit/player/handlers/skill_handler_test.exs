@@ -3313,9 +3313,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       SkillHandler.report_cast_failure(41, 1000, {:not_ok, reply})
 
       assert_received {:to_player,
-                       %Aesir.Net.ChatMessage{
-                         gid: 1000,
-                         message: "You can't open a shop on this map"
+                       %Aesir.Net.ChatNotice{
+                         kind: :ERROR,
+                         text: "You can't open a shop on this map"
                        }}
 
       assert_received {:to_player, %Aesir.Net.SkillCastFailed{skill_id: 41}}

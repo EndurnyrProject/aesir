@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Gm.Command do
   @moduledoc """
-  Behaviour for GM (`@`-prefixed) chat commands.
+  Behaviour for GM commands (what the player types after `@`).
 
   Each command is an isolated module implementing this behaviour and registered
   in the `Dispatcher` registry. The dispatcher handles parsing, permission

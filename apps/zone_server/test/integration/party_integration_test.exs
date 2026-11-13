@@ -33,6 +33,8 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
+  alias Aesir.Net.ChatLine
+  alias Aesir.Net.ChatSend
   alias Aesir.Net.PartyActionResult
   alias Aesir.Net.PartyCreateRequest
   alias Aesir.Net.PartyInfo
@@ -127,6 +129,29 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
       assert leader_state.stats.progression.job_exp == job_reward
       assert ally_state.stats.progression.base_exp == 0
       assert ally_state.stats.progression.job_exp == 0
+    end
+  end
+
+  describe "party chat" do
+    test "a line reaches every online member on any map once, the speaker included" do
+      %{sessions: [leader, _ally]} =
+        form_party([{"Leader", @killer_level, "prontera"}, {"Ally", @killer_level, "geffen"}])
+
+      %{character_id: leader_id, character_name: leader_name} = get_player_state(leader.pid)
+      flush_packets()
+
+      simulate_incoming_message(leader.pid, %ChatSend{channel: :CHAT_PARTY, text: "pull"})
+
+      line = %ChatLine{
+        channel: :CHAT_PARTY,
+        sender_gid: leader_id,
+        sender_name: leader_name,
+        text: "pull"
+      }
+
+      assert_receive {:packet_sent, ^line, _}, 1_000
+      assert_receive {:packet_sent, ^line, _}, 1_000
+      refute_receive {:packet_sent, %ChatLine{}, _}, 100
     end
   end
 

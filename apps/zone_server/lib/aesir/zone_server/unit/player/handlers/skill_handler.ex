@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.CastCancel
-  alias Aesir.Net.ChatMessage
+  alias Aesir.Net.ChatNotice
   alias Aesir.Net.SkillCastFailed
   alias Aesir.Net.SkillCasting
   alias Aesir.Net.SkillCooldown
@@ -2331,7 +2331,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     do: report_cast_failure(skill_id, character_id, reason)
 
   def report_cast_failure(skill_id, character_id, {:not_ok, {:message, text, reply}}) do
-    Broadcast.to_player(character_id, %ChatMessage{gid: character_id, message: text})
+    Broadcast.to_player(character_id, %ChatNotice{kind: :ERROR, text: text})
     report_cast_failure(skill_id, character_id, {:not_ok, reply})
   end
 

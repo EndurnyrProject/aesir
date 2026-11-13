@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Integration.PvpDeathIntegrationTest do
   alias Aesir.Commons.ClusterTestHelper
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
-  alias Aesir.Net.ChatMessage
+  alias Aesir.Net.ChatNotice
   alias Aesir.Net.Respawn
   alias Aesir.Repo
   alias Aesir.ZoneServer.Gm.Dispatcher
@@ -267,19 +267,19 @@ defmodule Aesir.ZoneServer.Integration.PvpDeathIntegrationTest do
 
         Dispatcher.dispatch("@pvpon bogus", gm_state)
 
-        assert_receive {:packet_sent, %ChatMessage{message: "Usage: @pvpon [noparty] [noguild]"},
-                        _},
+        assert_receive {:packet_sent,
+                        %ChatNotice{kind: :ERROR, text: "Usage: @pvpon [noparty] [noguild]"}, _},
                        1_000
 
         assert complete_flags(@map) == flags_before
 
         Dispatcher.dispatch("@pvpon", gm_state)
-        assert_receive {:packet_sent, %ChatMessage{message: "PvP enabled."}, _}, 1_000
+        assert_receive {:packet_sent, %ChatNotice{kind: :INFO, text: "PvP enabled."}, _}, 1_000
 
         assert :ok = auto_attack(gm_session, defender.id)
 
         Dispatcher.dispatch("@pvpoff", gm_state)
-        assert_receive {:packet_sent, %ChatMessage{message: "PvP disabled."}, _}, 1_000
+        assert_receive {:packet_sent, %ChatNotice{kind: :INFO, text: "PvP disabled."}, _}, 1_000
 
         assert complete_flags(@map) == %{
                  pvp: false,

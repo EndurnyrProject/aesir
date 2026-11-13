@@ -63,8 +63,8 @@ message Envelope {
     UnitDespawn unit_despawn = 40;  // s2c zone world
     NameRequest name_request = 41;  // c2s zone
     NameResponse name_response = 42;  // s2c zone world
-    ChatRequest chat_request = 43;  // c2s zone
-    ChatMessage chat_message = 44;  // s2c zone world
+    ChatSend chat_send = 43;  // c2s zone
+    ChatLine chat_line = 44;  // s2c zone world
     Snapshot snapshot = 45;  // s2c zone snapshots
     // 46-71: zone combat / skill / item / stat
     ActionRequest action_request = 46;  // c2s zone
@@ -298,6 +298,9 @@ message Envelope {
     RankingRequest ranking_request = 229;  // c2s zone
     RankingResponse ranking_response = 230;  // s2c zone gameplay
     FameUpdate fame_update = 231;  // s2c zone gameplay
+    // 232-233: GM command line and non-speech text for the chat log
+    GmCommand gm_command = 232;  // c2s zone
+    ChatNotice chat_notice = 233;  // s2c zone world
   }
 }
 
@@ -897,16 +900,70 @@ message NameResponse {
   string position_name = 5;
 }
 
-// Client -> server, public chat message (replaces RO CZ_REQUEST_CHAT 0x008C).
-message ChatRequest {
-  string message = 1;
+// Who a chat line reaches.
+enum ChatChannel {
+  // Players in view of the speaker.
+  CHAT_LOCAL = 0;
+  // Online members of the speaker's party.
+  CHAT_PARTY = 1;
+  // Online members of the speaker's guild.
+  CHAT_GUILD = 2;
+  // Every online player.
+  CHAT_TRADE = 3;
+  // One player, named by `whisper_to`.
+  CHAT_WHISPER = 4;
 }
 
-// Server -> client, an entity's chat message (replaces RO ZC_NOTIFY_CHAT 0x008D).
-message ChatMessage {
-  uint32 gid = 1;
-  string message = 2;
-  bytes raw_message = 3; // Talkie Box bytes, when present; otherwise use message.
+// Client -> server, say something on a channel. The server knows who is
+// speaking, so `text` is the words only and never carries the sender's name.
+message ChatSend {
+  ChatChannel channel = 1;
+  // At most 255 bytes, not blank.
+  string text = 2;
+  // Recipient character name. CHAT_WHISPER only.
+  string whisper_to = 3;
+  // Inventory indices of the items linked in `text`, in order: the n-th
+  // U+FFFC in `text` marks where the n-th link is shown. At most 3, and the
+  // number of U+FFFC must equal the number of indices.
+  repeated uint32 link_indices = 4;
+}
+
+// Server -> client, one line of speech. The sender also gets its own line back,
+// so the client never draws what it typed until the server accepted it.
+message ChatLine {
+  ChatChannel channel = 1;
+  // The speaking unit (player, NPC or Talkie Box cell).
+  uint32 sender_gid = 2;
+  // Display name of the speaker. Empty for a Talkie Box.
+  string sender_name = 3;
+  string text = 4;
+  // Talkie Box bytes, when present; otherwise use `text`.
+  bytes raw_text = 5;
+  // CHAT_WHISPER only: the recipient's name, so the sender's own copy can be
+  // told apart from a whisper it received.
+  string whisper_to = 6;
+  // The linked items, one per U+FFFC in `text`, in order. `index`, `amount`,
+  // `location` and `favorite` are zeroed: a link shows an item, not a slot.
+  repeated InventoryItem links = 7;
+}
+
+// Client -> server, a GM command line without the leading `@`
+// (for example `item 501 10`). The reply is a ChatNotice.
+message GmCommand {
+  string command = 1;
+}
+
+// Server -> client, free text for the chat log that nobody said: command
+// replies, chat refusals and server notices. A notice the client has its own
+// wording for goes through SystemNotice instead.
+message ChatNotice {
+  enum Kind {
+    INFO = 0;
+    ERROR = 1;
+  }
+
+  Kind kind = 1;
+  string text = 2;
 }
 
 // Client -> server, emote/emoticon request (replaces RO CZ_REQ_EMOTION 0x00bf).

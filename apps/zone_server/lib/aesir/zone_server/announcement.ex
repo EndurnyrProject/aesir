@@ -62,9 +62,10 @@ defmodule Aesir.ZoneServer.Announcement do
 
   @doc """
   Fans an already-built packet to every player on a map. Used by the
-  `Coordinator` when it receives a global announcement.
+  `Coordinator` for whatever rides the global announcement topic: an
+  `Announcement`, or a `ChatLine` from trade chat or a server-wide `npctalk`.
   """
-  @spec deliver_local(AnnouncementMsg.t(), String.t()) :: :ok
+  @spec deliver_local(struct(), String.t()) :: :ok
   def deliver_local(packet, map_name) do
     map_name
     |> SpatialIndex.get_players_on_map()

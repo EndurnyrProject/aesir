@@ -80,6 +80,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   def info({:guild_skill_update, guild_state}, state),
     do: guild_skills_updated(guild_state, state)
 
+  # A party or guild chat line, published by `ChatHandler` on the topic this
+  # session subscribed to when it joined.
+  def info({:chat_line, packet}, state) do
+    MessageRouter.send_to(state.connection_pid, packet)
+    {:noreply, state}
+  end
+
   @doc """
   Subscribes the calling session to a party it just created or joined
   mid-session, updates `game_state.party_id`, and sends the initial
