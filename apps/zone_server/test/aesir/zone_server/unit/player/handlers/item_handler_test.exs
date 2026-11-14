@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.SpecialEffect
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # Client index 2 maps to server index 0 (the +2 offset).
@@ -169,6 +170,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
       assert_received {:send, :gameplay,
                        {:item_use_result,
                         %ItemUseResult{index: @red_potion_client_index, ok: true, reason: 0}}}
+    end
+
+    test "a used potion plays its effect to the area" do
+      ScriptCompiler.compile_all!([item_def(@red_potion_id, "heal(ctx, hp: 50)")])
+      definition = usable_definition(@red_potion_id, "heal(ctx, hp: 50)")
+      stub(Items, :by_id, fn @red_potion_id -> {:ok, definition} end)
+      expect_potion_consumed()
+      expect(SpecialEffect, :play, fn {:player, 1000}, :potion1, :area -> :ok end)
+
+      assert {:noreply, _} =
+               ItemHandler.handle_use_item(@red_potion_client_index, state_with_potion())
     end
 
     test "an item script reads the HP its own heal just restored" do

@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDialogs
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.ItemManagement.NoEquip
+  alias Aesir.ZoneServer.Mmo.ItemManagement.UseEffect
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -355,6 +356,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
           reason: 0
         })
 
+        {:item, item_id} = ctx.source
+        UseEffect.play(char_id, item_id)
         PlayerEvents.inventory_changed(char_id)
 
         committed = SkillHandler.drain_warp(committed)
