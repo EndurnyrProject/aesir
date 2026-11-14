@@ -1932,7 +1932,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
 
     test "drains follow-up applications requested by an on_damage callback" do
-      target_id = 1
+      # Its own status publishes notifications on the player's PubSub topic, so a
+      # shared id would leak them into any concurrent module subscribed to it.
+      target_id = 91_001
 
       setup_player_mock(target_id)
       Registry.register_module(FollowUpStatus)

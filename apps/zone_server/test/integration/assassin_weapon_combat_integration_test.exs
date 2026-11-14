@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinWeaponCombatIntegrationTest do
   alias Aesir.ZoneServer.Mmo.Combat.AutoAttack
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
+  alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.HpDrain
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -151,11 +152,17 @@ defmodule Aesir.ZoneServer.Integration.AssassinWeaponCombatIntegrationTest do
     flee = rate_base + attacker.combat_stats.hit - 5
     defender = %{defender | combat_stats: %{defender.combat_stats | flee: flee, perfect_dodge: 0}}
 
+    # A procced double attack now rolls its critical before the hit test (the
+    # skill DB gives TF_DOUBLE a Critical flag), so the seeded hit roll no
+    # longer lands where this arrangement was written to expect it. Pin the two
+    # outcomes the arrangement is about; the swings' damage stays seeded.
+    stub(HitCalculations, :calculate_hit_result, fn _attacker, _defender -> :miss end)
     :rand.seed(:exsss, {1, 1, 1})
 
     failed =
       HandedAttack.calculate(player_state(double), attacker, defender, rng: fn _ -> 100 end)
 
+    stub(HitCalculations, :calculate_hit_result, fn _attacker, _defender -> :hit end)
     :rand.seed(:exsss, {1, 1, 1})
 
     succeeded =
@@ -164,6 +171,11 @@ defmodule Aesir.ZoneServer.Integration.AssassinWeaponCombatIntegrationTest do
     assert {:ok, %{display_divisions: 1, outcome: :miss}} = failed
     assert {:ok, %{display_divisions: 2, outcome: outcome}} = succeeded
     assert outcome in [:hit, :critical]
+
+    stub(HitCalculations, :calculate_hit_result, fn attacker_stats, target_stats ->
+      call_original(HitCalculations, :calculate_hit_result, [attacker_stats, target_stats])
+    end)
+
     assert attacker.combat_stats.hit == player_state(double).stats.combat_stats.hit
 
     katar = start_assassin(equipped: [both: @jur], skills: %{@tf_double => 10}, luk: 30)

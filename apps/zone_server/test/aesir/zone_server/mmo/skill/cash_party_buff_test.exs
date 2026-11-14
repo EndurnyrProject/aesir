@@ -127,11 +127,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CashPartyBuffTest do
     assert_receive {:stats, {:status_changed, :sc_blessing, :apply}}
     refute_receive {:stats, {:status_changed, :sc_curse, :removed}}, 0
 
+    # Another module publishing on these players' topics must not read as this
+    # call's traffic, so the no-op assertion is scoped to the buff it sends.
+    flush_stats()
     held = StatusStorage.get_status(:player, 2, :sc_blessing)
     :ok = StatusStorage.apply_status(:player, 1, :sc_blessing, val1: 10)
     assert [] = PartyBuff.apply_cash(caster, :sc_blessing, Keyword.put(params(), :val1, 1), 14)
     assert StatusStorage.get_status(:player, 2, :sc_blessing) == held
-    refute_receive {:stats, {:status_changed, _, _}}, 0
+    refute_receive {:stats, {:status_changed, :sc_blessing, _}}, 0
+  end
+
+  defp flush_stats do
+    receive do
+      {:stats, _} -> flush_stats()
+    after
+      0 -> :ok
+    end
   end
 
   test "fanout preserves a magic self invocation and its original source for immunity" do

@@ -76,7 +76,11 @@ defmodule Aesir.ZoneServer.Integration.AdrenalineScrollTest do
       assert entry.val3 == 200
       assert entry.expires_at - entry.started_at == 165_000
 
-      expected = if GameMode.mode() == :renewal, do: %{aspd: 7, hit: 20}, else: %{aspd_rate: 20}
+      expected =
+        if GameMode.mode() == :renewal,
+          do: %{aspd_fixed_max: 7, hit: 20},
+          else: %{aspd_rate_max: 20}
+
       assert get_player_state(session.pid).stats.modifiers.status_effects == expected
     end
 
