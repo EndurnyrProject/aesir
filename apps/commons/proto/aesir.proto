@@ -2656,6 +2656,9 @@ message SkillUnitGroupState {
   repeated SkillUnitCellState cells = 10;
   SkillUnitPhase phase = 11;
   bytes message = 12; // Scribble bytes; empty for other skill units.
+  // Visual sub-unit chosen at placement (Ground Drift: wind 0, dark 1, poison 2,
+  // water 3, fire 4); 0 for other skill units.
+  uint32 unit_variant = 13;
 }
 
 // Server -> client, an authoritative replacement for the observer's complete

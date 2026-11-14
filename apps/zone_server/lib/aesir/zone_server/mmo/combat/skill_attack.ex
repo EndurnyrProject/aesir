@@ -873,7 +873,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         :critical_divisor,
         :critical_max_weapon,
         :skill_id,
-        :element
+        :element,
+        :late_atk_bonus
       ])
 
     {skill_id, skill_level, calc_opts}

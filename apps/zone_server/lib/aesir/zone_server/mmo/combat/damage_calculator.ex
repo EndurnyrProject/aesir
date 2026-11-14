@@ -875,10 +875,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   # Weapon Research and Hilt Binding join every classic player weapon hit after
   # the 0 cap, before the attacker's cards.
+  # A skill's own flat term (`:late_atk_bonus`, Ground Drift's 50 per level)
+  # joins at the same step.
   defp classic_late_atk(%{attacker: %{unit_type: :player} = attacker, opts: opts}),
     do:
       Map.get(physical_snapshot(attacker), :weapon_research_atk, 0) +
-        hilt_binding_atk(attacker, opts)
+        hilt_binding_atk(attacker, opts) + Keyword.get(opts, :late_atk_bonus, 0)
 
   defp classic_late_atk(_hit), do: 0
 
@@ -1887,9 +1889,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     end
   end
 
+  @doc """
+  The attacker's weapon element with its endow applied, ignoring ammunition:
+  the element a ground skill snapshots at placement (`skill_unitsetting`'s
+  `rhw.ele` overridden by an enchant).
+  """
+  @spec attack_element(map(), map()) :: atom()
+  def attack_element(attacker, attacker_modifiers) do
+    DamageShared.endow_element(attacker_modifiers) || Map.get(attacker.weapon, :element, :neutral)
+  end
+
   defp resolve_attack_element(attacker, attacker_modifiers, opts) do
-    DamageShared.endow_element(attacker_modifiers) || arrow_element(attacker, opts) ||
-      Map.get(attacker.weapon, :element, :neutral)
+    case DamageShared.endow_element(attacker_modifiers) do
+      nil -> arrow_element(attacker, opts) || attack_element(attacker, attacker_modifiers)
+      endow -> endow
+    end
   end
 
   defp arrow_element(attacker, opts) do

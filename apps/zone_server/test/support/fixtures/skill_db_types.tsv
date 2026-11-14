@@ -377,6 +377,7 @@
 518	GS_DUST	Weapon	false	Weapon	false	none	none	Bullet	1,1,1,1,1,1,1,1,1,1	Bullet	1,1,1,1,1,1,1,1,1,1
 519	GS_FULLBUSTER	Weapon	false	Weapon	false	none	none	Bullet	2,2,2,2,2,2,2,2,2,2	Bullet	2,2,4,4,6,6,8,8,10,10
 520	GS_SPREADATTACK	Weapon	false	Weapon	false	none	none	Bullet	5,5,5,5,5,5,5,5,5,5	Bullet	5,5,5,5,5,5,5,5,5,5
+521	GS_GROUNDDRIFT	Weapon	false	Weapon	false	none	IgnoreFlee	Bullet	1,1,1,1,1,1,1,1,1,1	Grenade	1,1,1,1,1,1,1,1,1,1
 653	NPC_EARTHQUAKE	Magic	false	Magic	false	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 660	NPC_BLEEDING	Weapon	false	Weapon	false	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 663	NPC_WIDESILENCE	None	true	None	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0

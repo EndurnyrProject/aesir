@@ -32,7 +32,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.View do
       expires_tick: to_server_tick(group.expires_at, clock),
       cells: cells |> Enum.sort_by(& &1.cell_id) |> Enum.map(&cell/1),
       phase: phase(group.state),
-      message: message(group)
+      message: message(group),
+      unit_variant: Map.get(group.state, :variant, 0)
     }
   end
 
