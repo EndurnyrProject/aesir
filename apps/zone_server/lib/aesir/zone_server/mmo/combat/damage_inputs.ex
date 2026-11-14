@@ -394,13 +394,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
 
     defense_multiplier = 1.0 + Map.get(modifiers, :defense_multiplier, 0.0)
 
-    modified_hard_def =
-      trunc((hard_def + hard_def_bonus) * defense_multiplier * (100 + def_rate) / 100)
+    {
+      rate_scaled_defense(hard_def + hard_def_bonus, defense_multiplier, def_rate),
+      rate_scaled_defense(soft_def + soft_def_bonus, defense_multiplier, def2_rate)
+    }
+  end
 
-    modified_soft_def =
-      trunc((soft_def + soft_def_bonus) * defense_multiplier * (100 + def2_rate) / 100)
+  # The reference applies a defense rate as `def -= def * rate / 100`
+  # (`status_calc_def`: Provoke, Fling, Signum Crucis), i.e. the signed rate
+  # scales the already-modified defense and the division truncates toward zero,
+  # so a 25% cut off 101 DEF leaves 76, not 75.
+  defp rate_scaled_defense(defense, multiplier, rate) when rate == 0,
+    do: trunc(defense * multiplier)
 
-    {modified_hard_def, modified_soft_def}
+  defp rate_scaled_defense(defense, multiplier, rate) do
+    scaled = trunc(defense * multiplier)
+    scaled + div(scaled * rate, 100)
   end
 
   @doc """
@@ -537,8 +546,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
 
   defp ordinary_mdef_values(combat_stats, modifiers) do
     mdef_rate = Map.get(modifiers, :mdef_rate, 0)
-    hard = trunc(combat_stats.mdef * (100 + mdef_rate) / 100)
-    {hard, combat_stats.soft_mdef}
+    {rate_scaled_defense(combat_stats.mdef, 1.0, mdef_rate), combat_stats.soft_mdef}
   end
 
   defp equipment_rates(

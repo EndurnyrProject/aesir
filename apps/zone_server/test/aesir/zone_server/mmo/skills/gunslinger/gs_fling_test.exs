@@ -2,7 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Gunslinger.GsFlingTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
   alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
   alias Aesir.ZoneServer.Mmo.Skills.Gunslinger.GsFling
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -21,6 +23,37 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Gunslinger.GsFlingTest do
 
     assert GsFling.dynamic_cost(caster(coins(7)), {:unit, 2000}, 1, GsFling.definition()).spheres ==
              5
+  end
+
+  test "a three-coin cast settles those three coins and its ten SP" do
+    caster = caster(coins(3))
+    definition = GsFling.definition()
+    cost = GsFling.dynamic_cost(caster, {:unit, 2000}, 1, definition)
+
+    assert {:ok, prepared} =
+             PlayerCaster.prepare_begin_cost(caster, GsFling, definition, cost, 0, 1)
+
+    {paid, remaining} = PlayerCaster.commit_primary(caster, prepared)
+    paid = PlayerCaster.commit(paid, remaining)
+
+    assert SpiritSpheres.count(paid.spirit_spheres) == 0
+    assert paid.stats.current_state.sp == 90
+  end
+
+  test "the damage is the job level whatever the target's DEF, element and flee" do
+    definition = GsFling.definition()
+    attacker = CombatTestHelper.create_player_combatant(job_level: 42)
+
+    armored = CombatTestHelper.create_mob_combatant(def: 500, soft_def: 500, element: :water)
+    evasive = CombatTestHelper.create_mob_combatant(flee: 5_000, agi: 200)
+
+    opts = [skill_id: definition.id, attack_flag: 0x20, base_damage: 42]
+
+    assert {:ok, %{damage: 42}} =
+             MiscDamageCalculator.calculate_misc_damage(attacker, armored, opts)
+
+    assert {:ok, %{damage: 42}} =
+             MiscDamageCalculator.calculate_misc_damage(attacker, evasive, opts)
   end
 
   test "an empty hand refuses with the coins reason" do
