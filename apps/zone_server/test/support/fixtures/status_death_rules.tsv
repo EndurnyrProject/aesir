@@ -179,6 +179,7 @@ sc_ljosalfar	survives	survives
 sc_longing	absent	ends
 sc_loud	ends	ends
 sc_lukfood	ends	ends
+sc_magicalbullet	ends	absent
 sc_magiccandy	survives	absent
 sc_magicpower	ends	ends
 sc_magicrod	ends	ends

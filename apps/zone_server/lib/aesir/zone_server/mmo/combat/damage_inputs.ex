@@ -485,6 +485,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
 
   defp zero(rates), do: Map.new(rates, fn {channel, _rate} -> {channel, 0} end)
 
+  @doc """
+  Renewal SC_MAGICALBULLET's weapon ATK term (`battle.cpp` `battle_attack_sc_bonus`).
+
+  With `tmdef` the target's hard plus soft MDEF: when `matk_min > tmdef` and the
+  band is not degenerate, the half-open MATK roll minus `tmdef`; otherwise
+  `matk_min - tmdef`. Either result is floored at 0.
+  """
+  @spec magical_bullet_atk(map(), map()) :: non_neg_integer()
+  def magical_bullet_atk(attacker_stats, defender_stats) do
+    tmdef = Map.get(defender_stats, :mdef, 0) + Map.get(defender_stats, :soft_mdef, 0)
+    matk_min = Map.fetch!(attacker_stats, :matk_min)
+    matk_max = Map.fetch!(attacker_stats, :matk_max)
+
+    if matk_min > tmdef,
+      do: max(DamageShared.roll(matk_min, matk_max) - tmdef, 0),
+      else: max(matk_min - tmdef, 0)
+  end
+
   @doc "Rolls the half-open MATK band, falling back to its deterministic scalar."
   @spec roll_matk(map()) :: non_neg_integer()
   def roll_matk(combat_stats) do

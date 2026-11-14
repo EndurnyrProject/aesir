@@ -988,6 +988,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   defp held_edp(attacker),
     do: StatusStorage.get_status(attacker.unit_type, attacker.unit_id, :sc_edp)
 
+  # Renewal Magical Bullet, rolled once per context, so once per hit and hand.
+  defp magical_bullet_atk(attacker, defender) do
+    if StatusStorage.has_status?(attacker.unit_type, attacker.unit_id, :sc_magicalbullet),
+      do: DamageInputs.magical_bullet_atk(attacker.combat_stats, defender.combat_stats),
+      else: 0
+  end
+
   # Classic Magnum Break (SC_WATK_ELEMENT): a player's hit, unless it ignores
   # elements or attack cards, gains `val2` percent of its normal-attack base taken
   # as the status element, plus the right weapon's Star Crumb bonus and the
@@ -1329,6 +1336,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
           nil -> 0
         end,
       stave_matk: Keyword.get(opts, :stave_matk, 0),
+      post_card_weapon_atk: magical_bullet_atk(attacker, defender),
       patk: Map.get(attacker.combat_stats, :patk, 0),
       res: Map.get(defender.combat_stats, :res, 0),
       critical?: critical.is_critical,
