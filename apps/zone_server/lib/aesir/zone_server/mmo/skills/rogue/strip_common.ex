@@ -10,6 +10,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.StripCommon do
   decides the same in its own session, also requiring each piece to be worn.
   The skill's effect shows its result around the target (Divest All only when
   something was stripped) and a player caster is told when nothing was.
+
+  Disarm (`:disarm`) brings its own percent rate and duration (`attempt/7`): it
+  strips only the weapon, always shows a successful effect and never reports a
+  failure.
   """
 
   alias Aesir.Net.SkillEffect
@@ -33,8 +37,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.StripCommon do
   @typedoc "An equipment slot a Divest skill can strip."
   @type slot :: :right_hand | :left_hand | :armor | :head_top
 
-  @typedoc "`:divest` for the single-piece skills, `:full` for Divest All."
-  @type kind :: :divest | :full
+  @typedoc "`:divest` for the single-piece skills, `:full` for Divest All, `:disarm` for Disarm."
+  @type kind :: :divest | :full | :disarm
+
+  @typedoc "A target already resolved by the caller: `{target_ref, pid, state, unit_type}`."
+  @type resolved :: {term(), pid() | nil, struct(), :player | :mob | :homunculus}
+
+  @typedoc "An explicit strip input: the percent `rate` rolled and the status `duration_ms`."
+  @type input :: %{rate: integer(), duration_ms: pos_integer()}
 
   @doc """
   Casts a Divest skill at `{:unit, target}` over `slots`; always `{:ok, caster}`
@@ -42,18 +52,52 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.StripCommon do
   """
   @spec cast(struct(), {:unit, term()}, pos_integer(), map(), [slot()], kind()) ::
           {:ok, struct()} | {:error, atom()}
-  def cast(caster, {:unit, target_ref}, level, definition, slots, kind) do
+  def cast(caster, {:unit, target_ref}, level, definition, slots, kind)
+      when kind in [:divest, :full] do
     with {:ok, target_pid, target, target_type} <- TargetResolver.resolve(target_ref) do
       outcome = outcome_opts(caster, target, target_ref, level, definition, kind)
-      attempt(caster, target_pid, target, target_type, level, slots, outcome)
+      divest(caster, target_pid, target, target_type, level, slots, outcome)
       {:ok, caster}
     end
   end
 
-  defp attempt(_caster, _pid, _target, :skill_unit, _level, _slots, outcome),
+  @doc """
+  Attempts a strip of `slots` on a resolved living target with an explicit
+  `input`: success when a 0..99 roll is below `input.rate` (`roll_percent?/1`),
+  the status then lasting `input.duration_ms` with `val1` the level. Only the
+  `:disarm` kind takes this path; its outcome is reported per `report_outcome/2`.
+  """
+  @spec attempt(struct(), resolved(), pos_integer(), map(), [slot()], :disarm, input()) :: :ok
+  def attempt(
+        caster,
+        {target_ref, target_pid, target, target_type},
+        level,
+        definition,
+        slots,
+        :disarm,
+        %{rate: rate, duration_ms: duration_ms}
+      )
+      when target_type in [:player, :mob, :homunculus] do
+    outcome = outcome_opts(caster, target, target_ref, level, definition, :disarm)
+
+    if __MODULE__.roll_percent?(rate) do
+      opts = [
+        duration: duration_ms,
+        val1: level,
+        caster_id: unit_id(caster),
+        source_type: unit_type(caster)
+      ]
+
+      strip(target_type, target_pid, unit_id(target), slots, opts, outcome)
+    else
+      report_outcome(false, outcome)
+    end
+  end
+
+  defp divest(_caster, _pid, _target, :skill_unit, _level, _slots, outcome),
     do: report_outcome(false, outcome)
 
-  defp attempt(caster, target_pid, target, target_type, level, slots, outcome) do
+  defp divest(caster, target_pid, target, target_type, level, slots, outcome) do
     caster_dex = unit_stats(caster).dex
     target_dex = unit_stats(target).dex
 
@@ -100,15 +144,34 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.StripCommon do
   @spec roll_success?(integer()) :: boolean()
   def roll_success?(rate), do: :rand.uniform(1_000) <= rate
 
+  @doc "Rolls a percent rate the reference way: `rnd() % 100 < rate` succeeds."
+  @spec roll_percent?(integer()) :: boolean()
+  def roll_percent?(rate), do: percent_success?(:rand.uniform(100) - 1, rate)
+
+  @doc "Whether a 0..99 `roll` succeeds against a percent `rate`."
+  @spec percent_success?(0..99, integer()) :: boolean()
+  def percent_success?(roll, rate), do: roll < rate
+
   @doc """
   Shows the Divest skill's effect and tells a player caster when nothing was
-  stripped. `outcome` carries `skill_id`, `level`, `kind`, `src_id`,
+  stripped; Disarm always shows a successful effect and reports nothing. `outcome` carries `skill_id`, `level`, `kind`, `src_id`,
   `target_id`, `origin` (`{map, x, y}` of the target, whose area sees the
   effect; a player target's session replaces it with its live position) and
   `report_to` (the caster's character id, or nil for a monster caster).
   """
   @spec report_outcome(boolean(), keyword()) :: :ok
   def report_outcome(stripped?, outcome) do
+    if outcome[:kind] == :disarm,
+      do: disarm_outcome(outcome),
+      else: divest_outcome(stripped?, outcome)
+  end
+
+  defp disarm_outcome(outcome) do
+    show_effect(true, outcome)
+    :ok
+  end
+
+  defp divest_outcome(stripped?, outcome) do
     if outcome[:kind] == :divest or stripped?, do: show_effect(stripped?, outcome)
 
     with false <- stripped?,

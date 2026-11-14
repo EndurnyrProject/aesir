@@ -212,7 +212,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   @spec handle_strip([atom()], keyword(), map()) :: {:noreply, map()}
   def handle_strip(slots, opts, %{game_state: game_state} = state) do
     id = game_state.character_id
-    status_opts = Keyword.take(opts, [:duration, :caster_id, :source_type])
+    status_opts = Keyword.take(opts, [:duration, :val1, :caster_id, :source_type])
 
     {state, stripped?} =
       Enum.reduce(StripCommon.pieces(), {state, false}, fn {slot, status, protection},
