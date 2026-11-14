@@ -372,6 +372,7 @@
 513	GS_DISARM	Weapon	false	Weapon	false	none	none	Bullet	1,1,1,1,1	Bullet	1,1,1,1,1
 514	GS_PIERCINGSHOT	Weapon	false	Weapon	false	none	none	Bullet	1,1,1,1,1	Bullet	1,1,1,1,1
 515	GS_RAPIDSHOWER	Weapon	false	Weapon	false	none	none	Bullet	1,1,1,1,1,1,1,1,1,1	Bullet	5,5,5,5,5,5,5,5,5,5
+516	GS_DESPERADO	Weapon	false	Weapon	false	none	none	Bullet	10,10,10,10,10,10,10,10,10,10	Bullet	10,10,10,10,10,10,10,10,10,10
 517	GS_GATLINGFEVER	Weapon	true	Weapon	true	none	none	none	0	none	0
 518	GS_DUST	Weapon	false	Weapon	false	none	none	Bullet	1,1,1,1,1,1,1,1,1,1	Bullet	1,1,1,1,1,1,1,1,1,1
 519	GS_FULLBUSTER	Weapon	false	Weapon	false	none	none	Bullet	2,2,2,2,2,2,2,2,2,2	Bullet	2,2,4,4,6,6,8,8,10,10

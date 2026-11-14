@@ -49,6 +49,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Homunculus.PrivateStateView
   alias Aesir.ZoneServer.Unit.Homunculus.StateCommit, as: HomunculusStateCommit
   alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Inventory.Ammo
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
@@ -346,6 +347,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   def handle_cast_complete(state, _token), do: {:noreply, state}
+
+  @doc """
+  Consumes `qty` units of the equipped ammunition a deleted ground group
+  deferred. As the reference's `pc_delitem`, a missing or short stack is left
+  untouched.
+  """
+  @spec handle_settle_deferred_ammo(pos_integer(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
+  def handle_settle_deferred_ammo(qty, %{game_state: game_state} = state) do
+    case Ammo.consume(game_state.inventory, qty) do
+      {:ok, inventory, change} ->
+        staged = %{
+          game_state
+          | inventory: inventory,
+            pending_inventory_persist:
+              game_state.pending_inventory_persist ++ [{game_state.inventory, inventory, change}]
+        }
+
+        {:noreply,
+         StateCommit.commit(state, InventoryStaging.drain(state.connection_pid, staged))}
+
+      {:error, _reason} ->
+        {:noreply, state}
+    end
+  end
 
   defp complete_cast(state, game_state, ctx) do
     expected_id = Map.get(ctx, :homunculus_id)
@@ -1823,6 +1849,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   defp lock_equip_change(state, _info, _now), do: state
 
+  # A skill the reference gives a `canequip_tick` at cast end (Desperado) holds
+  # equipment changes for its duration from the cast end.
+  defp lock_equip_after_cast(state, skill_id, level) do
+    with {:ok, definition} <- Catalog.by_id(skill_id),
+         until when is_integer(until) <-
+           Definition.equip_lock_until(definition, level, System.monotonic_time(:millisecond)) do
+      %{state | equip_lock_until: until}
+    else
+      _no_lock -> state
+    end
+  end
+
   defp schedule_cast(%{game_state: game_state} = state, info) do
     now = System.monotonic_time(:millisecond)
     state = lock_equip_change(state, info, now)
@@ -1935,6 +1973,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # announces the cooldown the interpreter just wrote, and `auto_cast/4` writes
   # none, so sending it would grey out a bolt the server still considers ready.
   defp commit_cast(state, new_game_state, skill_id, level, postdelay? \\ true) do
+    state = if postdelay?, do: lock_equip_after_cast(state, skill_id, level), else: state
     {state, sphere_cost_plan} = prepare_cast_commit(state, new_game_state)
     publish_cast_commit(state, skill_id, level, postdelay?, sphere_cost_plan)
   end

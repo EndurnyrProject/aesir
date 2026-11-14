@@ -19,7 +19,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.GroupLifecycle do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapCombat
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapTransition
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @typedoc "The unit that damaged a cell, or `nil` for decay."
   @type damage_source :: {atom(), integer()} | nil
@@ -93,6 +95,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.GroupLifecycle do
   @doc """
   Tears a group down: occupants leave every cell, the cell indexes go, the
   handler's `on_expire` runs, the row is deleted and the despawn published.
+  Deferred ammunition (`state.deferred_ammo`) is settled with its owner only by
+  the cleanup that deleted a live row, so a second cleanup settles nothing.
   """
   @spec cleanup(Group.t(), module() | nil, atom()) :: :ok
   def cleanup(%Group{group_id: group_id} = group, module, despawn_reason) do
@@ -109,9 +113,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.GroupLifecycle do
       end
     end
 
+    live? = Storage.get(group_id) != nil
     Storage.delete(group_id)
+    if live?, do: settle_deferred_ammo(group)
     Publisher.group_despawn(group, Enum.map(cells, & &1.cell_id), despawn_reason)
   end
+
+  # The reference consumes a group's ammunition in `skill_unit_group_free`,
+  # through its owning session; a vanished owner keeps nothing to consume.
+  defp settle_deferred_ammo(%Group{
+         state: %{deferred_ammo: %{owner_type: :player, owner_id: id, qty: qty}}
+       }) do
+    case UnitRegistry.get_player_pid(id) do
+      {:ok, pid} -> PlayerSession.settle_deferred_ammo(pid, qty)
+      _gone -> :ok
+    end
+  end
+
+  defp settle_deferred_ammo(_group), do: :ok
 
   @doc "Logs a failed callback and tears the group down."
   @spec callback_failed(Group.t(), atom(), term(), module() | nil) :: :ok

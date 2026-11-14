@@ -326,7 +326,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
       commitment: Cost.prepare_clamped(caster, cost),
       zeny: zeny,
       consume_catalysts?: true,
-      ammo_qty: ammo_qty
+      ammo_qty: ammo_qty,
+      consume_ammo?: not Map.get(definition, :defer_ammo, false)
     }
   end
 
@@ -443,7 +444,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   Settles what a prepared cost has left after the effect. A cast that spares its
   requirement (`consume_catalysts?: false`) skips the items and whatever else is
   paid after the effect (Item Appraisal's SP); `consume_ammo?: false` spares the
-  ammo a refusal before the cast-end tail never spends. The ammunition consumed
+  ammo a refusal before the cast-end tail never spends, and the ammo a
+  `defer_ammo` skill leaves to its ground group's deletion. The ammunition consumed
   is the level's amount (`ammo_qty`), never the renewal extra unit the cast-end
   check requires.
   """

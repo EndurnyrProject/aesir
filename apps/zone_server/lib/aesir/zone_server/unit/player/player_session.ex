@@ -612,6 +612,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @doc """
+  Asks this player to consume `qty` units of its equipped ammunition that a
+  deleted ground group deferred (Desperado). A stack that is gone or shorter
+  than `qty` is left untouched.
+  """
+  @spec settle_deferred_ammo(pid(), pos_integer()) :: :ok
+  def settle_deferred_ammo(pid, qty),
+    do: GenServer.cast(pid, {:skill, {:settle_deferred_ammo, qty}})
+
+  @doc """
   Re-runs the touch check of the cell this player stood on (`{map, x, y}`) when
   an OnTouch status ended there or an NPC covering it became visible; skipped
   while a warp is pending, once it has moved on, or when it is dead.
@@ -1381,6 +1390,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:equipment, {:unequip_slot, slot}}, state) do
     EquipmentHandler.handle_unequip_slot(slot, state)
+  end
+
+  # Skill: a deleted ground group settles the ammunition it deferred.
+  @impl true
+  def handle_cast({:skill, {:settle_deferred_ammo, qty}}, state) do
+    SkillHandler.handle_settle_deferred_ammo(qty, state)
   end
 
   # Skill: another unit cancels this player's cast (Mind Breaker, Spell Breaker).

@@ -29,6 +29,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   a nonzero quantity. Both are mode-keyable; read the required amount through
   `ammo_qty_at_level/2`.
 
+  `defer_ammo` checks the ammunition at cast end but leaves it unspent: the
+  skill's ground group consumes it when deleted (the reference's
+  `castendPos2` `flag |= 1` and `group->state.ammo_consume`).
+  `equip_lock_after_cast: :duration1` holds a player's equipment changes for
+  the level's `duration` after the cast (`canequip_tick`, Desperado).
+
   `fixed_cast_time` is additional to variable `cast_time`. An absent entry is
   zero; a negative sentinel requests the configured fixed/variable split.
 
@@ -221,6 +227,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             unit_range: 0,
             is_trap: false,
             ranged_single_unit: false,
+            defer_ammo: false,
+            equip_lock_after_cast: nil,
             after_cast_delay: [],
             cooldown: [],
             damage_kind: :weapon,
@@ -293,6 +301,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           unit_range: non_neg_integer(),
           is_trap: boolean(),
           ranged_single_unit: boolean(),
+          defer_ammo: boolean(),
+          equip_lock_after_cast: :duration1 | nil,
           after_cast_delay: [non_neg_integer()],
           cooldown: [non_neg_integer()],
           damage_kind: damage_kind(),
@@ -373,6 +383,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     unit_range: {:integer, {:gte, 0}},
     is_trap: :boolean,
     ranged_single_unit: :boolean,
+    defer_ammo: :boolean,
+    equip_lock_after_cast: {:enum, [nil, :duration1]},
     after_cast_delay: {:list, :integer},
     cooldown: {:list, :integer},
     damage_kind: {:enum, [:weapon, :magic, :misc, :none]},
@@ -437,6 +449,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     unit_range: 0,
     is_trap: false,
     ranged_single_unit: false,
+    defer_ammo: false,
+    equip_lock_after_cast: nil,
     after_cast_delay: [],
     cooldown: [],
     damage_kind: :weapon,
@@ -640,4 +654,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
       _none -> 0
     end
   end
+
+  @doc """
+  The monotonic deadline until which a cast at `level` ending at `now` holds
+  equipment changes, or `nil` when the skill holds none.
+  """
+  @spec equip_lock_until(t(), pos_integer(), integer()) :: integer() | nil
+  def equip_lock_until(
+        %__MODULE__{equip_lock_after_cast: :duration1, duration: durations},
+        level,
+        now
+      ),
+      do: now + Enum.at(durations, level - 1, 0)
+
+  def equip_lock_until(%__MODULE__{}, _level, _now), do: nil
 end
