@@ -86,7 +86,7 @@
 74	PR_MAGNIFICAT	Magic	true	Magic	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 75	PR_GLORIA	Magic	true	Magic	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 76	PR_LEXDIVINA	Magic	true	Magic	true	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
-77	PR_TURNUNDEAD	Magic	false	Magic	false	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
+77	PR_TURNUNDEAD	Magic	false	Magic	false	IgnoreAtkCard	IgnoreAtkCard	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 78	PR_LEXAETERNA	Magic	true	Magic	true	none	none	none	0	none	0
 79	PR_MAGNUS	Magic	false	Magic	false	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 80	WZ_FIREPILLAR	Magic	false	Magic	false	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
@@ -129,7 +129,7 @@
 118	HT_SHOCKWAVE	Misc	true	Misc	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 119	HT_SANDMAN	Misc	true	Misc	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 120	HT_FLASHER	Misc	true	Misc	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
-121	HT_FREEZINGTRAP	Weapon	false	Weapon	false	IgnoreFlee	none	none	0,0,0,0,0	none	0,0,0,0,0
+121	HT_FREEZINGTRAP	Weapon	false	Weapon	false	IgnoreFlee	IgnoreAtkCard	none	0,0,0,0,0	none	0,0,0,0,0
 122	HT_BLASTMINE	Misc	false	Misc	false	IgnoreDefCard,IgnoreFlee	IgnoreDefCard,IgnoreFlee	none	0,0,0,0,0	none	0,0,0,0,0
 123	HT_CLAYMORETRAP	Misc	false	Misc	false	IgnoreDefCard,IgnoreFlee	IgnoreDefCard,IgnoreFlee	none	0,0,0,0,0	none	0,0,0,0,0
 124	HT_REMOVETRAP	Misc	true	Misc	true	none	none	none	0	none	0
@@ -149,7 +149,7 @@
 138	AS_ENCHANTPOISON	Weapon	true	Weapon	true	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 139	AS_POISONREACT	Weapon	false	Weapon	false	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 140	AS_VENOMDUST	Weapon	true	Weapon	true	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
-141	AS_SPLASHER	Weapon	true	Weapon	true	IgnoreFlee	IgnoreFlee	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
+141	AS_SPLASHER	Weapon	true	Weapon	true	IgnoreAtkCard,IgnoreFlee	IgnoreAtkCard,IgnoreFlee	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 142	NV_FIRSTAID	None	true	None	true	none	none	none	0	none	0
 143	NV_TRICKDEAD	None	true	None	true	none	none	none	0	none	0
 144	SM_MOVINGRECOVERY	None	false	None	false	none	none	none	0	none	0
@@ -157,7 +157,7 @@
 146	SM_AUTOBERSERK	Weapon	true	Weapon	true	none	none	none	0	none	0
 147	AC_MAKINGARROW	Weapon	true	Weapon	true	none	none	none	0	none	0
 148	AC_CHARGEARROW	Weapon	false	Weapon	false	none	none	Arrow	1	Arrow	1
-149	TF_SPRINKLESAND	Weapon	false	Weapon	false	none	none	none	0	none	0
+149	TF_SPRINKLESAND	Weapon	false	Weapon	false	none	IgnoreAtkCard	none	0	none	0
 150	TF_BACKSLIDING	Weapon	true	Weapon	true	none	none	none	0	none	0
 151	TF_PICKSTONE	None	true	None	true	none	none	none	0	none	0
 152	TF_THROWSTONE	Misc	false	Misc	false	IgnoreFlee	IgnoreFlee	none	0	none	0
@@ -201,8 +201,8 @@
 226	AM_AXEMASTERY	Weapon	false	Weapon	false	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 227	AM_LEARNINGPOTION	None	false	None	false	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 228	AM_PHARMACY	None	true	None	true	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
-229	AM_DEMONSTRATION	Weapon	true	Weapon	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
-230	AM_ACIDTERROR	Weapon	false	Weapon	false	IgnoreFlee	IgnoreFlee	none	0,0,0,0,0	none	0,0,0,0,0
+229	AM_DEMONSTRATION	Weapon	true	Weapon	true	IgnoreAtkCard	IgnoreAtkCard	none	0,0,0,0,0	none	0,0,0,0,0
+230	AM_ACIDTERROR	Weapon	false	Weapon	false	IgnoreAtkCard,IgnoreFlee	IgnoreAtkCard,IgnoreFlee	none	0,0,0,0,0	none	0,0,0,0,0
 231	AM_POTIONPITCHER	None	true	None	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 232	AM_CANNIBALIZE	None	true	None	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 233	AM_SPHEREMINE	None	true	None	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
@@ -300,17 +300,17 @@
 365	HW_MAGICCRASHER	Weapon	false	Weapon	false	none	none	none	0	none	0
 366	HW_MAGICPOWER	Magic	true	Magic	true	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 367	PA_PRESSURE	Magic	false	Misc	false	none	IgnoreDefCard,IgnoreElement,IgnoreFlee	none	0,0,0,0,0	none	0,0,0,0,0
-368	PA_SACRIFICE	Weapon	true	Weapon	true	IgnoreFlee	IgnoreFlee	none	0,0,0,0,0	none	0,0,0,0,0
+368	PA_SACRIFICE	Weapon	true	Weapon	true	IgnoreAtkCard,IgnoreFlee	IgnoreFlee	none	0,0,0,0,0	none	0,0,0,0,0
 369	PA_GOSPEL	Misc	true	Misc	true	IgnoreFlee	IgnoreFlee	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 370	CH_PALMSTRIKE	Weapon	false	Weapon	false	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 371	CH_TIGERFIST	Weapon	false	Weapon	false	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 372	CH_CHAINCRUSH	Weapon	false	Weapon	false	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 373	PF_HPCONVERSION	Magic	true	Magic	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 374	PF_SOULCHANGE	None	true	None	true	none	none	none	0	none	0
-375	PF_SOULBURN	Magic	false	Magic	false	IgnoreDefCard,IgnoreElement	IgnoreDefCard,IgnoreElement	none	0,0,0,0,0	none	0,0,0,0,0
+375	PF_SOULBURN	Magic	false	Magic	false	IgnoreAtkCard,IgnoreDefCard,IgnoreElement	IgnoreAtkCard,IgnoreDefCard,IgnoreElement	none	0,0,0,0,0	none	0,0,0,0,0
 376	ASC_KATAR	Weapon	true	Weapon	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 378	ASC_EDP	Weapon	true	Weapon	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
-379	ASC_BREAKER	Weapon	false	Weapon	false	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
+379	ASC_BREAKER	Weapon	false	Weapon	false	none	IgnoreAtkCard	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 380	SN_SIGHT	Weapon	true	Weapon	true	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 381	SN_FALCONASSAULT	Misc	false	Misc	false	IgnoreDefCard,IgnoreFlee	IgnoreFlee	none	0,0,0,0,0	none	0,0,0,0,0
 382	SN_SHARPSHOOTING	Weapon	false	Weapon	false	none	none	Arrow	1,1,1,1,1	Arrow	1,1,1,1,1
@@ -331,7 +331,7 @@
 403	PF_MEMORIZE	Magic	true	Magic	true	none	none	none	0	none	0
 404	PF_FOGWALL	Magic	true	Magic	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 405	PF_SPIDERWEB	Magic	true	Magic	true	none	none	none	0	none	0
-406	ASC_METEORASSAULT	Weapon	false	Weapon	false	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
+406	ASC_METEORASSAULT	Weapon	false	Weapon	false	none	IgnoreAtkCard	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 407	ASC_CDP	None	true	None	true	none	none	none	0	none	0
 459	BS_ADRENALINE2	Weapon	true	Weapon	true	none	none	none	0	none	0
 473	SM_SELFPROVOKE	None	true	None	true	none	none	none	0	none	0
@@ -345,7 +345,7 @@
 482	PF_DOUBLECASTING	Magic	true	Magic	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 483	HW_GANBANTEIN	None	true	None	true	none	none	none	0	none	0
 484	HW_GRAVITATION	Magic	false	Misc	true	none	IgnoreDefCard,IgnoreElement,IgnoreFlee	none	0,0,0,0,0	none	0,0,0,0,0
-485	WS_CARTTERMINATION	Weapon	false	Weapon	false	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
+485	WS_CARTTERMINATION	Weapon	false	Weapon	false	none	IgnoreAtkCard	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 486	WS_OVERTHRUSTMAX	Weapon	true	Weapon	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 487	CG_LONGINGFREEDOM	-	-	None	true	-	none	-	-	none	0,0,0,0,0
 488	CG_HERMODE	Misc	true	Misc	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
@@ -359,7 +359,7 @@
 500	GS_GLITTERING	Misc	true	Misc	true	IgnoreFlee	IgnoreFlee	none	0,0,0,0,0	none	0,0,0,0,0
 501	GS_FLING	Misc	false	Misc	false	IgnoreElement,IgnoreFlee	IgnoreElement,IgnoreFlee	none	0	none	0
 502	GS_TRIPLEACTION	Weapon	false	Weapon	false	none	none	Arrow,Bullet,Cannonball,Dagger,Grenade,Kunai,Shell,Shuriken,Throwweapon	1	Arrow,Bullet,Cannonball,Dagger,Grenade,Kunai,Shell,Shuriken,Throwweapon	1
-503	GS_BULLSEYE	Weapon	false	Weapon	false	none	none	Arrow,Bullet,Cannonball,Dagger,Grenade,Kunai,Shell,Shuriken,Throwweapon	1	Arrow,Bullet,Cannonball,Dagger,Grenade,Kunai,Shell,Shuriken,Throwweapon	1
+503	GS_BULLSEYE	Weapon	false	Weapon	false	IgnoreAtkCard	IgnoreAtkCard	Arrow,Bullet,Cannonball,Dagger,Grenade,Kunai,Shell,Shuriken,Throwweapon	1	Arrow,Bullet,Cannonball,Dagger,Grenade,Kunai,Shell,Shuriken,Throwweapon	1
 504	GS_MADNESSCANCEL	Weapon	true	Weapon	true	none	none	none	0	none	0
 505	GS_ADJUSTMENT	Weapon	true	Weapon	true	none	none	none	0	none	0
 506	GS_INCREASING	Weapon	true	Weapon	true	none	none	none	0	none	0
@@ -377,7 +377,7 @@
 518	GS_DUST	Weapon	false	Weapon	false	none	none	Bullet	1,1,1,1,1,1,1,1,1,1	Bullet	1,1,1,1,1,1,1,1,1,1
 519	GS_FULLBUSTER	Weapon	false	Weapon	false	none	none	Bullet	2,2,2,2,2,2,2,2,2,2	Bullet	2,2,4,4,6,6,8,8,10,10
 520	GS_SPREADATTACK	Weapon	false	Weapon	false	none	none	Bullet	5,5,5,5,5,5,5,5,5,5	Bullet	5,5,5,5,5,5,5,5,5,5
-521	GS_GROUNDDRIFT	Weapon	false	Weapon	false	none	IgnoreFlee	Bullet	1,1,1,1,1,1,1,1,1,1	Grenade	1,1,1,1,1,1,1,1,1,1
+521	GS_GROUNDDRIFT	Weapon	false	Weapon	false	none	IgnoreAtkCard,IgnoreFlee	Bullet	1,1,1,1,1,1,1,1,1,1	Grenade	1,1,1,1,1,1,1,1,1,1
 653	NPC_EARTHQUAKE	Magic	false	Magic	false	none	none	none	0,0,0,0,0,0,0,0,0,0	none	0,0,0,0,0,0,0,0,0,0
 660	NPC_BLEEDING	Weapon	false	Weapon	false	none	none	none	0,0,0,0,0	none	0,0,0,0,0
 663	NPC_WIDESILENCE	None	true	None	true	none	none	none	0,0,0,0,0	none	0,0,0,0,0
@@ -393,7 +393,7 @@
 1001	KN_CHARGEATK	Weapon	false	Weapon	false	none	none	none	0	none	0
 1002	CR_SHRINK	Weapon	true	Weapon	true	none	none	none	0	none	0
 1003	AS_SONICACCEL	Weapon	false	Weapon	false	none	none	none	0	none	0
-1004	AS_VENOMKNIFE	Weapon	false	Weapon	false	none	none	Dagger	1	Dagger	1
+1004	AS_VENOMKNIFE	Weapon	false	Weapon	false	IgnoreAtkCard	IgnoreAtkCard	Dagger	1	Dagger	1
 1005	RG_CLOSECONFINE	Weapon	true	Weapon	true	none	none	none	0	none	0
 1006	WZ_SIGHTBLASTER	Magic	false	Magic	false	none	none	none	0	none	0
 1007	SA_CREATECON	None	true	None	true	none	none	none	0	none	0
@@ -405,7 +405,7 @@
 1013	BS_GREED	Weapon	true	Weapon	true	none	none	none	0	none	0
 1014	PR_REDEMPTIO	Magic	true	Magic	true	none	none	none	0	none	0
 1015	MO_KITRANSLATION	Weapon	true	Weapon	true	none	none	none	0	none	0
-1016	MO_BALKYOUNG	Weapon	false	Weapon	false	none	none	none	0	none	0
+1016	MO_BALKYOUNG	Weapon	false	Weapon	false	none	IgnoreAtkCard	none	0	none	0
 1017	SA_ELEMENTGROUND	Magic	true	Magic	true	none	none	none	0	none	0
 1018	SA_ELEMENTFIRE	Magic	true	Magic	true	none	none	none	0	none	0
 1019	SA_ELEMENTWIND	Magic	true	Magic	true	none	none	none	0	none	0

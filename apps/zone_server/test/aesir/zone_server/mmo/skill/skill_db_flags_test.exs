@@ -1,11 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.SkillDbFlagsTest do
   @moduledoc """
-  Pins every catalog skill's `damage_kind`, `damage_type`, `ignore_def_card`,
-  `ignore_element`, `ignore_flee`, `require_ammo` and `ammo_qty` to the skill
-  DB's `Type`, `NoDamage`, `IgnoreDefCard`, `IgnoreElement`, `IgnoreFlee`,
-  `Requires: Ammo` and `AmmoAmount` columns in both modes, from the checked-in
-  extract `test/support/fixtures/skill_db_types.tsv`. A mode without a row for
-  the skill reads the other mode's row.
+  Pins every catalog skill's `damage_kind`, `damage_type`, `ignore_atk_card`,
+  `ignore_def_card`, `ignore_element`, `ignore_flee`, `require_ammo` and
+  `ammo_qty` to the skill DB's `Type`, `NoDamage`, `IgnoreAtkCard`,
+  `IgnoreDefCard`, `IgnoreElement`, `IgnoreFlee`, `Requires: Ammo` and
+  `AmmoAmount` columns in both modes, from the checked-in extract
+  `test/support/fixtures/skill_db_types.tsv`. A mode without a row for the skill
+  reads the other mode's row.
   """
   use ExUnit.Case, async: true
 
@@ -65,6 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.SkillDbFlagsTest do
     %{
       damage_kind: Map.fetch!(@kinds, type),
       damage_type: if(no_damage == "true", do: :no_damage, else: :damage),
+      ignore_atk_card: "IgnoreAtkCard" in ignore,
       ignore_def_card: "IgnoreDefCard" in ignore,
       ignore_element: "IgnoreElement" in ignore,
       ignore_flee: "IgnoreFlee" in ignore,
@@ -84,7 +86,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.SkillDbFlagsTest do
 
   defp declared(definition, expected) do
     definition
-    |> Map.take([:damage_kind, :damage_type, :ignore_def_card, :ignore_element, :ignore_flee])
+    |> Map.take([
+      :damage_kind,
+      :damage_type,
+      :ignore_atk_card,
+      :ignore_def_card,
+      :ignore_element,
+      :ignore_flee
+    ])
     |> Map.merge(%{
       require_ammo: Enum.sort(definition.require_ammo),
       ammo_qty: ammo_sequence(definition, expected)
