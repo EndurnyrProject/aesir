@@ -23,6 +23,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListViewTest do
   @al_heal_id 28
   @mage_job_id 2
   @mg_thunderstorm_id 21
+  @mg_firebolt_id 19
+  @asc_edp_id 378
   @archer_job_id 3
   @hunter_job_id 11
   @quest_skill_id 99_022
@@ -62,6 +64,16 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListViewTest do
 
   defp by_id(%SkillList{skills: skills}, skill_id) do
     Enum.find(skills, &(&1.skill_id == skill_id))
+  end
+
+  # A skill outside the Swordman tree, as equipment grants it.
+  defp granted_skill(skill_id, level) do
+    state = %PlayerState{
+      stats: %{progression: progression([]), granted_skills: %{skill_id => level}},
+      plagiarized: nil
+    }
+
+    state |> SkillListView.build() |> by_id(skill_id)
   end
 
   describe "build/1" do
@@ -149,6 +161,39 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListViewTest do
         |> by_id(@mg_thunderstorm_id)
 
       assert %SkillInfo{splash_radius: 2} = thunderstorm
+    end
+
+    test "an instant skill with no cooldown (SM_BASH) lists neither" do
+      bash = progression([]) |> SkillListView.build() |> by_id(@sm_bash_id)
+
+      assert %SkillInfo{cast_time: [], cooldown: []} = bash
+    end
+
+    @tag game_mode: :renewal
+    test "renewal lists a level's variable plus fixed cast, and the cooldown" do
+      bolt = progression(job_id: @mage_job_id) |> SkillListView.build() |> by_id(@mg_firebolt_id)
+
+      assert %SkillInfo{
+               max_level: 10,
+               cast_time: [800, 1200, 1600, 2000, 2400, 2800, 3200, 3600, 4000, 4400],
+               cooldown: []
+             } = bolt
+
+      assert %SkillInfo{cast_time: [], cooldown: [2000, 2000, 2000, 2000, 2000]} =
+               granted_skill(@asc_edp_id, 5)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "pre-renewal lists the whole cast as variable, and no cooldown where it has a delay" do
+      bolt = progression(job_id: @mage_job_id) |> SkillListView.build() |> by_id(@mg_firebolt_id)
+
+      assert %SkillInfo{
+               max_level: 10,
+               cast_time: [700, 1400, 2100, 2800, 3500, 4200, 4900, 5600, 6300, 7000],
+               cooldown: []
+             } = bolt
+
+      assert %SkillInfo{cast_time: [], cooldown: []} = granted_skill(@asc_edp_id, 5)
     end
 
     test "a retained quest skill uses its exact owner id and follows lineage visibility" do

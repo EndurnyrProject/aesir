@@ -1083,6 +1083,14 @@ message SkillInfo {
   uint32 req_job_level = 11;
   uint32 job_id = 12;
   uint32 splash_radius = 13;
+  // Base cast time in milliseconds for each level, index 0 = level 1, up to
+  // max_level. It is the cast of a caster with no DEX or INT, no equipment
+  // bonuses and no statuses, so the real cast is this or shorter. Empty when
+  // every level is instant.
+  repeated uint32 cast_time = 14;
+  // Cooldown in milliseconds for each level, index 0 = level 1, up to
+  // max_level. Empty when no level has one.
+  repeated uint32 cooldown = 15;
 }
 
 // Client -> server, spend one skill point to learn/raise a skill (replaces RO CZ_UPGRADE_SKILLLEVEL 0x0112).

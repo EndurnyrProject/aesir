@@ -7,13 +7,16 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListView do
   `SkillTree.available_for/1` produces the annotated tree (current level, cap,
   prerequisites, level minimums, `upgradable?`); this view resolves each entry's
   castable `Definition` from `Skill.Catalog` for the display fields (`type`,
-  `range`, `name`, cast `sp`) and packs the lot into `Aesir.Net.SkillInfo`.
+  `range`, `name`, cast `sp`, and the per-level base `cast_time` and `cooldown`)
+  and packs the lot into `Aesir.Net.SkillInfo`.
   """
 
   alias Aesir.Net.SkillInfo
   alias Aesir.Net.SkillList
   alias Aesir.Net.SkillRequirement
+  alias Aesir.ZoneServer.Mmo.Skill.CastTime
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -127,8 +130,25 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListView do
       requires: Enum.map(view_entry.requires, &to_requirement/1),
       req_base_level: view_entry.base_level,
       req_job_level: view_entry.job_level,
-      splash_radius: definition.splash_radius
+      splash_radius: definition.splash_radius,
+      cast_time: per_level(view_entry.max_level, &base_cast_time(definition, &1)),
+      cooldown: per_level(view_entry.max_level, &Cooldown.duration(definition, &1))
     }
+  end
+
+  # One value per level up to `max_level`, or nothing when every level is zero.
+  @spec per_level(non_neg_integer(), (pos_integer() -> non_neg_integer())) ::
+          [non_neg_integer()]
+  defp per_level(max_level, value_at) do
+    values = Enum.map(1..max_level//1, value_at)
+    if Enum.all?(values, &(&1 == 0)), do: [], else: values
+  end
+
+  # The cast a player with no DEX or INT, no equipment bonuses and no statuses
+  # gets under the active ruleset: the longest the skill takes at that level.
+  @spec base_cast_time(Definition.t(), pos_integer()) :: non_neg_integer()
+  defp base_cast_time(definition, level) do
+    CastTime.compute(definition, level, %{dex: 0, int: 0}).total
   end
 
   @spec to_requirement({non_neg_integer(), pos_integer()}) :: SkillRequirement.t()
