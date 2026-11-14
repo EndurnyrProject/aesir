@@ -10,11 +10,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSpawnTest do
   alias Aesir.Net.UnitSpawn
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.KillExp
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Mob.SpawnView
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -88,6 +90,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSpawnTest do
     {:ok, _state} = MobSession.init(%{state: build_mob_state(8, true)})
 
     assert_received {:spawn_broadcast, %UnitSpawn{gid: 8, health_state: 0}}
+  end
+
+  test "the mob spawn tells the client whether the monster attacks on sight" do
+    stub(StatusDisplay, :spawn_state, fn :mob, 6 ->
+      %{body_state: 0, health_state: 0, effect_state: 0, virtue: 0}
+    end)
+
+    passive = build_mob_state(6)
+    aggressive = put_in(passive.calculated.mode, MobMode.mask([:aggressive]))
+
+    refute SpawnView.build(passive).aggressive
+    assert SpawnView.build(aggressive).aggressive
   end
 
   defp build_mob_state(instance_id, is_dead \\ false) do

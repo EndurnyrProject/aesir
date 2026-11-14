@@ -700,6 +700,8 @@ message UnitSpawn {
   uint32 spirit_sphere_count = 36;
   uint64 spirit_sphere_revision = 37;
   DisplaySize size = 38;
+  // Monsters only: attacks players on sight (the aggressive mode).
+  bool aggressive = 39;
 }
 
 // Server -> client, authoritative absolute spirit-sphere state for a unit.

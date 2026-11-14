@@ -48,6 +48,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.SpawnView do
       max_hp: mob_state.calculated.max_hp,
       hp: mob_state.hp,
       is_boss: MobState.is_boss?(mob_state),
+      aggressive: MobState.aggressive?(mob_state),
       name: mob_state.mob_data.name,
       moving: false
     }
