@@ -29,7 +29,7 @@ defmodule ZoneServer.MixProject do
   defp deps do
     [
       {:commons, in_umbrella: true},
-      {:peri, "~> 0.11.3"},
+      {:peri, "~> 0.12.0"},
       {:yaml_elixir, "~> 2.11"},
       {:ymlr, "~> 5.0", only: [:dev, :test]}
     ]
