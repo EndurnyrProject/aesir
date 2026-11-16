@@ -1613,6 +1613,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     test "resurrect revalidates and commits through the target session", %{character: character} do
       Mimic.copy(CharacterPersistence)
       stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
+      stub(CharacterPersistence, :update_character, fn _, _, _ -> :ok end)
       stub(CharacterPersistence, :update_position, fn _, _, _, _ -> {:ok, %Character{}} end)
 
       {:ok, pid} = PlayerSession.start_link(%{character: character, connection_pid: self()})
@@ -1652,6 +1653,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     } do
       Mimic.copy(CharacterPersistence)
       stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
+      stub(CharacterPersistence, :update_character, fn _, _, _ -> :ok end)
       stub(CharacterPersistence, :update_position, fn _, _, _, _ -> {:ok, %Character{}} end)
 
       {:ok, target_pid} =
@@ -1675,6 +1677,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     } do
       Mimic.copy(CharacterPersistence)
       stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
+      stub(CharacterPersistence, :update_character, fn _, _, _ -> :ok end)
       stub(CharacterPersistence, :update_position, fn _, _, _, _ -> {:ok, %Character{}} end)
 
       {:ok, target_pid} =
@@ -1698,6 +1701,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       Mimic.copy(CharacterPersistence)
       Mimic.copy(WarpHandler)
       stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
+      stub(CharacterPersistence, :update_character, fn _, _, _ -> :ok end)
       stub(CharacterPersistence, :update_position, fn _, _, _, _ -> {:ok, %Character{}} end)
 
       stub(WarpHandler, :warp, fn state, "geffen", 1, 1 ->

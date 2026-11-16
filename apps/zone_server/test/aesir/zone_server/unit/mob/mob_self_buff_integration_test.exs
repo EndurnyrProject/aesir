@@ -22,7 +22,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSelfBuffIntegrationTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.Handlers.StatsHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
-  alias Aesir.ZoneServer.Unit.Mob.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables

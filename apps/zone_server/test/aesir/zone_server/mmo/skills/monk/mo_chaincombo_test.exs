@@ -204,7 +204,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
     end
   end
 
-  defp caster(stage, target_id, opts \\ []) do
+  defp caster(stage, _target_id, opts \\ []) do
     base =
       PlayerState.new(%Character{
         id: @caster_id,

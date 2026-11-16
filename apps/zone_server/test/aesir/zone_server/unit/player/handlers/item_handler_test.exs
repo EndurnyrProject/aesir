@@ -223,6 +223,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
         {:ok, usable_definition(@red_potion_id, source)}
       end)
 
+      stub(CharacterPersistence, :update_character, fn 1000, _fields, _opts -> :ok end)
+
       expect(InventoryOps, :remove, fn 1000, inventory, @red_potion_slot, 1 ->
         {:ok, %{@red_potion_slot => %{inventory[@red_potion_slot] | amount: 4}},
          {:reduced, @red_potion_slot, 4}}

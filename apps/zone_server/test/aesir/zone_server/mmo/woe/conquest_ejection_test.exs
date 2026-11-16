@@ -40,6 +40,11 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ConquestEjectionTest do
     stub(Persistence, :persist, fn _castle_id, _guild_id -> :ok end)
     stub(Persistence, :persist_economy, fn _castle_id, _state -> :ok end)
     stub(Persistence, :persist_guardians, fn _castle_id, _slots -> :ok end)
+    stub(Persistence, :persist_kafra, fn _castle_id, _hired -> :ok end)
+
+    stub(Persistence, :persist_conquest_activity, fn _castle_name, _guild_id, _previous ->
+      :ok
+    end)
 
     stub(Manager, :get, fn guild_id ->
       {:ok,

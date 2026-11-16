@@ -1098,8 +1098,6 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
           state: %{exclusive_terrain: true}
         })
 
-      cell_id = cell.cell_id
-
       :ok = UnitRegistry.register_unit(:player, @caster_id, PlayerState, caster, self())
       :ok = SpatialIndex.add_unit(:player, @caster_id, caster.x, caster.y, caster.map_name)
 

@@ -119,7 +119,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreakTest do
   end
 
   describe "combatant wearer" do
-    defp wearer(equipment_mods \\ %{}, weapon_type \\ :one_handed_sword) do
+    defp wearer(equipment_mods, weapon_type \\ :one_handed_sword) do
       struct(Combatant, %{
         unit_id: 1001,
         unit_type: :player,
