@@ -236,12 +236,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   def handle_capture(%{is_dead: true} = state), do: {:reply, {:error, :dead}, state}
 
   def handle_capture(state) do
-    event_char_id = LootOwnership.determine_typed(state).first
-
     {:noreply, state} =
       handle_death(state, nil, nil, nil, nil,
         despawn_reason: DespawnReason.out_of_sight(),
-        event_char_id: event_char_id,
         mvp_effect_only: true
       )
 
@@ -438,17 +435,24 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     Slaves.master_died(updated_state)
 
     # Notify coordinator of death for respawn scheduling and OnMyMobDead dispatch
-    Coordinator.mob_died(
-      state.map_name,
-      state.instance_id,
-      Keyword.get(opts, :event_char_id, reward_owner_id)
-    )
+    Coordinator.mob_died(state.map_name, state.instance_id, event_char_id(state, attacker_ref))
 
     # Schedule process termination after a brief delay to handle cleanup
     Process.send_after(self(), :terminate, 1000)
 
     {:noreply, updated_state}
   end
+
+  # The actual player source (`sd`), else the loot-priority player (`first_sd`),
+  # else nil, which runs the event detached.
+  defp event_char_id(state, {:player, attacker_id}) do
+    case UnitRegistry.get_player_pid(attacker_id) do
+      {:ok, _pid} -> attacker_id
+      {:error, :not_found} -> event_char_id(state, nil)
+    end
+  end
+
+  defp event_char_id(state, _attacker), do: LootOwnership.determine_typed(state).first
 
   # Pre-renewal Mr. Kim a Rich Man rides on the killed mob, so its bonus is
   # read here, before the death broadcast lets field cleanup drop the status.

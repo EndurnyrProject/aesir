@@ -87,7 +87,7 @@ defmodule Aesir.ZoneServer.Integration.OnMyMobDeadTest do
       refute_receive {:owner_event_ran, _char_id}
     end
 
-    test "a tagged mob dying with no killer fires nothing" do
+    test "a tagged mob dying with no qualifying player runs its event detached" do
       NpcRegistry.reload([OwnerEventNpc])
       mob_state = build_mob_state(owner_event: "OwnerEventNpc::OnMyMobDead")
       register_mob(mob_state)
@@ -97,10 +97,10 @@ defmodule Aesir.ZoneServer.Integration.OnMyMobDeadTest do
       {:noreply, _state} =
         Coordinator.handle_cast({:mob_died, mob_state.instance_id, nil}, coordinator_state)
 
-      refute_receive {:owner_event_ran, _char_id}
+      assert_receive {:owner_event_ran, nil}, 500
     end
 
-    test "a tagged mob dying to a non-player killer fires nothing" do
+    test "a tagged mob whose chosen player is offline runs its event detached" do
       NpcRegistry.reload([OwnerEventNpc])
       mob_state = build_mob_state(owner_event: "OwnerEventNpc::OnMyMobDead")
       register_mob(mob_state)
@@ -113,7 +113,7 @@ defmodule Aesir.ZoneServer.Integration.OnMyMobDeadTest do
           coordinator_state
         )
 
-      refute_receive {:owner_event_ran, _char_id}
+      assert_receive {:owner_event_ran, nil}, 500
     end
 
     test "an unknown npc name logs a warning and fires nothing" do
@@ -162,6 +162,7 @@ defmodule Aesir.ZoneServer.Integration.OnMyMobDeadTest do
     setup {Aesir.MimicMode, :global}
 
     test "passes the killing blow's attacker id through to Coordinator.mob_died" do
+      start_player_session(id: 777)
       test_pid = self()
 
       stub(Coordinator, :mob_died, fn map, id, killer ->

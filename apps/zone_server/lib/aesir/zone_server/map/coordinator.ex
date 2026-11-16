@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
+  alias Aesir.ZoneServer.Npc.Events, as: NpcEvents
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -212,11 +213,10 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   @doc """
   Notifies the coordinator that a mob has died.
 
-  `killer_char_id` is the reward-owner character ID of the killing blow;
-  rootless final sources and despawns pass `nil`. When the dying mob carries
-  an `owner_event` (rAthena OnMyMobDead) and that owner resolves to a live
-  player session, the event fires attached to that player; anything else
-  (no `owner_event`, no reward owner, or an offline owner) fires nothing.
+  `killer_char_id` is the player the death event attaches to: the killing
+  blow's reward owner, else the loot-priority player, else `nil`. When the
+  dying mob carries an `owner_event` (rAthena OnMyMobDead) it fires attached to
+  that player while online, and detached otherwise.
   """
   @spec mob_died(String.t(), integer(), integer() | nil) :: :ok
   def mob_died(map_name, instance_id, killer_char_id \\ nil) do
@@ -870,28 +870,27 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     end
   end
 
-  # Dispatches a dying mob's OnMyMobDead owner event (rAthena `mobkillevent`)
-  # when it carries one and the killing blow lands from a live player session
-  # -- a mob-vs-mob kill, a despawn, or an offline killer all fire nothing,
-  # matching rAthena's "must be killed by a player" semantics. The DSL already
-  # validated the ref's "Name::OnLabel" shape at spawn time, so a split
-  # failure here would only mean the field was set some other way; treated the
-  # same as no event rather than crashing the death path over it.
+  # Dispatches a dying mob's OnMyMobDead owner event (rAthena `mobkillevent`).
+  # The mob death path already chose the player it attaches to; with no such
+  # player, or one no longer online, it runs detached (`npc_event_do`). The DSL
+  # validated the ref's "Name::OnLabel" shape at spawn time, so a split failure
+  # here only means the field was set some other way and is logged, not raised.
   @spec dispatch_owner_event(String.t() | nil, integer() | nil) :: :ok
   defp dispatch_owner_event(nil, _killer_char_id), do: :ok
-  defp dispatch_owner_event(_owner_event, nil), do: :ok
+  defp dispatch_owner_event(owner_event, nil), do: NpcEvents.trigger(owner_event)
 
   defp dispatch_owner_event(owner_event, killer_char_id) do
-    with [name, label] <- String.split(owner_event, "::", parts: 2),
-         {:ok, pid} <- UnitRegistry.get_player_pid(killer_char_id),
-         [{module, placement} | _rest] <- NpcRegistry.by_name(name) do
-      gid = NpcRegistry.entity_id(placement)
-      PlayerSession.run_attached_event(pid, module, gid, label)
-      :ok
-    else
-      {:error, :not_found} ->
-        :ok
+    case UnitRegistry.get_player_pid(killer_char_id) do
+      {:ok, pid} -> run_attached_owner_event(owner_event, pid)
+      {:error, :not_found} -> NpcEvents.trigger(owner_event)
+    end
+  end
 
+  defp run_attached_owner_event(owner_event, pid) do
+    with [name, label] <- String.split(owner_event, "::", parts: 2),
+         [{module, placement} | _rest] <- NpcRegistry.by_name(name) do
+      PlayerSession.run_attached_event(pid, module, NpcRegistry.entity_id(placement), label)
+    else
       [] ->
         Logger.warning("npc owner event: unknown name in #{inspect(owner_event)}")
         :ok

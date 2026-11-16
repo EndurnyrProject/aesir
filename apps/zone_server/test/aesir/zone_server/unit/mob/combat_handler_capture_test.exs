@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatHandlerCaptureTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler
   alias Aesir.ZoneServer.Unit.Mob.KillExp
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -97,6 +98,30 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatHandlerCaptureTest do
     refute_receive {:announced, _other}
     refute_receive {:progression, {:mob_kill_exp, _base, _job, _race, _class}}
     refute_receive {:loot, _reward}
+  end
+
+  test "capturing an undamaged event mob leaves its death event with no player to attach to" do
+    state = MobState.set_owner_event(build_mob_state(), "OwnerEventNpc::OnMyMobDead")
+
+    assert {:reply, :ok, _captured} = MobSession.handle_call({:combat, :capture}, self(), state)
+
+    assert_receive {:mob_died, "prontera", 1, nil}
+  end
+
+  test "a player-owned non-player killing blow attaches the event to the loot leader" do
+    register_player(42)
+    register_player(43)
+    attacker = %{build_mob_state() | instance_id: 2, owner_player_id: 43}
+    UnitRegistry.register_unit(:mob, 2, MobState, attacker, self())
+
+    state =
+      build_mob_state()
+      |> MobState.add_aggro(42, 900)
+      |> MobState.add_typed_aggro({:player, 42}, 42, 900)
+      |> MobState.set_owner_event("OwnerEventNpc::OnMyMobDead")
+
+    assert {:noreply, _dead} = CombatHandler.handle_apply_damage(700, {:mob, 2}, state)
+    assert_receive {:mob_died, "prontera", 1, 42}
   end
 
   test "capturing a dead mob is refused and changes nothing" do
