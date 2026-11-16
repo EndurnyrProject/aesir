@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
@@ -222,6 +223,31 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     {:stop, :normal, :ok, state}
   end
 
+  @doc """
+  A capture (`pet_catch_process_end`): the mob leaves its observers' sight and
+  dies with no source and no rewards (`mob_dead` type 3). No EXP, MVP EXP, MVP
+  drop, drop roll, kill credit or kill-local reward follows, but an MVP-tier mob
+  still plays its MVP effect for its MVP, carried loot returns to the floor,
+  slaves die, a spawned mob respawns on its normal delay and an NPC death event
+  runs attached to the loot-priority player. A dead mob refuses.
+  """
+  @spec handle_capture(MobState.t()) ::
+          {:reply, :ok | {:error, :dead}, MobState.t()}
+  def handle_capture(%{is_dead: true} = state), do: {:reply, {:error, :dead}, state}
+
+  def handle_capture(state) do
+    event_char_id = LootOwnership.determine_typed(state).first
+
+    {:noreply, state} =
+      handle_death(state, nil, nil, nil, nil,
+        despawn_reason: DespawnReason.out_of_sight(),
+        event_char_id: event_char_id,
+        mvp_effect_only: true
+      )
+
+    {:reply, :ok, state}
+  end
+
   @doc "Applies nonlethal equipment vanish from a max-HP percentage."
   @spec handle_vanish(non_neg_integer(), tuple(), MobState.t()) :: {:noreply, MobState.t()}
   def handle_vanish(_hp_percent, _source, %{is_dead: true} = state), do: {:noreply, state}
@@ -379,7 +405,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
 
   def handle_polymorph(_replacement_id, %MobState{} = state), do: {:noreply, state}
 
-  defp handle_death(state, attacker_ref, reward_owner_id, kill_blow, kill_credit) do
+  defp handle_death(state, attacker_ref, reward_owner_id, kill_blow, kill_credit, opts \\ []) do
     exp_bonus = kill_exp_bonus(state.instance_id)
     drops_suppressed? = drops_suppressed?(state)
 
@@ -394,17 +420,29 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     StatusInterpreter.remove_on_death(:mob, state.instance_id)
 
     # Notify nearby players of mob death
-    SpawnView.notify_despawn(updated_state)
+    SpawnView.notify_despawn(
+      updated_state,
+      Keyword.get(opts, :despawn_reason, DespawnReason.died())
+    )
+
     Lifecycle.publish_death(:mob, state.instance_id, state.map_name, kill_credit)
 
     if drops_suppressed? or not is_integer(reward_owner_id),
       do: Looting.drop_on_death(state)
 
     announce_kill(state, attacker_ref, reward_owner_id, kill_blow, exp_bonus, drops_suppressed?)
+
+    if Keyword.get(opts, :mvp_effect_only, false),
+      do: MvpReward.play_effect(state.aggro_list, state.mob_data, state.map_name)
+
     Slaves.master_died(updated_state)
 
     # Notify coordinator of death for respawn scheduling and OnMyMobDead dispatch
-    Coordinator.mob_died(state.map_name, state.instance_id, reward_owner_id)
+    Coordinator.mob_died(
+      state.map_name,
+      state.instance_id,
+      Keyword.get(opts, :event_char_id, reward_owner_id)
+    )
 
     # Schedule process termination after a brief delay to handle cleanup
     Process.send_after(self(), :terminate, 1000)

@@ -130,6 +130,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @doc """
+  Captures the mob for a successful pet catch: it leaves sight and dies with no
+  EXP or drops, keeping its death event, slave removal and respawn. Returns
+  `{:error, :dead}` for a mob that is already dead.
+  """
+  @spec capture(pid()) :: :ok | {:error, :dead}
+  def capture(pid), do: GenServer.call(pid, {:combat, :capture})
+
+  @doc """
   Gets the current mob state.
   """
   @spec get_state(pid()) :: MobState.t()
@@ -349,6 +357,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @impl GenServer
   def handle_call({:combat, :script_kill}, _from, state) do
     CombatHandler.handle_script_kill(state)
+  end
+
+  def handle_call({:combat, :capture}, _from, state) do
+    CombatHandler.handle_capture(state)
   end
 
   def handle_call({:casting, :interrupt}, _from, state) do

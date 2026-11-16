@@ -86,6 +86,22 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
 
   def grant(_aggro_list, %MobDefinition{}, _map_name, _x, _y, _ownership), do: :ok
 
+  @doc """
+  Plays only the MVP effect for a reward-less death of `mob_data` on `map_name`
+  (`mob_dead` type 3, a capture): the MVP is chosen exactly as in `grant/6`,
+  but no MVP experience or MVP drop follows. No-ops for non-MVP-tier mobs and
+  when no eligible MVP exists. Returns `:ok`.
+  """
+  @spec play_effect(%{non_neg_integer() => pos_integer()}, MobDefinition.t(), String.t()) :: :ok
+  def play_effect(_aggro_list, %MobDefinition{mvp_exp: 0, mvp_drops: []}, _map_name), do: :ok
+
+  def play_effect(aggro_list, %MobDefinition{} = mob_data, map_name)
+      when map_size(aggro_list) > 0 do
+    aggro_list |> pick_winner(map_name) |> announce(mob_data)
+  end
+
+  def play_effect(_aggro_list, %MobDefinition{}, _map_name), do: :ok
+
   @spec pick_winner(%{non_neg_integer() => pos_integer()}, String.t()) :: winner() | nil
   defp pick_winner(aggro_list, map_name) do
     aggro_list

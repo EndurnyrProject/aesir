@@ -91,14 +91,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.SpawnView do
   end
 
   @doc """
-  Broadcasts a despawn packet for `mob_state` to nearby players and returns it.
+  Broadcasts a despawn packet for `mob_state` with `reason` (a death by
+  default) to nearby players and returns it.
   """
-  @spec notify_despawn(MobState.t()) :: {:ok, UnitDespawn.t()}
-  def notify_despawn(%MobState{} = mob_state) do
-    packet = %UnitDespawn{
-      gid: mob_state.instance_id,
-      reason: DespawnReason.died()
-    }
+  @spec notify_despawn(MobState.t(), non_neg_integer()) :: {:ok, UnitDespawn.t()}
+  def notify_despawn(%MobState{} = mob_state, reason \\ DespawnReason.died()) do
+    packet = %UnitDespawn{gid: mob_state.instance_id, reason: reason}
 
     broadcast_to_nearby_players(mob_state, packet)
     {:ok, packet}
