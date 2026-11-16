@@ -177,6 +177,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps do
     end
   end
 
+  def persist_change(_char_id, old_inventory, new_inventory, {:updated, index, attrs}) do
+    update_at(old_inventory, new_inventory, index, attrs)
+  end
+
   def persist_change(_char_id, old_inventory, new_inventory, {:identified, index}) do
     update_at(old_inventory, new_inventory, index, %{identify: 1})
   end

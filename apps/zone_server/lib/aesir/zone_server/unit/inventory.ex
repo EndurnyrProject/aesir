@@ -58,6 +58,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
           ItemContainer.change()
           | {:equipped, non_neg_integer(), non_neg_integer(), [non_neg_integer()]}
           | {:unequipped, non_neg_integer()}
+          | {:updated, non_neg_integer(), map()}
           | {:card_compounded, non_neg_integer(), non_neg_integer(),
              :card0 | :card1 | :card2 | :card3}
 
