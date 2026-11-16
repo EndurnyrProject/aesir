@@ -44,6 +44,18 @@ defmodule Mix.Tasks.Aesir.Import.MapFlagsTest do
            ]
   end
 
+  test "pet capture and penalty flags replay independently, including nopenalty off" do
+    assert rows([
+             "town\tmapflag\tnopenalty\n",
+             "cleared\tmapflag\tnopenalty\n",
+             "cleared\tmapflag\tnopenalty\toff\n",
+             "field\tmapflag\tnopetcapture\n"
+           ]) == [
+             %{"map" => "field", "flags" => ["nopetcapture"]},
+             %{"map" => "town", "flags" => ["noexppenalty", "nozenypenalty"]}
+           ]
+  end
+
   test "GvG noparty is independent of versus flags and can be unset" do
     assert rows([
              "arena\tmapflag\tgvg\n",

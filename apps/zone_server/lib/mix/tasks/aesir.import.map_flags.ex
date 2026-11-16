@@ -5,7 +5,8 @@ defmodule Mix.Tasks.Aesir.Import.MapFlags do
   (`npc/scripts_mapflags.conf`, then `npc/re/` or `npc/pre-re/scripts_mapflags.conf`)
   and writes the resulting `gvg`, `gvg_te`, `gvg_castle`, `gvg_te_castle`,
   `gvg_dungeon`, `gvg_noparty`, `battleground`, `noskill`, `noteleport`, `nowarp`,
-  `noicewall`, `novending` and `restricted` zone flags to
+  `noicewall`, `novending`, `nopetcapture`, `noexppenalty`, `nozenypenalty`
+  and `restricted` zone flags to
   `apps/zone_server/priv/db/<mode>/map_flags/scripts.yml`.
 
       mix aesir.import.map_flags [<rathena_root>] [--mode re|pre-re]
@@ -15,7 +16,8 @@ defmodule Mix.Tasks.Aesir.Import.MapFlags do
   `battleground`; a castle flag clears the other castle flag and `pvp`;
   `gvg_dungeon` clears `pvp`; `battleground` clears `pvp`, `gvg`,
   `gvg_dungeon` and `gvg_castle`; the skill-restriction flags only set
-  themselves. A value of `off` unsets the flag, and
+  themselves. `nopenalty` sets or unsets both penalty flags.
+  A value of `off` unsets the flag, and
   `restricted off` clears every zone. `restricted <n>` adds zone bit
   `1 << (n + 4)`; a `restricted` line without a number is skipped. `pvp` takes
   part in the replay but is not written: the PvP maps are curated in
@@ -38,11 +40,14 @@ defmodule Mix.Tasks.Aesir.Import.MapFlags do
     :gvg_noparty,
     :gvg_te,
     :gvg_te_castle,
+    :noexppenalty,
     :noicewall,
+    :nopetcapture,
     :noskill,
     :noteleport,
     :novending,
-    :nowarp
+    :nowarp,
+    :nozenypenalty
   ]
   @gvg_flags [:gvg, :gvg_te, :gvg_dungeon, :gvg_castle, :gvg_te_castle]
 
@@ -123,7 +128,7 @@ defmodule Mix.Tasks.Aesir.Import.MapFlags do
     end
   end
 
-  @flags Map.new(@written ++ [:pvp, :restricted], &{Atom.to_string(&1), &1})
+  @flags Map.new(@written ++ [:nopenalty, :pvp, :restricted], &{Atom.to_string(&1), &1})
   defp flag(name), do: Map.get(@flags, name)
 
   defp value(nil), do: nil
@@ -141,6 +146,12 @@ defmodule Mix.Tasks.Aesir.Import.MapFlags do
       _ -> state
     end
   end
+
+  defp apply_flag(state, :nopenalty, :off),
+    do: update(state, &drop(&1, [:noexppenalty, :nozenypenalty]))
+
+  defp apply_flag(state, :nopenalty, _value),
+    do: update(state, &(&1 |> MapSet.put(:noexppenalty) |> MapSet.put(:nozenypenalty)))
 
   defp apply_flag(state, flag, :off), do: update(state, &MapSet.delete(&1, flag))
 

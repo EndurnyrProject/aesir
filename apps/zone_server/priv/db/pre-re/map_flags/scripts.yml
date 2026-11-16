@@ -48,30 +48,46 @@
   map: 6@tower
   zone: 1024
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: airplane
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: airport
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: alb_ship
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: alberta
   zone: 2048
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: alberta_in
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: alde_alche
 - flags: []
   map: alde_tt02
   zone: 32
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: aldeba_in
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: aldebaran
   zone: 2048
 - flags:
@@ -108,20 +124,30 @@
     - noteleport
   map: ama_dun01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: ama_in01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: ama_in02
 - flags:
+    - noexppenalty
     - noteleport
     - nowarp
+    - nozenypenalty
   map: ama_test
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: amatsu
   zone: 2048
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: arena_room
 - flags:
     - gvg_castle
@@ -151,81 +177,123 @@
     - noteleport
   map: arug_que01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: auction_01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: auction_02
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: ayo_in01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: ayo_in02
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: ayothaya
   zone: 2048
 - flags:
     - battleground
+    - noexppenalty
     - noteleport
     - nowarp
+    - nozenypenalty
   map: bat_a01
 - flags:
     - battleground
+    - noexppenalty
     - noteleport
     - nowarp
+    - nozenypenalty
   map: bat_b01
 - flags:
     - battleground
+    - noexppenalty
     - noteleport
     - nowarp
+    - nozenypenalty
   map: bat_c01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: bat_room
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: bra_in01
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: brasilis
   zone: 2048
 - flags:
     - noteleport
   map: cave
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: cmd_in01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: cmd_in02
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: comodo
   zone: 2048
 - flags:
     - noteleport
   map: e_tower
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: ein_in01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: einbech
   zone: 2048
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: einbroch
   zone: 2048
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: gef_dun03
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: gef_tower
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: geffen
   zone: 2048
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: geffen_in
 - flags:
     - gvg_castle
@@ -270,105 +338,163 @@
     - gvg_dungeon
   map: gld_dun04
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: gon_in
 - flags:
+    - noexppenalty
     - noteleport
     - nowarp
+    - nozenypenalty
   map: gon_test
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: gonryun
   zone: 2048
 - flags:
     - gvg
     - gvg_noparty
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: guild_vs1
 - flags:
     - gvg
     - gvg_noparty
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: guild_vs2
 - flags:
     - gvg
     - gvg_noparty
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: guild_vs3
 - flags:
     - gvg
     - gvg_noparty
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: guild_vs4
 - flags:
     - gvg
     - gvg_noparty
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: guild_vs5
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: hu_in01
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: hugel
   zone: 2048
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: in_hunter
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: in_moc_16
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: in_orcs01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: in_rogue
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: izlude
   zone: 2048
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: izlude_in
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: jawaii
   zone: 2048
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: jawaii_in
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: job_cru
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: job_duncer
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: job_hunte
 - flags:
     - noteleport
   map: job_knt
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: job_monk
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: job_prist
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: job_sage
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: job_soul
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: job_star
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: job_sword1
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: job_thief1
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: job_wiz
 - flags:
     - noteleport
@@ -389,83 +515,133 @@
     - noteleport
   map: kh_dun01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: kh_kiehl01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: kh_kiehl02
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: kh_mansion
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: kh_rossi
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: kh_school
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: kh_vila
 - flags:
     - noteleport
   map: lhz_cube
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: lhz_in01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: lhz_in02
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: lhz_in03
 - flags:
     - noteleport
   map: lhz_que01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: lighthalzen
   zone: 2048
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: lou_in01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: lou_in02
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: louyang
   zone: 2048
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: man_in01
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: manuk
   zone: 2048
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: mid_camp
   zone: 2048
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: mid_campin
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: moc_castle
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: moc_fild22b
+- flags:
+    - noexppenalty
+    - nozenypenalty
+  map: moc_para01
 - flags: []
   map: moc_ruins
   zone: 2048
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: monk_in
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: monk_test
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: morocc
   zone: 2048
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: morocc_in
 - flags: []
   map: moscovia
@@ -474,22 +650,36 @@
     - noteleport
   map: mosk_in
 - flags:
+    - noexppenalty
+    - nozenypenalty
+  map: mosk_ship
+- flags:
     - nowarp
   map: n_castle
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: new_zone01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: new_zone02
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: new_zone03
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: new_zone04
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: nif_in
 - flags: []
   map: niflheim
@@ -498,11 +688,15 @@
     - noteleport
   map: nyd_dun02
 - flags:
+    - noexppenalty
     - noskill
     - noteleport
     - nowarp
+    - nozenypenalty
   map: p_track01
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: pay_arche
   zone: 2048
 - flags:
@@ -535,17 +729,25 @@
     - noteleport
     - nowarp
   map: payg_cas05
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: payon
   zone: 2048
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: payon_in01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: payon_in02
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: payon_in03
 - flags:
     - noicewall
@@ -553,29 +755,43 @@
     - nowarp
   map: poring_w01
 - flags:
+    - noexppenalty
     - noicewall
     - noteleport
     - nowarp
+    - nozenypenalty
   map: poring_w02
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: prontera
   zone: 2048
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: prt_are01
 - flags:
+    - noexppenalty
     - noskill
     - noteleport
+    - nozenypenalty
   map: prt_are_in
   zone: 128
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: prt_castle
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: prt_church
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: prt_in
 - flags:
     - gvg_castle
@@ -608,31 +824,49 @@
     - nowarp
   map: prtg_cas05
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: pvp_2vs2
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: pvp_y_1-2
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: pvp_y_2-2
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: pvp_y_3-2
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: pvp_y_4-2
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: pvp_y_5-2
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: pvp_y_6-2
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: pvp_y_7-2
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: pvp_y_8-2
 - flags:
     - noteleport
@@ -664,16 +898,24 @@
     - noteleport
   map: que_job02
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: que_ng
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: que_qsch01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: que_rachel
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: que_sign01
 - flags:
     - noteleport
@@ -688,15 +930,27 @@
     - noskill
   map: quiz_02
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: ra_in01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: ra_temin
 - flags:
+    - noexppenalty
+    - nozenypenalty
+  map: ra_temple
+- flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: ra_temsky
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: rachel
   zone: 2048
 - flags:
@@ -724,10 +978,14 @@
     - gvg_dungeon
   map: schg_dun01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: sec_in01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: sec_in02
 - flags:
     - noteleport
@@ -735,12 +993,18 @@
   map: sec_pri
   zone: 64
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: spl_in01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: spl_in02
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: splendide
   zone: 2048
 - flags:
@@ -765,51 +1029,83 @@
     - noteleport
   map: thana_step
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: thor_camp
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: turbo_room
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: um_in
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: umbala
   zone: 2048
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: ve_in
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: ve_in02
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: veins
   zone: 2048
-- flags: []
+- flags:
+    - noexppenalty
+    - nozenypenalty
   map: xmas
   zone: 2048
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: xmas_in
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: yuno
   zone: 2048
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: yuno_in01
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: yuno_in02
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: yuno_in03
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: yuno_in04
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: yuno_in05
 - flags:
+    - noexppenalty
     - noteleport
+    - nozenypenalty
   map: yuno_pre

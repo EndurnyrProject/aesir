@@ -154,7 +154,13 @@ defmodule Aesir.ZoneServer.Map.MapFlagsTest do
     end
 
     test "non-castle map has no flags" do
-      assert MapFlags.flags("prontera") == %{}
+      flags = MapFlags.flags("prontera")
+      refute Map.has_key?(flags, :gvg_castle)
+      refute Map.has_key?(flags, :nosave)
+      refute Map.has_key?(flags, :noteleport)
+      refute Map.has_key?(flags, :nowarp)
+      refute Map.has_key?(flags, :noreturn)
+      refute Map.has_key?(flags, :gvg)
     end
   end
 

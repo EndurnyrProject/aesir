@@ -28,7 +28,8 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
   resolve player-versus-player hostility; `nomobloot` and `nomvploot` suppress a
   dead monster's ordinary and MVP drop pools; `noskill`, `noteleport`, `nowarp`
   and `noicewall` refuse a player's skill request, `novending` refuses Vending; and any other atom is
-  rejected so typos stay inert.
+  rejected so typos stay inert. `nopetcapture` is for pet capture restrictions;
+  `noexppenalty` and `nozenypenalty` are for death penalties.
   """
 
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
@@ -73,6 +74,9 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
           | :noskill
           | :noicewall
           | :novending
+          | :nopetcapture
+          | :noexppenalty
+          | :nozenypenalty
   @type map_name :: String.t()
 
   @flags [
@@ -97,7 +101,10 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
     :battleground,
     :noskill,
     :noicewall,
-    :novending
+    :novending,
+    :nopetcapture,
+    :noexppenalty,
+    :nozenypenalty
   ]
   @static_woe_flags [:gvg_castle, :nosave, :noteleport, :nowarp, :noreturn]
 
