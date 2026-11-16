@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Shop do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ClientItemType
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.PetManagement.Egg
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Npc.Shop, as: ShopData
   alias Aesir.ZoneServer.Unit.Bound
@@ -305,7 +306,8 @@ defmodule Aesir.ZoneServer.Unit.Shop do
        do: {:error, :unsellable}
 
   defp sellable(%InventoryItem{nameid: nameid} = item) do
-    with true <- Bound.sellable?(item),
+    with false <- Egg.hatched?(item),
+         true <- Bound.sellable?(item),
          true <- Rental.transferable?(item),
          {:ok, %ItemDefinition{} = def} <- ItemManagement.get_item_by_id(nameid),
          true <- ItemDefinition.sell_price(def) > 0 do

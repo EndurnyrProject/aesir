@@ -61,6 +61,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageOpsTest do
     %{account: account, character: character, stats: Stats.from_character(character)}
   end
 
+  test "hatched egg cannot enter storage, but an unhatched egg can", %{
+    account: account,
+    character: char
+  } do
+    seed_inv(char.id, @potion, 1, %{attribute: 1, card0: 256})
+    inventory = inv_map(char.id)
+    index = index_of(inventory, @potion)
+
+    assert {:error, :hatched_egg} =
+             StorageOps.deposit(account.id, char.id, inventory, %{}, index, 1)
+
+    item = inventory[index]
+    {:ok, _} = InventoryPersistence.update_item(item, %{attribute: 0})
+    inventory = inv_map(char.id)
+    assert {:ok, _, _, _, _} = StorageOps.deposit(account.id, char.id, inventory, %{}, index, 1)
+  end
+
   describe "deposit/6" do
     test "reduces the inventory row and inserts the storage row, both committed", %{
       account: account,

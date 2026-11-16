@@ -82,6 +82,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageOpsTest do
     }
   end
 
+  test "hatched egg cannot enter guild storage", %{ctx: ctx, character: char} do
+    seed_inv(char.id, @potion, 1, %{attribute: 1, card0: 256})
+    inventory = inventory_map(char.id)
+    index = index_of(inventory, @potion)
+    assert {:error, :hatched_egg} = GuildStorageOps.deposit(ctx, inventory, %{}, index, 1)
+    assert [%InventoryItem{attribute: 1}] = InventoryPersistence.load_inventory(char.id)
+  end
+
   describe "deposit/5" do
     test "reduces inventory and inserts guild storage with an audit row", %{
       ctx: ctx,

@@ -76,6 +76,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOpsTest do
     end
   end
 
+  test "hatched egg cannot enter a cart", %{character: char} do
+    seed_inv(char.id, @potion, 1, %{attribute: 1, card0: 256})
+    inventory = inv_map(char.id)
+    index = index_of(inventory, @potion)
+    assert {:error, :overweight} = CartOps.move_to_cart(char.id, inventory, %{}, index, 1)
+    assert [%InventoryItem{attribute: 1}] = InventoryPersistence.load_inventory(char.id)
+  end
+
   describe "move_to_cart/5" do
     test "reduces the inventory row and inserts the cart row, both committed", %{character: char} do
       seed_inv(char.id, @potion, 10)

@@ -98,6 +98,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler do
 
       {:noreply, committed}
     else
+      {:error, :hatched_egg} ->
+        {:noreply, state}
+
       {:error, reason} ->
         Logger.debug("Storage deposit rejected for #{char_id}: #{inspect(reason)}")
         send_result(state.connection_pid, error_code(reason))

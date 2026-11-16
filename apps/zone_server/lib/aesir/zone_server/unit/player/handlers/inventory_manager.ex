@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.PetManagement.Egg
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
@@ -262,7 +263,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   """
   @spec handle_repair_all(SessionState.t()) :: {:noreply, SessionState.t()}
   def handle_repair_all(%{game_state: game_state} = state) do
-    broken_indices = for {index, %InventoryItem{attribute: 1}} <- game_state.inventory, do: index
+    broken_indices =
+      for {index, %InventoryItem{attribute: 1} = item} <- game_state.inventory,
+          not Egg.hatched?(item),
+          do: index
 
     case BreakOps.repair_all(game_state) do
       {:ok, new_game_state} ->

@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOps do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.PetManagement.Egg
   alias Aesir.ZoneServer.Unit.Cart
   alias Aesir.ZoneServer.Unit.Cart.Persistence
   alias Aesir.ZoneServer.Unit.Inventory
@@ -75,6 +76,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOps do
   def move_to_cart(char_id, inventory, cart, index, amount)
       when is_integer(amount) and amount > 0 do
     with {:ok, item} <- fetch(inventory, index, amount),
+         true <- not Egg.hatched?(item) || {:error, :overweight},
          {:ok, %ItemDefinition{} = item_def} <- ItemManagement.get_item_by_id(item.nameid),
          {:ok, new_cart, cart_change} <- Cart.add_item(cart, item_def, item, amount),
          {:ok, new_inventory, inv_change} <- Inventory.remove(inventory, index, amount),

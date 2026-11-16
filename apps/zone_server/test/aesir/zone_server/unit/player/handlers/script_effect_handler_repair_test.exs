@@ -59,7 +59,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerRepairTest do
     %{character: character, stats: Stats.from_character(character)}
   end
 
-  describe "{:repair, index}" do
+  describe "{:repair, ordinal}" do
     test "clears the broken flag, keeps the row unequipped, and syncs it", %{
       character: char,
       stats: stats
@@ -69,7 +69,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerRepairTest do
       index = index_of(inventory, @sword)
       state = base_state(char, stats, inventory)
 
-      {reply, new_state} = ScriptEffectHandler.apply_op({:repair, index}, state)
+      {reply, new_state} = ScriptEffectHandler.apply_op({:repair, 1}, state)
 
       assert {:ok, %PlayerState{}} = reply
       assert %{^index => %InventoryItem{attribute: 0, equip: 0}} = new_state.game_state.inventory
@@ -85,15 +85,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerRepairTest do
     } do
       seed_inv(char.id, @potion, 1)
       inventory = inv_map(char.id)
-      index = index_of(inventory, @potion)
       state = base_state(char, stats, inventory)
 
-      {reply, new_state} = ScriptEffectHandler.apply_op({:repair, index}, state)
+      {reply, new_state} = ScriptEffectHandler.apply_op({:repair, 1}, state)
 
       assert {:ok, %PlayerState{}} = reply
       assert new_state.game_state.inventory == inventory
       refute_receive {:send, :gameplay, {:item_added, _}}
     end
+  end
+
+  test "repair selects the broken ordinal in slot order, excluding hatched eggs", %{
+    character: char,
+    stats: stats
+  } do
+    seed_inv(char.id, @sword, 1, %{attribute: 1})
+    seed_inv(char.id, @potion, 1, %{attribute: 1, card0: 256})
+    seed_inv(char.id, @armor, 1, %{attribute: 1})
+    rows = inv_map(char.id) |> Enum.sort_by(&elem(&1, 0)) |> Enum.map(&elem(&1, 1))
+    [first, egg, second] = rows
+    inventory = %{3 => first, 5 => egg, 7 => second}
+    state = base_state(char, stats, inventory)
+
+    assert {{:ok, _}, result} = ScriptEffectHandler.apply_op({:repair, 2}, state)
+    assert result.game_state.inventory[3].attribute == 1
+    assert result.game_state.inventory[5].attribute == 1
+    assert result.game_state.inventory[7].attribute == 0
   end
 
   describe "{:repairall}" do

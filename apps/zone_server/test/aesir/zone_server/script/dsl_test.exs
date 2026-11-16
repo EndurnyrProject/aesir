@@ -637,6 +637,19 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
   end
 
+  test "getbrokenid skips a hatched egg" do
+    ctx =
+      build_ctx(
+        inventory: %{
+          3 => %InventoryItem{nameid: 1101, attribute: 1, card0: 256},
+          7 => %InventoryItem{nameid: 2301, attribute: 1}
+        }
+      )
+
+    assert Dsl.getbrokenid(ctx, 1) == 2301
+    assert Dsl.getbrokenid(ctx, 2) == 0
+  end
+
   describe "getbrokenid/2" do
     test "returns the nth broken item id in slot order" do
       inventory = %{

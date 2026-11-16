@@ -92,6 +92,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
     }
   end
 
+  test "hatched egg cannot be sold, but unhatched egg can", ctx do
+    shop = shop()
+    register_shop(shop)
+    stub_sell_price(@potion, 25)
+    inventory = seed_inventory(ctx.seller.id, 1)
+    item = inventory[0]
+    {:ok, _} = InventoryPersistence.update_item(item, %{card0: 256, attribute: 1})
+    inventory = InventoryPersistence.load_inventory(ctx.seller.id) |> PlayerState.from_list()
+
+    {:noreply, _} =
+      open_sell(seller_state(ctx.seller, inventory, 1_000, 150, 60), request(shop, [{0, 1}]))
+
+    assert_receive {:send, _, {:npc_sell_result, %NpcSellResult{result: 4}}}
+
+    assert [%InventoryItem{attribute: 1} = egg] =
+             InventoryPersistence.load_inventory(ctx.seller.id)
+
+    {:ok, _} = InventoryPersistence.update_item(egg, %{attribute: 0})
+    inventory = InventoryPersistence.load_inventory(ctx.seller.id) |> PlayerState.from_list()
+
+    {:noreply, _} =
+      open_sell(seller_state(ctx.seller, inventory, 1_000, 150, 60), request(shop, [{0, 1}]))
+
+    assert_receive {:send, _, {:npc_sell_result, %NpcSellResult{result: 0}}}
+    assert [] = InventoryPersistence.load_inventory(ctx.seller.id)
+  end
+
   describe "sell/2" do
     test "commits the inventory removal and the zeny credit atomically", ctx do
       shop = shop()

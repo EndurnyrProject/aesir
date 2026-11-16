@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsRepairweapon do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.PetManagement.Egg
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Menu
@@ -63,32 +64,38 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsRepairweapon do
           PlayerState.t(),
           %{id: non_neg_integer(), extras: [non_neg_integer()]},
           pos_integer()
-        ) :: {:ok, PlayerState.t()} | {:error, atom()}
+        ) :: {:ok, PlayerState.t()} | {:silent, PlayerState.t()} | {:error, atom()}
   def on_menu_reply(%PlayerState{target_id: target_id} = caster, %{id: slot}, _level) do
-    with {:ok, target_state, target_pid} <- resolve_target(caster, target_id),
+    with {:ok, target_state, target_pid} <- find_target(caster, target_id),
          %InventoryItem{attribute: 1} = item <- Map.get(target_state.inventory, slot),
+         false <- Egg.hatched?(item),
+         true <- nearby?(caster, target_state) || {:error, :target_out_of_range},
          {:ok, material_id} <- material_for(item),
          :ok <- require_material(caster.inventory, material_id),
          {:ok, repaired_caster} <- repair_target(caster, target_id, target_pid, slot),
          {:ok, consumed} <- consume_material(repaired_caster, material_id) do
       {:ok, consumed}
     else
+      true -> {:silent, caster}
       nil -> {:error, :repair_failed}
       %InventoryItem{} -> {:error, :repair_failed}
       {:error, reason} -> {:error, reason}
     end
   end
 
-  defp resolve_target(%PlayerState{character_id: target_id} = caster, target_id),
+  defp resolve_target(caster, target_id) do
+    with {:ok, target, pid} <- find_target(caster, target_id),
+         true <- nearby?(caster, target) || {:error, :target_out_of_range} do
+      {:ok, target, pid}
+    end
+  end
+
+  defp find_target(%PlayerState{character_id: target_id} = caster, target_id),
     do: {:ok, caster, caster.process_pid}
 
-  defp resolve_target(%PlayerState{} = caster, target_id) do
-    with {:ok, {_module, %PlayerState{} = target, pid}} <-
-           UnitRegistry.get_unit(:player, target_id),
-         true <- nearby?(caster, target) do
-      {:ok, target, pid}
-    else
-      false -> {:error, :target_out_of_range}
+  defp find_target(%PlayerState{}, target_id) do
+    case UnitRegistry.get_unit(:player, target_id) do
+      {:ok, {_module, %PlayerState{} = target, pid}} -> {:ok, target, pid}
       {:error, :not_found} -> {:error, :invalid_target}
     end
   end
@@ -101,8 +108,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsRepairweapon do
   defp repairable_slots(inventory) do
     inventory
     |> Enum.filter(fn
-      {_slot, %InventoryItem{attribute: 1} = item} -> match?({:ok, _}, material_for(item))
-      _normal_or_non_item -> false
+      {_slot, %InventoryItem{attribute: 1} = item} ->
+        not Egg.hatched?(item) and match?({:ok, _}, material_for(item))
+
+      _normal_or_non_item ->
+        false
     end)
     |> Enum.map(&elem(&1, 0))
     |> Enum.sort()

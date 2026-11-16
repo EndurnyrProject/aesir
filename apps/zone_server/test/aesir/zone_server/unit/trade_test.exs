@@ -31,6 +31,13 @@ defmodule Aesir.ZoneServer.Unit.TradeTest do
     assert Trade.offerable?(item(), item_definition(no_trade: true)) == {:error, :no_trade}
   end
 
+  test "only unhatched eggs can be offered" do
+    assert Trade.offerable?(item(card0: 256, attribute: 1), item_definition()) ==
+             {:error, :hatched_egg}
+
+    assert Trade.offerable?(item(card0: 256, attribute: 0), item_definition()) == :ok
+  end
+
   test "allows a clean item" do
     assert Trade.offerable?(item(), item_definition()) == :ok
   end

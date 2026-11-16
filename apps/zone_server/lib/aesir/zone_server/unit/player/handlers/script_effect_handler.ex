@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.PetManagement.Egg
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -613,21 +614,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     {result, %{state | game_state: new_gs}}
   end
 
-  def apply_op({:repair, index}, %{game_state: gs} = state) do
-    was_broken? = match?(%InventoryItem{attribute: 1}, Map.get(gs.inventory, index))
+  def apply_op({:repair, ordinal}, %{game_state: gs} = state) do
+    index =
+      gs.inventory
+      |> Enum.filter(fn {_index, item} -> item.attribute == 1 and not Egg.hatched?(item) end)
+      |> Enum.sort_by(&elem(&1, 0))
+      |> Enum.at(if ordinal > 0, do: ordinal - 1, else: length(gs.inventory))
 
-    case BreakOps.repair(gs, index) do
-      {:ok, new_gs} ->
-        if was_broken?, do: push_item_view(state.connection_pid, new_gs, index)
-        commit(state, new_gs)
+    case index do
+      {slot, _item} ->
+        case BreakOps.repair(gs, slot) do
+          {:ok, new_gs} ->
+            push_item_view(state.connection_pid, new_gs, slot)
+            commit(state, new_gs)
 
-      {:error, reason} ->
-        {{:error, reason}, state}
+          {:error, reason} ->
+            {{:error, reason}, state}
+        end
+
+      nil ->
+        commit(state, gs)
     end
   end
 
   def apply_op({:repairall}, %{game_state: gs} = state) do
-    broken_indices = for {index, %InventoryItem{attribute: 1}} <- gs.inventory, do: index
+    broken_indices =
+      for {index, %InventoryItem{attribute: 1} = item} <- gs.inventory,
+          not Egg.hatched?(item),
+          do: index
 
     case BreakOps.repair_all(gs) do
       {:ok, new_gs} ->

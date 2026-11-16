@@ -98,6 +98,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.BreakOpsTest do
     end
   end
 
+  test "hatched egg is never repaired", %{character: char, stats: stats} do
+    seed_inv(char.id, @sword, 1, %{attribute: 1, card0: 256})
+    inventory = inv_map(char.id)
+    index = index_of(inventory, @sword)
+    state = build_state(char, stats, inventory)
+
+    assert {:ok, ^state} = BreakOps.repair(state, index)
+    assert {:ok, ^state} = BreakOps.repair_all(state)
+    assert [%InventoryItem{attribute: 1}] = InventoryPersistence.load_inventory(char.id)
+  end
+
   describe "repair/2" do
     test "clears the broken flag, leaves the row unequipped, and is idempotent", %{
       character: char,

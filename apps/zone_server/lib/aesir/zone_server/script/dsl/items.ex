@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Group
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Roller
+  alias Aesir.ZoneServer.Mmo.PetManagement.Egg
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl.Announce
@@ -449,14 +450,14 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   end
 
   @doc """
-  Clears the broken flag on the equipment at inventory `index` through the
+  Clears the broken flag on the `ordinal`-th broken non-hatched item through the
   session seam (rAthena `repair`), re-syncing the now-normal row to the client.
   Idempotent: a missing or already-normal row is a no-op success. Never
   re-equips the item - the player re-wears it manually.
   """
   @spec repair(Ctx.t(), non_neg_integer()) :: Ctx.t()
-  def repair(%Ctx{status: {:error, _}} = ctx, _index), do: ctx
-  def repair(%Ctx{} = ctx, index), do: apply_op(ctx, {:repair, index})
+  def repair(%Ctx{status: {:error, _}} = ctx, _ordinal), do: ctx
+  def repair(%Ctx{} = ctx, ordinal), do: apply_op(ctx, {:repair, ordinal})
 
   @doc """
   Clears the broken flag on every broken equipment through the session seam
@@ -478,7 +479,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   def getbrokenid(%Ctx{game_state: gs}, n) when is_integer(n) and n >= 1 do
     gs.inventory
     |> Enum.sort_by(fn {index, _item} -> index end)
-    |> Enum.filter(fn {_index, item} -> item.attribute == 1 end)
+    |> Enum.filter(fn {_index, item} -> item.attribute == 1 and not Egg.hatched?(item) end)
     |> Enum.at(n - 1)
     |> case do
       {_index, item} -> item.nameid

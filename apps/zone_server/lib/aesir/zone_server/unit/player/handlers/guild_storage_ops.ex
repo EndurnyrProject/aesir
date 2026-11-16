@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageOps do
   alias Aesir.ZoneServer.Guild.Storage.Persistence
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.PetManagement.Egg
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -37,6 +38,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageOps do
   def deposit(ctx, inventory, storage, index, amount)
       when is_integer(amount) and amount > 0 do
     with {:ok, item} <- fetch(inventory, index, amount),
+         true <- not Egg.hatched?(item) || {:error, :hatched_egg},
          {:ok, %ItemDefinition{} = item_def} <- ItemManagement.get_item_by_id(item.nameid),
          :ok <- Storage.depositable(item),
          {:ok, new_inventory, inv_change} <- Inventory.remove(inventory, index, amount),

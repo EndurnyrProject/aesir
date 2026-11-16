@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.BreakOps do
 
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
+  alias Aesir.ZoneServer.Mmo.PetManagement.Egg
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -72,8 +73,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.BreakOps do
           {:ok, PlayerState.t()} | {:error, term()}
   def repair(%PlayerState{inventory: inventory} = state, index) when is_integer(index) do
     case Map.get(inventory, index) do
-      %InventoryItem{attribute: 1} = item -> clear_broken(state, index, item)
-      _missing_or_normal -> {:ok, state}
+      %InventoryItem{attribute: 1} = item ->
+        if Egg.hatched?(item), do: {:ok, state}, else: clear_broken(state, index, item)
+
+      _missing_or_normal ->
+        {:ok, state}
     end
   end
 
@@ -84,7 +88,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.BreakOps do
   """
   @spec repair_all(PlayerState.t()) :: {:ok, PlayerState.t()} | {:error, term()}
   def repair_all(%PlayerState{inventory: inventory} = state) do
-    case for {index, %InventoryItem{attribute: 1} = item} <- inventory, do: {index, item} do
+    case for {index, %InventoryItem{attribute: 1} = item} <- inventory,
+             not Egg.hatched?(item),
+             do: {index, item} do
       [] -> {:ok, state}
       broken_rows -> do_repair_all(state, broken_rows)
     end

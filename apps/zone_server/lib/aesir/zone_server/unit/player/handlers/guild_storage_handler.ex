@@ -123,6 +123,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler do
       send_result(committed.connection_pid, :STORAGE_OK)
       {:noreply, committed}
     else
+      {:error, :hatched_egg} ->
+        {:noreply, state}
+
       {:error, reason} ->
         send_result(state.connection_pid, error_code(reason))
         {:noreply, state}

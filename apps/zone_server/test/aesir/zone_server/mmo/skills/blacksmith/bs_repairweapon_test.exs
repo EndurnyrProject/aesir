@@ -42,6 +42,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsRepairweaponTest do
     assert definition.sp_cost == [30]
   end
 
+  test "hatched eggs are omitted and cannot be selected for repair" do
+    egg = %{item(1101, 1) | card0: 256}
+    register(player(2, %{0 => egg, 1 => item(1101, 1)}))
+    caster = player(1, %{9 => item(1_002, 0)})
+    assert {:ok, offered} = BsRepairweapon.cast(caster, {:unit, 2}, 1, definition())
+    assert offered.pending_menu_offer.entry_ids == [1]
+
+    assert {:silent, %{target_id: 2}} =
+             BsRepairweapon.on_menu_reply(%{caster | target_id: 2}, %{id: 0, extras: []}, 1)
+  end
+
   test "offers only broken rows with a repairable equipment level" do
     target =
       player(2, %{
