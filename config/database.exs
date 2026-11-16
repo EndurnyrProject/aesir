@@ -15,7 +15,7 @@ if config_env() == :test do
   # Only the primary checkout has a `.git` directory; git worktrees have a `.git` file and
   # jj workspaces have none. Give every other checkout its own test database so concurrent
   # `mix test` runs don't share sandbox state. The path hash keeps same-named checkouts apart.
-  repo_root = Path.expand("../..", __DIR__)
+  repo_root = Path.expand("..", __DIR__)
 
   test_database =
     System.get_env("TEST_DATABASE") ||
@@ -29,7 +29,7 @@ if config_env() == :test do
           |> String.replace(~r/[^a-z0-9]+/, "_")
           |> String.slice(0, 32)
 
-        "grain_next_test_#{suffix}_#{repo_root |> :erlang.phash2() |> Integer.to_string(36)}"
+        "aesir_test_#{suffix}_#{repo_root |> :erlang.phash2() |> Integer.to_string(36)}"
       end
 
   config :commons, Aesir.Repo,
