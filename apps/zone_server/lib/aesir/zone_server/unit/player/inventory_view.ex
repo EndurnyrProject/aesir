@@ -7,6 +7,8 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
   the inventory and cart index spaces stay consistent across all messages.
   """
 
+  import Bitwise
+
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.Models.ItemOptions
   alias Aesir.Net.CartInfo
@@ -286,7 +288,7 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
       identified: item.identify == 1,
       attribute: item.attribute,
       refine: item.refine,
-      cards: [item.card0, item.card1, item.card2, item.card3],
+      cards: cards(item),
       location: item.equip,
       type: client_type(item.nameid),
       expire_time: encode_expire_time(item.expire_time),
@@ -298,6 +300,11 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
       options: item_options(item.random_options)
     }
   end
+
+  defp cards(%InventoryItem{card0: 256, card3: card3}),
+    do: [0, 0, card3 >>> 1, card3 &&& 1]
+
+  defp cards(item), do: InventoryItem.cards(item)
 
   @doc """
   Builds the wire option slots of an item's random options.

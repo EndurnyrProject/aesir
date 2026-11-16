@@ -83,6 +83,20 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryViewTest do
     assert char_view.bound == :BOUND_CHAR
   end
 
+  test "masks pet identity while preserving forged and created cards" do
+    egg = item(card0: 256, card1: 123, card2: 456, card3: 9)
+    forged = item(card0: 255, card1: 42, card2: 123, card3: 456)
+    created = item(card0: 254, card1: 0, card2: 123, card3: 456)
+
+    %{normal: [egg_view, forged_view, created_view]} =
+      InventoryView.inventory_list(%{0 => egg, 1 => forged, 2 => created})
+
+    assert egg_view.cards == [0, 0, 4, 1]
+    assert forged_view.cards == [255, 42, 123, 456]
+    assert created_view.cards == [254, 0, 123, 456]
+    assert InventoryView.item_added(egg, 0).cards == [0, 0, 4, 1]
+  end
+
   defp item(attrs \\ []) do
     struct(
       InventoryItem,
