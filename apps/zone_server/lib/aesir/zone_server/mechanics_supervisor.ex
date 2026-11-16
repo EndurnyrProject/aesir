@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.MobSkill.Db, as: MobSkillDb
+  alias Aesir.ZoneServer.Mmo.PetManagement.Catalog, as: PetCatalog
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.StatusEffect.CalcFlags
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
@@ -45,6 +46,7 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
     :ok = LevelPenalty.reload()
     :ok = RefineDatabase.reload()
     :ok = HomunculusCatalogs.reload()
+    :ok = PetCatalog.reload()
     :ok = ShopVerifier.verify!(Shops.all())
 
     # WoE boot: reload the castle catalog and its static mapflags, seed the

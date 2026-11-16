@@ -1,0 +1,4047 @@
+---
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :critical, 1)
+      ctx = bonus(ctx, :luk, 3)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :critical, 1)
+        ctx = bonus(ctx, :luk, 2)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 2000
+  change_target_rate: 10001
+  egg_item_id: 9001
+  equip_item_id: 10013
+  evolution:
+    - requirements:
+        - amount: 10
+          item_id: 610
+        - amount: 3
+          item_id: 619
+      target_mob_id: 1090
+  food_item_id: 531
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 50
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1002
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 619
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:magic_atk_ele, :wind}, 2)
+      ctx = bonus(ctx, :varcast_rate, -2)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:magic_atk_ele, :wind}, 1)
+        ctx = bonus(ctx, :varcast_rate, -1)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9155
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 6108
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1004
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:res_eff, :sc_curse}, 2000)
+      ctx = bonus(ctx, :int, 5)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:res_eff, :sc_curse}, 1000)
+        ctx = bonus(ctx, :int, 3)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 2000
+  change_target_rate: 10001
+  egg_item_id: 9138
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 1000889
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1005
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 101331
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, :int, 3)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :int, 2)
+      else
+        ctx
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9103
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 1066
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1010
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :agi, 2)
+      ctx = bonus(ctx, :flee, 3)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :agi, 1)
+        ctx = bonus(ctx, :flee, 2)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 1500
+  change_target_rate: 10001
+  egg_item_id: 9006
+  equip_item_id: 10002
+  evolution: []
+  food_item_id: 537
+  fullness: 6
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 30
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1011
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 624
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, :hit, 8)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :hit, 5)
+      else
+        ctx
+      end
+    end
+  capture_rate: 1500
+  change_target_rate: 10001
+  egg_item_id: 9012
+  equip_item_id: 10017
+  evolution: []
+  food_item_id: 537
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 30
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1014
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 630
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, :max_hp, 200)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :max_hp, 150)
+      else
+        ctx
+      end
+    end
+  capture_rate: 1000
+  change_target_rate: 10001
+  egg_item_id: 9014
+  equip_item_id: 10010
+  evolution:
+    - requirements:
+        - amount: 10
+          item_id: 537
+        - amount: 3
+          item_id: 632
+        - amount: 300
+          item_id: 7101
+        - amount: 1
+          item_id: 4031
+        - amount: 10
+          item_id: 522
+      target_mob_id: 1369
+  food_item_id: 537
+  fullness: 4
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 30
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1019
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 632
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, :atk, 15)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :atk, 10)
+      else
+        ctx
+      end
+    end
+  capture_rate: 500
+  change_target_rate: 10001
+  egg_item_id: 9017
+  equip_item_id: 10009
+  evolution:
+    - requirements:
+        - amount: 3
+          item_id: 635
+        - amount: 1
+          item_id: 1124
+        - amount: 500
+          item_id: 931
+        - amount: 1
+          item_id: 2267
+        - amount: 1
+          item_id: 4066
+      target_mob_id: 1213
+  food_item_id: 537
+  fullness: 5
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 20
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1023
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 635
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :def, 2)
+      ctx = bonus(ctx, :int, 2)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :def, 1)
+        ctx = bonus(ctx, :int, 1)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 500
+  change_target_rate: 10001
+  egg_item_id: 9018
+  equip_item_id: 10008
+  evolution: []
+  food_item_id: 537
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 20
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1026
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 636
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, {:addclass, :all}, 2)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, {:addclass, :all}, 1)
+      else
+        ctx
+      end
+    end
+  capture_rate: 500
+  change_target_rate: 10001
+  egg_item_id: 9021
+  equip_item_id: 10006
+  evolution:
+    - requirements:
+        - amount: 3
+          item_id: 639
+        - amount: 1
+          item_id: 10006
+        - amount: 300
+          item_id: 954
+        - amount: 6
+          item_id: 732
+      target_mob_id: 3636
+  food_item_id: 537
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 10
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1029
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 639
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:subele, :poison}, 15)
+      ctx = bonus(ctx, :luk, 3)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:subele, :poison}, 10)
+        ctx = bonus(ctx, :luk, 2)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 1000
+  change_target_rate: 10001
+  egg_item_id: 9003
+  equip_item_id: 10013
+  evolution: []
+  food_item_id: 511
+  fullness: 5
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 30
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1031
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 621
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :perfect_dodge, 20)
+      ctx = bonus(ctx, :hit, 1)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :perfect_dodge, 20)
+      else
+        ctx
+      end
+    end
+  capture_rate: 500
+  change_target_rate: 10001
+  egg_item_id: 9008
+  equip_item_id: 10002
+  evolution: []
+  food_item_id: 716
+  fullness: 5
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 10
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1035
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 626
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, :max_hp, 150)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :max_hp, 100)
+      else
+        ctx
+      end
+    end
+  capture_rate: 500
+  change_target_rate: 10001
+  egg_item_id: 9053
+  equip_item_id: 10035
+  evolution:
+    - requirements:
+        - amount: 500
+          item_id: 953
+        - amount: 3
+          item_id: 12371
+        - amount: 1
+          item_id: 27029
+        - amount: 20
+          item_id: 990
+      target_mob_id: 3023
+  food_item_id: 6111
+  fullness: 7
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 20
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1040
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12371
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, :hit, 5)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :hit, 4)
+      else
+        ctx
+      end
+    end
+  capture_rate: 2000
+  change_target_rate: 10001
+  egg_item_id: 9102
+  equip_item_id: 0
+  evolution:
+    - requirements:
+        - amount: 3
+          item_id: 23256
+        - amount: 200
+          item_id: 7511
+        - amount: 30
+          item_id: 969
+        - amount: 1
+          item_id: 4248
+      target_mob_id: 1297
+  food_item_id: 934
+  fullness: 7
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 50
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1041
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 23256
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, :flee, 9)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :flee, 6)
+      else
+        ctx
+      end
+    end
+  capture_rate: 1000
+  change_target_rate: 10001
+  egg_item_id: 9007
+  equip_item_id: 10002
+  evolution: []
+  food_item_id: 1002
+  fullness: 5
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 20
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1042
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 625
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :atk, 8)
+      ctx = bonus(ctx, :str, 2)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :atk, 5)
+        ctx = bonus(ctx, :str, 1)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 2000
+  change_target_rate: 10001
+  egg_item_id: 9005
+  equip_item_id: 10012
+  evolution: []
+  food_item_id: 507
+  fullness: 4
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 40
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1049
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 623
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :hp_regen, 8)
+      ctx = bonus(ctx, :max_hp, 38)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :hp_regen, 5)
+        ctx = bonus(ctx, :max_hp, 25)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 1500
+  change_target_rate: 10001
+  egg_item_id: 9011
+  equip_item_id: 10014
+  evolution:
+    - requirements:
+        - amount: 3
+          item_id: 707
+        - amount: 777
+          item_id: 940
+        - amount: 200
+          item_id: 508
+        - amount: 1
+          item_id: 4057
+      target_mob_id: 1058
+  food_item_id: 537
+  fullness: 1
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 30
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1052
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 629
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :perfect_dodge, 10)
+      ctx = bonus(ctx, :agi, 2)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :perfect_dodge, 10)
+        ctx = bonus(ctx, :agi, 1)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 1000
+  change_target_rate: 10001
+  egg_item_id: 9015
+  equip_item_id: 10019
+  evolution: []
+  food_item_id: 537
+  fullness: 4
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 30
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1056
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 633
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, :critical, 5)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :critical, 3)
+      else
+        ctx
+      end
+    end
+  capture_rate: 1000
+  change_target_rate: 10001
+  egg_item_id: 9016
+  equip_item_id: 10018
+  evolution:
+    - requirements:
+        - amount: 3
+          item_id: 634
+        - amount: 2
+          item_id: 753
+        - amount: 300
+          item_id: 7182
+        - amount: 1
+          item_id: 4051
+      target_mob_id: 1214
+  food_item_id: 532
+  fullness: 5
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 20
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1057
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 634
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:addrace, :plant}, 6)
+      ctx = bonus(ctx, {:magic_addrace, :plant}, 6)
+      ctx = bonus(ctx, :hp_regen, 20)
+      ctx = bonus(ctx, :max_hp, 70)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:addrace, :plant}, 3)
+        ctx = bonus(ctx, {:magic_addrace, :plant}, 3)
+        ctx = bonus(ctx, :hp_regen, 15)
+        ctx = bonus(ctx, :max_hp, 55)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          ctx = bonus(ctx, :hp_regen, 10)
+          ctx = bonus(ctx, :max_hp, 38)
+          ctx
+        else
+          if ((pet_info(ctx, :intimate) >= 1) || (pet_info(ctx, :intimate) >= 100)) do
+            ctx = bonus(ctx, :hp_regen, 5)
+            ctx = bonus(ctx, :max_hp, 25)
+            ctx
+          else
+            ctx
+          end
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9106
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1058
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :critical, 3)
+      ctx = bonus(ctx, :atk, 3)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :critical, 2)
+        ctx = bonus(ctx, :atk, 2)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 1500
+  change_target_rate: 10001
+  egg_item_id: 9004
+  equip_item_id: 10007
+  evolution:
+    - requirements:
+        - amount: 100
+          item_id: 7198
+        - amount: 250
+          item_id: 705
+        - amount: 30
+          item_id: 706
+        - amount: 1
+          item_id: 4663
+      target_mob_id: 3496
+  food_item_id: 534
+  fullness: 4
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 40
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1063
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 622
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :str, 2)
+      ctx = bonus(ctx, :int, 2)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :str, 1)
+        ctx = bonus(ctx, :int, 1)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 1000
+  change_target_rate: 10001
+  egg_item_id: 9013
+  equip_item_id: 10017
+  evolution: []
+  food_item_id: 537
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 20
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1077
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 631
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, :atk, 40)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :atk, 30)
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          bonus(ctx, :atk, 20)
+        else
+          ctx = bonus(ctx, :atk, 10)
+          ctx = bonus(ctx, :def, -3)
+          ctx
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9072
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1087
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :critical, 3)
+      ctx = bonus(ctx, :luk, 3)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :critical, 2)
+        ctx = bonus(ctx, :luk, 3)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          ctx = bonus(ctx, :critical, 1)
+          ctx = bonus(ctx, :luk, 3)
+          ctx
+        else
+          if ((pet_info(ctx, :intimate) >= 1) || (pet_info(ctx, :intimate) >= 100)) do
+            ctx = bonus(ctx, :critical, 1)
+            ctx = bonus(ctx, :luk, 2)
+            ctx
+          else
+            ctx
+          end
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9069
+  equip_item_id: 0
+  evolution:
+    - requirements:
+        - amount: 20
+          item_id: 503
+        - amount: 1
+          item_id: 2282
+        - amount: 50
+          item_id: 509
+        - amount: 200
+          item_id: 909
+      target_mob_id: 1096
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1090
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :max_hp_rate, 2)
+      ctx = bonus(ctx, :heal_power, 8)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :max_hp_rate, 2)
+        ctx = bonus(ctx, :heal_power, 6)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          ctx = bonus(ctx, :max_hp_rate, 1)
+          ctx = bonus(ctx, :heal_power, 4)
+          ctx
+        else
+          if ((pet_info(ctx, :intimate) >= 1) || (pet_info(ctx, :intimate) >= 100)) do
+            ctx = bonus(ctx, :max_hp_rate, 1)
+            ctx = bonus(ctx, :heal_power, 2)
+            ctx
+          else
+            ctx
+          end
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9088
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 1
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1096
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:res_eff, :sc_stun}, 200)
+      ctx = bonus(ctx, :mdef, 2)
+      ctx = bonus(ctx, :def, 2)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:res_eff, :sc_stun}, 100)
+        ctx = bonus(ctx, :mdef, 1)
+        ctx = bonus(ctx, :def, 1)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 200
+  change_target_rate: 10001
+  egg_item_id: 9024
+  equip_item_id: 10001
+  evolution: []
+  food_item_id: 518
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 10
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1101
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 642
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:magic_atk_ele, :earth}, 5)
+      ctx = bonus(ctx, :int, 4)
+      ctx = bonus(ctx, :max_sp, 130)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:magic_atk_ele, :earth}, 3)
+        ctx = bonus(ctx, :int, 3)
+        ctx = bonus(ctx, :max_sp, 105)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          ctx = bonus(ctx, :int, 2)
+          ctx = bonus(ctx, :max_sp, 75)
+          ctx
+        else
+          if ((pet_info(ctx, :intimate) >= 1) || (pet_info(ctx, :intimate) >= 100)) do
+            ctx = bonus(ctx, :int, 1)
+            ctx = bonus(ctx, :max_sp, 50)
+            ctx
+          else
+            ctx
+          end
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9129
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1106
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :int, 2)
+      ctx = bonus(ctx, :max_sp, 75)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :int, 1)
+        ctx = bonus(ctx, :max_sp, 50)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 1000
+  change_target_rate: 10001
+  egg_item_id: 9010
+  equip_item_id: 10003
+  evolution:
+    - requirements:
+        - amount: 3
+          item_id: 628
+        - amount: 1
+          item_id: 4082
+        - amount: 300
+          item_id: 7030
+        - amount: 20
+          item_id: 919
+      target_mob_id: 1106
+  food_item_id: 537
+  fullness: 6
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 40
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1107
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 628
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:addclass, :all}, 1)
+      ctx = bonus(ctx, :matk_rate, 1)
+      ctx = bonus(ctx, :max_hp_rate, 1)
+      ctx = bonus(ctx, :max_sp_rate, 1)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:addclass, :all}, 1)
+        ctx = bonus(ctx, :matk_rate, 1)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 500
+  change_target_rate: 10001
+  egg_item_id: 9023
+  equip_item_id: 10004
+  evolution:
+    - requirements:
+        - amount: 3
+          item_id: 641
+        - amount: 250
+          item_id: 1039
+        - amount: 30
+          item_id: 1009
+        - amount: 1
+          item_id: 4122
+      target_mob_id: 3669
+  food_item_id: 711
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 10
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1109
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 641
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, :matk_rate, 2)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :matk_rate, 1)
+      else
+        ctx
+      end
+    end
+  capture_rate: 500
+  change_target_rate: 10001
+  egg_item_id: 9019
+  equip_item_id: 10005
+  evolution:
+    - requirements:
+        - amount: 3
+          item_id: 637
+        - amount: 3
+          item_id: 981
+        - amount: 300
+          item_id: 1021
+        - amount: 3
+          item_id: 969
+      target_mob_id: 1301
+  food_item_id: 537
+  fullness: 4
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 20
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1110
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 637
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :atk, 5)
+      ctx = bonus(ctx, :hit, 5)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :atk, 3)
+        ctx = bonus(ctx, :hit, 3)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 1500
+  change_target_rate: 10001
+  egg_item_id: 9002
+  equip_item_id: 10013
+  evolution:
+    - requirements:
+        - amount: 20
+          item_id: 7032
+        - amount: 10
+          item_id: 7031
+        - amount: 3
+          item_id: 531
+        - amount: 1
+          item_id: 4659
+      target_mob_id: 3495
+    - requirements:
+        - amount: 500
+          item_id: 25290
+        - amount: 50
+          item_id: 529
+        - amount: 50
+          item_id: 530
+        - amount: 1
+          item_id: 4004
+      target_mob_id: 3790
+  food_item_id: 508
+  fullness: 4
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 40
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1113
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 620
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program:
+  capture_rate: 800
+  change_target_rate: 10001
+  egg_item_id: 9032
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 7821
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 50
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1122
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 14569
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program:
+  capture_rate: 800
+  change_target_rate: 10001
+  egg_item_id: 9033
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 7821
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 50
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1123
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 14570
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program:
+  capture_rate: 800
+  change_target_rate: 10001
+  egg_item_id: 9034
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 7821
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 50
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1125
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 14571
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      pet_autobonus(ctx, %{other: nil, bonus: [{:bonus, {:subele, :neutral}, 2}, {:heal, 100, 0}], trigger: :attack, battle_flag: 529}, 100, 5000)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        pet_autobonus(ctx, %{other: nil, bonus: [{:bonus, {:subele, :neutral}, 2}, {:heal, 100, 0}], trigger: :attack, battle_flag: 529}, 100, 3000)
+      else
+        ctx
+      end
+    end
+  capture_rate: 500
+  change_target_rate: 10001
+  egg_item_id: 9043
+  equip_item_id: 10025
+  evolution: []
+  food_item_id: 6098
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 10
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1143
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12361
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:res_eff, :sc_stonewait}, 800)
+      ctx = bonus(ctx, :vit, 2)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:res_eff, :sc_stonewait}, 500)
+        ctx = bonus(ctx, :vit, 1)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 200
+  change_target_rate: 10001
+  egg_item_id: 9050
+  equip_item_id: 10032
+  evolution: []
+  food_item_id: 6108
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 10
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1148
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12368
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :critical, 6)
+      ctx = bonus(ctx, :hit, 6)
+      ctx = pet_autobonus(ctx, %{other: nil, bonus: [{:bonus, {:hp_regen_bonus, 1000}, 500}, {:bonus, {:sp_regen_bonus, 1000}, 20}], trigger: :attack, battle_flag: 785}, 30, 5000)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :critical, 5)
+        ctx = bonus(ctx, :hit, 5)
+        ctx = pet_autobonus(ctx, %{other: nil, bonus: [{:bonus, {:hp_regen_bonus, 1000}, 400}, {:bonus, {:sp_regen_bonus, 1000}, 10}], trigger: :attack, battle_flag: 785}, 30, 5000)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          ctx = bonus(ctx, :critical, 4)
+          ctx = bonus(ctx, :hit, 4)
+          ctx = pet_autobonus(ctx, %{other: nil, bonus: [{:bonus, {:hp_regen_bonus, 1000}, 300}], trigger: :attack, battle_flag: 785}, 20, 5000)
+          ctx
+        else
+          ctx = bonus(ctx, :critical, 3)
+          ctx = bonus(ctx, :hit, 3)
+          ctx
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9112
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 25377
+  fullness: 1
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1150
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :aspd_rate, 1)
+      ctx = bonus(ctx, :agi, 1)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :aspd_rate, 1)
+      else
+        ctx
+      end
+    end
+  capture_rate: 500
+  change_target_rate: 10001
+  egg_item_id: 9022
+  equip_item_id: 10011
+  evolution:
+    - requirements:
+        - amount: 3
+          item_id: 640
+        - amount: 100
+          item_id: 6260
+        - amount: 150
+          item_id: 606
+        - amount: 1
+          item_id: 4279
+      target_mob_id: 3670
+  food_item_id: 537
+  fullness: 4
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 20
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1155
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 640
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :vit, 2)
+      ctx = bonus(ctx, :max_hp, 200)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :vit, 2)
+        ctx = bonus(ctx, :max_hp, 100)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          ctx = bonus(ctx, :vit, 2)
+          ctx = bonus(ctx, :max_hp, 50)
+          ctx
+        else
+          if ((pet_info(ctx, :intimate) >= 1) || (pet_info(ctx, :intimate) >= 100)) do
+            ctx = bonus(ctx, :vit, 1)
+            ctx = bonus(ctx, :max_hp, 50)
+            ctx
+          else
+            ctx
+          end
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9070
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1166
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :vit, 2)
+      ctx = bonus(ctx, :max_hp, 75)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :vit, 1)
+        ctx = bonus(ctx, :max_hp, 50)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 1500
+  change_target_rate: 10001
+  egg_item_id: 9009
+  equip_item_id: 10015
+  evolution:
+    - requirements:
+        - amount: 10
+          item_id: 537
+        - amount: 3
+          item_id: 627
+        - amount: 100
+          item_id: 517
+        - amount: 50
+          item_id: 949
+      target_mob_id: 1166
+  food_item_id: 537
+  fullness: 7
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 40
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1167
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 627
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :str, 2)
+      ctx = bonus(ctx, :dex, 2)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :str, 1)
+        ctx = bonus(ctx, :dex, 1)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 500
+  change_target_rate: 10001
+  egg_item_id: 9020
+  equip_item_id: 10016
+  evolution: []
+  food_item_id: 537
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 10
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1170
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 638
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = grant_skill(ctx, 51, 1)
+      ctx = bonus(ctx, :flee, 10)
+      ctx
+    else
+      ctx = grant_skill(ctx, 51, 1)
+      ctx = bonus(ctx, :flee, 7)
+      ctx
+    end
+  capture_rate: 500
+  change_target_rate: 10001
+  egg_item_id: 9045
+  equip_item_id: 10027
+  evolution: []
+  food_item_id: 6100
+  fullness: 7
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 20
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1179
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12363
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :critical, 3)
+      ctx = bonus(ctx, :hit, 3)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :critical, 2)
+        ctx = bonus(ctx, :hit, 2)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 2000
+  change_target_rate: 10001
+  egg_item_id: 9095
+  equip_item_id: 0
+  evolution:
+    - requirements:
+        - amount: 3
+          item_id: 23187
+        - amount: 999
+          item_id: 1022
+        - amount: 1
+          item_id: 10008
+        - amount: 1
+          item_id: 4159
+      target_mob_id: 1307
+  food_item_id: 25231
+  fullness: 4
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 50
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1180
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 23187
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:res_eff, :sc_stun}, 200)
+      ctx = bonus(ctx, :vit, 2)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:res_eff, :sc_stun}, 100)
+        ctx = bonus(ctx, :vit, 1)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 500
+  change_target_rate: 10001
+  egg_item_id: 9025
+  equip_item_id: 10020
+  evolution:
+    - requirements:
+        - amount: 1
+          item_id: 5367
+        - amount: 100
+          item_id: 7277
+        - amount: 50
+          item_id: 7014
+        - amount: 1
+          item_id: 4328
+      target_mob_id: 1512
+  food_item_id: 537
+  fullness: 4
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 30
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1188
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 659
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :matk, 20)
+      ctx = bonus(ctx, :atk, 20)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :matk, 15)
+        ctx = bonus(ctx, :atk, 15)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          ctx = bonus(ctx, :matk, 10)
+          ctx = bonus(ctx, :atk, 10)
+          ctx
+        else
+          ctx = bonus(ctx, :atk, 10)
+          ctx = bonus(ctx, :def, -3)
+          ctx
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9073
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1190
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:magic_addele, :holy}, 5)
+      ctx = bonus(ctx, :int, 2)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:magic_addele, :holy}, 3)
+        ctx = bonus(ctx, :int, 1)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 200
+  change_target_rate: 10001
+  egg_item_id: 9128
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 1000552
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1198
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 100796
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, 3)
+      ctx = bonus(ctx, {:magic_addrace, :demi_human}, 3)
+      ctx = bonus(ctx, {:addrace, :player_human}, 3)
+      ctx = bonus(ctx, {:magic_addrace, :player_human}, 3)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:addrace, :demi_human}, 2)
+        ctx = bonus(ctx, {:magic_addrace, :demi_human}, 2)
+        ctx = bonus(ctx, {:addrace, :player_human}, 2)
+        ctx = bonus(ctx, {:magic_addrace, :player_human}, 2)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 300
+  change_target_rate: 10001
+  egg_item_id: 9026
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 929
+  fullness: 7
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 10
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1200
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 660
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, :agi, 4)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :agi, 3)
+      else
+        ctx
+      end
+    end
+  capture_rate: 800
+  change_target_rate: 10001
+  egg_item_id: 9037
+  equip_item_id: 0
+  evolution:
+    - requirements:
+        - amount: 500
+          item_id: 7005
+        - amount: 50
+          item_id: 1009
+        - amount: 100
+          item_id: 1059
+        - amount: 1
+          item_id: 4210
+      target_mob_id: 20420
+  food_item_id: 7824
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 20
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1208
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 14574
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, :atk, 25)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :atk, 20)
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          bonus(ctx, :atk, 15)
+        else
+          if ((pet_info(ctx, :intimate) >= 1) || (pet_info(ctx, :intimate) >= 100)) do
+            bonus(ctx, :atk, 10)
+          else
+            ctx
+          end
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9087
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1213
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :long_atk_rate, 3)
+      ctx = bonus(ctx, :critical, 9)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :long_atk_rate, 2)
+        ctx = bonus(ctx, :critical, 7)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          ctx = bonus(ctx, :long_atk_rate, 1)
+          ctx = bonus(ctx, :critical, 5)
+          ctx
+        else
+          if ((pet_info(ctx, :intimate) >= 1) || (pet_info(ctx, :intimate) >= 100)) do
+            bonus(ctx, :critical, 3)
+          else
+            ctx
+          end
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9091
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1214
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program:
+  capture_rate: 2000
+  change_target_rate: 10001
+  egg_item_id: 9061
+  equip_item_id: 10039
+  evolution: []
+  food_item_id: 6534
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 50
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1242
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 12789
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:subele, :water}, 2)
+      ctx = bonus(ctx, :max_hp, 45)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:subele, :water}, 1)
+        ctx = bonus(ctx, :max_hp, 30)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 2000
+  change_target_rate: 10001
+  egg_item_id: 9029
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 911
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 50
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1245
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12225
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :aspd_rate, 1)
+      ctx = bonus(ctx, :flee, 3)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :aspd_rate, 1)
+      else
+        ctx
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9190
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 6111
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1269
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:subrace, :demi_human}, 2)
+      ctx = bonus(ctx, {:subrace, :player_human}, 2)
+      ctx = bonus(ctx, :mdef, 2)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:subrace, :demi_human}, 1)
+        ctx = bonus(ctx, {:subrace, :player_human}, 1)
+        ctx = bonus(ctx, :mdef, 1)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 800
+  change_target_rate: 10001
+  egg_item_id: 9027
+  equip_item_id: 0
+  evolution:
+    - requirements:
+        - amount: 500
+          item_id: 7047
+        - amount: 200
+          item_id: 511
+        - amount: 30
+          item_id: 985
+        - amount: 1
+          item_id: 4253
+      target_mob_id: 1737
+  food_item_id: 504
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 20
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1275
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 661
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:addrace, :dragon}, 6)
+      ctx = bonus(ctx, {:magic_addrace, :dragon}, 6)
+      ctx = bonus(ctx, :hit, 6)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:addrace, :dragon}, 3)
+        ctx = bonus(ctx, {:magic_addrace, :dragon}, 3)
+        ctx = bonus(ctx, :hit, 6)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          bonus(ctx, :hit, 5)
+        else
+          if ((pet_info(ctx, :intimate) >= 1) || (pet_info(ctx, :intimate) >= 100)) do
+            bonus(ctx, :hit, 4)
+          else
+            ctx
+          end
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9107
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1297
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, 5)
+      ctx = bonus(ctx, {:addrace, :player_human}, 5)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:addrace, :demi_human}, 3)
+        ctx = bonus(ctx, {:addrace, :player_human}, 3)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 50
+  change_target_rate: 10001
+  egg_item_id: 9046
+  equip_item_id: 10028
+  evolution: []
+  food_item_id: 6104
+  fullness: 7
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 10
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1299
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12364
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, :matk_rate, 4)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :matk_rate, 3)
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          bonus(ctx, :matk_rate, 2)
+        else
+          if ((pet_info(ctx, :intimate) >= 1) || (pet_info(ctx, :intimate) >= 100)) do
+            bonus(ctx, :matk_rate, 1)
+          else
+            ctx
+          end
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9089
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1301
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :critical, 5)
+      ctx = bonus(ctx, :hit, 5)
+      ctx = pet_autobonus(ctx, %{other: nil, bonus: [{:bonus, {:hp_regen_bonus, 1000}, 400}], trigger: :attack, battle_flag: 785}, 20, 5000)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :critical, 4)
+        ctx = bonus(ctx, :hit, 4)
+        ctx = pet_autobonus(ctx, %{other: nil, bonus: [{:bonus, {:hp_regen_bonus, 1000}, 300}], trigger: :attack, battle_flag: 785}, 20, 5000)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          ctx = bonus(ctx, :critical, 3)
+          ctx = bonus(ctx, :hit, 3)
+          ctx
+        else
+          ctx = bonus(ctx, :critical, 2)
+          ctx = bonus(ctx, :hit, 2)
+          ctx
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9096
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1307
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, :max_hp, 400)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :max_hp, 300)
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          bonus(ctx, :max_hp, 200)
+        else
+          if ((pet_info(ctx, :intimate) >= 1) || (pet_info(ctx, :intimate) >= 100)) do
+            bonus(ctx, :max_hp, 150)
+          else
+            ctx
+          end
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9071
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1369
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :hp_drain_rate, 30)
+      ctx = bonus(ctx, :hp_drain_percent, 5)
+      ctx = bonus(ctx, :max_hp_rate, 1)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :hp_drain_rate, 30)
+        ctx = bonus(ctx, :hp_drain_percent, 5)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 200
+  change_target_rate: 10001
+  egg_item_id: 9055
+  equip_item_id: 10037
+  evolution: []
+  food_item_id: 6113
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 10
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1370
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12373
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :sp_drain_rate, 30)
+      ctx = bonus(ctx, :sp_drain_percent, 1)
+      ctx = bonus(ctx, :max_sp_rate, 5)
+      ctx
+    else
+      ctx = bonus(ctx, :sp_drain_rate, 30)
+      ctx = bonus(ctx, :sp_drain_percent, 1)
+      ctx = bonus(ctx, :max_sp_rate, 3)
+      ctx
+    end
+  capture_rate: 50
+  change_target_rate: 10001
+  egg_item_id: 9052
+  equip_item_id: 10034
+  evolution: []
+  food_item_id: 6110
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 10
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1374
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12370
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, :int, 1)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, {:res_eff, :sc_sleep}, 10000)
+      else
+        ctx
+      end
+    end
+  capture_rate: 200
+  change_target_rate: 10001
+  egg_item_id: 9054
+  equip_item_id: 10036
+  evolution:
+    - requirements:
+        - amount: 500
+          item_id: 7120
+        - amount: 100
+          item_id: 510
+        - amount: 100
+          item_id: 935
+        - amount: 1
+          item_id: 4166
+      target_mob_id: 20373
+  food_item_id: 6112
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 10
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1379
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12372
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program:
+  capture_rate: 800
+  change_target_rate: 10001
+  egg_item_id: 9036
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 7823
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 10
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1382
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 14573
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program:
+  capture_rate: 800
+  change_target_rate: 10001
+  egg_item_id: 9035
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 7822
+  fullness: 4
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 20
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1385
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 14572
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, :agi, 3)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :agi, 2)
+      else
+        ctx
+      end
+    end
+  capture_rate: 500
+  change_target_rate: 10001
+  egg_item_id: 9044
+  equip_item_id: 10026
+  evolution: []
+  food_item_id: 6099
+  fullness: 7
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 20
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1401
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12362
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :varcast_rate, -5)
+      ctx = bonus(ctx, :int, 2)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :varcast_rate, -3)
+        ctx = bonus(ctx, :int, 1)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 200
+  change_target_rate: 10001
+  egg_item_id: 9048
+  equip_item_id: 10030
+  evolution: []
+  food_item_id: 6106
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1404
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12366
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :sp_regen, 8)
+      ctx = bonus(ctx, :max_sp, 45)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :sp_regen, 5)
+        ctx = bonus(ctx, :max_sp, 30)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 500
+  change_target_rate: 10001
+  egg_item_id: 9047
+  equip_item_id: 10029
+  evolution: []
+  food_item_id: 6105
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1416
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12365
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, {:subele, :fire}, 5)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, {:subele, :fire}, 3)
+      else
+        ctx
+      end
+    end
+  capture_rate: 500
+  change_target_rate: 10001
+  egg_item_id: 9051
+  equip_item_id: 10033
+  evolution: []
+  food_item_id: 6109
+  fullness: 7
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 20
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1495
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12369
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, :crit_atk_rate, 8)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :crit_atk_rate, 5)
+      else
+        ctx
+      end
+    end
+  capture_rate: 200
+  change_target_rate: 10001
+  egg_item_id: 9049
+  equip_item_id: 10031
+  evolution: []
+  food_item_id: 6107
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 10
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1504
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12367
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = auto_cast(ctx, %{force: 0, flag: 849, skill_id: 28, trigger: :when_hit}, 2, 10)
+      ctx = bonus(ctx, :max_hp_rate, 3)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = auto_cast(ctx, %{force: 0, flag: 849, skill_id: 28, trigger: :when_hit}, 1, 10)
+        ctx = bonus(ctx, :max_hp_rate, 3)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 200
+  change_target_rate: 10001
+  egg_item_id: 9042
+  equip_item_id: 10024
+  evolution: []
+  food_item_id: 6097
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1505
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12360
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :vit, 4)
+      ctx = bonus(ctx, {:res_eff, :sc_stun}, 400)
+      ctx = bonus(ctx, :sp_drain_rate, 10)
+      ctx = bonus(ctx, :sp_drain_percent, 1)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :vit, 3)
+        ctx = bonus(ctx, {:res_eff, :sc_stun}, 300)
+        ctx = bonus(ctx, :sp_drain_rate, 10)
+        ctx = bonus(ctx, :sp_drain_percent, 1)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          ctx = bonus(ctx, :vit, 2)
+          ctx = bonus(ctx, {:res_eff, :sc_stun}, 200)
+          ctx
+        else
+          ctx = bonus(ctx, :vit, 1)
+          ctx = bonus(ctx, {:res_eff, :sc_stun}, 100)
+          ctx
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9093
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1512
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, :max_sp, 15)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :max_sp, 10)
+      else
+        ctx
+      end
+    end
+  capture_rate: 500
+  change_target_rate: 10001
+  egg_item_id: 9040
+  equip_item_id: 10022
+  evolution: []
+  food_item_id: 6095
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 10
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1513
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12358
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:subrace, :demi_human}, 2)
+      ctx = bonus(ctx, {:subrace, :player_human}, 2)
+      ctx = bonus(ctx, :def, 2)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:subrace, :demi_human}, 1)
+        ctx = bonus(ctx, {:subrace, :player_human}, 1)
+        ctx = bonus(ctx, :def, 1)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 2000
+  change_target_rate: 10001
+  egg_item_id: 9030
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 6115
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 50
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1519
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12395
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:subrace, :brute}, 5)
+      ctx = bonus(ctx, {:subrace, :player_doram}, 5)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:subrace, :brute}, 3)
+        ctx = bonus(ctx, {:subrace, :player_doram}, 3)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 200
+  change_target_rate: 10001
+  egg_item_id: 9041
+  equip_item_id: 10023
+  evolution: []
+  food_item_id: 6096
+  fullness: 7
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 20
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1586
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12359
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, :max_sp, 100)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :max_sp, 50)
+      else
+        ctx
+      end
+    end
+  capture_rate: 2000
+  change_target_rate: 10001
+  egg_item_id: 9099
+  equip_item_id: 0
+  evolution:
+    - requirements:
+        - amount: 3
+          item_id: 23189
+        - amount: 300
+          item_id: 7442
+        - amount: 50
+          item_id: 724
+        - amount: 1
+          item_id: 4340
+      target_mob_id: 2995
+    - requirements:
+        - amount: 500
+          item_id: 7317
+        - amount: 100
+          item_id: 518
+        - amount: 10
+          item_id: 727
+        - amount: 1
+          item_id: 4340
+      target_mob_id: 1736
+    - requirements:
+        - amount: 500
+          item_id: 7317
+        - amount: 100
+          item_id: 518
+        - amount: 50
+          item_id: 7449
+        - amount: 1
+          item_id: 4340
+      target_mob_id: 1735
+  food_item_id: 25233
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 50
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1622
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 23189
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program:
+  capture_rate: 2000
+  change_target_rate: 10001
+  egg_item_id: 9039
+  equip_item_id: 10021
+  evolution: []
+  food_item_id: 6094
+  fullness: 7
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 10
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1630
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12357
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:subrace, :demi_human}, 2)
+      ctx = bonus(ctx, {:subrace, :player_human}, 2)
+      ctx = bonus(ctx, :def, 2)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:subrace, :demi_human}, 1)
+        ctx = bonus(ctx, {:subrace, :player_human}, 1)
+        ctx = bonus(ctx, :def, 1)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 2000
+  change_target_rate: 10001
+  egg_item_id: 9030
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 6115
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 50
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1631
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12395
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :hit, 1)
+      ctx = bonus(ctx, :dex, 2)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :hit, 1)
+        ctx = bonus(ctx, :dex, 1)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 2000
+  change_target_rate: 10001
+  egg_item_id: 9100
+  equip_item_id: 0
+  evolution:
+    - requirements:
+        - amount: 3
+          item_id: 23188
+        - amount: 50
+          item_id: 6100
+        - amount: 200
+          item_id: 7340
+        - amount: 1
+          item_id: 4413
+      target_mob_id: 1773
+  food_item_id: 25232
+  fullness: 4
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 50
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1632
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 23188
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:magic_atk_ele, :neutral}, 5)
+      ctx = bonus(ctx, :varcast_rate, -5)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:magic_atk_ele, :neutral}, 3)
+        ctx = bonus(ctx, :varcast_rate, -4)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          bonus(ctx, :varcast_rate, -3)
+        else
+          if ((pet_info(ctx, :intimate) >= 1) || (pet_info(ctx, :intimate) >= 100)) do
+            bonus(ctx, :varcast_rate, -2)
+          else
+            ctx
+          end
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9119
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1735
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :aspd_rate, 5)
+      ctx = bonus(ctx, :hit, 12)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :aspd_rate, 4)
+        ctx = bonus(ctx, :hit, 9)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          ctx = bonus(ctx, :aspd_rate, 3)
+          ctx = bonus(ctx, :hit, 6)
+          ctx
+        else
+          if ((pet_info(ctx, :intimate) >= 1) || (pet_info(ctx, :intimate) >= 100)) do
+            bonus(ctx, :aspd_rate, 2)
+          else
+            ctx
+          end
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9118
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1736
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :mdef, 7)
+      ctx = bonus(ctx, :heal_power, 6)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :mdef, 6)
+        ctx = bonus(ctx, :heal_power, 4)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          ctx = bonus(ctx, :mdef, 5)
+          ctx = bonus(ctx, :heal_power, 2)
+          ctx
+        else
+          if ((pet_info(ctx, :intimate) >= 1) || (pet_info(ctx, :intimate) >= 100)) do
+            bonus(ctx, :mdef, 4)
+          else
+            ctx
+          end
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9120
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1737
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:magic_atk_ele, :holy}, 2)
+      ctx = bonus(ctx, :varcast_rate, -2)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:magic_atk_ele, :holy}, 1)
+        ctx = bonus(ctx, :varcast_rate, -1)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9187
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 6105
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1754
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :crit_atk_rate, 9)
+      ctx = bonus(ctx, :hit, 2)
+      ctx = bonus(ctx, :dex, 2)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :crit_atk_rate, 7)
+        ctx = bonus(ctx, :hit, 2)
+        ctx = bonus(ctx, :dex, 2)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          ctx = bonus(ctx, :hit, 1)
+          ctx = bonus(ctx, :dex, 2)
+          ctx
+        else
+          if ((pet_info(ctx, :intimate) >= 1) || (pet_info(ctx, :intimate) >= 100)) do
+            ctx = bonus(ctx, :hit, 1)
+            ctx = bonus(ctx, :dex, 1)
+            ctx
+          else
+            ctx
+          end
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9105
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1773
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, {:magic_atk_ele, :wind}, 3)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, {:magic_atk_ele, :wind}, 2)
+      else
+        ctx
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9104
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 7564
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1782
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, {:subele, :neutral}, 2)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, {:subele, :neutral}, 1)
+      else
+        ctx
+      end
+    end
+  capture_rate: 2000
+  change_target_rate: 10001
+  egg_item_id: 9028
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 511
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 50
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1815
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 12340
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:addele, :fire}, 2)
+      ctx = bonus(ctx, {:subele, :fire}, 3)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:addele, :fire}, 1)
+        ctx = bonus(ctx, {:subele, :fire}, 2)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 200
+  change_target_rate: 10001
+  egg_item_id: 9056
+  equip_item_id: 10038
+  evolution: []
+  food_item_id: 6114
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 10
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1837
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12374
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program:
+  capture_rate: 2000
+  change_target_rate: 10001
+  egg_item_id: 9031
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 7766
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 50
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1879
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program:
+  capture_rate: 800
+  change_target_rate: 10001
+  egg_item_id: 9038
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 554
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 30
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 1963
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program:
+  capture_rate: 50
+  change_target_rate: 10001
+  egg_item_id: 6221
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 0
+  fullness: 0
+  hunger_increase: 20
+  hungry_delay_ms: 0
+  intimacy_fed: 0
+  intimacy_hungry: -5
+  intimacy_overfed: 0
+  intimacy_owner_die: 0
+  intimacy_start: 0
+  mob_id: 2057
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12408
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program:
+  capture_rate: 50
+  change_target_rate: 10001
+  egg_item_id: 6221
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 0
+  fullness: 0
+  hunger_increase: 20
+  hungry_delay_ms: 0
+  intimacy_fed: 0
+  intimacy_hungry: -5
+  intimacy_overfed: 0
+  intimacy_owner_die: 0
+  intimacy_start: 0
+  mob_id: 2081
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12408
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program:
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9057
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 512
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 10
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 2200
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 750) do
+      bonus(ctx, :matk_rate, 2)
+    else
+      ctx
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9058
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 529
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 10
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 2210
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:add_damage_class, 2317}, 10)
+      ctx = bonus(ctx, {:add_damage_class, 2318}, 10)
+      ctx = bonus(ctx, {:add_damage_class, 2319}, 10)
+      ctx = bonus(ctx, {:add_damage_class, 2320}, 10)
+      ctx = bonus(ctx, {:add_damage_class, 2321}, 10)
+      ctx = bonus(ctx, {:add_damage_class, 2322}, 10)
+      ctx = bonus(ctx, {:add_damage_class, 2327}, 10)
+      ctx = bonus(ctx, {:add_damage_class, 2332}, 10)
+      ctx = bonus(ctx, {:add_damage_class, 2333}, 10)
+      ctx = bonus(ctx, :mdef, 5)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:add_damage_class, 2317}, 10)
+        ctx = bonus(ctx, {:add_damage_class, 2318}, 10)
+        ctx = bonus(ctx, {:add_damage_class, 2319}, 10)
+        ctx = bonus(ctx, {:add_damage_class, 2320}, 10)
+        ctx = bonus(ctx, {:add_damage_class, 2321}, 10)
+        ctx = bonus(ctx, {:add_damage_class, 2322}, 10)
+        ctx = bonus(ctx, {:add_damage_class, 2327}, 10)
+        ctx = bonus(ctx, {:add_damage_class, 2332}, 10)
+        ctx = bonus(ctx, {:add_damage_class, 2333}, 10)
+        ctx = bonus(ctx, :mdef, 3)
+        ctx
+      else
+        ctx
+      end
+    end
+  capture_rate: 1000
+  change_target_rate: 10001
+  egg_item_id: 9059
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 528
+  fullness: 8
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 10
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 2313
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 12699
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, 1)
+      ctx = bonus(ctx, {:magic_addrace, :demi_human}, 1)
+      ctx = bonus(ctx, {:subrace, :demi_human}, 1)
+      ctx
+    else
+      ctx
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9060
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 2336
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, :hp_regen, 75)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, :hp_regen, 50)
+      else
+        ctx
+      end
+    end
+  capture_rate: 5000
+  change_target_rate: 10001
+  egg_item_id: 9062
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 531
+  fullness: 3
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 1000
+  intimacy_hungry: -5
+  intimacy_overfed: 0
+  intimacy_owner_die: 0
+  intimacy_start: 250
+  mob_id: 2398
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 12846
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :max_sp, 150)
+      ctx = pet_autobonus(ctx, %{other: nil, bonus: [{:bonus, {:sp_regen_bonus, 1000}, 40}], trigger: :attack, battle_flag: 338}, 30, 5000)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :max_sp, 150)
+        ctx = pet_autobonus(ctx, %{other: nil, bonus: [{:bonus, {:sp_regen_bonus, 1000}, 30}], trigger: :attack, battle_flag: 338}, 30, 5000)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          bonus(ctx, :max_sp, 100)
+        else
+          bonus(ctx, :max_sp, 50)
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9108
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 2995
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:magic_atk_ele, :fire}, 5)
+      ctx = bonus(ctx, :max_hp, 500)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:magic_atk_ele, :fire}, 3)
+        ctx = bonus(ctx, :max_hp, 400)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          bonus(ctx, :max_hp, 300)
+        else
+          if ((pet_info(ctx, :intimate) >= 1) || (pet_info(ctx, :intimate) >= 100)) do
+            bonus(ctx, :max_hp, 200)
+          else
+            ctx
+          end
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9131
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 3023
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :atk, 9)
+      ctx = bonus(ctx, :hit, 9)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :atk, 7)
+        ctx = bonus(ctx, :hit, 7)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          ctx = bonus(ctx, :atk, 5)
+          ctx = bonus(ctx, :hit, 5)
+          ctx
+        else
+          if ((pet_info(ctx, :intimate) >= 1) || (pet_info(ctx, :intimate) >= 100)) do
+            ctx = bonus(ctx, :atk, 3)
+            ctx = bonus(ctx, :hit, 3)
+            ctx
+          else
+            ctx
+          end
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9092
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 3495
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:addrace, :formless}, 6)
+      ctx = bonus(ctx, {:magic_addrace, :formless}, 6)
+      ctx = bonus(ctx, :critical, 5)
+      ctx = bonus(ctx, :atk, 5)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:addrace, :formless}, 3)
+        ctx = bonus(ctx, {:magic_addrace, :formless}, 3)
+        ctx = bonus(ctx, :critical, 4)
+        ctx = bonus(ctx, :atk, 4)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          ctx = bonus(ctx, :critical, 3)
+          ctx = bonus(ctx, :atk, 3)
+          ctx
+        else
+          if ((pet_info(ctx, :intimate) >= 1) || (pet_info(ctx, :intimate) >= 100)) do
+            ctx = bonus(ctx, :critical, 2)
+            ctx = bonus(ctx, :atk, 2)
+            ctx
+          else
+            ctx
+          end
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9094
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 3496
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, {:addclass, :all}, 4)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, {:addclass, :all}, 3)
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          bonus(ctx, {:addclass, :all}, 2)
+        else
+          if ((pet_info(ctx, :intimate) >= 1) || (pet_info(ctx, :intimate) >= 100)) do
+            bonus(ctx, {:addclass, :all}, 1)
+          else
+            ctx
+          end
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9090
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 3636
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :atk_rate, 2)
+      ctx = bonus(ctx, :matk_rate, 2)
+      ctx = bonus(ctx, :max_hp_rate, 2)
+      ctx = bonus(ctx, :max_sp_rate, 2)
+      ctx = auto_cast(ctx, %{force: 1, flag: 529, skill_id: 19, trigger: :attack}, 3, 50)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :atk_rate, 2)
+        ctx = bonus(ctx, :matk_rate, 2)
+        ctx = bonus(ctx, :max_hp_rate, 1)
+        ctx = bonus(ctx, :max_sp_rate, 1)
+        ctx = auto_cast(ctx, %{force: 1, flag: 529, skill_id: 19, trigger: :attack}, 3, 50)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          ctx = bonus(ctx, :atk_rate, 1)
+          ctx = bonus(ctx, :matk_rate, 1)
+          ctx = bonus(ctx, :max_hp_rate, 1)
+          ctx = bonus(ctx, :max_sp_rate, 1)
+          ctx
+        else
+          ctx = bonus(ctx, :atk_rate, 1)
+          ctx = bonus(ctx, :matk_rate, 1)
+          ctx
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9097
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 3669
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 14573
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :aspd_rate, 3)
+      ctx = bonus(ctx, :agi, 3)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :aspd_rate, 2)
+        ctx = bonus(ctx, :agi, 2)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          ctx = bonus(ctx, :aspd_rate, 1)
+          ctx = bonus(ctx, :agi, 1)
+          ctx
+        else
+          if ((pet_info(ctx, :intimate) >= 1) || (pet_info(ctx, :intimate) >= 100)) do
+            bonus(ctx, :aspd_rate, 1)
+          else
+            ctx
+          end
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9098
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 3670
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 750) do
+      bonus(ctx, {:exp_add_class, :all}, 1)
+    else
+      ctx
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9109
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 529
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 3790
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, {:res_eff, :sc_sleep}, 10000)
+      ctx = bonus(ctx, :max_sp_rate, 3)
+      ctx = bonus(ctx, :int, 4)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, {:res_eff, :sc_sleep}, 10000)
+        ctx = bonus(ctx, :max_sp_rate, 1)
+        ctx = bonus(ctx, :int, 3)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          bonus(ctx, :int, 2)
+        else
+          if ((pet_info(ctx, :intimate) >= 1) || (pet_info(ctx, :intimate) >= 100)) do
+            bonus(ctx, :int, 1)
+          else
+            ctx
+          end
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9116
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 20373
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      ctx = bonus(ctx, :crit_atk_rate, 7)
+      ctx = bonus(ctx, :critical, 3)
+      ctx = bonus(ctx, :agi, 4)
+      ctx
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        ctx = bonus(ctx, :crit_atk_rate, 5)
+        ctx = bonus(ctx, :critical, 2)
+        ctx = bonus(ctx, :agi, 4)
+        ctx
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          ctx = bonus(ctx, :critical, 1)
+          ctx = bonus(ctx, :agi, 4)
+          ctx
+        else
+          if ((pet_info(ctx, :intimate) >= 1) || (pet_info(ctx, :intimate) >= 100)) do
+            bonus(ctx, :agi, 4)
+          else
+            ctx
+          end
+        end
+      end
+    end
+  capture_rate: 0
+  change_target_rate: 10001
+  egg_item_id: 9117
+  equip_item_id: 0
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 120000
+  intimacy_fed: 15
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 20420
+  retaliate_rate: 10001
+  special_performance: false
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: false
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, {:addrace2, :ep172beta}, 10)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, {:addrace2, :ep172beta}, 6)
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          bonus(ctx, {:addrace2, :ep172beta}, 3)
+        else
+          ctx
+        end
+      end
+    end
+  capture_rate: 1000
+  change_target_rate: 10001
+  egg_item_id: 9123
+  equip_item_id: 10043
+  evolution:
+    - requirements:
+        - amount: 500
+          item_id: 1000103
+        - amount: 50
+          item_id: 7095
+        - amount: 10
+          item_id: 7094
+      target_mob_id: 20697
+  food_item_id: 1000227
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 20
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 20696
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 0
+- allow_auto_feed: true
+  attack_rate: 10001
+  bonus_program: |-
+    if (pet_info(ctx, :intimate) >= 910) do
+      bonus(ctx, {:addrace2, :ep172alpha}, 15)
+    else
+      if (pet_info(ctx, :intimate) >= 750) do
+        bonus(ctx, {:addrace2, :ep172alpha}, 8)
+      else
+        if (pet_info(ctx, :intimate) >= 250) do
+          bonus(ctx, {:addrace2, :ep172alpha}, 4)
+        else
+          ctx
+        end
+      end
+    end
+  capture_rate: 1000
+  change_target_rate: 10001
+  egg_item_id: 9124
+  equip_item_id: 10044
+  evolution: []
+  food_item_id: 537
+  fullness: 2
+  hunger_increase: 20
+  hungry_delay_ms: 60000
+  intimacy_fed: 20
+  intimacy_hungry: -5
+  intimacy_overfed: -100
+  intimacy_owner_die: -20
+  intimacy_start: 250
+  mob_id: 20697
+  retaliate_rate: 10001
+  special_performance: true
+  support_ops: []
+  tame_item_id: 0

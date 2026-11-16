@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Db.Layout do
     "homunculus/species.yml" => {:file, false, "aesir.import.homunculi"},
     "homunculus/exp.yml" => {:file, false, "aesir.import.homunculi"},
     "homunculus/skill_trees.yml" => {:file, false, "aesir.import.homunculi"},
+    "pets.yml" => {:file, false, "aesir.import.pets"},
     "produce/recipes.yml" => {:file, false, "aesir.import.produce"},
     "produce/ore_discovery.yml" => {:file, false, "aesir.import.produce"},
     "guild/exp.yml" => {:file, false, "aesir.import.guild"},
