@@ -18,6 +18,8 @@ defmodule Aesir.ZoneServer do
   alias Aesir.Net.HelloAck
   alias Aesir.Net.HomunculusRequest
   alias Aesir.Net.HomunculusResult
+  alias Aesir.Net.PetRequest
+  alias Aesir.Net.PetResult
   alias Aesir.Net.SessionAuth
   alias Aesir.Net.TimeSync
   alias Aesir.Net.TimeSyncAck
@@ -111,6 +113,18 @@ defmodule Aesir.ZoneServer do
       request_id: request.request_id,
       success: false,
       error: :HOMUNCULUS_ERROR_WRONG_CHANNEL
+    }
+
+    MessageRouter.send_to(self(), result)
+    {:ok, session_data}
+  end
+
+  def handle_message(%PetRequest{} = request, channel, session_data)
+      when channel != :gameplay do
+    result = %PetResult{
+      request_id: request.request_id,
+      success: false,
+      error: :PET_ERROR_WRONG_CHANNEL
     }
 
     MessageRouter.send_to(self(), result)

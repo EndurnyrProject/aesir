@@ -301,6 +301,15 @@ message Envelope {
     // 232-233: GM command line and non-speech text for the chat log
     GmCommand gm_command = 232;  // c2s zone
     ChatNotice chat_notice = 233;  // s2c zone world
+    PetRequest pet_request = 234;  // c2s zone
+    PetResult pet_result = 235;  // s2c zone gameplay
+    PetCatchStart pet_catch_start = 236;  // s2c zone gameplay
+    PetCatchResult pet_catch_result = 237;  // s2c zone gameplay
+    PetEggList pet_egg_list = 238;  // s2c zone gameplay
+    PetPrivateState pet_private_state = 239;  // s2c zone bulk
+    PetStateChange pet_state_change = 240;  // s2c zone world
+    PetEmotion pet_emotion = 241;  // s2c zone world
+    PetFoodResult pet_food_result = 242;  // s2c zone gameplay
   }
 }
 
@@ -3170,4 +3179,100 @@ message WaitingRoomChat {
   uint32 char_id = 2;
   string name = 3;
   string message = 4;
+}
+
+// A correlated pet command from the owner.
+message PetRequest {
+  uint64 request_id = 1; // Correlates the response with this request.
+  oneof command {
+    PetCatchTargetCommand catch_target = 2; // Attempt to capture a mob.
+    PetSelectEggCommand select_egg = 3; // Hatch an inventory egg.
+    PetMenuCommand menu = 4; // Invoke a pet menu action.
+    PetRenameCommand rename = 5; // Rename the pet.
+    PetEquipAccessoryCommand equip_accessory = 6; // Equip an inventory accessory.
+    PetEmotionCommand emotion = 7; // Request a pet emotion.
+    PetSetAutofeedCommand set_autofeed = 8; // Change automatic feeding.
+    PetEvolveCommand evolve = 9; // Evolve the pet.
+  }
+}
+message PetCatchTargetCommand { uint32 target_id = 1; } // Target mob gid.
+message PetSelectEggCommand { uint32 index = 1; } // Inventory egg index.
+message PetMenuCommand { PetMenuAction action = 1; } // Menu action to perform.
+message PetRenameCommand { string name = 1; } // Requested pet name.
+message PetEquipAccessoryCommand { uint32 index = 1; } // Inventory accessory index.
+message PetEmotionCommand { uint32 data = 1; } // Emotion data.
+message PetSetAutofeedCommand { bool enabled = 1; } // Whether automatic feeding is enabled.
+message PetEvolveCommand { uint32 egg_item_id = 1; } // Evolved pet egg item ID.
+
+enum PetMenuAction {
+  PET_MENU_STATUS = 0;
+  PET_MENU_FEED = 1;
+  PET_MENU_PERFORMANCE = 2;
+  PET_MENU_RETURN_TO_EGG = 3;
+  PET_MENU_UNEQUIP = 4;
+}
+
+enum PetError {
+  PET_ERROR_NONE = 0;
+  PET_ERROR_WRONG_CHANNEL = 1;
+  PET_ERROR_NO_PET = 2;
+  PET_ERROR_INVALID_REQUEST = 3;
+  PET_ERROR_EVOLUTION_FAIL_UNKNOWN = 4;
+  PET_ERROR_EVOLUTION_FAIL_NOTEXIST_CALLPET = 5;
+  PET_ERROR_EVOLUTION_FAIL_NOT_PETEGG = 6;
+  PET_ERROR_EVOLUTION_FAIL_RECIPE = 7;
+  PET_ERROR_EVOLUTION_FAIL_MATERIAL = 8;
+  PET_ERROR_EVOLUTION_FAIL_RG_FAMILIAR = 9;
+  PET_ERROR_EVOLUTION_SUCCESS = 10;
+}
+
+// Response to a pet command.
+message PetResult {
+  uint64 request_id = 1; // Request being answered.
+  bool success = 2; // Whether the command succeeded.
+  PetError error = 3; // Failure or evolution result.
+  PetPrivateState state = 4; // Optional owner-only pet state.
+}
+
+// Begins target selection for taming.
+message PetCatchStart {}
+message PetCatchResult { bool success = 1; } // Whether capture succeeded.
+message PetEggList { repeated uint32 indexes = 1; } // Inventory indexes of hatchable eggs.
+
+// Owner-only pet details.
+message PetPrivateState {
+  uint32 gid = 1; // Pet world identifier.
+  string name = 2; // Pet name.
+  bool renamed = 3; // Whether the pet is considered renamed.
+  uint32 level = 4; // Pet level.
+  uint32 hunger = 5; // Current hunger.
+  uint32 intimacy = 6; // Current intimacy.
+  uint32 accessory_item_id = 7; // Equipped accessory item ID.
+  uint32 class_id = 8; // Pet class ID.
+  bool autofeed_enabled = 9; // Whether automatic feeding is enabled.
+  bool autofeed_available = 10; // Whether automatic feeding is available.
+}
+
+enum PetStateChangeType {
+  PET_STATE_INIT = 0;
+  PET_STATE_INTIMACY = 1;
+  PET_STATE_HUNGER = 2;
+  PET_STATE_ACCESSORY = 3;
+  PET_STATE_PERFORMANCE = 4;
+  PET_STATE_UPDATE_EGG = 6;
+}
+
+// Incremental pet state update.
+message PetStateChange {
+  uint32 gid = 1; // Pet world identifier.
+  PetStateChangeType type = 2; // Kind of change.
+  int32 value = 3; // Value interpreted according to type.
+}
+message PetEmotion {
+  uint32 gid = 1; // Pet world identifier.
+  uint32 data = 2; // Emotion data.
+}
+message PetFoodResult {
+  bool success = 1; // Whether feeding succeeded.
+  uint32 food_item_id = 2; // Food item ID.
 }

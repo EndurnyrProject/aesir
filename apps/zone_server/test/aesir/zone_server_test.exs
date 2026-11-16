@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServerTest do
   alias Aesir.Net.HomunculusRequest
   alias Aesir.Net.HomunculusResult
   alias Aesir.Net.MapLoaded
+  alias Aesir.Net.PetRequest
   alias Aesir.Net.SessionAuth
   alias Aesir.Net.TimeSync
   alias Aesir.Net.TimeSyncAck
@@ -154,6 +155,19 @@ defmodule Aesir.ZoneServerTest do
                ZoneServer.handle_message(%TimeSync{client_tick: 42}, :control, %{})
 
       assert is_integer(tick)
+    end
+  end
+
+  test "rejects pet requests on non-gameplay channels" do
+    request = %PetRequest{request_id: 987}
+    session = %{}
+
+    for channel <- [:control, :world, :bulk, :snapshots] do
+      assert {:ok, ^session} = ZoneServer.handle_message(request, channel, session)
+      assert_receive {:send, :gameplay, {:pet_result, result}}
+      assert result.request_id == 987
+      assert result.success == false
+      assert result.error == :PET_ERROR_WRONG_CHANNEL
     end
   end
 

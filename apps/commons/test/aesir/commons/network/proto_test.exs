@@ -124,6 +124,15 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.PartyMember
   alias Aesir.Net.PartyMemberUpdate
   alias Aesir.Net.PartyOptionsRequest
+  alias Aesir.Net.PetCatchTargetCommand
+  alias Aesir.Net.PetEmotionCommand
+  alias Aesir.Net.PetEquipAccessoryCommand
+  alias Aesir.Net.PetEvolveCommand
+  alias Aesir.Net.PetMenuCommand
+  alias Aesir.Net.PetRenameCommand
+  alias Aesir.Net.PetRequest
+  alias Aesir.Net.PetSelectEggCommand
+  alias Aesir.Net.PetSetAutofeedCommand
   alias Aesir.Net.PickupItemRequest
   alias Aesir.Net.PickupResult
   alias Aesir.Net.ProductionResult
@@ -325,6 +334,23 @@ defmodule Aesir.Commons.Network.ProtoTest do
         request_id: 9_223_372_036_854_775_807,
         command: {tag, command}
       })
+    end
+  end
+
+  test "pet request commands round-trip through the envelope" do
+    commands = [
+      {:catch_target, %PetCatchTargetCommand{target_id: 42}},
+      {:select_egg, %PetSelectEggCommand{index: 3}},
+      {:menu, %PetMenuCommand{action: :PET_MENU_FEED}},
+      {:rename, %PetRenameCommand{name: "Poring"}},
+      {:equip_accessory, %PetEquipAccessoryCommand{index: 4}},
+      {:emotion, %PetEmotionCommand{data: 5}},
+      {:set_autofeed, %PetSetAutofeedCommand{enabled: true}},
+      {:evolve, %PetEvolveCommand{egg_item_id: 6}}
+    ]
+
+    for command <- commands do
+      assert_round_trip(:pet_request, %PetRequest{request_id: 987, command: command})
     end
   end
 

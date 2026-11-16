@@ -220,6 +220,15 @@
     {"field": 230, "tag": "ranking_response", "message": "RankingResponse", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
     {"field": 231, "tag": "fame_update", "message": "FameUpdate", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
     {"field": 232, "tag": "gm_command", "message": "GmCommand", "direction": "c2s", "servers": ["zone"]},
-    {"field": 233, "tag": "chat_notice", "message": "ChatNotice", "direction": "s2c", "servers": ["zone"], "channel": "world"}
+    {"field": 233, "tag": "chat_notice", "message": "ChatNotice", "direction": "s2c", "servers": ["zone"], "channel": "world"},
+    {"field": 234, "tag": "pet_request", "message": "PetRequest", "direction": "c2s", "servers": ["zone"]},
+    {"field": 235, "tag": "pet_result", "message": "PetResult", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
+    {"field": 236, "tag": "pet_catch_start", "message": "PetCatchStart", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
+    {"field": 237, "tag": "pet_catch_result", "message": "PetCatchResult", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
+    {"field": 238, "tag": "pet_egg_list", "message": "PetEggList", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
+    {"field": 239, "tag": "pet_private_state", "message": "PetPrivateState", "direction": "s2c", "servers": ["zone"], "channel": "bulk"},
+    {"field": 240, "tag": "pet_state_change", "message": "PetStateChange", "direction": "s2c", "servers": ["zone"], "channel": "world"},
+    {"field": 241, "tag": "pet_emotion", "message": "PetEmotion", "direction": "s2c", "servers": ["zone"], "channel": "world"},
+    {"field": 242, "tag": "pet_food_result", "message": "PetFoodResult", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"}
   ]
 }
