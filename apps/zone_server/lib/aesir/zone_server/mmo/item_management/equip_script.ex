@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   and parsed back to the tuple form at load time through a closed vocabulary
   (`parse!/1`): `bonus/3`, `autobonus/4`, `status_start/4`, `status_end/2`,
   `heal/3`, `refine/1`, `base_level/1`, `job_level/1`, `gettime/2`, `char_info/2`,
+  `pet_info/2`, `pet_autobonus/4`,
   `+ - *`, `div/2`, `min/2`, `max/2`, `pow/2`, numeric comparisons, string
   equality/inequality, `&&`/`||`/`not`, `job_is/3`, `job_is_not/3`, `bool/2`,
   `equipped/2`, `if/else` statements, and the inline
@@ -85,6 +86,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   from the optional `:random_option` input (rAthena `getrandomoptinfo`). A
   script that is not an option's, which has no such input, reads `0`.
 
+  ## Pet constructs
+
+  `{:pet_info, field}` (source `pet_info(ctx, :intimate)`) reads a field of the
+  owner's pet from the optional `:pet` input (rAthena `getpetinfo`). It is an
+  integer expression for every field but `:name`, which is a string expression
+  usable in string comparisons. Fields include `:block_id`, the pet world ID.
+  Without a `:pet` input it reads `0` (`"null"`
+  for `:name`); a `:pet` map lacking the field read raises.
+
+  `{:pet_autobonus, spec, rate, duration}` (source `pet_autobonus(ctx, spec,
+  rate, duration)`, rAthena `petautobonus`/`petautobonus2`/`petautobonus3`)
+  registers a pet autobonus into `Result.pet_autobonuses`, never into
+  `autobonuses`. Evaluation follows `buildin_petautobonus` and
+  `pet_addautobonus`: no `:pet` input registers nothing; the rate is read as an
+  `int16` and the duration as a `uint32`; a zero rate or duration registers
+  nothing; the rate is then capped to -10000..10000.
+
   ## Job-aware constructs
 
   Two constructs gate on the wearer's job, reading the optional `:job_id` input
@@ -116,6 +134,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   @typedoc "A field of the random option whose script is running."
   @type random_option_field :: :id | :value | :param
 
+  @typedoc "An integer field of the owner's pet (`getpetinfo`)."
+  @type pet_info_field ::
+          :id | :class | :intimate | :hungry | :renamed | :level | :block_id | :egg_id | :food_id
+
   @typedoc "A wearer job reader: current job, first-job lineage, or trans/baby-collapsed job."
   @type job_reader :: :class | :base_class | :base_job
 
@@ -141,7 +163,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           optional(:character_info) => Rathena.character_info() | nil,
           optional(:map_name) => String.t() | nil,
           optional(:lr_flag) => BonusKeys.lr_flag(),
-          optional(:random_option) => %{id: integer(), value: integer(), param: integer()}
+          optional(:random_option) => %{id: integer(), value: integer(), param: integer()},
+          optional(:pet) => %{atom() => integer() | String.t()}
         }
 
   @typedoc """
@@ -161,12 +184,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           | {:skill_lv, pos_integer()}
           | {:stat, atom()}
           | {:random_option, random_option_field()}
+          | {:pet_info, pet_info_field()}
           | {:equip_item, :id | :refine | :view, expr()}
           | {:bool, condition()}
           | {:gettime, expr()}
 
   @typedoc "An attached-character string expression."
-  @type string_expr :: String.t() | {:char_info, expr()}
+  @type string_expr :: String.t() | {:char_info, expr()} | {:pet_info, :name}
 
   @typedoc "An input-pure boolean condition gating an `:if` instruction or a ternary."
   @type condition ::
@@ -240,6 +264,28 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           secondary: program()
         }
 
+  @typedoc """
+  The constant half of a pet autobonus instruction: its trigger, normalised
+  battle flag, the bonus program, and the optional other program run when it
+  fires.
+  """
+  @type pet_autobonus_spec :: %{
+          trigger: :attack | :when_hit | {:on_skill, pos_integer()},
+          battle_flag: non_neg_integer(),
+          bonus: program(),
+          other: program() | nil
+        }
+
+  @typedoc "An evaluated pet autobonus registration, its rate capped to -10000..10000."
+  @type pet_autobonus :: %{
+          trigger: :attack | :when_hit | {:on_skill, pos_integer()},
+          battle_flag: non_neg_integer(),
+          bonus: program(),
+          other: program() | nil,
+          rate: integer(),
+          duration_ms: pos_integer()
+        }
+
   @typedoc "A runtime side effect emitted by an evaluated equipment program."
   @type effect ::
           {:status_start, atom(), pos_integer() | :infinite, integer()}
@@ -264,6 +310,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           | {:grant_skill, pos_integer(), expr()}
           | {:auto_cast, auto_cast_spec(), expr(), expr()}
           | {:autobonus, autobonus_spec(), expr(), expr()}
+          | {:pet_autobonus, pet_autobonus_spec(), expr(), expr()}
           | {:status_start, atom(), expr() | :infinite, expr()}
           | {:status_end, atom()}
           | {:heal, expr(), expr()}
@@ -277,6 +324,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   # The stat atoms a `{:stat, atom}` expression may read: the six base stats and
   # six trait stats, matching the resolver's stat-parameter value set.
+  @pet_info_fields [
+    :id,
+    :class,
+    :intimate,
+    :hungry,
+    :renamed,
+    :level,
+    :block_id,
+    :egg_id,
+    :food_id
+  ]
+
   @stat_params [:str, :agi, :vit, :int, :dex, :luk, :pow, :sta, :wis, :spl, :con, :crt]
 
   @doc """
@@ -323,6 +382,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
       result
       | auto_casts: Enum.reverse(result.auto_casts),
         autobonuses: Enum.reverse(result.autobonuses),
+        pet_autobonuses: Enum.reverse(result.pet_autobonuses),
         add_effs: Enum.reverse(result.add_effs),
         effects: Enum.reverse(result.effects)
     }
@@ -370,6 +430,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     "autobonus(ctx, #{inspect(spec, limit: :infinity)}, #{render_expr(rate)}, #{render_expr(duration)})"
   end
 
+  defp render_instr({:pet_autobonus, spec, rate, duration}) do
+    "pet_autobonus(ctx, #{inspect(spec, limit: :infinity)}, #{render_expr(rate)}, #{render_expr(duration)})"
+  end
+
   defp render_instr({:status_start, status, duration, value}) do
     "status_start(ctx, #{inspect(status)}, #{render_duration(duration)}, #{render_expr(value)})"
   end
@@ -397,6 +461,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp render_expr({:skill_lv, id}), do: "skill_lv(ctx, #{id})"
   defp render_expr({:stat, stat}), do: "stat(ctx, #{inspect(stat)})"
   defp render_expr({:random_option, field}), do: "random_option(ctx, #{inspect(field)})"
+  defp render_expr({:pet_info, field}), do: "pet_info(ctx, #{inspect(field)})"
 
   defp render_expr({:equip_item, field, slot}),
     do: "equip_item(ctx, #{inspect(field)}, #{render_expr(slot)})"
@@ -443,6 +508,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp render_string_expr({:char_info, selector}),
     do: "char_info(ctx, #{render_expr(selector)})"
 
+  defp render_string_expr({:pet_info, :name}), do: "pet_info(ctx, :name)"
+
   defp indent(source) do
     source
     |> String.split("\n")
@@ -482,6 +549,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp parse_instr!({:autobonus, _, [{:ctx, _, c}, spec, rate, duration]}) when is_atom(c) do
     {:autobonus, validate_autobonus_spec!(spec), parse_expr!(rate), parse_expr!(duration)}
+  end
+
+  defp parse_instr!({:pet_autobonus, _, [{:ctx, _, c}, spec, rate, duration]}) when is_atom(c) do
+    {:pet_autobonus, validate_pet_autobonus_spec!(spec), parse_expr!(rate), parse_expr!(duration)}
   end
 
   defp parse_instr!({:status_start, _, [{:ctx, _, c}, status, duration, value]})
@@ -525,6 +596,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp parse_expr!({:random_option, _, [{:ctx, _, c}, field]})
        when is_atom(c) and field in [:id, :value, :param],
        do: {:random_option, field}
+
+  defp parse_expr!({:pet_info, _, [{:ctx, _, c}, field]})
+       when is_atom(c) and field in @pet_info_fields,
+       do: {:pet_info, field}
 
   defp parse_expr!({:equip_item, _, [{:ctx, _, c}, field, slot]})
        when is_atom(c) and field in [:id, :refine, :view],
@@ -582,12 +657,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp string_expr_source?(value) when is_binary(value), do: true
   defp string_expr_source?({:char_info, _, _args}), do: true
+  defp string_expr_source?({:pet_info, _, [_ctx, :name]}), do: true
   defp string_expr_source?(_value), do: false
 
   defp parse_string_expr!(value) when is_binary(value), do: value
 
   defp parse_string_expr!({:char_info, _, [{:ctx, _, c}, selector]}) when is_atom(c),
     do: {:char_info, parse_expr!(selector)}
+
+  defp parse_string_expr!({:pet_info, _, [{:ctx, _, c}, :name]}) when is_atom(c),
+    do: {:pet_info, :name}
 
   defp parse_string_expr!(other), do: malformed!("string expression", other)
 
@@ -724,6 +803,31 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   end
 
   defp validate_autobonus_spec!(spec), do: malformed!("autobonus spec", spec)
+
+  defp validate_pet_autobonus_spec!({:%{}, _, _} = quoted) do
+    quoted
+    |> literal!()
+    |> validate_pet_autobonus_spec!()
+  end
+
+  defp validate_pet_autobonus_spec!(
+         %{trigger: trigger, battle_flag: battle_flag, bonus: bonus, other: other} = spec
+       ) do
+    with true <- map_size(spec) == 4,
+         true <- valid_autobonus_trigger?(trigger),
+         true <- is_integer(battle_flag) and battle_flag >= 0,
+         bonus when is_list(bonus) <- validate_program!(bonus),
+         other when is_list(other) or is_nil(other) <- validate_optional_program!(other) do
+      %{spec | bonus: bonus, other: other}
+    else
+      _ -> malformed!("pet_autobonus spec", spec)
+    end
+  end
+
+  defp validate_pet_autobonus_spec!(spec), do: malformed!("pet_autobonus spec", spec)
+
+  defp validate_optional_program!(nil), do: nil
+  defp validate_optional_program!(program), do: validate_program!(program)
 
   defp valid_autobonus_trigger?(trigger) when trigger in [:attack, :when_hit], do: true
   defp valid_autobonus_trigger?({:on_skill, id}), do: is_integer(id) and id > 0
@@ -880,6 +984,26 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     end
   end
 
+  defp eval_instr({:pet_autobonus, _spec, _rate, _duration}, inputs, %Result{} = result)
+       when not is_map_key(inputs, :pet),
+       do: result
+
+  defp eval_instr({:pet_autobonus, spec, rate_expr, duration_expr}, inputs, %Result{} = result) do
+    <<rate::signed-16>> = <<eval_expr(rate_expr, inputs)::16>>
+    <<duration::unsigned-32>> = <<eval_expr(duration_expr, inputs)::32>>
+
+    if rate != 0 and duration != 0 do
+      registration =
+        spec
+        |> Map.put(:rate, rate |> max(-10_000) |> min(10_000))
+        |> Map.put(:duration_ms, duration)
+
+      %{result | pet_autobonuses: [registration | result.pet_autobonuses]}
+    else
+      result
+    end
+  end
+
   defp eval_instr({:status_start, status, :infinite, value_expr}, inputs, %Result{} = result) do
     effect = {:status_start, status, :infinite, eval_expr(value_expr, inputs)}
     %{result | effects: [effect | result.effects]}
@@ -976,6 +1100,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp eval_expr({:random_option, field}, inputs),
     do: inputs |> Map.get(:random_option, %{}) |> Map.get(field, 0)
 
+  defp eval_expr({:pet_info, field}, inputs), do: pet_info(inputs, field, 0)
+
   defp eval_expr({:equip_item, field, slot}, inputs) do
     item = inputs |> Map.get(:equipped_slots, %{}) |> Map.get(eval_expr(slot, inputs), %{})
     Map.get(item, field, if(field == :refine, do: 0, else: -1))
@@ -1039,7 +1165,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     Rathena.strcharinfo(Map.get(inputs, :character_info), eval_expr(selector, inputs))
   end
 
+  defp eval_string_expr({:pet_info, :name}, inputs), do: pet_info(inputs, :name, "null")
+
   defp eval_string_expr(other, _inputs), do: malformed!("string expression", other)
+
+  defp pet_info(inputs, field, no_pet) do
+    case Map.fetch(inputs, :pet) do
+      {:ok, pet} -> Map.fetch!(pet, field)
+      :error -> no_pet
+    end
+  end
 
   # The wearer's job for a reader. An absent `:job_id` input reads as job 0
   # (Novice); `JobLineage` normalizes trans/baby variants for the base readers.

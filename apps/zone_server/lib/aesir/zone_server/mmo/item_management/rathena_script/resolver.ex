@@ -497,6 +497,40 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   @races_folded Map.new(@races, fn {symbol, atom} -> {String.downcase(symbol), atom} end)
   @statuses_folded Map.new(@statuses, fn {symbol, atom} -> {String.downcase(symbol), atom} end)
 
+  # `petinfo_types` (script.hpp), keyed to the `EquipScript` `pet_info` field atoms.
+  @pet_info_fields %{
+    "PETINFO_ID" => :id,
+    "PETINFO_CLASS" => :class,
+    "PETINFO_NAME" => :name,
+    "PETINFO_INTIMATE" => :intimate,
+    "PETINFO_HUNGRY" => :hungry,
+    "PETINFO_RENAMED" => :renamed,
+    "PETINFO_LEVEL" => :level,
+    "PETINFO_BLOCKID" => :block_id,
+    "PETINFO_EGGID" => :egg_id,
+    "PETINFO_FOODID" => :food_id
+  }
+
+  # `e_pet_intimate_level` (pet.hpp).
+  @pet_intimate_levels %{
+    "PET_INTIMATE_NONE" => 0,
+    "PET_INTIMATE_AWKWARD" => 1,
+    "PET_INTIMATE_SHY" => 100,
+    "PET_INTIMATE_NEUTRAL" => 250,
+    "PET_INTIMATE_CORDIAL" => 750,
+    "PET_INTIMATE_LOYAL" => 910,
+    "PET_INTIMATE_MAX" => 1000
+  }
+
+  @doc "Resolves a `PETINFO_*` constant to the `EquipScript` `pet_info` field atom."
+  @spec resolve_pet_info(String.t()) :: {:ok, atom()} | error()
+  def resolve_pet_info(symbol) when is_binary(symbol), do: lookup(@pet_info_fields, symbol)
+
+  @doc "Resolves a `PET_INTIMATE_*` intimacy threshold constant to its value."
+  @spec resolve_pet_intimate(String.t()) :: {:ok, non_neg_integer()} | error()
+  def resolve_pet_intimate(symbol) when is_binary(symbol),
+    do: lookup(@pet_intimate_levels, symbol)
+
   @doc "Resolves a date selector, month, or weekday constant."
   @spec resolve_date_constant(String.t()) :: {:ok, integer()} | error()
   def resolve_date_constant(symbol) do

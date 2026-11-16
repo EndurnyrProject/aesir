@@ -100,11 +100,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     param), `readparam(<stat>)` -> `{:stat, atom}` (the wearer's base stat,
     for the base/trait stat constants only), `getrandomoptinfo(<ROA_*>)` ->
     `{:random_option, field}` (the running random option's id, value or param),
+    `getpetinfo(<PETINFO_*>)` -> `{:pet_info, field}` (the owner's pet; the
+    string `PETINFO_NAME` is supported in string comparisons), `PET_INTIMATE_*` thresholds,
     and the pure two-argument integer
     combinators `min(a,b)`, `max(a,b)` and `pow(base,exp)` over the same
     input-pure operands, and a bare comparison used as an integer
     (`2+3*(getrefine()>5)`) -> `{:bool, cond}` (1/0). `rand(...)` and every other
     call are unsupported.
+
+  - `petautobonus`/`petautobonus2`/`petautobonus3` — `{:pet_autobonus, spec,
+    rate, duration}` with the argument shapes of `autobonus*`. The battle flag
+    gets `pet_addautobonus`'s normalisation (`BattleFlags.fill_battle/1`); an
+    omitted or empty secondary script is `other: nil`; an empty bonus script
+    registers nothing. Rate and duration stay expressions, so the zero
+    rejection and the rate cap happen at evaluation.
 
   A program that compiles to zero instructions (script was only assignments) yields
   `{:ok, []}`, which the importer stores as no `on_equip`.
@@ -366,6 +375,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   defp normalize_command_name(stmt), do: stmt
 
   @autobonus_commands ~w(autobonus autobonus2 autobonus3)
+  @pet_autobonus_commands ~w(petautobonus petautobonus2 petautobonus3)
+  @all_autobonus_commands @autobonus_commands ++ @pet_autobonus_commands
   @nested_contexts [:autobonus_primary, :autobonus_secondary]
   @nested_cosmetics ~w(specialeffect2 active_transform showscript)
 
@@ -373,8 +384,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
        when name in @autobonus_commands and context in [:equip, :unequip],
        do: compile_autobonus(name, args, env)
 
+  defp compile_context_instr({:cmd, name, args}, env, :equip)
+       when name in @pet_autobonus_commands,
+       do: compile_pet_autobonus(name, args, env)
+
   defp compile_context_instr({:cmd, name, _args}, _env, context)
-       when name in @autobonus_commands and context in @nested_contexts,
+       when name in @all_autobonus_commands and context in @nested_contexts,
        do: unsupported({:recursive_autobonus, name})
 
   defp compile_context_instr({:cmd, "sc_start", args}, env, context)
@@ -476,6 +491,54 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
       {:ok, {:autobonus, spec, rate, duration}}
     end
   end
+
+  # `buildin_petautobonus` refuses an empty bonus script, so it registers nothing.
+  defp compile_pet_autobonus(_name, [{:str, ""} | _rest], _env), do: {:ok, []}
+
+  defp compile_pet_autobonus(name, [bonus, rate, duration | rest], env)
+       when name in ["petautobonus", "petautobonus2"] and length(rest) <= 2 do
+    {flag_ast, other_ast} =
+      case rest do
+        [] -> {{:int, 0}, nil}
+        [flag] -> {flag, nil}
+        [flag, other] -> {flag, other}
+      end
+
+    with {:ok, flag} <- resolve_autobonus_flag(flag_ast) do
+      trigger = if name == "petautobonus", do: :attack, else: :when_hit
+      head = %{trigger: trigger, battle_flag: BattleFlags.fill_battle(flag)}
+      compile_pet_autobonus_instr(head, {bonus, rate, duration, other_ast}, env, name)
+    end
+  end
+
+  defp compile_pet_autobonus("petautobonus3" = name, [bonus, rate, duration, skill | rest], env)
+       when length(rest) <= 1 do
+    with {:ok, skill_id} <- resolve_skill_ref(skill) do
+      head = %{trigger: {:on_skill, skill_id}, battle_flag: 0}
+      compile_pet_autobonus_instr(head, {bonus, rate, duration, List.first(rest)}, env, name)
+    end
+  end
+
+  defp compile_pet_autobonus(name, args, _env), do: unsupported({:autobonus_shape, name, args})
+
+  defp compile_pet_autobonus_instr(
+         head,
+         {bonus_ast, rate_ast, duration_ast, other_ast},
+         env,
+         name
+       ) do
+    with {:ok, bonus} <- compile_nested(bonus_ast, env, :autobonus_primary, name),
+         {:ok, other} <- compile_pet_other(other_ast, env, name),
+         {:ok, rate} <- compile_expr(rate_ast, env),
+         {:ok, duration} <- compile_expr(duration_ast, env) do
+      spec = Map.merge(head, %{bonus: bonus, other: other})
+      {:ok, {:pet_autobonus, spec, rate, duration}}
+    end
+  end
+
+  defp compile_pet_other(nil, _env, _name), do: {:ok, nil}
+  defp compile_pet_other({:str, ""}, _env, _name), do: {:ok, nil}
+  defp compile_pet_other(ast, env, name), do: compile_nested(ast, env, :autobonus_secondary, name)
 
   defp compile_optional_nested(nil, _env, _outer_command), do: {:ok, []}
 
@@ -1352,6 +1415,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   defp compile_expr({:name, "BaseLevel"}, _env), do: {:ok, :base_level}
   defp compile_expr({:name, "JobLevel"}, _env), do: {:ok, :job_level}
 
+  defp compile_expr({:name, "PET_INTIMATE_" <> _level = symbol}, _env),
+    do: resolve(&Resolver.resolve_pet_intimate/1, symbol)
+
   defp compile_expr({:name, symbol} = ast, _env) do
     with {:ok, source} <- NpcResolver.constant(String.upcase(symbol)),
          {value, ""} <- Integer.parse(source) do
@@ -1433,6 +1499,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
       other -> unsupported({:unresolved_param, other})
     end
   end
+
+  # `getpetinfo(<PETINFO_*>)` reads the owner's pet; the name is a string and
+  # has no place in an integer expression.
+  defp compile_expr({:call, "getpetinfo", [{:name, symbol}]} = ast, _env) do
+    case resolve(&Resolver.resolve_pet_info/1, symbol) do
+      {:ok, :name} -> unsupported({:expression, ast})
+      {:ok, field} -> {:ok, {:pet_info, field}}
+      error -> error
+    end
+  end
+
+  defp compile_expr({:call, "getpetinfo", [type_ast]}, _env),
+    do: unsupported({:unresolved_param, type_ast})
 
   # `pow`, `min` and `max` are pure two-argument integer combinators over the
   # input-pure vocabulary; they compile to the matching binary-op IR node.
@@ -1534,6 +1613,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   defp compile_string_expr({:str, value}, _env), do: {:ok, value}
 
+  defp compile_string_expr({:call, "getpetinfo", [{:name, "PETINFO_NAME"}]}, _env),
+    do: {:ok, {:pet_info, :name}}
+
   defp compile_string_expr({:call, name, [selector]}, env) do
     if String.downcase(name) == "strcharinfo" do
       with {:ok, selector} <- compile_expr(selector, env), do: {:ok, {:char_info, selector}}
@@ -1546,6 +1628,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   defp string_shaped?({:str, _value}), do: true
   defp string_shaped?({:var, _scope, _name, :str}), do: true
+
+  defp string_shaped?({:call, "getpetinfo", [{:name, "PETINFO_NAME"}]}), do: true
 
   defp string_shaped?({:call, name, _args}),
     do: String.downcase(name) == "strcharinfo"

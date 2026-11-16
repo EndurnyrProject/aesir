@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript.Result do
   Deterministic result of evaluating an equipment-script program.
 
   Modifiers retain the existing equipment merge representation, while
-  autocasts, autobonuses, on-hit status bonuses (`EquipAddEff`) and effects
+  autocasts, autobonuses, pet autobonuses, on-hit status bonuses (`EquipAddEff`) and effects
   preserve their own source order.
   """
 
@@ -11,13 +11,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript.Result do
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
 
   @enforce_keys [:modifiers, :auto_casts, :autobonuses, :effects]
-  defstruct modifiers: %{}, auto_casts: [], autobonuses: [], add_effs: [], effects: []
+  defstruct modifiers: %{},
+            auto_casts: [],
+            autobonuses: [],
+            pet_autobonuses: [],
+            add_effs: [],
+            effects: []
 
   @type t() :: %__MODULE__{
           modifiers: map(),
           auto_casts: [EquipScript.auto_cast()],
           add_effs: [EquipAddEff.bonus()],
           autobonuses: [EquipScript.autobonus()],
+          pet_autobonuses: [EquipScript.pet_autobonus()],
           effects: [EquipScript.effect()]
         }
 end

@@ -1772,4 +1772,109 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("sc_start SC_BLESSING,1000,INFINITE_TICK;")
     end
   end
+
+  describe "pet scripts" do
+    @poring_script ~S"""
+    .@i = getpetinfo(PETINFO_INTIMATE);
+
+    if (.@i >= PET_INTIMATE_LOYAL) {
+       bonus bCritical,1;
+       bonus bLuk,3;
+    }
+    else if (.@i >= PET_INTIMATE_CORDIAL) {
+       bonus bCritical,1;
+       bonus bLuk,2;
+    }
+    """
+
+    defp pet_inputs(pet), do: Map.merge(%{refine: 0, base_level: 1, job_level: 1}, pet)
+
+    test "the renewal PORING script bonuses follow the pet's intimacy" do
+      assert {:ok, program} = compile(@poring_script)
+
+      assert EquipScript.eval(program, pet_inputs(%{pet: %{intimate: 950}})) ==
+               %{critical: 1, luk: 3}
+
+      assert EquipScript.eval(program, pet_inputs(%{pet: %{intimate: 800}})) ==
+               %{critical: 1, luk: 2}
+
+      assert EquipScript.eval(program, pet_inputs(%{pet: %{intimate: 500}})) == %{}
+      assert EquipScript.eval(program, pet_inputs(%{})) == %{}
+    end
+
+    test "pet name comparisons and block id read the supplied pet" do
+      assert {:ok, program} =
+               compile(
+                 ~S'if (getpetinfo(PETINFO_NAME) == "null") { bonus bLuk,1; } bonus bStr,getpetinfo(PETINFO_BLOCKID);'
+               )
+
+      assert EquipScript.eval(program, pet_inputs(%{})) == %{luk: 1, str: 0}
+
+      assert EquipScript.eval(program, pet_inputs(%{pet: %{name: "Poring", block_id: 42}})) == %{
+               str: 42
+             }
+
+      assert {:ok, same_name} =
+               compile(
+                 "if (getpetinfo(PETINFO_NAME) == getpetinfo(PETINFO_NAME)) { bonus bLuk,1; }"
+               )
+
+      assert EquipScript.eval(same_name, pet_inputs(%{})) == %{luk: 1}
+    end
+
+    test "petautobonus2 and petautobonus3 compile their triggers and defaults" do
+      for {command, trigger, flag} <- [
+            {~S'petautobonus2 "{ bonus bLuk,1; }",100,5000;', :when_hit,
+             battle_flag(~w(short long weapon normal skill))},
+            {~S'petautobonus3 "{ bonus bLuk,1; }",100,5000,"SM_BASH";', {:on_skill, 5}, 0},
+            {~S'petautobonus3 "{ bonus bLuk,1; }",100,5000,5;', {:on_skill, 5}, 0}
+          ] do
+        assert {:ok, program} = compile(command)
+
+        assert [
+                 %{
+                   trigger: ^trigger,
+                   battle_flag: ^flag,
+                   rate: 100,
+                   duration_ms: 5_000,
+                   other: nil
+                 }
+               ] =
+                 EquipScript.evaluate(program, pet_inputs(%{pet: %{}})).pet_autobonuses
+      end
+    end
+
+    test "petautobonus registers a pet autobonus with the normalised flag, capped rate and zero rejection" do
+      line = fn rate, duration ->
+        ~s|petautobonus "{ bonus2 bSubEle,Ele_Neutral,2; heal 100,0; }",#{rate},#{duration},BF_SHORT\|BF_NORMAL;|
+      end
+
+      evaluate = fn script ->
+        {:ok, program} = compile(script)
+        EquipScript.evaluate(program, pet_inputs(%{pet: %{intimate: 1000}}))
+      end
+
+      result = evaluate.(line.(100, 5000))
+      assert result.autobonuses == []
+
+      assert [entry] = result.pet_autobonuses
+
+      assert %{
+               trigger: :attack,
+               rate: 100,
+               duration_ms: 5_000,
+               bonus: [{:bonus, {:subele, :neutral}, 2}, {:heal, 100, 0}],
+               other: nil
+             } = entry
+
+      assert entry.battle_flag == battle_flag(~w(short normal weapon))
+
+      assert [%{rate: 10_000}] = evaluate.(line.(20_000, 5000)).pet_autobonuses
+      assert evaluate.(line.(0, 5000)).pet_autobonuses == []
+      assert evaluate.(line.(100, 0)).pet_autobonuses == []
+
+      {:ok, program} = compile(line.(100, 5000))
+      assert EquipScript.evaluate(program, pet_inputs(%{})).pet_autobonuses == []
+    end
+  end
 end

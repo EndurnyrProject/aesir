@@ -1205,4 +1205,55 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       assert EquipScript.eval(program, on(3)) == %{def: 2}
     end
   end
+
+  describe "pet constructs" do
+    test "pet_info and pet_autobonus round-trip through render and parse" do
+      spec = %{
+        trigger: :when_hit,
+        battle_flag: 17,
+        bonus: [{:bonus, :str, 1}],
+        other: [{:heal, 100, 0}]
+      }
+
+      program = [
+        {:if, {:>=, {:pet_info, :intimate}, 910},
+         [{:pet_autobonus, spec, {:pet_info, :hungry}, 5_000}],
+         [{:pet_autobonus, %{spec | trigger: {:on_skill, 5}, other: nil}, 10, 1_000}]},
+        {:if, {:string_cmp, :==, {:pet_info, :name}, "null"}, [{:bonus, :luk, 1}], []}
+      ]
+
+      assert program |> EquipScript.to_source() |> EquipScript.parse!() == program
+    end
+
+    test "parse! rejects malformed pet constructs" do
+      for source <- [
+            "bonus(ctx, :luk, pet_info(ctx, :bogus))",
+            "pet_autobonus(ctx, %{trigger: :attack, battle_flag: 17, bonus: []}, 1, 1)",
+            "pet_autobonus(ctx, %{trigger: :attack, battle_flag: 17, primary: [], secondary: []}, 1, 1)"
+          ] do
+        assert_raise ArgumentError, fn -> EquipScript.parse!(source) end
+      end
+    end
+
+    test "pet_info reads the pet input, 0 or \"null\" without a pet" do
+      program = [
+        {:bonus, :luk, {:pet_info, :intimate}},
+        {:if, {:string_cmp, :==, {:pet_info, :name}, "null"}, [{:bonus, :str, 1}], []}
+      ]
+
+      assert EquipScript.eval(program, on(0, pet: %{intimate: 900, name: "Pori"})) == %{luk: 900}
+      assert EquipScript.eval(program, on(0)) == %{luk: 0, str: 1}
+    end
+
+    test "pet_autobonus reads its rate as int16 and its duration as uint32" do
+      spec = %{trigger: :attack, battle_flag: 17, bonus: [], other: nil}
+      pet = [pet: %{intimate: 1000}]
+
+      assert [%{rate: -10_000, duration_ms: 4_294_967_295}] =
+               EquipScript.evaluate([{:pet_autobonus, spec, 40_000, -1}], on(0, pet)).pet_autobonuses
+
+      assert EquipScript.evaluate([{:pet_autobonus, spec, 65_536, 1}], on(0, pet)).pet_autobonuses ==
+               []
+    end
+  end
 end
