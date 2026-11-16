@@ -60,4 +60,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TargetResolverTest do
 
     assert {:error, :not_found} = TargetResolver.resolve(:mob, 2001)
   end
+
+  describe "pets" do
+    test "a pet is never a valid target (battle.cpp:8000 default case)" do
+      reject(&UnitRegistry.get_unit/2)
+
+      assert {:error, :invalid_target} = TargetResolver.resolve({:pet, 70_001})
+      assert {:error, :invalid_target} = TargetResolver.resolve(:pet, 70_001)
+
+      assert {:error, :invalid_target} =
+               TargetResolver.ensure_targetable(%{world_gid: 70_001}, :pet)
+    end
+  end
 end

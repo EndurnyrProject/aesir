@@ -152,8 +152,8 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   end
 
   @doc """
-  Gets all units (of any type) in the square of `range` cells around a
-  position, in the map's block order (`units_in_area/5`).
+  Gets all combat units in the square of `range` cells around a position, in
+  the map's block order (`units_in_area/5`). Pets are excluded.
   Returns list of {unit_type, unit_id} tuples.
   """
   @spec get_all_units_in_range(String.t(), integer(), integer(), integer()) ::
@@ -166,6 +166,10 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   The units standing exactly on cell `{x, y}`, in the order the map's block
   lists them: every unit other than a monster first, then the monsters, each
   group with the unit that entered the cell's 8x8 block most recently first.
+
+  Pets are excluded: rAthena's cell iterations for combat, skills and
+  statuses filter by `BL_CHAR`, which has no `BL_PET`. Reach pets through the
+  typed queries (`get_pets_in_range/4`, `get_units_in_area(:pet, ...)`).
   """
   @spec units_in_cell(String.t(), integer(), integer()) :: [{atom(), integer()}]
   def units_in_cell(map_name, x, y) do
@@ -181,6 +185,10 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   other than a monster first, then the monsters. Each group walks the 8x8
   blocks row by row (y, then x) and lists each block's units with the one that
   entered it most recently first.
+
+  Pets are excluded: rAthena's area iterations for combat, skills and
+  statuses filter by `BL_CHAR`, which has no `BL_PET`. Reach pets through the
+  typed queries (`get_pets_in_range/4`, `get_units_in_area(:pet, ...)`).
   """
   @spec units_in_area(String.t(), integer(), integer(), integer(), integer()) ::
           [{atom(), integer()}]
@@ -198,12 +206,14 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
       Enum.flat_map(blocks, &newest_first(elem(&1, 0)))
   end
 
-  # A block's units standing where `pred` holds, split into `{monsters, others}`.
+  # A block's non-pet units standing where `pred` holds, split into
+  # `{monsters, others}`.
   defp block_entries(cell, map_name, pred) do
     entries =
       case :ets.lookup(spatial_index_table(), cell) do
         [{^cell, units_map}] ->
           for {unit_type, ids} <- units_map,
+              unit_type != :pet,
               {unit_id, entry} <- ids,
               at?(unit_type, unit_id, map_name, pred),
               do: {unit_type, unit_id, entry}
@@ -299,6 +309,11 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   def get_homunculi_in_range(map_name, x, y, range) do
     get_units_in_range(:homunculus, map_name, x, y, range)
   end
+
+  @doc "Gets transient pet gids in range of a position."
+  @spec get_pets_in_range(String.t(), integer(), integer(), non_neg_integer()) :: [integer()]
+  def get_pets_in_range(map_name, x, y, range),
+    do: get_units_in_range(:pet, map_name, x, y, range)
 
   # Player-specific wrapper functions for backward compatibility
 

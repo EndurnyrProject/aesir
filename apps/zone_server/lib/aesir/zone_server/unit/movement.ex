@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Movement do
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Homunculus.SpawnView, as: HomunculusSpawnView
   alias Aesir.ZoneServer.Unit.Mob.SpawnView, as: MobSpawnView
+  alias Aesir.ZoneServer.Unit.Pet.SpawnView, as: PetSpawnView
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -38,7 +39,8 @@ defmodule Aesir.ZoneServer.Unit.Movement do
   Updates the spatial index and the unit registry with `updated_state`, then
   marks the unit dirty for its map. The `move_state` is derived from
   `updated_state.movement_state` (`:moving` -> moving, anything else ->
-  standing).
+  standing). A pet never triggers ground units or movement contact, and no
+  contact reaches it.
   """
   @spec set_position(unit_type(), unit_id(), map(), String.t()) :: :ok
   def set_position(unit_type, unit_id, updated_state, map_name) do
@@ -78,7 +80,7 @@ defmodule Aesir.ZoneServer.Unit.Movement do
   """
   @spec warp_position(unit_type(), unit_id(), map(), String.t()) :: :ok
   def warp_position(unit_type, unit_id, updated_state, map_name) do
-    :ok = Trigger.on_removed({unit_type, unit_id})
+    :ok = leave_ground_units(unit_type, unit_id)
     previous = SpatialIndex.get_unit_position(unit_type, unit_id)
     vanish(unit_type, unit_id, previous)
 
@@ -105,6 +107,12 @@ defmodule Aesir.ZoneServer.Unit.Movement do
     previous
     |> players_near()
     |> HomunculusSpawnView.notify_vanished(gid, DespawnReason.teleport())
+  end
+
+  defp vanish(:pet, gid, previous) do
+    previous
+    |> players_near()
+    |> PetSpawnView.notify_vanished(gid, DespawnReason.teleport())
   end
 
   defp vanish(:mob, instance_id, {:ok, position}),
@@ -244,14 +252,24 @@ defmodule Aesir.ZoneServer.Unit.Movement do
          kind
        ) do
     seen_from = if kind == :warp, do: {:error, :removed}, else: previous
-    notify_homunculus_boundaries(unit_type, unit_id, seen_from, updated_state, map_name)
+    notify_companion_boundaries(unit_type, unit_id, seen_from, updated_state, map_name)
     mark_dirty(map_name, unit_type, unit_id, move_state)
 
-    mover = {unit_type, unit_id}
-    cell_events(kind, mover, previous, map_name, updated_state.x, updated_state.y)
-    Trigger.on_caster_moved(mover, map_name, updated_state.x, updated_state.y)
-    fire_movement_contact(mover, previous, map_name, updated_state.x, updated_state.y)
+    ground_events(kind, {unit_type, unit_id}, previous, map_name, updated_state)
   end
+
+  # Ground units and movement contact act only on BL_CHAR units, which
+  # exclude pets (rAthena `map_moveblock`, `skill_unitsetting` bl_flag).
+  defp ground_events(_kind, {:pet, _gid}, _previous, _map_name, _state), do: :ok
+
+  defp ground_events(kind, mover, previous, map_name, %{x: x, y: y}) do
+    cell_events(kind, mover, previous, map_name, x, y)
+    Trigger.on_caster_moved(mover, map_name, x, y)
+    fire_movement_contact(mover, previous, map_name, x, y)
+  end
+
+  defp leave_ground_units(:pet, _gid), do: :ok
+  defp leave_ground_units(unit_type, unit_id), do: Trigger.on_removed({unit_type, unit_id})
 
   @doc """
   Records a unit in its map's dirty set with the given `move_state`.
@@ -298,13 +316,9 @@ defmodule Aesir.ZoneServer.Unit.Movement do
     drained
   end
 
-  defp notify_homunculus_boundaries(
-         :homunculus,
-         gid,
-         previous,
-         updated_state,
-         map_name
-       ) do
+  defp notify_companion_boundaries(unit_type, gid, previous, updated_state, map_name)
+       when unit_type in [:homunculus, :pet] do
+    spawn_view = companion_spawn_view(unit_type)
     old_players = players_near(previous)
 
     new_players =
@@ -319,14 +333,17 @@ defmodule Aesir.ZoneServer.Unit.Movement do
 
     old_players
     |> MapSet.difference(new_players)
-    |> HomunculusSpawnView.notify_left(gid)
+    |> spawn_view.notify_left(gid)
 
     new_players
     |> MapSet.difference(old_players)
-    |> HomunculusSpawnView.notify_entered(gid)
+    |> spawn_view.notify_entered(gid)
   end
 
-  defp notify_homunculus_boundaries(_type, _id, _previous, _state, _map), do: :ok
+  defp notify_companion_boundaries(_type, _id, _previous, _state, _map), do: :ok
+
+  defp companion_spawn_view(:homunculus), do: HomunculusSpawnView
+  defp companion_spawn_view(:pet), do: PetSpawnView
 
   defp players_near({:ok, {x, y, map_name}}) do
     map_name

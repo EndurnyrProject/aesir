@@ -45,6 +45,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   alias Aesir.ZoneServer.Navigation.Session, as: NavigationSession
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Runtime
+  alias Aesir.ZoneServer.Unit.Pet.PetState
+  alias Aesir.ZoneServer.Unit.Pet.Runtime, as: PetRuntime
   alias Aesir.ZoneServer.Unit.Player.NaturalHeal.Timing
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -88,6 +90,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             quest_info_display: %{map: nil, shown: %{}},
             homunculus: nil,
             homunculus_runtime: %Runtime{private_dirty: false},
+            pet: nil,
+            pet_runtime: %PetRuntime{},
             navigation: nil,
             canlog_at: nil,
             lingering: nil,
@@ -152,6 +156,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
           },
           homunculus: HomunculusState.t() | nil,
           homunculus_runtime: Runtime.t(),
+          pet: PetState.t() | nil,
+          pet_runtime: PetRuntime.t(),
           navigation: NavigationSession.t() | nil,
           canlog_at: integer() | nil,
           lingering: reference() | nil,

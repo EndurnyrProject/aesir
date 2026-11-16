@@ -540,6 +540,21 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:visibility, {:homunculus_vanished, gid, reason}})
   end
 
+  @doc "Notifies this player that a pet entered their view range."
+  @spec notify_pet_entered_view(pid(), pos_integer()) :: :ok
+  def notify_pet_entered_view(pid, gid),
+    do: GenServer.cast(pid, {:visibility, {:pet_entered_view, gid}})
+
+  @doc "Notifies this player that a pet left their view range."
+  @spec notify_pet_left_view(pid(), pos_integer()) :: :ok
+  def notify_pet_left_view(pid, gid),
+    do: GenServer.cast(pid, {:visibility, {:pet_left_view, gid}})
+
+  @doc "Notifies this player that a pet vanished with `reason` (a `DespawnReason`)."
+  @spec notify_pet_vanished(pid(), pos_integer(), non_neg_integer()) :: :ok
+  def notify_pet_vanished(pid, gid, reason),
+    do: GenServer.cast(pid, {:visibility, {:pet_vanished, gid, reason}})
+
   @doc "Warps this player to `{x, y}` on `map_name`."
   @spec warp(pid(), String.t(), integer(), integer()) :: :ok
   def warp(pid, map_name, x, y) do
@@ -1279,6 +1294,21 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:visibility, {:homunculus_vanished, gid, reason}}, state) do
     VisibilityHandler.homunculus_vanished(gid, reason, state)
+  end
+
+  @impl true
+  def handle_cast({:visibility, {:pet_entered_view, gid}}, state) do
+    VisibilityHandler.pet_entered_view(gid, state)
+  end
+
+  @impl true
+  def handle_cast({:visibility, {:pet_left_view, gid}}, state) do
+    VisibilityHandler.pet_left_view(gid, state)
+  end
+
+  @impl true
+  def handle_cast({:visibility, {:pet_vanished, gid, reason}}, state) do
+    VisibilityHandler.pet_vanished(gid, reason, state)
   end
 
   # Movement: the knockback landing delegates to MovementHandler (stop +

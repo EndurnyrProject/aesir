@@ -72,6 +72,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TargetResolver do
   the Homunculus registry.
   """
   @spec resolve(target()) :: resolved() | {:error, atom()}
+  def resolve({:pet, _unit_id}), do: {:error, :invalid_target}
+
   def resolve({unit_type, unit_id} = ref) do
     if Ref.valid?(ref) and unit_type in [:player, :mob, :homunculus, :skill_unit],
       do: resolve(unit_type, unit_id),
@@ -93,14 +95,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TargetResolver do
   end
 
   @doc "Resolves an exact unit type and id to its live unit state."
-  @spec resolve(target_type(), integer()) :: resolved() | {:error, atom()}
+  @spec resolve(target_type() | :pet, integer()) :: resolved() | {:error, atom()}
+  def resolve(:pet, _target_id), do: {:error, :invalid_target}
   def resolve(:mob, target_id), do: get_registered_unit_state(:mob, target_id)
   def resolve(:homunculus, target_id), do: get_registered_unit_state(:homunculus, target_id)
   def resolve(:player, target_id), do: get_player_unit_state(target_id)
   def resolve(:skill_unit, target_id), do: CombatTarget.resolve(target_id)
 
-  @doc "Gates out dead units and destroyed skill-unit cells."
-  @spec ensure_targetable(struct() | map(), target_type()) :: :ok | {:error, :target_dead}
+  @doc """
+  Gates out dead units and destroyed skill-unit cells. A pet is never a
+  target (`battle_check_target` default case, `battle.cpp:8000`).
+  """
+  @spec ensure_targetable(struct() | map(), target_type() | :pet) ::
+          :ok | {:error, :target_dead | :invalid_target}
+  def ensure_targetable(_target_state, :pet), do: {:error, :invalid_target}
+
   def ensure_targetable(target_state, unit_type)
       when unit_type in [:player, :mob, :homunculus] do
     if Unit.living?(target_state), do: :ok, else: {:error, :target_dead}

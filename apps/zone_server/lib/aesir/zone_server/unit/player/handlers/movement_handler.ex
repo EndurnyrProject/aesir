@@ -48,6 +48,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.MovementEngine
+  alias Aesir.ZoneServer.Unit.Pet.SpawnView, as: PetSpawnView
   alias Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
@@ -854,6 +855,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     |> MapSet.difference(new_visible_homunculi)
     |> Enum.each(&HomunculusSpawnView.send_despawn(game_state.character_id, &1))
 
+    new_visible_pets =
+      game_state.map_name
+      |> SpatialIndex.get_pets_in_range(
+        game_state.x,
+        game_state.y,
+        game_state.view_range
+      )
+      |> MapSet.new()
+
+    new_visible_pets
+    |> MapSet.difference(game_state.visible_pets)
+    |> Enum.each(&send_pet_spawn_packet_to(game_state.character_id, &1))
+
+    game_state.visible_pets
+    |> MapSet.difference(new_visible_pets)
+    |> Enum.each(&PetSpawnView.send_despawn(game_state.character_id, &1))
+
     # Handle warp visibility — static NPC warp entities are not spatial-indexed
     # (few per map; held per-map in `Npc.Warps`). Diff against `visible_warps`
     # using the same view square as the mob path (`SpatialIndex.get_units_in_range`).
@@ -957,6 +975,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       | visible_players: new_visible,
         visible_mobs: new_visible_mobs,
         visible_homunculi: new_visible_homunculi,
+        visible_pets: new_visible_pets,
         visible_warps: new_visible_warps,
         visible_npcs: new_visible_npcs,
         visible_shops: new_visible_shops,
@@ -1086,6 +1105,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       |> Enum.each(&Broadcast.to_player(to_char_id, &1))
     else
       _ -> :ok
+    end
+  end
+
+  defp send_pet_spawn_packet_to(to_char_id, gid) do
+    case UnitRegistry.get_unit(:pet, gid) do
+      {:ok, {_module, pet, _pid}} -> PetSpawnView.send_spawn(to_char_id, pet)
+      {:error, :not_found} -> :ok
     end
   end
 

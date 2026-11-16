@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Unit.SnapshotBuilder do
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Pet.PetState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -177,7 +178,7 @@ defmodule Aesir.ZoneServer.Unit.SnapshotBuilder do
     end
   end
 
-  @spec to_entity(integer(), PlayerState.t() | MobState.t() | HomunculusState.t()) ::
+  @spec to_entity(integer(), PlayerState.t() | MobState.t() | HomunculusState.t() | PetState.t()) ::
           SnapshotEntity.t()
   defp to_entity(unit_id, %PlayerState{} = state) do
     %{hp: hp} = state.stats.current_state
@@ -193,9 +194,11 @@ defmodule Aesir.ZoneServer.Unit.SnapshotBuilder do
     build_entity(unit_id, state, hp, max_hp)
   end
 
+  defp to_entity(unit_id, %PetState{} = state), do: build_entity(unit_id, state, 1, 1)
+
   @spec build_entity(
           integer(),
-          PlayerState.t() | MobState.t() | HomunculusState.t(),
+          PlayerState.t() | MobState.t() | HomunculusState.t() | PetState.t(),
           integer(),
           integer()
         ) ::

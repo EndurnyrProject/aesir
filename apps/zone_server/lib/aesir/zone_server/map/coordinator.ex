@@ -623,7 +623,8 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
              state.x,
              state.y,
              state.view_range,
-             state.visible_homunculi
+             state.visible_homunculi,
+             state.visible_pets
            ) do
       [{pid, SnapshotBuilder.chunks_for(visible, {state.x, state.y}, server_tick)}]
     else
@@ -637,13 +638,23 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
           integer(),
           integer(),
           integer(),
+          MapSet.t(integer()),
           MapSet.t(integer())
         ) :: [SnapshotEntity.t()]
-  defp visible_entities(keyed_entities, char_id, px, py, view_range, visible_homunculi) do
+  defp visible_entities(
+         keyed_entities,
+         char_id,
+         px,
+         py,
+         view_range,
+         visible_homunculi,
+         visible_pets
+       ) do
     keyed_entities
     |> Enum.reject(fn
       {{:player, ^char_id}, _entity} -> true
       {{:homunculus, gid}, _entity} -> not MapSet.member?(visible_homunculi, gid)
+      {{:pet, gid}, _entity} -> not MapSet.member?(visible_pets, gid)
       _other -> false
     end)
     |> Enum.filter(fn {_key, entity} ->

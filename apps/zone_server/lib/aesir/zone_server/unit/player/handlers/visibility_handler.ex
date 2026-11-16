@@ -30,6 +30,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
   alias Aesir.ZoneServer.Unit.Concealment
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.SpawnView, as: HomunculusSpawnView
+  alias Aesir.ZoneServer.Unit.Pet.PetState
+  alias Aesir.ZoneServer.Unit.Pet.SpawnView, as: PetSpawnView
   alias Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -136,6 +138,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
     end
   end
 
+  @doc "Reconciles a pet entry event against current world visibility."
+  @spec pet_entered_view(pos_integer(), map()) :: {:noreply, map()}
+  def pet_entered_view(gid, state), do: reconcile_pet_visibility(gid, state)
+
+  @doc "Reconciles a pet leave event against current world visibility."
+  @spec pet_left_view(pos_integer(), map()) :: {:noreply, map()}
+  def pet_left_view(gid, state), do: reconcile_pet_visibility(gid, state)
+
+  @doc """
+  Sends one despawn with `reason` and clears a visible pet from this observer;
+  a pet it does not see is ignored.
+  """
+  @spec pet_vanished(pos_integer(), non_neg_integer(), map()) :: {:noreply, map()}
+  def pet_vanished(gid, reason, state) do
+    if MapSet.member?(state.game_state.visible_pets, gid) do
+      MessageRouter.send_to(state.connection_pid, %UnitDespawn{gid: gid, reason: reason})
+      publish_pet_visibility(state, gid, false)
+    else
+      {:noreply, state}
+    end
+  end
+
   @doc "Forwards a ground-item vanish and forgets the item."
   @spec item_vanished(ItemVanished.t(), map()) :: {:noreply, map()}
   def item_vanished(%ItemVanished{ground_id: ground_id} = packet, state) do
@@ -210,6 +234,47 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
 
   defp update_visible_homunculus(game_state, gid, false) do
     %{game_state | visible_homunculi: MapSet.delete(game_state.visible_homunculi, gid)}
+  end
+
+  defp reconcile_pet_visibility(gid, state) do
+    visible? = MapSet.member?(state.game_state.visible_pets, gid)
+
+    case {current_pet(gid, state.game_state), visible?} do
+      {{:visible, pet}, false} ->
+        MessageRouter.send_to(state.connection_pid, PetSpawnView.build(pet))
+        publish_pet_visibility(state, gid, true)
+
+      {:hidden, true} ->
+        MessageRouter.send_to(state.connection_pid, %UnitDespawn{
+          gid: gid,
+          reason: DespawnReason.out_of_sight()
+        })
+
+        publish_pet_visibility(state, gid, false)
+
+      _unchanged ->
+        {:noreply, state}
+    end
+  end
+
+  defp current_pet(gid, player) do
+    with {:ok, {_module, %PetState{} = pet, _pid}} <- UnitRegistry.get_unit(:pet, gid),
+         {:ok, {x, y, map_name}} <- SpatialIndex.get_unit_position(:pet, gid),
+         true <- map_name == player.map_name,
+         true <- Geometry.in_tile_range?(player.x, player.y, x, y, player.view_range) do
+      {:visible, pet}
+    else
+      _ -> :hidden
+    end
+  end
+
+  defp publish_pet_visibility(%{game_state: game_state} = state, gid, visible?) do
+    visible_pets =
+      if visible?,
+        do: MapSet.put(game_state.visible_pets, gid),
+        else: MapSet.delete(game_state.visible_pets, gid)
+
+    {:noreply, StateCommit.commit(state, %{game_state | visible_pets: visible_pets})}
   end
 
   defp maybe_send_vending_board(connection_pid, char_id) do
