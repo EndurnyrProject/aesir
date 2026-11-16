@@ -18,6 +18,63 @@ config :zone_server, :vending_rules, %{
   show_buyer_name: true
 }
 
+# rAthena conf/battle/pet.conf: Whether to use the legacy pet catch formula.
+config :zone_server, pet_legacy_formula: false
+# rAthena conf/battle/pet.conf: Pet catch rate as a percentage.
+config :zone_server, pet_catch_rate: 100
+# rAthena conf/battle/pet.conf: Maximum catch distance in cells; zero disables the check.
+config :zone_server, pet_distance_check: 5
+# rAthena conf/battle/pet.conf: Whether hiding prevents catching pets.
+config :zone_server, pet_hide_check: true
+# rAthena conf/battle/pet.conf: Whether pets can be renamed more than once.
+config :zone_server, pet_rename: false
+# rAthena conf/battle/pet.conf: Pet intimacy gain from feeding as a percentage.
+config :zone_server, pet_friendly_rate: 100
+# rAthena conf/battle/pet.conf: Pet hunger delay rate as a percentage.
+config :zone_server, pet_hungry_delay_rate: 100
+# rAthena conf/battle/pet.conf: Whether pet equipment is required for pet skills.
+config :zone_server, pet_equip_required: true
+# rAthena conf/battle/pet.conf: Whether to destroy pet equipment when inventory has no space.
+config :zone_server, pet_unequip_destroy: true
+# rAthena conf/battle/pet.conf: Whether pets attack when their master attacks.
+config :zone_server, pet_attack_support: false
+# rAthena conf/battle/pet.conf: Whether pets attack when their master takes damage.
+config :zone_server, pet_damage_support: false
+# rAthena conf/battle/pet.conf: Minimum pet intimacy required for support.
+config :zone_server, pet_support_min_friendly: 900
+# rAthena conf/battle/pet.conf: Whether pets use skills.
+config :zone_server, pet_status_support: false
+# rAthena conf/battle/pet.conf: Pet battle support rate as a percentage.
+config :zone_server, pet_support_rate: 100
+# rAthena conf/battle/pet.conf: Whether the master receives experience from pet damage.
+config :zone_server, pet_attack_exp_to_master: false
+# rAthena conf/battle/pet.conf: Experience rate from pet attacks as a percentage.
+config :zone_server, pet_attack_exp_rate: 100
+# rAthena conf/battle/pet.conf: Pet level as a percentage of master level; zero disables leveling.
+config :zone_server, pet_lv_rate: 0
+# rAthena conf/battle/pet.conf: Maximum pet stats when pet leveling is enabled.
+config :zone_server, pet_max_stats: 99
+# rAthena conf/battle/pet.conf: Maximum minimum pet attack when pet leveling is enabled.
+config :zone_server, pet_max_atk1: 500
+# rAthena conf/battle/pet.conf: Maximum maximum pet attack when pet leveling is enabled.
+config :zone_server, pet_max_atk2: 1000
+# rAthena conf/battle/pet.conf: Whether pets are disabled during guild wars.
+config :zone_server, pet_disable_in_gvg: false
+# rAthena conf/battle/pet.conf: Whether fixed pet skill damage ignores infinite defense.
+config :zone_server, pet_ignore_infinite_def: true
+# rAthena conf/battle/pet.conf: Whether pets continue attacking when their master is dead.
+config :zone_server, pet_master_dead: false
+# rAthena conf/battle/pet.conf: Whether autofeed notices ignore the client setting.
+config :zone_server, pet_autofeed_always: true
+# rAthena conf/battle/pet.conf: Pet walk speed mode: master, default, or mob database.
+config :zone_server, pet_walk_speed: 1
+# rAthena conf/battle/feature.conf: Whether pet evolution is enabled.
+config :zone_server, feature_pet_evolution: true
+# rAthena conf/battle/feature.conf: Whether pet autofeeding is enabled.
+config :zone_server, feature_pet_autofeed: true
+# rAthena conf/battle/feature.conf: Hunger threshold for pet autofeeding.
+config :zone_server, feature_pet_autofeed_rate: 89
+
 # Party tunables
 config :zone_server, max_party: 12
 config :zone_server, party_share_level: 15

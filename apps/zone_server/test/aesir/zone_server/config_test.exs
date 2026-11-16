@@ -3,6 +3,56 @@ defmodule Aesir.ZoneServer.ConfigTest do
 
   alias Aesir.ZoneServer.Config
 
+  test "pet configuration defaults match the shipped battle configuration when unset" do
+    defaults = [
+      {:pet_legacy_formula, :pet_legacy_formula?, false},
+      {:pet_catch_rate, :pet_catch_rate, 100},
+      {:pet_distance_check, :pet_distance_check, 5},
+      {:pet_hide_check, :pet_hide_check?, true},
+      {:pet_rename, :pet_rename?, false},
+      {:pet_friendly_rate, :pet_friendly_rate, 100},
+      {:pet_hungry_delay_rate, :pet_hungry_delay_rate, 100},
+      {:pet_equip_required, :pet_equip_required?, true},
+      {:pet_unequip_destroy, :pet_unequip_destroy?, true},
+      {:pet_attack_support, :pet_attack_support?, false},
+      {:pet_damage_support, :pet_damage_support?, false},
+      {:pet_support_min_friendly, :pet_support_min_friendly, 900},
+      {:pet_status_support, :pet_status_support?, false},
+      {:pet_support_rate, :pet_support_rate, 100},
+      {:pet_attack_exp_to_master, :pet_attack_exp_to_master?, false},
+      {:pet_attack_exp_rate, :pet_attack_exp_rate, 100},
+      {:pet_lv_rate, :pet_lv_rate, 0},
+      {:pet_max_stats, :pet_max_stats, 99},
+      {:pet_max_atk1, :pet_max_atk1, 500},
+      {:pet_max_atk2, :pet_max_atk2, 1000},
+      {:pet_disable_in_gvg, :pet_disable_in_gvg?, false},
+      {:pet_ignore_infinite_def, :pet_ignore_infinite_def?, true},
+      {:pet_master_dead, :pet_master_dead?, false},
+      {:pet_autofeed_always, :pet_autofeed_always?, true},
+      {:pet_walk_speed, :pet_walk_speed, 1},
+      {:feature_pet_evolution, :feature_pet_evolution?, true},
+      {:feature_pet_autofeed, :feature_pet_autofeed?, true},
+      {:feature_pet_autofeed_rate, :feature_pet_autofeed_rate, 89}
+    ]
+
+    previous =
+      Enum.map(defaults, fn {key, _, _} -> {key, Application.fetch_env(:zone_server, key)} end)
+
+    on_exit(fn ->
+      for {key, value} <- previous do
+        case value do
+          {:ok, configured} -> Application.put_env(:zone_server, key, configured)
+          :error -> Application.delete_env(:zone_server, key)
+        end
+      end
+    end)
+
+    for {key, accessor, expected} <- defaults do
+      Application.delete_env(:zone_server, key)
+      assert apply(Config, accessor, []) == expected
+    end
+  end
+
   describe "max_party/0" do
     test "returns the configured default when unset" do
       assert Config.max_party() == 12

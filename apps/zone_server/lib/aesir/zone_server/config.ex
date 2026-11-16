@@ -8,6 +8,34 @@ defmodule Aesir.ZoneServer.Config do
 
   alias Aesir.ZoneServer.Unit.Vending
 
+  @default_pet_legacy_formula false
+  @default_pet_catch_rate 100
+  @default_pet_distance_check 5
+  @default_pet_hide_check true
+  @default_pet_rename false
+  @default_pet_friendly_rate 100
+  @default_pet_hungry_delay_rate 100
+  @default_pet_equip_required true
+  @default_pet_unequip_destroy true
+  @default_pet_attack_support false
+  @default_pet_damage_support false
+  @default_pet_support_min_friendly 900
+  @default_pet_status_support false
+  @default_pet_support_rate 100
+  @default_pet_attack_exp_to_master false
+  @default_pet_attack_exp_rate 100
+  @default_pet_lv_rate 0
+  @default_pet_max_stats 99
+  @default_pet_max_atk1 500
+  @default_pet_max_atk2 1000
+  @default_pet_disable_in_gvg false
+  @default_pet_ignore_infinite_def true
+  @default_pet_master_dead false
+  @default_pet_autofeed_always true
+  @default_pet_walk_speed 1
+  @default_feature_pet_evolution true
+  @default_feature_pet_autofeed true
+  @default_feature_pet_autofeed_rate 89
   @default_view_range 20
   @default_vending_rules %{
     max_price: 1_000_000_000,
@@ -372,6 +400,161 @@ defmodule Aesir.ZoneServer.Config do
   """
   @spec chat_room_gm_level() :: non_neg_integer()
   def chat_room_gm_level, do: Application.get_env(:zone_server, :chat_room_gm_level, 60)
+
+  @doc "Whether to use the legacy pet catch formula."
+  @spec pet_legacy_formula?() :: boolean()
+  def pet_legacy_formula?,
+    do: Application.get_env(:zone_server, :pet_legacy_formula, @default_pet_legacy_formula)
+
+  @doc "Pet catch rate as a percentage."
+  @spec pet_catch_rate() :: integer()
+  def pet_catch_rate,
+    do: Application.get_env(:zone_server, :pet_catch_rate, @default_pet_catch_rate)
+
+  @doc "Maximum catch distance in cells; zero disables the check."
+  @spec pet_distance_check() :: integer()
+  def pet_distance_check,
+    do: Application.get_env(:zone_server, :pet_distance_check, @default_pet_distance_check)
+
+  @doc "Whether hiding prevents catching pets."
+  @spec pet_hide_check?() :: boolean()
+  def pet_hide_check?,
+    do: Application.get_env(:zone_server, :pet_hide_check, @default_pet_hide_check)
+
+  @doc "Whether pets can be renamed more than once."
+  @spec pet_rename?() :: boolean()
+  def pet_rename?, do: Application.get_env(:zone_server, :pet_rename, @default_pet_rename)
+
+  @doc "Pet intimacy gain from feeding as a percentage."
+  @spec pet_friendly_rate() :: integer()
+  def pet_friendly_rate,
+    do: Application.get_env(:zone_server, :pet_friendly_rate, @default_pet_friendly_rate)
+
+  @doc "Pet hunger delay rate as a percentage."
+  @spec pet_hungry_delay_rate() :: integer()
+  def pet_hungry_delay_rate,
+    do: Application.get_env(:zone_server, :pet_hungry_delay_rate, @default_pet_hungry_delay_rate)
+
+  @doc "Whether pet equipment is required for pet skills."
+  @spec pet_equip_required?() :: boolean()
+  def pet_equip_required?,
+    do: Application.get_env(:zone_server, :pet_equip_required, @default_pet_equip_required)
+
+  @doc "Whether to destroy pet equipment when inventory has no space."
+  @spec pet_unequip_destroy?() :: boolean()
+  def pet_unequip_destroy?,
+    do: Application.get_env(:zone_server, :pet_unequip_destroy, @default_pet_unequip_destroy)
+
+  @doc "Whether pets attack when their master attacks."
+  @spec pet_attack_support?() :: boolean()
+  def pet_attack_support?,
+    do: Application.get_env(:zone_server, :pet_attack_support, @default_pet_attack_support)
+
+  @doc "Whether pets attack when their master takes damage."
+  @spec pet_damage_support?() :: boolean()
+  def pet_damage_support?,
+    do: Application.get_env(:zone_server, :pet_damage_support, @default_pet_damage_support)
+
+  @doc "Minimum pet intimacy required for support."
+  @spec pet_support_min_friendly() :: integer()
+  def pet_support_min_friendly,
+    do:
+      Application.get_env(
+        :zone_server,
+        :pet_support_min_friendly,
+        @default_pet_support_min_friendly
+      )
+
+  @doc "Whether pets use skills."
+  @spec pet_status_support?() :: boolean()
+  def pet_status_support?,
+    do: Application.get_env(:zone_server, :pet_status_support, @default_pet_status_support)
+
+  @doc "Pet battle support rate as a percentage."
+  @spec pet_support_rate() :: integer()
+  def pet_support_rate,
+    do: Application.get_env(:zone_server, :pet_support_rate, @default_pet_support_rate)
+
+  @doc "Whether the master receives experience from pet damage."
+  @spec pet_attack_exp_to_master?() :: boolean()
+  def pet_attack_exp_to_master?,
+    do:
+      Application.get_env(
+        :zone_server,
+        :pet_attack_exp_to_master,
+        @default_pet_attack_exp_to_master
+      )
+
+  @doc "Experience rate from pet attacks as a percentage."
+  @spec pet_attack_exp_rate() :: integer()
+  def pet_attack_exp_rate,
+    do: Application.get_env(:zone_server, :pet_attack_exp_rate, @default_pet_attack_exp_rate)
+
+  @doc "Pet level as a percentage of master level; zero disables leveling."
+  @spec pet_lv_rate() :: integer()
+  def pet_lv_rate, do: Application.get_env(:zone_server, :pet_lv_rate, @default_pet_lv_rate)
+
+  @doc "Maximum pet stats when pet leveling is enabled."
+  @spec pet_max_stats() :: integer()
+  def pet_max_stats, do: Application.get_env(:zone_server, :pet_max_stats, @default_pet_max_stats)
+
+  @doc "Maximum minimum pet attack when pet leveling is enabled."
+  @spec pet_max_atk1() :: integer()
+  def pet_max_atk1, do: Application.get_env(:zone_server, :pet_max_atk1, @default_pet_max_atk1)
+
+  @doc "Maximum maximum pet attack when pet leveling is enabled."
+  @spec pet_max_atk2() :: integer()
+  def pet_max_atk2, do: Application.get_env(:zone_server, :pet_max_atk2, @default_pet_max_atk2)
+
+  @doc "Whether pets are disabled during guild wars."
+  @spec pet_disable_in_gvg?() :: boolean()
+  def pet_disable_in_gvg?,
+    do: Application.get_env(:zone_server, :pet_disable_in_gvg, @default_pet_disable_in_gvg)
+
+  @doc "Whether fixed pet skill damage ignores infinite defense."
+  @spec pet_ignore_infinite_def?() :: boolean()
+  def pet_ignore_infinite_def?,
+    do:
+      Application.get_env(
+        :zone_server,
+        :pet_ignore_infinite_def,
+        @default_pet_ignore_infinite_def
+      )
+
+  @doc "Whether pets continue attacking when their master is dead."
+  @spec pet_master_dead?() :: boolean()
+  def pet_master_dead?,
+    do: Application.get_env(:zone_server, :pet_master_dead, @default_pet_master_dead)
+
+  @doc "Whether autofeed notices ignore the client setting."
+  @spec pet_autofeed_always?() :: boolean()
+  def pet_autofeed_always?,
+    do: Application.get_env(:zone_server, :pet_autofeed_always, @default_pet_autofeed_always)
+
+  @doc "Pet walk speed mode: master, default, or mob database."
+  @spec pet_walk_speed() :: integer()
+  def pet_walk_speed,
+    do: Application.get_env(:zone_server, :pet_walk_speed, @default_pet_walk_speed)
+
+  @doc "Whether pet evolution is enabled."
+  @spec feature_pet_evolution?() :: boolean()
+  def feature_pet_evolution?,
+    do: Application.get_env(:zone_server, :feature_pet_evolution, @default_feature_pet_evolution)
+
+  @doc "Whether pet autofeeding is enabled."
+  @spec feature_pet_autofeed?() :: boolean()
+  def feature_pet_autofeed?,
+    do: Application.get_env(:zone_server, :feature_pet_autofeed, @default_feature_pet_autofeed)
+
+  @doc "Hunger threshold for pet autofeeding."
+  @spec feature_pet_autofeed_rate() :: integer()
+  def feature_pet_autofeed_rate,
+    do:
+      Application.get_env(
+        :zone_server,
+        :feature_pet_autofeed_rate,
+        @default_feature_pet_autofeed_rate
+      )
 
   defp rate(key), do: Application.get_env(:zone_server, key, @default_item_rate)
 
