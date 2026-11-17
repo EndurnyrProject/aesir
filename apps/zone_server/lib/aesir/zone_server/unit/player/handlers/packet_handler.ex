@@ -344,8 +344,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   end
 
   # UnequipItem - Player unequips an item (protobuf analogue of CZ_REQ_TAKEOFF_EQUIP 0x00AB).
+  # A dead player is refused here only; internal unequips do not check death.
   def handle_message(%UnequipItem{index: index}, state) do
-    EquipmentHandler.handle_unequip(PlayerState.server_index(index), state)
+    case EquipmentHandler.check_alive(state) do
+      :ok -> EquipmentHandler.handle_unequip(PlayerState.server_index(index), state)
+      :refused -> {:noreply, state}
+    end
   end
 
   # UseItem - Player uses a consumable (protobuf analogue of CZ_USE_ITEM 0x0439).

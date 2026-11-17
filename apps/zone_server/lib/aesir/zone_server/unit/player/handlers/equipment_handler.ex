@@ -22,6 +22,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   alias Aesir.Net.EquipResult
   alias Aesir.Net.SystemNotice
   alias Aesir.Net.UnequipResult
+  alias Aesir.Net.UnitDespawn
+  alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.Eligibility
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
@@ -35,6 +37,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
+  alias Aesir.ZoneServer.Unit.Pet.Handlers.AccessoryHandler
   alias Aesir.ZoneServer.Unit.Player.Appearance
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
@@ -58,19 +61,74 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   @doc """
   Handles an equip request for the item at `server_index` into `position`.
 
-  Once the index is within the inventory, an NPC dialog whose script refuses
-  item use refuses it with a notice and no equip result. Otherwise, unless a
-  storage window is open or a body state holds the player, a trade, a vending
-  stall or an open NPC shop window refuses it silently.
+  The request first passes `check_equip_request/2`. A pet armor then goes to
+  the pet as its accessory; any other item is equipped on the player.
   """
-  @spec handle_equip(non_neg_integer(), non_neg_integer(), map()) :: {:noreply, map()}
+  @spec handle_equip(integer(), non_neg_integer(), map()) :: {:noreply, map()}
   def handle_equip(server_index, position, state) do
-    if server_index in 0..(Inventory.capacity() - 1)//1 do
-      with :ok <- request_gate(state), do: equip(server_index, position, state)
-    else
-      {:noreply, state}
+    case check_equip_request(server_index, state) do
+      :ok ->
+        if pet_armor?(state.game_state.inventory[server_index]),
+          do: {:noreply, AccessoryHandler.equip(state, server_index)},
+          else: equip(server_index, position, state)
+
+      :refused ->
+        {:noreply, state}
     end
   end
+
+  @doc """
+  Refuses a request from a dead player, resending the dead state to the area
+  so the client shows it again.
+  """
+  @spec check_alive(map()) :: :ok | :refused
+  def check_alive(%{game_state: %PlayerState{action_state: :dead} = game_state}) do
+    Broadcast.to_visible_players(game_state, %UnitDespawn{
+      gid: game_state.character_id,
+      reason: DespawnReason.died()
+    })
+
+    :refused
+  end
+
+  def check_alive(%{game_state: %PlayerState{}}), do: :ok
+
+  @doc """
+  The checks an equip request passes before its item is equipped, in order.
+
+  A dead player is refused by `check_alive/1`. An index outside the
+  inventory is ignored. An NPC dialog whose script refuses item use gets the
+  can't-equip notice. Unless a storage window is open or a body state holds
+  the player, a trade, a vending stall, its setup window or an open NPC shop
+  window refuses it silently. An unidentified item or an empty slot gets the
+  equip failure.
+  """
+  @spec check_equip_request(integer(), map()) :: :ok | :refused
+  def check_equip_request(server_index, %{game_state: game_state} = state) do
+    cond do
+      check_alive(state) == :refused ->
+        :refused
+
+      server_index not in 0..(Inventory.capacity() - 1)//1 ->
+        :refused
+
+      request_gate(state) == :refused ->
+        :refused
+
+      not identified?(game_state.inventory[server_index]) ->
+        send_packet(state, equip_failure_result(server_index, :fail))
+        :refused
+
+      true ->
+        :ok
+    end
+  end
+
+  defp identified?(%InventoryItem{} = item), do: InventoryItem.identified?(item)
+  defp identified?(nil), do: false
+
+  defp pet_armor?(%InventoryItem{nameid: nameid}),
+    do: match?({:ok, %ItemDefinition{type: :pet_armor}}, ItemManagement.get_item_by_id(nameid))
 
   # An Arrow Vulcan cast holds equipment changes until it completes.
   defp equip_locked?(%{equip_lock_until: until}) when is_integer(until),
@@ -83,18 +141,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
     cond do
       SessionState.npc_dialog?(state) and not SessionState.npc_item_flag?(state) ->
         send_packet(state, %SystemNotice{id: :SYSTEM_NOTICE_ID_CAN_NOT_EQUIP_ITEM})
-        {:noreply, state}
+        :refused
 
       storage_open?(state) or body_state(state) != 0 ->
         :ok
 
-      Map.get(state, :trade) != nil or PlayerState.vending?(state.game_state) or
-          SessionState.npc_shop_open?(state) ->
-        {:noreply, state}
+      busy?(state) ->
+        :refused
 
       true ->
         :ok
     end
+  end
+
+  defp busy?(state) do
+    Map.get(state, :trade) != nil or PlayerState.vending?(state.game_state) or
+      Map.get(state, :vending_setup) != nil or SessionState.npc_shop_open?(state)
   end
 
   defp storage_open?(state),
@@ -134,7 +196,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   """
   @spec handle_unequip(non_neg_integer(), map()) :: {:noreply, map()}
   def handle_unequip(server_index, state) do
-    with :ok <- request_gate(state), do: unequip(server_index, state)
+    case request_gate(state) do
+      :ok -> unequip(server_index, state)
+      :refused -> {:noreply, state}
+    end
   end
 
   defp unequip(server_index, %{game_state: game_state} = state) do

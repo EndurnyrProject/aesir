@@ -12,8 +12,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
   alias Aesir.Net.ItemBound
   alias Aesir.Net.SkillEffect
   alias Aesir.Net.SystemNotice
+  alias Aesir.Net.UnequipItem
   alias Aesir.Net.UnequipResult
+  alias Aesir.Net.UnitDespawn
   alias Aesir.StatusActionFixture
+  alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -24,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
+  alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -201,6 +205,49 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
     assert_receive {:send, :gameplay, {:equip_result, %EquipResult{index: 2, result: 2}}}
   end
 
+  test "refuses a dead player's equip and resends the dead state to the area" do
+    game_state = PlayerState.new(%{character() | class: 1, base_level: 99})
+    item = %InventoryItem{nameid: 1101, amount: 1, identify: 1}
+
+    dead = %{
+      game_state
+      | inventory: %{0 => item},
+        action_state: :dead,
+        visible_players: MapSet.new([1001])
+    }
+
+    state = %{connection_pid: self(), game_state: dead}
+    stub(UnitRegistry, :get_player_pid, fn 1001 -> {:ok, self()} end)
+
+    assert {:noreply, ^state} = EquipmentHandler.handle_equip(0, 2, state)
+
+    assert_receive {:"$gen_cast", {:send_packet, %UnitDespawn{gid: 1000, reason: reason}}}
+    assert reason == DespawnReason.died()
+    refute_received {:send, :gameplay, {:equip_result, _}}
+  end
+
+  test "refuses a dead player's unequip request and resends the dead state to the area" do
+    game_state = PlayerState.new(%{character() | class: 1, base_level: 99})
+    item = %InventoryItem{nameid: 1101, amount: 1, identify: 1}
+
+    dead = %{
+      game_state
+      | inventory: %{0 => item},
+        action_state: :dead,
+        visible_players: MapSet.new([1001])
+    }
+
+    state = %{connection_pid: self(), game_state: dead}
+    stub(UnitRegistry, :get_player_pid, fn 1001 -> {:ok, self()} end)
+
+    assert {:noreply, ^state} =
+             PacketHandler.handle_message(%UnequipItem{index: PlayerState.client_index(0)}, state)
+
+    assert_receive {:"$gen_cast", {:send_packet, %UnitDespawn{gid: 1000, reason: reason}}}
+    assert reason == DespawnReason.died()
+    refute_received {:send, :gameplay, {:unequip_result, _}}
+  end
+
   test "refuses an equip change while an Arrow Vulcan cast holds it" do
     game_state = PlayerState.new(%{character() | class: 1, base_level: 99})
     item = %InventoryItem{nameid: 1101, amount: 1, identify: 1}
@@ -263,7 +310,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
     for {label, busy} <- [
           {"trading", {:session, :trade, %{pid: nil}}},
           {"vending", {:game, :vending_shop, %{shop_id: "equip-fixture"}}},
-          {"with an NPC shop window open", {:session, :npc_shop, 0x5800_0001}}
+          {"with an NPC shop window open", {:session, :npc_shop, 0x5800_0001}},
+          {"setting up a vending stall",
+           {:session, :vending_setup, %{setup_id: "equip-fixture", level: 1, sp_spent: 30}}}
         ] do
       @busy busy
       test "#{label} is refused silently" do
