@@ -1,13 +1,21 @@
 defmodule Aesir.ZoneServer.Unit.Pet.PersistenceTest do
   use Aesir.DataCase, async: true
 
+  import Aesir.TestEtsSetup
+
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.Models.Pet
+  alias Aesir.ZoneServer.Map.Coordinator
+  alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
+  alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
   alias Aesir.ZoneServer.Mmo.PetManagement.Catalog
   alias Aesir.ZoneServer.Mmo.PetManagement.Egg
+  alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
   alias Aesir.ZoneServer.Unit.Pet.Persistence
+  alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   setup do
     suffix = System.unique_integer([:positive])
@@ -42,6 +50,96 @@ defmodule Aesir.ZoneServer.Unit.Pet.PersistenceTest do
 
     {:ok, definition} = Catalog.by_mob(1002)
     %{account: account, character: character, definition: definition}
+  end
+
+  test "expiring a catalog egg deletes the pet encoded in its card words", %{
+    account: account,
+    character: character,
+    definition: definition
+  } do
+    setup_ets_tables(%{})
+
+    {:ok, _, pet} =
+      Persistence.create_with_egg(
+        account.id,
+        character.id,
+        definition,
+        %{level: 1, name: "Poring"},
+        %{},
+        :infinity
+      )
+
+    item = %{
+      GroundItem.new(definition.egg_item_id, 1, 1, 1, true, cards: [0, pet.id, 0, 0])
+      | dropped_at: System.monotonic_time(:millisecond) - 1_000_000
+    }
+
+    GroundItemStore.put("prontera", item)
+
+    short_cards = %{
+      GroundItem.new(501, 1, 1, 1, true, cards: [])
+      | dropped_at: System.monotonic_time(:millisecond) - 1_000_000
+    }
+
+    GroundItemStore.put("prontera", short_cards)
+
+    assert {:noreply, _} =
+             Coordinator.handle_info(:expire_ground_items, %Coordinator{map_name: "prontera"})
+
+    refute Repo.get(Pet, pet.id)
+  end
+
+  test "script deletion removes the selected egg's pet but not an unmarked egg's pet", %{
+    account: account,
+    character: character,
+    definition: definition
+  } do
+    {:ok, inventory, pet} =
+      Persistence.create_with_egg(
+        account.id,
+        character.id,
+        definition,
+        %{level: 1, name: "Poring"},
+        %{},
+        :infinity
+      )
+
+    {:ok, plain} =
+      InventoryPersistence.insert_item(character.id, %{nameid: definition.egg_item_id, amount: 2})
+
+    inventory = Map.put(inventory, 1, plain)
+
+    state = %{
+      game_state: %PlayerState{character_id: character.id, inventory: inventory},
+      connection_pid: self()
+    }
+
+    assert Repo.get(Pet, pet.id)
+
+    assert {{:ok, _}, updated} =
+             ScriptEffectHandler.apply_op({:delitem, definition.egg_item_id, 1}, state)
+
+    refute Repo.get(Pet, pet.id)
+    assert updated.game_state.inventory[1].amount == 2
+
+    {:ok, inventory, other} =
+      Persistence.create_with_egg(
+        account.id,
+        character.id,
+        definition,
+        %{level: 1, name: "Poring"},
+        %{},
+        :infinity
+      )
+
+    [{index, egg}] = Map.to_list(inventory)
+    {:ok, egg} = Repo.update(Ecto.Changeset.change(egg, card0: 0))
+    state = %{state | game_state: %{state.game_state | inventory: %{index => egg}}}
+
+    assert {{:ok, _}, _} =
+             ScriptEffectHandler.apply_op({:delitem, definition.egg_item_id, 1}, state)
+
+    assert Repo.get(Pet, other.id)
   end
 
   test "creation, hatching and returning persist the pet and egg atomically", %{

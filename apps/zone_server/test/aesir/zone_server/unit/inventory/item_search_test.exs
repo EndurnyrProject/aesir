@@ -51,6 +51,13 @@ defmodule Aesir.ZoneServer.Unit.Inventory.ItemSearchTest do
   end
 
   describe "delete_plan/3" do
+    test "deleting by item id selects marked pet eggs in slot order" do
+      egg = 9001
+      inventory = %{0 => row(egg, 1, card0: 256, card1: 123), 1 => row(egg, 1)}
+
+      assert ItemSearch.delete_plan(inventory, egg, 1) == {:ok, [{0, 1}]}
+    end
+
     test "takes plain unequipped rows first, then any other row of the item" do
       inventory = %{
         0 => row(@potion, 1, equip: 2),

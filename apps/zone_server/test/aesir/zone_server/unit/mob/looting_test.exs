@@ -1,10 +1,11 @@
 defmodule Aesir.ZoneServer.Unit.Mob.LootingTest do
-  use ExUnit.Case, async: true
+  use Aesir.DataCase, async: true
   use Mimic
 
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.Commons.Models.Pet
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.LineOfSight
@@ -155,6 +156,33 @@ defmodule Aesir.ZoneServer.Unit.Mob.LootingTest do
     assert shortened.walk_path == [{102, 100}]
     assert shortened.skill_state == :idle
     HitStop.cancel(shortened.pending_step)
+  end
+
+  test "discarding a marked egg from full loot deletes its pet" do
+    pet =
+      Repo.insert!(%Pet{
+        class: 1002,
+        name: "Poring",
+        account_id: 0,
+        char_id: 0,
+        level: 1,
+        egg_id: 9001,
+        intimate: 250,
+        hungry: 100
+      })
+
+    egg = GroundItem.new(9001, 1, 100, 100, true, cards: [256, pet.id, 0, 0])
+    retained = [egg | for(id <- 501..509, do: GroundItem.new(id, 1, 100, 100))]
+    incoming = GroundItem.new(511, 1, 100, 100)
+    GroundItemStore.put("prontera", incoming)
+
+    stub(Coordinator, :claim_loot_item, fn "prontera", id ->
+      GroundItemStore.claim("prontera", id)
+    end)
+
+    state = %{looter() | looted_items: retained, loot_target_id: incoming.id}
+    assert length(Looting.step(state, true, System.system_time(:millisecond)).looted_items) == 10
+    refute Repo.get(Pet, pet.id)
   end
 
   test "a full bag replaces its oldest stack, and a lost claim grants nothing" do

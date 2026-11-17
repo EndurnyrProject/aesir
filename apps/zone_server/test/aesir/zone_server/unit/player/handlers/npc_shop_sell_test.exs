@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Commons.Models.Pet
   alias Aesir.Net.NpcSellEntry
   alias Aesir.Net.NpcSellRequest
   alias Aesir.Net.NpcSellResult
@@ -120,6 +121,71 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
   end
 
   describe "sell/2" do
+    test "selling a pet egg deletes its pet but an unmarked egg does not", ctx do
+      shop = shop()
+      register_shop(shop)
+
+      pet =
+        Repo.insert!(%Pet{
+          class: 1002,
+          name: "Poring",
+          account_id: 0,
+          char_id: 0,
+          level: 1,
+          egg_id: 9001,
+          intimate: 250,
+          hungry: 100
+        })
+
+      stub(ItemManagement, :get_item_by_id, fn 9001 ->
+        {:ok,
+         %ItemDefinition{
+           id: 9001,
+           aegis_name: "Egg",
+           name: "Egg",
+           type: :pet_egg,
+           buy: 50,
+           sell: 25,
+           weight: 1
+         }}
+      end)
+
+      {:ok, _} =
+        InventoryPersistence.insert_item(ctx.seller.id, %{
+          nameid: 9001,
+          amount: 1,
+          card0: 256,
+          card1: pet.id
+        })
+
+      inventory = InventoryPersistence.load_inventory(ctx.seller.id) |> PlayerState.from_list()
+      open_sell(seller_state(ctx.seller, inventory, 1_000, 150, 60), request(shop, [{0, 1}]))
+      refute Repo.get(Pet, pet.id)
+
+      other =
+        Repo.insert!(%Pet{
+          class: 1002,
+          name: "Poring",
+          account_id: 0,
+          char_id: 0,
+          level: 1,
+          egg_id: 9001,
+          intimate: 250,
+          hungry: 100
+        })
+
+      {:ok, _} =
+        InventoryPersistence.insert_item(ctx.seller.id, %{
+          nameid: 9001,
+          amount: 1,
+          card1: other.id
+        })
+
+      inventory = InventoryPersistence.load_inventory(ctx.seller.id) |> PlayerState.from_list()
+      open_sell(seller_state(ctx.seller, inventory, 1_000, 150, 60), request(shop, [{0, 1}]))
+      assert Repo.get(Pet, other.id)
+    end
+
     test "commits the inventory removal and the zeny credit atomically", ctx do
       shop = shop()
       register_shop(shop)

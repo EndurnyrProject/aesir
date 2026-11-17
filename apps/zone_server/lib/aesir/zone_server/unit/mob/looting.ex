@@ -11,10 +11,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.Looting do
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
   alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
+  alias Aesir.ZoneServer.Mmo.PetManagement.Egg
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Pet.Persistence
 
   @loot_range 12
   @capacity 10
@@ -122,12 +124,28 @@ defmodule Aesir.ZoneServer.Unit.Mob.Looting do
     end
   end
 
+  defp discard_oldest(items) when length(items) >= @capacity do
+    case hd(items) do
+      %{cards: [card0, card1, card2 | _]} ->
+        if pet_id = Egg.pet_id(%{card0: card0, card1: card1, card2: card2}) do
+          Persistence.delete(pet_id, nil)
+        end
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp discard_oldest(_items), do: :ok
+
   defp pickup(%MobState{attack_timer_at: timer} = state, _now) when timer != nil, do: state
 
   defp pickup(state, now) do
     state =
       case Coordinator.claim_loot_item(state.map_name, state.loot_target_id) do
         {:ok, item} ->
+          discard_oldest(state.looted_items)
+
           items = Enum.take(state.looted_items, -(@capacity - 1)) ++ [item]
           %{state | looted_items: items}
 

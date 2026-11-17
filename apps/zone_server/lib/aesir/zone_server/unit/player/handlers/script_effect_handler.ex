@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Inventory.ItemSearch
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
   alias Aesir.ZoneServer.Unit.ItemContainer
+  alias Aesir.ZoneServer.Unit.Pet.Persistence, as: PetPersistence
   alias Aesir.ZoneServer.Unit.Player.DieCounter
   alias Aesir.ZoneServer.Unit.Player.Handlers.BreakOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
@@ -810,6 +811,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
       case InventoryOps.remove(gs.character_id, gs.inventory, index, amount) do
         {:ok, persisted, _change} ->
+          delete_pet_egg(Map.fetch!(gs.inventory, index), gs.character_id)
+
           MessageRouter.send_to(state.connection_pid, InventoryView.item_removed(index, amount))
           {:cont, commit(state, %{gs | inventory: persisted})}
 
@@ -817,6 +820,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           {:halt, {{:error, reason}, state}}
       end
     end)
+  end
+
+  defp delete_pet_egg(item, character_id) do
+    with {:ok, %{type: :pet_egg}} <- Items.by_id(item.nameid),
+         pet_id when not is_nil(pet_id) <- Egg.pet_id(item) do
+      PetPersistence.delete(pet_id, character_id)
+    end
   end
 
   defp take_off(%{game_state: gs} = state, index) do

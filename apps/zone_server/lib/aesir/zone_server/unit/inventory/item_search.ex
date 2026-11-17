@@ -11,7 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory.ItemSearch do
 
   Deleting runs the reference's search twice, first only counting and then
   deleting. Each run takes, in index order, the unequipped rows that match
-  best (by id only: unrefined and card-less; exact: unequipped with the
+  best (by id only: unrefined and card-less, or pet eggs; exact: unequipped with the
   requested refine), and when it skipped a row for being equipped or not
   matching that way, takes any other matching row in a second pass. The
   counting run does not consume what its first pass took, so a row can count
@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory.ItemSearch do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.Models.ItemOptions
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Items
 
   @typedoc "Exact attributes to match; `options: nil` skips the option compare."
   @type criteria :: %{
@@ -118,7 +119,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory.ItemSearch do
     cond do
       item.nameid != nameid -> :skip
       item.equip != 0 or item.refine != 0 -> :important
-      card_words(item) != [0, 0, 0, 0] -> :important
+      card_words(item) != [0, 0, 0, 0] and not pet_egg_type?(item) -> :important
       true -> :take
     end
   end
@@ -136,6 +137,13 @@ defmodule Aesir.ZoneServer.Unit.Inventory.ItemSearch do
 
   defp second_pass?(item, criteria),
     do: item.nameid == criteria.nameid and exact?(item, criteria)
+
+  defp pet_egg_type?(item) do
+    case Items.by_id(item.nameid) do
+      {:ok, %{type: :pet_egg}} -> true
+      _ -> false
+    end
+  end
 
   defp exact?(item, criteria) do
     item.identify == criteria.identify and item.refine == criteria.refine and

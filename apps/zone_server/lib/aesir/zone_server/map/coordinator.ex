@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Map.Coordinator do
   use GenServer
 
+  import Bitwise
+
   require Logger
 
   alias Aesir.Commons.InterServer.PubSub, as: ServerPubSub
@@ -22,6 +24,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Mmo.PetManagement.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
   alias Aesir.ZoneServer.Npc.Events, as: NpcEvents
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
@@ -32,6 +35,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
   alias Aesir.ZoneServer.Unit.Movement
+  alias Aesir.ZoneServer.Unit.Pet.Persistence, as: PetPersistence
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SnapshotBuilder
@@ -527,6 +531,8 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     state.map_name
     |> GroundItemStore.expire_due(System.monotonic_time(:millisecond), @ground_item_lifetime_ms)
     |> Enum.each(fn %GroundItem{} = item ->
+      delete_expired_pet(item)
+
       Broadcast.to_in_range(
         state.map_name,
         item.x,
@@ -540,6 +546,16 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
     {:noreply, state}
   end
+
+  defp delete_expired_pet(%GroundItem{cards: [_, low, high | _], nameid: nameid}) do
+    pet_id = low ||| high <<< 16
+
+    if pet_id != 0 and match?({:ok, _}, Catalog.by_egg(nameid)) do
+      PetPersistence.delete(pet_id, nil)
+    end
+  end
+
+  defp delete_expired_pet(%GroundItem{}), do: :ok
 
   @doc """
   Computes the per-observer delta-snapshot deliveries for one flush.

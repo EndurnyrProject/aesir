@@ -27,11 +27,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.PetManagement.Catalog
+  alias Aesir.ZoneServer.Mmo.PetManagement.Egg
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Shop, as: ShopData
   alias Aesir.ZoneServer.Npc.Shop.Registry, as: ShopRegistry
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.ItemContainer
+  alias Aesir.ZoneServer.Unit.Pet.Persistence, as: PetPersistence
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerEvents
@@ -157,6 +161,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
            ShopCore.compute_sell(requests, gs),
          {:ok, inventory} <-
            transact_sell(gs.character_id, gs.inventory, gs.zeny, total_credit, removals) do
+      Enum.each(removals, fn {index, _amount} ->
+        delete_pet_egg(Map.fetch!(gs.inventory, index))
+      end)
+
       new_state = finalize_sell(state, inventory, removals, total_credit)
       reply(connection_pid, %NpcSellResult{result: @result_ok})
       PlayerEvents.inventory_changed(gs.character_id)
@@ -165,6 +173,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
       {:error, reason} ->
         reply(connection_pid, %NpcSellResult{result: sell_result_code(reason)})
         {:noreply, state}
+    end
+  end
+
+  defp delete_pet_egg(item) do
+    with {:ok, %{type: :pet_egg}} <- Items.by_id(item.nameid),
+         {:ok, _} <- Catalog.by_egg(item.nameid),
+         pet_id when not is_nil(pet_id) <- Egg.pet_id(item) do
+      PetPersistence.delete(pet_id, nil)
     end
   end
 
