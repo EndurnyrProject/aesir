@@ -2,10 +2,10 @@ defmodule Aesir.ZoneServer.Mmo.PetManagement.Catalog do
   @moduledoc """
   Runtime pet catalog loaded from `pets.yml` into `:persistent_term`.
 
-  Only the lookups the reference makes through `pet_db_search` exist: by mob,
-  by egg item, and whether an item is a taming item. When several pets share an
-  egg item, `by_egg/1` returns the one with the lowest mob id; the reference's
-  pick follows its hash map order, which no id order reproduces.
+  Only three lookups exist: by mob, by egg item, and whether an item is a
+  taming item. When several pets share an egg item, `by_egg/1` returns the one
+  with the lowest mob id; the original pick follows hash map order, which no
+  id order reproduces.
   """
 
   alias Aesir.ZoneServer.Db.Source

@@ -14,7 +14,9 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequest do
   while casting, unless the
   skill is Cast Cancel; while the act delay runs, unless the skill comes from
   an item; in pre-renewal, while Basilica holds the player, unless the caster
-  ends its own Basilica; and while a skill menu other than Autospell is open.
+  ends its own Basilica; and while a skill menu other than Autospell or the pet
+  egg list is open. The handler closes the pet egg list for a request that
+  gets past the open-menu check.
   Every refusal but `not_ok/3`'s and the act delay's is silent. A skill that
   targets the user is then aimed at the user whatever the client named.
 
@@ -200,13 +202,14 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequest do
   end
 
   # The skill's own menus, Arrow Crafting's list and a pending text prompt; the
-  # Autospell menu stays open for the next request.
+  # Autospell menu stays open for the next request and the pet egg list is
+  # closed by it.
   defp menu_open?(state) do
     case Map.get(state, :pending_skill_menu) do
       %{skill_id: @autospell} ->
         false
 
-      nil ->
+      menu when is_nil(menu) or menu.kind == :PET_EGGS ->
         SessionState.system_dialog?(state) or Map.get(state, :pending_skill_text_input) != nil
 
       _menu ->

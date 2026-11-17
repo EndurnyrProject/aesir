@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequestTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Npc.Proximity
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SkillRequest
@@ -288,6 +289,15 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequestTest do
 
       autospell = %{state | pending_skill_menu: %{skill_id: @autospell, kind: :SKILL}}
       assert {:use, _} = targeted(autospell, @first_aid)
+    end
+
+    test "the pet egg list lets a request through", %{state: state} do
+      egg_list = SkillMenuHandler.open_pet_egg_offer(state)
+
+      assert {:use, _} = targeted(egg_list, @first_aid)
+
+      assert {:refuse, :silent} =
+               targeted(%{egg_list | pending_skill_text_input: :pending}, @first_aid)
     end
   end
 

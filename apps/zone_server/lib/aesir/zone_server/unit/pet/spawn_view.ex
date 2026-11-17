@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.SpawnView do
 
   @doc """
   Builds the spawn packet of a pet in the world. The accessory shows the
-  equipped item's view id, or the item id when it has none (`status.cpp:9482`).
+  equipped item's view id, or the item id when it has none.
   """
   @spec build(PetState.t()) :: UnitSpawn.t()
   def build(%PetState{world_gid: gid} = pet) when is_integer(gid) do
@@ -37,9 +37,14 @@ defmodule Aesir.ZoneServer.Unit.Pet.SpawnView do
     }
   end
 
-  defp accessory_view(0), do: 0
+  @doc """
+  The accessory's view id: the equipped item's view id, or the item id when it
+  has none, 0 with nothing equipped.
+  """
+  @spec accessory_view(non_neg_integer()) :: non_neg_integer()
+  def accessory_view(0), do: 0
 
-  defp accessory_view(item_id) do
+  def accessory_view(item_id) do
     case Items.by_id(item_id) do
       {:ok, %{view: view}} when view != 0 -> view
       _no_view -> item_id

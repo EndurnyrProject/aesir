@@ -5,8 +5,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   and behind the production list item scripts open (`produce`, `src_skill_id` 0).
 
   `open/5` sends the `SkillMenu` offer and parks it on the session's
-  `pending_skill_menu` — the equivalent of rAthena's `menuskill_id`/`menuskill_val`
-  pair. `handle_reply/2` accepts exactly the reply that answers the parked offer
+  `pending_skill_menu`, a single slot. `handle_reply/2` accepts exactly the
+  reply that answers the parked offer
   and clears it; anything else (no pending menu, a different `src_skill_id`, an
   id outside the offered set) is dropped with a debug log rather than crashing
   the session, since a reply is client input and may be stale or forged. A
@@ -21,6 +21,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   This module owns the transport only. An accepted selection is routed back to
   the skill that opened the menu through its `Skill.Menu` capability, which does
   the acting.
+
+  The pet egg list parks here too (`open_pet_egg_offer/1`). It has no skill
+  callback: its selection arrives as a `PetRequest`, never as a
+  `SkillMenuReply`.
   """
 
   require Logger
@@ -40,8 +44,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
 
-  @typedoc "A `SkillMenu.Kind` enum value."
-  @type kind :: :SKILLS | :ITEMS | :INVENTORY_SLOTS | :OPTIONS
+  @taming_monster 297
+
+  @typedoc "A `SkillMenu.Kind` enum value, or `:PET_EGGS` for the pet egg list."
+  @type kind :: :SKILLS | :ITEMS | :INVENTORY_SLOTS | :OPTIONS | :PET_EGGS
 
   @typedoc "The offer parked on the session while the client is deciding."
   @type pending :: %{
@@ -59,7 +65,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   consumer of the reply does not have to re-read it.
 
   Replaces any menu already pending: the newest offer is the only one the client
-  is showing, and rAthena likewise keeps a single `menuskill_id`.
+  is showing.
   """
   @spec open(
           map(),
@@ -107,6 +113,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
       end
     end
   end
+
+  @doc """
+  Parks the pet egg list offer under Taming Monster's skill id, replacing any
+  open menu. The caller sends the list itself.
+  """
+  @spec open_pet_egg_offer(SessionState.t()) :: SessionState.t()
+  def open_pet_egg_offer(%SessionState{} = state) do
+    %{
+      state
+      | pending_skill_menu: %{
+          skill_id: @taming_monster,
+          kind: :PET_EGGS,
+          entry_ids: [],
+          level: 0
+        }
+    }
+  end
+
+  @doc "Whether the pet egg list offer is parked."
+  @spec pet_egg_offer?(map()) :: boolean()
+  def pet_egg_offer?(state), do: match?(%{kind: :PET_EGGS}, Map.get(state, :pending_skill_menu))
 
   @doc """
   Opens the production list an item's `produce` script asks for (see
@@ -162,6 +189,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   @spec handle_reply(SkillMenuReply.t(), map()) :: {:noreply, map()}
   def handle_reply(%SkillMenuReply{} = reply, %{pending_skill_menu: nil} = state) do
     debug_drop(state, "no menu is pending", reply)
+    {:noreply, state}
+  end
+
+  def handle_reply(%SkillMenuReply{} = reply, %{pending_skill_menu: %{kind: :PET_EGGS}} = state) do
+    debug_drop(state, "the pet egg list is pending", reply)
     {:noreply, state}
   end
 

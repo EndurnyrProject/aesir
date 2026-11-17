@@ -104,6 +104,15 @@ defmodule Aesir.ZoneServer.Unit.Pet.Persistence do
     end
   end
 
+  @doc """
+  Points the character at `pet_id`, restoring the link to a hatched pet it
+  owns.
+  """
+  @spec link(pos_integer(), pos_integer()) :: :ok | {:error, :character_missing}
+  def link(pet_id, character_id) do
+    with {:ok, :updated} <- update_character(Repo, character_id, pet_id), do: :ok
+  end
+
   @doc "Saves pet attributes."
   @spec save(Pet.t(), map()) :: {:ok, Pet.t()} | {:error, Ecto.Changeset.t()}
   def save(pet, attrs), do: pet |> Pet.changeset(attrs) |> Repo.update()

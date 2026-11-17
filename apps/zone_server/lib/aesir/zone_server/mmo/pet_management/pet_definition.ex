@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.PetManagement.PetDefinition do
   @moduledoc """
-  One imported `pet_db` row (rAthena `s_pet_db`): the species keyed by its mob
+  One imported `pet_db` row: the species keyed by its mob
   id, its items, hunger and intimacy tuning, support AI rates, the parsed bonus
   program and the support-script ops. Item ids of absent items are 0.
   """

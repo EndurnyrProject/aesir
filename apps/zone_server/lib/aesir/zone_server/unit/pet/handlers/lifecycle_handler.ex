@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler do
   alias Aesir.ZoneServer.Unit.Pet.PetState
   alias Aesir.ZoneServer.Unit.Pet.StateCommit
   alias Aesir.ZoneServer.Unit.Player.InventoryView
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit, as: PlayerStateCommit
 
@@ -33,16 +34,15 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler do
   @gvg_refusal "Pets are not allowed in Guild Wars."
 
   @doc """
-  Restores the pet named by `characters.pet_id` at login (`pet_recv_petdata`,
-  `pet.cpp:1130`), held off the map until `spawned_after_map_load/1`.
+  Restores the pet named by `characters.pet_id` at login, held off the map
+  until `spawned_after_map_load/1`.
 
-  With no row, a hatched row of another account or character
-  (`mapif_load_pet` sends no info) or an unknown class (`pet_data_init`),
-  `pet_id` is cleared. A row still in its egg hides the egg (`attribute 1`)
-  and clears `pet_id`: the hatch that follows fails because `pet_id` was set
-  (`pet_birth_process`, `pet.cpp:1084`); with no egg only `pet_id` is cleared.
-  Otherwise the pet stands next to the owner (`unit_calc_pos`) facing the
-  owner's direction, and an unrenamed pet takes its mob's name.
+  With no row, a hatched row of another account or character or an unknown
+  class, `pet_id` is cleared. A row still in its egg hides the egg
+  (`attribute 1`) and clears `pet_id`: the hatch that follows fails because
+  `pet_id` was set; with no egg only `pet_id` is cleared.
+  Otherwise the pet stands next to the owner facing the owner's direction,
+  and an unrenamed pet takes its mob's name.
   """
   @spec restore(SessionState.t(), Character.t()) :: SessionState.t()
   def restore(%SessionState{} = session, %Character{pet_id: pet_id} = character)
@@ -63,10 +63,10 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler do
   def restore(%SessionState{} = session, %Character{}), do: session
 
   @doc """
-  Puts the pet in the world once the owner's map has loaded
-  (`clif_parse_LoadEndAck`, `clif.cpp:10851-10866`): it spawns and the owner
-  gets INIT and the private state. On a GvG map with `pet_disable_in_gvg` the
-  owner sees message 666 and the pet returns to its egg instead.
+  Puts the pet in the world once the owner's map has loaded: it spawns and the
+  owner gets INIT and the private state. On a GvG map with
+  `pet_disable_in_gvg` the owner sees message 666 and the pet returns to its
+  egg instead.
   """
   @spec spawned_after_map_load(SessionState.t()) :: SessionState.t()
   def spawned_after_map_load(%SessionState{pet: %PetState{}, game_state: owner} = session) do
@@ -85,9 +85,8 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler do
 
   @doc """
   Carries the pet along an owner warp: it leaves the map out of sight with its
-  owner (`unit_remove_map_pc`), stops walking and thinking, and stands on the
-  destination cell facing the owner's direction (`pc_setpos`, `pc.cpp:7134`)
-  until `spawned_after_map_load/1`.
+  owner, stops walking and thinking, and stands on the destination cell
+  facing the owner's direction until `spawned_after_map_load/1`.
   """
   @spec detach_for_warp(SessionState.t(), {String.t(), integer(), integer()}) ::
           SessionState.t()
@@ -117,12 +116,11 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler do
   def detach_for_warp(%SessionState{} = session, _destination), do: session
 
   @doc """
-  Returns the pet to its egg (`pet_return_egg`, `pet.cpp:952-980`): the egg
+  Returns the pet to its egg: the egg
   shows again (`attribute 0`), the pet goes back in it (`incubate 1`) and is
   unlinked from the character, the owner gets the inventory and UPDATE_EGG,
   and the pet leaves the world out of sight. With its egg gone from the
-  inventory nothing changes. As `unit_free` does, the live pet is saved with
-  the transition.
+  inventory nothing changes. The live pet is saved with the transition.
   """
   @spec return_to_egg(SessionState.t()) :: SessionState.t()
   def return_to_egg(%SessionState{pet: %PetState{} = pet, game_state: owner} = session) do
@@ -141,7 +139,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler do
   def return_to_egg(%SessionState{} = session), do: session
 
   @doc """
-  Ends the pet with its owner's session (`unit_free`, `unit.cpp:4053-4060`):
+  Ends the pet with its owner's session:
   it leaves the world out of sight; a pet with intimacy is saved, a pet that
   ran away (intimacy 0) is deleted and unlinked from the character.
   """
@@ -157,9 +155,8 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler do
   def terminate(%SessionState{}), do: :ok
 
   @doc """
-  Sends the owner its pet's status (`clif_send_petstatus`) with the autofeed
-  setting (`clif_pet_autofeed_status`). `renamed` is reported only while
-  `pet_rename` is off.
+  Sends the owner its pet's status with the autofeed setting. `renamed` is
+  reported only while `pet_rename` is off.
   """
   @spec send_private_state(SessionState.t()) :: :ok
   def send_private_state(%SessionState{pet: %PetState{} = pet} = session) do
@@ -181,9 +178,8 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler do
   end
 
   defp init(%SessionState{game_state: owner} = session, %Pet{} = row) do
-    with {:ok, _definition} <- Catalog.by_mob(row.class),
-         {:ok, mob} <- Mobs.by_id(row.class),
-         {:ok, session} <- StateCommit.restore(session, place(row, mob, owner)) do
+    with {:ok, pet} <- build(row, owner),
+         {:ok, session} <- StateCommit.restore(session, pet) do
       session
     else
       :error ->
@@ -195,13 +191,27 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler do
     end
   end
 
-  defp place(row, mob, owner) do
-    pet = PetState.from_row(row, owner)
-    {x, y} = MovementHandler.calc_pos(pet, owner)
-    %{pet | x: x, y: y, name: if(row.rename_flag == 0, do: mob.name, else: row.name)}
+  @doc """
+  Builds the pet for `row` as it first appears: next to the owner facing the
+  owner's direction, an unrenamed pet named after its mob. `:error` for a
+  class with no pet or mob entry.
+  """
+  @spec build(Pet.t(), PlayerState.t()) :: {:ok, PetState.t()} | :error
+  def build(%Pet{} = row, %PlayerState{} = owner) do
+    with {:ok, _definition} <- Catalog.by_mob(row.class),
+         {:ok, mob} <- Mobs.by_id(row.class) do
+      pet = PetState.from_row(row, owner)
+      {x, y} = MovementHandler.calc_pos(pet, owner)
+      {:ok, %{pet | x: x, y: y, name: if(row.rename_flag == 0, do: mob.name, else: row.name)}}
+    end
   end
 
-  defp hide_egg(%SessionState{game_state: owner} = session, %Pet{id: pet_id}) do
+  @doc """
+  Hides the pet's egg (`attribute 1`), if the owner carries it, and clears
+  `characters.pet_id`: what a failed hatch leaves behind.
+  """
+  @spec hide_egg(SessionState.t(), Pet.t()) :: SessionState.t()
+  def hide_egg(%SessionState{game_state: owner} = session, %Pet{id: pet_id}) do
     case Enum.find(owner.inventory, fn {_index, item} -> Egg.pet_id(item) == pet_id end) do
       {index, egg} -> unlink(session, pet_id, %{owner.inventory | index => %{egg | attribute: 1}})
       nil -> unlink(session, pet_id, owner.inventory)
@@ -250,6 +260,6 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler do
     })
   end
 
-  # `mapdata_flag_gvg`; Aesir runs no TE agit, so a TE castle never counts.
+  # A TE castle never counts: Aesir runs no TE agit.
   defp gvg?(map_name), do: MapFlags.gvg?(map_name) or MapFlags.get(map_name, :gvg_te)
 end

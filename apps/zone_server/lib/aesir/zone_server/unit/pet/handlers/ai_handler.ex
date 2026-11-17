@@ -1,5 +1,5 @@
 defmodule Aesir.ZoneServer.Unit.Pet.Handlers.AiHandler do
-  @moduledoc "The pet's 100 ms think (`pet_ai_sub_hard`, `pet.cpp:1753`)."
+  @moduledoc "The pet's 100 ms think."
 
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
@@ -13,7 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.AiHandler do
   @think_ms 100
   @follow_range 3
 
-  @doc "Arms exactly one think timer while a pet is out (`MIN_PETTHINKTIME`)."
+  @doc "Arms exactly one think timer while a pet is out."
   @spec arm(SessionState.t()) :: SessionState.t()
   def arm(%SessionState{pet_runtime: runtime} = session) do
     Clock.cancel(runtime.ai_timer_ref)

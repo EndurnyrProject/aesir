@@ -6,16 +6,18 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
   alias Aesir.Net.PetMenuCommand
   alias Aesir.Net.PetRequest
   alias Aesir.Net.PetResult
+  alias Aesir.Net.PetSelectEggCommand
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Pet.Handlers.AiHandler
+  alias Aesir.ZoneServer.Unit.Pet.Handlers.HatchHandler
   alias Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler
   alias Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Pet.PetState
   alias Aesir.ZoneServer.Unit.Player.SessionState
 
   @doc """
-  Runs a pet request and replies with its `PetResult`. The menu (`pet_menu`,
-  `pet.cpp:1422`) needs a pet out with intimacy above 0.
+  Runs a pet request and replies with its `PetResult`. The menu needs a pet
+  out with intimacy above 0.
   """
   @spec request(PetRequest.t(), SessionState.t()) :: {:noreply, SessionState.t()}
   def request(%PetRequest{} = request, %SessionState{} = session) do
@@ -32,6 +34,14 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
 
     MessageRouter.send_to(session.connection_pid, reply)
     {:noreply, session}
+  end
+
+  defp run({:select_egg, %PetSelectEggCommand{index: index}}, session) do
+    selected = HatchHandler.select_egg(session, index)
+
+    if is_nil(session.pet) and not is_nil(selected.pet),
+      do: {:ok, selected},
+      else: {{:error, :PET_ERROR_INVALID_REQUEST}, selected}
   end
 
   defp run(_command, %SessionState{pet: nil} = session),
@@ -58,8 +68,13 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
 
   defp run(_command, session), do: {{:error, :PET_ERROR_INVALID_REQUEST}, session}
 
-  @doc "Handles an asynchronous pet command."
+  @doc """
+  Handles an asynchronous pet command: `{:birthpet}` opens the egg list.
+  """
   @spec cast(term(), SessionState.t()) :: {:noreply, SessionState.t()}
+  def cast({:birthpet}, %SessionState{} = session),
+    do: {:noreply, HatchHandler.open_egg_list(session)}
+
   def cast(command, %SessionState{} = session) do
     Logger.warning("Unsupported pet cast: #{inspect(command)}")
     {:noreply, session}

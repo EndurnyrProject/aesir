@@ -1,12 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.PetManagement.SupportScript do
   @moduledoc """
   Transpiles a `pet_db` `SupportScript` into ordered declarative ops, one per
-  pet support buildin (`script.cpp` `BUILDIN_FUNC(petskillbonus)` and siblings).
+  pet support buildin (`petskillbonus` and its siblings).
 
   Arguments are resolved the way each buildin stores them: `petloot` clamps its
-  size to 1..30 (`MAX_PETLOOT_SIZE`), and `petskillattack` caps its level at the
-  skill's max level (`script.cpp:15415`). Any other statement, command or a
-  non-literal argument raises, so the import fails loudly.
+  size to 1..30, and `petskillattack` caps its level at the skill's max level.
+  Any other statement, command or a non-literal argument raises, so the import
+  fails loudly.
   """
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys

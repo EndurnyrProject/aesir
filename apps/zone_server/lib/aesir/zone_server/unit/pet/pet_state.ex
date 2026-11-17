@@ -90,7 +90,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.PetState do
   @doc """
   Builds the pet from its persisted row, placed on its owner's cell and facing.
 
-  The walk speed follows `pet_walk_speed` (`pet.hpp` `get_pet_walk_speed`):
+  The walk speed follows `pet_walk_speed`:
   1 the owner's current speed, 2 the default 150, 3 the mob database speed.
   """
   @spec from_row(Pet.t(), PlayerState.t()) :: t()

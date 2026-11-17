@@ -119,10 +119,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp run_targeted(state, skill_id, %{level: level, target: target_id}),
     do: dispatch_use_skill(state, skill_id, level, target_id)
 
-  # A request that passed ends the invincibility when it should and leaves a
-  # pending item skill behind only for an item skill.
+  # A request that passed ends the invincibility when it should, closes the pet
+  # egg list and leaves a pending item skill behind only for an item skill.
   defp accept_request(state, request) do
     state = if request.ends_invincibility?, do: Invincibility.stop(state), else: state
+
+    state =
+      if SkillMenuHandler.pet_egg_offer?(state), do: SkillMenuHandler.clear(state), else: state
 
     if request.clears_item_skill? and Map.get(state, :pending_item_skill) != nil,
       do: %{state | pending_item_skill: nil},
@@ -157,8 +160,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
-  # Mirrors rAthena's ordering (`skills/mage/castcancel.cpp`): the requirement is
-  # consumed first, then the cast is aborted, then the penalty is zapped. Running
+  # The requirement is consumed first, then the cast is aborted, then the
+  # penalty is zapped. Running
   # `begin_cast/4` up front validates Cast Cancel (learned, cooldown, its own 2 SP)
   # and charges it against a state that still carries the descriptor, so a Cast
   # Cancel the player cannot afford aborts nothing. With no cast in flight,
@@ -196,7 +199,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   # `sp_cost(cancelled_skill, cancelled_level) * (90 - 20*(lv-1)) / 100`, the raw
-  # catalog cost (rAthena's `skill_get_sp`, before any `sp_cost_rate` modifier).
+  # catalog cost (before any `sp_cost_rate` modifier).
   # Higher Cast Cancel levels pay less: 90% down to 10% at level 5. A skill in
   # flight is by construction a castable catalog skill, so a lookup miss is a
   # broken invariant and crashes rather than silently cancelling for free.
@@ -759,7 +762,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   @doc """
-  Starts a cast a script asked for (rAthena `unitskilluseid`) on the player's own
+  Starts a cast a script asked for (`unitskilluseid`) on the player's own
   unit. The skill needs no learned rank; every other cast-begin and cast-end
   condition applies. A gate refusal leaves the state unchanged, an instant cast
   runs to its cast end here, and a timed one starts the ordinary cast bar.

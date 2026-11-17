@@ -1,10 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.PetManagement.EggGrant do
   @moduledoc """
-  Creates a pet and its identified egg for one fresh egg grant (rAthena
-  `pet_create_egg`, `pet.cpp:668-688`, and `pet_get_egg`).
+  Creates a pet and its identified egg for one fresh egg grant.
 
   `:not_egg` (no pet hatches from the item, or its mob is unknown) and
-  `:no_slot` (no free inventory slot) are the reference's pre-checks, after
+  `:no_slot` (no free inventory slot) are the pre-checks, after
   which the callers that test the result add the plain item instead. Any later
   refusal (`:overweight`) leaves no pet row and is terminal for that egg.
   """

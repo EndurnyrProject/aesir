@@ -52,9 +52,8 @@ defmodule Aesir.ZoneServer.Unit.Pet.StateCommit do
   end
 
   @doc """
-  Stores a pet held off the map, as `pet_data_init` creates it before
-  `map_addblock`: its world id is claimed but it is not in the world until
-  `attach/1`.
+  Stores a pet held off the map: its world id is claimed but it is not in the
+  world until `attach/1`.
   """
   @spec restore(SessionState.t(), PetState.t()) ::
           {:ok, SessionState.t()} | {:error, :exhausted}
@@ -90,7 +89,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.StateCommit do
 
   @doc """
   Takes the pet out of the world with `reason` for every observer, releases
-  its world id and clears `session.pet`. As `unit_free` does, every pet timer
+  its world id and clears `session.pet`. Every pet timer
   is cancelled and the runtime reset with a bumped generation, so stale timer
   events are dropped; the owner's catch process is kept.
   """

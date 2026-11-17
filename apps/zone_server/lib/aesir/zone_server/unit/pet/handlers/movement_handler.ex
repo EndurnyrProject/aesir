@@ -1,8 +1,7 @@
 defmodule Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler do
   @moduledoc """
-  Walks the owner's pet: path stepping, the follow cell (`unit_calc_pos`),
-  random walk (`pet_randomwalk`), the slide to the owner inside an owner
-  `unit_movepos`, and the 3 s owner recall (`unit_check_start_teleport_timer`).
+  Walks the owner's pet: path stepping, the follow cell, random walk, the
+  slide to the owner when the owner moves instantly, and the 3 s owner recall.
   """
 
   require Logger
@@ -32,13 +31,13 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler do
   @owner_chase_range 3
 
   @doc """
-  Starts a walk to `goal` (`unit_walktoxy`). A pet already walking takes the
+  Starts a walk to `goal`. A pet already walking takes the
   new goal on its next cell and succeeds. Fails while the pet cannot move
   (`opts[:now]` before `can_move_at_ms`) or when no walk path exists.
-  `chase_owner: true` is `unit_walktobl` toward the owner at `goal` with chase
-  range 3: the walk goes to the owner-adjacent cell of `unit_can_reach_bl`,
-  its path end trimmed to the range, and at the path end `unit_update_chase`
-  stops within the range or out of sight, else chases again.
+  `chase_owner: true` chases the owner at `goal` with chase range 3: the walk
+  goes to the cell next to the owner, its path end trimmed to the range, and
+  at the path end the chase stops within the range or out of sight, else
+  chases again.
   """
   @spec walk_to(SessionState.t(), {integer(), integer()}, keyword()) ::
           {:ok, SessionState.t()} | {:error, :unreachable}
@@ -99,9 +98,9 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler do
   end
 
   @doc """
-  The follow cell (`unit_calc_pos`, `unit.cpp:3106`): 2 cells behind the
+  The follow cell: 2 cells behind the
   owner's facing, else 1, else up to 12 random directions (2 cells, then 1).
-  When all fail the reference tries `(tx, tx)`, and its caller then walks to
+  When all fail it tries `(tx, tx)`, and its caller then walks to
   the owner's cell when that is unreachable too.
   """
   @spec calc_pos(PetState.t(), PlayerState.t()) :: {integer(), integer()}
@@ -115,7 +114,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler do
   end
 
   @doc """
-  Random walk (`pet_randomwalk`, `pet.cpp:1694`) once the next walk time has
+  Random walk once the next walk time has
   passed and the pet can move: 20 tries within `max(12 - fails, 5)` cells; a
   total failure counts a fail, and past 1000 fails the pet holds for 60 s.
   The next walk is `now + 4000 + path cost + rnd(0..999)`.
@@ -144,7 +143,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler do
   def random_walk(%SessionState{} = session, _now), do: session
 
   @doc """
-  The pet check of an owner `unit_movepos` (`unit.cpp:1220-1232`): a pet with
+  The pet check of an owner's instant move: a pet with
   intimacy above 0 moves to the owner's cell with a slide when the move was
   made without a path check (`checkpath? == false`) and the pet has no path to
   the owner, or when the pet is farther than the view range.
@@ -166,7 +165,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler do
   def slide_to_owner(session, _checkpath?), do: session
 
   @doc """
-  The pet part of `unit_check_start_teleport_timer` at an owner walk start:
+  The pet check at an owner walk start:
   a pet farther than the view range arms the 3 s recall unless one is armed;
   otherwise an armed recall is cancelled.
   """
@@ -189,7 +188,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler do
   def check_recall(session), do: session
 
   @doc """
-  The recall firing (`unit_teleport_timer`): a pet still farther than the view
+  The recall firing: a pet still farther than the view
   range warps to the owner's cell; otherwise the recall just clears.
   """
   @spec recall_timeout(reference(), SessionState.t()) :: SessionState.t()
@@ -208,8 +207,8 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler do
 
   def recall_timeout(_ref, %SessionState{} = session), do: session
 
-  # `max_walk_path` is checked by `unit_walktoxy` only; `unit_walktobl` keeps
-  # the 14-step rule alone.
+  # `max_walk_path` limits a plain walk only; a chase keeps the 14-step rule
+  # alone.
   defp request_path(map, from, goal, true), do: Pathfinding.rewalk_path(map, from, goal)
   defp request_path(map, from, goal, false), do: Pathfinding.walk_path(map, from, goal)
 
@@ -224,8 +223,8 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler do
 
   defp walk_goal(_map, _pet, goal, false), do: {:ok, goal}
 
-  # `unit_can_reach_bl`: the owner's neighbour on the pet's side, else the first
-  # passable neighbour in direction order, with a CELL_CHKNOREACH path to it.
+  # The owner's neighbour on the pet's side, else the first passable neighbour
+  # in direction order, with a CELL_CHKNOREACH path to it.
   defp walk_goal(map, %PetState{} = pet, {tx, ty}, true) do
     side = {sign(tx - pet.x), sign(ty - pet.y)}
 
@@ -269,7 +268,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler do
     |> arm_step()
   end
 
-  # `unit_walktoxy_sub`: a chase drops path cells from the end while the range
+  # A chase drops path cells from the end while the range
   # budget lasts, a diagonal costing twice a straight step, keeping one step.
   defp trim(cells, from), do: do_trim(Enum.reverse([from | cells]), @owner_chase_range * 10 - 10)
 
@@ -314,7 +313,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler do
     end
   end
 
-  # `unit_update_chase` at the path end: stop within the chase range or with
+  # At the path end: stop within the chase range or with
   # the owner out of sight, else chase again once the pet can move.
   defp update_chase(%SessionState{pet: pet, game_state: owner} = session) do
     now = System.monotonic_time(:millisecond)
@@ -327,9 +326,9 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler do
     end
   end
 
-  # `status_check_visibility` from a pet: same map, within its `range2`, and
-  # the owner not concealed from it. `status_calc_pet_` (`status.cpp:3073`)
-  # discards every mob mode and the class, so a pet is never a boss or detector.
+  # Visibility from a pet: same map, within its `range2`, and the owner not
+  # concealed from it. A pet has no mob modes or class, so it is never a boss
+  # or detector.
   defp owner_visible?(%PetState{} = pet, %PlayerState{} = owner) do
     {:ok, mob} = Mobs.by_id(pet.class_id)
     viewer = %{class: :normal, detector: false}

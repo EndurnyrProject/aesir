@@ -2,10 +2,10 @@ defmodule Aesir.ZoneServer.Unit.Pet.Runtime do
   @moduledoc """
   Process-local bookkeeping for the pet owned by a player session.
 
-  `movement_path` is the whole walk and `path_pos` the steps taken on it, as
-  the reference's `walkpath`; `walk_target` is a destination requested while
-  walking, taken on the next cell; `chase_owner` marks a walk toward the owner
-  (`ud.target_to == master`); `teleport_timer_ref` is the 3 s owner recall.
+  `movement_path` is the whole walk and `path_pos` the steps taken on it;
+  `walk_target` is a destination requested while
+  walking, taken on the next cell; `chase_owner` marks a walk toward the owner;
+  `teleport_timer_ref` is the 3 s owner recall.
   The `*_at_ms` deadlines are monotonic milliseconds, `nil` when none is set
   (the monotonic clock is negative on the BEAM, so 0 is not "no deadline").
 
