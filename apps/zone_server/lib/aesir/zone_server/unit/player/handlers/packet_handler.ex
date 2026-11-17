@@ -60,6 +60,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.PartyLeaderRequest
   alias Aesir.Net.PartyLeaveRequest
   alias Aesir.Net.PartyOptionsRequest
+  alias Aesir.Net.PetRequest
   alias Aesir.Net.PickupItemRequest
   alias Aesir.Net.RankingRequest
   alias Aesir.Net.Respawn
@@ -95,6 +96,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Mmo.Skills.Novice.NvBasic
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
+  alias Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler, as: PetCommandHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CardHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ChatHandler
@@ -211,6 +213,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
   def handle_message(%HomunculusRequest{} = request, state) do
     HomunculusCommandHandler.request(request, state)
+  end
+
+  def handle_message(%PetRequest{} = request, state) do
+    PetCommandHandler.request(request, state)
   end
 
   def handle_message(

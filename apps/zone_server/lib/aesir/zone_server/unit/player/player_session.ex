@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler, as: HomunculusMovementHandler
   alias Aesir.ZoneServer.Unit.Lifecycle
+  alias Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler, as: PetCommandHandler
   alias Aesir.ZoneServer.Unit.Player.GuildSync
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
@@ -999,6 +1000,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     HomunculusCommandHandler.info(event, ref, state)
   end
 
+  def handle_info({:timeout, ref, {:pet, event}}, state) do
+    PetCommandHandler.info(event, ref, state)
+  end
+
   # Combat: cross-unit heal broadcast on this player's topic, and the
   # self-armed auto-attack loop tick.
   @impl true
@@ -1256,6 +1261,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   def handle_cast({:homunculus, command}, state) do
     HomunculusCommandHandler.cast(command, state)
+  end
+
+  def handle_cast({:pet, command}, state) do
+    PetCommandHandler.cast(command, state)
   end
 
   @impl true
@@ -1651,6 +1660,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_call({:homunculus, command}, from, state) do
     HomunculusCommandHandler.call(command, from, state)
+  end
+
+  def handle_call({:pet, command}, from, state) do
+    PetCommandHandler.call(command, from, state)
   end
 
   # Inventory: synchronous single-row mutations.

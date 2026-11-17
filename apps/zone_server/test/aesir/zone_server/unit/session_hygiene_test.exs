@@ -57,10 +57,10 @@ defmodule Aesir.ZoneServer.Unit.SessionHygieneTest do
                        )
 
   # Companion aggregates nested in `SessionState`, each with the one source file
-  # allowed to replace the field directly. Future companions (pet, mercenary)
-  # add one entry here.
+  # allowed to replace the field directly.
   @companion_fields %{
-    homunculus: "unit/homunculus/state_commit.ex"
+    homunculus: "unit/homunculus/state_commit.ex",
+    pet: "unit/pet/state_commit.ex"
   }
 
   @map_writers [:put, :replace, :replace!, :update, :update!]
@@ -102,6 +102,13 @@ defmodule Aesir.ZoneServer.Unit.SessionHygieneTest do
       assert @player_session_source =~ "handle_cast({:homunculus, command}, state)"
       assert @player_session_source =~ "handle_call({:homunculus, command}, from, state)"
       refute @player_session_source =~ "handle_info({:homunculus,"
+    end
+
+    test "every pet mailbox shape delegates through its namespace" do
+      assert @player_session_source =~ "handle_info({:timeout, ref, {:pet, event}}, state)"
+      assert @player_session_source =~ "handle_cast({:pet, command}, state)"
+      assert @player_session_source =~ "handle_call({:pet, command}, from, state)"
+      refute @player_session_source =~ "handle_info({:pet,"
     end
 
     test "recognizes the guarded direct replacement forms" do
