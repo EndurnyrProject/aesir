@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.HatchHandler do
   alias Aesir.ZoneServer.Unit.Pet.SpawnView
   alias Aesir.ZoneServer.Unit.Pet.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit, as: PlayerStateCommit
 
@@ -38,7 +39,8 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.HatchHandler do
   Opens the egg list: nothing while a pet is out; message 666 on a GvG map
   (War of Emperium TE included) with `pet_disable_in_gvg`; otherwise every pet
   egg item in the inventory, hatched ones included, is listed and the offer is
-  parked, even when the list is empty.
+  parked, even when the list is empty. The list carries client inventory
+  indexes.
   """
   @spec open_egg_list(SessionState.t()) :: SessionState.t()
   def open_egg_list(%SessionState{pet: %PetState{}} = session), do: session
@@ -49,7 +51,10 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.HatchHandler do
       session
     else
       indexes =
-        for {index, item} <- owner.inventory, item.amount > 0, egg_item?(item.nameid), do: index
+        for {index, item} <- owner.inventory,
+            item.amount > 0,
+            egg_item?(item.nameid),
+            do: PlayerState.client_index(index)
 
       MessageRouter.send_to(session.connection_pid, %PetEggList{indexes: Enum.sort(indexes)})
       SkillMenuHandler.open_pet_egg_offer(session)
@@ -57,7 +62,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.HatchHandler do
   end
 
   @doc """
-  Hatches the egg at inventory `index`. Ignored with no egg list parked;
+  Hatches the egg at server inventory `index`. Ignored with no egg list parked;
   otherwise the list closes and the pick is ignored while trading, for an
   empty slot, an item that is no pet's egg, an egg without a pet
   (`card0 != 256`) or a pet row that is gone or belongs to someone else.

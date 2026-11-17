@@ -1065,7 +1065,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
       assert {:noreply, committed} = ItemHandler.handle_use_item(@red_potion_client_index, state)
 
       assert SkillMenuHandler.pet_egg_offer?(committed)
-      assert_received {:send, :gameplay, {:pet_egg_list, %PetEggList{indexes: [1]}}}
+      assert_received {:send, :gameplay, {:pet_egg_list, %PetEggList{indexes: [3]}}}
       assert_received {:send, :gameplay, {:item_removed, %ItemRemoved{amount: 1}}}
     end
   end

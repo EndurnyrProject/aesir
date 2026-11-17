@@ -100,7 +100,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.HatchHandlerTest do
       opened = HatchHandler.open_egg_list(session(ctx.character, inventory))
 
       assert SkillMenuHandler.pet_egg_offer?(opened)
-      egg_index = ctx.egg_index
+      egg_index = ctx.egg_index + 2
       assert_receive {:send, _, {:pet_egg_list, %PetEggList{indexes: [^egg_index]}}}
     end
 

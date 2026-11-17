@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
   alias Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler
   alias Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Pet.PetState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
 
   @doc """
@@ -40,7 +41,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
   end
 
   defp run({:select_egg, %PetSelectEggCommand{index: index}}, session) do
-    selected = HatchHandler.select_egg(session, index)
+    selected = HatchHandler.select_egg(session, PlayerState.server_index(index))
 
     if is_nil(session.pet) and not is_nil(selected.pet),
       do: {:ok, selected},
