@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.Endure
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
+  alias Aesir.ZoneServer.Mmo.JobManagement.JobMapid
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
   alias Aesir.ZoneServer.Mmo.Skills.Rogue.PlagiarismCopyable
@@ -41,7 +42,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
   alias Aesir.ZoneServer.Unit.Lifecycle
+  alias Aesir.ZoneServer.Unit.Pet.Handlers.HungerHandler, as: PetHungerHandler
   alias Aesir.ZoneServer.Unit.Player.DieCounter
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
@@ -50,9 +53,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
+  alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.Logout
   alias Aesir.ZoneServer.Unit.Player.NaturalHeal.Timing
+  alias Aesir.ZoneServer.Unit.Player.PlayerEvents
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.ScriptVitals
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -66,6 +71,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Phoenix.PubSub
 
   @plagiarism_skill_id 225
+  @mapid_second_mask 0xFFF
+  @new_insurance_id 6413
 
   @doc """
   Computes the HP after taking `damage`, clamped at 0.
@@ -768,6 +775,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     Broadcast.to_visible_players(dead_state, vanish)
     Lifecycle.publish_death(:player, game_state.character_id, game_state.map_name)
 
+    state = PetHungerHandler.owner_died(state)
     state = HomunculusCommandHandler.owner_died(state)
     state = Map.put(state, :regen_timing, Timing.initial())
     {:noreply, SkillMenuHandler.clear(state)}
@@ -845,29 +853,121 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
   defp cancel_cast_timer(game_state), do: game_state
 
-  # Renewal death EXP penalty (rAthena exp.conf death_penalty_base/job). Skipped
-  # when both config rates are 0 or the dying player carries `no_death_penalty`
-  # (SC_LIFEINSURANCE). The penalty never de-levels — see `Leveling.death_penalty/3`.
+  # The death penalty. None when `death_penalty_type` is 0, for the Novice line
+  # (Novice, High Novice, Baby; Super Novice is not part of it), under a
+  # `no_death_penalty` status (SC_LIFEINSURANCE), and on `noexppenalty` and GvG
+  # maps. A New Insurance in the inventory is consumed instead of the EXP; the
+  # zeny penalty is applied either way, except on `nozenypenalty` maps.
   defp apply_death_penalty(%{game_state: game_state} = state) do
-    base_pct = Config.death_penalty_base()
-    job_pct = Config.death_penalty_job()
+    type = Config.death_penalty_type()
 
-    cond do
-      base_pct == 0 and job_pct == 0 ->
-        state
-
-      ModifierCalculator.get_all_modifiers(:player, game_state.character_id)
-      |> Map.get(:no_death_penalty, 0) > 0 ->
-        state
-
-      true ->
-        subtract_death_exp(state, base_pct, job_pct)
+    if type == 0 or death_penalty_exempt?(game_state) do
+      state
+    else
+      state |> lose_death_exp(type) |> pay_death_zeny()
     end
   end
 
-  defp subtract_death_exp(%{game_state: game_state} = state, base_pct, job_pct) do
+  defp death_penalty_exempt?(%PlayerState{} = game_state) do
+    novice_line?(game_state.stats.progression.job_id) or
+      no_death_penalty?(game_state.character_id) or
+      MapFlags.get(game_state.map_name, :noexppenalty) or
+      MapFlags.gvg2?(game_state.map_name)
+  end
+
+  defp novice_line?(job_id),
+    do: Bitwise.band(JobMapid.from_job(job_id), @mapid_second_mask) == JobMapid.from_job(:novice)
+
+  defp no_death_penalty?(character_id) do
+    ModifierCalculator.get_all_modifiers(:player, character_id)
+    |> Map.get(:no_death_penalty, 0)
+    |> Kernel.>(0)
+  end
+
+  defp lose_death_exp(%{game_state: game_state} = state, type) do
+    case death_exp_loss(type, game_state.stats.progression) do
+      {0, 0} ->
+        state
+
+      {base_loss, job_loss} ->
+        case consume_new_insurance(state) do
+          {:ok, state} -> state
+          :none -> subtract_death_exp(state, base_loss, job_loss)
+        end
+    end
+  end
+
+  defp death_exp_loss(type, progression) do
+    base_rate = Config.death_penalty_base()
+    job_rate = Config.death_penalty_job()
+
+    cond do
+      base_rate == 0 and job_rate == 0 ->
+        {0, 0}
+
+      type == 1 ->
+        Leveling.death_penalty(progression, base_rate, job_rate)
+
+      true ->
+        Leveling.death_penalty(
+          progression,
+          type,
+          base_rate,
+          job_rate,
+          Config.death_penalty_maxlv()
+        )
+    end
+  end
+
+  defp consume_new_insurance(%{game_state: game_state} = state) do
+    with {index, _item} <- first_new_insurance(game_state.inventory),
+         {:ok, inventory, _change} <-
+           InventoryOps.remove(game_state.character_id, game_state.inventory, index, 1) do
+      state = StateCommit.commit(state, %{game_state | inventory: inventory})
+      MessageRouter.send_to(state.connection_pid, InventoryView.item_removed(index, 1, 1))
+      PlayerEvents.inventory_changed(game_state.character_id)
+      {:ok, state}
+    else
+      nil ->
+        :none
+
+      {:error, reason} ->
+        Logger.error(
+          "New Insurance removal failed for #{game_state.character_id}: #{inspect(reason)}"
+        )
+
+        :none
+    end
+  end
+
+  defp first_new_insurance(inventory) do
+    inventory
+    |> Enum.filter(fn {_index, item} -> item.nameid == @new_insurance_id and item.amount > 0 end)
+    |> Enum.min_by(fn {index, _item} -> index end, fn -> nil end)
+  end
+
+  defp pay_death_zeny(%{game_state: game_state} = state) do
+    rate = Config.zeny_penalty()
+
+    if rate > 0 and not MapFlags.get(game_state.map_name, :nozenypenalty) do
+      pay_death_zeny(state, trunc(game_state.zeny * (rate / 10_000)))
+    else
+      state
+    end
+  end
+
+  defp pay_death_zeny(%{game_state: game_state} = state, loss)
+       when loss > 0 and loss <= game_state.zeny do
+    zeny = game_state.zeny - loss
+    StatusSync.send_param(state.connection_pid, StatusParams.zeny(), zeny)
+    CharacterPersistence.update_character(game_state.character_id, %{zeny: zeny}, async: true)
+    StateCommit.commit(state, %{game_state | zeny: zeny})
+  end
+
+  defp pay_death_zeny(state, _loss), do: state
+
+  defp subtract_death_exp(%{game_state: game_state} = state, base_loss, job_loss) do
     progression = game_state.stats.progression
-    {base_loss, job_loss} = Leveling.death_penalty(progression, base_pct, job_pct)
 
     if base_loss == 0 and job_loss == 0 do
       state

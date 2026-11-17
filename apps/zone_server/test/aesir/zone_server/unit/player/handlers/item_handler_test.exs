@@ -222,6 +222,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
           end
         )
         |> put_in([:game_state, Access.key!(:visible_players)], MapSet.new())
+        |> then(&struct!(SessionState, &1))
 
       stub(Items, :by_id, fn @red_potion_id ->
         {:ok, usable_definition(@red_potion_id, source)}

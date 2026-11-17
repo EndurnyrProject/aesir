@@ -80,12 +80,20 @@ config :zone_server, max_party: 12
 config :zone_server, party_share_level: 15
 config :zone_server, party_even_share_bonus: 0
 
-# Renewal death EXP penalty as a percentage of the exp needed to reach the next
-# base/job level (renewal default 1%).
-# Never de-levels; skipped for characters carrying SC_LIFEINSURANCE. Set to 0 to
-# disable.
-config :zone_server, death_penalty_base: 1
-config :zone_server, death_penalty_job: 1
+# How a death costs EXP: 0 no penalty, 1 a percentage of the exp needed for the
+# next level, 2 a percentage of the exp into the current level.
+config :zone_server, death_penalty_type: 1
+
+# Death EXP penalty rates in 1/10000 (100 = 1%). Never de-levels; skipped for
+# characters carrying SC_LIFEINSURANCE.
+config :zone_server, death_penalty_base: 100
+config :zone_server, death_penalty_job: 100
+
+# Whether max-level characters still lose EXP on death: 0 never, 1 base, 2 job, 3 both.
+config :zone_server, death_penalty_maxlv: 0
+
+# Zeny lost on death in 1/10000 of the zeny held; skipped on nozenypenalty maps.
+config :zone_server, zeny_penalty: 0
 
 # Natural equipment-break rate rolled on a confirmed hit, in 1/10000 units. 
 # Default 0 disables natural breaking

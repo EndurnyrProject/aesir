@@ -7,8 +7,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   @moduletag :capture_log
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.CastCancel
+  alias Aesir.Net.ItemRemoved
   alias Aesir.Net.ParamChange
   alias Aesir.Net.RespawnResult
   alias Aesir.Net.Resurrect
@@ -32,6 +34,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   alias Aesir.ZoneServer.Unit.Lifecycle.Event
   alias Aesir.ZoneServer.Unit.Player.DieCounter
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
@@ -91,6 +94,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     stub(SpatialIndex, :clear_visibility, fn _ -> :ok end)
     stub(SpatialIndex, :add_player, fn _, _, _, _ -> :ok end)
     stub(MovementHandler, :handle_visibility_update, fn game_state -> game_state end)
+
+    :ok = MapFlags.set_runtime("prontera", :noexppenalty, false)
+    :ok = MapFlags.set_runtime("prontera", :nozenypenalty, false)
 
     :ok
   end
@@ -1284,13 +1290,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
 
   describe "death EXP penalty" do
     test "subtracts the computed base/job loss, pushes the exp params and persists" do
-      stub(Leveling, :death_penalty, fn _prog, 1, 1 -> {10, 5} end)
+      stub(Leveling, :death_penalty, fn _prog, 100, 100 -> {10, 5} end)
 
       {:noreply, %{game_state: game_state}} =
         HealthHandler.apply_damage(
           150,
           2001,
-          build_state(100, :idle, %{base_exp: 100, job_exp: 40})
+          build_state(100, :idle, %{base_exp: 100, job_exp: 40, job_id: 1})
         )
 
       assert game_state.action_state == :dead
@@ -1312,7 +1318,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       HealthHandler.apply_damage(
         150,
         2001,
-        build_state(100, :idle, %{base_exp: 100, job_exp: 40})
+        build_state(100, :idle, %{base_exp: 100, job_exp: 40, job_id: 1})
       )
     end
 
@@ -1326,7 +1332,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
         HealthHandler.apply_damage(
           150,
           2001,
-          build_state(100, :idle, %{base_exp: 100, job_exp: 40})
+          build_state(100, :idle, %{base_exp: 100, job_exp: 40, job_id: 1})
         )
 
       assert game_state.stats.progression.base_exp == 100
@@ -1351,7 +1357,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
         HealthHandler.apply_damage(
           150,
           2001,
-          build_recalculable_state(100, :idle, %{base_exp: 100, job_exp: 40})
+          build_recalculable_state(100, :idle, %{base_exp: 100, job_exp: 40, job_id: 1})
         )
 
       assert game_state.stats.progression.base_exp == 100
@@ -1367,11 +1373,120 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
         HealthHandler.apply_damage(
           150,
           2001,
-          build_state(100, :idle, %{base_exp: 100, job_exp: 40})
+          build_state(100, :idle, %{base_exp: 100, job_exp: 40, job_id: 1})
         )
 
       assert game_state.stats.progression.base_exp == 100
       assert game_state.stats.progression.job_exp == 40
+    end
+
+    test "Novice, High Novice and Baby are exempt, Super Novice is not" do
+      stub(Leveling, :death_penalty, fn _prog, _b, _j -> {10, 5} end)
+
+      for {job_id, base_exp} <- [{0, 100}, {4001, 100}, {4023, 100}, {23, 90}] do
+        {:noreply, %{game_state: game_state}} =
+          HealthHandler.apply_damage(
+            150,
+            2001,
+            build_recalculable_state(100, :idle, %{base_exp: 100, job_exp: 40, job_id: job_id})
+          )
+
+        assert game_state.stats.progression.base_exp == base_exp
+      end
+    end
+
+    test "skips on a noexppenalty map" do
+      :ok = MapFlags.set_runtime("prontera", :noexppenalty, true)
+      reject(&Leveling.death_penalty/3)
+      refute_exp_persisted()
+
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.apply_damage(
+          150,
+          2001,
+          build_state(100, :idle, %{base_exp: 100, job_exp: 40, job_id: 1})
+        )
+
+      assert game_state.stats.progression.base_exp == 100
+    end
+
+    test "skips on a castle outside the siege" do
+      :ok = MapFlags.set_runtime("prontera", :gvg_castle, true)
+      reject(&Leveling.death_penalty/3)
+      refute_exp_persisted()
+
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.apply_damage(
+          150,
+          2001,
+          build_state(100, :idle, %{base_exp: 100, job_exp: 40, job_id: 1})
+        )
+
+      assert game_state.stats.progression.base_exp == 100
+    end
+
+    test "skips when death_penalty_type is 0" do
+      stub(Config, :death_penalty_type, fn -> 0 end)
+      reject(&Leveling.death_penalty/3)
+      refute_exp_persisted()
+
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.apply_damage(
+          150,
+          2001,
+          build_state(100, :idle, %{base_exp: 100, job_exp: 40, job_id: 1})
+        )
+
+      assert game_state.stats.progression.base_exp == 100
+    end
+
+    test "death_penalty_type 2 takes the percentage of the exp into the level" do
+      stub(Config, :death_penalty_type, fn -> 2 end)
+      reject(&Leveling.death_penalty/3)
+
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.apply_damage(
+          150,
+          2001,
+          build_state(100, :idle, %{base_exp: 1000, job_exp: 500, job_id: 1})
+        )
+
+      assert game_state.stats.progression.base_exp == 990
+      assert game_state.stats.progression.job_exp == 495
+    end
+  end
+
+  describe "death penalty insurance and zeny" do
+    test "a New Insurance is consumed instead of the exp" do
+      stub(Leveling, :death_penalty, fn _prog, _b, _j -> {10, 5} end)
+      insurance = %InventoryItem{id: 9, nameid: 6413, amount: 2}
+      refute_exp_persisted()
+
+      expect(InventoryOps, :remove, fn 1, _inventory, 3, 1 ->
+        {:ok, %{3 => %{insurance | amount: 1}}, {:reduced, 3, 1}}
+      end)
+
+      state = build_state(100, :idle, %{base_exp: 100, job_exp: 40, job_id: 1})
+      state = put_in(state.game_state.inventory, %{3 => insurance})
+
+      {:noreply, %{game_state: game_state}} = HealthHandler.apply_damage(150, 2001, state)
+
+      assert game_state.stats.progression.base_exp == 100
+      assert game_state.inventory[3].amount == 1
+      assert_received {:send, _channel, {_tag, %ItemRemoved{amount: 1, reason: 1}}}
+    end
+
+    test "zeny_penalty takes rate/10000 of the zeny, not on nozenypenalty maps" do
+      stub(Config, :zeny_penalty, fn -> 150 end)
+      state = build_state(100, :idle, %{job_id: 1})
+      state = put_in(state.game_state.zeny, 1000)
+
+      {:noreply, %{game_state: game_state}} = HealthHandler.apply_damage(150, 2001, state)
+      assert game_state.zeny == 985
+
+      :ok = MapFlags.set_runtime("prontera", :nozenypenalty, true)
+      {:noreply, %{game_state: game_state}} = HealthHandler.apply_damage(150, 2001, state)
+      assert game_state.zeny == 1000
     end
   end
 
@@ -1412,7 +1527,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
         HealthHandler.apply_damage(
           150,
           {:player, 2001},
-          build_state(100, :idle, %{base_exp: 100, job_exp: 40})
+          build_state(100, :idle, %{base_exp: 100, job_exp: 40, job_id: 1})
         )
 
       assert game_state.action_state == :dead

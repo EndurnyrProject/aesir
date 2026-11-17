@@ -57,8 +57,11 @@ defmodule Aesir.ZoneServer.Config do
   @default_mvp_item_second_get_time 10_000
   @default_mvp_item_third_get_time 2000
   @default_first_attack_loot_bonus 30
-  @default_death_penalty_base 1
-  @default_death_penalty_job 1
+  @default_death_penalty_type 1
+  @default_death_penalty_base 100
+  @default_death_penalty_job 100
+  @default_death_penalty_maxlv 0
+  @default_zeny_penalty 0
   @default_natural_break_rate 0
   @default_boss_respawn_delay_percentage 100
   @default_boss_respawn_reconcile_on_boot true
@@ -198,22 +201,38 @@ defmodule Aesir.ZoneServer.Config do
       )
 
   @doc """
-  Death EXP penalty applied to the base track, as a percentage of the exp needed
-  to reach the next base level (rAthena `exp.conf death_penalty_base`, renewal
-  default 1%). Set to 0 to disable the base-track penalty.
+  How a death costs EXP: 0 no penalty, 1 a
+  percentage of the exp needed for the next level, 2 a percentage of the exp
+  into the current level.
+  """
+  @spec death_penalty_type() :: 0..2
+  def death_penalty_type,
+    do: Application.get_env(:zone_server, :death_penalty_type, @default_death_penalty_type)
+
+  @doc """
+  Death EXP penalty rate on the base track, in 1/10000 (100 = 1%) of the exp
+  needed for the next level (type 1) or of the exp into the level (type 2).
   """
   @spec death_penalty_base() :: non_neg_integer()
   def death_penalty_base,
     do: Application.get_env(:zone_server, :death_penalty_base, @default_death_penalty_base)
 
-  @doc """
-  Death EXP penalty applied to the job track, as a percentage of the exp needed
-  to reach the next job level (rAthena `exp.conf death_penalty_job`, renewal
-  default 1%). Set to 0 to disable the job-track penalty.
-  """
+  @doc "Death EXP penalty rate on the job track, in 1/10000. See `death_penalty_base/0`."
   @spec death_penalty_job() :: non_neg_integer()
   def death_penalty_job,
     do: Application.get_env(:zone_server, :death_penalty_job, @default_death_penalty_job)
+
+  @doc """
+  Whether a character at its max level still loses EXP on death: 0 never,
+  1 base, 2 job, 3 both.
+  """
+  @spec death_penalty_maxlv() :: 0..3
+  def death_penalty_maxlv,
+    do: Application.get_env(:zone_server, :death_penalty_maxlv, @default_death_penalty_maxlv)
+
+  @doc "Zeny lost on death, in 1/10000 (100 = 1%) of the zeny held. Skipped on `nozenypenalty` maps."
+  @spec zeny_penalty() :: non_neg_integer()
+  def zeny_penalty, do: Application.get_env(:zone_server, :zeny_penalty, @default_zeny_penalty)
 
   @doc """
   Natural equipment-break rate rolled on a confirmed hit, in 1/10000 units

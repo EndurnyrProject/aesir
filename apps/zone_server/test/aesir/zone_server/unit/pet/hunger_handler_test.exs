@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.HungerHandlerTest do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.PetManagement.Catalog
   alias Aesir.ZoneServer.Mmo.PetManagement.Egg
@@ -189,6 +190,41 @@ defmodule Aesir.ZoneServer.Unit.Pet.HungerHandlerTest do
                       {:pet_food_result,
                        %PetFoodResult{success: false, food_item_id: @apple_juice}}}
 
+      refute_received {:send, _, {:pet_state_change, _}}
+    end
+  end
+
+  describe "owner_died/1" do
+    test "costs the species' owner-death intimacy", ctx do
+      session = spawned(ctx)
+      expected = 250 + ctx.definition.intimacy_owner_die
+
+      updated = HungerHandler.owner_died(session)
+
+      assert expected in 1..249
+      assert updated.pet.intimate == expected
+      assert Repo.get!(Pet, updated.pet.pet_id).intimate == expected
+      assert_state_change(:PET_STATE_INTIMACY, expected)
+    end
+
+    test "costs intimacy and deletes the egg when it reaches zero", ctx do
+      session = ctx |> spawned() |> with_pet(intimate: 1)
+      updated = HungerHandler.owner_died(session)
+      assert updated.pet.intimate == 0
+      assert Egg.find(updated.game_state.inventory, updated.pet.pet_id) == :error
+      assert_state_change(:PET_STATE_INTIMACY, 0)
+    end
+
+    test "a pet that already ran away still sends its intimacy", ctx do
+      session = ctx |> spawned() |> with_pet(intimate: 0)
+      assert HungerHandler.owner_died(session).pet.intimate == 0
+      assert_state_change(:PET_STATE_INTIMACY, 0)
+    end
+
+    test "does not cost intimacy on a noexppenalty map", ctx do
+      session = spawned(ctx)
+      :ok = MapFlags.set_runtime(@map, :noexppenalty, true)
+      assert HungerHandler.owner_died(session).pet.intimate == 250
       refute_received {:send, _, {:pet_state_change, _}}
     end
   end

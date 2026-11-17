@@ -157,6 +157,20 @@ defmodule Aesir.ZoneServer.Unit.Pet.LifecycleHandlerTest do
   end
 
   describe "detach_for_warp/2" do
+    test "a runaway pet is removed and deleted instead of travelling", ctx do
+      session = ctx |> restored() |> LifecycleHandler.spawned_after_map_load()
+      pet_id = session.pet.pet_id
+      gid = session.pet.world_gid
+      session = %{session | pet: %{session.pet | intimate: 0}}
+
+      detached = LifecycleHandler.detach_for_warp(session, {@other_map, 30, 31})
+
+      assert detached.pet == nil
+      assert {:error, :not_found} = UnitRegistry.get_unit(:pet, gid)
+      refute Repo.get(Pet, pet_id)
+      assert Repo.get!(Character, ctx.character.id).pet_id == 0
+    end
+
     test "the pet leaves with its owner and re-enters at the destination", ctx do
       session = ctx |> restored() |> LifecycleHandler.spawned_after_map_load()
       gid = session.pet.world_gid

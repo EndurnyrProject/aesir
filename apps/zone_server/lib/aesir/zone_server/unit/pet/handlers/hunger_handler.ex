@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.HungerHandler do
   alias Aesir.Net.PetFoodResult
   alias Aesir.Net.PetStateChange
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.PetManagement.Catalog
   alias Aesir.ZoneServer.Mmo.PetManagement.Egg
   alias Aesir.ZoneServer.Mmo.PetManagement.PetDefinition
@@ -172,6 +173,27 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.HungerHandler do
     updated = change_intimacy(pet, value)
     apply_change(session, pet, updated, updated)
   end
+
+  @doc """
+  The owner died. Outside `noexppenalty` maps the pet's intimacy changes by
+  `intimacy_owner_die` (at 0 the egg is deleted and the pet runs away at its
+  current speed) and INTIMACY goes to the owner, even when unchanged.
+  """
+  @spec owner_died(SessionState.t()) :: SessionState.t()
+  def owner_died(%SessionState{pet: %PetState{} = pet, game_state: owner} = session) do
+    if MapFlags.get(owner.map_name, :noexppenalty) do
+      session
+    else
+      session = set_intimate(session, pet.intimate + definition(pet).intimacy_owner_die)
+
+      if session.pet.intimate == pet.intimate,
+        do: send_state_change(session, :PET_STATE_INTIMACY, pet.intimate)
+
+      session
+    end
+  end
+
+  def owner_died(%SessionState{} = session), do: session
 
   @doc """
   Turns autofeed on or off. Ignored (`:error`) unless `feature_pet_autofeed`

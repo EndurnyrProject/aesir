@@ -92,6 +92,14 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler do
   """
   @spec detach_for_warp(SessionState.t(), {String.t(), integer(), integer()}) ::
           SessionState.t()
+  def detach_for_warp(
+        %SessionState{pet: %PetState{intimate: 0} = pet, game_state: owner} = session,
+        _destination
+      ) do
+    :ok = Persistence.delete(pet.pet_id, owner.character_id)
+    StateCommit.remove(session, DespawnReason.out_of_sight())
+  end
+
   def detach_for_warp(%SessionState{pet: %PetState{}} = session, {map_name, x, y}) do
     session = MovementHandler.stop(session)
     runtime = session.pet_runtime
