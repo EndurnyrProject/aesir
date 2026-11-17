@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler, as: HomunculusMovementHandler
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler, as: PetCommandHandler
+  alias Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler, as: PetLifecycleHandler
   alias Aesir.ZoneServer.Unit.Player.GuildSync
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
@@ -775,6 +776,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
     register_player(final_game_state)
 
+    # Restore the pet that was out at logout, held off the map until the
+    # first map load spawns it.
+    state = PetLifecycleHandler.restore(state, character)
+
     # Restore a mounted cart: load its rows, set the tier, and re-apply
     # SC_PUSHCART so the sprite folds into the spawn effect_state and the
     # walk-speed penalty is recomputed. Runs after registration so the
@@ -854,7 +859,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         Process.send_after(self(), :natural_heal_tick, @natural_heal_interval)
         Process.send_after(self(), :rental_expiry_tick, @rental_expiry_interval)
 
-        {:noreply, StateCommit.commit(state, updated_game_state)}
+        {:noreply,
+         state
+         |> StateCommit.commit(updated_game_state)
+         |> PetLifecycleHandler.spawned_after_map_load()}
 
       {:stop, reason, state} ->
         {:stop, reason, state}
@@ -880,7 +888,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # Re-evaluate quest-icon bubbles for the destination map.
     QuestInfoView.request_refresh()
 
-    HomunculusCommandHandler.entered_after_warp(state)
+    state
+    |> PetLifecycleHandler.spawned_after_map_load()
+    |> HomunculusCommandHandler.entered_after_warp()
   end
 
   # Player-state facts (PlayerEvents) that can flip a questinfo condition. The
@@ -1791,6 +1801,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     state = %{state | game_state: game_state}
     Process.demonitor(connection_monitor_ref, [:flush])
     state = HomunculusCommandHandler.terminate(state)
+    :ok = PetLifecycleHandler.terminate(state)
     state = TradeHandler.cancel_if_trading(state, :disconnected)
     game_state = state.game_state
 

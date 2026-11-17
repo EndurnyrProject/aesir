@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
   alias Aesir.ZoneServer.Unit.Lifecycle
+  alias Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler, as: PetLifecycleHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
@@ -93,6 +94,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
       game_state = WaitingRoomHandler.leave_if_in_room(state.game_state)
       state = %{state | game_state: game_state}
       state = HomunculusCommandHandler.detach_for_warp(state, same_map?)
+      state = PetLifecycleHandler.detach_for_warp(state, {dest_map, fx, fy})
       state = close_storage_on_cross_map(state, same_map?)
       state = reconcile_vending(state, dest_map, fx, fy)
       game_state = state.game_state

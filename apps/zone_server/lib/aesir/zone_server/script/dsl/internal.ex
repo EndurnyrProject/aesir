@@ -22,7 +22,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Internal do
   @doc """
   Routes a state-mutating op through the single-writer session, then folds
   the authoritative state back into ctx. Item-script balance assignments, grants,
-  deletion and posture operations thread the owning session inline. NPC and
+  deletion, posture and warps thread the owning session inline. NPC and
   item-menu interactions use a cross-process call, never a self-call. A refused
   op is a failed command: the script goes on with the ctx unchanged (`Ctx.fail/3`), unless the
   caller passes `:halt` for a command whose refusal ends the script. A
@@ -33,7 +33,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Internal do
   def apply_op(ctx, op, on_error \\ :fail)
 
   def apply_op(%Ctx{source: {:item, _}, session_state: state} = ctx, op, on_error)
-      when not is_nil(state) and elem(op, 0) in [:set_zeny, :give_item, :delitem, :stand] do
+      when not is_nil(state) and
+             elem(op, 0) in [:set_zeny, :give_item, :delitem, :stand, :warp] do
     {reply, state} = ScriptEffectHandler.apply_op(op, %{state | game_state: ctx.game_state})
     ctx = %{ctx | game_state: state.game_state, session_state: state}
 

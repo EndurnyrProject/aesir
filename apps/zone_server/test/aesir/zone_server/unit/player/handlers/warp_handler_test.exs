@@ -17,9 +17,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
   alias Aesir.ZoneServer.Mmo.Woe.CastleStore
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member
+  alias Aesir.ZoneServer.Script.Ctx
+  alias Aesir.ZoneServer.Script.Dsl
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Lifecycle.Event
+  alias Aesir.ZoneServer.Unit.Pet.PetState
+  alias Aesir.ZoneServer.Unit.Pet.StateCommit, as: PetStateCommit
   alias Aesir.ZoneServer.Unit.Player.GuildSync
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -210,19 +214,45 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
       assert Process.read_timer(timer_ref) == false
     end
 
-    # `Script.Dsl.warp/4` hands this handler a bare `%{game_state:,
-    # connection_pid:}` map, not a `SessionState`. Clearing the menu with
-    # struct-update syntax raised `KeyError` on that shape, killing the
-    # Interaction task after the position had already been committed - the
-    # server moved the player and the client never got its `MapMove`.
-    test "a warp driven with the script DSL's partial session still sends MapMove" do
-      session = %{game_state: state().game_state, connection_pid: self()}
+    # An item script's `warp` runs inline on the owning session through
+    # `Script.Dsl.warp/4`; the session it hands this handler is the real one.
+    test "an item-script warp moves the session and sends MapMove" do
+      ctx = Dsl.warp(Ctx.from_session(state(), {:item, 602}), "geffen", 100, 120)
 
-      assert {:ok, %{game_state: new_game_state}} =
-               WarpHandler.warp(session, "geffen", 100, 120)
-
-      assert new_game_state.map_name == "geffen"
+      assert %SessionState{game_state: %{map_name: "geffen"}} = ctx.session_state
+      assert ctx.game_state.map_name == "geffen"
       assert_received {:send, :control, {:map_move, %MapMove{map_name: "geffen"}}}
+    end
+
+    test "an item-script warp carries the pet to the destination" do
+      pet = %PetState{
+        pet_id: 9,
+        owner_char_id: 1000,
+        owner_account_id: 2000,
+        class_id: 1002,
+        name: "Poring",
+        level: 1,
+        egg_id: 9001,
+        intimate: 250,
+        hungry: 100,
+        map_name: "prontera",
+        x: 151,
+        y: 150
+      }
+
+      stub(UnitRegistry, :update_unit_state, fn type, id, unit ->
+        call_original(UnitRegistry, :update_unit_state, [type, id, unit])
+      end)
+
+      {:ok, state} = PetStateCommit.spawn(state(), pet)
+      gid = state.pet.world_gid
+
+      ctx = Dsl.warp(Ctx.from_session(state, {:item, 602}), "geffen", 100, 120)
+
+      assert %PetState{world_gid: ^gid, map_name: "geffen", x: 100, y: 120} =
+               ctx.session_state.pet
+
+      assert {:error, :not_found} = SpatialIndex.get_unit_position(:pet, gid)
     end
   end
 
@@ -489,10 +519,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
     test "cross-map item-script warp force-closes guild storage and frees its claim" do
       state = state_with_guild_storage()
       guild_id = state.guild_storage_ctx.guild_id
-      partial = %{game_state: state.game_state, connection_pid: state.connection_pid}
 
-      assert {:ok, updated} = WarpHandler.warp(partial, "geffen", 100, 120)
-      assert updated.game_state.guild_storage == nil
+      ctx = Dsl.warp(Ctx.from_session(state, {:item, 602}), "geffen", 100, 120)
+      assert ctx.session_state.game_state.guild_storage == nil
 
       next_holder = spawn(fn -> receive do: (:stop -> :ok) end)
       on_exit(fn -> if Process.alive?(next_holder), do: Process.exit(next_holder, :kill) end)
@@ -501,10 +530,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
 
     test "cross-map item-script warp force-closes personal storage" do
       state = state_with_storage(%{0 => :placeholder})
-      partial = %{game_state: state.game_state, connection_pid: state.connection_pid}
 
-      assert {:ok, updated} = WarpHandler.warp(partial, "geffen", 100, 120)
-      assert updated.game_state.storage == nil
+      ctx = Dsl.warp(Ctx.from_session(state, {:item, 602}), "geffen", 100, 120)
+      assert ctx.session_state.game_state.storage == nil
     end
 
     test "same-map warp leaves guild storage and its claim open" do

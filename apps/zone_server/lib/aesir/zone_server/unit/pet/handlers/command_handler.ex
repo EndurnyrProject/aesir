@@ -3,26 +3,60 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
 
   require Logger
 
+  alias Aesir.Net.PetMenuCommand
   alias Aesir.Net.PetRequest
   alias Aesir.Net.PetResult
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Pet.Handlers.AiHandler
+  alias Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler
   alias Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Pet.PetState
   alias Aesir.ZoneServer.Unit.Player.SessionState
 
-  @doc "Replies to a pet request."
+  @doc """
+  Runs a pet request and replies with its `PetResult`. The menu (`pet_menu`,
+  `pet.cpp:1422`) needs a pet out with intimacy above 0.
+  """
   @spec request(PetRequest.t(), SessionState.t()) :: {:noreply, SessionState.t()}
   def request(%PetRequest{} = request, %SessionState{} = session) do
-    error = if is_nil(session.pet), do: :PET_ERROR_NO_PET, else: :PET_ERROR_INVALID_REQUEST
+    {result, session} = run(request.command, session)
 
-    MessageRouter.send_to(session.connection_pid, %PetResult{
-      request_id: request.request_id,
-      success: false,
-      error: error
-    })
+    reply =
+      case result do
+        :ok ->
+          %PetResult{request_id: request.request_id, success: true}
 
+        {:error, error} ->
+          %PetResult{request_id: request.request_id, success: false, error: error}
+      end
+
+    MessageRouter.send_to(session.connection_pid, reply)
     {:noreply, session}
   end
+
+  defp run(_command, %SessionState{pet: nil} = session),
+    do: {{:error, :PET_ERROR_NO_PET}, session}
+
+  defp run(
+         {:menu, %PetMenuCommand{}},
+         %SessionState{pet: %PetState{intimate: intimate}} = session
+       )
+       when intimate <= 0,
+       do: {{:error, :PET_ERROR_INVALID_REQUEST}, session}
+
+  defp run({:menu, %PetMenuCommand{action: :PET_MENU_STATUS}}, session) do
+    LifecycleHandler.send_private_state(session)
+    {:ok, session}
+  end
+
+  defp run({:menu, %PetMenuCommand{action: :PET_MENU_RETURN_TO_EGG}}, session) do
+    case LifecycleHandler.return_to_egg(session) do
+      %SessionState{pet: nil} = returned -> {:ok, returned}
+      unchanged -> {{:error, :PET_ERROR_INVALID_REQUEST}, unchanged}
+    end
+  end
+
+  defp run(_command, session), do: {{:error, :PET_ERROR_INVALID_REQUEST}, session}
 
   @doc "Handles an asynchronous pet command."
   @spec cast(term(), SessionState.t()) :: {:noreply, SessionState.t()}

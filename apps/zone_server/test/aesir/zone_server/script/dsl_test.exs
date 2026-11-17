@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -1031,7 +1032,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
         {:ok, %{game_state: relocated}}
       end)
 
-      ctx = Dsl.warp(build_ctx(), {"prontera", 150, 100})
+      ctx = Dsl.warp(warp_ctx(), {"prontera", 150, 100})
 
       assert ctx.status == :ok
       assert Dsl.position(ctx) == {150, 100, "prontera"}
@@ -1040,7 +1041,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     test "fails the command, goes on and leaves position unchanged when the warp fails" do
       stub(WarpHandler, :warp, fn _session, _map, _x, _y -> {:error, :map_not_found} end)
 
-      ctx = build_ctx()
+      ctx = warp_ctx()
       result = Dsl.warp(ctx, {"prontera", 150, 100})
 
       assert result.status == :ok
@@ -1059,7 +1060,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
         {:ok, %{game_state: relocated}}
       end)
 
-      ctx = Dsl.warp(build_ctx(), :random)
+      ctx = Dsl.warp(warp_ctx(), :random)
 
       assert ctx.status == :ok
       assert Dsl.position(ctx) == {33, 44, "prontera"}
@@ -1068,7 +1069,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     test "fails the command and goes on when no walkable cell can be resolved" do
       stub(Cell, :random_traversable, fn _map -> {:error, :not_found} end)
 
-      result = Dsl.warp(build_ctx(), :random)
+      result = Dsl.warp(warp_ctx(), :random)
 
       assert result.status == :ok
       assert result.failures == [{:warp, :not_found}]
@@ -1090,7 +1091,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
         {:ok, %{game_state: relocated}}
       end)
 
-      ctx = Dsl.warp(%{build_ctx() | game_state: game_state}, :save_point)
+      ctx = Dsl.warp(%{warp_ctx() | game_state: game_state}, :save_point)
 
       assert ctx.status == :ok
       assert Dsl.position(ctx) == {90, 105, "izlude"}
@@ -1100,7 +1101,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       stub(WarpHandler, :warp, fn _session, _map, _x, _y -> {:error, :map_not_found} end)
 
       game_state = %{build_game_state() | save_map: "izlude", save_x: 90, save_y: 105}
-      ctx = %{build_ctx() | game_state: game_state}
+      ctx = %{warp_ctx() | game_state: game_state}
 
       result = Dsl.warp(ctx, :save_point)
 
@@ -1126,7 +1127,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
         {:ok, %{game_state: relocated}}
       end)
 
-      ctx = Dsl.warp(build_ctx(), "Random", 85, 107)
+      ctx = Dsl.warp(warp_ctx(), "Random", 85, 107)
 
       assert ctx.status == :ok
       assert Dsl.position(ctx) == {33, 44, "prontera"}
@@ -1140,7 +1141,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
         {:ok, %{game_state: relocated}}
       end)
 
-      ctx = %{build_ctx() | game_state: game_state}
+      ctx = %{warp_ctx() | game_state: game_state}
 
       for target <- ["SavePoint", "Save"] do
         assert Dsl.position(Dsl.warp(ctx, target, 85, 107)) == {90, 105, "izlude"}
@@ -1154,7 +1155,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
         {:ok, %{game_state: relocated}}
       end)
 
-      assert Dsl.position(Dsl.warp(build_ctx(), "int_land", 85, 107)) == {85, 107, "int_land"}
+      assert Dsl.position(Dsl.warp(warp_ctx(), "int_land", 85, 107)) == {85, 107, "int_land"}
     end
   end
 
@@ -1277,7 +1278,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
         {:ok, %{game_state: relocated}}
       end)
 
-      ctx = Dsl.warpchar(build_ctx(), "in_moc_16", 20, 145)
+      ctx = Dsl.warpchar(warp_ctx(), "in_moc_16", 20, 145)
       assert Dsl.position(ctx) == {20, 145, "prontera"}
     end
 
@@ -1288,7 +1289,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
         {:ok, %{game_state: relocated}}
       end)
 
-      ctx = Dsl.warpchar(build_ctx(), "in_moc_16", 20, 145, 1)
+      ctx = Dsl.warpchar(warp_ctx(), "in_moc_16", 20, 145, 1)
       assert Dsl.position(ctx) == {20, 145, "prontera"}
     end
 
@@ -2036,6 +2037,12 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       game_state: build_game_state(opts),
       source: {:item, 501}
     }
+  end
+
+  # An item script runs inline on its session, which the warp moves.
+  defp warp_ctx(opts \\ []) do
+    ctx = build_ctx(opts)
+    %{ctx | session_state: %SessionState{game_state: ctx.game_state, connection_pid: self()}}
   end
 
   defp build_game_state(opts \\ []) do

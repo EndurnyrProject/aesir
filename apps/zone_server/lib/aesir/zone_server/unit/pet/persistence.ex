@@ -68,10 +68,13 @@ defmodule Aesir.ZoneServer.Unit.Pet.Persistence do
     )
   end
 
-  @doc "Returns a pet to its matching egg."
-  @spec return_to_egg(Pet.t(), pos_integer(), Inventory.t()) :: result()
-  def return_to_egg(pet, character_id, inventory) do
-    transition(pet, character_id, inventory, %{incubate: 1}, 0, 0)
+  @doc """
+  Returns a pet to its matching egg, saving `attrs` (the live pet fields) with
+  the transition.
+  """
+  @spec return_to_egg(Pet.t(), pos_integer(), Inventory.t(), map()) :: result()
+  def return_to_egg(pet, character_id, inventory, attrs \\ %{}) do
+    transition(pet, character_id, inventory, Map.put(attrs, :incubate, 1), 0, 0)
   end
 
   defp transition(pet, character_id, inventory, attrs, attribute, pet_id) do
@@ -115,6 +118,23 @@ defmodule Aesir.ZoneServer.Unit.Pet.Persistence do
     |> transact()
   end
 
+  @doc """
+  Clears the character's reference to `pet_id`, if it still points at it, and
+  applies the inventory change from `old` to `new` in the same transaction.
+  """
+  @spec unlink(pos_integer(), pos_integer(), Inventory.t(), Inventory.t()) ::
+          {:ok, Inventory.t()} | {:error, term()}
+  def unlink(pet_id, character_id, old, new) do
+    Multi.new()
+    |> inventory_change(character_id, old, new)
+    |> Multi.update_all(:character, unlink_query(pet_id, character_id), set: [pet_id: 0])
+    |> Repo.transact()
+    |> case do
+      {:ok, %{inventory: inventory}} -> {:ok, inventory}
+      {:error, _operation, reason, _changes} -> {:error, reason}
+    end
+  end
+
   @doc "Deletes a pet and clears its character's reference if it matches."
   @spec delete(pos_integer(), pos_integer() | nil) :: :ok
   def delete(pet_id, character_id) do
@@ -122,10 +142,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Persistence do
     |> Multi.delete_all(:pet, from(p in Pet, where: p.id == ^pet_id))
     |> Multi.run(:character, fn repo, _ ->
       if character_id do
-        repo.update_all(
-          from(c in Character, where: c.id == ^character_id and c.pet_id == ^pet_id),
-          set: [pet_id: 0]
-        )
+        repo.update_all(unlink_query(pet_id, character_id), set: [pet_id: 0])
       end
 
       {:ok, :updated}
@@ -139,6 +156,9 @@ defmodule Aesir.ZoneServer.Unit.Pet.Persistence do
         raise "pet deletion failed at #{operation}: #{inspect(reason)}"
     end
   end
+
+  defp unlink_query(pet_id, character_id),
+    do: from(c in Character, where: c.id == ^character_id and c.pet_id == ^pet_id)
 
   defp inventory_change(multi, character_id, old, new) do
     Multi.run(multi, :inventory, fn _repo, _changes ->
