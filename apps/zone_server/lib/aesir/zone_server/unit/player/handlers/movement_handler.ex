@@ -48,6 +48,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.MovementEngine
+  alias Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler, as: PetMovementHandler
   alias Aesir.ZoneServer.Unit.Pet.SpawnView, as: PetSpawnView
   alias Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
@@ -529,12 +530,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     # the client's interpolation (and skipping over warp/trap cells). A walk
     # already under way is redirected when its pending step lands instead of
     # starting a second step chain.
-    game_state =
-      if walking?,
-        do: %{game_state | walk_target: {dest_x, dest_y}},
-        else: start_walk(state, game_state, path, dest_x, dest_y)
-
-    {:noreply, StateCommit.commit(state, game_state)}
+    # A walk start (not a redirect) checks the pet recall (`unit_walktoxy`).
+    if walking? do
+      {:noreply, StateCommit.commit(state, %{game_state | walk_target: {dest_x, dest_y}})}
+    else
+      game_state = start_walk(state, game_state, path, dest_x, dest_y)
+      {:noreply, state |> StateCommit.commit(game_state) |> PetMovementHandler.check_recall()}
+    end
   end
 
   defp dispatch_movement_intent(state, game_state) do
@@ -722,7 +724,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
           integer(),
           integer()
         ) :: {:noreply, SessionState.t()}
-  def handle_displacement(state, expected_x, expected_y, map_name, x, y) do
+  def handle_displacement(state, expected_x, expected_y, map_name, x, y),
+    do: displace(state, {expected_x, expected_y, map_name}, {x, y}, false)
+
+  @doc """
+  An unchecked `unit_movepos` of the player (Ankle Snare's pull,
+  `skill.cpp:7017`): `handle_displacement/6`, then, unless a warp fired, the
+  pet check with `checkpath` false (`unit.cpp:1220-1232`).
+  """
+  @spec handle_movepos(
+          SessionState.t(),
+          integer(),
+          integer(),
+          String.t(),
+          integer(),
+          integer()
+        ) :: {:noreply, SessionState.t()}
+  def handle_movepos(state, expected_x, expected_y, map_name, x, y),
+    do: displace(state, {expected_x, expected_y, map_name}, {x, y}, true)
+
+  defp displace(state, {expected_x, expected_y, map_name}, {x, y}, movepos?) do
     game_state = state.game_state
 
     if Unit.living?(game_state) and
@@ -740,12 +761,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
       case maybe_trigger_warp(state.game_state) do
         {:warp_fired, marked_state} -> {:noreply, %{state | game_state: marked_state}}
-        :no_warp -> {:noreply, TouchHandler.scan(state)}
+        :no_warp -> {:noreply, state |> TouchHandler.scan() |> slide_pet(movepos?)}
       end
     else
       {:noreply, state}
     end
   end
+
+  defp slide_pet(state, true), do: PetMovementHandler.slide_to_owner(state, false)
+  defp slide_pet(state, false), do: state
 
   defp broadcast_displacement(unit_id, map_name, x, y) do
     packet = %Knockback{unit_id: unit_id, dst_x: x, dst_y: y}

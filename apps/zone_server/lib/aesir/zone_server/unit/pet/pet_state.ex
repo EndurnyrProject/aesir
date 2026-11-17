@@ -112,9 +112,17 @@ defmodule Aesir.ZoneServer.Unit.Pet.PetState do
       x: owner.x,
       y: owner.y,
       dir: owner.dir,
-      walk_speed: walk_speed(Config.pet_walk_speed(), row.class, owner)
+      walk_speed: base_walk_speed(row.class, owner)
     }
   end
+
+  @doc """
+  The pet's normal walk speed for `pet_walk_speed` (`get_pet_walk_speed`):
+  1 the owner's current speed, 2 the default 150, 3 the mob database speed.
+  """
+  @spec base_walk_speed(pos_integer(), PlayerState.t()) :: pos_integer()
+  def base_walk_speed(class_id, %PlayerState{} = owner),
+    do: walk_speed(Config.pet_walk_speed(), class_id, owner)
 
   defp walk_speed(2, _class_id, _owner), do: @default_walk_speed
   defp walk_speed(3, class_id, _owner), do: mob!(class_id).walk_speed

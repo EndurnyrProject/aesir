@@ -132,7 +132,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtAnklesnare do
            source_type: group.caster_type
          ) do
       :ok ->
-        Knockback.pull_to(type, id, x, y, blown_immunity: true)
+        Knockback.pull_to(type, id, x, y, blown_immunity: true, unchecked_movepos: true)
 
         group
         |> Trap.transition(:captured, now, held_ms(type, id, hold_ms))

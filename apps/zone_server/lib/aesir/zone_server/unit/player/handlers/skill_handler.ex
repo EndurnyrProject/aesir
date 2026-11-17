@@ -51,6 +51,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Ammo
   alias Aesir.ZoneServer.Unit.Movement
+  alias Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler, as: PetMovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
@@ -2114,7 +2115,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
             moved_state.skill_cooldowns
           end
 
-        %{state | game_state: %{moved_state | skill_cooldowns: blocked_cooldowns}}
+        # Every staged self-move is a path-checked `unit_movepos`.
+        PetMovementHandler.slide_to_owner(
+          %{state | game_state: %{moved_state | skill_cooldowns: blocked_cooldowns}},
+          true
+        )
     end
   end
 

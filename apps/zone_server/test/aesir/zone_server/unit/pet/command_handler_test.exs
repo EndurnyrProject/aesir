@@ -46,4 +46,21 @@ defmodule Aesir.ZoneServer.Unit.Pet.CommandHandlerTest do
 
     assert {:noreply, ^session} = CommandHandler.info({:hunger_tick, 1}, make_ref(), session)
   end
+
+  test "a stale think timer has no effect while a current one is consumed" do
+    ref = make_ref()
+
+    session = %SessionState{
+      game_state: nil,
+      connection_pid: self(),
+      pet_runtime: %Runtime{generation: 2, ai_timer_ref: ref, movement_timer_ref: ref}
+    }
+
+    assert {:noreply, ^session} = CommandHandler.info({:ai_tick, 1}, ref, session)
+    assert {:noreply, ^session} = CommandHandler.info({:move_step, 1}, ref, session)
+    assert {:noreply, ticked} = CommandHandler.info({:ai_tick, 2}, ref, session)
+    assert ticked.pet_runtime.ai_timer_ref == nil
+    assert {:noreply, stepped} = CommandHandler.info({:move_step, 2}, ref, session)
+    assert stepped.pet_runtime.movement_timer_ref == nil
+  end
 end

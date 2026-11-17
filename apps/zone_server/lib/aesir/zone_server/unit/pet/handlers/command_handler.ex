@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
   alias Aesir.Net.PetRequest
   alias Aesir.Net.PetResult
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Unit.Pet.Handlers.AiHandler
+  alias Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.SessionState
 
   @doc "Replies to a pet request."
@@ -42,6 +44,15 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
         %SessionState{pet_runtime: %{generation: current}} = session
       )
       when generation != current, do: {:noreply, session}
+
+  def info({:ai_tick, _generation}, ref, %SessionState{} = session),
+    do: {:noreply, AiHandler.tick(ref, session)}
+
+  def info({:move_step, _generation}, ref, %SessionState{} = session),
+    do: {:noreply, MovementHandler.step(ref, session)}
+
+  def info({:recall, _generation}, ref, %SessionState{} = session),
+    do: {:noreply, MovementHandler.recall_timeout(ref, session)}
 
   def info(event, _ref, %SessionState{} = session) do
     Logger.warning("Unsupported pet info event: #{inspect(event)}")

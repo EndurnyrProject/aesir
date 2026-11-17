@@ -1336,6 +1336,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     MovementHandler.handle_displacement(state, expected_x, expected_y, map_name, x, y)
   end
 
+  def handle_cast({:movement, {:movepos, expected_x, expected_y, map_name, x, y}}, state) do
+    MovementHandler.handle_movepos(state, expected_x, expected_y, map_name, x, y)
+  end
+
   @impl true
   def handle_cast({:movement, {:recheck_touch, position}}, state) do
     MovementHandler.recheck_touch(state, position)

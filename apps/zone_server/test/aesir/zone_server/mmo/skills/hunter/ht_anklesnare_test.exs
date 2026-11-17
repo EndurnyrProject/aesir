@@ -65,7 +65,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtAnklesnareTest do
     test "a player-owned snare catches a monster, holds it, and pulls it onto the snare" do
       register_player(@player_id, base_level: 50)
       register_mob(@mob_id, level: 20, agi: 100)
-      expect(Knockback, :pull_to, fn :mob, @mob_id, 50, 50, [blown_immunity: true] -> :ok end)
+
+      expect(Knockback, :pull_to, fn :mob,
+                                     @mob_id,
+                                     50,
+                                     50,
+                                     [blown_immunity: true, unchecked_movepos: true] ->
+        :ok
+      end)
+
       armed = group(:player, @player_id, level: 5)
       now = System.monotonic_time(:millisecond)
 

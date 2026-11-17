@@ -94,7 +94,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
 
   Without options the pull moves any unit, a boss included (Spider Web's
   catch). `blown_immunity: true` applies the same resistance as a knockback (a siege map, a knockback-immune monster,
-  no-knockback gear, a pre-renewal Basilica caster).
+  no-knockback gear, a pre-renewal Basilica caster). `unchecked_movepos: true`
+  marks a player's pull as an unchecked `unit_movepos` (Ankle Snare), which
+  also runs the owner's pet check.
   """
   @spec pull_to(atom(), integer(), integer(), integer(), keyword()) :: result()
   def pull_to(unit_type, unit_id, target_x, target_y, opts \\ [])
@@ -114,7 +116,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
         {:ok, {x, y}}
       else
         destination = pull_path(map_data, {x, y}, {target_x, target_y})
-        request_displacement(unit_type, unit_id, pid, {x, y, map_name}, destination)
+        kind = displacement_kind(opts)
+        request_displacement(unit_type, unit_id, pid, {x, y, map_name}, destination, kind)
       end
     end
   end
@@ -246,21 +249,32 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
     {:ok, {dst_x, dst_y}}
   end
 
-  defp request_displacement(_unit_type, _unit_id, _pid, {x, y, _map_name}, {x, y}),
-    do: {:ok, {x, y}}
+  defp displacement_kind(opts),
+    do: if(Keyword.get(opts, :unchecked_movepos, false), do: :movepos, else: :displace)
+
+  # A player's `unit_movepos` runs its pet check even for a zero-distance move.
+  defp request_displacement(unit_type, _unit_id, _pid, {x, y, _map_name}, {x, y}, kind)
+       when unit_type != :player or kind != :movepos,
+       do: {:ok, {x, y}}
 
   defp request_displacement(
          :homunculus,
          unit_id,
          pid,
          {x, y, map_name},
-         {dst_x, dst_y}
+         {dst_x, dst_y},
+         _kind
        ) do
     PlayerSession.displace_homunculus(pid, unit_id, x, y, map_name, dst_x, dst_y)
     {:ok, {dst_x, dst_y}}
   end
 
-  defp request_displacement(_unit_type, _unit_id, pid, {x, y, map_name}, {dst_x, dst_y}) do
+  defp request_displacement(:player, _unit_id, pid, {x, y, map_name}, {dst_x, dst_y}, kind) do
+    GenServer.cast(pid, {:movement, {kind, x, y, map_name, dst_x, dst_y}})
+    {:ok, {dst_x, dst_y}}
+  end
+
+  defp request_displacement(_unit_type, _unit_id, pid, {x, y, map_name}, {dst_x, dst_y}, _kind) do
     GenServer.cast(pid, {:movement, {:displace, x, y, map_name, dst_x, dst_y}})
     {:ok, {dst_x, dst_y}}
   end

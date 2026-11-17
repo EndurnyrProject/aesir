@@ -28,6 +28,20 @@ defmodule Aesir.ZoneServer.Unit.Pet.StateCommit do
   end
 
   @doc """
+  Stores the pet moved by a warp: it vanishes with the teleport reason and
+  appears on its new cell (`Movement.warp_position/4`).
+  """
+  @spec commit_warp(SessionState.t(), PetState.t()) :: SessionState.t()
+  def commit_warp(
+        %SessionState{pet: %PetState{world_gid: gid}} = session,
+        %PetState{world_gid: gid} = pet
+      )
+      when is_integer(gid) do
+    Movement.warp_position(:pet, gid, pet, pet.map_name)
+    %{session | pet: pet}
+  end
+
+  @doc """
   Claims a world id for the pet, registers it on its cell and shows it to the
   players in view.
   """
