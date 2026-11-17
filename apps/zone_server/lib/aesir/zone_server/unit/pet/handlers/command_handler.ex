@@ -3,12 +3,14 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
 
   require Logger
 
+  alias Aesir.Net.PetCatchTargetCommand
   alias Aesir.Net.PetMenuCommand
   alias Aesir.Net.PetRequest
   alias Aesir.Net.PetResult
   alias Aesir.Net.PetSelectEggCommand
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Pet.Handlers.AiHandler
+  alias Aesir.ZoneServer.Unit.Pet.Handlers.CatchHandler
   alias Aesir.ZoneServer.Unit.Pet.Handlers.HatchHandler
   alias Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler
   alias Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler
@@ -16,8 +18,9 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
   alias Aesir.ZoneServer.Unit.Player.SessionState
 
   @doc """
-  Runs a pet request and replies with its `PetResult`. The menu needs a pet
-  out with intimacy above 0.
+  Runs a pet request and replies with its `PetResult`. A catch pick needs no
+  pet out and is always acknowledged, its outcome going in `PetCatchResult`;
+  the menu needs a pet out with intimacy above 0.
   """
   @spec request(PetRequest.t(), SessionState.t()) :: {:noreply, SessionState.t()}
   def request(%PetRequest{} = request, %SessionState{} = session) do
@@ -44,6 +47,9 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
       else: {{:error, :PET_ERROR_INVALID_REQUEST}, selected}
   end
 
+  defp run({:catch_target, %PetCatchTargetCommand{target_id: target_id}}, session),
+    do: {:ok, CatchHandler.finish(session, target_id)}
+
   defp run(_command, %SessionState{pet: nil} = session),
     do: {{:error, :PET_ERROR_NO_PET}, session}
 
@@ -69,11 +75,15 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
   defp run(_command, session), do: {{:error, :PET_ERROR_INVALID_REQUEST}, session}
 
   @doc """
-  Handles an asynchronous pet command: `{:birthpet}` opens the egg list.
+  Handles an asynchronous pet command: `{:birthpet}` opens the egg list and
+  `{:catchpet, lure_id, flag}` starts a catch.
   """
   @spec cast(term(), SessionState.t()) :: {:noreply, SessionState.t()}
   def cast({:birthpet}, %SessionState{} = session),
     do: {:noreply, HatchHandler.open_egg_list(session)}
+
+  def cast({:catchpet, lure_id, flag}, %SessionState{} = session),
+    do: {:noreply, CatchHandler.start(session, lure_id, flag)}
 
   def cast(command, %SessionState{} = session) do
     Logger.warning("Unsupported pet cast: #{inspect(command)}")

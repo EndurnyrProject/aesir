@@ -257,7 +257,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
     end
   end
 
-  defp notify_new_rows(connection_pid, old, new) do
+  @doc "Emits an `ItemAdded` for every slot of `new` that `old` did not have."
+  @spec notify_new_rows(pid(), Inventory.t(), Inventory.t()) :: :ok
+  def notify_new_rows(connection_pid, old, new) do
     new
     |> Enum.reject(fn {index, _item} -> Map.has_key?(old, index) end)
     |> Enum.each(fn {index, item} ->

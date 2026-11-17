@@ -1305,6 +1305,8 @@ enum SystemNoticeId {
   SYSTEM_NOTICE_ID_MAP_CANT_MEMO = 5;
   // NOTIFY_MAPINFO_CANT_USE_SKILL: the skill cannot be used on this map.
   SYSTEM_NOTICE_ID_MAP_CANT_USE_SKILL = 6;
+  // MSI_CANT_GET_ITEM_BECAUSE_COUNT, shown red: no free inventory slot for the item.
+  SYSTEM_NOTICE_ID_CANT_GET_ITEM_BECAUSE_COUNT = 7;
 }
 
 // Server -> client, caster-only: a client string-table notice the reference

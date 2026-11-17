@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Unit.Pet.CommandHandlerTest do
   use ExUnit.Case, async: true
 
+  alias Aesir.Net.PetCatchResult
+  alias Aesir.Net.PetCatchTargetCommand
   alias Aesir.Net.PetRequest
   alias Aesir.Net.PetResult
   alias Aesir.ZoneServer.Unit.Pet.Clock
@@ -29,6 +31,16 @@ defmodule Aesir.ZoneServer.Unit.Pet.CommandHandlerTest do
     assert_receive {:send, _,
                     {:pet_result,
                      %PetResult{request_id: 7, success: false, error: :PET_ERROR_INVALID_REQUEST}}}
+  end
+
+  test "a catch pick with no pet out still finishes the catch" do
+    session = %SessionState{game_state: nil, connection_pid: self()}
+    request = %PetRequest{request_id: 8, command: {:catch_target, %PetCatchTargetCommand{}}}
+
+    assert {:noreply, ^session} = CommandHandler.request(request, session)
+
+    assert_receive {:send, _, {:pet_catch_result, %PetCatchResult{success: false}}}
+    assert_receive {:send, _, {:pet_result, %PetResult{request_id: 8, success: true}}}
   end
 
   test "pet clock delivers the captured generation" do
