@@ -146,6 +146,7 @@ Mimic.copy(Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler)
 Mimic.copy(Aesir.ZoneServer.Config)
 Mimic.copy(Aesir.ZoneServer.Mmo.Skill.PortalAccess)
 Mimic.copy(Aesir.ZoneServer.Unit.Pet.Clock)
+Mimic.copy(Aesir.ZoneServer.Mmo.PetManagement.Catalog)
 Mimic.copy(Aesir.Repo)
 
 # Integration tests are excluded from the default run. From the umbrella root:

@@ -302,7 +302,8 @@ defmodule Aesir.ZoneServer.Unit.Pet.LifecycleHandlerTest do
         walk_speed: 150,
         movement_state: :standing,
         view_range: 14,
-        inventory: inventory
+        inventory: inventory,
+        stats: PlayerState.new(character).stats
       },
       connection_pid: self(),
       pet_runtime: %Runtime{generation: 3}

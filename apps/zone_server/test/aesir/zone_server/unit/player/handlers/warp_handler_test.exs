@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
   import Mimic
 
   alias Aesir.Commons.ClusterTestHelper
+  alias Aesir.Commons.Models.Character
   alias Aesir.Net.MapMove
   alias Aesir.Net.UnitDespawn
   alias Aesir.ZoneServer.Constants.DespawnReason
@@ -244,7 +245,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
         call_original(UnitRegistry, :update_unit_state, [type, id, unit])
       end)
 
-      {:ok, state} = PetStateCommit.spawn(state(), pet)
+      owner =
+        put_in(
+          state().game_state.stats,
+          Stats.from_character(%Character{
+            class: 0,
+            base_level: 1,
+            job_level: 1,
+            str: 1,
+            agi: 1,
+            vit: 1,
+            int: 1,
+            dex: 1,
+            luk: 1
+          })
+        )
+
+      {:ok, state} = PetStateCommit.spawn(owner, pet)
       gid = state.pet.world_gid
 
       ctx = Dsl.warp(Ctx.from_session(state, {:item, 602}), "geffen", 100, 120)

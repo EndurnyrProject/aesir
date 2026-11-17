@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.WorldPresenceTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.Commons.Models.Character
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.UnitSpawn
   alias Aesir.ZoneServer.Constants.DespawnReason
@@ -21,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.WorldPresenceTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -194,7 +196,18 @@ defmodule Aesir.ZoneServer.Unit.Pet.WorldPresenceTest do
       visible_items: MapSet.new(),
       visible_skill_units: MapSet.new(),
       party_id: 0,
-      stats: %{current_state: %{hp: 100}, derived_stats: %{max_hp: 100}}
+      stats:
+        Stats.from_character(%Character{
+          class: 0,
+          base_level: 1,
+          job_level: 1,
+          str: 1,
+          agi: 1,
+          vit: 1,
+          int: 1,
+          dex: 1,
+          luk: 1
+        })
     }
   end
 

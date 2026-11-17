@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerPetTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapData
@@ -14,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerPetTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -98,7 +100,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerPetTest do
       dir: 0,
       walk_speed: 150,
       view_range: 14,
-      stats: %{}
+      stats:
+        Stats.from_character(%Character{
+          class: 0,
+          base_level: 1,
+          job_level: 1,
+          str: 1,
+          agi: 1,
+          vit: 1,
+          int: 1,
+          dex: 1,
+          luk: 1
+        })
     })
   end
 end

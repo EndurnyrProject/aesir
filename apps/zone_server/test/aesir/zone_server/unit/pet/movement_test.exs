@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.MovementTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapData
@@ -14,6 +15,8 @@ defmodule Aesir.ZoneServer.Unit.Pet.MovementTest do
   alias Aesir.ZoneServer.Unit.Pet.StateCommit
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @map "pet_move_map"
 
@@ -215,6 +218,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.MovementTest do
         overrides
       )
 
+    :ok = UnitRegistry.register_player(owner(), self())
     base = %SessionState{game_state: owner(), connection_pid: self(), pet_runtime: %Runtime{}}
     {:ok, session} = StateCommit.spawn(base, pet)
     session
@@ -231,7 +235,19 @@ defmodule Aesir.ZoneServer.Unit.Pet.MovementTest do
       dir: 0,
       walk_speed: 150,
       movement_state: :standing,
-      view_range: 14
+      view_range: 14,
+      stats:
+        Stats.from_character(%Character{
+          class: 0,
+          base_level: 1,
+          job_level: 1,
+          str: 1,
+          agi: 1,
+          vit: 1,
+          int: 1,
+          dex: 1,
+          luk: 1
+        })
     }
   end
 end

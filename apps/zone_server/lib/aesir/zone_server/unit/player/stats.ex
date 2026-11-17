@@ -153,6 +153,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           secondary_effects: [EquipScript.effect()]
         }
 
+  @typedoc """
+  The pet's bonus program, run last in the equipment fold with `inputs`
+  (the `:pet` map read by `pet_info`) merged in. `skill_bonus` is the pet's
+  active skill bonus, `nil` while it is off.
+  """
+  @type pet_bonus :: %{
+          program: EquipScript.program(),
+          inputs: %{pet: %{atom() => integer() | String.t()}},
+          skill_bonus: {atom(), integer()} | nil
+        }
+
   @typedoc "A direct status desired by at least one currently worn item."
   @type equip_status :: {pos_integer() | :infinite, integer()}
 
@@ -228,6 +239,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
             # option bit through every `calculate_stats/3` call site.
             riding: false,
 
+            # The owner's pet bonus program with the pet's live `:pet` input, kept
+            # current by `Pet.StateCommit`; `nil` while no pet object exists.
+            pet_bonus: nil,
+
             # Bumped by a recalculation whose full-recalculation inputs changed
             # (`recalculation_basis`, a hash of them): allocated stats, job and
             # levels, learned passive skills, worn items, riding, the map, and the
@@ -261,6 +276,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           left_hand: WeaponHand.t() | nil,
           granted_skills: %{integer() => non_neg_integer()},
           riding: boolean(),
+          pet_bonus: pet_bonus() | nil,
           generation: non_neg_integer(),
           recalculation_basis: non_neg_integer() | nil
         }

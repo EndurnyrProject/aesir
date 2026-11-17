@@ -71,16 +71,16 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.HungerHandler do
     definition = definition(pet)
     hungry = pet.hungry - definition.fullness
 
-    {updated, interval} =
+    {updated, recompute_at, interval} =
       if hungry < 0 do
-        {pet |> Map.put(:hungry, 0) |> starving_intimacy(definition, session),
-         @starving_interval_ms}
+        updated = pet |> Map.put(:hungry, 0) |> starving_intimacy(definition, session)
+        {updated, updated, @starving_interval_ms}
       else
-        {%{pet | hungry: hungry}, hungry_delay(pet)}
+        {%{pet | hungry: hungry}, nil, hungry_delay(pet)}
       end
 
     session
-    |> apply_change(pet, updated)
+    |> apply_change(pet, updated, recompute_at)
     |> autofeed()
     |> schedule(interval)
   end
@@ -103,8 +103,9 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.HungerHandler do
   Feeds the pet one of its food. Without the food only the failure goes to
   the owner. A pet with no food item (id 0) is fed for free while the
   inventory has a free slot. Intimacy changes by `feed_delta/3` (at 0 after
-  overfeeding the pet runs away), hunger rises by `hunger_increase` up to 100,
-  then HUNGER, INTIMACY and the success go to the owner.
+  overfeeding the pet runs away) and the owner is recomputed, then hunger rises
+  by `hunger_increase` up to 100 and HUNGER, INTIMACY and the success go to
+  the owner.
   """
   @spec feed(SessionState.t()) :: SessionState.t()
   def feed(%SessionState{pet: %PetState{} = pet, game_state: owner} = session) do
@@ -122,16 +123,16 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.HungerHandler do
   defp fed(%SessionState{game_state: owner} = session, pet, definition, index) do
     {inventory, removed} = consume_food(owner.inventory, index)
     delta = feed_delta(definition, pet.hungry, Config.pet_friendly_rate())
-    updated = change_intimacy(pet, pet.intimate + delta)
+    intimate = change_intimacy(pet, pet.intimate + delta)
 
-    updated =
-      if pet.hungry > @hungry_satisfied and updated.intimate <= 0,
-        do: run_away_speed(updated, session),
-        else: updated
+    intimate =
+      if pet.hungry > @hungry_satisfied and intimate.intimate <= 0,
+        do: run_away_speed(intimate, session),
+        else: intimate
 
-    updated = %{updated | hungry: min(pet.hungry + definition.hunger_increase, @hungry_stuffed)}
+    updated = %{intimate | hungry: min(pet.hungry + definition.hunger_increase, @hungry_stuffed)}
 
-    case persist(session, pet, updated, inventory, removed) do
+    case persist(session, pet, updated, inventory, removed, intimate) do
       {:ok, session} ->
         send_state_change(session, :PET_STATE_HUNGER, updated.hungry)
         send_state_change(session, :PET_STATE_INTIMACY, updated.intimate)
@@ -164,10 +165,13 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.HungerHandler do
   @doc """
   Sets the pet's intimacy, clamped to 0..1000, and saves it: at 0 the egg is
   deleted, otherwise its `card3` keeps the rename bit and takes the new grade.
+  The owner is recomputed on every call, an unchanged value included.
   """
   @spec set_intimate(SessionState.t(), integer()) :: SessionState.t()
-  def set_intimate(%SessionState{pet: %PetState{} = pet} = session, value),
-    do: apply_change(session, pet, change_intimacy(pet, value))
+  def set_intimate(%SessionState{pet: %PetState{} = pet} = session, value) do
+    updated = change_intimacy(pet, value)
+    apply_change(session, pet, updated, updated)
+  end
 
   @doc """
   Turns autofeed on or off. Ignored (`:error`) unless `feature_pet_autofeed`
@@ -178,7 +182,14 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.HungerHandler do
     with true <- Config.feature_pet_autofeed?(),
          %PetDefinition{allow_auto_feed: true} <- definition(pet),
          {:ok, session} <-
-           persist(session, pet, %{pet | autofeed: enabled}, session.game_state.inventory, []) do
+           persist(
+             session,
+             pet,
+             %{pet | autofeed: enabled},
+             session.game_state.inventory,
+             [],
+             nil
+           ) do
       {:ok, session}
     else
       _ignored -> :error
@@ -188,8 +199,8 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.HungerHandler do
   def set_autofeed(%SessionState{}, _enabled), do: :error
 
   # Saves the change, then sends the owner INTIMACY and HUNGER when they changed.
-  defp apply_change(%SessionState{game_state: owner} = session, pet, updated) do
-    case persist(session, pet, updated, owner.inventory, []) do
+  defp apply_change(%SessionState{game_state: owner} = session, pet, updated, recompute_at) do
+    case persist(session, pet, updated, owner.inventory, [], recompute_at) do
       {:ok, session} ->
         if updated.intimate != pet.intimate,
           do: send_state_change(session, :PET_STATE_INTIMACY, updated.intimate)
@@ -212,8 +223,16 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.HungerHandler do
   # Saves the pet with `inventory` (the owner's after the slots in `removed`
   # lost one item) and the egg upkeep: the egg is deleted at intimacy 0,
   # otherwise its card3 grade follows the intimacy. The owner is told about
-  # every removal once saved.
-  defp persist(%SessionState{game_state: owner} = session, pet, updated, inventory, removed) do
+  # every removal once saved. With `recompute_at`, the owner is recomputed
+  # with that pet before `updated` is stored.
+  defp persist(
+         %SessionState{game_state: owner} = session,
+         pet,
+         updated,
+         inventory,
+         removed,
+         recompute_at
+       ) do
     {inventory, removed} = egg_upkeep(inventory, updated, removed)
 
     with %Pet{} = row <- Persistence.load(pet.pet_id),
@@ -227,13 +246,18 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.HungerHandler do
            ) do
       session = PlayerStateCommit.commit(session, %{owner | inventory: inventory})
       Enum.each(removed, &notify_removed(session, &1))
-      {:ok, StateCommit.commit(session, updated)}
+      {:ok, session |> recompute_owner(recompute_at) |> StateCommit.commit(updated)}
     else
       failure ->
         Logger.error("Failed to save pet #{pet.pet_id}: #{inspect(failure)}")
         :error
     end
   end
+
+  defp recompute_owner(session, nil), do: session
+
+  defp recompute_owner(session, %PetState{} = pet),
+    do: session |> StateCommit.commit(pet) |> StateCommit.sync_owner_bonus()
 
   defp egg_upkeep(inventory, %PetState{} = pet, removed) do
     case egg_index(inventory, pet.pet_id) do

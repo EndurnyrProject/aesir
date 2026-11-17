@@ -80,7 +80,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
         ) :: Stats.t()
   def apply_equipment_modifiers(stats, equipped_items \\ nil, extra_inputs \\ %{})
 
-  def apply_equipment_modifiers(%Stats{worn_items: []} = stats, nil, extra_inputs)
+  def apply_equipment_modifiers(%Stats{worn_items: [], pet_bonus: nil} = stats, nil, extra_inputs)
       when not is_map_key(extra_inputs, :temporary_card_id) do
     %{
       stats
@@ -196,7 +196,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   end
 
   defp fold_with_actives(stats, worn_items, active_inputs, worn_inputs) do
-    fold = fold_worn_items(worn_items, worn_inputs) |> fold_temporary_card(worn_inputs)
+    fold =
+      worn_items
+      |> fold_worn_items(worn_inputs)
+      |> fold_temporary_card(worn_inputs)
+      |> fold_pet_bonus(stats.pet_bonus, worn_inputs)
 
     active =
       retain_active_autobonuses(
@@ -219,7 +223,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
           |> Map.drop([:lr_flag, :random_option])
 
         result = EquipScript.evaluate(program, inputs)
-        %{fold | modifier_steps: [result.modifiers | fold.modifier_steps]}
+
+        %{
+          fold
+          | modifier_steps: [result.modifiers | fold.modifier_steps],
+            visible: with_grants(fold.visible, granted_by([{:temporary_card, result}]))
+        }
 
       _missing_program ->
         fold
@@ -227,6 +236,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   end
 
   defp fold_temporary_card(fold, _inputs), do: fold
+
+  # The pet's program runs after every other script, with no refine or hand
+  # context and the pet's live state as its `:pet` input, and is collected
+  # like an item's own script. Its autocasts carry no card and register after
+  # every worn source's.
+  defp fold_pet_bonus(fold, nil, _inputs), do: fold
+
+  defp fold_pet_bonus(fold, %{program: program, inputs: pet_inputs}, inputs) do
+    inputs =
+      inputs
+      |> Map.put(:refine, 0)
+      |> Map.put(:learned_skills, fold.visible)
+      |> Map.drop([:lr_flag, :random_option])
+      |> Map.merge(pet_inputs)
+
+    result = EquipScript.evaluate(program, inputs)
+    order = {5, {0, 0}}
+    add_effs = if result.add_effs == [], do: [], else: [{order, result.add_effs}]
+
+    %{
+      fold
+      | modifier_steps: [result.modifiers | fold.modifier_steps],
+        visible: with_grants(fold.visible, granted_by([{:pet, result}])),
+        auto_casts: fold.auto_casts ++ Enum.map(result.auto_casts, &{order, &1, 0}),
+        add_effs: fold.add_effs ++ add_effs,
+        statuses: install_equip_statuses(fold.statuses, result.effects)
+    }
+  end
 
   # The active programs run before any worn script, so they see the learned
   # levels and the grants of the active programs before them only.
