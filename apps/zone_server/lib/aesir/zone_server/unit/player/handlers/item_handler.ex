@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   Ordinary items consume one unit on success. A `delay_consume` item stays in
   inventory until a staged skill claims it; branches that do not stage a skill
   keep it. A `no_consume` item is never consumed.
+  A taming item on a `nopetcapture` map is refused with message 669 and kept;
+  a script's catch or egg list starts after the item is spent.
   `ItemUseResult` acknowledges the item use and `ItemRemoved` reports the actual
   consumption. A failed item-use check leaves inventory unchanged.
   """
@@ -21,17 +23,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   alias Aesir.Net.ItemUseResult
   alias Aesir.Net.ProgressBarAbort
   alias Aesir.Net.SystemNotice
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
   alias Aesir.ZoneServer.Mmo.ItemManagement.Eligibility
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDialogs
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.ItemManagement.NoEquip
   alias Aesir.ZoneServer.Mmo.ItemManagement.UseEffect
+  alias Aesir.ZoneServer.Mmo.PetManagement.Catalog, as: PetCatalog
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ItemEffectHandler
+  alias Aesir.ZoneServer.Unit.Pet.Handlers.CatchHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CardHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
@@ -135,6 +140,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
     with :ok <- usable?(definition),
          :ok <- Eligibility.check(definition, context),
          :ok <- map_allows?(definition, state.game_state),
+         :ok <- pet_capture_allowed?(definition, state),
          :ok <- item_dialog_allowed?(definition, state) do
       run_effect(client_index, server_index, definition, state)
     else
@@ -198,7 +204,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
          match?(%{type: :usable, no_consume: false}, definition) and
          CompiledItemScripts.interactive?(item_id) and
          match?({:ok, _}, ItemDialogs.target({helper, args})) do
-      remove_consumed_item(client_index, server_index, ctx, state, nil, {item_id, helper, args})
+      client_index
+      |> remove_consumed_item(server_index, ctx, state, nil, {item_id, helper, args})
+      |> settle_removal()
     else
       reject_invalid_script(client_index, item_id, state)
     end
@@ -219,6 +227,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
     effects = Enum.reject(effects, &match?({:unit_skill_use, _, _}, &1))
     produce_triggers = for {:produce, trigger} <- effects, do: trigger
     effects = Enum.reject(effects, &match?({:produce, _}, &1))
+    pet_ops = for {:pet, op} <- effects, do: op
+    effects = Enum.reject(effects, &match?({:pet, _}, &1))
 
     with :ok <- validate_item_skill(pending),
          :ok <- reject_exclusive_effects(effects),
@@ -237,14 +247,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
           )
         end
 
-      consumed
-      |> start_script_cast(skill_cast)
-      |> open_production_lists(produce_triggers)
+      # The script's follow-up effects run only once the item is spent.
+      case consumed do
+        {:not_removed, reply} ->
+          reply
+
+        reply ->
+          reply
+          |> start_script_cast(skill_cast)
+          |> open_production_lists(produce_triggers)
+          |> apply_pet_ops(pet_ops)
+      end
     else
       {:error, :invalid_script} -> reject_invalid_script(client_index, item_id, state)
       {:error, reason} -> reject(client_index, reason, state)
     end
   end
+
+  defp settle_removal({:not_removed, reply}), do: reply
+  defp settle_removal(reply), do: reply
 
   # A `unitskilluseid` script cast starts once the item is spent or claimed, as
   # the reference runs the item's script after its own use acknowledgement.
@@ -257,6 +278,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   # item's script after removing it.
   defp open_production_lists({:noreply, state}, triggers),
     do: {:noreply, Enum.reduce(triggers, state, &SkillMenuHandler.open_produce(&2, &1))}
+
+  # A taming item's catch and the incubator's egg list start after the item is
+  # spent, as the reference runs the item's script after removing it.
+  defp apply_pet_ops({:noreply, state}, ops) do
+    {:noreply,
+     Enum.reduce(ops, state, fn op, acc -> op |> ScriptEffectHandler.apply_op(acc) |> elem(1) end)}
+  end
 
   # A delayed-consume item stays until the selected target is known; a
   # no-consume item is never removed (the reference's DELAYCONSUME_NOCONSUME).
@@ -372,7 +400,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
           "use_item consume failed for #{char_id} (item #{ctx.source |> elem(1)}): #{inspect(reason)}"
         )
 
-        reject(client_index, reason, state)
+        {:not_removed, reject(client_index, reason, state)}
     end
   end
 
@@ -442,6 +470,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
     if NoEquip.restricted?(definition.id, game_state.map_name),
       do: {:error, :restricted_area},
       else: :ok
+  end
+
+  # A taming item is refused with message 669 on a `nopetcapture` map and is
+  # not consumed.
+  @spec pet_capture_allowed?(map(), map()) :: :ok | {:error, :nopetcapture}
+  defp pet_capture_allowed?(%{id: item_id}, %{game_state: game_state} = state) do
+    if PetCatalog.tame_item?(item_id) and MapFlags.get(game_state.map_name, :nopetcapture) do
+      CatchHandler.send_catch_refusal(state)
+      {:error, :nopetcapture}
+    else
+      :ok
+    end
   end
 
   # While an NPC dialog holds the player, the first item use cancels a running

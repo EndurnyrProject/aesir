@@ -14,9 +14,13 @@ base_class/1
 base_job/1
 base_level/1
 basicskillcheck/1
+birthpet/1
 broadcast/3
 broadcast/4
 can_change_job?/1
+catchpet/1
+catchpet/2
+catchpet/3
 changequest/3
 char_name/2
 checkcart/1

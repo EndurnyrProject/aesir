@@ -14,7 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet do
   - `%{shape: :call, dsl: name, args: types}` — a positional DSL call
     `name(ctx, a0, a1, …)` where each `types` entry says how to render the
     matching positional argument (`:int` literal, `:string` literal, `:status`,
-    `:item`, `:skill`, `:effect` resolver lookups).
+    `:item`, `:skill`, `:effect` resolver lookups). An optional `min_args: n`
+    lets a script omit the trailing arguments past the first `n`.
   - `%{shape: :heal, dsl: name}` — the `itemheal`/`heal`/`percentheal` shape:
     `name(ctx, hp: …, sp: …)`, zero amounts omitted, `rand` rendered as a range.
   - `%{shape: :itemskill, dsl: name}` — `itemskill(ctx, skill, level: lv)`, with optional `keep_requirement: true`.
@@ -38,6 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet do
 
   @type rule ::
           %{shape: :call, dsl: String.t(), args: [atom()]}
+          | %{shape: :call, dsl: String.t(), args: [atom()], min_args: non_neg_integer()}
           | %{shape: :heal, dsl: String.t()}
           | %{shape: :itemskill, dsl: String.t()}
           | %{shape: :unit_skill_use, dsl: String.t()}
@@ -46,6 +48,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet do
 
   @commands %{
     "homevolution" => %{shape: :call, dsl: "homevolution", args: []},
+    "pet" => %{shape: :call, dsl: "catchpet", args: [:item, :int], min_args: 0},
+    "catchpet" => %{shape: :call, dsl: "catchpet", args: [:item, :int], min_args: 0},
+    "bpet" => %{shape: :call, dsl: "birthpet", args: []},
+    "birthpet" => %{shape: :call, dsl: "birthpet", args: []},
     "setfalcon" => %{shape: :call, dsl: "setfalcon", args: [:expr]},
     "itemheal" => %{shape: :heal, dsl: "item_heal"},
     "heal" => %{shape: :heal, dsl: "heal"},

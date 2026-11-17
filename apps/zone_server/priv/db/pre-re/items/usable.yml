@@ -883,6 +883,7 @@
   id: 619
   name: Unripe Apple
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Orange_Juice
@@ -890,6 +891,7 @@
   id: 620
   name: Orange Juice
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Bitter_Herb
@@ -897,6 +899,7 @@
   id: 621
   name: Bitter Herb
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Rainbow_Carrot
@@ -904,6 +907,7 @@
   id: 622
   name: Rainbow Carrot
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Earthworm_The_Dude
@@ -911,6 +915,7 @@
   id: 623
   name: Earthworm the Dude
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Rotten_Fish
@@ -918,6 +923,7 @@
   id: 624
   name: Rotten Fish
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Lusty_Iron
@@ -925,6 +931,7 @@
   id: 625
   name: Rusty Iron
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Monster_Juice
@@ -932,6 +939,7 @@
   id: 626
   name: Monster Juice
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Sweet_Milk
@@ -939,6 +947,7 @@
   id: 627
   name: Sweet Milk
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Well_Dried_Bone
@@ -946,6 +955,7 @@
   id: 628
   name: Well-Dried Bone
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Singing_Flower
@@ -953,6 +963,7 @@
   id: 629
   name: Singing Flower
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Dew_Laden_Moss
@@ -960,6 +971,7 @@
   id: 630
   name: Dew Laden Moss
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Deadly_Noxious_Herb
@@ -967,6 +979,7 @@
   id: 631
   name: Deadly Noxious Herb
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Fatty_Chubby_Earthworm
@@ -974,6 +987,7 @@
   id: 632
   name: Fatty Chubby Earthworm
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Baked_Yam
@@ -981,6 +995,7 @@
   id: 633
   name: Sweet Potato
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Tropical_Banana
@@ -988,6 +1003,7 @@
   id: 634
   name: Tropical Banana
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Horror_Of_Tribe
@@ -995,6 +1011,7 @@
   id: 635
   name: Orc Trophy
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: No_Recipient
@@ -1002,6 +1019,7 @@
   id: 636
   name: No Recipient
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Old_Broom
@@ -1009,6 +1027,7 @@
   id: 637
   name: Old Broom
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Silver_Knife_Of_Chaste
@@ -1016,6 +1035,7 @@
   id: 638
   name: Silver Knife of Chastity
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Armlet_Of_Obedience
@@ -1023,6 +1043,7 @@
   id: 639
   name: Armlet of Obedience
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Shining_Stone
@@ -1030,6 +1051,7 @@
   id: 640
   name: Shining Stone
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Contracts_In_Shadow
@@ -1037,6 +1059,7 @@
   id: 641
   name: Contract in Shadow
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Book_Of_Devil
@@ -1044,12 +1067,14 @@
   id: 642
   name: Book of the Devil
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Pet_Incubator
   buy: 3000
   id: 643
   name: Pet Incubator
+  on_use: birthpet(ctx)
   type: usable
   weight: 30
 - aegis_name: Gift_Box
@@ -1130,6 +1155,7 @@
   id: 659
   name: Her Heart
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Prohibition_Red_Candle
@@ -1137,6 +1163,7 @@
   id: 660
   name: Forbidden Red Candle
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Sway_Apron
@@ -1144,6 +1171,7 @@
   id: 661
   name: Soft Apron
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Inspector_Certificate
@@ -3663,6 +3691,7 @@
   id: 12225
   name: Sweet Candy Cane
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Examination1
@@ -4684,6 +4713,7 @@
   no_storage: true
   no_trade: true
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 10
 - aegis_name: Special_Alloy_Trap_Box
@@ -4844,6 +4874,7 @@
   buy: 20
   id: 12357
   name: Shiny Wing Gown
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Fan_Of_Wind
@@ -4851,6 +4882,7 @@
   id: 12358
   name: Fan Of Wind
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Very_Soft_Plant
@@ -4858,6 +4890,7 @@
   id: 12359
   name: Very Soft Plant
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Very_Red_Juice
@@ -4865,6 +4898,7 @@
   id: 12360
   name: Very Red Juice
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Delicious_Shaved_Ice
@@ -4875,12 +4909,14 @@
   no_storage: true
   no_trade: true
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
 - aegis_name: Kuloren
   buy: 20
   id: 12362
   name: Kuloren
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Fit_Pipe
@@ -4891,12 +4927,14 @@
   no_storage: true
   no_trade: true
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
 - aegis_name: Staff_Of_Leader
   buy: 20
   id: 12364
   name: Staff Of Leader
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Charming_Lotus
@@ -4904,6 +4942,7 @@
   id: 12365
   name: Charming Lotus
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Gril_Doll
@@ -4911,6 +4950,7 @@
   id: 12366
   name: Girl's Doll
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Luxury_Whisky_Bottle
@@ -4918,6 +4958,7 @@
   id: 12367
   name: Luxury Whisky Bottle
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Splendid_Mirror
@@ -4925,6 +4966,7 @@
   id: 12368
   name: Splendid Mirror
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Oilpalm_Coconut
@@ -4932,6 +4974,7 @@
   id: 12369
   name: Oilpalm Coconut
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Gril's_Naivety
@@ -4942,12 +4985,14 @@
   no_storage: true
   no_trade: true
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
 - aegis_name: Magical_Lithography
   buy: 20
   id: 12371
   name: Magical Lithography
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Hell_Contract
@@ -4955,6 +5000,7 @@
   id: 12372
   name: Hell Contract
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Boy's_Naivety
@@ -4962,6 +5008,7 @@
   id: 12373
   name: Boy's Pure Heart
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Flaming_Ice
@@ -4969,6 +5016,7 @@
   id: 12374
   name: Ice Fireworks
   no_use_sitting: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Acaraje
@@ -5156,6 +5204,7 @@
   buy: 20
   id: 12395
   name: Tantan Noodle
+  on_use: catchpet(ctx)
   type: usable
   weight: 50
 - aegis_name: Fools_Day_Box
@@ -5296,6 +5345,7 @@
 - aegis_name: Leaf_Cat_Ball
   id: 12408
   name: Leaf Cat Ball
+  on_use: catchpet(ctx)
   type: usable
 - aegis_name: Pork_Belly_H
   id: 12409
@@ -14312,6 +14362,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 10
 - aegis_name: Flail_Goblin_Ring
@@ -14320,6 +14371,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 10
 - aegis_name: Hammer_Goblin_Ring
@@ -14328,6 +14380,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 10
 - aegis_name: Holy_Marble
@@ -14336,6 +14389,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 10
 - aegis_name: Red_Burning_Stone
@@ -14344,6 +14398,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 10
 - aegis_name: Skull_Of_Vagabond
@@ -14352,6 +14407,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: catchpet(ctx)
   type: usable
   weight: 10
 - aegis_name: Str_Dish05_

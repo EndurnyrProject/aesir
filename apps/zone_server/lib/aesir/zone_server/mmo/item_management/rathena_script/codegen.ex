@@ -320,14 +320,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   end
 
   defp render_rule(%{shape: :call, dsl: dsl, args: types}, args)
-       when length(types) == length(args) do
-    with {:ok, rendered} <- map_ok(Enum.zip(types, args), fn {t, a} -> render_arg(t, a) end) do
-      case rendered do
-        [] -> {:ok, "#{dsl}(ctx)"}
-        _args -> {:ok, "#{dsl}(ctx, #{Enum.join(rendered, ", ")})"}
-      end
-    end
-  end
+       when length(types) == length(args),
+       do: render_call(dsl, types, args)
+
+  defp render_rule(%{shape: :call, dsl: dsl, args: types, min_args: min}, args)
+       when length(args) >= min and length(args) < length(types),
+       do: render_call(dsl, Enum.take(types, length(args)), args)
 
   defp render_rule(%{shape: :item_group_optional, dsl: dsl, args: types}, args) do
     with {:ok, rendered} <- render_item_group_optional(args, types) do
@@ -358,6 +356,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   end
 
   defp render_rule(rule, args), do: unsupported({:arity, rule.dsl, args})
+
+  defp render_call(dsl, types, args) do
+    with {:ok, rendered} <- map_ok(Enum.zip(types, args), fn {t, a} -> render_arg(t, a) end) do
+      case rendered do
+        [] -> {:ok, "#{dsl}(ctx)"}
+        _args -> {:ok, "#{dsl}(ctx, #{Enum.join(rendered, ", ")})"}
+      end
+    end
+  end
 
   defp render_unit_self({:call, "getcharid", [{:int, 3}]}), do: :ok
   defp render_unit_self(other), do: unsupported({:unit_skill_use_target, other})

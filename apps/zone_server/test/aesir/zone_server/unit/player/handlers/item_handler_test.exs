@@ -5,15 +5,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.CardTargetList
+  alias Aesir.Net.ChatNotice
   alias Aesir.Net.ItemRemoved
   alias Aesir.Net.ItemSkillReady
   alias Aesir.Net.ItemUseResult
+  alias Aesir.Net.PetEggList
   alias Aesir.Net.ProgressBarAbort
   alias Aesir.Net.SystemNotice
   alias Aesir.Net.UseItem
   alias Aesir.StatusActionFixture
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.ItemManagement.NoEquip
@@ -30,6 +33,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -1003,6 +1007,69 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
     end
   end
 
+  describe "handle_use_item/2 with pet scripts" do
+    @apple 619
+    @incubator 643
+    @poring_egg 9001
+
+    test "a taming item is spent before its catch starts" do
+      stub_pet_item(@apple, "catchpet(ctx)")
+      stub(MapFlags, :get, fn "prontera", _flag -> false end)
+      expect_potion_consumed()
+
+      assert {:noreply, committed} =
+               ItemHandler.handle_use_item(@red_potion_client_index, pet_session(@apple))
+
+      assert committed.pet_runtime.catch_process == %{lure_id: @apple, flag: 0}
+      assert committed.game_state.inventory[@red_potion_slot].amount == 4
+      assert sent_tags() == [:item_removed, :item_use_result, :pet_catch_start]
+    end
+
+    test "a taming item whose removal fails starts no catch" do
+      stub_pet_item(@apple, "catchpet(ctx)")
+      stub(MapFlags, :get, fn "prontera", _flag -> false end)
+      expect(InventoryOps, :remove, fn 1000, _inventory, 0, 1 -> {:error, :inventory_failure} end)
+      state = pet_session(@apple)
+
+      assert {:noreply, ^state} = ItemHandler.handle_use_item(@red_potion_client_index, state)
+      assert sent_tags() == [:item_use_result]
+    end
+
+    test "a taming item on a nopetcapture map is refused with message 669 and kept" do
+      stub_pet_item(@apple, "catchpet(ctx)")
+      stub(MapFlags, :get, fn "prontera", :nopetcapture -> true end)
+      reject(&InventoryOps.remove/4)
+      state = pet_session(@apple)
+
+      assert {:noreply, ^state} = ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert_received {:send, _channel,
+                       {:chat_notice, %ChatNotice{text: "You can't catch any pet on this map."}}}
+
+      assert_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: false, reason: 3}}}
+
+      refute_received {:send, :gameplay, {:pet_catch_start, _}}
+    end
+
+    test "a pet incubator is spent and opens the egg list" do
+      stub_pet_item(@incubator, "birthpet(ctx)")
+
+      expect(InventoryOps, :remove, fn 1000, inventory, @red_potion_slot, 1 ->
+        {:ok, Map.delete(inventory, @red_potion_slot), {:removed, @red_potion_slot}}
+      end)
+
+      state = pet_session(@incubator)
+      egg = %InventoryItem{id: 2, nameid: @poring_egg, amount: 1}
+      state = put_in(state.game_state.inventory[1], egg)
+
+      assert {:noreply, committed} = ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert SkillMenuHandler.pet_egg_offer?(committed)
+      assert_received {:send, :gameplay, {:pet_egg_list, %PetEggList{indexes: [1]}}}
+      assert_received {:send, :gameplay, {:item_removed, %ItemRemoved{amount: 1}}}
+    end
+  end
+
   describe "handle_use_item/2 with an empty slot" do
     test "sends ItemUseResult{ok: false} without crashing" do
       reject(&Items.by_id/1)
@@ -1032,6 +1099,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
 
       assert {:noreply, ^state} =
                PacketHandler.handle_message(%UseItem{index: @red_potion_client_index}, state)
+    end
+  end
+
+  defp stub_pet_item(item_id, source) do
+    ScriptCompiler.compile_all!([item_def(item_id, source)])
+    definition = %{usable_definition(item_id, source) | type: :usable}
+
+    stub(Items, :by_id, fn
+      ^item_id -> {:ok, definition}
+      id -> call_original(Items, :by_id, [id])
+    end)
+  end
+
+  defp pet_session(nameid) do
+    %{connection_pid: pid, game_state: game_state} = state_with_potion(nameid)
+    %SessionState{connection_pid: pid, game_state: game_state}
+  end
+
+  defp sent_tags do
+    receive do
+      {:send, :gameplay, {tag, _message}} -> [tag | sent_tags()]
+    after
+      0 -> []
     end
   end
 

@@ -69,6 +69,7 @@ defmodule Aesir.ZoneServer.Script.Ctx do
           | {:script_damage, ScriptVitals.damage()}
           | {:unit_skill_use, integer(), pos_integer()}
           | {:potion_pitch, :flat | :percent, integer(), integer()}
+          | {:pet, {:catchpet, pos_integer(), integer()} | {:birthpet}}
 
   @enforce_keys [:char_id, :account_id, :connection_pid, :game_state, :source]
   defstruct char_id: nil,

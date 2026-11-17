@@ -39,6 +39,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Inventory.ItemSearch
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
   alias Aesir.ZoneServer.Unit.ItemContainer
+  alias Aesir.ZoneServer.Unit.Pet.Handlers.CatchHandler
+  alias Aesir.ZoneServer.Unit.Pet.Handlers.HatchHandler
   alias Aesir.ZoneServer.Unit.Pet.Persistence, as: PetPersistence
   alias Aesir.ZoneServer.Unit.Player.DieCounter
   alias Aesir.ZoneServer.Unit.Player.Handlers.BreakOps
@@ -126,6 +128,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:completequest, QuestLog.quest_id()}
           | {:changequest, QuestLog.quest_id(), QuestLog.quest_id()}
           | {:set_look, 1 | 3 | 5 | 6 | 7 | 12, non_neg_integer()}
+          | {:catchpet, pos_integer(), integer()}
+          | {:birthpet}
           | ScriptVitals.op()
 
   @type reply :: {:ok, PlayerState.t()} | RefineOps.result() | {:error, term()}
@@ -542,6 +546,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
       {:ok, new_state} -> {{:ok, new_state.game_state}, new_state}
       {:error, reason} -> {{:error, reason}, state}
     end
+  end
+
+  def apply_op({:catchpet, lure_id, flag}, state) do
+    state = CatchHandler.start(state, lure_id, flag)
+    {{:ok, state.game_state}, state}
+  end
+
+  def apply_op({:birthpet}, state) do
+    state = HatchHandler.open_egg_list(state)
+    {{:ok, state.game_state}, state}
   end
 
   def apply_op({:stage_item_skill, skill_id, level}, state),

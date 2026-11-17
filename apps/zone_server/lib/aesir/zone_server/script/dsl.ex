@@ -62,6 +62,10 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   # -- PlayerEffects (Dsl.PlayerEffects) ---------------------------------------
 
   defdelegate homevolution(ctx), to: PlayerEffects
+  defdelegate catchpet(ctx), to: PlayerEffects
+  defdelegate catchpet(ctx, lure_id), to: PlayerEffects
+  defdelegate catchpet(ctx, lure_id, flag), to: PlayerEffects
+  defdelegate birthpet(ctx), to: PlayerEffects
   defdelegate add_homunculus_intimacy(ctx, amount), to: PlayerEffects
   defdelegate heal(ctx, opts), to: PlayerEffects
   defdelegate item_heal(ctx, opts), to: PlayerEffects

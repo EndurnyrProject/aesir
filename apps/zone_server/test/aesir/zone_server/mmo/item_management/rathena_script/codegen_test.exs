@@ -52,6 +52,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
     assert {:ok, "homevolution(ctx)"} = compile("homevolution;")
   end
 
+  test "pet and catchpet take an optional lure and flag; bpet and birthpet take none" do
+    for command <- ["pet", "catchpet"] do
+      assert {:ok, "catchpet(ctx)"} = compile_with_source_catalogs("#{command};")
+      assert {:ok, "catchpet(ctx, 501)"} = compile_with_source_catalogs("#{command} 501;")
+      assert {:ok, "catchpet(ctx, 501, 2)"} = compile_with_source_catalogs("#{command} 501,2;")
+
+      assert {:error, {:unsupported, {:arity, "catchpet", _}}} =
+               compile_with_source_catalogs("#{command} 501,2,3;")
+    end
+
+    assert {:ok, "birthpet(ctx)"} = compile("bpet;")
+    assert {:ok, "birthpet(ctx)"} = compile("birthpet;")
+  end
+
   describe "generate/1 healing commands" do
     test "itemheal omits sp when zero" do
       assert {:ok, "item_heal(ctx, hp: 45)"} = compile("itemheal 45,0;")

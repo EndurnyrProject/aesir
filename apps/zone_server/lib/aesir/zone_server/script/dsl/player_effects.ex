@@ -11,6 +11,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   import Aesir.ZoneServer.Script.Dsl.Internal, only: [apply_op: 2]
   import Bitwise, only: [band: 2]
 
+  require Logger
+
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Script.Ctx
@@ -39,6 +42,53 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
 
   def add_homunculus_intimacy(%Ctx{} = ctx, amount) when is_integer(amount) and amount > 0,
     do: stage_homunculus_effect(ctx, {:homunculus_intimacy, amount})
+
+  @doc """
+  Starts a catch with the item being used as the lure and the normal flag (the
+  `pet` command with no arguments). Outside an item script there is no item
+  being used, so the command fails.
+  """
+  @spec catchpet(Ctx.t()) :: Ctx.t()
+  def catchpet(%Ctx{status: {:error, _}} = ctx), do: ctx
+  def catchpet(%Ctx{source: {:item, item_id}} = ctx), do: catchpet(ctx, item_id, 0)
+  def catchpet(%Ctx{} = ctx), do: Ctx.fail(ctx, :catchpet, :no_lure)
+
+  @doc "Starts a catch with `lure_id` and the normal flag."
+  @spec catchpet(Ctx.t(), pos_integer()) :: Ctx.t()
+  def catchpet(%Ctx{} = ctx, lure_id), do: catchpet(ctx, lure_id, 0)
+
+  @doc """
+  Starts a catch with `lure_id` and `flag`: 0 the lure must be the pet's taming
+  item, 1 any mob that is not status-immune, 2 any mob. An unknown lure fails
+  the command; a flag outside `0..2` is logged and kept, and catches like 2.
+
+  In an item script the catch is staged and starts once the item is spent;
+  elsewhere it is applied through the player session.
+  """
+  @spec catchpet(Ctx.t(), pos_integer(), integer()) :: Ctx.t()
+  def catchpet(%Ctx{status: {:error, _}} = ctx, _lure_id, _flag), do: ctx
+
+  def catchpet(%Ctx{} = ctx, lure_id, flag) when is_integer(lure_id) and is_integer(flag) do
+    if flag not in 0..2, do: Logger.error("catchpet: invalid value '#{flag}' for flag")
+
+    case Items.by_id(lure_id) do
+      {:ok, _definition} -> stage_pet_effect(ctx, {:catchpet, lure_id, flag})
+      :error -> Ctx.fail(ctx, :catchpet, :invalid_lure)
+    end
+  end
+
+  @doc """
+  Opens the egg list (the `bpet` command). Staged in an item script like
+  `catchpet/3`, so the list opens once the item is spent.
+  """
+  @spec birthpet(Ctx.t()) :: Ctx.t()
+  def birthpet(%Ctx{status: {:error, _}} = ctx), do: ctx
+  def birthpet(%Ctx{} = ctx), do: stage_pet_effect(ctx, {:birthpet})
+
+  defp stage_pet_effect(%Ctx{session_pid: nil, source: {:item, _}} = ctx, op),
+    do: stage_session_effect(ctx, {:pet, op})
+
+  defp stage_pet_effect(ctx, op), do: apply_op(ctx, op)
 
   defp stage_homunculus_effect(ctx, effect),
     do: stage_session_effect(ctx, {:homunculus, effect})
