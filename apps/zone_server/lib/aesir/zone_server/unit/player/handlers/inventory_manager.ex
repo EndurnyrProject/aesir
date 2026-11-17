@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.PetManagement.Egg
+  alias Aesir.ZoneServer.Mmo.PetManagement.EggGrant
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
@@ -206,11 +207,62 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
         settle_give(handle_give_item(item_def, amount, state, give_opts))
       else
         Enum.reduce(1..max(amount, 1), state, fn _unit, current ->
-          settle_give(handle_give_item(item_def, 1, current, give_opts))
+          settle_give(give_unit(item_def, current, give_opts))
         end)
       end
 
     {:noreply, state}
+  end
+
+  # `atcommand_item` tries `pet_create_egg` per unit and adds the plain item
+  # only when it refuses (atcommand.cpp:1529).
+  defp give_unit(item_def, state, opts) do
+    case grant_egg(item_def.id, state) do
+      {:error, reason, state} when reason in [:not_egg, :no_slot] ->
+        handle_give_item(item_def, 1, state, opts)
+
+      {:ok, state} ->
+        PlayerEvents.inventory_changed(state.game_state.character_id)
+        {:ok, state}
+
+      error ->
+        error
+    end
+  end
+
+  @doc """
+  Grants one fresh pet egg to this session's player through `EggGrant`.
+
+  `:not_egg` and `:no_slot` are the reference's pre-checks and send nothing, so
+  the caller decides whether to add the plain item. A later refusal
+  (`:overweight`) sends the add failure, as `pet_get_egg` does. The untouched
+  state comes back on every error.
+  """
+  @spec grant_egg(pos_integer(), SessionState.t()) ::
+          {:ok, SessionState.t()} | {:error, term(), SessionState.t()}
+  def grant_egg(item_id, %{game_state: gs} = state) do
+    room = Inventory.weight_room(gs.inventory, gs.stats)
+
+    case EggGrant.grant(item_id, gs.account_id, gs.character_id, gs.inventory, room) do
+      {:ok, inventory} ->
+        notify_new_rows(state.connection_pid, gs.inventory, inventory)
+        {:ok, %{state | game_state: %{gs | inventory: inventory}}}
+
+      {:error, reason} when reason in [:not_egg, :no_slot] ->
+        {:error, reason, state}
+
+      {:error, reason} ->
+        notify_add_failed(state.connection_pid, reason)
+        {:error, reason, state}
+    end
+  end
+
+  defp notify_new_rows(connection_pid, old, new) do
+    new
+    |> Enum.reject(fn {index, _item} -> Map.has_key?(old, index) end)
+    |> Enum.each(fn {index, item} ->
+      MessageRouter.send_to(connection_pid, InventoryView.item_added(item, index))
+    end)
   end
 
   defp settle_give({:ok, new_state}), do: new_state

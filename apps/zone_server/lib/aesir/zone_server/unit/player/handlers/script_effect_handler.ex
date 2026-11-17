@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.PetManagement.Catalog, as: PetCatalog
   alias Aesir.ZoneServer.Mmo.PetManagement.Egg
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -72,6 +73,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   @max_cart_type 13
 
+  @typep grant_mode :: :plain | {:opts, map()} | {:egg, :plain | {:opts, map()}}
+
   @type op ::
           {:set_zeny, non_neg_integer()}
           | {:pay_zeny, non_neg_integer()}
@@ -79,6 +82,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:give_item, integer(), pos_integer()}
           | {:give_item2, integer(), pos_integer(), map()}
           | {:give_group_items, [map()]}
+          | {:give_plain_item, integer(), map()}
+          | {:give_egg, pos_integer()}
           | {:give_rand_group_items, [map()]}
           | {:get_named_item, integer(), String.t() | integer()}
           | {:give_item_rental, integer(), integer(), keyword()}
@@ -191,7 +196,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
              :give_item_rental,
              :get_named_item,
              :give_group_items,
-             :give_rand_group_items
+             :give_rand_group_items,
+             :give_plain_item,
+             :give_egg
            ] ->
         :inventory_changed
 
@@ -248,7 +255,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   def apply_op({:give_item, item_id, qty}, state) do
     case fetch_definition(item_id) do
-      {:ok, definition} -> give_units(state, definition, qty, :plain)
+      {:ok, definition} -> give_units(state, definition, qty, {:egg, :plain})
       {:error, reason} -> {{:error, reason}, state}
     end
   end
@@ -259,13 +266,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   # its expiry at the moment of the grant.
   def apply_op({:give_item2, item_id, qty, attrs}, state) do
     case fetch_definition(item_id) do
-      {:ok, definition} -> give_units(state, definition, qty, {:opts, expiry(attrs)})
+      {:ok, definition} -> give_units(state, definition, qty, item2_mode(attrs))
       {:error, reason} -> {{:error, reason}, state}
     end
   end
 
+  # `MvpReward`: one unit added as given, never through a pet egg grant
+  # (mob.cpp:3520 adds MVP prizes with plain `pc_additem`).
+  def apply_op({:give_plain_item, item_id, attrs}, state) do
+    case fetch_definition(item_id) do
+      {:ok, definition} -> give_amount(state, definition, 1, {:opts, attrs})
+      {:error, reason} -> {{:error, reason}, state}
+    end
+  end
+
+  # A regular monster drop of an egg goes to the loot owner through
+  # `pet_create_egg` with its result ignored (mob.cpp:3338-3341).
+  def apply_op({:give_egg, item_id}, state) do
+    case InventoryManager.grant_egg(item_id, state) do
+      {:ok, next} -> commit(next, next.game_state)
+      {:error, reason, unchanged} -> {{:error, reason}, unchanged}
+    end
+  end
+
   def apply_op({:give_group_items, grants}, state), do: give_group_items(state, grants, false)
-  def apply_op({:give_rand_group_items, grants}, state), do: give_group_items(state, grants, true)
+  def apply_op({:give_rand_group_items, grants}, state), do: give_rand_group_items(state, grants)
 
   def apply_op({:get_named_item, item_id, target}, %{game_state: gs} = state) do
     with {:ok, definition} <- fetch_definition(item_id),
@@ -308,7 +333,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   def apply_op({:give_item_bound, item_id, qty, bound}, state) do
     case fetch_definition(item_id) do
-      {:ok, definition} -> give_units(state, definition, qty, {:opts, %{bound: bound}})
+      {:ok, definition} -> give_units(state, definition, qty, {:egg, {:opts, %{bound: bound}}})
       {:error, reason} -> {{:error, reason}, state}
     end
   end
@@ -741,6 +766,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     end
   end
 
+  # `getrandgroupitem` tries `pet_create_egg` per unit of a pet egg entry and
+  # adds the plain unit only when it refuses (script.cpp:23205-23214).
+  defp give_rand_group_items(state, [%{item_id: item_id, amount: amount} = grant]) do
+    if match?({:ok, _}, PetCatalog.by_egg(item_id)) do
+      Enum.reduce_while(1..max(amount, 1), {{:ok, state.game_state}, state}, fn _unit,
+                                                                                {_reply, current} ->
+        rand_group_egg(current, grant)
+      end)
+    else
+      give_group_items(state, [grant], true)
+    end
+  end
+
+  defp give_rand_group_items(state, grants), do: give_group_items(state, grants, true)
+
+  defp rand_group_egg(state, grant) do
+    case InventoryManager.grant_egg(grant.item_id, state) do
+      {:ok, next} ->
+        {:cont, commit(next, next.game_state)}
+
+      {:error, reason, _state} when reason in [:not_egg, :no_slot] ->
+        case give_group_items(state, [%{grant | amount: 1}], true) do
+          {{:ok, _gs}, _next} = ok -> {:cont, ok}
+          error -> {:halt, error}
+        end
+
+      {:error, _terminal, unchanged} ->
+        {:cont, commit(unchanged, unchanged.game_state)}
+    end
+  end
+
   defp give_group_items(%{game_state: gs} = state, grants, halt?) do
     {:ok, inventory, successes, failures} =
       Inventory.give_group(gs.character_id, gs.inventory, gs.stats, grants, halt?: halt?)
@@ -801,7 +857,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     |> Map.put(:expire_time, Rental.expire_at(seconds, NaiveDateTime.utc_now()))
   end
 
-  defp expiry(attrs), do: attrs
+  # `rentitem2` never creates a pet; `getitem2`/`getitembound2` do (script.cpp:7903).
+  defp item2_mode(%{expire_seconds: _} = attrs), do: {:opts, expiry(attrs)}
+  defp item2_mode(attrs), do: {:egg, {:opts, attrs}}
 
   defp delete_rows(state, plan) do
     Enum.reduce_while(plan, {{:ok, state.game_state}, state}, fn {index, amount},
@@ -890,7 +948,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   # The reference `getitem` family grants a stackable amount in one call and a
   # non-stackable one unit per call, halting the script at the first refusal
   # and keeping the units already granted.
-  @spec give_units(state(), ItemDefinition.t(), pos_integer(), :plain | {:opts, map()}) ::
+  @spec give_units(state(), ItemDefinition.t(), pos_integer(), grant_mode()) ::
           {reply(), state()}
   defp give_units(%{game_state: gs} = state, %ItemDefinition{}, qty, _opts) when qty <= 0,
     do: {{:ok, gs}, state}
@@ -937,8 +995,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     partial
   end
 
-  @spec give_amount(state(), ItemDefinition.t(), pos_integer(), :plain | {:opts, map()}) ::
+  @spec give_amount(state(), ItemDefinition.t(), pos_integer(), grant_mode()) ::
           {reply(), state()}
+  defp give_amount(state, %ItemDefinition{} = definition, amount, {:egg, mode}) do
+    case InventoryManager.grant_egg(definition.id, state) do
+      {:ok, next} ->
+        commit(next, next.game_state)
+
+      {:error, reason, _state} when reason in [:not_egg, :no_slot] ->
+        give_amount(state, definition, amount, mode)
+
+      {:error, _terminal, unchanged} ->
+        commit(unchanged, unchanged.game_state)
+    end
+  end
+
   defp give_amount(%{game_state: gs} = state, %ItemDefinition{} = definition, amount, mode) do
     result =
       case mode do

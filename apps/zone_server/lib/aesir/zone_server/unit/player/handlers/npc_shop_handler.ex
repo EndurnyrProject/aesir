@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Pet.Persistence, as: PetPersistence
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerEvents
@@ -118,9 +119,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
          {:ok, shop} <- fetch_in_range(gs, unit_id),
          {:ok, %{total_cost: total_cost, item_adds: item_adds}} <-
            ShopCore.compute_buy(shop, requests, gs),
+         {eggs, item_adds} = Enum.split_with(item_adds, &pet_egg?/1),
          {:ok, inventory, changes} <-
            transact_buy(gs.character_id, gs.inventory, gs.zeny, total_cost, item_adds) do
       new_state = finalize_buy(state, inventory, changes, total_cost)
+      new_state = Enum.reduce(eggs, new_state, &grant_egg/2)
       reply(connection_pid, %NpcBuyResult{result: @result_ok})
       PlayerEvents.inventory_changed(gs.character_id)
       {:noreply, new_state}
@@ -173,6 +176,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
       {:error, reason} ->
         reply(connection_pid, %NpcSellResult{result: sell_result_code(reason)})
         {:noreply, state}
+    end
+  end
+
+  defp pet_egg?({%ItemDefinition{type: type}, _amount}), do: type == :pet_egg
+
+  # A bought pet egg is one `pet_create_egg` call with its result ignored and
+  # no plain-item fallback, after the zeny is paid (npc.cpp:2914-2915).
+  defp grant_egg({%ItemDefinition{id: item_id}, _amount}, state) do
+    case InventoryManager.grant_egg(item_id, state) do
+      {:ok, next} -> next
+      {:error, _reason, unchanged} -> unchanged
     end
   end
 

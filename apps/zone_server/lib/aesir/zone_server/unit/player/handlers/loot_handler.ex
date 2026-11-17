@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
+  alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.OreTable
@@ -17,14 +18,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.QuestInfoView
   alias Aesir.ZoneServer.Unit.Player.QuestLog
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.Player.QuestView
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @finding_ore 106
+  @task_supervisor Aesir.ZoneServer.TaskSupervisor
 
   @doc """
   Routes a `:loot`-enveloped session message to its handler. `PlayerSession`'s
@@ -49,8 +53,54 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   @doc false
   @spec mob_killed(map(), map(), (pos_integer() -> pos_integer())) :: {:noreply, map()}
   def mob_killed(payload, state, rng) do
-    maybe_drop_items(payload, state, rng)
+    recipient = egg_recipient(payload)
+
+    state =
+      payload
+      |> maybe_drop_items(state, rng, recipient)
+      |> grant_drop_eggs(recipient, state)
+
     {:noreply, maybe_credit_zeny(payload, state, rng)}
+  end
+
+  # A rolled pet egg goes to `pet_create_egg` of `first_sd`: the top loot
+  # owner, else the killing blow when it is a player (mob.cpp:2953-2956, :3058).
+  # With neither, it drops to the floor like any item (mob.cpp:3338-3341).
+  # Another owner's session receives it off this process, so no session ever
+  # calls into another.
+  defp egg_recipient(%{ownership: %LootOwnership{first: first}}) when is_integer(first),
+    do: first
+
+  defp egg_recipient(%{final_source: {:player, char_id}}), do: char_id
+  defp egg_recipient(_payload), do: nil
+
+  defp grant_drop_eggs([], _recipient, state), do: state
+
+  defp grant_drop_eggs(eggs, recipient, %{game_state: %{character_id: recipient}} = state),
+    do: Enum.reduce(eggs, state, &grant_own_egg/2)
+
+  defp grant_drop_eggs(eggs, recipient, state), do: send_eggs(eggs, recipient, state)
+
+  defp grant_own_egg(item_id, state) do
+    {:reply, _reply, state} = ScriptEffectHandler.handle_script_apply({:give_egg, item_id}, state)
+    state
+  end
+
+  defp send_eggs(eggs, owner, state) do
+    with {:ok, pid} <- UnitRegistry.get_player_pid(owner) do
+      {:ok, _task} =
+        Task.Supervisor.start_child(@task_supervisor, fn ->
+          Enum.each(eggs, &give_remote_egg(pid, &1))
+        end)
+    end
+
+    state
+  end
+
+  defp give_remote_egg(pid, item_id) do
+    PlayerSession.script_apply(pid, {:give_egg, item_id})
+  catch
+    :exit, _reason -> :ok
   end
 
   defp maybe_credit_zeny(%{mob_level: mob_level}, state, rng) do
@@ -210,16 +260,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   # place holding both the table and the reward owner's stats) and places results as
   # ground items through the map coordinator. Legacy payloads without a drop
   # table fall through to the no-op clause.
-  defp maybe_drop_items(%{ownership: ownership, boss?: boss?} = payload, state, rng) do
-    maybe_drop_items(payload, state, rng, ownership: {ownership, boss?})
+  defp maybe_drop_items(%{ownership: ownership, boss?: boss?} = payload, state, rng, recipient) do
+    maybe_drop_items(payload, state, rng, recipient, ownership: {ownership, boss?})
   end
 
-  defp maybe_drop_items(payload, state, rng), do: maybe_drop_items(payload, state, rng, [])
+  defp maybe_drop_items(payload, state, rng, recipient),
+    do: maybe_drop_items(payload, state, rng, recipient, [])
 
   defp maybe_drop_items(
          %{drops: drops, mob_level: mob_level, map: map, x: x, y: y} = payload,
          state,
          rng,
+         recipient,
          opts
        ) do
     stats = state.game_state.stats
@@ -243,11 +295,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
         y
       )
 
-    items =
+    {eggs, rolled} =
       drops
       |> DropCalculator.roll(luk, base_level, mob_level, drop_bonus, map, x, y,
         fixed_item_drop: Map.get(payload, :fixed_item_drop?, false)
       )
+      |> take_eggs(recipient, map, x, y)
+
+    items =
+      rolled
       |> Kernel.++(equip_drops)
       |> maybe_discover_ore(
         Stats.skill_level(stats, @finding_ore),
@@ -264,9 +320,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
       {items, []} -> Coordinator.drop_items(map, items, x, y)
       {items, opts} -> Coordinator.drop_items(map, items, x, y, opts)
     end
+
+    eggs
   end
 
-  defp maybe_drop_items(_payload, _state, _rng, _opts), do: :ok
+  defp maybe_drop_items(_payload, _state, _rng, _recipient, _opts), do: []
+
+  defp take_eggs(drops, nil, _map, _x, _y), do: {[], drops}
+  defp take_eggs(drops, _recipient, map, x, y), do: DropCalculator.take_eggs(drops, map, x, y)
 
   defp drop_add_race(equipment, mob_race) do
     race = bonus_race(mob_race)

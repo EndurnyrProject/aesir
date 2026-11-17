@@ -84,6 +84,31 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   end
 
   @doc """
+  Takes the pet eggs out of rolled drops: they go to the first loot owner's
+  `pet_create_egg` and never reach the floor (mob.cpp:3338-3341), so the other
+  drops take the scatter cells in order as if the eggs never dropped.
+  """
+  @spec take_eggs([drop()], String.t(), integer(), integer()) :: {[pos_integer()], [drop()]}
+  def take_eggs(drops, map_name, x, y) do
+    case Enum.split_with(drops, &pet_egg?/1) do
+      {[], drops} -> {[], drops}
+      {eggs, items} -> {Enum.map(eggs, &elem(&1, 0)), rescatter(items, map_name, x, y)}
+    end
+  end
+
+  defp rescatter(items, map_name, x, y) do
+    items
+    |> Enum.with_index()
+    |> Enum.map(fn {item, index} ->
+      {cx, cy} = resolve_cell(index, map_name, x, y)
+      item |> put_elem(2, cx) |> put_elem(3, cy)
+    end)
+  end
+
+  defp pet_egg?(item),
+    do: match?({:ok, %{type: :pet_egg}}, ItemManagement.get_item_by_id(elem(item, 0)))
+
+  @doc """
   Rolls the killer's equipment bonus item and item-group drops, scattering the
   results around `{x, y}` like the mob's own drops.
 

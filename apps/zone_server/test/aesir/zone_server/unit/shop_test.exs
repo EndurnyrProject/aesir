@@ -191,9 +191,14 @@ defmodule Aesir.ZoneServer.Unit.ShopTest do
     end
 
     test "rejects when the buy would push the player overweight" do
-      # novice str 1 -> max 20_300; 41 swords at weight 500 = 20_500 > 20_300.
+      # novice str 1 -> max 20_300; 41 one-sword lines at weight 500 = 20_500 > 20_300.
+      # A single non-stackable line is clamped to 1 (npc.cpp:2853-2857).
       assert {:error, :overweight} =
-               Shop.compute_buy(shop(), [{@sword, 41}], player(%{zeny: 1_000_000}))
+               Shop.compute_buy(
+                 shop(),
+                 List.duplicate({@sword, 1}, 41),
+                 player(%{zeny: 1_000_000})
+               )
     end
 
     test "rejects when there is no free inventory slot for a new item" do

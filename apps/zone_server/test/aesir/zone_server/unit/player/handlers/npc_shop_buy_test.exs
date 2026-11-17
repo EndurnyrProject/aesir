@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopBuyTest do
   alias Aesir.Net.NpcBuyEntry
   alias Aesir.Net.NpcBuyRequest
   alias Aesir.Net.NpcBuyResult
+  alias Aesir.ZoneServer.Mmo.PetManagement.Egg
   alias Aesir.ZoneServer.Npc.Shop
   alias Aesir.ZoneServer.Npc.Shops
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
@@ -68,6 +69,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopBuyTest do
   end
 
   describe "buy/2" do
+    test "a bought egg is clamped to one unit and hatches a pet after the zeny is paid", ctx do
+      shop = %{shop() | items: [%{nameid: 9001, price: @price}]}
+      register_shop(shop)
+
+      assert {:noreply, new_state} =
+               open_buy(buyer_state(ctx.buyer, %{}, 1_000, 150, 60), request(shop, [{9001, 3}]))
+
+      assert reload_zeny(ctx.buyer.id) == 1_000 - @price
+      assert [egg] = InventoryPersistence.load_inventory(ctx.buyer.id)
+      assert Egg.pet_id(egg)
+      assert [_] = Map.values(new_state.game_state.inventory)
+    end
+
     test "commits inventory adds and the zeny debit atomically", ctx do
       shop = shop()
       register_shop(shop)

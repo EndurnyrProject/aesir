@@ -189,7 +189,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
       )
 
       refute_received :drop_penalty_read
-      assert_receive {:session_call, {:npc, {:script_apply, {:give_item, 1001, 1}}}}
+      assert_receive {:session_call, {:npc, {:script_apply, {:give_plain_item, 1001, %{}}}}}
       assert_receive {:progression, {:mob_kill_exp, 350, 0, _race, _mob_class}}
     end
   end
@@ -221,7 +221,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
       )
 
       assert_receive {:session_call,
-                      {:npc, {:script_apply, {:give_item2, 10_001, 1, %{identify: 0}}}}}
+                      {:npc, {:script_apply, {:give_plain_item, 10_001, %{identify: 0}}}}}
 
       assert_receive {:floor, "gld_dun03", [{10_001, 1, 42, 77, false}], 42, 77, _opts}
     end
@@ -248,7 +248,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
       assert_receive {:session_call,
                       {:npc,
                        {:script_apply,
-                        {:give_item2, 1001, 1, %{identify: 1, random_options: ^options}}}}}
+                        {:give_plain_item, 1001, %{identify: 1, random_options: ^options}}}}}
 
       assert_receive {:floor, "gld_dun03", [{1001, 1, 42, 77, true, %{random_options: ^options}}],
                       42, 77, _opts}
@@ -295,7 +295,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
         ownership()
       )
 
-      assert_receive {:session_call, {:npc, {:script_apply, {:give_item, 1001, 1}}}}
+      assert_receive {:session_call, {:npc, {:script_apply, {:give_plain_item, 1001, %{}}}}}
       refute_receive {:session_call, _msg}
     end
 
@@ -320,7 +320,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
         end)
 
       assert :ok = Task.await(task, 1000)
-      assert_receive {:session_call, {:npc, {:script_apply, {:give_item, 1001, 1}}}}
+      assert_receive {:session_call, {:npc, {:script_apply, {:give_plain_item, 1001, %{}}}}}
     end
 
     test "stamps an overweight fallback with the recipient and MVP ownership windows" do
@@ -444,7 +444,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
       )
 
       assert_receive {:progression, {:mob_kill_exp, 700, 0, _race, _mob_class}}
-      assert_receive {:session_call, {:npc, {:script_apply, {:give_item, 1001, 1}}}}
+      assert_receive {:session_call, {:npc, {:script_apply, {:give_plain_item, 1001, %{}}}}}
       assert_receive {:announced, %{text: "Runner has defeated Baphomet!"}}
     end
 

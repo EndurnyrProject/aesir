@@ -226,13 +226,17 @@ defmodule Aesir.ZoneServer.Unit.Shop do
        when is_integer(amount) and amount > 0 do
     with true <- in_shop?(shop, nameid),
          {:ok, %ItemDefinition{} = def} <- ItemManagement.get_item_by_id(nameid) do
-      {:ok, {def, amount, effective_buy_price(shop, nameid, player_state)}}
+      {:ok, {def, buy_amount(def, amount), effective_buy_price(shop, nameid, player_state)}}
     else
       _ -> {:error, :item_not_in_shop}
     end
   end
 
   defp resolve_buy_line(_shop, _request, _player_state), do: {:error, :item_not_in_shop}
+
+  # A non-stackable line buys one unit whatever the request says (npc.cpp:2853-2857).
+  defp buy_amount(item_def, amount),
+    do: if(ItemDefinition.stackable?(item_def), do: amount, else: 1)
 
   defp in_shop?(%ShopData{items: items}, nameid), do: Enum.any?(items, &(&1.nameid == nameid))
 

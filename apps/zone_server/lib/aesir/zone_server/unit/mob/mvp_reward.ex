@@ -274,14 +274,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
   end
 
   # An MVP drop the reference leaves unidentified, or one with random options,
-  # needs the explicit-attribute grant; any other is the plain `getitem` shape.
+  # needs explicit attributes. Every prize is a plain add, never a pet egg grant.
   @spec grant_op(drop_grant()) :: tuple()
-  defp grant_op({nameid, true, []}), do: {:give_item, nameid, 1}
-  defp grant_op({nameid, false, []}), do: {:give_item2, nameid, 1, %{identify: 0}}
+  defp grant_op({nameid, true, []}), do: {:give_plain_item, nameid, %{}}
+  defp grant_op({nameid, false, []}), do: {:give_plain_item, nameid, %{identify: 0}}
 
   defp grant_op({nameid, identified, options}),
     do:
-      {:give_item2, nameid, 1,
+      {:give_plain_item, nameid,
        %{identify: if(identified, do: 1, else: 0), random_options: options}}
 
   @spec scatter(drop_grant(), String.t(), integer(), integer(), winner() | nil, LootOwnership.t()) ::
