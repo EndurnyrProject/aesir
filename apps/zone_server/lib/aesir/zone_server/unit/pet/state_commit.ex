@@ -17,14 +17,18 @@ defmodule Aesir.ZoneServer.Unit.Pet.StateCommit do
 
   @world_id_range 2..1_999_999
 
-  @doc "Stores the pet already in the world and publishes its position and snapshot."
+  @doc """
+  Stores the pet and, while it is in the world, publishes its position and
+  snapshot. A pet held off the map (before its first map load or during an
+  owner warp) is only stored.
+  """
   @spec commit(SessionState.t(), PetState.t()) :: SessionState.t()
   def commit(
         %SessionState{pet: %PetState{world_gid: gid}} = session,
         %PetState{world_gid: gid} = pet
       )
       when is_integer(gid) do
-    Movement.set_position(:pet, gid, pet, pet.map_name)
+    if in_world?(gid), do: Movement.set_position(:pet, gid, pet, pet.map_name)
     %{session | pet: pet}
   end
 
@@ -107,12 +111,14 @@ defmodule Aesir.ZoneServer.Unit.Pet.StateCommit do
   end
 
   defp leave_world(%PetState{world_gid: gid} = pet, reason) do
-    if match?({:ok, _}, SpatialIndex.get_unit_position(:pet, gid)) do
+    if in_world?(gid) do
       SpawnView.notify_despawn(pet, reason)
       Movement.clear_dirty(pet.map_name, :pet, gid)
       SpatialIndex.remove_unit(:pet, gid)
     end
   end
+
+  defp in_world?(gid), do: match?({:ok, _}, SpatialIndex.get_unit_position(:pet, gid))
 
   defp free_runtime(%Runtime{} = runtime) do
     timers = [

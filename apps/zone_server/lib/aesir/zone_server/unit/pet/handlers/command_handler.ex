@@ -8,10 +8,12 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
   alias Aesir.Net.PetRequest
   alias Aesir.Net.PetResult
   alias Aesir.Net.PetSelectEggCommand
+  alias Aesir.Net.PetSetAutofeedCommand
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Pet.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Pet.Handlers.CatchHandler
   alias Aesir.ZoneServer.Unit.Pet.Handlers.HatchHandler
+  alias Aesir.ZoneServer.Unit.Pet.Handlers.HungerHandler
   alias Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler
   alias Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Pet.PetState
@@ -66,10 +68,20 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
     {:ok, session}
   end
 
+  defp run({:menu, %PetMenuCommand{action: :PET_MENU_FEED}}, session),
+    do: {:ok, HungerHandler.feed(session)}
+
   defp run({:menu, %PetMenuCommand{action: :PET_MENU_RETURN_TO_EGG}}, session) do
     case LifecycleHandler.return_to_egg(session) do
       %SessionState{pet: nil} = returned -> {:ok, returned}
       unchanged -> {{:error, :PET_ERROR_INVALID_REQUEST}, unchanged}
+    end
+  end
+
+  defp run({:set_autofeed, %PetSetAutofeedCommand{enabled: enabled}}, session) do
+    case HungerHandler.set_autofeed(session, enabled) do
+      {:ok, session} -> {:ok, session}
+      :error -> {{:error, :PET_ERROR_INVALID_REQUEST}, session}
     end
   end
 
@@ -113,6 +125,16 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
 
   def info({:recall, _generation}, ref, %SessionState{} = session),
     do: {:noreply, MovementHandler.recall_timeout(ref, session)}
+
+  def info(
+        {:hunger_tick, _generation},
+        ref,
+        %SessionState{pet_runtime: %{hunger_timer_ref: ref}} = session
+      )
+      when is_reference(ref),
+      do: {:noreply, HungerHandler.tick(session)}
+
+  def info({:hunger_tick, _generation}, _ref, %SessionState{} = session), do: {:noreply, session}
 
   def info(event, _ref, %SessionState{} = session) do
     Logger.warning("Unsupported pet info event: #{inspect(event)}")

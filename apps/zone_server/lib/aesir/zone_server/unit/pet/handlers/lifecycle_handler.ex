@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler do
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Pet.Clock
   alias Aesir.ZoneServer.Unit.Pet.Handlers.AiHandler
+  alias Aesir.ZoneServer.Unit.Pet.Handlers.HungerHandler
   alias Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Pet.Persistence
   alias Aesir.ZoneServer.Unit.Pet.PetState
@@ -42,7 +43,8 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler do
   (`attribute 1`) and clears `pet_id`: the hatch that follows fails because
   `pet_id` was set; with no egg only `pet_id` is cleared.
   Otherwise the pet stands next to the owner facing the owner's direction,
-  and an unrenamed pet takes its mob's name.
+  and an unrenamed pet takes its mob's name. Its hunger timer starts now and
+  keeps running across owner warps.
   """
   @spec restore(SessionState.t(), Character.t()) :: SessionState.t()
   def restore(%SessionState{} = session, %Character{pet_id: pet_id} = character)
@@ -180,7 +182,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler do
   defp init(%SessionState{game_state: owner} = session, %Pet{} = row) do
     with {:ok, pet} <- build(row, owner),
          {:ok, session} <- StateCommit.restore(session, pet) do
-      session
+      HungerHandler.arm(session)
     else
       :error ->
         unlink(session, row.id, owner.inventory)

@@ -75,4 +75,19 @@ defmodule Aesir.ZoneServer.Unit.Pet.CommandHandlerTest do
     assert {:noreply, stepped} = CommandHandler.info({:move_step, 2}, ref, session)
     assert stepped.pet_runtime.movement_timer_ref == nil
   end
+
+  test "a hunger timer runs only for the current generation and reference" do
+    ref = make_ref()
+
+    session = %SessionState{
+      game_state: nil,
+      connection_pid: self(),
+      pet_runtime: %Runtime{generation: 2, hunger_timer_ref: ref}
+    }
+
+    assert {:noreply, ^session} = CommandHandler.info({:hunger_tick, 1}, ref, session)
+    assert {:noreply, ^session} = CommandHandler.info({:hunger_tick, 2}, make_ref(), session)
+    assert {:noreply, ticked} = CommandHandler.info({:hunger_tick, 2}, ref, session)
+    assert ticked.pet_runtime.hunger_timer_ref == nil
+  end
 end

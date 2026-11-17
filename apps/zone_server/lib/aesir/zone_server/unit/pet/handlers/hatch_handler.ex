@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.HatchHandler do
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Pet.Handlers.AiHandler
+  alias Aesir.ZoneServer.Unit.Pet.Handlers.HungerHandler
   alias Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler
   alias Aesir.ZoneServer.Unit.Pet.Persistence
   alias Aesir.ZoneServer.Unit.Pet.PetState
@@ -134,7 +135,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.HatchHandler do
   end
 
   # Spawn, INIT and (on a hatch) UPDATE_EGG to the owner, ACCESSORY to the
-  # area, then the status and autofeed setting.
+  # area, then the status and autofeed setting; the AI and hunger timers start.
   defp come_out(session, pet, hatched?) do
     case StateCommit.spawn(session, pet) do
       {:ok, session} ->
@@ -145,7 +146,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.HatchHandler do
 
         broadcast_accessory(session)
         LifecycleHandler.send_private_state(session)
-        AiHandler.arm(session)
+        session |> AiHandler.arm() |> HungerHandler.arm()
 
       {:error, :exhausted} ->
         Logger.error("No world id left to spawn pet #{pet.pet_id}")
