@@ -207,6 +207,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandlerTest do
     assert_received {:send, _channel, {:param_change, %ParamChange{var_id: ^uagi, value: 2}}}
   end
 
+  test "the initial load sends the owner their zeny" do
+    state = session_state()
+    state = put_in(state.game_state.zeny, 12_345)
+    {:noreply, _state} = MapLoadHandler.handle_map_loaded(state)
+
+    zeny = StatusParams.zeny()
+    assert_received {:send, _channel, {:param_change, %ParamChange{var_id: ^zeny, value: 12_345}}}
+  end
+
   test "the initial load sends the owner their own restored sprite state" do
     :ok = StatusStorage.apply_status(:player, @char_id, :sc_push_cart, val1: 5, val2: 1)
 

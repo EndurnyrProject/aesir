@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
   @moduledoc """
   Handles the client's map-loaded acknowledgement.
 
-  On initial entry the full client sync runs (status params, inventory, cart,
+  On initial entry the full client sync runs (status params and zeny, inventory, cart,
   skill list), the invincibility starts, and only then does the player enter
   the map: `:spawn_player` indexes the player and runs the first visibility
   pass, so nothing can see or pick the player before its invincibility runs.
@@ -90,7 +90,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
 
     StatusSync.send_params(connection_pid, %{
       StatusParams.weight() => Weight.current_weight(game_state.inventory),
-      StatusParams.max_weight() => Weight.max_weight(game_state.stats)
+      StatusParams.max_weight() => Weight.max_weight(game_state.stats),
+      StatusParams.zeny() => game_state.zeny
     })
 
     StatusSync.send_params(connection_pid, %{
