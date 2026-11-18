@@ -1840,7 +1840,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       battle_flag: 0,
       primary: [],
       secondary: [],
-      primary_effects: [],
       secondary_effects: []
     }
   end

@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
 
   require Logger
 
+  alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
@@ -14,6 +15,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
   alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.Stats
 
+  @doc """
+  Activates an autobonus registration: runs its other script, marks it active
+  under a fresh generation, and forces a full recalculation, whose equipment
+  fold runs the bonus script (and queues its effects). The expiry message is
+  tagged with the generation, so only the latest activation's expiry ends it.
+  A registration that changed source since the trigger was dispatched is a
+  no-op.
+  """
   @spec activate(SessionState.t(), Stats.autobonus_key(), Stats.autobonus_source_identity()) ::
           {:noreply, SessionState.t()}
   def activate(%{game_state: %{stats: stats}} = state, key, expected_source_identity) do
@@ -21,28 +30,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
       {:ok, %{source_identity: ^expected_source_identity} = registration} ->
         granted_skills = Stats.granted_skills(stats)
         generation = System.unique_integer([:monotonic, :positive])
+        state = apply_effects(registration.secondary_effects, state, registration, key)
+        stats = state.game_state.stats
         active = Map.put(stats.active_autobonuses, key, generation)
-        stats = %{stats | active_autobonuses: active}
+        stats = Stats.force_full_recalculation(%{stats | active_autobonuses: active})
         state = %{state | game_state: %{state.game_state | stats: stats}}
-
-        state =
-          apply_effects(
-            registration.primary_effects,
-            state,
-            registration,
-            key,
-            :primary
-          )
-
-        state =
-          apply_effects(
-            registration.secondary_effects,
-            state,
-            registration,
-            key,
-            :secondary
-          )
-
         state = recalculate_and_sync_skills(state, granted_skills)
 
         Process.send_after(
@@ -58,18 +50,68 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
     end
   end
 
+  @doc """
+  Ends the activation tagged `generation` with a forced full recalculation; a
+  stale generation or a registration that is gone is a no-op.
+  """
   @spec expire(SessionState.t(), Stats.autobonus_key(), pos_integer()) ::
           {:noreply, SessionState.t()}
   def expire(%{game_state: %{stats: stats}} = state, key, generation) do
     with {:ok, _registration} <- Map.fetch(stats.equip_autobonuses, key),
          ^generation <- Map.get(stats.active_autobonuses, key) do
       granted_skills = Stats.granted_skills(stats)
-      stats = %{stats | active_autobonuses: Map.delete(stats.active_autobonuses, key)}
+      active = Map.delete(stats.active_autobonuses, key)
+      stats = Stats.force_full_recalculation(%{stats | active_autobonuses: active})
       state = %{state | game_state: %{state.game_state | stats: stats}}
       {:noreply, recalculate_and_sync_skills(state, granted_skills)}
     else
       _stale_or_missing -> {:noreply, state}
     end
+  end
+
+  @doc """
+  Performs the side effects an equipment fold queued from the active
+  autobonus programs, in order. A started or ended status refreshes the
+  owner through its own calculation flags, as any status change does.
+  """
+  @spec perform_restores(SessionState.t(), [EquipScript.effect()]) :: SessionState.t()
+  def perform_restores(state, effects) do
+    Enum.reduce(effects, state, fn
+      {:status_start, status, duration, value}, state ->
+        character_id = state.game_state.character_id
+
+        params = [
+          caster_id: character_id,
+          val1: value,
+          duration: duration,
+          owner_refresh: :notify,
+          no_tick_def: true
+        ]
+
+        case Interpreter.apply_status(:player, character_id, status, params) do
+          :ok ->
+            :ok
+
+          {:error, reason} ->
+            Logger.warning(
+              "Active autobonus status #{status} rejected for player #{character_id}: " <>
+                inspect(reason)
+            )
+        end
+
+        state
+
+      {:status_end, status}, state ->
+        Interpreter.remove_status(:player, state.game_state.character_id, status,
+          owner_refresh: :notify
+        )
+
+        state
+
+      {:heal, hp, sp}, state ->
+        {:noreply, state} = HealthHandler.apply_forced_heal(hp, sp, state)
+        state
+    end)
   end
 
   @doc "Reconciles changed inventory-derived status inputs without rebuilding unchanged equipment."
@@ -188,7 +230,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
     end
   end
 
-  defp apply_effects(effects, state, registration, key, phase) do
+  defp apply_effects(effects, state, registration, key) do
     Enum.reduce(effects, state, fn
       {:status_start, status, duration, value}, state ->
         character_id = state.game_state.character_id
@@ -208,8 +250,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
 
           {:error, reason} ->
             Logger.warning(
-              "Equipment autobonus status #{status} rejected for item #{registration.item_id}, " <>
-                "#{phase} proc key #{inspect(key)}: #{inspect(reason)}"
+              "Equipment autobonus status #{status} rejected for source " <>
+                "#{inspect(registration.source_identity)}, secondary proc key #{inspect(key)}: " <>
+                inspect(reason)
             )
         end
 

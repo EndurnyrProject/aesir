@@ -149,7 +149,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           battle_flag: non_neg_integer(),
           primary: EquipScript.program(),
           secondary: EquipScript.program(),
-          primary_effects: [EquipScript.effect()],
           secondary_effects: [EquipScript.effect()]
         }
 
@@ -219,6 +218,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
             # deterministic equipment fold.
             equip_autobonuses: %{},
             active_autobonuses: %{},
+            # The side effects of the active autobonus programs, appended by each
+            # equipment fold that ran them and performed once by the commit that
+            # publishes the stats (`Player.StateCommit`).
+            autobonus_restores: [],
             equip_statuses: %{},
             card_unequip_effects: %{},
             right_hand: nil,
@@ -270,6 +273,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           worn_items: [worn_item()],
           equip_autobonuses: %{autobonus_key() => autobonus_registration()},
           active_autobonuses: %{autobonus_key() => pos_integer()},
+          autobonus_restores: [EquipScript.effect()],
           equip_statuses: %{atom() => equip_status()},
           card_unequip_effects: %{card_source_key() => card_cleanup()},
           right_hand: WeaponHand.t() | nil,
@@ -348,7 +352,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   def changed?(%__MODULE__{} = left, %__MODULE__{} = right),
     do: unversioned(left) != unversioned(right)
 
-  defp unversioned(stats), do: %{stats | generation: 0, recalculation_basis: nil}
+  defp unversioned(stats),
+    do: %{stats | generation: 0, recalculation_basis: nil, autobonus_restores: []}
 
   @doc """
   Marks a full recalculation for an event that is one whatever it changes

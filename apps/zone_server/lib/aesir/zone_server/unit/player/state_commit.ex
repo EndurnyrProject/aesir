@@ -8,12 +8,14 @@ defmodule Aesir.ZoneServer.Unit.Player.StateCommit do
   alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.Mmo.Skills.Sage.SaFreecast
   alias Aesir.ZoneServer.Unit.Player.GuildSync
+  alias Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.FameHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler
   alias Aesir.ZoneServer.Unit.Player.PartySync
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -28,8 +30,21 @@ defmodule Aesir.ZoneServer.Unit.Player.StateCommit do
   current walk speed (`StatusManager.current_walk_speed/1`); the new speed is
   sent to the client when it differs. Equipment/status Intravision transitions
   refresh only this observer's already-visible concealed units after publication.
+
+  The side effects the equipment folds since the last commit queued from the
+  active autobonus programs (`Stats.autobonus_restores`) are performed once,
+  after the state without them is committed.
   """
   @spec commit(SessionState.t(), PlayerState.t()) :: SessionState.t()
+  def commit(
+        session,
+        %PlayerState{stats: %Stats{autobonus_restores: [_ | _] = effects} = stats} = game_state
+      ) do
+    session
+    |> commit(%{game_state | stats: %{stats | autobonus_restores: []}})
+    |> EquipProcHandler.perform_restores(effects)
+  end
+
   def commit(%{game_state: %PlayerState{} = previous} = session, %PlayerState{} = game_state) do
     game_state = FameHandler.drain(Map.get(session, :connection_pid), game_state)
     UnitRegistry.update_unit_state(:player, game_state.character_id, game_state)

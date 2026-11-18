@@ -146,6 +146,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
       stats
       | equip_autobonuses: fold.registrations,
         active_autobonuses: fold.active,
+        autobonus_restores: stats.autobonus_restores ++ fold.restores,
         equip_statuses: fold.statuses,
         card_unequip_effects: fold.card_cleanups,
         granted_skills: granted_skills,
@@ -160,7 +161,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   # equipment slot and option slot (the ammunition's never run). Their bonuses merge in that order, and a
   # script's `skill_lv` reads see the learned levels joined with what the
   # scripts before it granted. An active autobonus that grants a skill makes
-  # the worn scripts run again with that grant visible.
+  # the worn scripts run again with that grant visible. Every run of the active
+  # programs also performs their side effects again (a `heal` heals on each
+  # full recalculation while the autobonus lasts), so the final pass's effects
+  # are queued in `autobonus_restores`.
   defp equipment_fold_result(stats, worn_items, extra_inputs) do
     inputs =
       stats.progression
@@ -192,7 +196,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
       |> register_add_effs(add_effs)
       |> finalize_equipment_bonuses()
 
-    %{fold | bonuses: bonuses} |> Map.put(:active, active)
+    restores = Enum.flat_map(active_results, fn {_registration, result} -> result.effects end)
+
+    fold
+    |> Map.put(:bonuses, bonuses)
+    |> Map.put(:active, active)
+    |> Map.put(:restores, restores)
   end
 
   defp fold_with_actives(stats, worn_items, active_inputs, worn_inputs) do
@@ -886,7 +895,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
 
     Enum.reduce(autobonuses, registrations, fn %{lexical_slot: lexical_slot} = autobonus, acc ->
       autobonus = Map.delete(autobonus, :lexical_slot)
-      primary = EquipScript.evaluate(autobonus.primary, inputs)
       secondary = EquipScript.evaluate(autobonus.secondary, inputs)
 
       registration =
@@ -895,7 +903,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
           source_identity: source_identity,
           refine: item.refine,
           source_order: {worn_ordinal, lexical_slot},
-          primary_effects: primary.effects,
           secondary_effects: secondary.effects
         })
 

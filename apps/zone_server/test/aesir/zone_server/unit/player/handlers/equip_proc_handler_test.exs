@@ -15,9 +15,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -107,18 +109,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
     refute_receive {:send, _channel, {:skill_list, %SkillList{}}}
   end
 
-  test "activation applies primary then secondary status effects in source order" do
-    registration = %{
-      registration()
-      | primary_effects: [
-          {:status_start, :sc_summer, 3_000, 7},
-          {:status_end, :sc_summer}
-        ],
-        secondary_effects: [{:status_start, :sc_strangelights, :infinite, 9}]
-    }
+  test "activation runs the other script, then the bonus script through the forced recalculation" do
+    {state, _row} =
+      state_with_real_proc(
+        [{:status_start, :sc_summer, 3_000, 7}, {:status_end, :sc_summer}],
+        [{:status_start, :sc_strangelights, :infinite, 9}]
+      )
 
-    state = state_with_registration(registration)
+    :ok = UnitRegistry.register_player(state.game_state, self())
     test_pid = self()
+
+    expect(Interpreter, :apply_status, fn :player, 1, :sc_strangelights, params ->
+      send(test_pid, {:effect, :start_lights, params})
+      :ok
+    end)
 
     expect(Interpreter, :apply_status, fn :player, 1, :sc_summer, params ->
       send(test_pid, {:effect, :start_summer, params})
@@ -130,54 +134,76 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
       :ok
     end)
 
-    expect(Interpreter, :apply_status, fn :player, 1, :sc_strangelights, params ->
-      send(test_pid, {:effect, :start_lights, params})
-      :ok
-    end)
-
-    stub(Calculator, :calculate_stats, fn stats, 1 -> stats end)
-    stub(UnitRegistry, :update_unit_state, fn :player, 1, _game_state -> :ok end)
-    stub(StatusSync, :send_stat_updates, fn _connection_pid, _stats -> :ok end)
-
     assert {:noreply, _updated} = activate(state, @key)
+
+    assert_receive {:effect, :start_lights, lights_params}
+    assert lights_params[:caster_id] == 1
+    assert lights_params[:val1] == 9
+    assert lights_params[:duration] == :infinite
+    assert lights_params[:owner_refresh] == :defer
 
     assert_receive {:effect, :start_summer, start_params}
     assert start_params[:caster_id] == 1
     assert start_params[:duration] == 3_000
     assert start_params[:val1] == 7
-    assert start_params[:owner_refresh] == :defer
+    assert start_params[:owner_refresh] == :notify
 
-    assert_receive {:effect, :end_summer, [owner_refresh: :defer]}
-    assert_receive {:effect, :start_lights, lights_params}
-    assert lights_params[:caster_id] == 1
-    assert lights_params[:val1] == 9
-    assert lights_params[:duration] == :infinite
+    assert_receive {:effect, :end_summer, [owner_refresh: :notify]}
   end
 
   test "activation applies signed heal effects in source order" do
-    registration = %{
-      registration()
-      | primary_effects: [{:heal, 0, 20}],
-        secondary_effects: [{:heal, 0, -5}]
-    }
-
-    state = state_with_registration(registration)
+    {state, _row} = state_with_real_proc([{:heal, 0, 20}], [{:heal, 0, -5}])
+    :ok = UnitRegistry.register_player(state.game_state, self())
     state = put_in(state.game_state.stats.current_state.sp, 10)
-    state = put_in(state.game_state.stats.derived_stats.max_sp, 100)
 
     stub(CharacterPersistence, :update_stats, fn _character_id, _attrs, _opts -> {:ok, nil} end)
-    stub(Calculator, :calculate_stats, fn stats, 1 -> stats end)
-    stub(UnitRegistry, :update_unit_state, fn :player, 1, _game_state -> :ok end)
-    stub(StatusSync, :send_stat_updates, fn _connection_pid, _stats -> :ok end)
 
     assert {:noreply, updated} = activate(state, @key)
     assert updated.game_state.stats.current_state.sp == 25
   end
 
+  test "an active autobonus runs its bonus script's effects again on each full recalculation" do
+    {state, _row} = state_with_real_proc([{:bonus, :atk, 25}, {:heal, 0, 10}])
+    :ok = UnitRegistry.register_player(state.game_state, self())
+    state = put_in(state.game_state.stats.current_state.sp, 1)
+
+    stub(CharacterPersistence, :update_stats, fn _character_id, _attrs, _opts -> {:ok, nil} end)
+
+    {:noreply, active} = activate(state, @key)
+    assert active.game_state.stats.current_state.sp == 11
+
+    recalculated = StatusManager.recalculate_after_status_change(active)
+    assert recalculated.game_state.stats.current_state.sp == 21
+
+    unequipped = Calculator.calculate_stats(recalculated.game_state.stats, 1, [])
+    removed = StateCommit.commit(recalculated, %{recalculated.game_state | stats: unequipped})
+    assert removed.game_state.stats.active_autobonuses == %{}
+    assert removed.game_state.stats.current_state.sp == 21
+
+    token = active.game_state.stats.active_autobonuses[@key]
+    {:noreply, expired} = EquipProcHandler.expire(recalculated, @key, token)
+
+    assert StatusManager.recalculate_after_status_change(expired).game_state.stats.current_state.sp ==
+             21
+  end
+
+  test "activation and expiry force a full recalculation" do
+    {state, _row} = state_with_real_proc([{:bonus, :atk, 25}])
+    :ok = UnitRegistry.register_player(state.game_state, self())
+    generation = state.game_state.stats.generation
+
+    {:noreply, active} = activate(state, @key)
+    assert active.game_state.stats.generation > generation
+
+    token = active.game_state.stats.active_autobonuses[@key]
+    {:noreply, expired} = EquipProcHandler.expire(active, @key, token)
+    assert expired.game_state.stats.generation > active.game_state.stats.generation
+  end
+
   test "rejected status effects log context without rolling back the active modifier" do
     registration = %{
       registration()
-      | primary_effects: [{:status_start, :sc_unknown_equip_proc, 1_000, 1}]
+      | secondary_effects: [{:status_start, :sc_unknown_equip_proc, 1_000, 1}]
     }
 
     state = state_with_registration(registration)
@@ -203,8 +229,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
                  state.game_state.stats.combat_stats.atk + 25
       end)
 
-    assert log =~ "item 501"
-    assert log =~ "primary proc key {101, 0}"
+    assert log =~ "{:card, 0, 501}"
+    assert log =~ "secondary proc key {101, 0}"
     assert log =~ "unknown_status"
   end
 
@@ -651,7 +677,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
     }
   end
 
-  defp state_with_real_proc(primary) do
+  defp state_with_real_proc(primary, secondary \\ []) do
     item_id = 90_001
 
     item = %ItemDefinition{
@@ -659,8 +685,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
       aegis_name: "PROC_TEST_ITEM",
       name: "Proc Test Item",
       on_equip: [
-        {:autobonus, %{trigger: :attack, battle_flag: 0, primary: primary, secondary: []}, 1_000,
-         60_000}
+        {:autobonus, %{trigger: :attack, battle_flag: 0, primary: primary, secondary: secondary},
+         1_000, 60_000}
       ]
     }
 
@@ -695,7 +721,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
       battle_flag: 0,
       primary: [],
       secondary: [],
-      primary_effects: [],
       secondary_effects: []
     }
   end

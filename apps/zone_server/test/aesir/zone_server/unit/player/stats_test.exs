@@ -2432,7 +2432,6 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       assert folded.modifiers.equipment.atk == 3
       assert registration.rate == 7
-      assert registration.primary_effects == [{:status_start, :sc_summer, 1_000, 1}]
       assert registration.secondary_effects == [{:status_end, :sc_summer}]
 
       assert folded.card_unequip_effects[{150, 0}].effects == [
@@ -2991,7 +2990,6 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
                battle_flag: 3,
                primary: primary,
                secondary: secondary,
-               primary_effects: [{:status_start, :blessing, 5_000, 2}],
                secondary_effects: [{:status_end, :blessing}]
              }
 
