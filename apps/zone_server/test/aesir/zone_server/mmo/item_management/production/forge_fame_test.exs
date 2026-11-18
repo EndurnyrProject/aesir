@@ -1,9 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeFameTest do
-  use Aesir.DataCase, async: false
+  use Aesir.DataCase, async: true
   use Mimic
 
-  alias Aesir.Commons.Models.Account
-  alias Aesir.Commons.Models.Character
+  import Aesir.Factory
+
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes.Recipe
@@ -13,20 +13,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeFameTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
 
-  setup :set_mimic_private
+  setup :set_mimic_from_context
 
   setup do
-    account =
-      Repo.insert!(%Account{userid: "forge-fame", user_pass: "unused", email: "fame@test.local"})
-
-    character =
-      Repo.insert!(%Character{
-        account_id: account.id,
-        char_num: 0,
-        name: "FameMaker",
-        class: 4019,
-        job_level: 70
-      })
+    character = insert(:character, name: "FameMaker", class: 4019, job_level: 70)
 
     stats = Stats.from_character(character)
     stats = put_in(stats.progression.learned_skills, %{228 => 1, 99 => 3})

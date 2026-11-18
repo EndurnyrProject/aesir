@@ -37,7 +37,8 @@ user, and never assume a path. Docs and skills write it as `<rathena>`.
   raised with the user to scope.
 
 The working procedure (per-skill parity checklist, review lens, audit limits) is in the
-**aesir-workflow** skill; the mode-research method is in **aesir-game-modes**.
+**aesir-workflow** skill; the mode-research method is in **aesir-game-modes**; how tests assert
+parity is in **aesir-testing**.
 
 ## Project Structure
 
@@ -193,80 +194,33 @@ NPC import has its own rules (all-scope runs, `--only` semantics, manifest owner
 `_conflicts/` and stale-output handling, helper resolution). Read the transpiler section of the
 **aesir-npc** skill before running `mix aesir.import.npcs`.
 
-## Testing Approach
+## Testing
 
-The suite is large (zone_server alone is over 1000 files). Every new test costs every future
-run, so test logic, not data or wiring.
+Load the **aesir-testing** skill before writing, changing, running, or auditing any test. It owns
+what to test, the gates, the run commands and how to read them, factories, async rules, Mimic
+modes, integration isolation, and the flake checklist. These rules always apply:
 
-### What to test
-
-- **Unit test**: formulas and mechanics (damage, stats, cast time, resistances), parsers,
-  transpilers and compilers, handlers with real branching, catalog and registry invariants (one
-  test over the whole catalog, not one per module), and regressions for fixed bugs.
-- **Do not unit test**: skill/status/item definition metadata (`id`, `name`, `max_level`,
-  `display_name`, flags; the catalog invariant tests cover them), one-line delegations, imported
-  or generated data, NPC content (see the aesir-npc skill), and Mimic `expect` tests that only
-  mirror the implementation's call sequence.
-- **Integration test**: one per feature path that crosses a session boundary or needs the real
-  routing (deadlocks, packet ingress, NPC interaction, warps, quests), driving the real subsystems
-  through `IntegrationCase`. Not one per skill or status.
-- A new skill or status module needs a test only for the logic it adds. A module whose behaviour is
-  entirely declarative needs none.
-
-### Gates
-
-- While iterating: the touched files, by `file` or `file:line`.
-- Before finishing: the test directories for the touched subsystems in the mode you changed, plus
-  `mix format` and `mix credo --strict`.
-- The full four-command matrix below is required only for changes to the mode seam
-  (`Mmo.Mechanics`, `GameMode`, `Db.Layout`), shared formulas and combat orchestration, test
-  support, or data layout. For everything else, do not run it. "Test support" means a change to
-  shared helpers or `IntegrationCase` behaviour; adding a `Mimic.copy` line or a stub in
-  `test_helper.exs` does not count.
-
-### Running integration tests efficiently
-
-The integration suites take about 10 minutes per mode. Treat a full run as expensive.
-
-- **Waves: integrations only at the end of the wave.** When implementing a task list in
-  execution waves, run no integration tests while implementing a wave's tasks (unit tests,
-  format and credo only). Once every task in the wave is done, run the integrations once
-  (targeted, then the full suite if required), and fix any fallout before the wave is closed.
-- **Targeted first.** Find the integrations that exercise the change (`rg -l` for the touched
-  module, message or skill under `apps/zone_server/test/integration`) and run only those files,
-  in both modes: `mix test.integration.re <files>`, then `mix test.integration.pre_re <files>`.
-- **Full suite at most once per wave or change**, and only when the gate above requires it or
-  the user asks. Run it last, after the targeted files are green.
-- **After a full run fails, never re-run the full suite to check a fix.** Re-run only the failing
-  files, in the failing mode. A green targeted re-run is enough; do not repeat the full suite
-  unless the fix touched shared code again.
-- **Run one mode, then the other**, never both at once (shared `aesir_test` database). The run
-  exceeds the 600 s tool timeout: start it in the background writing to a log file, wait with a
-  single blocking loop on a completion marker, then filter the log with the `rg` filter in
-  "Reading umbrella results" below. Do not poll repeatedly or re-run because a call timed out.
-- **Check flakes in isolation**: re-run the one failing file 2-3 times before treating a
-  failure as real, and compare against the known flakes in the aesir-workflow skill.
-- **A new migration** needs `MIX_ENV=test mix ecto.migrate` once before app-level `mix test`
-  runs (the umbrella aliases migrate; app-level runs do not).
-
-### Mechanics
-
-- `Aesir.DataCase` gives transaction sandboxing; `Aesir.Commons.ClusterTestHelper` clears Horde
-  entries; `Aesir.TestEtsSetup` seeds ETS for unit tests; `IntegrationCase` does all of that plus a
-  per-test world for integration tests.
-- Use `Mimic` for boundaries, not for the function under test. Follow AAA.
-
-Shared unit tests remain untagged and run in both modes. Tests requiring a particular boot mode use
-`@tag game_mode: :renewal` or `:pre_renewal`, with `@describetag`/`@moduletag` for suitable groups.
-Pure tests calling both formula implementations directly remain untagged.
-
-`IntegrationCase` gives shared integrations both `integration_re: true` and `integration_pre_re: true`.
-A mode-specific integration must also set its opposite integration tag to `false`; a `game_mode` tag
-alone cannot override an ExUnit include filter. Keep paired cases in the same files. Explicit CLI
-integration selectors must include `:true` because a bare tag also matches a tag set to `false`.
-
-Integration-test isolation, the determinism checklist, and Mimic sharp edges are in the
-**aesir-workflow** skill.
+- **Test logic, not data or wiring.** Unit test formulas and mechanics, parsers and compilers,
+  handlers with real branching, catalog invariants (one test over the whole catalog), and
+  regressions. Do not test definition metadata, one-line delegations, imported or generated data,
+  NPC content, or Mimic `expect`s that only mirror the implementation's call sequence.
+  Integration tests cover feature paths that cross a session boundary, not one per skill or status.
+- **Mechanics tests assert rAthena's numbers**, derived from the source in both modes, never from
+  the implementation.
+- **Gates.** While iterating, the touched files. Before finishing, the touched subsystems' test
+  directories in the mode you changed, plus `mix format` and `mix credo --strict`. The full
+  four-command matrix only for changes to the mode seam (`Mmo.Mechanics`, `GameMode`,
+  `Db.Layout`), shared formulas and combat orchestration, test support, or data layout.
+- **Integrations are expensive** (about 10 minutes per mode): targeted files first, one mode at a
+  time, the full suite at most once per change, and never a full re-run to check a fix.
+- **Factories, not builders.** Rows come from `Aesir.Factory` (`insert(:character)`), runtime
+  structs from `Aesir.ZoneServer.Factory` (`build(:guild_state)`). No per-file fixture functions.
+- **Async by default.** `async: true` unless a sync reason listed in the skill applies; every file
+  that stubs claims its Mimic mode with `setup :set_mimic_from_context`.
+- **Never loosen production types for tests.** A spec or function head that takes a struct names
+  the struct; do not widen it to `map()`/`%{}` so a test can pass a partial value. Build the real
+  struct (extend the factory).
+- **Never edit an existing test to make it pass** without asking the user.
 
 ## Build, Lint, and Test
 
@@ -284,22 +238,8 @@ Integration-test isolation, the determinism checklist, and Mimic sharp edges are
 - **Run a single test**: `mix test path/to/test_file.exs:line_number`
 - Dialyzer is run via `mix dialyzer` in each app; the umbrella root does not have a Dialyzer PLT.
 
-The four mode aliases override an inherited `AESIR_DB_MODE` before boot and forward normal test
-arguments (paths, `--only`); run them serially in separate Mix invocations when the gate above
-requires the matrix. Plain `mix test` and `mix test.integration` retain environment-based selection
-(pre-renewal when `AESIR_DB_MODE` is unset, per `config/config.exs`); run app-level test commands
-with `AESIR_DB_MODE=renewal` or `=pre_renewal` set explicitly.
-
-**Reading umbrella results.** The umbrella aliases run every app in sequence, so `tail` only shows
-the last app (`account_server`, 10 tests) and hides zone_server failures. Pipe through this filter
-once, never `tail` first:
-
-```sh
-mix test.re 2>&1 | rg '^(==> |Result:|Failed:|\s+\d+\) test)'
-```
-
-It prints one `==> app` header per app, each `Result:` line, and the `N) test ...` header of every
-failure. Re-run only the failing file to see the full output.
+Test commands run per mode; how they select the mode, run integrations, and how to read the
+umbrella output are in the **aesir-testing** skill.
 
 ## Tool Preferences
 
@@ -324,8 +264,9 @@ failure. Re-run only the failing file to see the full output.
 - **Docs**: Add `@moduledoc`/`@doc` to public modules/functions and `@typedoc` to public types.
 - **Prefer `with` over nested `case`**.
 - **No superfluous comments**: Prefer module/function docs; comment inline only when genuinely needed.
-- **Structs**: plain `defstruct` with an explicit `@enforce_keys` and a hand-written `@type t()`.
-  Do not reach for a struct-generating macro library.
+- **Structs**: define structs with `TypedStruct` (`use TypedStruct` + `typedstruct do field ... end`),
+  marking required fields `enforce: true`, so the struct, `@enforce_keys` and `@type t()` come
+  from one declaration. Prefer it over plain `defstruct` with a hand-written `@type t()`.
 - **Aliases**: Always `alias` modules at the top of the file instead of using fully-qualified names.
 - **Numbers**: Numbers larger than 9999 must use underscores, e.g. `10_000`.
 - **Tell, don't ask**: Avoid `get`/`put` patterns; prefer passing state through function calls.
@@ -344,7 +285,7 @@ failure. Re-run only the failing file to see the full output.
    generated `Aesir.Net.*` structs; do not hand-roll binary packets.
 3. **Session Management**: Always validate sessions before processing user requests.
 4. **Error Handling**: Use the `{:ok, result}` / `{:error, reason}` pattern instead of raising.
-5. **Testing**: Follow "What to test" above. Cover the logic you add, including its error paths;
+5. **Testing**: Follow "Testing" above. Cover the logic you add, including its error paths;
    do not add tests for data, wiring, or declarative modules.
 6. **Documentation**: Document modules and functions; for protocol messages document field meaning.
 7. **Mechanics**: renewal and pre-renewal are both first-class and must match rAthena exactly;

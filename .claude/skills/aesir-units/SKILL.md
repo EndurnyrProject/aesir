@@ -38,7 +38,7 @@ observe another unit without messaging its process:
 - `unit/player/player_session.ex` routes tagged `handle_cast/handle_call/handle_info`.
   Decoded client ingress arrives via `ZoneServer.handle_message/3` →
   `PlayerSession.deliver_message/2` → `{:message, msg}` → `Handlers.PacketHandler.handle_message/2`.
-  (Tests inject the same envelope with `simulate_incoming_message/2`; see `aesir-workflow`.)
+  (Tests inject the same envelope with `simulate_incoming_message/2`; see `aesir-testing`.)
 - **`SessionState`** (`unit/player/session_state.ex`) is the GenServer state. It wraps the
   authoritative immutable **`%PlayerState{}` as `state.game_state`** and adds process-level
   bookkeeping the game state must NOT carry: `connection_pid`/monitor, `client_capabilities`,
@@ -115,7 +115,7 @@ into a handler / behind the deferred seam", not "loosen the test".
 
 ## Related skills
 
-- `aesir-workflow`: how to test sessions without flakes (integration isolation,
+- `aesir-testing`: how to test sessions without flakes (integration isolation,
   `simulate_incoming_message`, the determinism checklist, Mimic sharp edges).
 - `aesir-skills`: skills run inside these sessions (`on_place` self-call hazard, deferred).
 - `aesir-status-effects`: `StatusStorage` semantics and process placement of callbacks.

@@ -152,7 +152,7 @@ source. `val1`-`val4` are persisted, including the values `on_apply` and `on_tic
 - When fixing one status's bug (dead key, missing flag, missing resolver entry), grep the
   whole `effects/` tree for structural siblings: this subsystem's bugs come in classes.
 - Session-driving tests (the `StatusPersistence` stub), fixture shapes and Mimic traps are in
-  `aesir-workflow`.
+  `aesir-testing`.
 
 ## Game modes
 

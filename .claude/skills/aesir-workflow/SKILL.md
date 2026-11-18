@@ -1,6 +1,6 @@
 ---
 name: aesir-workflow
-description: How to work on the Aesir codebase - version control (colocated Jujutsu), the spec-to-implementation flow, the proportionality stop, test mechanics (integration isolation, determinism, Mimic sharp edges, flake root causes), and engineering conventions not owned by another skill. Load this before starting any non-trivial change in this repo.
+description: How to work on the Aesir codebase - version control (colocated Jujutsu), the spec-to-implementation flow, the mechanics parity procedure, the proportionality stop, and engineering conventions not owned by another skill. Testing lives in aesir-testing. Load this before starting any non-trivial change in this repo.
 ---
 
 # Working on Aesir
@@ -81,91 +81,12 @@ ground-unit cells) and in `aesir-status-effects`.
 
 ## Build, lint, test
 
-What to test and which commands gate a change are defined in AGENTS.md ("Testing
-Approach"). This section is the mechanics.
-
 - `mix format` and `mix credo --strict` before considering work done.
-- Prefer file and `file:line` runs while iterating. Native includes and `file:line` can
-  override tag exclusions; they never change the runtime mode.
 - After changing an importer or codegen (items, NPCs), **`mix compile` first**: mix tasks
   have silently run stale dev beams and regenerated output with old code. Sanity-check that
   the output actually changed.
-
-### Integration test isolation (per-test worlds)
-
-`Aesir.ZoneServer.IntegrationCase` (`test/support/integration_case.ex`) gives each test its
-own ETS world and background processes. Never reach for the boot-global
-`MapManager`/`Coordinator`.
-
-- `use ExUnit.Case, async: false`; setup calls `Mimic.set_mimic_private()`, seeds a fresh
-  random `EtsTable`, starts per-test unnamed `StatusTickManager`, skill-unit manager, and
-  NPC interaction supervisors, plus an isolated `"prontera"` world.
-- Any other map: `start_per_test_map(@map)` in `setup` (unnamed `MobSupervisor` +
-  `Coordinator`, scoped through `ProcessTree`, auto-cleaned). Do not add
-  `MapManager.get_coordinator/1` wait/retry helpers; a few legacy `ensure_coordinator`
-  privates still target global state, do not copy them.
-- `Aesir.TestEtsSetup.setup_ets_tables/1` is the unit-test seeded-ETS helper;
-  `IntegrationCase` includes that seeding, so integration tests use `IntegrationCase` only.
-- Helpers (`test/support/`): `simulate_incoming_message/2` (packet ingress),
-  `start_player_session/1` / `start_mob_session/1` (accept `vit:`/`luk:`; mobs also
-  `agi:`/`dex:` and default `awake: false` to avoid idle-AI wander flakes),
-  `assert_packet_sent/2` / `collect_packets_of_type/2`, and `assert_eventually`/`eventually/3`
-  (`commons` `test_wait.ex`, polls 25ms/4s). Use these instead of `Process.sleep`.
-- `assert_packet_sent` timeout trap: `collect_packets_of_type` restarts its timeout after
-  every matching packet, so it waits the full timeout after the *last* match. Keep the
-  100ms default; raising it starves time-sensitive follow-up effects.
-
-### Determinism (the flake checklist)
-
-Every flake the suite has had traces to one of these. Check them before diagnosing a race.
-
-- **Unpinned infliction rolls** are the most common cause. A status applied through the real
-  path as arranged state must be pinned: `vit: 0, luk: 0` on the target (rolls in a
-  session/manager process), or `stub(Resistance, :roll_success, fn _ -> true end)` when the
-  roll happens in the test process (`Resistance` is Mimic-able via `test_helper.exs`).
-- **Unpinned swing rolls**: a critical skips the hit roll, a player defender always has a
-  Lucky Dodge chance, and the hit rate never guarantees a miss. A test that needs a hit or a
-  miss pins the outcome (`stub(HitCalculations, :calculate_hit_result, ...)`) or the crit
-  (`critical_rate: 0`) when the attack runs in the test process.
-- **Deadlines stamped inside the call**: assert `expires_at` between `before + d` and
-  `after + d` around the call, never `assert_in_delta expires_at - now`, which drifts
-  under load.
-- **Mimic mode leak**: a file that stubs without claiming a mode inherits whatever the
-  previous module leaked. Files that stub need `setup :set_mimic_private`; files that go
-  global need `setup {Aesir.MimicMode, :global}`, never raw `setup :set_mimic_global`.
-  `IntegrationCase` claims private mode per test; a module-level global setup still wins.
-- Knockback/pull is a `GenServer.cast`. Asserting immediately after arranging a displacement
-  races the mover's landing, and whatever occupies the destination cell can fire `on_touch`.
-- Snapshotting a whole `SessionState` and pinning it across an operation also pins
-  lazily-populated fields (`quest_info_display` is filled by an async post-map-load refresh).
-  Let the session settle with `assert_eventually` before the snapshot.
-- `spawn(fn -> :ok end)` + `Process.monitor` delivers `:noproc`, not `:normal`, when the
-  process exits first; never pin that DOWN reason.
-- `ClusterTestHelper.clear_all/0` waits for terminated Horde owners to leave the local ETS;
-  anything else tearing down cluster entries needs the same wait.
-- Generated `userid`s must be ≤23 chars (account validation); use short prefixes.
-- Parallel worktree suites share one `aesir_test` database; concurrent runs exhaust
-  Postgres connections and surface as one-off DB failures. Check how many suites are running.
-- Remaining known flake: `test/integration/npc_events_integration_test.exs`
-  (OnTimer/OnMyMobDead timing). Ignore when gating on green if it passes in isolation.
-
-### Mimic and fixture sharp edges
-
-- **Arity trap**: changing a stubbed function's arity silently deactivates every old-arity
-  stub; the real function runs and tests pass for the wrong reason. After any arity change:
-  `rg 'stub\(TheModule|expect\(TheModule' apps/*/test` and update all of them. The tell:
-  `assert_received` failing on a message a stub should have sent.
-- **Use real production shapes** in status/combat tests. Hand-built `attack_info` maps and
-  hardcoded entity fixtures have hidden real bugs (wrong field names, boss-flag gates).
-  Insist on real `UnitRegistry`/`PlayerState`/`MobState` shapes; bare
-  `%PlayerState{character_id: id}` fixtures have `stats: nil`, so keep code nil-tolerant
-  rather than inflating fixtures.
-- Tests driving `PlayerSession.init`/`terminate` directly must `Mimic.copy(StatusPersistence)`
-  and stub `restore_on_spawn`/`save_statuses`, or they hit the DB sandbox.
-- Deadlock-class bugs (self-calls inside a session) only reproduce when the cast goes
-  through the real session (`simulate_incoming_message`), never when the test process calls
-  `Skill.cast/4` directly.
-- Keep `defdelegate` seams when splitting modules so existing Mimic stubs keep working.
+- Everything about tests (what to test, gates, running and reading suites, factories, async,
+  Mimic, integration isolation, the flake checklist) is in `aesir-testing`.
 
 ## Engineering conventions not owned by another skill
 
@@ -185,6 +106,8 @@ Every flake the suite has had traces to one of these. Check them before diagnosi
 
 - `aesir-units`: sessions, handlers, `SessionState`/`StateCommit`, single-writer rule,
   deferred effects with epoch/token invalidation (canonical owner of those rules).
+- `aesir-testing`: what to test, gates, factories, async and Mimic rules, integration isolation,
+  the flake checklist.
 - `aesir-game-modes`: renewal vs pre-renewal research, the mode seam, mode-aware writing rules.
 - `aesir-skills`, `aesir-status-effects`, `aesir-items`, `aesir-mobs`, `aesir-npc`,
   `aesir-protocol`: per-subsystem guides.

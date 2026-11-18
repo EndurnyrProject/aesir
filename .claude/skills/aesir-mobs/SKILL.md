@@ -82,4 +82,4 @@ Rules and gotchas:
 
 - Mob skill rows are data: test `Executor` dispatch and `mob_cast/5` logic, not that a row
   exists. Cast lifecycle (interrupt, cooldown) is session behaviour and belongs in one
-  integration test per path, not per skill. See AGENTS.md "What to test".
+  integration test per path, not per skill. See `aesir-testing` ("What to test").

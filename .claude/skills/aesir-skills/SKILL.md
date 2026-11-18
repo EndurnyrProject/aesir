@@ -205,4 +205,4 @@ requirement silently removes mob rows.
 - Tests assert the reference's numbers in both modes; derive expected values from the source
   (check its `#ifdef RENEWAL` branches), never from the implementation.
 - Real session paths for deadlock-class bugs, real fixture shapes, the Mimic arity trap and the
-  determinism checklist are in `aesir-workflow`.
+  determinism checklist are in `aesir-testing`.

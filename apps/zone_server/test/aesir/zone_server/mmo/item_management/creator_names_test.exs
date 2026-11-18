@@ -1,41 +1,19 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.CreatorNamesTest do
-  use Aesir.DataCase, async: false
+  use Aesir.DataCase, async: true
   use Mimic
 
+  import Aesir.Factory
+
   alias Aesir.Commons.InterServer.Schemas.OnlineUser
-  alias Aesir.Commons.Models.Account
-  alias Aesir.Commons.Models.Character
   alias Aesir.Commons.SessionManager
   alias Aesir.ZoneServer.Mmo.ItemManagement.CreatorNames
 
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
   setup do
-    Mimic.set_mimic_private()
-    Mimic.copy(SessionManager)
-
-    suffix = System.unique_integer([:positive])
-
-    account =
-      %Account{}
-      |> Account.changeset(%{
-        userid: "creator#{suffix}",
-        user_pass: "password",
-        email: "creator#{suffix}@aesir.test"
-      })
-      |> Repo.insert!()
-
-    character =
-      %Character{}
-      |> Character.changeset(%{
-        account_id: account.id,
-        char_num: 0,
-        name: "Creator#{suffix}",
-        class: 0
-      })
-      |> Repo.insert!()
-
-    %{account: account, character: character}
+    character = insert(:character)
+    %{account: character.account, character: character}
   end
 
   test "resolves an online character by name", %{account: account, character: character} do

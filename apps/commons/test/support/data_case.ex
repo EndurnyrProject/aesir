@@ -1,4 +1,18 @@
 defmodule Aesir.DataCase do
+  @moduledoc """
+  Case template for tests that touch `Aesir.Repo`.
+
+  Each test checks out its own sandbox connection and rolls it back on exit:
+
+    * `async: true` (prefer it) gives the test a private connection. The test
+      process and anything carrying it in `$callers` (`Task.async/1`, `Task.start/1`) can
+      use it; any other process needs `Ecto.Adapters.SQL.Sandbox.allow/3`.
+    * `async: false` shares the connection with every process, for tests whose DB work
+      runs in processes outside the test's tree (Horde entries, supervised sessions).
+
+  Insert rows with `Aesir.Factory`, never with hand-written changeset pipelines.
+  """
+
   use ExUnit.CaseTemplate
 
   using do
