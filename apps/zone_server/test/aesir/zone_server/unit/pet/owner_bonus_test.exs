@@ -9,8 +9,10 @@ defmodule Aesir.ZoneServer.Unit.Pet.OwnerBonusTest do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.Models.Pet
   alias Aesir.Net.SkillList
+  alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.Combat.EquipAutobonus
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.OwnerBonusTest do
   alias Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler
   alias Aesir.ZoneServer.Unit.Pet.Persistence
   alias Aesir.ZoneServer.Unit.Pet.Runtime
+  alias Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -281,6 +284,76 @@ defmodule Aesir.ZoneServer.Unit.Pet.OwnerBonusTest do
       assert hatched.game_state.stats.modifiers == base.game_state.stats.modifiers
       assert hatched.game_state.stats.generation == base.game_state.stats.generation
     end
+  end
+
+  describe "pet autobonuses" do
+    @marionette """
+    pet_autobonus(ctx, %{other: nil, bonus: [{:bonus, {:subele, :neutral}, 2}, {:heal, 100, 0}], trigger: :attack, battle_flag: 529}, 100, 5000)
+    """
+
+    test "trigger on a short normal attack, apply for the duration, then expire", ctx do
+      hatched = hatch_with_program(ctx, @marionette)
+      registrations = hatched.game_state.stats.equip_autobonuses
+      test_pid = self()
+
+      roll = fn rate ->
+        send(test_pid, {:rolled, rate})
+        true
+      end
+
+      assert [{:pet, _} = key] = EquipAutobonus.on_attack(registrations, 529, roll: roll)
+      assert_received {:rolled, 100}
+      assert EquipAutobonus.on_attack(registrations, 2 + 512 + 16, roll: roll) == []
+
+      before = System.monotonic_time(:millisecond)
+      {:noreply, active} = EquipProcHandler.activate(hatched, key, {:pet, 1002})
+      after_activation = System.monotonic_time(:millisecond)
+      timer = Map.fetch!(active.pet_runtime.autobonus_timers, key)
+      read_before = System.monotonic_time(:millisecond)
+      remaining = Process.read_timer(timer)
+      read_after = System.monotonic_time(:millisecond)
+
+      assert Stats.get_equipment_modifier(active.game_state.stats, {:subele, :neutral}) == 2
+      assert read_before + remaining <= after_activation + 5_001
+      assert read_after + remaining >= before + 4_999
+
+      generation = Map.fetch!(active.game_state.stats.active_autobonuses, key)
+      {:noreply, expired} = EquipProcHandler.expire(active, key, generation)
+      assert Stats.get_equipment_modifier(expired.game_state.stats, {:subele, :neutral}) == 0
+      assert Map.has_key?(expired.game_state.stats.equip_autobonuses, key)
+      assert expired.pet_runtime.autobonus_timers == %{}
+    end
+
+    test "the same script registered twice in one pet program registers once", ctx do
+      hatched = hatch_with_program(ctx, @marionette <> @marionette)
+
+      assert [{:pet, 0}] = Map.keys(hatched.game_state.stats.equip_autobonuses)
+    end
+
+    test "returning the pet to its egg drops an active autobonus at once", ctx do
+      hatched = hatch_with_program(ctx, @marionette)
+      [key] = Map.keys(hatched.game_state.stats.equip_autobonuses)
+      {:noreply, active} = EquipProcHandler.activate(hatched, key, {:pet, 1002})
+      timer = Map.fetch!(active.pet_runtime.autobonus_timers, key)
+      active = put_in(active.game_state.stats.current_state.hp, 1)
+
+      returned = LifecycleHandler.return_to_egg(active)
+
+      assert returned.game_state.stats.equip_autobonuses == %{}
+      assert returned.game_state.stats.active_autobonuses == %{}
+      assert Stats.get_equipment_modifier(returned.game_state.stats, {:subele, :neutral}) == 0
+      assert returned.game_state.stats.current_state.hp == 1
+      assert Process.read_timer(timer) == false
+    end
+  end
+
+  defp hatch_with_program(ctx, source) do
+    {:ok, poring} = Catalog.by_mob(1002)
+    program = EquipScript.parse!(source)
+    stub(Catalog, :by_mob, fn 1002 -> {:ok, %{poring | bonus_program: program}} end)
+    stub(CharacterPersistence, :update_stats, fn _character_id, _attrs, _opts -> {:ok, nil} end)
+    {inventory, egg_index, _pet_id} = pet_egg(ctx.character, 1002, %{intimate: 500})
+    ctx.character |> session(inventory) |> hatch(egg_index)
   end
 
   defp hatch(session, egg_index) do

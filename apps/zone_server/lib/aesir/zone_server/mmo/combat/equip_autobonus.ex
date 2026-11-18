@@ -80,10 +80,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutobonus do
     end)
   end
 
+  # The player's own registrations are checked before the pet's.
   @spec ordered_registrations(map()) :: [{Stats.autobonus_key(), map()}]
   defp ordered_registrations(registrations) do
-    Enum.sort_by(registrations, fn {_key, registration} ->
-      Map.fetch!(registration, :source_order)
+    Enum.sort_by(registrations, fn {key, registration} ->
+      {match?({:pet, _ordinal}, key), Map.fetch!(registration, :source_order)}
     end)
   end
 

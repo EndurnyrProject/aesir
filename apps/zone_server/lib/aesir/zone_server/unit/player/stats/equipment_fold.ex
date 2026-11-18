@@ -46,6 +46,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
           optional(:local_time) => NaiveDateTime.t()
         }
 
+  @max_autobonuses 50
+
   @doc """
   Applies equipment modifiers to stats from the equipped inventory items.
 
@@ -209,7 +211,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
       worn_items
       |> fold_worn_items(worn_inputs)
       |> fold_temporary_card(worn_inputs)
-      |> fold_pet_bonus(stats.pet_bonus, worn_inputs)
+      |> fold_pet_bonus(stats, worn_inputs)
 
     active =
       retain_active_autobonuses(
@@ -218,7 +220,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
         fold.registrations
       )
 
-    {fold, active, evaluate_actives(active, fold.registrations, worn_items, active_inputs)}
+    {fold, active,
+     evaluate_actives(active, fold.registrations, worn_items, active_inputs, stats.pet_bonus)}
   end
 
   defp fold_temporary_card(fold, %{temporary_card_id: id} = inputs)
@@ -249,10 +252,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   # The pet's program runs after every other script, with no refine or hand
   # context and the pet's live state as its `:pet` input, and is collected
   # like an item's own script. Its autocasts carry no card and register after
-  # every worn source's.
-  defp fold_pet_bonus(fold, nil, _inputs), do: fold
+  # every worn source's. Its autobonus registrations outlive the recompute that
+  # made them: they stay until the pet object goes away (`pet_bonus` becomes
+  # `nil`), whether or not a later run still reaches their statement.
+  defp fold_pet_bonus(fold, %Stats{pet_bonus: nil}, _inputs), do: fold
 
-  defp fold_pet_bonus(fold, %{program: program, inputs: pet_inputs}, inputs) do
+  defp fold_pet_bonus(
+         fold,
+         %Stats{pet_bonus: %{program: program, inputs: pet_inputs}} = stats,
+         inputs
+       ) do
     inputs =
       inputs
       |> Map.put(:refine, 0)
@@ -270,22 +279,73 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
         visible: with_grants(fold.visible, granted_by([{:pet, result}])),
         auto_casts: fold.auto_casts ++ Enum.map(result.auto_casts, &{order, &1, 0}),
         add_effs: fold.add_effs ++ add_effs,
-        statuses: install_equip_statuses(fold.statuses, result.effects)
+        statuses: install_equip_statuses(fold.statuses, result.effects),
+        registrations:
+          fold.registrations
+          |> Map.merge(carried_pet_autobonuses(stats.equip_autobonuses, inputs))
+          |> register_pet_autobonuses(result.pet_autobonuses, pet_inputs, inputs)
     }
   end
 
+  defp carried_pet_autobonuses(previous, inputs) do
+    for {{:pet, _ordinal} = key, registration} <- previous, into: %{} do
+      {key, %{registration | secondary_effects: effects(registration.secondary, inputs)}}
+    end
+  end
+
+  # A pet registration is refused when its trigger list (attack, when hit, on
+  # skill) already holds one with the same bonus script, or holds the maximum.
+  defp register_pet_autobonuses(registrations, autobonuses, pet_inputs, inputs) do
+    Enum.reduce(autobonuses, registrations, fn autobonus, acc ->
+      pets = for {{:pet, _ordinal}, registration} <- acc, do: registration
+      list = autobonus_list(autobonus.trigger)
+      same_list = Enum.filter(pets, &(autobonus_list(&1.trigger) == list))
+
+      if length(same_list) >= @max_autobonuses or
+           Enum.any?(same_list, &(&1.primary == autobonus.bonus)) do
+        acc
+      else
+        ordinal = length(pets)
+        secondary = autobonus.other || []
+
+        Map.put(acc, {:pet, ordinal}, %{
+          source_identity: {:pet, pet_inputs.pet.class},
+          refine: 0,
+          source_order: {0, ordinal},
+          trigger: autobonus.trigger,
+          rate: autobonus.rate,
+          duration_ms: autobonus.duration_ms,
+          battle_flag: autobonus.battle_flag,
+          primary: autobonus.bonus,
+          secondary: secondary,
+          secondary_effects: effects(secondary, inputs)
+        })
+      end
+    end)
+  end
+
+  defp effects(program, inputs), do: EquipScript.evaluate(program, inputs).effects
+
   # The active programs run before any worn script, so they see the learned
   # levels and the grants of the active programs before them only.
-  defp evaluate_actives(active, registrations, worn_items, inputs) do
+  defp evaluate_actives(active, registrations, worn_items, inputs, pet_bonus) do
     active
     |> Enum.map(fn {key, _generation} -> Map.fetch!(registrations, key) end)
     |> Enum.sort_by(&active_order(&1, worn_items))
     |> Enum.map_reduce(inputs, fn registration, inputs ->
-      result = EquipScript.evaluate(registration.primary, %{inputs | refine: registration.refine})
+      result =
+        EquipScript.evaluate(registration.primary, active_inputs(registration, inputs, pet_bonus))
+
       {{registration, result}, see_grants(inputs, granted_by([{registration, result}]))}
     end)
     |> elem(0)
   end
+
+  defp active_inputs(%{source_identity: {:pet, _class}}, inputs, %{inputs: pet_inputs}),
+    do: Map.merge(%{inputs | refine: 0}, pet_inputs)
+
+  defp active_inputs(registration, inputs, _pet_bonus),
+    do: %{inputs | refine: registration.refine}
 
   defp granted_by(results) do
     Enum.reduce(results, %{}, fn {_source, result}, acc ->
@@ -348,6 +408,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
 
   defp source_add_effs(add_effs, item, card_slot),
     do: [{{3, {equip_index!(item), card_slot}}, add_effs}]
+
+  # The pet's active programs run after the player's own.
+  defp active_order(%{source_identity: {:pet, _class}} = registration, _worn_items) do
+    {_phase, ordinal} = registration.source_order
+    {0, {3 + autobonus_list(registration.trigger), 0, 0, ordinal}}
+  end
 
   defp active_order(registration, worn_items) do
     {worn_ordinal, lexical_slot} = registration.source_order

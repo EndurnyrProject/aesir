@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Unit.Pet.Clock
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -20,7 +21,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
   under a fresh generation, and forces a full recalculation, whose equipment
   fold runs the bonus script (and queues its effects). The expiry message is
   tagged with the generation, so only the latest activation's expiry ends it.
-  A registration that changed source since the trigger was dispatched is a
+  A pet registration's timer is also kept in the pet runtime, replacing (and
+  cancelling) the previous activation's, so freeing the pet cancels it. A
+  registration that changed source since the trigger was dispatched is a
   no-op.
   """
   @spec activate(SessionState.t(), Stats.autobonus_key(), Stats.autobonus_source_identity()) ::
@@ -37,13 +40,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
         state = %{state | game_state: %{state.game_state | stats: stats}}
         state = recalculate_and_sync_skills(state, granted_skills)
 
-        Process.send_after(
-          self(),
-          {:equip_autobonus_expire, key, generation},
-          registration.duration_ms
-        )
+        timer =
+          Process.send_after(
+            self(),
+            {:equip_autobonus_expire, key, generation},
+            registration.duration_ms
+          )
 
-        {:noreply, state}
+        {:noreply, track_pet_timer(state, key, timer)}
 
       _stale_or_missing ->
         {:noreply, state}
@@ -63,11 +67,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
       active = Map.delete(stats.active_autobonuses, key)
       stats = Stats.force_full_recalculation(%{stats | active_autobonuses: active})
       state = %{state | game_state: %{state.game_state | stats: stats}}
-      {:noreply, recalculate_and_sync_skills(state, granted_skills)}
+      {:noreply, state |> untrack_pet_timer(key) |> recalculate_and_sync_skills(granted_skills)}
     else
       _stale_or_missing -> {:noreply, state}
     end
   end
+
+  defp track_pet_timer(%{pet_runtime: runtime} = state, {:pet, _ordinal} = key, timer) do
+    Clock.cancel(Map.get(runtime.autobonus_timers, key))
+    timers = Map.put(runtime.autobonus_timers, key, timer)
+    %{state | pet_runtime: %{runtime | autobonus_timers: timers}}
+  end
+
+  defp track_pet_timer(state, _key, _timer), do: state
+
+  defp untrack_pet_timer(%{pet_runtime: runtime} = state, {:pet, _ordinal} = key) do
+    timers = Map.delete(runtime.autobonus_timers, key)
+    %{state | pet_runtime: %{runtime | autobonus_timers: timers}}
+  end
+
+  defp untrack_pet_timer(state, _key), do: state
 
   @doc """
   Performs the side effects an equipment fold queued from the active

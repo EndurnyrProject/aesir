@@ -126,20 +126,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           }
   end
 
-  @typedoc "Stable identity of one autobonus registration within an inventory row."
-  @type autobonus_key :: {pos_integer(), non_neg_integer()}
+  @typedoc """
+  Stable identity of one autobonus registration: an inventory row and the
+  statement's lexical slot, or `{:pet, ordinal}` for the pet's registrations in
+  the order they were first registered.
+  """
+  @type autobonus_key :: {pos_integer(), non_neg_integer()} | {:pet, non_neg_integer()}
 
   @typedoc """
   Identity of the source that owns an autobonus registration: the host item,
-  a socketed card, or a random option slot (by slot index and option id; its
-  registration's `item_id` is the host's).
+  a socketed card, a random option slot (by slot index and option id; its
+  registration's `item_id` is the host's), or the pet by its class.
   """
   @type autobonus_source_identity ::
-          {:host, pos_integer()} | {:card, 0..3, pos_integer()} | {:option, 0..4, integer()}
+          {:host, pos_integer()}
+          | {:card, 0..3, pos_integer()}
+          | {:option, 0..4, integer()}
+          | {:pet, pos_integer()}
 
-  @typedoc "An evaluated autobonus registration derived from a worn item."
+  @typedoc "An evaluated autobonus registration of a worn item (with `item_id`) or the pet."
   @type autobonus_registration :: %{
-          item_id: pos_integer(),
+          optional(:item_id) => pos_integer(),
           source_identity: autobonus_source_identity(),
           refine: non_neg_integer(),
           source_order: {non_neg_integer(), non_neg_integer()},
