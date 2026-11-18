@@ -43,7 +43,7 @@ defmodule Aesir.ZoneServer.Npc.WarpsVerifierTest do
 
     test "drops and warns when a warp's destination map is not in MapCache" do
       stub(MapCache, :get, fn
-        "prontera" -> {:ok, %MapData{}}
+        "prontera" -> {:ok, MapData.new("prontera", 1, 1)}
         "nowhere" -> {:error, :not_found}
       end)
 
@@ -60,7 +60,7 @@ defmodule Aesir.ZoneServer.Npc.WarpsVerifierTest do
     end
 
     test "drops and warns when a warp's own cell is not walkable" do
-      stub(MapCache, :get, fn _ -> {:ok, %MapData{}} end)
+      stub(MapCache, :get, fn _ -> {:ok, MapData.new("prontera", 1, 1)} end)
       stub(MapData, :walkable?, fn %MapData{}, 5, 5 -> false end)
 
       logs =
@@ -74,7 +74,7 @@ defmodule Aesir.ZoneServer.Npc.WarpsVerifierTest do
     end
 
     test "keeps the walkable warps on a map and only drops the invalid one" do
-      stub(MapCache, :get, fn _ -> {:ok, %MapData{}} end)
+      stub(MapCache, :get, fn _ -> {:ok, MapData.new("prontera", 1, 1)} end)
       stub(MapData, :walkable?, fn %MapData{}, x, _ -> x != 9 end)
 
       kept = warp(id: "ok", x: 5, y: 5)
@@ -87,7 +87,7 @@ defmodule Aesir.ZoneServer.Npc.WarpsVerifierTest do
 
   describe "sanitize/1 keeps valid warps, warning on soft issues" do
     test "keeps the warp but warns when its destination cell is not walkable" do
-      stub(MapCache, :get, fn _ -> {:ok, %MapData{}} end)
+      stub(MapCache, :get, fn _ -> {:ok, MapData.new("prontera", 1, 1)} end)
 
       stub(MapData, :walkable?, fn
         %MapData{}, 1, 1 -> true
@@ -101,7 +101,7 @@ defmodule Aesir.ZoneServer.Npc.WarpsVerifierTest do
     end
 
     test "warns when two warps on the same map have intersecting trigger areas" do
-      stub(MapCache, :get, fn _ -> {:ok, %MapData{}} end)
+      stub(MapCache, :get, fn _ -> {:ok, MapData.new("prontera", 1, 1)} end)
       stub(MapData, :walkable?, fn _, _, _ -> true end)
 
       a = warp(id: "a", x: 150, y: 20, xs: 1, ys: 1)
@@ -114,7 +114,7 @@ defmodule Aesir.ZoneServer.Npc.WarpsVerifierTest do
     end
 
     test "does not warn when two warps on the same map do not overlap" do
-      stub(MapCache, :get, fn _ -> {:ok, %MapData{}} end)
+      stub(MapCache, :get, fn _ -> {:ok, MapData.new("prontera", 1, 1)} end)
       stub(MapData, :walkable?, fn _, _, _ -> true end)
 
       a = warp(id: "a", x: 10, y: 10, xs: 0, ys: 0)

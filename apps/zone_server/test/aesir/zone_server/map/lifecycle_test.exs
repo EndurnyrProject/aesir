@@ -1,5 +1,5 @@
 defmodule Aesir.ZoneServer.Map.LifecycleTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias Aesir.ZoneServer.Map.Lifecycle
 

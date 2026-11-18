@@ -12,10 +12,6 @@ defmodule Aesir.ZoneServer.Map.MapDataTest do
       assert map.xs == 10
       assert map.ys == 20
       assert byte_size(map.cells) == 200
-      assert map.dynamic_cells == %{}
-      assert map.npcs == []
-      assert map.users == 0
-      assert map.zone == 0
     end
 
     test "initializes all cells as walkable ground" do

@@ -24,6 +24,8 @@ defmodule Aesir.ZoneServer.NpcEventsIntegrationTest do
 
   use Aesir.ZoneServer.IntegrationCase
 
+  import Aesir.ZoneServer.Factory
+
   @moduletag :capture_log
 
   alias Aesir.Commons.Models.Character
@@ -326,7 +328,7 @@ defmodule Aesir.ZoneServer.NpcEventsIntegrationTest do
       stub(Coordinator, :mob_died, fn map_name, instance_id, killer_char_id ->
         Coordinator.handle_cast(
           {:mob_died, instance_id, killer_char_id},
-          %Coordinator{map_name: map_name, respawn_timers: %{}}
+          build(:coordinator_state, map_name: map_name)
         )
 
         :ok

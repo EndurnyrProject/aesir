@@ -7,45 +7,28 @@ defmodule Aesir.ZoneServer.Map.MapData do
   coordinator flags until their consumers migrate.
   """
 
+  use TypedStruct
+
   alias Aesir.ZoneServer.Map.GatType
 
-  defstruct [
-    :name,
-    :index,
-    :xs,
-    :ys,
-    :cells,
-    :dynamic_cells,
-    :npcs,
-    :users,
-    :instance_id,
-    :zone
-  ]
-
   @typedoc """
-  name: The name of the map (e.g. "prontera.gat")
-  index: Unique index for the map (for internal use)
+  name: The name of the map (e.g. "prontera")
   xs: Width of the map in cells
   ys: Height of the map in cells
-  cells: Raw binary data representing GAT types for each cell
-  dynamic_cells: Legacy coordinator flags; never runtime terrain contributions
-  npcs: List of NPCs on the map
-  users: Number of users currently on the map
+  cells: Raw binary data representing GAT types for each cell, row-major
+  dynamic_cells: Legacy coordinator flags by cell index; never runtime terrain contributions
   instance_id: Optional instance ID if this map is part of an instance
   zone: Zone ID for the map (for zone management)
   """
-  @type t :: %__MODULE__{
-          name: String.t(),
-          index: integer() | nil,
-          xs: integer(),
-          ys: integer(),
-          cells: binary(),
-          dynamic_cells: map(),
-          npcs: list(),
-          users: integer(),
-          instance_id: integer() | nil,
-          zone: integer()
-        }
+  typedstruct do
+    field :name, String.t(), enforce: true
+    field :xs, non_neg_integer(), enforce: true
+    field :ys, non_neg_integer(), enforce: true
+    field :cells, binary(), enforce: true
+    field :dynamic_cells, %{non_neg_integer() => %{atom() => true}}, default: %{}
+    field :instance_id, non_neg_integer()
+    field :zone, non_neg_integer(), default: 0
+  end
 
   @doc """
   Creates a new map with the given dimensions.
@@ -55,16 +38,7 @@ defmodule Aesir.ZoneServer.Map.MapData do
   def new(name, width, height) do
     cells = :binary.copy(<<GatType.walkable()>>, width * height)
 
-    %__MODULE__{
-      name: name,
-      xs: width,
-      ys: height,
-      cells: cells,
-      dynamic_cells: %{},
-      npcs: [],
-      users: 0,
-      zone: 0
-    }
+    %__MODULE__{name: name, xs: width, ys: height, cells: cells}
   end
 
   @doc """

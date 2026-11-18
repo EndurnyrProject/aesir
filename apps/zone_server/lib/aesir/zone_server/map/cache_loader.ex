@@ -10,23 +10,6 @@ defmodule Aesir.ZoneServer.Map.CacheLoader do
   @map_name_length 12
 
   @doc """
-  Loads a specific map from the cache.
-  """
-  @spec load_map_from_cache(String.t(), String.t()) :: {:ok, MapData.t()} | {:error, String.t()}
-  def load_map_from_cache(cache_path, map_name) do
-    case load_cache(cache_path) do
-      {:ok, cache_maps} ->
-        case Map.get(cache_maps, map_name) do
-          nil -> {:error, "Map #{map_name} not found in cache"}
-          map_data -> {:ok, map_data}
-        end
-
-      error ->
-        error
-    end
-  end
-
-  @doc """
   Loads a map cache file and returns all available maps.
 
   Cache file format:
@@ -41,7 +24,7 @@ defmodule Aesir.ZoneServer.Map.CacheLoader do
       - int32: len (compressed data length)
     - Compressed cell data (zlib compressed array of GAT types)
   """
-  @spec load_cache(String.t()) :: {:ok, map()} | {:error, String.t()}
+  @spec load_cache(String.t()) :: {:ok, %{String.t() => MapData.t()}} | {:error, String.t()}
   # Cache path is built from `:code.priv_dir/1` or a mix-task argument.
   # sobelow_skip ["Traversal.FileModule"]
   def load_cache(cache_path) do
@@ -144,18 +127,7 @@ defmodule Aesir.ZoneServer.Map.CacheLoader do
 
     case :zlib.uncompress(compressed_data) do
       decompressed when byte_size(decompressed) == expected_size ->
-        map = %MapData{
-          name: map_name,
-          xs: width,
-          ys: height,
-          cells: decompressed,
-          dynamic_cells: %{},
-          npcs: [],
-          users: 0,
-          zone: 0
-        }
-
-        {:ok, map}
+        {:ok, %MapData{name: map_name, xs: width, ys: height, cells: decompressed}}
 
       decompressed ->
         {:error,

@@ -7,12 +7,14 @@ defmodule Aesir.ZoneServer.Map.CoordinatorAnnouncementTest do
 
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
   import Mimic
 
   alias Aesir.Net.Announcement, as: AnnouncementMsg
   alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.Map.Coordinator
 
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
   @map_name "coordinator_announcement_test_map"
@@ -27,7 +29,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorAnnouncementTest do
       :ok
     end)
 
-    state = %Coordinator{map_name: @map_name}
+    state = build(:coordinator_state, map_name: @map_name)
 
     assert {:noreply, ^state} = Coordinator.handle_info({:announcement, packet}, state)
 

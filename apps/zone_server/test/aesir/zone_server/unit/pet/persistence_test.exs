@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.PersistenceTest do
   use Aesir.DataCase, async: true
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
@@ -84,7 +85,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.PersistenceTest do
     GroundItemStore.put("prontera", short_cards)
 
     assert {:noreply, _} =
-             Coordinator.handle_info(:expire_ground_items, %Coordinator{map_name: "prontera"})
+             Coordinator.handle_info(:expire_ground_items, build(:coordinator_state))
 
     refute Repo.get(Pet, pet.id)
   end

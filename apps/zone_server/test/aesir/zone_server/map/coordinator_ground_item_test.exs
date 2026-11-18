@@ -1,10 +1,13 @@
 defmodule Aesir.ZoneServer.Map.CoordinatorGroundItemTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
+  use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Net.ItemOnGround
   alias Aesir.Net.ItemVanished
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
@@ -15,39 +18,22 @@ defmodule Aesir.ZoneServer.Map.CoordinatorGroundItemTest do
 
   @map_name "prontera"
 
+  setup :set_mimic_from_context
   setup :setup_ets_tables
 
   defp register_observer(char_id, x, y) do
-    state = %PlayerState{
-      character_id: char_id,
-      account_id: char_id + 1000,
-      map_name: @map_name,
-      x: x,
-      y: y,
-      dir: 3,
-      movement_state: :standing,
-      view_range: 14
-    }
+    state =
+      build(:player_state, character_id: char_id, map_name: @map_name, x: x, y: y, view_range: 14)
 
     SpatialIndex.add_unit(:player, char_id, x, y, @map_name)
     UnitRegistry.register_unit(:player, char_id, PlayerState, state, self())
     state
   end
 
-  defp coordinator_state, do: %Coordinator{map_name: @map_name}
+  defp coordinator_state, do: build(:coordinator_state, map_name: @map_name)
 
   defp set_windows(values) do
-    previous =
-      Enum.map(values, fn {key, _value} -> {key, Application.get_env(:zone_server, key)} end)
-
-    Enum.each(values, fn {key, value} -> Application.put_env(:zone_server, key, value) end)
-
-    on_exit(fn ->
-      Enum.each(previous, fn
-        {key, nil} -> Application.delete_env(:zone_server, key)
-        {key, value} -> Application.put_env(:zone_server, key, value)
-      end)
-    end)
+    Enum.each(values, fn {getter, value} -> stub(Config, getter, fn -> value end) end)
   end
 
   defp drop_item(opts) do

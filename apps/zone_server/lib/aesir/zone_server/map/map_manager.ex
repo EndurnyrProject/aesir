@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Map.MapManager do
   Responsible for starting coordinators for all available maps on system startup.
   """
   use GenServer
+  use TypedStruct
 
   require Logger
 
@@ -11,11 +12,15 @@ defmodule Aesir.ZoneServer.Map.MapManager do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.PartitionedSupervisor
 
-  defstruct [
-    :initialized,
-    :coordinators,
-    :failed_maps
-  ]
+  @typedoc """
+  `coordinators` maps each started map to its coordinator pid; `failed_maps`
+  lists the maps whose coordinator failed to start.
+  """
+  typedstruct do
+    field :initialized, boolean(), default: false
+    field :coordinators, %{String.t() => pid()}, default: %{}
+    field :failed_maps, [String.t()], default: []
+  end
 
   @doc """
   Starts the MapManager GenServer.
@@ -54,12 +59,7 @@ defmodule Aesir.ZoneServer.Map.MapManager do
     # Start coordinators after other systems are ready
     Process.send_after(self(), :initialize_all_maps, 500)
 
-    {:ok,
-     %__MODULE__{
-       initialized: false,
-       coordinators: %{},
-       failed_maps: []
-     }}
+    {:ok, %__MODULE__{}}
   end
 
   @impl true

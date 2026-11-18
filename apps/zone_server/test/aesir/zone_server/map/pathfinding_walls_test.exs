@@ -5,7 +5,7 @@ defmodule Aesir.ZoneServer.Map.PathfindingWallsTest do
   free of walls.
   """
 
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   import Aesir.TestEtsSetup
 

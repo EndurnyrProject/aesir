@@ -1,15 +1,15 @@
 defmodule Aesir.ZoneServer.Map.BossRespawnTest do
-  use Aesir.DataCase, async: false
+  use Aesir.DataCase, async: true
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
   import ExUnit.CaptureLog
 
   alias Aesir.Commons.Models.BossRespawn, as: Row
+  alias Aesir.TestMob
   alias Aesir.ZoneServer.Map.BossRespawn
   alias Aesir.ZoneServer.Map.Coordinator
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Map.BossRespawnTest do
   @osiris_id 1038
   @poring_id 1002
 
+  setup :set_mimic_from_context
   setup :setup_ets_tables
   setup :verify_on_exit!
 
@@ -88,19 +89,12 @@ defmodule Aesir.ZoneServer.Map.BossRespawnTest do
     test "a boss_monster line's death writes a row, and its respawn deletes it" do
       instance_id = System.unique_integer([:positive])
 
-      spawn_config = %MobSpawn{
-        mob: @osiris_id,
-        amount: 1,
-        respawn_time: 10_000,
-        respawn_variance: 0,
-        boss: true,
-        spawn_area: %MobSpawn.SpawnArea{x: 100, y: 100, xs: 0, ys: 0}
-      }
+      spawn_config = build(:mob_spawn, mob: @osiris_id, respawn_time: 10_000, boss: true)
 
       mob_state =
         MobState.new(
           instance_id,
-          mob_definition(@osiris_id, boss?: true),
+          boss_definition(@osiris_id),
           spawn_config,
           "prontera",
           100,
@@ -109,7 +103,7 @@ defmodule Aesir.ZoneServer.Map.BossRespawnTest do
 
       UnitRegistry.register_unit(:mob, instance_id, MobState, mob_state, self())
 
-      died_state = %Coordinator{map_name: "prontera", respawn_timers: %{}, next_mob_id: 1}
+      died_state = build(:coordinator_state)
 
       before_death = DateTime.utc_now()
 
@@ -131,18 +125,12 @@ defmodule Aesir.ZoneServer.Map.BossRespawnTest do
     test "a boss-class mob on a plain monster line writes no row" do
       instance_id = System.unique_integer([:positive])
 
-      spawn_config = %MobSpawn{
-        mob: @osiris_id,
-        amount: 1,
-        respawn_time: 10_000,
-        respawn_variance: 0,
-        spawn_area: %MobSpawn.SpawnArea{x: 100, y: 100, xs: 0, ys: 0}
-      }
+      spawn_config = build(:mob_spawn, mob: @osiris_id, respawn_time: 10_000)
 
       mob_state =
         MobState.new(
           instance_id,
-          mob_definition(@osiris_id, boss?: true),
+          boss_definition(@osiris_id),
           spawn_config,
           "prontera",
           100,
@@ -151,7 +139,7 @@ defmodule Aesir.ZoneServer.Map.BossRespawnTest do
 
       UnitRegistry.register_unit(:mob, instance_id, MobState, mob_state, self())
 
-      state = %Coordinator{map_name: "prontera", respawn_timers: %{}}
+      state = build(:coordinator_state)
 
       {:noreply, _new_state} = Coordinator.handle_cast({:mob_died, instance_id, nil}, state)
 
@@ -161,18 +149,12 @@ defmodule Aesir.ZoneServer.Map.BossRespawnTest do
     test "a non-boss mob death writes no row" do
       instance_id = System.unique_integer([:positive])
 
-      spawn_config = %MobSpawn{
-        mob: @poring_id,
-        amount: 1,
-        respawn_time: 5_000,
-        respawn_variance: 0,
-        spawn_area: %MobSpawn.SpawnArea{x: 100, y: 100, xs: 0, ys: 0}
-      }
+      spawn_config = build(:mob_spawn, mob: @poring_id)
 
       mob_state =
         MobState.new(
           instance_id,
-          mob_definition(@poring_id, boss?: false),
+          TestMob.definition(id: @poring_id),
           spawn_config,
           "prontera",
           100,
@@ -181,7 +163,7 @@ defmodule Aesir.ZoneServer.Map.BossRespawnTest do
 
       UnitRegistry.register_unit(:mob, instance_id, MobState, mob_state, self())
 
-      state = %Coordinator{map_name: "prontera", respawn_timers: %{}}
+      state = build(:coordinator_state)
 
       {:noreply, _new_state} = Coordinator.handle_cast({:mob_died, instance_id, nil}, state)
 
@@ -193,19 +175,12 @@ defmodule Aesir.ZoneServer.Map.BossRespawnTest do
 
       instance_id = System.unique_integer([:positive])
 
-      spawn_config = %MobSpawn{
-        mob: @osiris_id,
-        amount: 1,
-        respawn_time: 10_000,
-        respawn_variance: 0,
-        boss: true,
-        spawn_area: %MobSpawn.SpawnArea{x: 100, y: 100, xs: 0, ys: 0}
-      }
+      spawn_config = build(:mob_spawn, mob: @osiris_id, respawn_time: 10_000, boss: true)
 
       mob_state =
         MobState.new(
           instance_id,
-          mob_definition(@osiris_id, boss?: true),
+          boss_definition(@osiris_id),
           spawn_config,
           "prontera",
           100,
@@ -214,7 +189,7 @@ defmodule Aesir.ZoneServer.Map.BossRespawnTest do
 
       UnitRegistry.register_unit(:mob, instance_id, MobState, mob_state, self())
 
-      state = %Coordinator{map_name: "prontera", respawn_timers: %{}}
+      state = build(:coordinator_state)
 
       log =
         capture_log(fn ->
@@ -239,21 +214,9 @@ defmodule Aesir.ZoneServer.Map.BossRespawnTest do
 
       stub(MobSupervisor, :spawn_mob, fn _map_name, _mob_state, _awake -> {:ok, self()} end)
 
-      spawn_config = %MobSpawn{
-        mob: @poring_id,
-        amount: 1,
-        respawn_time: 5_000,
-        respawn_variance: 0,
-        spawn_area: %MobSpawn.SpawnArea{x: 100, y: 100, xs: 0, ys: 0}
-      }
+      spawn_config = build(:mob_spawn, mob: @poring_id)
 
-      state = %Coordinator{
-        map_name: "prontera",
-        respawn_timers: %{},
-        map_data: %{width: 512, height: 512},
-        mobs_awake: true,
-        next_mob_id: 1
-      }
+      state = build(:coordinator_state, mobs_awake: true)
 
       Coordinator.handle_info({:respawn_mob, spawn_config}, state)
 
@@ -261,33 +224,6 @@ defmodule Aesir.ZoneServer.Map.BossRespawnTest do
     end
   end
 
-  defp mob_definition(mob_id, boss?: boss?) do
-    %MobDefinition{
-      id: mob_id,
-      aegis_name: "test_mob_#{mob_id}",
-      name: "Test Mob #{mob_id}",
-      level: 1,
-      hp: 100,
-      sp: 0,
-      stats: %{str: 10, agi: 10, vit: 10, int: 10, dex: 10, luk: 10},
-      atk: 10,
-      matk: 0,
-      def: 0,
-      mdef: 0,
-      attack_range: 1,
-      walk_speed: 200,
-      attack_delay: 1000,
-      attack_motion: 500,
-      client_attack_motion: 500,
-      damage_motion: 400,
-      element: {:neutral, 1},
-      race: :formless,
-      size: :medium,
-      class:
-        Aesir.ZoneServer.Mmo.MobManagement.MobMode.class(
-          if(boss?, do: [:detector, :status_immune, :knockback_immune], else: [])
-        ),
-      modes: if(boss?, do: [:detector, :status_immune, :knockback_immune], else: [])
-    }
-  end
+  defp boss_definition(mob_id),
+    do: TestMob.definition(id: mob_id, modes: [:detector, :status_immune, :knockback_immune])
 end

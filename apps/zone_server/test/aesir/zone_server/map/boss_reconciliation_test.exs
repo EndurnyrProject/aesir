@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Map.BossReconciliationTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
   import ExUnit.CaptureLog
 
   alias Aesir.Commons.Models.BossRespawn, as: Row
@@ -24,7 +25,6 @@ defmodule Aesir.ZoneServer.Map.BossReconciliationTest do
   alias Aesir.ZoneServer.Map.BossRespawn
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapData
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.Spawns
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
@@ -203,25 +203,10 @@ defmodule Aesir.ZoneServer.Map.BossReconciliationTest do
   end
 
   defp boss_spawn(amount) do
-    %MobSpawn{
-      mob: @osiris_id,
-      amount: amount,
-      respawn_time: 60_000,
-      respawn_variance: 0,
-      boss: true,
-      spawn_area: %MobSpawn.SpawnArea{x: 100, y: 100, xs: 0, ys: 0}
-    }
+    build(:mob_spawn, mob: @osiris_id, amount: amount, respawn_time: 60_000, boss: true)
   end
 
-  defp poring_spawn do
-    %MobSpawn{
-      mob: @poring_id,
-      amount: 1,
-      respawn_time: 5_000,
-      respawn_variance: 0,
-      spawn_area: %MobSpawn.SpawnArea{x: 100, y: 100, xs: 0, ys: 0}
-    }
-  end
+  defp poring_spawn, do: build(:mob_spawn, mob: @poring_id)
 
   defp write_deadline(map_name, mob_id, offset_seconds) do
     :ok =
@@ -241,14 +226,8 @@ defmodule Aesir.ZoneServer.Map.BossReconciliationTest do
   end
 
   defp tick_with_player(state) do
-    player = %PlayerState{
-      character_id: 2001,
-      map_name: state.map_name,
-      x: 100,
-      y: 100,
-      action_state: :idle,
-      stats: %{current_state: %{hp: 100}}
-    }
+    player =
+      build(:player_state, character_id: 2001, map_name: state.map_name, x: 100, y: 100)
 
     SpatialIndex.add_player(player.character_id, player.x, player.y, player.map_name)
     UnitRegistry.register_unit(:player, player.character_id, PlayerState, player, self())

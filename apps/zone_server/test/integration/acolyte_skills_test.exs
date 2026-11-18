@@ -416,7 +416,7 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
 
       # The empty test map cache cannot report a water cell, so the two map
       # collaborators `validate/4` consults are stubbed into the session process.
-      stub(MapCache, :get, fn _map -> {:ok, %MapData{name: "prontera"}} end)
+      stub(MapCache, :get, fn _map -> {:ok, MapData.new("prontera", 1, 1)} end)
       stub(MapData, :check_cell, fn _map, _x, _y, :chk_water -> true end)
       Mimic.allow(MapCache, self(), caster.pid)
       Mimic.allow(MapData, self(), caster.pid)
@@ -449,7 +449,7 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
           }
       }
 
-      stub(MapCache, :get, fn _map -> {:ok, %MapData{name: "prontera"}} end)
+      stub(MapCache, :get, fn _map -> {:ok, MapData.new("prontera", 1, 1)} end)
       stub(MapData, :check_cell, fn _map, _x, _y, :chk_water -> false end)
 
       assert {:error, :not_on_water} = AlHolywater.begin_attempt(holder, :self, 1, definition)
@@ -531,7 +531,7 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
       # The warp path is real; only the map cache is faked. `Cell.random_traversable`
       # picks a random in-bounds cell via `:rand.uniform(xs/ys)`, so a 1x1 map makes
       # the destination deterministic at {0, 0} with every cell stubbed walkable.
-      stub(MapCache, :get, fn _map -> {:ok, %MapData{name: "prontera", xs: 1, ys: 1}} end)
+      stub(MapCache, :get, fn _map -> {:ok, MapData.new("prontera", 1, 1)} end)
       stub(MapData, :walkable?, fn _map, _x, _y -> true end)
       Mimic.allow(MapCache, self(), player.pid)
       Mimic.allow(MapData, self(), player.pid)
@@ -567,7 +567,7 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
       for _ <- 1..2, do: learn(player.pid, teleport)
       flush_packets()
 
-      stub(MapCache, :get, fn _map -> {:ok, %MapData{name: "prontera"}} end)
+      stub(MapCache, :get, fn _map -> {:ok, MapData.new("prontera", 1, 1)} end)
       stub(MapData, :walkable?, fn _map, _x, _y -> true end)
       Mimic.allow(MapCache, self(), player.pid)
       Mimic.allow(MapData, self(), player.pid)

@@ -11,13 +11,13 @@ defmodule Aesir.ZoneServer.Map.Cell do
   defmodule WaterSource do
     @moduledoc "A Water Ball source and whether it is permanent terrain or a consumable cell."
 
-    @enforce_keys [:origin, :cell_id]
-    defstruct [:origin, :cell_id]
+    use TypedStruct
 
-    @type t() :: %__MODULE__{
-            origin: :base | :skill_unit | :water_ball,
-            cell_id: non_neg_integer() | nil
-          }
+    @typedoc "`cell_id` is nil for permanent `:base` water."
+    typedstruct do
+      field :origin, :base | :skill_unit | :water_ball, enforce: true
+      field :cell_id, non_neg_integer() | nil, enforce: true
+    end
   end
 
   @type contribution :: %{

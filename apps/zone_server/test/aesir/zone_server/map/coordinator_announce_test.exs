@@ -5,7 +5,9 @@ defmodule Aesir.ZoneServer.Map.CoordinatorAnnounceTest do
   the map's local players, without calling into any refine module directly.
   """
 
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
+
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Map.Coordinator
   alias Phoenix.PubSub
@@ -15,7 +17,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorAnnounceTest do
   test "relays a received server_announce event to the map's local players" do
     PubSub.subscribe(Aesir.PubSub, "map:#{@map_name}")
 
-    state = %Coordinator{map_name: @map_name}
+    state = build(:coordinator_state, map_name: @map_name)
     event = %{event: "server_announce", message: %{nameid: 1201, refine: 10}}
 
     assert {:noreply, ^state} = Coordinator.handle_info({:server_announce, event}, state)

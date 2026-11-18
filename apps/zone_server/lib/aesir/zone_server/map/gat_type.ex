@@ -9,9 +9,20 @@ defmodule Aesir.ZoneServer.Map.GatType do
   @gat_water 3
   @gat_cliff 5
 
+  @doc "Walkable ground."
+  @spec walkable() :: 0
   def walkable, do: @gat_walkable
+
+  @doc "Wall: blocks movement and projectiles."
+  @spec wall() :: 1
   def wall, do: @gat_wall
+
+  @doc "Walkable water."
+  @spec water() :: 3
   def water, do: @gat_water
+
+  @doc "Cliff: blocks movement, not projectiles."
+  @spec cliff() :: 5
   def cliff, do: @gat_cliff
 
   @doc """

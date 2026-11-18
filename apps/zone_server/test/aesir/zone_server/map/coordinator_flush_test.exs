@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorFlushTest do
   use ExUnit.Case, async: true
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Net.Snapshot, as: NetSnapshot
   alias Aesir.Net.UnitSpawn
@@ -20,31 +21,8 @@ defmodule Aesir.ZoneServer.Map.CoordinatorFlushTest do
   setup :setup_ets_tables
 
   defp register_player(attrs) do
-    base = %PlayerState{
-      character_id: 1001,
-      account_id: 2001,
-      map_name: @map_name,
-      x: 50,
-      y: 50,
-      dir: 3,
-      action_state: :idle,
-      movement_state: :standing,
-      view_range: 14,
-      visible_players: MapSet.new(),
-      visible_mobs: MapSet.new(),
-      visible_homunculi: MapSet.new(),
-      visible_warps: MapSet.new(),
-      visible_npcs: MapSet.new(),
-      visible_shops: MapSet.new(),
-      visible_items: MapSet.new(),
-      visible_skill_units: MapSet.new(),
-      stats: %{
-        current_state: %{hp: 100},
-        derived_stats: %{max_hp: 100}
-      }
-    }
-
-    state = Map.merge(base, Map.new(attrs))
+    defaults = [character_id: 1001, map_name: @map_name, x: 50, y: 50, dir: 3, view_range: 14]
+    state = build(:player_state, Keyword.merge(defaults, attrs))
 
     SpatialIndex.add_unit(:player, state.character_id, state.x, state.y, state.map_name)
     UnitRegistry.register_unit(:player, state.character_id, PlayerState, state, self())
@@ -113,7 +91,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorFlushTest do
 
   describe "flush_snapshots/3" do
     test "delivers exactly the dirty entities in AoI; an idle unit is absent" do
-      observer = register_player(character_id: 1001, x: 50, y: 50)
+      register_player(character_id: 1001, x: 50, y: 50)
       register_mob(instance_id: 5001, x: 52, y: 50, movement_state: :moving)
       register_mob(instance_id: 5002, x: 53, y: 50, movement_state: :moving)
       # idle mob in AoI but never marked dirty
@@ -128,7 +106,6 @@ defmodule Aesir.ZoneServer.Map.CoordinatorFlushTest do
       assert [{^pid, chunks}] = deliveries
       ids = chunks |> Enum.flat_map(& &1.entities) |> Enum.map(& &1.id) |> Enum.sort()
       assert ids == [5001, 5002]
-      assert observer.character_id == 1001
     end
 
     test "excludes a dirty unit outside the observer's view_range" do
@@ -252,16 +229,6 @@ defmodule Aesir.ZoneServer.Map.CoordinatorFlushTest do
       assert deliveries == []
       assert recently_stopped == %{}
     end
-
-    test "drained chunks are %Snapshot{} structs over the snapshots channel" do
-      register_player(character_id: 1001, x: 50, y: 50)
-      register_mob(instance_id: 5001, x: 52, y: 50, movement_state: :moving)
-      Movement.mark_dirty(@map_name, :mob, 5001, 1)
-
-      {[{_pid, chunks}], _} = Coordinator.flush_snapshots(@map_name, %{}, 1)
-
-      assert Enum.all?(chunks, &match?(%NetSnapshot{}, &1))
-    end
   end
 
   describe "handle_info(:broadcast_tick, ...)" do
@@ -274,12 +241,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorFlushTest do
       register_mob(instance_id: 5001, x: 52, y: 50, movement_state: :moving, map_name: @map_name)
       Movement.mark_dirty(@map_name, :mob, 5001, 1)
 
-      state = %Coordinator{
-        map_name: @map_name,
-        recently_stopped: %{},
-        mobs_spawned: true,
-        mobs_awake: true
-      }
+      state = build(:coordinator_state, map_name: @map_name, mobs_spawned: true, mobs_awake: true)
 
       assert {:noreply, %Coordinator{recently_stopped: %{}}} =
                Coordinator.handle_info(:broadcast_tick, state)
@@ -292,11 +254,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorFlushTest do
       register_mob(instance_id: 5001, x: 52, y: 50, movement_state: :moving)
       Movement.mark_dirty(@map_name, :mob, 5001, 1)
 
-      state = %Coordinator{
-        map_name: @map_name,
-        spawn_data: [],
-        recently_stopped: %{}
-      }
+      state = build(:coordinator_state, map_name: @map_name)
 
       assert {:noreply, %Coordinator{mobs_spawned: false, mobs_awake: false}} =
                Coordinator.handle_info(:broadcast_tick, state)

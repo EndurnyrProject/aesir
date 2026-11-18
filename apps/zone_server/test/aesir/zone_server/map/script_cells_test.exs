@@ -1,5 +1,5 @@
 defmodule Aesir.ZoneServer.Map.ScriptCellsTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   import Aesir.TestEtsSetup
   import ExUnit.CaptureLog
@@ -92,10 +92,8 @@ defmodule Aesir.ZoneServer.Map.ScriptCellsTest do
 
     assert Cell.icewall?("script_cells_test", 0, 0)
 
-    contribution_index = EtsTable.table_for(:dynamic_cell_contributions)
+    :ok = ScriptCells.set("script_cells_test", {0, 0}, {2, 2}, :icewall, 0)
 
-    assert :ets.lookup(contribution_index, {"script_cells_test", 0, 0, :npc_script, 0}) == [
-             {{"script_cells_test", 0, 0, :npc_script, 0}, %{icewall: true}}
-           ]
+    refute Cell.icewall?("script_cells_test", 0, 0)
   end
 end

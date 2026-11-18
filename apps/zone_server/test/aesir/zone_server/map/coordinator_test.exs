@@ -9,12 +9,13 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest.ArrivalSpy do
 end
 
 defmodule Aesir.ZoneServer.Map.CoordinatorTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
   use Mimic
 
   @moduletag :capture_log
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Cell
@@ -33,6 +34,8 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
   alias Aesir.ZoneServer.Unit.WorldId
 
   @poring_id 1002
+
+  setup :set_mimic_from_context
 
   describe "mob_died/2 routing" do
     test "routes a .gat-suffixed map name to the clean-named coordinator" do
@@ -53,7 +56,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
     test "registers the summoned mob in UnitRegistry so it is attackable" do
       stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
 
-      state = %Coordinator{map_name: "prontera", next_mob_id: 1}
+      state = build(:coordinator_state)
 
       {:reply, {:ok, instance_id}, _new_state} =
         Coordinator.handle_call({:summon_mob, @poring_id, 150, 100, []}, {self(), nil}, state)
@@ -73,7 +76,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
         MobState.new(
           42,
           Aesir.TestMob.definition(walk_speed: 95),
-          %{respawn_time: 0},
+          build(:mob_spawn),
           "prontera",
           150,
           100
@@ -81,7 +84,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
 
       master = %{master | calculated: %{master.calculated | speed: 700}}
       UnitRegistry.register_unit(:mob, 42, MobState, master, self())
-      state = %Coordinator{map_name: "prontera", next_mob_id: 1}
+      state = build(:coordinator_state)
 
       {:reply, {:ok, id}, _state} =
         Coordinator.handle_call(
@@ -125,7 +128,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
           state: %{test_pid: self()}
         })
 
-      state = %Coordinator{map_name: "prontera", next_mob_id: 1}
+      state = build(:coordinator_state)
 
       {:reply, {:ok, instance_id}, _new_state} =
         Coordinator.handle_call({:summon_mob, @poring_id, 150, 100, []}, {self(), nil}, state)
@@ -139,7 +142,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
       map_data = MapData.new("prontera", 40, 40)
       :ets.insert(EtsTable.table_for(:map_cache), {"prontera", map_data})
 
-      state = %Coordinator{map_name: "prontera", map_data: map_data, next_mob_id: 1}
+      state = build(:coordinator_state, map_data: map_data)
 
       {:reply, {:ok, instance_id}, _new_state} =
         Coordinator.handle_call({:summon_mob, @poring_id, 0, 0, []}, {self(), nil}, state)
@@ -159,7 +162,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
         {:ok, self()}
       end)
 
-      state = %Coordinator{map_name: "prontera", next_mob_id: 1}
+      state = build(:coordinator_state)
 
       opts = [
         owner_player_id: 42,
@@ -189,7 +192,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
     test "threads a :master_id opt onto the spawned mob (slave link)" do
       stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
 
-      state = %Coordinator{map_name: "prontera", next_mob_id: 1}
+      state = build(:coordinator_state)
 
       {:reply, {:ok, instance_id}, _new_state} =
         Coordinator.handle_call(
@@ -205,7 +208,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
     test "a summon without :master_id spawns masterless" do
       stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
 
-      state = %Coordinator{map_name: "prontera", next_mob_id: 1}
+      state = build(:coordinator_state)
 
       {:reply, {:ok, instance_id}, _new_state} =
         Coordinator.handle_call({:summon_mob, @poring_id, 150, 100, []}, {self(), nil}, state)
@@ -223,7 +226,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
     test "a killed summon is not scheduled for respawn" do
       stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
 
-      state = %Coordinator{map_name: "prontera", next_mob_id: 1}
+      state = build(:coordinator_state)
 
       {:reply, {:ok, instance_id}, new_state} =
         Coordinator.handle_call({:summon_mob, @poring_id, 150, 100, []}, {self(), nil}, state)
@@ -241,7 +244,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
       :ok = Cell.put("prontera", 150, 100, :test_blocker, 1, blocks_movement: true)
       reject(&MobSupervisor.spawn_mob/3)
 
-      state = %Coordinator{map_name: "prontera", map_data: map_data, next_mob_id: 1}
+      state = build(:coordinator_state, map_data: map_data)
 
       assert {:reply, {:error, :no_walkable_cell}, ^state} =
                Coordinator.handle_call(
@@ -259,7 +262,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
         {:error, :start_failed}
       end)
 
-      state = %Coordinator{map_name: "prontera", next_mob_id: 1}
+      state = build(:coordinator_state)
 
       assert {:reply, {:error, :start_failed}, ^state} =
                Coordinator.handle_call(
@@ -273,7 +276,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
     end
 
     test "replies with the error when the mob id is unknown" do
-      state = %Coordinator{map_name: "prontera", next_mob_id: 1}
+      state = build(:coordinator_state)
 
       assert {:reply, {:error, :mob_not_found}, ^state} =
                Coordinator.handle_call({:summon_mob, 9_999_999, 10, 10, []}, {self(), nil}, state)
@@ -290,7 +293,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
       map_data = MapData.new("prontera", 40, 40)
       :ets.insert(EtsTable.table_for(:map_cache), {"prontera", map_data})
 
-      state = %Coordinator{map_name: "prontera", map_data: map_data, next_mob_id: 1}
+      state = build(:coordinator_state, map_data: map_data)
 
       {:reply, {:ok, instance_id}, _new_state} =
         Coordinator.handle_call(
@@ -316,7 +319,6 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
     setup :setup_ets_tables
 
     test "delegates allocation with the existing mob ID range" do
-      Mimic.copy(WorldId)
       stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
       test_pid = self()
 
@@ -325,7 +327,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
         {:ok, 123_456}
       end)
 
-      state = %Coordinator{map_name: "prontera", next_mob_id: 1}
+      state = build(:coordinator_state)
 
       assert {:reply, {:ok, 123_456}, _new_state} =
                Coordinator.handle_call(
@@ -338,10 +340,9 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
     end
 
     test "fails fast when the world ID range is exhausted" do
-      Mimic.copy(WorldId)
       stub(WorldId, :allocate, fn 2..1_999_999, :mob -> {:error, :exhausted} end)
 
-      state = %Coordinator{map_name: "prontera", next_mob_id: 1}
+      state = build(:coordinator_state)
 
       assert_raise RuntimeError, "world ID range exhausted", fn ->
         Coordinator.handle_call({:summon_mob, @poring_id, 150, 100, []}, {self(), nil}, state)

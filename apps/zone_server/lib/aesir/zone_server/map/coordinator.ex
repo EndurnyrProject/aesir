@@ -1,5 +1,6 @@
 defmodule Aesir.ZoneServer.Map.Coordinator do
   use GenServer
+  use TypedStruct
 
   import Bitwise
 
@@ -75,30 +76,30 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   @spawn_retry_delay 5_000
   @spawn_position_attempts 100
 
-  defstruct [
-    :map_name,
-    :map_data,
-    :spawn_data,
-    :npcs,
-    :respawn_timers,
-    :next_mob_id,
-    :weather,
-    :pvp_enabled,
-    :pk_enabled,
-    :mob_supervisor_pid,
-    :empty_since,
-    boss_deadlines: %{},
-    mobs_spawned: false,
-    mobs_awake: false,
-    recently_stopped: %{}
-  ]
-
-  @typedoc "Per-map coordinator state."
-  @type t :: %__MODULE__{}
+  @typedoc """
+  Per-map coordinator state. `map_data` is nil when the map is missing from the
+  cache. `respawn_timers` holds each dead mob's pending respawn timer and spawn
+  line, by instance id. `empty_since` is the monotonic millisecond the map last
+  lost its living players, nil while any remain. `recently_stopped` counts the
+  stop echoes left per unit.
+  """
+  typedstruct do
+    field :map_name, String.t(), enforce: true
+    field :map_data, MapData.t()
+    field :spawn_data, [MobSpawn.t()], default: []
+    field :respawn_timers, %{integer() => {reference(), MobSpawn.t()}}, default: %{}
+    field :mob_supervisor_pid, pid()
+    field :empty_since, integer()
+    field :boss_deadlines, BossRespawn.deadlines(), default: %{}
+    field :mobs_spawned, boolean(), default: false
+    field :mobs_awake, boolean(), default: false
+    field :recently_stopped, %{{atom(), integer()} => non_neg_integer()}, default: %{}
+  end
 
   @doc """
   Starts a map coordinator.
   """
+  @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do
     map_name = Keyword.fetch!(opts, :map_name)
     {name, opts} = Keyword.pop(opts, :name, via_tuple(map_name))
@@ -191,14 +192,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       map_name: map_name,
       map_data: map_data,
       spawn_data: spawn_data,
-      npcs: %{},
-      respawn_timers: %{},
-      next_mob_id: 1,
-      weather: :clear,
-      pvp_enabled: Keyword.get(opts, :pvp_enabled, false),
-      pk_enabled: Keyword.get(opts, :pk_enabled, false),
       mob_supervisor_pid: mob_supervisor_pid,
-      recently_stopped: %{},
       # Boot-reconciled boss deadlines, consulted (never acted on) by this
       # map's first spawn. See `spawn_initial_mob/2`.
       boss_deadlines: BossRespawn.deadlines_for(map_name)
@@ -864,7 +858,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
         UnitRegistry.register_unit(:mob, instance_id, MobState, mob_state, mob_pid)
         :ok = StatsHandler.initialize_slave_mode(mob_state)
         Trigger.on_appear({:mob, instance_id}, state.map_name, x, y)
-        {{:ok, instance_id}, %{state | next_mob_id: state.next_mob_id + 1}}
+        {{:ok, instance_id}, state}
 
       {:error, reason} ->
         UnitRegistry.release_unit_id(instance_id, :mob)

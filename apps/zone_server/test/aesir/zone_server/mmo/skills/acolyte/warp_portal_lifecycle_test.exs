@@ -3,8 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.WarpPortalLifecycleTest do
 
   import Mimic
 
-  alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.Skill.PortalAccess
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarp
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -89,7 +88,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.WarpPortalLifecycleTest do
     }
 
     stub(UnitRegistry, :get_unit, fn :player, 3000 -> {:ok, {PlayerState, target, self()}} end)
-    stub(MapCache, :get, fn "izlude" -> {:ok, %MapData{name: "izlude", cells: nil}} end)
+    stub(PortalAccess, :allowed?, fn %PlayerState{character_id: 3000}, "izlude" -> false end)
 
     group = %Group{
       group_id: 1,

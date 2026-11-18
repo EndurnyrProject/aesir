@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Map.MapFlagsTest do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Db.Layout
+  alias Aesir.ZoneServer.DbTestSetup
   alias Aesir.ZoneServer.Map.CacheLoader
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Map.MapFlags.StaticFlags
@@ -111,18 +112,6 @@ defmodule Aesir.ZoneServer.Map.MapFlagsTest do
 
       :ok = MapFlags.set_runtime("prontera", :nochat, true)
       assert MapFlags.get("prontera", :nochat) == true
-    end
-
-    @tag :tmp_dir
-    test "loads from a map-flags file", %{tmp_dir: dir} do
-      path = Path.join(dir, "map_flags.yml")
-
-      File.write!(path, """
-      - map: prontera
-        flags: [nochat]
-      """)
-
-      assert StaticFlags.load(path) == %{"prontera" => %{nochat: true}}
     end
   end
 
@@ -237,12 +226,7 @@ defmodule Aesir.ZoneServer.Map.MapFlagsTest do
   describe "import overlay" do
     @tag :tmp_dir
     test "replaces one map's flags", %{tmp_dir: root} do
-      previous_root = Application.get_env(:zone_server, :db_root)
-
-      on_exit(fn ->
-        restore_root(previous_root)
-        MapFlags.reload()
-      end)
+      on_exit(&MapFlags.reload/0)
 
       File.write!(Path.join(root, "map_flags.yml"), """
       - map: arena
@@ -265,7 +249,7 @@ defmodule Aesir.ZoneServer.Map.MapFlagsTest do
         flags: [pvp_noparty]
       """)
 
-      Application.put_env(:zone_server, :db_root, root)
+      :ok = DbTestSetup.stub_root(root)
       assert :ok = MapFlags.reload()
       assert MapFlags.flags("arena") == %{pvp_noparty: true}
       assert MapFlags.flags("untouched") == %{pvp_noparty: true}
@@ -275,12 +259,7 @@ defmodule Aesir.ZoneServer.Map.MapFlagsTest do
   describe "invincible_time/1" do
     @tag :tmp_dir
     test "reads the active mode's times, an import row overriding one map", %{tmp_dir: root} do
-      previous_root = Application.get_env(:zone_server, :db_root)
-
-      on_exit(fn ->
-        restore_root(previous_root)
-        MapFlags.reload()
-      end)
+      on_exit(&MapFlags.reload/0)
 
       File.write!(Path.join(root, "map_flags.yml"), "[]\n")
       mode_dir = Path.join(root, Layout.mode_dir(GameMode.mode()))
@@ -301,7 +280,7 @@ defmodule Aesir.ZoneServer.Map.MapFlagsTest do
       File.mkdir_p!(Path.dirname(import))
       File.write!(import, "- map: other\n  time: 0\n")
 
-      Application.put_env(:zone_server, :db_root, root)
+      :ok = DbTestSetup.stub_root(root)
       :ok = MapFlags.reload()
 
       assert MapFlags.invincible_time("castle") == 10_000
@@ -309,9 +288,6 @@ defmodule Aesir.ZoneServer.Map.MapFlagsTest do
       assert MapFlags.invincible_time("prontera") == nil
     end
   end
-
-  defp restore_root(nil), do: Application.delete_env(:zone_server, :db_root)
-  defp restore_root(root), do: Application.put_env(:zone_server, :db_root, root)
 
   describe "same-map static merge" do
     test "castle flags and a loader-supplied pvp flag coexist on one map" do

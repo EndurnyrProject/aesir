@@ -60,7 +60,7 @@ defmodule Aesir.ZoneServer.Integration.WarpTest do
   end
 
   test "warp then MapLoaded relocates the player and respawns without a resync" do
-    stub(MapCache, :get, fn "geffen" -> {:ok, %MapData{name: "geffen"}} end)
+    stub(MapCache, :get, fn "geffen" -> {:ok, MapData.new("geffen", 1, 1)} end)
     stub(MapData, :walkable?, fn _map, 100, 120 -> true end)
     stub(SpatialIndex, :get_visible_players, fn 1000 -> [2001] end)
     stub(SpatialIndex, :remove_player, fn 1000 -> :ok end)

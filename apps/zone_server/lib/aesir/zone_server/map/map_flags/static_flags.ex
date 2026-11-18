@@ -64,7 +64,7 @@ defmodule Aesir.ZoneServer.Map.MapFlags.StaticFlags do
     |> to_index!()
   end
 
-  @spec to_index!([map()]) :: static_index()
+  @spec to_index!(term()) :: static_index()
   defp to_index!(rows) when is_list(rows) do
     Enum.reduce(rows, %{}, fn row, index -> merge_row(index, row_flags!(row)) end)
   end

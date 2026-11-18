@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Integration.OnMyMobDeadTest do
 
   @moduletag :capture_log
 
+  import Aesir.ZoneServer.Factory
   import ExUnit.CaptureLog
 
   alias Aesir.ZoneServer.Map.Coordinator
@@ -58,7 +59,7 @@ defmodule Aesir.ZoneServer.Integration.OnMyMobDeadTest do
       mob_state = build_mob_state(owner_event: "OwnerEventNpc::OnMyMobDead")
       register_mob(mob_state)
 
-      coordinator_state = %Coordinator{map_name: "prontera", respawn_timers: %{}}
+      coordinator_state = build(:coordinator_state)
 
       {:noreply, _state} =
         Coordinator.handle_cast(
@@ -75,7 +76,7 @@ defmodule Aesir.ZoneServer.Integration.OnMyMobDeadTest do
       mob_state = build_mob_state(owner_event: nil)
       register_mob(mob_state)
 
-      coordinator_state = %Coordinator{map_name: "prontera", respawn_timers: %{}}
+      coordinator_state = build(:coordinator_state)
 
       {:noreply, new_state} =
         Coordinator.handle_cast(
@@ -92,7 +93,7 @@ defmodule Aesir.ZoneServer.Integration.OnMyMobDeadTest do
       mob_state = build_mob_state(owner_event: "OwnerEventNpc::OnMyMobDead")
       register_mob(mob_state)
 
-      coordinator_state = %Coordinator{map_name: "prontera", respawn_timers: %{}}
+      coordinator_state = build(:coordinator_state)
 
       {:noreply, _state} =
         Coordinator.handle_cast({:mob_died, mob_state.instance_id, nil}, coordinator_state)
@@ -105,7 +106,7 @@ defmodule Aesir.ZoneServer.Integration.OnMyMobDeadTest do
       mob_state = build_mob_state(owner_event: "OwnerEventNpc::OnMyMobDead")
       register_mob(mob_state)
 
-      coordinator_state = %Coordinator{map_name: "prontera", respawn_timers: %{}}
+      coordinator_state = build(:coordinator_state)
 
       {:noreply, _state} =
         Coordinator.handle_cast(
@@ -121,7 +122,7 @@ defmodule Aesir.ZoneServer.Integration.OnMyMobDeadTest do
       mob_state = build_mob_state(owner_event: "Nowhere::OnMyMobDead")
       register_mob(mob_state)
 
-      coordinator_state = %Coordinator{map_name: "prontera", respawn_timers: %{}}
+      coordinator_state = build(:coordinator_state)
 
       log =
         capture_log(fn ->
@@ -141,7 +142,7 @@ defmodule Aesir.ZoneServer.Integration.OnMyMobDeadTest do
       mob_state = build_mob_state(owner_event: "PlacementNpc::OnUndeclared")
       register_mob(mob_state)
 
-      coordinator_state = %Coordinator{map_name: "prontera", respawn_timers: %{}}
+      coordinator_state = build(:coordinator_state)
 
       log =
         capture_log(fn ->

@@ -78,14 +78,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PortalAccess do
   defp allowed_on_map?(player, map_name, map) do
     job_id = player_job_id(player.stats)
 
-    with true <- is_binary(map.cells),
-         {:ok, _job} <- Jobs.by_id(job_id) do
-      restriction = Map.get(index()["jobs"], to_string(job_id), %{})
-      level = if restriction == %{}, do: 0, else: permissions(player).level
-      static_zone = get_in(index(), ["maps", map_name, "zone"]) || 0
-      job_allowed?(restriction, level, MapFlags.flags(map_name), static_zone ||| (map.zone || 0))
-    else
-      _ -> false
+    case Jobs.by_id(job_id) do
+      {:ok, _job} ->
+        restriction = Map.get(index()["jobs"], to_string(job_id), %{})
+        level = if restriction == %{}, do: 0, else: permissions(player).level
+        static_zone = get_in(index(), ["maps", map_name, "zone"]) || 0
+        job_allowed?(restriction, level, MapFlags.flags(map_name), static_zone ||| map.zone)
+
+      _ ->
+        false
     end
   end
 

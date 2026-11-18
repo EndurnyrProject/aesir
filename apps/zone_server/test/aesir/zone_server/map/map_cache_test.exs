@@ -1,5 +1,5 @@
 defmodule Aesir.ZoneServer.Map.MapCacheTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   import Aesir.TestEtsSetup
 

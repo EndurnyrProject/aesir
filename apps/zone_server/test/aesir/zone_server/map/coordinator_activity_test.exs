@@ -6,10 +6,11 @@ defmodule Aesir.ZoneServer.Map.CoordinatorActivityTest do
   data (Poring), with the supervisor layer stubbed.
   """
 
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Cell
@@ -26,6 +27,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorActivityTest do
   @map_name "coordinator_activity_test_map"
   @poring_id 1002
 
+  setup :set_mimic_from_context
   setup :setup_ets_tables
   setup :verify_on_exit!
 
@@ -56,39 +58,35 @@ defmodule Aesir.ZoneServer.Map.CoordinatorActivityTest do
   end
 
   defp base_state(overrides) do
-    struct!(
-      %Coordinator{
-        map_name: @map_name,
-        spawn_data: [spawn_config()],
-        map_data: MapData.new(@map_name, 200, 200),
-        respawn_timers: %{},
-        next_mob_id: 1,
-        recently_stopped: %{}
-      },
-      overrides
-    )
+    defaults = [
+      map_name: @map_name,
+      spawn_data: [spawn_config()],
+      map_data: MapData.new(@map_name, 200, 200)
+    ]
+
+    build(:coordinator_state, Keyword.merge(defaults, overrides))
   end
 
   defp spawn_config do
-    %MobSpawn{
+    build(:mob_spawn,
       mob: @poring_id,
       amount: 2,
-      respawn_time: 5_000,
       spawn_area: %MobSpawn.SpawnArea{x: 100, y: 100, xs: 3, ys: 3}
-    }
+    )
   end
 
   defp tick(state), do: Coordinator.handle_info(:broadcast_tick, state)
 
   defp register_player(action_state, hp) do
-    player = %PlayerState{
-      character_id: 1001,
-      map_name: @map_name,
-      x: 100,
-      y: 100,
-      action_state: action_state,
-      stats: %{current_state: %{hp: hp}}
-    }
+    player =
+      build(:player_state,
+        character_id: 1001,
+        map_name: @map_name,
+        x: 100,
+        y: 100,
+        action_state: action_state,
+        stats: %{current_state: %{hp: hp}}
+      )
 
     SpatialIndex.add_player(player.character_id, player.x, player.y, player.map_name)
     UnitRegistry.register_unit(:player, player.character_id, PlayerState, player, self())
@@ -206,12 +204,11 @@ defmodule Aesir.ZoneServer.Map.CoordinatorActivityTest do
         |> MapData.new(200, 200)
         |> MapData.set_cell(0, 0, GatType.wall())
 
-      config = %MobSpawn{
-        mob: @poring_id,
-        amount: 1,
-        respawn_time: 5_000,
-        spawn_area: %MobSpawn.SpawnArea{x: 0, y: 0, xs: 0, ys: 0}
-      }
+      config =
+        build(:mob_spawn,
+          mob: @poring_id,
+          spawn_area: %MobSpawn.SpawnArea{x: 0, y: 0, xs: 0, ys: 0}
+        )
 
       state = base_state(map_data: map_data, mobs_spawned: true, mobs_awake: true)
       :ets.insert(EtsTable.table_for(:map_cache), {@map_name, map_data})
@@ -236,12 +233,11 @@ defmodule Aesir.ZoneServer.Map.CoordinatorActivityTest do
     end
 
     test "a fixed spawn point is used as-is" do
-      config = %MobSpawn{
-        mob: @poring_id,
-        amount: 1,
-        respawn_time: 5_000,
-        spawn_area: %MobSpawn.SpawnArea{x: 42, y: 43, xs: 0, ys: 0}
-      }
+      config =
+        build(:mob_spawn,
+          mob: @poring_id,
+          spawn_area: %MobSpawn.SpawnArea{x: 42, y: 43, xs: 0, ys: 0}
+        )
 
       state = base_state(mobs_spawned: true, mobs_awake: true)
 
@@ -253,22 +249,16 @@ defmodule Aesir.ZoneServer.Map.CoordinatorActivityTest do
 
   describe "spawn retry when the target cell is blocked" do
     setup do
-      prev = Application.get_env(:zone_server, :spawn_retry_delay_ms)
-      Application.put_env(:zone_server, :spawn_retry_delay_ms, 10)
-
-      on_exit(fn ->
-        case prev do
-          nil -> Application.delete_env(:zone_server, :spawn_retry_delay_ms)
-          value -> Application.put_env(:zone_server, :spawn_retry_delay_ms, value)
-        end
+      stub(Application, :get_env, fn
+        :zone_server, :spawn_retry_delay_ms, _default -> 10
+        app, key, default -> call_original(Application, :get_env, [app, key, default])
       end)
 
-      config = %MobSpawn{
-        mob: @poring_id,
-        amount: 1,
-        respawn_time: 5_000,
-        spawn_area: %MobSpawn.SpawnArea{x: 42, y: 43, xs: 0, ys: 0}
-      }
+      config =
+        build(:mob_spawn,
+          mob: @poring_id,
+          spawn_area: %MobSpawn.SpawnArea{x: 42, y: 43, xs: 0, ys: 0}
+        )
 
       %{config: config}
     end

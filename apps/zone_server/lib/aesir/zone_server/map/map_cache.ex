@@ -1,4 +1,8 @@
 defmodule Aesir.ZoneServer.Map.MapCache do
+  @moduledoc """
+  ETS cache of every map's `MapData`, keyed by map name without the `.gat` suffix.
+  """
+
   require Logger
 
   alias Aesir.ZoneServer.Map.CacheLoader
@@ -9,6 +13,7 @@ defmodule Aesir.ZoneServer.Map.MapCache do
   @doc """
   Initializes the map cache and loads all maps.
   """
+  @spec init() :: :ok
   def init do
     cache_path = Path.join(:code.priv_dir(:zone_server), "maps.mcache")
 
@@ -30,6 +35,7 @@ defmodule Aesir.ZoneServer.Map.MapCache do
   @doc """
   Gets map data by name.
   """
+  @spec get(String.t()) :: {:ok, MapData.t()} | {:error, :not_found}
   def get(map_name) when is_binary(map_name) do
     cache_name = String.replace_suffix(map_name, ".gat", "")
 
@@ -42,6 +48,7 @@ defmodule Aesir.ZoneServer.Map.MapCache do
   @doc """
   Gets map data by name, raises if not found.
   """
+  @spec get!(String.t()) :: MapData.t()
   def get!(map_name) do
     case get(map_name) do
       {:ok, map_data} -> map_data
@@ -52,6 +59,7 @@ defmodule Aesir.ZoneServer.Map.MapCache do
   @doc """
   Checks if a map exists in the cache.
   """
+  @spec exists?(String.t()) :: boolean()
   def exists?(map_name) do
     :ets.member(table_for(:map_cache), map_name)
   end
@@ -59,6 +67,7 @@ defmodule Aesir.ZoneServer.Map.MapCache do
   @doc """
   Lists all cached map names.
   """
+  @spec list_maps() :: [String.t()]
   def list_maps do
     :ets.select(table_for(:map_cache), [{{:"$1", :_}, [], [:"$1"]}])
   end
@@ -66,6 +75,7 @@ defmodule Aesir.ZoneServer.Map.MapCache do
   @doc """
   Checks if a position is walkable on a map.
   """
+  @spec walkable?(String.t(), integer(), integer()) :: boolean()
   def walkable?(map_name, x, y) do
     case get(map_name) do
       {:ok, map_data} -> MapData.walkable?(map_data, x, y)
