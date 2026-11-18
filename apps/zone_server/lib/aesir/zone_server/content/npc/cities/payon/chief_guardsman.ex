@@ -37,10 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Payon.ChiefGuardsman do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     ctx
     |> mes("[Chief Guardsman]")
@@ -62,6 +59,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Payon.ChiefGuardsman do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 end

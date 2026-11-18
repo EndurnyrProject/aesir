@@ -42,10 +42,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.BardSkills.Yhelle do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FBardskillyhelle
-  alias Aesir.ZoneServer.Script.Ctx
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx) do
     ctx
     |> disablenpc("Yhelle#bard_chick5")
@@ -76,7 +74,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.BardSkills.Yhelle do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> emotion(:huk)

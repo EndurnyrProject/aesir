@@ -40,13 +40,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.BardSkills.YoungMan do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @tropical_sograt 12112
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch", ctx) do
     if bard?(ctx), do: emotion(ctx, :huk), else: ctx
   catch
@@ -54,7 +52,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.BardSkills.YoungMan do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if bard?(ctx), do: confront_bard(ctx), else: fear_bards(ctx)
   catch

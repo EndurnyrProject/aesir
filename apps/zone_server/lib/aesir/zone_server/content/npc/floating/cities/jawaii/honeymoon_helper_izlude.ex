@@ -87,13 +87,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Jawaii.HoneymoonHelperIzl
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @fare 100_000
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, choice} =
       ctx

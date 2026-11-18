@@ -878,10 +878,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.M011Sintrap do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     if get_npc_var_of(ctx, "DisableTraps", "Beholder#ASNTEST", 0) < 1 do
       ctx
@@ -900,7 +897,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.M011Sintrap do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnTouch_", ctx)
 end

@@ -39,11 +39,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M11e.Ninja.SuspiciousMan do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :NINJ_Q, 0) do
       1 -> ask_for_minerals(ctx)

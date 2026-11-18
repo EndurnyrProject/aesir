@@ -31,14 +31,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.NoviceSkills.ChivalryMember
       %{map: "prt_in", x: 73, y: 87, dir: 4, sprite: 65, name: "Chivalry Member", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @play_dead 143
   @newbie_tag 7039
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if eligible?(ctx) do
       ctx

@@ -44,7 +44,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.MerchantSkills.Necko do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @crazy_uproar 155
@@ -53,7 +52,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.MerchantSkills.Necko do
   @mushroom_spore 921
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     ctx
     |> mes("[!?]")
@@ -65,7 +63,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.MerchantSkills.Necko do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       Rathena.job_id(base_class(ctx)) != Rathena.job_id(:merchant) -> store_closed(ctx)

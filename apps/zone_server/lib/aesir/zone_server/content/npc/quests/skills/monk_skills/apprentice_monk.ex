@@ -40,14 +40,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.MonkSkills.ApprenticeMonk d
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @spiritual_bestowment 1015
   @excruciating_palm 1016
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:monk) do
       monk_progress(ctx, get_char_var(ctx, :MONK_SK, 0))

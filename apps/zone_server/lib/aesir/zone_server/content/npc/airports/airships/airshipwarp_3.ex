@@ -45,15 +45,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Airshipwarp3 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     case get_server_temp_var(ctx, "airplanelocation2", 0) do
       0 -> warp(ctx, "ra_fild12", 292, 204)

@@ -22,10 +22,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lutie.Poze do
     scope: :shared,
     spawn: [%{map: "xmas", x: 117, y: 304, dir: 4, sprite: 713, name: "Poze", scope: :shared}]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :xmas_npc, 0) in [3, 4] do
       discuss_snowysnow(ctx)

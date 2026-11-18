@@ -32,10 +32,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Mage.Bookshelf do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, solution} =
       ctx

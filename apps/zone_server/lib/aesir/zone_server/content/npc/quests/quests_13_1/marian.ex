@@ -44,13 +44,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Marian do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @supply_box 6045
   @gift 12322
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       checkweight(ctx, [{1201, 1}]) == 0 or get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 1000 ->

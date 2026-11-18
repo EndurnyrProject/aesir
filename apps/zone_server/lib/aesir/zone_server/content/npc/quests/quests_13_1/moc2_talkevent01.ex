@@ -37,14 +37,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Moc2Talkevent01 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch", ctx), do: wake_up(ctx)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: wake_up(ctx)
 
   defp wake_up(ctx) do

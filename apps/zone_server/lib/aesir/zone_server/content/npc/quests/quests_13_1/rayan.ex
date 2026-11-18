@@ -37,12 +37,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Rayan do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @npc "Rayan#moc_room2_2"
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> mes("- For some reason, Rayan is shivering in fear. -")
@@ -58,7 +55,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Rayan do
 
   # The reference's `OnInit` label is empty, so booting falls through into `OnDisable`.
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, @npc)
   def on_event("OnDisable", ctx), do: disablenpc(ctx, @npc)
   def on_event("OnEnable", ctx), do: enablenpc(ctx, @npc)

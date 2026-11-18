@@ -40,16 +40,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Hue372123 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @npc "Hue#ep131_rhea06"
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnEnable", ctx), do: ctx |> initnpctimer() |> enablenpc(@npc)
   def on_event("OnDisable", ctx), do: ctx |> stopnpctimer() |> disablenpc(@npc)
   def on_event("OnInit", ctx), do: disablenpc(ctx, @npc)

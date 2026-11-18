@@ -40,20 +40,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.ScrutinyAssociation do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @notice "Currently, the Dungeon Teleport Service Provider Election is being held in all major cities. Your participation is appreciated."
   @color "0x70dbdb"
   @election_timer "Scrutiny Association#5::OnEnable"
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: initnpctimer(ctx)
   def on_event("OnEnable", ctx), do: initnpctimer(ctx)
   def on_event("OnTimer7200000", ctx), do: announce_election(ctx)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: initnpctimer(ctx)
 
   defp announce_election(ctx) do

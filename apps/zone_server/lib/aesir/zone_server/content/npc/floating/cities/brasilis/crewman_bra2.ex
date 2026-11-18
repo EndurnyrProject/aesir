@@ -45,13 +45,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Brasilis.CrewmanBra2 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @vip_status_active 1
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, answer} =
       ctx

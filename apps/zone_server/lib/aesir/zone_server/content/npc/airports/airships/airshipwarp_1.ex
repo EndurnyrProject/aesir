@@ -45,14 +45,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Airshipwarp1 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   # The reference stacks this label on the next one, so both run the same body.
   def on_event("OnInit", ctx), do: on_event("OnHide", ctx)
   def on_event("OnHide", ctx), do: ctx |> specialeffect(:bash) |> disablenpc()

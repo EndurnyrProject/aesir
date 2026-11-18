@@ -210,8 +210,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests131.MysteriousRock 
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @stone 7049
   @boody_red 990
   @crystal_blue 991
@@ -223,7 +221,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests131.MysteriousRock 
   @minerals_per_visit 3
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if mineable?(ctx) do
       ctx =
@@ -242,7 +239,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests131.MysteriousRock 
   end
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTimer120000", ctx), do: ctx |> enablenpc() |> stopnpctimer()
 
   # The rock stops paying out while the player holds three minerals or is already inside the

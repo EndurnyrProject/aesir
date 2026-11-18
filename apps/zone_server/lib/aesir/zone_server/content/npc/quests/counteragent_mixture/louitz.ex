@@ -43,13 +43,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.CounteragentMixture.Louitz do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @detrimindexta 971
   @karvodailnirol 972
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :molgenstain, 0) == 2 do
       met_morgenstein_yet(ctx)

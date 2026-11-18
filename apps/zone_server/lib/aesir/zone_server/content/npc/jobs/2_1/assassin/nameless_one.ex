@@ -50,8 +50,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.NamelessOne do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @skill_quiz [
     {["1. Choose skill that is not required to learn Grimtooth."],
      [
@@ -162,7 +160,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.NamelessOne do
   ]
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     if get_char_var(ctx, :ASSIN_Q2, 0) < 5 do
       cond do
@@ -179,7 +176,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.NamelessOne do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnTouch_", ctx)
 

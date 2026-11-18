@@ -129,7 +129,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.MiroRfMain do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FOkolnir
-  alias Aesir.ZoneServer.Script.Ctx
 
   @wave_points [
     57,
@@ -314,11 +313,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.MiroRfMain do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnEnable", ctx) do
     {ctx, castle} = FOkolnir.call(ctx, [])
 

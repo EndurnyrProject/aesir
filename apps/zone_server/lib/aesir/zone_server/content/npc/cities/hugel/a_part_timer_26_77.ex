@@ -31,10 +31,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Hugel.APartTimer2677 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> mes("^3355FFThis part-timer is")

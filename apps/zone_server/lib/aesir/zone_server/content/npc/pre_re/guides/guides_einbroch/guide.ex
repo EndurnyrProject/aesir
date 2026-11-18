@@ -57,8 +57,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesEinbroch.Guide do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @locations [
     {[
        "[Einbroch Guide]",
@@ -146,7 +144,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesEinbroch.Guide do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> cutin("ein_soldier", 2)

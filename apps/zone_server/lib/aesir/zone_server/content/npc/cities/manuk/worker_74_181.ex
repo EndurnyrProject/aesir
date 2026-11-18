@@ -28,10 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Manuk.Worker74181 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 do
       ctx |> mes("[Worker]") |> mes("Chef Cook, how many plates should I put down?") |> close()

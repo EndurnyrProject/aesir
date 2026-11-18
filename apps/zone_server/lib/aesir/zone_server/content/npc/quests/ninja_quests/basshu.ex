@@ -28,7 +28,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.NinjaQuests.Basshu do
     scope: :shared,
     spawn: [%{map: "que_ng", x: 28, y: 45, dir: 3, sprite: 86, name: "Basshu", scope: :shared}]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @mirror_shield 2107
@@ -40,7 +39,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.NinjaQuests.Basshu do
   @only_once "Come again when you have these materials."
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       Rathena.job_id(base_class(ctx)) != Rathena.job_id(:ninja) -> turn_away(ctx)

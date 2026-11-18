@@ -37,10 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.PileOfStone do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :HELLIONQ, 0) == 49 do
       read_engraving(ctx)

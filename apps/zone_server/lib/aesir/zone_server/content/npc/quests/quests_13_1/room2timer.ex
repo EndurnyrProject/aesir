@@ -40,8 +40,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Room2timer do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @map "que_job01"
 
   @enter_message "Master Zone 2 is now under surveillance."
@@ -55,11 +53,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Room2timer do
   @room "que_job01#room_2"
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: announce_entry(ctx)
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnEnable", ctx), do: announce_entry(ctx)
 
   def on_event("OnStop", ctx) do

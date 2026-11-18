@@ -51,8 +51,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Thomas do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @mob_event "timestopper#1::OnMyMobDead"
 
   @test_monsters [
@@ -88,7 +86,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Thomas do
   ]
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     if get_char_var(ctx, :ASSIN_Q, 0) == 4 do
       offer_retry(ctx)
@@ -104,7 +101,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Thomas do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   defp offer_retry(ctx) do

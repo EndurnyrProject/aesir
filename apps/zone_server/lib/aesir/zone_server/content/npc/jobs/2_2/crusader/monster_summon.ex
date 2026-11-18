@@ -46,12 +46,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Crusader.MonsterSummon do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @on_dead "Monster Summon#cr0::OnDead"
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, "Monster Summon#cr0")
 
   def on_event("OnStart", ctx) do
@@ -85,7 +82,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Crusader.MonsterSummon do
   def on_event("OnReset", ctx), do: killmonster(ctx, "job_cru", @on_dead)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnInit", ctx)
 

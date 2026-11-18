@@ -65,8 +65,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesLighthalzen.Guide do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @locations [
     {[
        "[Lighthalzen Guide]",
@@ -164,7 +162,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesLighthalzen.Guide do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> cutin("ein_soldier", 2)

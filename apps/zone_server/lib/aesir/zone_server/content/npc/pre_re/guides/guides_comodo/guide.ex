@@ -32,10 +32,8 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesComodo.Guide do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.PreRe.Functions.FCmdguide
-  alias Aesir.ZoneServer.Script.Ctx
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, _} = FCmdguide.call(ctx, ["Native Papaya"])
     ctx

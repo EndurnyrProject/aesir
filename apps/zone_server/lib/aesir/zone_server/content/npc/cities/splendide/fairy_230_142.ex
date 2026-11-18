@@ -33,10 +33,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Splendide.Fairy230142 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
       ctx |> mes("[Fairy]") |> mes("Ah-Ha, I am so stunning.") |> close()

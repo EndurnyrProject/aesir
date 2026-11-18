@@ -47,10 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests131.MemberOfAllianc
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :ep13_ryu, 0) in [12, 13] do
       secret_plans(ctx)

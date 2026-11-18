@@ -54,8 +54,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests131.Diego do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @strong_vine 6041
   @ordinary_branch 6042
   @materials_needed 20
@@ -64,7 +62,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests131.Diego do
   @pies_rewarded 5
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :ep13_newbs, 0) do
       step when step < 5 -> busy(ctx)

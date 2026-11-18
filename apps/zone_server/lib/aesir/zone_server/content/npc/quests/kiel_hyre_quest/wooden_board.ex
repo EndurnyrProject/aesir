@@ -35,10 +35,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.WoodenBoard do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if checkweight(ctx, [{7503, 1}]) == 0 do
       inventory_full(ctx)

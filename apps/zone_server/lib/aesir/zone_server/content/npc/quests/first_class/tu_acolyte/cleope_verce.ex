@@ -33,11 +33,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.CleopeVerce d
       %{map: "prt_monk", x: 153, y: 210, dir: 3, sprite: 95, name: "Cleope Verce", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Cleope Verce]")
 

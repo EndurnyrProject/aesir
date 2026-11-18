@@ -33,7 +33,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.HunterSkills.Arpesto do
       %{map: "pay_arche", x: 109, y: 169, dir: 3, sprite: 712, name: "Arpesto", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @phantasmic_arrow 1009
@@ -42,7 +41,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.HunterSkills.Arpesto do
   @pet_food 537
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:hunter) do
       hunter(ctx, get_char_var(ctx, :qskill_hunter, 0))

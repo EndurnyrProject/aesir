@@ -28,18 +28,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M21.Priest.ZC do
 
   use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @generator "Zombie_Generator#prst"
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnMyMobDead", ctx) do
     remaining = get_npc_var_of(ctx, "MyMobs", @generator, 0) - 1
     set_npc_var_of(ctx, "MyMobs", @generator, remaining)
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 end

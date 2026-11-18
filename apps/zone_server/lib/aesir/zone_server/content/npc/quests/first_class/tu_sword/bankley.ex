@@ -32,10 +32,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuSword.Bankley do
       %{map: "morocc_in", x: 12, y: 156, dir: 3, sprite: 97, name: "Bankley", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :tu_swordman, 0) do
       step when step > 19 -> lifeless_body(ctx)

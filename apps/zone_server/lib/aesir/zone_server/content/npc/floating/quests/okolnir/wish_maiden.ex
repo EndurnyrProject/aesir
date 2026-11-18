@@ -128,11 +128,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.WishMaiden do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FOkolnir
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = identify_realm(ctx)
 
@@ -172,7 +170,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.WishMaiden do
   end
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx) do
     ctx = identify_realm(ctx)
     suffix = get_local(ctx, :"sub$", "")

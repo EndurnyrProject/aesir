@@ -39,10 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Lvl4WeaponQuest.BillThayer do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :lv4_weapon, 0) do
       stage when stage in [54, 55, 36, 37, 27, 28] ->

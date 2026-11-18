@@ -31,8 +31,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Nuria do
       %{map: "ra_temple", x: 122, y: 174, dir: 3, sprite: 918, name: "Nuria", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @report 11012
 
   # Steps in which the player is carrying the report to Nuria.
@@ -45,7 +43,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Nuria do
   @report_advances %{9 => 111, 101 => 102, 121 => 123}
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Nuria]")
     step = get_char_var(ctx, :ep13_1_edq, 0)

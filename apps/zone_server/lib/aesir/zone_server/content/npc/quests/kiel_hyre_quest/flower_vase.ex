@@ -35,10 +35,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.FlowerVase do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = ctx |> mes("^3355FFYou found") |> mes("a flower vase.^000000")
 

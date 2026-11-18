@@ -31,7 +31,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric do
       %{map: "prt_church", x: 173, y: 23, dir: 4, sprite: 79, name: "Cleric", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @holy_light 156
@@ -40,7 +39,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric do
   @rosary 2608
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, choice} =
       ctx

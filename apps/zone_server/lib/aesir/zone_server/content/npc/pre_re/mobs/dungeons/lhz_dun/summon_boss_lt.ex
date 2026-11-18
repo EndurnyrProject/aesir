@@ -37,8 +37,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Mobs.Dungeons.LhzDun.SummonBossLt d
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @map "lhz_dun03"
   @summon_event "summon_boss_lt::OnSummon"
   @mvp_death_event "summon_boss_lt::OnLhzMvPDead"
@@ -47,7 +45,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Mobs.Dungeons.LhzDun.SummonBossLt d
   @minion_spots [{183, 97}, {97, 96}, {47, 139}, {231, 140}, {139, 211}, {139, 259}]
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: initnpctimer(ctx)
   def on_event("OnTimer6000000", ctx), do: summon_if_rolled(ctx, 1)
   def on_event("OnTimer6300000", ctx), do: summon_if_rolled(ctx, 2)
@@ -61,7 +58,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Mobs.Dungeons.LhzDun.SummonBossLt d
   def on_event("OnMy99Dead", ctx), do: ctx
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: initnpctimer(ctx)
 
   defp summon_if_rolled(ctx, expected) do

@@ -35,10 +35,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.BigDoor42177 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_npc_var(ctx, "KHDoor4Opened", 0) == 0 do
       unlock_door(ctx)

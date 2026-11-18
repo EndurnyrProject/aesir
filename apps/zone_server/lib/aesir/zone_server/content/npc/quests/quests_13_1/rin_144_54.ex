@@ -46,8 +46,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Rin14454 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @npc "Rin#moc_room2_2"
   @rayan "Rayan#moc_room2_2"
   @tracing_log 6029
@@ -55,13 +53,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Rin14454 do
   @patterns ["SDHF92F-SDF", "VWNM94GVWN90", "CM3-TRDFGHE0"]
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, @npc)
   def on_event("OnDisable", ctx), do: disablenpc(ctx, @npc)
   def on_event("OnEnable", ctx), do: enablenpc(ctx, @npc)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if checkweight(ctx, [{714, 1}]) == 0 do
       overloaded(ctx)

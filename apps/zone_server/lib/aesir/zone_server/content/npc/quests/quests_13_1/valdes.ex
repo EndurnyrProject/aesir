@@ -39,7 +39,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Valdes do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @npc "Valdes#moc_master_1"
@@ -48,7 +47,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Valdes do
   @request_items [6029, 7418, 7416]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Valdes]")
 
@@ -60,7 +58,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Valdes do
   end
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, @npc)
   def on_event("OnDisable", ctx), do: disablenpc(ctx, @npc)
   def on_event("OnEnable", ctx), do: enablenpc(ctx, @npc)

@@ -40,16 +40,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.EnvClear do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @botanist "Botanist#ep13_1"
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch", ctx), do: study(ctx)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: study(ctx)
 
   defp study(ctx) do

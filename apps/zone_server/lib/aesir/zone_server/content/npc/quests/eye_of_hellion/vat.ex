@@ -37,10 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.Vat do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :HELLIONQ, 0) == 51 do
       read_message(ctx)

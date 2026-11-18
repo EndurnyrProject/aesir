@@ -40,14 +40,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Ep13bs do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx), do: sleep_in(ctx)
 
   defp sleep_in(ctx) do

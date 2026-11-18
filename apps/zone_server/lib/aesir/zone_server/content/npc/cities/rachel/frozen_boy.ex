@@ -26,10 +26,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.FrozenBoy do
       %{map: "ice_dun04", x: 33, y: 166, dir: 3, sprite: 925, name: "Frozen Boy", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = cutin(ctx, "ra_sboy.bmp", 2)
 

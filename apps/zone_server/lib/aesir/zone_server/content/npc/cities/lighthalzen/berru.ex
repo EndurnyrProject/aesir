@@ -44,10 +44,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Berru do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case Enum.random(1..3) do
       1 ->

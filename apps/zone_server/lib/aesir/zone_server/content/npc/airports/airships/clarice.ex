@@ -20,10 +20,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Clarice do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.Applegamble
-  alias Aesir.ZoneServer.Script.Ctx
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, _} =
       ctx

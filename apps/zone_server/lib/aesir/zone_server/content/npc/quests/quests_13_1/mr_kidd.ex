@@ -44,15 +44,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.MrKidd do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: set_server_temp_var(ctx, "moc_mao_gate1", 0)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if checkweight(ctx, [{714, 1}]) == 0 do
       overloaded(ctx)

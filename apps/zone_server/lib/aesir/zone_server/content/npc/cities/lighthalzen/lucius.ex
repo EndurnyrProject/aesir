@@ -36,10 +36,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Lucius do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if zeny(ctx) < 90_000 do
       request_donation(ctx)

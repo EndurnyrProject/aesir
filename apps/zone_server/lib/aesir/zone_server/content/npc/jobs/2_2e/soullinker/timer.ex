@@ -39,10 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.Timer do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnEnable", ctx), do: initnpctimer(ctx)
   def on_event("OnDisable", ctx), do: stop_ceremony(ctx)
   # The reference stacks these labels on the next one, so they all run the same body.
@@ -69,7 +66,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.Timer do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   defp stop_ceremony(ctx) do

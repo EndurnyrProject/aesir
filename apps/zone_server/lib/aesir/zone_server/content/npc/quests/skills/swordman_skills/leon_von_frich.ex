@@ -44,13 +44,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.SwordmanSkills.LeonVonFrich
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @fatal_blow 145
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     ctx |> mes("[Leon]") |> mes("Hahahahahahaha!") |> mes("Hahahahahahaha!") |> close()
   catch
@@ -58,7 +56,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.SwordmanSkills.LeonVonFrich
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if eligible?(ctx) do
       swordman_visit(ctx)

@@ -39,13 +39,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.WizardSkills.Meow do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @sight_blaster 1006
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:wizard) do
       wizard_talk(ctx, get_char_var(ctx, :WIZ_SK, 0))

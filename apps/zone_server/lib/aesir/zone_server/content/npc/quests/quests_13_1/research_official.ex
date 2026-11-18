@@ -44,7 +44,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.ResearchOfficial do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @npc "Research Official#ep131"
@@ -52,7 +51,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.ResearchOfficial do
   @first_aid_kit 12_110
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       overloaded?(ctx) -> overloaded(ctx)
@@ -62,7 +60,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.ResearchOfficial do
   end
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx), do: on_talk(ctx)
 
   def on_event("OnInit", ctx) do

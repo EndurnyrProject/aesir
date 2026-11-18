@@ -39,7 +39,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.CrusaderSkills.Pastor do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @shrink 1002
@@ -52,7 +51,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.CrusaderSkills.Pastor do
   @unripe_apple 619
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:crusader) do
       paladin_with_shrink? = upper(ctx) == 1 and Rathena.truthy?(getskilllv(ctx, @shrink))

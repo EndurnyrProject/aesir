@@ -35,10 +35,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Bookshelf do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if (count_item(ctx, 7491) < 1 and count_item(ctx, 7329) >= 1) or count_item(ctx, 7516) >= 1 do
       examine_book(ctx)

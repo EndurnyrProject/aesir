@@ -32,10 +32,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.OfficerA do
       %{map: "lhz_in01", x: 32, y: 22, dir: 3, sprite: 109, name: "Officer A", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :ep13_ryu, 0) do
       20 -> sent_back(ctx)

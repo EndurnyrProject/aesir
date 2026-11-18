@@ -38,16 +38,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.RoomOfFire4699 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, "Room of Fire#Failed")
 
   def on_event("OnTouch_", ctx), do: warp(ctx, "geffen", 120, 110)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnInit", ctx)
 end

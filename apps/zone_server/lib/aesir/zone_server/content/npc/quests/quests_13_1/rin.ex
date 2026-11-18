@@ -42,13 +42,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Rin do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @dark_crystal 6027
   @tracing_log 6029
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if checkweight(ctx, [{714, 1}]) == 0 do
       overloaded(ctx)

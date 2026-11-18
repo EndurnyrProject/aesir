@@ -33,10 +33,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Splendide.LaphineTakingNotes do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) > 0 and get_char_var(ctx, :ep13_2_rhea, 0) > 99 do
       ctx

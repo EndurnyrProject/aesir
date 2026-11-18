@@ -39,10 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.AllianceManager do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :ep13_ryu, 0) do
       16 -> freya_blessing(ctx)

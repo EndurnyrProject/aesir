@@ -47,8 +47,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesMorroc.Guide do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @locations [
     {"^FF0000Thief Guild^000000",
      [
@@ -88,7 +86,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesMorroc.Guide do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> cutin("moc_soldier", 2)

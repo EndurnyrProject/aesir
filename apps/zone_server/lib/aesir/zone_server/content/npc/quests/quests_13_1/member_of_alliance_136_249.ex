@@ -37,12 +37,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.MemberOfAlliance136249 d
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @hint "-I'm sure they'll settle their little dispute somehow. You should be heading to the dimensional rift next to Morocc and find the Guard there-"
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :ep13_ryu, 0) > 19 do
       pointed_to_rift(ctx)

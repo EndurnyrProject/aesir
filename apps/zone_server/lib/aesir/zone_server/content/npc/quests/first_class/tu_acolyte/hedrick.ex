@@ -32,10 +32,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.Hedrick do
       %{map: "prt_monk", x: 28, y: 260, dir: 5, sprite: 50, name: "Hedrick", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx =
       ctx

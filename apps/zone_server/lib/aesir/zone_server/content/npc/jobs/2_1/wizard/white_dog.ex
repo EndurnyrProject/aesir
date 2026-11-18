@@ -45,11 +45,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.WhiteDog do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:mage) do
       turn_away_non_mage(ctx)

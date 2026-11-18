@@ -30,10 +30,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.BardQuest.BattleSongs do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :gef_bard_q, 0) > 11 do
       ctx

@@ -35,11 +35,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.BardQuest.Bard do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx =
       if get_char_var(ctx, :bard_q, 0) > 5 do

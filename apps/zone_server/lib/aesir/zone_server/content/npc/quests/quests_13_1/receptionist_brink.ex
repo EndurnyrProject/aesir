@@ -39,12 +39,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.ReceptionistBrink do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @gift 12322
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :ep13_newbs, 0) do
       step when step < 3 -> too_nervous(ctx)

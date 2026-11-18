@@ -35,10 +35,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.Seisner do
       %{map: "pay_arche", x: 84, y: 139, dir: 3, sprite: 727, name: "Seisner", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx =
       ctx

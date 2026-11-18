@@ -38,10 +38,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Louyang.MuscularWoman do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if sex(ctx) == 0 do
       recruit_visitor(ctx)

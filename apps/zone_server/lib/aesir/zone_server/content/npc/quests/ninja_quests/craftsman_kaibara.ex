@@ -36,7 +36,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.NinjaQuests.CraftsmanKaibara do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @confirm ["No thanks. It's too expensive.", "Yes! I want one!"]
@@ -183,7 +182,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.NinjaQuests.CraftsmanKaibara do
   }
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:ninja) do
       choose_weapon(ctx)

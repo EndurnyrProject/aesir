@@ -43,10 +43,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Dance1010 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnEnable", ctx) do
     summon_mob_area(ctx,
       mob_id: 1002,
@@ -60,7 +57,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Dance1010 do
   def on_event("OnDisable", ctx), do: killmonsterall(ctx, "job_duncer")
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnEnable", ctx)
 end

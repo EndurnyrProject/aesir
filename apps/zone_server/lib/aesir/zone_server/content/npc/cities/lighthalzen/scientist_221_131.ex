@@ -36,11 +36,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Scientist221131 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       not Rathena.truthy?(is_equipped(ctx, 2241)) or

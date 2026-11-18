@@ -19,10 +19,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lutie.SantaClaus do
       %{map: "xmas_in", x: 100, y: 96, dir: 4, sprite: 718, name: "Santa Claus", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> mes("[Santa Claus]")

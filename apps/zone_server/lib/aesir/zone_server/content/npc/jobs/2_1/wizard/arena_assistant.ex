@@ -42,10 +42,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.ArenaAssistant do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx) do
     ctx
     |> waitingroom("Waiting Room", 20, "Arena Assistant::OnStartArena", 1)
@@ -63,7 +60,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.ArenaAssistant do
   def on_event("OnStart", ctx), do: enablewaitingroomevent(ctx)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> mes("[Arena Assistant]")

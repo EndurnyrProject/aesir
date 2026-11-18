@@ -42,13 +42,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.ApprenticeMonk do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @quit_message "...q.q..q. .quit! ...the marathon!! Y...you do not have what it takes to be a m... monk!"
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, choice} =
       ctx

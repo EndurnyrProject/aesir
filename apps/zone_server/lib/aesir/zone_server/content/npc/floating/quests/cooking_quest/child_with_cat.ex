@@ -50,10 +50,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.CookingQuest.ChildWithCat
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case Enum.random(1..2) do
       1 -> curious(ctx)

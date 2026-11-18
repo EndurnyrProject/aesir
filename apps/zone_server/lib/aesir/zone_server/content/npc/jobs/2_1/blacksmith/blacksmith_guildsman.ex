@@ -47,10 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Blacksmith.BlacksmithGuildsman d
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :BSMITH_Q, 0) do
       16 -> offer_quiz(ctx)

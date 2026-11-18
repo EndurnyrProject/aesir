@@ -33,10 +33,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.PromotionalStaff do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.PromotionalStaff
-  alias Aesir.ZoneServer.Script.Ctx
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     PromotionalStaff.call(ctx, [])
   catch

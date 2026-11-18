@@ -39,19 +39,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.CommandTimer do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @npc "Command Timer#edq"
   @expedition_messenger_2 "Expedition Messenger#2::OnDisable"
   @expedition_messenger_3 "Expedition Messenger#3::OnDisable"
   @rearm "Command Timer#edq::OnEnable"
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: disablenpc(ctx, @npc)
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, @npc)
   def on_event("OnEnable", ctx), do: ctx |> enablenpc(@npc) |> stopnpctimer() |> initnpctimer()
   def on_event("OnDisable", ctx), do: ctx |> disablenpc(@npc) |> stopnpctimer()

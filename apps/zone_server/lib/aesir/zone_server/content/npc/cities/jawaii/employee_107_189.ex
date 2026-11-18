@@ -34,10 +34,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Jawaii.Employee107189 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, choice} =
       ctx

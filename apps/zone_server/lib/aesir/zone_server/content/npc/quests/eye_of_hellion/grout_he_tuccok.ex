@@ -36,10 +36,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.GroutHeTuccok do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 2000 or
          checkweight(ctx, [{1201, 1}]) == 0 do

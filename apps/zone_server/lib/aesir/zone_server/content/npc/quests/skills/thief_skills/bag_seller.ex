@@ -22,10 +22,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.ThiefSkills.BagSeller do
     scope: :shared,
     spawn: [%{map: "payon", x: 91, y: 77, dir: 3, sprite: 99, name: "Bag Seller", scope: :shared}]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx =
       ctx

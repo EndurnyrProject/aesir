@@ -41,11 +41,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21e.Stargladiator.WanderingMaster d
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FClearjobvar
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       Rathena.job_id(class(ctx)) == Rathena.job_id(:taekwon) ->

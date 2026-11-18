@@ -55,13 +55,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M22.Crusader.ManInAnguish d
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @rosary 2608
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Murnak Mijoul]")
     job = Rathena.job_id(base_job(ctx))

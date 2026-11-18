@@ -95,13 +95,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Izlude.SailorIzlude do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @byalan_fare 150
   @alberta_fare 500
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, destination} =
       ctx

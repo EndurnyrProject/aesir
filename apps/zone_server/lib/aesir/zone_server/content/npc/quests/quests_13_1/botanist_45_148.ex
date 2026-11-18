@@ -38,12 +38,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Botanist45148 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @npc "Botanist#ep13_1"
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :ep13_animal, 0) do
       8 -> remind_planting(ctx)
@@ -53,7 +50,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Botanist45148 do
   end
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, @npc)
 
   defp remind_planting(ctx) do

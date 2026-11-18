@@ -32,11 +32,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Valkyrie.Teleporter do
       %{map: "valkyrie", x: 44, y: 33, dir: 5, sprite: 124, name: "Teleporter", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if upper(ctx) != 1 do
       greet_visitor(ctx, Enum.random(1..10))

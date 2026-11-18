@@ -53,10 +53,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.FirstClass.TuArcher.Sound
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     if get_char_var(ctx, :tu_archer02, 0) == 6 do
       ctx
@@ -72,6 +69,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.FirstClass.TuArcher.Sound
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 end

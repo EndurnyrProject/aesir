@@ -33,14 +33,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M21.Knight.Knight1 do
 
   use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @room "job_knt"
   @on_mob_dead "Knight1::OnMyMobDead"
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, "Knight1")
   def on_event("OnEnable", ctx), do: start_trial(ctx)
 
@@ -63,7 +61,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M21.Knight.Knight1 do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   defp start_trial(ctx) do

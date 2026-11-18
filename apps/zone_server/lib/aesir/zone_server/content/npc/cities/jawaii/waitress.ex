@@ -35,11 +35,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Jawaii.Waitress do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       checkweight(ctx, [{1201, 1}]) == 0 -> inventory_full(ctx)

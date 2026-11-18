@@ -29,10 +29,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Warps.Fields.VeinsFild.VeFild62 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case :rand.uniform(2) - 1 do
       0 -> warp(ctx, "ve_fild05", 354, 191)

@@ -40,11 +40,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.JayGreg do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if rogue_or_stalker?(ctx) do
       ctx |> mes("[Jay Greg]") |> quest_step(get_char_var(ctx, :ROG_SK, 0)) |> close()

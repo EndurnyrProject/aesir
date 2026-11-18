@@ -29,10 +29,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.KnightSkills.GrandMaster do
       %{map: "prontera", x: 72, y: 352, dir: 7, sprite: 733, name: "Grand Master", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Grand Master]")
 

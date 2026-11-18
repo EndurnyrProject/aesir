@@ -36,11 +36,9 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Acolyte.Ascetic41355 do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FMothermart
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Mother Mathilda]")
 

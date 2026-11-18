@@ -247,7 +247,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.TempleKeeper do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FOkolnir
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @keepers %{
@@ -256,11 +255,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.TempleKeeper do
   }
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     {ctx, sub, keeper} = keeper_identity(ctx)
 

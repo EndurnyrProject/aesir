@@ -40,14 +40,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.AlchemistGuild
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @maneater_blossom 1032
   @stem 905
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Alchemist Guildmember]")
 

@@ -32,10 +32,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Amatsu.LegendaryTree do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :jap_tree, 0) do
       1 -> reflect_on_proposals(ctx)

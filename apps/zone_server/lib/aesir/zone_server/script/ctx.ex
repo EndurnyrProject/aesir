@@ -19,7 +19,8 @@ defmodule Aesir.ZoneServer.Script.Ctx do
 
   Ordinary item scripts run inside the owning session. Their `session_state`
   carries that session through inline operations without calling its own mailbox;
-  `game_state` remains the current script snapshot. NPC and item-menu contexts
+  `game_state` remains the current script snapshot, and the two meet only in
+  `update_session/2`. NPC and item-menu contexts
   instead use `session_pid` to call their owning session. Item-menu contexts
   retain their item source but never carry inline `session_state` authority.
 
@@ -71,6 +72,16 @@ defmodule Aesir.ZoneServer.Script.Ctx do
           | {:potion_pitch, :flat | :percent, integer(), integer()}
           | {:pet, {:catchpet, pos_integer(), integer()} | {:birthpet}}
 
+  @typedoc """
+  The owning session of an inline item script, as the script carries it.
+
+  A script never reads a session field; it hands the session back to the
+  session's own handlers through `update_session/2`. The struct is named without
+  its field types so that a `t:t/0` mention does not expand a second copy of the
+  player state in every DSL spec.
+  """
+  @type inline_session :: %SessionState{}
+
   @enforce_keys [:char_id, :account_id, :connection_pid, :game_state, :source]
   defstruct char_id: nil,
             account_id: nil,
@@ -97,7 +108,7 @@ defmodule Aesir.ZoneServer.Script.Ctx do
           status: status(),
           interaction_pid: pid() | nil,
           session_pid: pid() | nil,
-          session_state: SessionState.t() | map() | nil,
+          session_state: inline_session() | nil,
           npc_gid: non_neg_integer() | nil,
           page: [String.t()],
           session_ref: reference() | nil,
@@ -126,6 +137,22 @@ defmodule Aesir.ZoneServer.Script.Ctx do
       session_state: if(match?({:item, _}, source), do: state),
       source: source
     }
+  end
+
+  @doc """
+  Runs `fun` on the owning session of an inline item script and folds its
+  result back into `ctx`.
+
+  `game_state` is the script's live player state, so the copy inside
+  `session_state` is stale as soon as a command changes it. `fun` receives the
+  session carrying the current `game_state`, and the session it returns becomes
+  the source of both. Nothing else may read `session_state.game_state`.
+  """
+  @spec update_session(t(), (SessionState.t() -> {reply, SessionState.t()})) :: {reply, t()}
+        when reply: var
+  def update_session(%__MODULE__{session_state: state} = ctx, fun) do
+    {reply, state} = fun.(%{state | game_state: ctx.game_state})
+    {reply, %{ctx | game_state: state.game_state, session_state: state}}
   end
 
   @doc """

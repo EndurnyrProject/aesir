@@ -27,10 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.Orwalk do
     scope: :shared,
     spawn: [%{map: "geffen", x: 156, y: 190, dir: 0, sprite: 82, name: "Orwalk", scope: :shared}]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> mes("[Orwalk]")

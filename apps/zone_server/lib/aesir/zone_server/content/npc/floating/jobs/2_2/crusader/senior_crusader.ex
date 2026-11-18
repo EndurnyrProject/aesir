@@ -62,7 +62,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M22.Crusader.SeniorCrusader
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FClearjobvar
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @emblem 1004
@@ -76,7 +75,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M22.Crusader.SeniorCrusader
   }
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Michael Halig]")
     job = Rathena.job_id(base_job(ctx))

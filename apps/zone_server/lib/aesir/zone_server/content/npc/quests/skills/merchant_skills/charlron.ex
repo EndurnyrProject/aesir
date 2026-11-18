@@ -33,7 +33,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.MerchantSkills.Charlron do
       %{map: "alberta", x: 119, y: 221, dir: 6, sprite: 107, name: "Charlron", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @change_cart 154
@@ -42,7 +41,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.MerchantSkills.Charlron do
   @animal_skin 919
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       Rathena.job_id(base_class(ctx)) != Rathena.job_id(:merchant) -> trader(ctx)

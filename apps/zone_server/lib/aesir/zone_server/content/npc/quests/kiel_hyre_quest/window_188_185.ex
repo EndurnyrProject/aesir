@@ -34,10 +34,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Window188185 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     warp(ctx, "yuno_fild08", 69, 183)
   end

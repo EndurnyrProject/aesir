@@ -38,10 +38,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.SageWelshyun do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     if get_char_var(ctx, :HELLIONQ, 0) == 58 and count_item(ctx, 7335) > 0 do
       ctx
@@ -58,7 +55,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.SageWelshyun do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 2000 or
          checkweight(ctx, [{1201, 1}]) == 0 do

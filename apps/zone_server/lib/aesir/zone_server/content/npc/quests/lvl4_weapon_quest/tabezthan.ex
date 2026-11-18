@@ -39,11 +39,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Lvl4WeaponQuest.Tabezthan do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       checkweight(ctx, [{908, 300}]) == 0 ->

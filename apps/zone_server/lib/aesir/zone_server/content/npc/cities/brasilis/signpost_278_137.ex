@@ -28,10 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Brasilis.Signpost278137 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx |> mes(":: Brasilis Hotel ::") |> close()
   end

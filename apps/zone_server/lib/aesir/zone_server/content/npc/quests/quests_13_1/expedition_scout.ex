@@ -71,14 +71,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.ExpeditionScout do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @report_page 6040
   @search_quest 3090
   @round_quest 3091
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     playtime = checkquest(ctx, @round_quest, :playtime)
 

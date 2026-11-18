@@ -29,11 +29,9 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.Novice.Novice.Hanson do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       checkweight(ctx, [{909, 400}]) == 0 -> too_heavy(ctx)

@@ -33,10 +33,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.UmbalaMan do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :event_umbala, 0) >= 3 do
       ctx

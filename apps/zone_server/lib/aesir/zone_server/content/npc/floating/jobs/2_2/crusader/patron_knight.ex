@@ -56,14 +56,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M22.Crusader.PatronKnight d
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @rosary 2608
   @holy_water 523
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = ctx |> mes("[Bliant Piyord]") |> mes("Welcome.")
     job = Rathena.job_id(base_job(ctx))

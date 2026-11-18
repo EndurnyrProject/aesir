@@ -43,8 +43,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesVeins.VeinsGuide do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @locations [
     {"Temple",
      [
@@ -99,7 +97,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesVeins.VeinsGuide do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> mes("[Veins Guide]")

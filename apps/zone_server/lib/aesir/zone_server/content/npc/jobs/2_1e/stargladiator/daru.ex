@@ -38,11 +38,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21e.Stargladiator.Daru do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if Rathena.job_id(class(ctx)) == Rathena.job_id(:taekwon) do
       guide_candidate(ctx, get_char_var(ctx, :STGL_Q, 0))

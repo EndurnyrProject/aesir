@@ -43,10 +43,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Tomoon do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     quest = get_char_var(ctx, :MONK_Q, 0)
 

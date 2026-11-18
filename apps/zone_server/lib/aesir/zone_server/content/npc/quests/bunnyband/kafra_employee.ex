@@ -42,13 +42,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Bunnyband.KafraEmployee do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FInsertplural
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @required_items [{949, 100}, {706, 1}, {722, 1}, {2213, 1}]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :BUNYBND, 0) == 1 do
       offer_bunny_band(ctx)

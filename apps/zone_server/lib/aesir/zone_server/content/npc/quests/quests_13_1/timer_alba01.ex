@@ -42,7 +42,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.TimerAlba01 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Todo
 
   @npc "#timer_alba01"
@@ -55,7 +54,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.TimerAlba01 do
   @recruitment_over "Breeder Taab: The recruitment for my breeding farm has ended. I'll see you next time. Thanks!"
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = ctx |> todo(:callfunc, ["F_GM_NPC"]) |> mes("Please enter the password") |> next()
 
@@ -67,7 +65,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.TimerAlba01 do
   end
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   # The reference's `OnInit` body has no terminator, so boot also runs `OnEnable`'s
   # `initnpctimer`.
   def on_event("OnInit", ctx) do

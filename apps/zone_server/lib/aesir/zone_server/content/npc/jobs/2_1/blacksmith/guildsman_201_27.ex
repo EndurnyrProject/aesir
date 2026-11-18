@@ -50,7 +50,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Blacksmith.Guildsman20127 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @materials %{
@@ -62,7 +61,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Blacksmith.Guildsman20127 do
   }
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx =
       ctx

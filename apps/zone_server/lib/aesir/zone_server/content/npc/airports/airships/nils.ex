@@ -35,8 +35,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Nils do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @challenges [
     %{
       first_lines: [
@@ -137,7 +135,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Nils do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, choice} =
       ctx

@@ -44,11 +44,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.DeanOfTheAcademy do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FClearjobvar
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = ctx |> cutin("job_sage_kayron", 2) |> mes("[Kayron Grik]")
 

@@ -26,10 +26,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.OddGrandma do
       %{map: "yuno", x: 257, y: 140, dir: 4, sprite: 846, name: "Odd Grandma", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     quest_stage = get_char_var(ctx, :KielHyreQuest, 0)
 

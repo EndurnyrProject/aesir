@@ -27,7 +27,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.NinjaQuests.Toshu do
     scope: :shared,
     spawn: [%{map: "que_ng", x: 27, y: 18, dir: 3, sprite: 709, name: "Toshu", scope: :shared}]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @arm_guard 2104
@@ -37,7 +36,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.NinjaQuests.Toshu do
   @fee 40_000
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:ninja) do
       offer(ctx)

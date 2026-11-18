@@ -93,11 +93,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Izlude.KylickIzlude do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if not Rathena.truthy?(checkre(ctx, 0)) and Rathena.truthy?(:rand.uniform(2) - 1) do
       about_amatsu(ctx)

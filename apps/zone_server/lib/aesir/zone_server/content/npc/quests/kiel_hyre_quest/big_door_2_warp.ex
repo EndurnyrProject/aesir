@@ -35,10 +35,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.BigDoor2Warp do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnEnable", ctx) do
     ctx |> initnpctimer() |> specialeffect(:summonslave)
   end
@@ -64,7 +61,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.BigDoor2Warp do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnEnable", ctx)
 end

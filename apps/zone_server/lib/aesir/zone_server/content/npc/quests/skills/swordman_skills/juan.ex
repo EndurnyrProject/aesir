@@ -44,13 +44,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.SwordmanSkills.Juan do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @auto_berserk 146
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:swordman) do
       swordman_visit(ctx)

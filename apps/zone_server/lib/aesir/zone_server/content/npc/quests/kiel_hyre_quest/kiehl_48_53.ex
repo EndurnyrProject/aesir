@@ -30,15 +30,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Kiehl4853 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx) do
     hideonnpc(ctx, "Kiehl#Copy")
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 end

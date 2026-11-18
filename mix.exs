@@ -55,6 +55,10 @@ defmodule Aesir.MixProject do
   defp dialyzer do
     [
       plt_add_apps: [:mix],
+      # zone_server is a leaf app, so no other app needs its contracts in the PLT.
+      # They serialize to hundreds of MB, and term_to_binary/2 silently truncates a
+      # compressed term above 4 GiB, which once left an unreadable PLT.
+      plt_ignore_apps: [:zone_server],
       ignore_warnings: ".dialyzer_ignore.exs"
     ]
   end

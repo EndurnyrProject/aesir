@@ -38,13 +38,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Dirt do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @decaying_stem 6035
   @germinating_sprout 7193
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :ep13_animal, 0) == 8 do
       plant_stem(ctx)

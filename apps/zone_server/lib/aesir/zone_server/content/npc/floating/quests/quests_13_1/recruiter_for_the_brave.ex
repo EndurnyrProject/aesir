@@ -49,11 +49,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests131.RecruiterForThe
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :ep13_ryu, 0) do
       12 -> register_elsewhere(ctx)

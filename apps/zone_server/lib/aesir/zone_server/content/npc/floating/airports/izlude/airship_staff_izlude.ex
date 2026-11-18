@@ -86,13 +86,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Airports.Izlude.AirshipStaffIzlu
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @fare 1_200
   @free_ticket 7311
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, answer} =
       ctx

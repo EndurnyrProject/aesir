@@ -41,8 +41,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.FrozenTree do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @hillsrion_horn 6032
   @horns_needed 5
 
@@ -50,7 +48,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.FrozenTree do
   @first_meeting 11
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :ep13_animal, 0) do
       @first_meeting -> first_meeting(ctx)

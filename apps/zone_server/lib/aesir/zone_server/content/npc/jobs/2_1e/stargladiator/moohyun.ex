@@ -39,11 +39,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21e.Stargladiator.Moohyun do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     cond do
       Rathena.job_id(class(ctx)) == Rathena.job_id(:taekwon) ->
@@ -76,7 +74,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21e.Stargladiator.Moohyun do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       Rathena.job_id(class(ctx)) == Rathena.job_id(:taekwon) ->

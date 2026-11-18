@@ -40,11 +40,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.ZombieInfo do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     cond do
       Rathena.job_id(base_job(ctx)) == Rathena.job_id(:priest) -> brief_priest(ctx)
@@ -54,7 +52,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.ZombieInfo do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnTouch_", ctx)
 

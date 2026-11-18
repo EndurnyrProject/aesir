@@ -229,11 +229,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Guildrelay.Relaydummy1Gui
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = set_local(ctx, :npc_name, strnpcinfo(ctx, 1))
     {ctx, castle_id} = relay_identity(ctx)

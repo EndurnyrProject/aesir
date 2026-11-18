@@ -33,10 +33,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.AirshipStaff do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :hg_ma1, 0) == 3 do
       answer_thierry_inquiry(ctx)

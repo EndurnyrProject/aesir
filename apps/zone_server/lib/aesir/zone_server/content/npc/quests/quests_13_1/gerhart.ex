@@ -30,8 +30,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Gerhart do
       %{map: "lhz_in01", x: 110, y: 174, dir: 5, sprite: 903, name: "Gerhart", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @report 11012
 
   # Steps in which the player is carrying the report to Gerhart.
@@ -44,7 +42,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Gerhart do
   @report_advances %{9 => 121, 101 => 103, 111 => 113}
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Gerhart]")
     step = get_char_var(ctx, :ep13_1_edq, 0)

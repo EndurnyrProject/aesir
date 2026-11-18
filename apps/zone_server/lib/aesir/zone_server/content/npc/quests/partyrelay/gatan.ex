@@ -93,13 +93,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Partyrelay.Gatan do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FPartyrelayExp
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @pending_tickets [7732, 7733, 7736, 7737, 7740, 7741]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       checkweight(ctx, [{907, 300}]) == 0 ->

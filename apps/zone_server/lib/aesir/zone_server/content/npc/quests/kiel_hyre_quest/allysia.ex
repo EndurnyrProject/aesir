@@ -26,10 +26,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Allysia do
       %{map: "kh_mansion", x: 18, y: 30, dir: 4, sprite: 894, name: "Allysia", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :KielHyreQuest, 0) < 46 do
       ctx

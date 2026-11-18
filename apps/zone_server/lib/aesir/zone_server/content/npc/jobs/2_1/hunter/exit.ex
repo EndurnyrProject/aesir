@@ -47,10 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Exit do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, "exit#hnttest")
 
   def on_event("OnTouch_", ctx) do
@@ -70,6 +67,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Exit do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 end

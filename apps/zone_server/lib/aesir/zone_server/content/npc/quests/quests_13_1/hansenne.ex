@@ -48,15 +48,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Hansenne do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @invitation 6036
   @soaked_report 6037
   @sandwich 12321
   @peaked_hat 6021
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       overloaded?(ctx) -> overloaded(ctx)

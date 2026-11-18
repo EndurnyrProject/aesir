@@ -34,10 +34,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.Hadenheim do
       %{map: "geffen_in", x: 114, y: 73, dir: 5, sprite: 709, name: "Hadenheim", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, choice} =
       ctx

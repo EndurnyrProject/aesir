@@ -77,8 +77,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesProntera.Guide do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @locations [
     {"Swordman Association",
      [
@@ -164,7 +162,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesProntera.Guide do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> cutin("prt_soldier", 2)

@@ -42,7 +42,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.QueJob018077 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @inner_room {61, 50}
@@ -50,11 +49,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.QueJob018077 do
   @bar_fee 1000
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx), do: enter(ctx)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: enter(ctx)
 
   defp enter(ctx) do

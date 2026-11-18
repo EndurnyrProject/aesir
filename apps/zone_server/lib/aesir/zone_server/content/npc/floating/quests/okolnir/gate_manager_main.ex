@@ -130,14 +130,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.GateManagerMain d
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FOkolnir
-  alias Aesir.ZoneServer.Script.Ctx
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnMyMobDead", ctx) do
     {ctx, castle} = FOkolnir.call(ctx, [])
 

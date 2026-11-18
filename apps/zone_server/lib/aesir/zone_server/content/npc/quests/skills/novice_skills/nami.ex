@@ -30,7 +30,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.NoviceSkills.Nami do
     scope: :shared,
     spawn: [%{map: "prt_in", x: 234, y: 133, dir: 4, sprite: 66, name: "Nami", scope: :shared}]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @first_aid 142
@@ -38,7 +37,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.NoviceSkills.Nami do
   @clover 705
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if eligible?(ctx), do: offer_care(ctx), else: lack_experience(ctx)
   catch

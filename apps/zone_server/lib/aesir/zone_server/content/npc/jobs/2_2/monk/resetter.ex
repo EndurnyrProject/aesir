@@ -42,10 +42,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Resetter do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTimer500000", ctx) do
     ctx
     |> donpcevent("mob_monk#1_1::OnDisable")
@@ -71,7 +68,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Resetter do
   def on_event("OnEnable", ctx), do: initnpctimer(ctx)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnTimer500000", ctx)
 end

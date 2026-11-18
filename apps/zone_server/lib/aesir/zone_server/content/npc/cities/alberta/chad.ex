@@ -17,10 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Alberta.Chad do
     scope: :shared,
     spawn: [%{map: "alberta_in", x: 20, y: 183, dir: 0, sprite: 49, name: "Chad", scope: :shared}]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> mes("[Chad]")

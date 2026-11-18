@@ -31,10 +31,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.BardQuest.LittleGirl do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       get_char_var(ctx, :gef_bard_q, 0) > 9 and get_char_var(ctx, :gef_bard_q, 0) < 30 ->

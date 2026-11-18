@@ -41,10 +41,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.WaitingRoom do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx) do
     ctx
     |> hideonnpc("Waiting Room#sg")
@@ -62,6 +59,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.WaitingRoom do
   def on_event("OnEnable", ctx), do: enablewaitingroomevent(ctx)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 end

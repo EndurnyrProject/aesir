@@ -47,8 +47,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Manager do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @target_mobs [
     {1015, {67, 80}},
     {1015, {114, 78}},
@@ -92,7 +90,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Manager do
   ]
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, "Manager#hnt")
 
   def on_event("OnEnable", ctx) do
@@ -198,7 +195,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Manager do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnInit", ctx)
 

@@ -29,10 +29,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMerchant.Jayon do
     scope: :shared,
     spawn: [%{map: "prontera", x: 247, y: 129, dir: 3, sprite: 85, name: "Jayon", scope: :shared}]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Jayon]")
 

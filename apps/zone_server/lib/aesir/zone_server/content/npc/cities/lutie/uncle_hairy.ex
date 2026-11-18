@@ -25,10 +25,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lutie.UncleHairy do
       %{map: "xmas", x: 176, y: 236, dir: 4, sprite: 712, name: "Uncle Hairy", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :xmas_npc, 0) == 4 do
       discuss_snowysnow(ctx)

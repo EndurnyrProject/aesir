@@ -41,7 +41,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MrSmith do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @full_fee_items [
@@ -65,7 +64,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MrSmith do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     rogue_q = get_char_var(ctx, :ROGUE_Q, 0)
 

@@ -42,7 +42,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.BardSkills.SpitefulLookingB
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @pang_voice 1010
@@ -50,7 +49,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.BardSkills.SpitefulLookingB
   @munak_doll 7277
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch", ctx) do
     emotion(ctx, :kik)
   catch
@@ -58,7 +56,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.BardSkills.SpitefulLookingB
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:bard),
       do: talk_to_bard(ctx),

@@ -24,10 +24,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lutie.LittleBoy do
       %{map: "xmas", x: 206, y: 168, dir: 4, sprite: 706, name: "Little Boy", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :xmas_npc, 0) == 9 do
       direct_to_marcell(ctx)

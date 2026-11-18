@@ -49,10 +49,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.TestGuide do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     cond do
       get_char_var(ctx, :ASSIN_Q2, 0) < 5 ->
@@ -73,7 +70,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.TestGuide do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   defp brief_target_test(ctx) do

@@ -32,10 +32,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.Tensue do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case :rand.uniform(3) - 1 do
       1 -> discuss_guilds(ctx)

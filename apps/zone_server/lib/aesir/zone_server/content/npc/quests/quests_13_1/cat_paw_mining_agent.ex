@@ -39,7 +39,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.CatPawMiningAgent do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @mining_quest 12062
@@ -50,7 +49,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.CatPawMiningAgent do
   @pre_renewal_exp 30_000
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case checkquest(ctx, @mining_quest, :playtime) do
       -1 -> offer_delivery(ctx)

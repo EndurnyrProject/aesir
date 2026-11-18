@@ -108,14 +108,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests131.DandelionDuplic
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx)
   def on_event("OnDisable", ctx), do: disablenpc(ctx)
   def on_event("OnEnable", ctx), do: enablenpc(ctx)

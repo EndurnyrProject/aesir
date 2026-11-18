@@ -42,15 +42,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.Kid do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: set_npc_var(ctx, "SoulLinkerTest", 0)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     job = Rathena.job_id(class(ctx))
 

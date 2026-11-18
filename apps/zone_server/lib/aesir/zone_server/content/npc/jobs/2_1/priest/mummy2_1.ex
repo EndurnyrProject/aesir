@@ -40,11 +40,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Mummy21 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, "Mummy2_1")
 
   def on_event("OnTouch_", ctx) do
@@ -59,7 +57,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Mummy21 do
   def on_event("OnDisable", ctx), do: disablenpc(ctx, "Mummy2_1")
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnInit", ctx)
 end

@@ -42,7 +42,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.DancerSkills.Aelle do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @alcohol 970
@@ -52,7 +51,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.DancerSkills.Aelle do
   @china 736
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:dancer),
       do: dancer_visit(ctx),

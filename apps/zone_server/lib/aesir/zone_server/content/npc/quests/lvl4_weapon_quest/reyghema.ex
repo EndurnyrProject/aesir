@@ -40,10 +40,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Lvl4WeaponQuest.Reyghema do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 3000 -> inventory_full(ctx)

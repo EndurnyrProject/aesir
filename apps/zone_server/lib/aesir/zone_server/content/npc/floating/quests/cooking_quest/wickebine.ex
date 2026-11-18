@@ -50,14 +50,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.CookingQuest.Wickebine do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
   def on_event("OnInit", ctx), do: disablenpc(ctx, "Wickebine#cook")
   def on_event("OnEnable", ctx), do: enablenpc(ctx, "Wickebine#cook")
   def on_event("OnDisable", ctx), do: disablenpc(ctx, "Wickebine#cook")
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: disablenpc(ctx, "Wickebine#cook")
 end

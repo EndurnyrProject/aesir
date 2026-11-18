@@ -40,14 +40,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.ExpeditionMessenger do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @second_messenger "Expedition Messenger#2"
   @third_messenger "Expedition Messenger#3"
   @report 11012
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     # The conditions are re-read per clause, exactly as the reference evaluates them.
     cond do
@@ -66,7 +63,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.ExpeditionMessenger do
   end
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx) do
     ctx
     |> donpcevent("#{@second_messenger}::OnDisable")

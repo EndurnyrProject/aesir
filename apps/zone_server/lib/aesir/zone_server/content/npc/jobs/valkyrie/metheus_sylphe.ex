@@ -42,13 +42,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Valkyrie.MetheusSylphe do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @donation 1_285_000
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       not rebirth_candidate?(ctx) ->

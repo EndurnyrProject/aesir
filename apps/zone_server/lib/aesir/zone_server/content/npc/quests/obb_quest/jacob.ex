@@ -36,10 +36,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.ObbQuest.Jacob do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :thai_head, 0) do
       6 -> meet_jacob(ctx)

@@ -39,14 +39,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.JuiceMaker.Morrison do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @speaker "[Little Morrison]"
   @meat 517
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       quest_known?(ctx) -> refuse_discussion(ctx)

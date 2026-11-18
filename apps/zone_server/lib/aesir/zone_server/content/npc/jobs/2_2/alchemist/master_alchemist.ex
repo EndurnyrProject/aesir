@@ -41,13 +41,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.MasterAlchemist do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FClearjobvar
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @random_creation_guides {7127, 7128, 7129, 7130, 7131, 7144}
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = ctx |> cutin("job_alche_vincent", 2) |> mes("[Vincent Carsciallo]")
 

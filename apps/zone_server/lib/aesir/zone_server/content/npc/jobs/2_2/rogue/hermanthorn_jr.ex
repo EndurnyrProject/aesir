@@ -38,10 +38,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.HermanthornJr do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :ROGUE_Q, 0) do
       8 -> assign_tunnel_test(ctx)

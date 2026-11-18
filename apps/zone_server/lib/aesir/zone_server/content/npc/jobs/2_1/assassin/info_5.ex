@@ -33,10 +33,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Info5 do
       %{map: "in_moc_16", x: 164, y: 88, dir: 0, sprite: -1, name: "info 5", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     ctx
     |> mes("[Guildmaster]")
@@ -46,7 +43,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Info5 do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnTouch_", ctx)
 end

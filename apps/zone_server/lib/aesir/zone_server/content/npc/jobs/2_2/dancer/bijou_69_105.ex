@@ -44,12 +44,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Bijou69105 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @dance_tiles ["dance#up", "dance#down", "dance#left", "dance#right", "dance#cen"]
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnEnable", ctx), do: initnpctimer(ctx)
   def on_event("OnDisable", ctx), do: stopnpctimer(ctx)
 
@@ -117,7 +114,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Bijou69105 do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnEnable", ctx)
 

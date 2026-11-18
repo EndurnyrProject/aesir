@@ -29,10 +29,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Gonryun.Gatekeeper do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> mes("[Kunlun Guard]")

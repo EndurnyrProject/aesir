@@ -31,10 +31,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.BishopMaugins 
       %{map: "monk_in", x: 19, y: 43, dir: 1, sprite: 60, name: "Bishop Maugins", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Bishop Maugins]")
 

@@ -44,13 +44,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Kafras.Kafras.KafraService do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FCheckkafcode
-  alias Aesir.ZoneServer.Script.Ctx
 
   @storage_fee 20
   @reserve_point_divisor 5
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, choice} =
       ctx

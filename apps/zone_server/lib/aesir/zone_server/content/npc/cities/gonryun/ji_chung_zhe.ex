@@ -35,10 +35,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Gonryun.JiChungZhe do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :nakha, 0) do
       stage when stage >= 0 and stage <= 2 -> express_worry(ctx)

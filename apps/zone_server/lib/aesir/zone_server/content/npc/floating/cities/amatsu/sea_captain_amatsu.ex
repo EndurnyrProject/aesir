@@ -47,10 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Amatsu.SeaCaptainAmatsu d
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, choice} =
       ctx

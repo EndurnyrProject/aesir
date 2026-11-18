@@ -37,12 +37,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.ExpeditionMessenger20928
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @npc "Expedition Messenger#3"
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> mes("[Expedition Agent]")
@@ -56,7 +53,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.ExpeditionMessenger20928
   end
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, @npc)
   def on_event("OnEnable", ctx), do: enablenpc(ctx, @npc)
   def on_event("OnDisable", ctx), do: disablenpc(ctx, @npc)

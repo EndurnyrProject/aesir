@@ -52,11 +52,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.CookingQuest.MadeleineChu
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 2000 do
       ask_to_store_items(ctx)

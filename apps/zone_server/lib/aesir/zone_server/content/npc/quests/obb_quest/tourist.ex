@@ -36,10 +36,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.ObbQuest.Tourist do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if checkweight(ctx, [{1201, 1}]) == 0 do
       ctx

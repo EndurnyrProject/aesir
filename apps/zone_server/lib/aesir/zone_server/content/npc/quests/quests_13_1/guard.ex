@@ -55,7 +55,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Guard do
   @gate [108, 252]
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch", ctx) do
     enter(ctx, 1)
   catch
@@ -63,7 +62,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Guard do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     enter(ctx, 0)
   catch

@@ -25,10 +25,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lutie.LittleGirl do
       %{map: "xmas", x: 208, y: 168, dir: 4, sprite: 703, name: "Little Girl", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :xmas_npc, 0) do
       9 -> reveal_shared_past(ctx)

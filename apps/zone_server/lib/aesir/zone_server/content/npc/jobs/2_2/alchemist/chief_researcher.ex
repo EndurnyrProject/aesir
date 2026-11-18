@@ -42,7 +42,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.ChiefResearcher do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @first_puzzle [
@@ -78,7 +77,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.ChiefResearcher do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if checkweight(ctx, [{1201, 1}]) == 0 do
       ctx

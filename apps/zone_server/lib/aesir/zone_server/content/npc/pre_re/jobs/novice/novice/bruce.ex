@@ -27,10 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.Novice.Novice.Bruce do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if class(ctx) == :novice do
       explain_jobs(ctx, get_char_var(ctx, :nov_3_swordman, 0))

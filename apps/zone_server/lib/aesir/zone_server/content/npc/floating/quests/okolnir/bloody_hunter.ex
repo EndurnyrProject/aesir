@@ -467,7 +467,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.BloodyHunter do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FOkolnir
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   # The ambush is picked by the last character of the NPC name, which `charat` yields as a
@@ -477,11 +476,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.BloodyHunter do
   @ambush_points [278, 301, 279, 300, 280, 299]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     {ctx, castle} = FOkolnir.call(ctx, [])
     name = ambush_name(ctx, castle)

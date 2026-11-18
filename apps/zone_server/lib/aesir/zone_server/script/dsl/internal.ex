@@ -35,8 +35,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Internal do
   def apply_op(%Ctx{source: {:item, _}, session_state: state} = ctx, op, on_error)
       when not is_nil(state) and
              elem(op, 0) in [:set_zeny, :give_item, :delitem, :stand, :warp] do
-    {reply, state} = ScriptEffectHandler.apply_op(op, %{state | game_state: ctx.game_state})
-    ctx = %{ctx | game_state: state.game_state, session_state: state}
+    {reply, ctx} = Ctx.update_session(ctx, &ScriptEffectHandler.apply_op(op, &1))
 
     case reply do
       {:ok, _game_state} -> ctx

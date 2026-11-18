@@ -28,10 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.Novice.Novice.EntranceGuard do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     state = get_char_var(ctx, :nov_2nd_cos, 0)
 

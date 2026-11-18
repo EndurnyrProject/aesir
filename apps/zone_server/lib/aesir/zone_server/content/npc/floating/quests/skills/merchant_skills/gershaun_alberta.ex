@@ -52,7 +52,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Skills.MerchantSkills.Ger
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @cart_revolution 153
@@ -70,7 +69,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Skills.MerchantSkills.Ger
   }
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       Rathena.job_id(base_class(ctx)) != Rathena.job_id(:merchant) -> motto(ctx)

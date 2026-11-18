@@ -27,10 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuSword.Muetro do
     scope: :shared,
     spawn: [%{map: "morocc", x: 82, y: 292, dir: 5, sprite: 84, name: "Muetro", scope: :shared}]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Muetro]")
 

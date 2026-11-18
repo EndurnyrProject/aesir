@@ -41,7 +41,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.SisterCecilia do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   # {question lines, options, wrong choice, rebuke, advice lines}
@@ -100,7 +99,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.SisterCecilia do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Sister Cecilia]")
 

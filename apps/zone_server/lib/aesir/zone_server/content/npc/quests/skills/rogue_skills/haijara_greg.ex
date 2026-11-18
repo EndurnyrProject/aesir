@@ -44,11 +44,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.HaijaraGreg do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:rogue) do
       talk_to_rogue(ctx, get_char_var(ctx, :ROG_SK, 0))

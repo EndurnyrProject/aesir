@@ -41,13 +41,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.BlacksmithSkills.Goodman do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @greed 1013
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:blacksmith) do
       not_blacksmith(ctx)

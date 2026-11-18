@@ -42,10 +42,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.CounteragentMixture.AureDupon do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :molgenstain, 0) == 2 do
       paths_cross_again(ctx)

@@ -148,7 +148,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.GloomyWizard do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:mage) do
       turn_away_non_mage(ctx)

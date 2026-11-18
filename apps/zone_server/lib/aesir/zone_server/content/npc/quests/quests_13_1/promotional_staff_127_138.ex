@@ -46,7 +46,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.PromotionalStaff127138 d
   @jellopies_needed 300
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :ep13_ryu, 0) do
       step when step > 3 -> already_adventuring(ctx)

@@ -33,10 +33,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Ayothaya.Girl do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case Enum.random(1..5) do
       roll when roll < 3 -> discuss_midgard(ctx)

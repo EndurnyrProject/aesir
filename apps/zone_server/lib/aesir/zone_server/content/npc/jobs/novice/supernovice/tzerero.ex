@@ -41,11 +41,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.Tzerero do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FClearjobvar
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       Rathena.job_id(base_job(ctx)) == Rathena.job_id(:super_novice) ->

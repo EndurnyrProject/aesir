@@ -40,13 +40,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.CrusaderSkills.Ford do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @shrink 1002
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:crusader) do
       step = get_char_var(ctx, :CRUS_SK, 0)

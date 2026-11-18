@@ -40,12 +40,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.M1st5min do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @kiennas ~w(Kienna#1st Kienna#2nd Kienna#3rd Kienna#4th Kienna#5th Kienna#6th Kienna#7th Kienna#8th)
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, "#1st5min")
   def on_event("OnEnable", ctx), do: ctx |> enablenpc("#1st5min") |> initnpctimer()
   def on_event("OnDisable", ctx), do: ctx |> stopnpctimer() |> disablenpc("#1st5min")
@@ -76,7 +73,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.M1st5min do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnInit", ctx)
 

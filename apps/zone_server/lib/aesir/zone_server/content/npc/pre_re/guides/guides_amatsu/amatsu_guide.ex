@@ -34,8 +34,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesAmatsu.AmatsuGuide do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @locations [
     {85, 235, 0, 0xFF3355, "^FF3355+^000000", "the Palace."},
     {96, 118, 1, 0xCE6300, "^CE6300+^000000", "the Tool Shop."},
@@ -44,7 +42,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesAmatsu.AmatsuGuide do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, choice} =
       ctx

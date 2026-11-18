@@ -43,10 +43,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.StaffOfficerAbidal do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       get_char_var(ctx, :ep13_1_edq, 0) == 13 or get_char_var(ctx, :ep13_1_edq, 0) == 14 ->

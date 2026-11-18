@@ -35,11 +35,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.Arthail do
       %{map: "prontera", x: 126, y: 335, dir: 5, sprite: 51, name: "Arthail", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Arthail]")
     step = get_char_var(ctx, :tu_archer02, 0)

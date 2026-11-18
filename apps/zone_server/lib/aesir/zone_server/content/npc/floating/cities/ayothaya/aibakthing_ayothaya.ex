@@ -47,12 +47,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Ayothaya.AibakthingAyotha
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @fare 10_000
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, choice} =
       ctx

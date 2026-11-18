@@ -27,7 +27,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.NinjaQuests.Tetsu do
     scope: :shared,
     spawn: [%{map: "que_ng", x: 22, y: 62, dir: 3, sprite: 709, name: "Tetsu", scope: :shared}]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @remember "Remember these needed materials, and come back after you're positive you have them all."
@@ -175,7 +174,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.NinjaQuests.Tetsu do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Tetsu]")
 

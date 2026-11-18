@@ -39,17 +39,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Room21Warp do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @npc "#room2_1_warp"
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: hide(ctx)
 
   # The reference's `OnInit` label is empty, so booting falls through into `OnDisable`.
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: hide(ctx)
   def on_event("OnDisable", ctx), do: hide(ctx)
   def on_event("OnEnable", ctx), do: enablenpc(ctx, @npc)

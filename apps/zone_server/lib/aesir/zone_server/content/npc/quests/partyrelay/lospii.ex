@@ -93,11 +93,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Partyrelay.Lospii do
   import Aesir.ZoneServer.Script.Dsl, warn: false
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FPartyrelayExp
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       checkweight(ctx, [{907, 300}]) == 0 ->

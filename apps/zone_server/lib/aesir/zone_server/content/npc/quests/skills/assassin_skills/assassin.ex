@@ -40,11 +40,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.AssassinSkills.Assassin do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       assassin?(ctx) and get_char_var(ctx, :ASSN_SK2, 0) == 1 ->

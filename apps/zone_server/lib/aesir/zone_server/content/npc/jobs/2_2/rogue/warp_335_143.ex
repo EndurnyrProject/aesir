@@ -38,8 +38,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.Warp335143 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @password_words [
     {["My father", "Aragham", "Aragon", "Legolas"], 1},
     {["did not", "didn't", "never", "ever"], 3},
@@ -48,7 +46,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.Warp335143 do
   ]
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     ctx =
       ctx
@@ -83,7 +80,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.Warp335143 do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnTouch_", ctx)
 

@@ -236,8 +236,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
 
   defp refresh_item_status(%Ctx{source: {:item, _}, session_state: state} = ctx, events)
        when not is_nil(state) do
-    state = StatusManager.refresh_events(%{state | game_state: ctx.game_state}, events)
-    %{ctx | game_state: state.game_state, session_state: state}
+    {:ok, ctx} = Ctx.update_session(ctx, &{:ok, StatusManager.refresh_events(&1, events)})
+    ctx
   end
 
   defp refresh_item_status(ctx, _events), do: ctx

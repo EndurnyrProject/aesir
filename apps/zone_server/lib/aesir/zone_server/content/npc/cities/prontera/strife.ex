@@ -34,10 +34,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.Strife do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     progress = get_char_var(ctx, :event_prt_nov_dreamtalk, 0)
 

@@ -226,15 +226,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.WindpathsMain do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FOkolnir
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     {ctx, suffix} = FOkolnir.call(ctx, [])
     ctx = set_local(ctx, :"sub$", suffix)

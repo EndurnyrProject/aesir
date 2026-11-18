@@ -43,8 +43,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.HeadOfTheAlliance do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @npc "Head of the Alliance#moo"
   @map "moc_fild22b"
   @mob_event "Head of the Alliance#moo::OnMyMobDead"
@@ -56,11 +54,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.HeadOfTheAlliance do
   @withdrawal_order "Head of the Alliance: All alliance members. All of you should stop your attacks and return to work. That's all."
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: disablenpc(ctx, @npc)
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, @npc)
   def on_event("OnReset", ctx), do: killmonster(ctx, @map, @mob_event)
 

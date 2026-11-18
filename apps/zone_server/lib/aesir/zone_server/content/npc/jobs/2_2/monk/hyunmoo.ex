@@ -44,11 +44,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Hyunmoo do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     quest = get_char_var(ctx, :MONK_Q, 0)
     net_mushrooms = count_item(ctx, 1069)

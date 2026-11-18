@@ -46,7 +46,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.AlchemistSkills.Pisruik do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @yellow_gemstone 715
@@ -58,7 +57,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.AlchemistSkills.Pisruik do
   @thesis 7434
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       Rathena.job_id(base_job(ctx)) != Rathena.job_id(:alchemist) -> busy(ctx)

@@ -41,10 +41,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.TestHelper do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, "Test Helper#wiz")
   def on_event("OnEnable", ctx), do: initnpctimer(ctx)
   def on_event("OnDisable", ctx), do: disablenpc(ctx, "Test Helper#wiz")
@@ -68,7 +65,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.TestHelper do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   defp announce(ctx, message), do: mapannounce(ctx, "job_wiz", message, 1)

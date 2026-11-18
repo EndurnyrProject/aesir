@@ -40,15 +40,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.ScrutinyAssociation24971
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @color "0x70dbdb"
   @votes_counted "All the votes for the Dungeon Teleport Service Provider Election have been received and counted."
   @winner "This time, Kafra Corporation will be the Dungeon Teleport Service Provider."
   @thanks "Many thanks to all of you who have voted and shown your support."
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnEnable", ctx), do: initnpctimer(ctx)
   def on_event("OnTimer1000", ctx), do: announce(ctx, @votes_counted, 0, @color)
 
@@ -64,6 +61,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.ScrutinyAssociation24971
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: initnpctimer(ctx)
 end

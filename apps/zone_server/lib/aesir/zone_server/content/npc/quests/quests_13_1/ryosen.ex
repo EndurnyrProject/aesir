@@ -45,8 +45,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Ryosen do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @invitation 6036
   @soaked_report 6037
   @neat_report 6038
@@ -54,7 +52,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Ryosen do
   @mystic_horn 6023
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       overloaded?(ctx) -> overloaded(ctx)

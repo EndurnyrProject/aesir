@@ -37,10 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.WoodenFloor do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :HELLIONQ, 0) do
       53 -> inspect_floor(ctx)

@@ -27,7 +27,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.NinjaQuests.Boshuu do
     scope: :shared,
     spawn: [%{map: "que_ng", x: 28, y: 50, dir: 3, sprite: 709, name: "Boshuu", scope: :shared}]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @slotted_guard 2102
@@ -37,7 +36,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.NinjaQuests.Boshuu do
   @guard_bit 2048
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       Rathena.job_id(base_class(ctx)) != Rathena.job_id(:ninja) -> turn_away(ctx)

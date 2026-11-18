@@ -35,7 +35,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuSword.Shurank do
       %{map: "izlude_in", x: 82, y: 163, dir: 3, sprite: 733, name: "Shurank", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @speaker "[Shurank]"
@@ -43,7 +42,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuSword.Shurank do
   @misspelled_speaker "[Shunrank]"
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Shurank]")
 

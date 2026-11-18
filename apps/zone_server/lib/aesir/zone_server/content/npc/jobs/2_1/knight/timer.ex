@@ -45,8 +45,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.Timer do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @mob_event "Timer#knt::OnMyMobDead"
 
   @arena_mobs [
@@ -69,7 +67,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.Timer do
   ]
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTimer300000", ctx), do: enablenpc(ctx, "Warp#knt")
 
   def on_event("OnTimer300500", ctx) do
@@ -105,7 +102,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.Timer do
   def on_event("OnMyMobDead", ctx), do: warp(ctx, "prt_fild05", 353, 251)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnTimer300000", ctx)
 end

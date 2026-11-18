@@ -43,8 +43,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Corpse do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @npc "Corpse#moc2_dead01"
   @map "que_dan01"
   @mob_event "Corpse#moc2_dead01::OnMyMobDead"
@@ -55,7 +53,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Corpse do
   @sealed_scroll 6028
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       checkweight(ctx, [{714, 1}]) == 0 ->
@@ -76,7 +73,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Corpse do
   end
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, @npc)
   def on_event("OnDisable", ctx), do: disablenpc(ctx, @npc)
   def on_event("OnEnable", ctx), do: enablenpc(ctx, @npc)

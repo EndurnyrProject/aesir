@@ -36,8 +36,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesHugel.HugelGuideGranny
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @locations [
     {"Church",
      ["Well, to me, this Church is rather like a place for old folks like me, you know..."],
@@ -95,7 +93,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesHugel.HugelGuideGranny
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> mes("[Hugel Guide Granny]")

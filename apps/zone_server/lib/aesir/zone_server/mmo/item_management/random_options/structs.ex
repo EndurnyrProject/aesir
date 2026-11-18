@@ -15,7 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Option do
   @type t() :: %__MODULE__{
           id: pos_integer(),
           name: String.t(),
-          program: EquipScript.program() | nil
+          program: EquipScript.compiled() | nil
         }
 end
 

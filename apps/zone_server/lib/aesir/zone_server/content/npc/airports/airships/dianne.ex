@@ -33,14 +33,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Dianne do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx), do: emotion(ctx, :cry)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> mes("[Dianne]")

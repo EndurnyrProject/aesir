@@ -21,10 +21,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Loudmouth do
       %{map: "lhz_in03", x: 184, y: 38, dir: 3, sprite: 55, name: "Loudmouth", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> mes("[Loudmouth]")

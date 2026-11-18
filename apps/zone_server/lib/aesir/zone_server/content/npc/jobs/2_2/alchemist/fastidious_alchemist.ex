@@ -42,7 +42,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.FastidiousAlchemist do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @first_test [
@@ -142,7 +141,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.FastidiousAlchemist do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Raspuchin Gregory]")
 

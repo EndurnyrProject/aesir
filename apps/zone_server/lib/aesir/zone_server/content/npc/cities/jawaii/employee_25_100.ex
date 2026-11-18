@@ -34,16 +34,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Jawaii.Employee25100 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnWelcome", ctx), do: emotion(ctx, :chup)
   def on_event("OnSolo", ctx), do: emotion(ctx, :huk)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = ctx |> mes("[Employee Itere]") |> mes("Welcome to") |> mes("Jawaii Tavern~")
 

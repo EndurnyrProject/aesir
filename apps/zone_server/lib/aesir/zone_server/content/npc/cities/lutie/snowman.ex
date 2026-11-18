@@ -25,10 +25,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lutie.Snowman do
     scope: :shared,
     spawn: [%{map: "xmas", x: 134, y: 112, dir: 4, sprite: 710, name: "Snowman", scope: :shared}]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if checkweight(ctx, [{1201, 1}]) == 0 do
       reject_overloaded_visitor(ctx)

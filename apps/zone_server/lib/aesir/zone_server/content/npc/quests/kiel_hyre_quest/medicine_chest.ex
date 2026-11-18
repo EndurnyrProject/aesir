@@ -35,10 +35,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.MedicineChest do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     poem = get_char_var(ctx, :KHCottagePoem2, 0)
     quest = get_char_var(ctx, :KielHyreQuest, 0)

@@ -31,10 +31,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMerchant.Kellion do
       %{map: "prontera", x: 93, y: 330, dir: 3, sprite: 97, name: "Kellion", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Kellion]")
 

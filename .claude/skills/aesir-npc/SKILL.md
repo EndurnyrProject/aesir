@@ -100,7 +100,9 @@ adaptation. Do not label original Aesir content as imported.
    function clauses, `case`/`cond`, and small purpose-named private functions. Share genuinely
    repeated dialogue locally. Prefer interpolation for known strings; retain compatibility
    conversions when their coercion matters. Do not introduce a new interpreter or generic
-   framework to refactor a handful of NPCs. Alias `Script.Ctx` and add callback specs.
+   framework to refactor a handful of NPCs. Do not add `@spec` to the `@impl` callbacks
+   (`on_talk/1`, `on_event/2`): the `Npc` behaviour types them, and Dialyzer expands a restated
+   `Ctx.t()` in every module. Keep one only when it narrows the callback (`:: no_return()`).
 3. **Preserve exits and effect order.** `close/1` returns the context; it does not throw.
    Generated `throw({:script_end, ctx})` calls implement early exits. Replace them with terminal
    branches or helper returns, not simple deletion that allows fallthrough. Keep post-close

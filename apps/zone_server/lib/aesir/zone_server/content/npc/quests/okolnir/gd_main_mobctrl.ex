@@ -137,7 +137,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Okolnir.GdMainMobctrl do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FOkolnir
-  alias Aesir.ZoneServer.Script.Ctx
 
   # One wave per encounter monster; the coordinates come in x/y pairs.
   @encounter_waves [
@@ -275,11 +274,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Okolnir.GdMainMobctrl do
   @reinforce_below 7
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnEnable", ctx) do
     {ctx, castle} = FOkolnir.call(ctx, [])
 

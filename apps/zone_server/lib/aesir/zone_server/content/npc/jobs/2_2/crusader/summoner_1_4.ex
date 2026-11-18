@@ -46,8 +46,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Crusader.Summoner14 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @wave [
     {1005, {98, 50}},
     {1005, {98, 55}},
@@ -63,7 +61,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Crusader.Summoner14 do
   ]
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTimer345000", ctx), do: donpcevent(ctx, "Summoner#cr4::OnReset")
   def on_event("OnTimer345500", ctx), do: donpcevent(ctx, "Summoner#cr4::OnEnd")
 
@@ -77,7 +74,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Crusader.Summoner14 do
   def on_event("OnDead", ctx), do: warp(ctx, "prt_fild05", 353, 251)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnTimer345000", ctx)
 

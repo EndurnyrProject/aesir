@@ -53,14 +53,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.CookingQuest.CharlesOrlea
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @child "Child with Cat#cook"
   @wickebine "Wickebine#cook"
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 2000 ->

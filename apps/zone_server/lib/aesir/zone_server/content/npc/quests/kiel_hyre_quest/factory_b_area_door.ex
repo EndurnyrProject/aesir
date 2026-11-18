@@ -36,15 +36,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.FactoryBAreaDoor do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnTouch", ctx)
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch", ctx) do
     case get_char_var(ctx, :KielHyreQuest, 0) do
       40 -> rescue_kiel(ctx)

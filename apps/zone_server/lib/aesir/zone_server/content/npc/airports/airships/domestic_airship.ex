@@ -25,14 +25,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.DomesticAirship do
       %{map: "airplane", x: 1, y: 1, dir: 0, sprite: -1, name: "Domestic_Airship", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx) do
     initnpctimer(ctx)
   end

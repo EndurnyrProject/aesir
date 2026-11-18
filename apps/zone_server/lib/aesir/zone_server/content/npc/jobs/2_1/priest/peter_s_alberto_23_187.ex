@@ -41,17 +41,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.PeterSAlberto23187 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, "Peter S. Alberto#2")
   def on_event("OnEnable", ctx), do: enablenpc(ctx, "Peter S. Alberto#2")
   def on_event("OnDisable", ctx), do: disablenpc(ctx, "Peter S. Alberto#2")
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Father Peter]")
     quest = get_char_var(ctx, :PRIEST_Q, 0)

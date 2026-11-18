@@ -35,10 +35,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Robots do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnMyMobDead", ctx) do
     if mobcount(ctx, "kh_kiehl01", "Robots#kh1::OnMyMobDead") < 1 do
       makeitem(ctx, 7506, 1, "this", 18, 180)
@@ -48,7 +45,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Robots do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if mobcount(ctx, "kh_kiehl01", "Robots#kh1::OnMyMobDead") < 1 do
       ctx

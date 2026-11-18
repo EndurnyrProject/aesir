@@ -21,10 +21,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.BanquetStaff do
       %{map: "lhz_in01", x: 14, y: 28, dir: 3, sprite: 109, name: "Banquet Staff", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> mes("[Banquet Staff]")

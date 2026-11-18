@@ -53,15 +53,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.FirstClass.TuArcher.Acoly
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @first_visit_heal_levels [3, 9, 8]
   @repeat_visit_heal_levels [3, 10, 8]
   @incagi_levels [1, 5, 10]
   @blessing_levels [1, 5, 10]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Acolyte]")
 

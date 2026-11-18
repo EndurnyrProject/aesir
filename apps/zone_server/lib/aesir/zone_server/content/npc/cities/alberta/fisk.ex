@@ -22,11 +22,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Alberta.Fisk do
     scope: :shared,
     spawn: [%{map: "alberta", x: 189, y: 151, dir: 5, sprite: 100, name: "Fisk", scope: :shared}]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, choice} =
       ctx

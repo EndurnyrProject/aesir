@@ -27,11 +27,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M11e.Ninja.Akagi do
     scope: :shared,
     spawn: [%{map: "alberta", x: 30, y: 65, dir: 3, sprite: 730, name: "Akagi", scope: :shared}]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       Rathena.job_id(class(ctx)) != Rathena.job_id(:novice) ->

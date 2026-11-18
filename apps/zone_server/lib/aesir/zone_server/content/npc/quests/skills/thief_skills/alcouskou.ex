@@ -37,11 +37,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.ThiefSkills.Alcouskou do
       %{map: "moc_prydb1", x: 154, y: 128, dir: 4, sprite: 118, name: "Alcouskou", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:thief) do
       thief_talk(ctx)

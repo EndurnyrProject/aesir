@@ -32,14 +32,10 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M22.Crusader.MonsterSummon do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, "Monster Summon#cr5")
 
   def on_event("OnTouch_", ctx) do

@@ -33,8 +33,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesGonryun.KunlunGuide do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @locations [
     {109, 131, 0, 0xFF3355, "^FF3355",
      "the residence of the Chief. Enjoy your stay in lovely Kunlun!"},
@@ -45,7 +43,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesGonryun.KunlunGuide do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, choice} =
       ctx

@@ -51,8 +51,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Beholder do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @target_event "Beholder#ASNTEST::OnMyMobDead"
   @decoy_event "Beholder#ASNTEST::OnMyMobDead2"
 
@@ -103,7 +101,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Beholder do
   ]
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnEnable", ctx) do
     ctx
     |> set_npc_var("MyMobs", 6)
@@ -202,7 +199,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Beholder do
   def on_event("OnTimer187000", ctx), do: donpcevent(ctx, "Beholder#ASNTEST::OnReset")
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   defp summon_all(ctx, mobs, event) do

@@ -29,11 +29,9 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.Swordman62170 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Swordman]")
 

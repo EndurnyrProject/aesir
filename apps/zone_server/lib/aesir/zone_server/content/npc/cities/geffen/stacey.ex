@@ -32,10 +32,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.Stacey do
     scope: :shared,
     spawn: [%{map: "geffen", x: 111, y: 48, dir: 0, sprite: 101, name: "Stacey", scope: :shared}]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case getequipid(ctx, 6) do
       2299 -> admire_orc_helm(ctx)

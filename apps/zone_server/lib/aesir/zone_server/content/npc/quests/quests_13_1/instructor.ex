@@ -45,7 +45,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Instructor do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @weight_check_item 1201
@@ -56,7 +55,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Instructor do
   @old_violet_box 617
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       checkweight(ctx, [{@weight_check_item, 1}]) == 0 ->

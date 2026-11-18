@@ -32,8 +32,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M21.Priest.ZombieGenerator 
 
   use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @name "Zombie_Generator#prst"
   @room "job_prist"
   @on_mob_dead "Z_C#prst::OnMyMobDead"
@@ -41,7 +39,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M21.Priest.ZombieGenerator 
   @zones ["Zombie1_1", "Zombie2_1", "Zombie3_1", "Zombie4_1", "Zombie5_1"]
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, @name)
   def on_event("OnEnable", ctx), do: start(ctx)
   def on_event("Onm1", ctx), do: spawn_wave(ctx, 13, [{24, 52}, {18, 52}, {30, 52}])
@@ -70,7 +67,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M21.Priest.ZombieGenerator 
   def on_event("OnTimer302000", ctx), do: stopnpctimer(ctx)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   defp start(ctx) do

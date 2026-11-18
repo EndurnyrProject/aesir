@@ -36,10 +36,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Kiehl do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTimer180000", ctx) do
     ctx
     |> stopnpctimer()
@@ -92,7 +89,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Kiehl do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if checkweight(ctx, [{908, 200}]) == 0 do
       ctx

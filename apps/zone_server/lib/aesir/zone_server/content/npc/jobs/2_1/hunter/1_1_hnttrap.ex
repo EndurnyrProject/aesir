@@ -2297,8 +2297,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.M11Hnttrap do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @announcements %{
     2 => {"", ", yes you! Go back and start over!"},
     3 => {"", " has failed!...well...you will if you don't start over..."},
@@ -2528,7 +2526,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.M11Hnttrap do
                          ", you have fallen into a trap. You will be returned to the starting point."}
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     ctx
     |> mapannounce("job_hunte", announcement(:rand.uniform(200) - 1, ctx), 1)
@@ -2539,7 +2536,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.M11Hnttrap do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnTouch_", ctx)
 

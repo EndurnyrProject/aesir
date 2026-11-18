@@ -44,13 +44,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.AlchemistSkills.Kellasus do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @bioethics 238
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if alchemist?(ctx),
       do: bioethics_step(ctx, get_char_var(ctx, :bioeth, 0)),

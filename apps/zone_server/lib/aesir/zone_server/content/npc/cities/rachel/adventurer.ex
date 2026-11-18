@@ -26,10 +26,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.Adventurer do
       %{map: "airplane", x: 238, y: 54, dir: 7, sprite: 88, name: "Adventurer", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_server_var(ctx, "rachel_donate", 0) < 10_000 do
       describe_lottery(ctx)

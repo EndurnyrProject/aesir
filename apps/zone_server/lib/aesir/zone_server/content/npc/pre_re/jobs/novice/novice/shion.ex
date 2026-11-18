@@ -64,10 +64,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.Novice.Novice.Shion do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :nov_get_item04, 0) > 9 or get_char_var(ctx, :nov_get_item05, 0) > 9 do
       return_to_training(ctx)

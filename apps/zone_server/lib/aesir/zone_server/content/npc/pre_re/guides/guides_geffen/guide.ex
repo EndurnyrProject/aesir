@@ -48,8 +48,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesGeffen.Guide do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @locations [
     {"^FF0000Magic Acedemy^000000",
      ["The Magic Academy in", "northwest Geffen handles", "Job Changes to the Mage class."],
@@ -77,7 +75,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesGeffen.Guide do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> cutin("gef_soldier", 2)

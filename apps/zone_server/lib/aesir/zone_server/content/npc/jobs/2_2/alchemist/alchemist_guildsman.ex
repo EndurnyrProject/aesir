@@ -44,14 +44,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.AlchemistGuildsman do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FInsertplural
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @old_magic_book 1006
   @hammer_of_blacksmith 1005
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Parmy Gianino]")
 

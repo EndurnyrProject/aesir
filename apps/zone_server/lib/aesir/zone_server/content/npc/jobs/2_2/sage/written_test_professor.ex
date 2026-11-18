@@ -171,7 +171,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.WrittenTestProfessor do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Claytos Verdo]")
 

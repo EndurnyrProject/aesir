@@ -30,10 +30,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.RekenberGuardDrew do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> mes("[Rekenber Guard Drew]")

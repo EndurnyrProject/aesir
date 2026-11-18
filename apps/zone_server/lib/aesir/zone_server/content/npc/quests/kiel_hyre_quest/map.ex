@@ -35,10 +35,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Map do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     poem_stage = get_char_var(ctx, :KHCottagePoem1, 0)
     quest_stage = get_char_var(ctx, :KielHyreQuest, 0)

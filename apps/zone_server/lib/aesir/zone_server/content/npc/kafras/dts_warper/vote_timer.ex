@@ -43,7 +43,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.VoteTimer do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @election_timer "Vote Timer#ein::OnEnable"
@@ -57,13 +56,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.VoteTimer do
   @minimum_votes 20
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: ctx |> clear_voting_session() |> initnpctimer()
   def on_event("OnEnable", ctx), do: initnpctimer(ctx)
   def on_event("OnTimer60000", ctx), do: tick(ctx)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx |> clear_voting_session() |> initnpctimer()
 
   # A voting session left behind by a previous run must not carry over.

@@ -39,19 +39,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Kafras.DtsWarper.VoteTimer3 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @term_minutes 8640
   @election_timer "Vote Timer#ein::OnEnable"
   @service_timer "Vote Timer3#ein::OnEnable"
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnEnable", ctx), do: initnpctimer(ctx)
   def on_event("OnTimer60000", ctx), do: tick(ctx)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: initnpctimer(ctx)
 
   defp tick(ctx) do

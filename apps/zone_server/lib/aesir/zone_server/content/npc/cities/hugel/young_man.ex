@@ -22,10 +22,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Hugel.YoungMan do
       %{map: "hugel", x: 189, y: 143, dir: 5, sprite: 898, name: "Young Man", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> mes("[Young Man]")

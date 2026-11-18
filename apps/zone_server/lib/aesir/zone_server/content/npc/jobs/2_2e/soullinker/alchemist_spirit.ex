@@ -38,10 +38,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.AlchemistSpirit do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     soul_quest = get_char_var(ctx, :SOUL_Q, 0)
 

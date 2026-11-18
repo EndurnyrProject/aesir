@@ -41,7 +41,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.KnightSkills.Knight do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @charge_attack 1001
@@ -49,7 +48,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.KnightSkills.Knight do
   @witherless_rose 748
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:knight) do
       knight_quest(ctx, get_char_var(ctx, :KNGT_SK, 0))

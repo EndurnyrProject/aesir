@@ -47,7 +47,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.CounteragentMixture.Morgenstein do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @alcohol 970
@@ -86,7 +85,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.CounteragentMixture.Morgenstein do
   @out_of_materials "Hohohoho.... not enough... not enough... haah...haah... go..... go get the rest of the materials!!"
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if checkweight(ctx, [{1201, 1}]) == 0 do
       carrying_too_much(ctx)

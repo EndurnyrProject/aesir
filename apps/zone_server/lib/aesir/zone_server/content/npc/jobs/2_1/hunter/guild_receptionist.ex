@@ -47,11 +47,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.GuildReceptionist do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     quest = get_char_var(ctx, :HNTR_Q, 0)
 

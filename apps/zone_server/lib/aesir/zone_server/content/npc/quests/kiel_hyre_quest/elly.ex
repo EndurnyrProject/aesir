@@ -26,10 +26,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Elly do
       %{map: "kh_school", x: 178, y: 180, dir: 4, sprite: 895, name: "Elly", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     quest_stage = get_char_var(ctx, :KielHyreQuest, 0)
 

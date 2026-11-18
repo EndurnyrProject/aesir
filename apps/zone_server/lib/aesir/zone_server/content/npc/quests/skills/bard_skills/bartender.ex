@@ -37,14 +37,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.BardSkills.Bartender do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @tropical_sograt 12112
   @vermilion_on_the_beach 12113
   @price 1000
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if checkweight(ctx, [{1201, 1}]) == 0 do
       ctx

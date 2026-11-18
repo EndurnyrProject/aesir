@@ -37,10 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.BardSkills.Customer17570 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> mes("[Little Bit Drunken Guy]")

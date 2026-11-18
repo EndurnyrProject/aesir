@@ -128,11 +128,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.Guide do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FOkolnir
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx) do
     {ctx, sub} = FOkolnir.call(ctx, [])
     ctx = ctx |> set_local(:"sub$", sub) |> enablenpc(Rathena.concat("Guide#gq_", sub))
@@ -140,7 +138,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.Guide do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, sub} = FOkolnir.call(ctx, [])
     ctx = set_local(ctx, :"sub$", sub)

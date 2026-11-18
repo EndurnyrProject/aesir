@@ -30,11 +30,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.Karven do
     scope: :shared,
     spawn: [%{map: "monk_in", x: 103, y: 176, dir: 7, sprite: 60, name: "Karven", scope: :shared}]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx =
       ctx

@@ -64,10 +64,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Book do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       get_char_var(ctx, :KielHyreQuest, 0) != 26 ->

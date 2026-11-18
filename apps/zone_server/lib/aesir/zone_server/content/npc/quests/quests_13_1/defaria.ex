@@ -47,8 +47,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Defaria do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @wet_firewood "Wet Firewood#moc2"
   @holy_water 523
   @rune_of_darkness 7511
@@ -61,7 +59,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Defaria do
   @baked_yam 633
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if checkweight(ctx, [{714, 1}]) == 0 do
       overloaded(ctx)

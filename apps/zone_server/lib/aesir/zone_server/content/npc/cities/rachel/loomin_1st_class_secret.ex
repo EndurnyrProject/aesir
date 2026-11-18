@@ -30,10 +30,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.Loomin1stClassSecret do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> mes("^3131FFLoomin, the boy")

@@ -39,8 +39,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Ep13ManFild01MonEdq do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @npc "ep13_man_fild01_mon_edq"
   @map "man_fild01"
   @event "ep13_man_fild01_mon_edq::OnMyMobDead"
@@ -48,11 +46,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Ep13ManFild01MonEdq do
   @spawn_batch 14
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: arm(ctx)
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: arm(ctx)
 
   def on_event("OnEnable", ctx) do

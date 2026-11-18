@@ -37,16 +37,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Tatacho do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @npc "Tatacho#alba02"
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: enablenpc(ctx, @npc)
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnEnable", ctx), do: enablenpc(ctx, @npc)
   def on_event("OnDisable", ctx), do: disablenpc(ctx, @npc)
   def on_event("OnTouch", ctx), do: pet_mood(ctx)

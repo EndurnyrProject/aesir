@@ -87,7 +87,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M22.Dancer.DancestepSteptri
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @floor "job_duncer"
@@ -95,11 +94,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M22.Dancer.DancestepSteptri
   @bc_map 1
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx), do: miss_step(ctx)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: miss_step(ctx)
 
   defp miss_step(ctx) do

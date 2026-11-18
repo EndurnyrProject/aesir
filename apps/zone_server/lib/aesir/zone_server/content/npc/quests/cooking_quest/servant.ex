@@ -33,7 +33,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.CookingQuest.Servant do
     scope: :shared,
     spawn: [%{map: "payon", x: 209, y: 127, dir: 3, sprite: 88, name: "Servant", scope: :shared}]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @rice_cake 555
@@ -41,7 +40,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.CookingQuest.Servant do
   @rice_cake_price 200
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if Rathena.truthy?(checkweight(ctx, [{@rice_cake, 1}])) do
       talk(ctx, get_char_var(ctx, :cooking_q, 0))

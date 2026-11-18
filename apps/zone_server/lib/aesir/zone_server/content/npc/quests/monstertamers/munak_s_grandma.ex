@@ -46,7 +46,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Monstertamers.MunakSGrandma do
   alias Aesir.ZoneServer.Script.Ctx
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if count_item(ctx, 1558) > 0 do
       tell_story(ctx)

@@ -35,10 +35,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.SwordHilt do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     first_poem = get_char_var(ctx, :KHCottagePoem1, 0)
     second_poem = get_char_var(ctx, :KHCottagePoem2, 0)

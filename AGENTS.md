@@ -260,7 +260,14 @@ umbrella output are in the **aesir-testing** skill.
 - **Naming**: `snake_case` for variables/functions, `CamelCase` for modules.
 - **Error Handling**: Use `with` for complex paths and pattern-match on returns. Avoid exceptions for
   control flow; return `{:ok, result}` / `{:error, reason}`.
-- **Typespecs**: Add `@spec` to all public functions.
+- **Typespecs**: Add `@spec` to all public functions, except `@impl` callbacks: the behaviour's
+  `@callback` already types them. Restate a spec on a callback only when it narrows it
+  (`:: no_return()`, one caster struct instead of the union).
+- **Keep carried types shallow**: Dialyzer expands a type in full at every mention, so anything
+  reachable from `PlayerState`, `SessionState` or `Script.Ctx` is paid for in thousands of specs,
+  and a recursive type there also defeats Dialyzer's size cap. A struct that only carries a value
+  for another module, without reading it, uses that module's shallow type
+  (`EquipScript.compiled()`, `Ctx.inline_session()`), never a recursive one.
 - **Docs**: Add `@moduledoc`/`@doc` to public modules/functions and `@typedoc` to public types.
 - **Prefer `with` over nested `case`**.
 - **No superfluous comments**: Prefer module/function docs; comment inline only when genuinely needed.

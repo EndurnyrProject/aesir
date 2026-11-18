@@ -34,7 +34,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.ArcherSkills.Roberto do
       %{map: "moc_ruins", x: 118, y: 99, dir: 5, sprite: 88, name: "Roberto", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @arrow_crafting 147
@@ -45,7 +44,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.ArcherSkills.Roberto do
   @red_potion 501
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       Rathena.job_id(base_class(ctx)) != Rathena.job_id(:archer) -> stranger(ctx)

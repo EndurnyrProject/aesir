@@ -34,10 +34,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.TestHelper do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> mes("[Test Helper]")

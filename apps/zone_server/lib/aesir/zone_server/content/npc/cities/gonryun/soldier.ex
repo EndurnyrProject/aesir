@@ -35,10 +35,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Gonryun.Soldier do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :b_sword, 0) do
       stage when stage < 7 -> tell_shrine_history(ctx)

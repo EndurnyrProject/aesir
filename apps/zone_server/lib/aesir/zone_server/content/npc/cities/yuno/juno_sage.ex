@@ -36,10 +36,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Yuno.JunoSage do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Le Morpheus]")
 

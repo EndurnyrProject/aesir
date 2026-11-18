@@ -39,10 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.Killershow01 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, "#killershow01")
   def on_event("OnEnable", ctx), do: ctx |> enablenpc("#killershow01") |> initnpctimer()
   def on_event("OnDisable", ctx), do: ctx |> stopnpctimer() |> disablenpc("#killershow01")
@@ -53,7 +50,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.Killershow01 do
     do: ctx |> disablenpc("Killer#Rogueguild") |> disablenpc("#killershow01")
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnInit", ctx)
 end

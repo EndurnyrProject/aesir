@@ -1023,7 +1023,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.M3Blank1ASwdtrap3
   alias Aesir.ZoneServer.Script.Ctx
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch", ctx) do
     ev_ontouch(ctx)
   catch
@@ -1031,7 +1030,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.M3Blank1ASwdtrap3
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ev_ontouch(ctx)
   catch

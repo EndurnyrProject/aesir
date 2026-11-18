@@ -30,14 +30,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M22.Sage.Arena0 do
 
   use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @arena "job_sage"
   @on_mob_dead "Arena#2::OnMyMobDead"
   @bc_map 1
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, "Arena#2")
   def on_event("OnEnable", ctx), do: start(ctx)
   def on_event("OnReset", ctx), do: killmonsterall(ctx, @arena)
@@ -69,7 +66,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M22.Sage.Arena0 do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   defp start(ctx) do

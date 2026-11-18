@@ -41,8 +41,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.QueJob015155 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @map "que_job01"
   @inner_room {11, 7}
   @entrance {52, 50}
@@ -50,11 +48,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.QueJob015155 do
   @room_var "moc_mao_room1"
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: reset_room(ctx)
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: reset_room(ctx)
   def on_event("OnReset", ctx), do: reset_room(ctx)
   def on_event("OnTouch_", ctx), do: admit(ctx)

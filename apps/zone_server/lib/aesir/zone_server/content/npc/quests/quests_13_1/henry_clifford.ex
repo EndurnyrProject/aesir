@@ -37,13 +37,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.HenryClifford do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @marlin 6049
   @cat_trading_points 2
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if count_item(ctx, @marlin) > 0 do
       offer_trade(ctx)

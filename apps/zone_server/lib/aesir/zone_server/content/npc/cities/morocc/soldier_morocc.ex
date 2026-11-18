@@ -30,14 +30,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.SoldierMorocc do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx), do: warn_player(ctx)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: warn_player(ctx)
 
   defp warn_player(ctx) do

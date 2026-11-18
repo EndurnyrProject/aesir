@@ -42,17 +42,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.HeapOfEarth do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @bloody_crystal 6027
   @investigation_step 7
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch", ctx), do: reveal_traces(ctx)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if checkweight(ctx, [{714, 1}]) == 0 do
       overburdened(ctx)

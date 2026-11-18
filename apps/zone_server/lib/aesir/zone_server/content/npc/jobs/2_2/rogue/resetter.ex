@@ -37,10 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.Resetter do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTimer500000", ctx) do
     ctx
     |> donpcevent("mob_rogue#1::OnDisable")
@@ -63,7 +60,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.Resetter do
   def on_event("OnInit", ctx), do: donpcevent(ctx, "resetter#rogue::OnEnable")
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnTimer500000", ctx)
 end

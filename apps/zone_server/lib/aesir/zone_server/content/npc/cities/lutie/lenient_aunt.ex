@@ -25,10 +25,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lutie.LenientAunt do
       %{map: "xmas_in", x: 27, y: 103, dir: 4, sprite: 701, name: "Lenient Aunt", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :xmas_npc, 0) do
       5 -> request_salt(ctx)

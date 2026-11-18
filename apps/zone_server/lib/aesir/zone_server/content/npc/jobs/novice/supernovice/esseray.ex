@@ -41,11 +41,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.Esseray do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Content.Npc.Re.Functions.EsserayEx
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       Rathena.job_id(class(ctx)) == Rathena.job_id(:super_novice_e) or

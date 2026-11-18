@@ -118,10 +118,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.Kienna do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FKienna
-  alias Aesir.ZoneServer.Script.Ctx
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     {ctx, _} = FKienna.call(ctx, [strnpcinfo(ctx, 2)])
     ctx
@@ -130,6 +128,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.RogueSkills.Kienna do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 end

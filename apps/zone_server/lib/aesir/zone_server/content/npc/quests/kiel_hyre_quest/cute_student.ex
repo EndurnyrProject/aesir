@@ -37,10 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.CuteStudent do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if checkweight(ctx, [{908, 200}]) == 0 do
       inventory_full(ctx)

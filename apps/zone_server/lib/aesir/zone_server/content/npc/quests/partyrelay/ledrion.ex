@@ -89,10 +89,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Partyrelay.Ledrion do
   import Aesir.ZoneServer.Script.Dsl, warn: false
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FPartyrelayExp
-  alias Aesir.ZoneServer.Script.Ctx
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, _} = getpartymember(ctx, getcharid(ctx, 1))
     party_member_count = get_server_temp_var(ctx, "partymembercount", 0)

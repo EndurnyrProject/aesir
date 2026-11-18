@@ -32,8 +32,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests131.Laur do
       %{map: "prt_castle", x: 88, y: 165, dir: 3, sprite: 57, name: "Laur", scope: :pre_renewal}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @report 11012
 
   # Steps in which the player is carrying the report to Laur.
@@ -46,7 +44,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests131.Laur do
   @report_advances %{9 => 101, 111 => 112, 121 => 122}
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Laur]")
     step = get_char_var(ctx, :ep13_1_edq, 0)

@@ -41,13 +41,11 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.Swordman do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @menu ["Job Change", "About Swordman.", "About the Job requirements.", "Cancel."]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if upper(ctx) == 1 do
       reborn(ctx)

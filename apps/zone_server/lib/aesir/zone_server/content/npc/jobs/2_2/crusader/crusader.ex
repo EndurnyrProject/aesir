@@ -38,7 +38,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Crusader.Crusader do
       %{map: "prt_church", x: 95, y: 127, dir: 3, sprite: 745, name: "Crusader", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @undead_quiz [
@@ -146,7 +145,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Crusader.Crusader do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Gabriel Valentine]")
     base_job = Rathena.job_id(base_job(ctx))

@@ -49,11 +49,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Blacksmith.Guildsman do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FClearjobvar
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if upper(ctx) == 1 do
       greet_reborn(ctx)

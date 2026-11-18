@@ -45,7 +45,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.ArcherSkills.Jason do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @arrow_repel 148
@@ -56,7 +55,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.ArcherSkills.Jason do
   @banana_juice 532
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     ctx |> mes("[???]") |> mes("Errrrrrr...") |> close()
   catch
@@ -64,7 +62,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.ArcherSkills.Jason do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       Rathena.job_id(base_class(ctx)) != Rathena.job_id(:archer) -> stranger(ctx)

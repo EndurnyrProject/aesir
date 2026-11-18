@@ -42,18 +42,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Moc2EventOn do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @npc "#moc2_event_on"
   @map "que_dan01"
   @event_controller "#moc2_event01"
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: enablenpc(ctx, @npc)
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnEnable", ctx), do: enablenpc(ctx, @npc)
   def on_event("OnDisable", ctx), do: disablenpc(ctx, @npc)
   def on_event("OnStop", ctx), do: stopnpctimer(ctx)

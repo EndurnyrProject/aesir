@@ -26,12 +26,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M22.Sage.Arena2 do
 
   use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @arena "job_sage"
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, "Arena#3")
 
   def on_event("OnEnable", ctx) do
@@ -49,6 +46,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M22.Sage.Arena2 do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 end

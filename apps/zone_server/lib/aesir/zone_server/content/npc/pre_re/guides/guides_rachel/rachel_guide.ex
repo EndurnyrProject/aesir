@@ -33,8 +33,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesRachel.RachelGuide do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @locations [
     {"Cheshrumnir",
      [
@@ -60,7 +58,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesRachel.RachelGuide do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> mes("[Rachel Guide]")

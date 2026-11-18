@@ -137,7 +137,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.ToAgitMainGate do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FOkolnir
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @arug_castles %{
@@ -157,11 +156,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.ToAgitMainGate do
   }
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     queue_map = strnpcinfo(ctx, 4)
     castle = Rathena.atoi(Rathena.charat(queue_map, Rathena.getstrlen(queue_map) - 1))

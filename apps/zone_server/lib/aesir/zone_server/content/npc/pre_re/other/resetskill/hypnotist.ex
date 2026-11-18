@@ -36,13 +36,11 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Other.Resetskill.Hypnotist do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @menu ["Skill Reset?", "I want a Skill Reset", "Nothing"]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, answer} =
       ctx

@@ -34,10 +34,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.ApprenticePriestess do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_server_var(ctx, "rachel_donate", 0) < 10_000 do
       promote_festival(ctx)

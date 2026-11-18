@@ -44,7 +44,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.SirAndrew do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @loyalty_items %{
@@ -53,7 +52,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.SirAndrew do
   }
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Sir Andrew]")
 

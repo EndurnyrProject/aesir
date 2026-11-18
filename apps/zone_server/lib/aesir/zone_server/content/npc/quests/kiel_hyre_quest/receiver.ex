@@ -36,10 +36,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Receiver do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnMyMobDead", ctx) do
     if mobcount(ctx, "kh_kiehl01", "Receiver#kh::OnMyMobDead") < 1 do
       makeitem(ctx, 7506, 1, "this", 19, 36)
@@ -49,7 +46,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Receiver do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if mobcount(ctx, "kh_kiehl01", "Receiver#kh::OnMyMobDead") < 1 do
       ctx

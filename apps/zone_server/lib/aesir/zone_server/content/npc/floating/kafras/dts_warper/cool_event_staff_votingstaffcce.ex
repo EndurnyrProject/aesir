@@ -112,7 +112,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Kafras.DtsWarper.CoolEventStaffV
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FCleargarbage
-  alias Aesir.ZoneServer.Script.Ctx
 
   @staff "[Cool Event Corp. Voting Staff]"
   @portrait "zonda_01"
@@ -147,7 +146,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Kafras.DtsWarper.CoolEventStaffV
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, _} = FCleargarbage.call(ctx, [])
 

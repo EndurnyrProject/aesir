@@ -230,11 +230,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Guildrelay.Relaydummy3Gui
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = set_local(ctx, :npc_name, strnpcinfo(ctx, 1))
     {castle_map, _x, _y} = getmapxy(ctx, :npc)

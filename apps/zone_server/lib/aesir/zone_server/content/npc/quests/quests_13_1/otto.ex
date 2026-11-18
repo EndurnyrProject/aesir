@@ -41,14 +41,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Otto do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @instructors_letter 6043
   @ottos_letter 6044
   @gift 12322
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       checkweight(ctx, [{1201, 1}]) == 0 -> overburdened(ctx)

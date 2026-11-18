@@ -53,7 +53,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Skills.SwordmanSkills.Kni
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @moving_recovery 144
@@ -61,7 +60,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Skills.SwordmanSkills.Kni
   @moth_wing 1058
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch", ctx) do
     if veteran_swordman?(ctx), do: pitch_skill(ctx), else: ctx
   catch
@@ -69,7 +67,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Skills.SwordmanSkills.Kni
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       not veteran_swordman?(ctx) -> introduce(ctx)

@@ -39,8 +39,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesPayon.Guide do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @locations [
     {"^FF0000Archer Guild^000000",
      [
@@ -76,7 +74,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesPayon.Guide do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> cutin("pay_soldier", 2)

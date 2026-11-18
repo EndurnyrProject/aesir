@@ -37,7 +37,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuSword.DequEe do
       %{map: "geffen", x: 154, y: 143, dir: 3, sprite: 734, name: "Dequ'ee", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @codes %{
@@ -176,7 +175,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuSword.DequEe do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       Rathena.job_id(base_job(ctx)) == Rathena.job_id(:novice) ->

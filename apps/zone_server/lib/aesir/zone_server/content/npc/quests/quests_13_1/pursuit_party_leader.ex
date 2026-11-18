@@ -41,11 +41,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.PursuitPartyLeader do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if checkweight(ctx, [{714, 3}]) == 0 do
       overloaded(ctx)

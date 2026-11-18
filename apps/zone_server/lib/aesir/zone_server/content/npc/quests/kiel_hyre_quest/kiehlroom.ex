@@ -26,10 +26,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Kiehlroom do
       %{map: "kh_kiehl02", x: 1, y: 1, dir: 0, sprite: -1, name: "KiehlRoom", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnKiehlMobDead", ctx) do
     ctx = set_npc_var(ctx, "KHKilled", get_npc_var(ctx, "KHKilled", 0) + 1)
 
@@ -71,6 +68,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Kiehlroom do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 end

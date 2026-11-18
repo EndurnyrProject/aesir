@@ -54,7 +54,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildmaster14980 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @examiners [
@@ -68,7 +67,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildmaster14980 do
   ]
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     ctx = save_guild_respawn(ctx)
 
@@ -120,7 +118,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildmaster14980 do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   defp save_guild_respawn(ctx) do

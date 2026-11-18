@@ -159,8 +159,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Mrsmile.SmileAssistanceSm
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @jellopy 909
   @fluff 914
   @clover 705
@@ -173,7 +171,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Mrsmile.SmileAssistanceSm
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, choice} =
       ctx

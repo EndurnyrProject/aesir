@@ -31,10 +31,8 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.TestHallStaff7245
     ]
 
   alias Aesir.ZoneServer.Content.Npc.PreRe.Functions.FJobswdteststaff
-  alias Aesir.ZoneServer.Script.Ctx
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, _} = FJobswdteststaff.call(ctx, [10, 245])
     ctx

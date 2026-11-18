@@ -47,7 +47,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.PromotionalStaff9067 do
   @ruby 723
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :ep13_ryu, 0) do
       step when step > 6 -> already_adventuring(ctx)

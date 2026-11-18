@@ -39,12 +39,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.PieceOfCrack do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @cat_trading_points 3000
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, points} =
       ctx

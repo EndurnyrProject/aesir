@@ -38,11 +38,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.BreederTaab do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :ep13_ryu, 0) > 99 or get_char_var(ctx, :ep13_start, 0) > 99 do
       at_step(ctx, get_char_var(ctx, :ep13_alba, 0))

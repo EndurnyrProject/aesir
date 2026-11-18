@@ -47,10 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Hunter do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     quest = get_char_var(ctx, :HNTR_Q, 0)
 

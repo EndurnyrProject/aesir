@@ -43,14 +43,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.AssassinSkills.Assassin2327
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @sonic_blow 136
   @sonic_acceleration 1003
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     assassin? = Rathena.job_id(base_job(ctx)) == Rathena.job_id(:assassin)
     step = get_char_var(ctx, :ASSN_SK, 0)

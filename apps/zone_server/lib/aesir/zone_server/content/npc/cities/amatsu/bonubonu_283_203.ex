@@ -33,10 +33,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Amatsu.Bonubonu283203 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> set_char_var(:jap_tree, 3)

@@ -42,7 +42,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.FerociousGorurug do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @fishing_quest 12060
@@ -54,7 +53,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.FerociousGorurug do
   @daily_exp 15_000
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case checkquest(ctx, @fishing_quest, :playtime) do
       -1 -> fishing_lesson(ctx)

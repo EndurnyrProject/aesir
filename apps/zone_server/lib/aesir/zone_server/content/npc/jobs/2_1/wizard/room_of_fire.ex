@@ -34,11 +34,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.RoomOfFire do
       %{map: "job_wiz", x: 1, y: 5, dir: 1, sprite: 66, name: "Room of Fire", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, "Room of Fire")
 
   def on_event("OnEnable", ctx) do
@@ -116,7 +114,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.RoomOfFire do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnInit", ctx)
 

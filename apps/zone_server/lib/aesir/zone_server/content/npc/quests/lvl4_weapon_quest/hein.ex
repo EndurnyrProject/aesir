@@ -40,10 +40,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Lvl4WeaponQuest.Hein do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case checkweight(ctx, [{908, 300}]) do
       0 -> inventory_full(ctx)

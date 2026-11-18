@@ -32,10 +32,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Pilot221158 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case Enum.random(1..4) do
       1 -> navigation_report(ctx)

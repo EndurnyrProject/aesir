@@ -38,10 +38,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Payon.Chief do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     case base_level(ctx) do
       level when level < 30 -> demand_respect(ctx)
@@ -51,7 +48,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Payon.Chief do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   defp demand_respect(ctx) do

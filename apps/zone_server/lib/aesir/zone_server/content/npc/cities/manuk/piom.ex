@@ -17,10 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Manuk.Piom do
     scope: :shared,
     spawn: [%{map: "manuk", x: 100, y: 100, dir: 3, sprite: 454, name: "Piom", scope: :shared}]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
       ctx

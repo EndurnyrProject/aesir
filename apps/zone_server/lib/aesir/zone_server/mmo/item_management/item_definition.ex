@@ -125,8 +125,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
           no_guild_storage: boolean(),
           stack_limit: %{optional(container()) => non_neg_integer()},
           on_use: String.t() | nil,
-          on_equip: EquipScript.program() | nil,
-          on_unequip: EquipScript.program() | nil,
+          on_equip: EquipScript.compiled() | nil,
+          on_unequip: EquipScript.compiled() | nil,
           attack_element: atom()
         }
 

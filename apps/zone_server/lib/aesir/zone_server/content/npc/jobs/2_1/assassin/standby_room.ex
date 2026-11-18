@@ -49,10 +49,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.StandbyRoom do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx) do
     ctx
     |> hideonnpc("Standby Room#ASNTEST")
@@ -78,6 +75,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.StandbyRoom do
   def on_event("OnStart", ctx), do: enablewaitingroomevent(ctx)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 end

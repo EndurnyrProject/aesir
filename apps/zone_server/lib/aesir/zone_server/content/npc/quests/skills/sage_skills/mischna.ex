@@ -35,7 +35,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.SageSkills.Mischna do
       %{map: "yuno_in03", x: 176, y: 24, dir: 3, sprite: 755, name: "Mischna", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @create_converter 1007
@@ -85,7 +84,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.SageSkills.Mischna do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:sage) do
       stranger(ctx)

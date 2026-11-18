@@ -28,10 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Manuk.Worker393134 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 do
       ctx

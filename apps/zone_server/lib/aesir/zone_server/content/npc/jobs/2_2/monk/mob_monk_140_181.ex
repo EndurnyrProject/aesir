@@ -43,10 +43,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.MobMonk140181 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     ctx
     |> summon_mob(mob_id: 1015, map: "monk_test", at: {140, 181})
@@ -58,7 +55,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.MobMonk140181 do
   def on_event("OnDisable", ctx), do: killmonsterall(ctx, "monk_test")
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnTouch_", ctx)
 end

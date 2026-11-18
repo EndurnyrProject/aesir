@@ -34,11 +34,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.Veiner do
       %{map: "prt_monk", x: 197, y: 228, dir: 3, sprite: 89, name: "Veiner", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Veiner]")
 

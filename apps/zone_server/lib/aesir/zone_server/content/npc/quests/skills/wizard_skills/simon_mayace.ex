@@ -38,10 +38,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.WizardSkills.SimonMayace do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :WIZ_SK, 0) == 1 do
       offer_lesson(ctx)

@@ -39,8 +39,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesJuno.JunoGuide do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @locations [
     {"Armory", {120, 138, 0, 0xFF3355},
      [
@@ -112,7 +110,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesJuno.JunoGuide do
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, choice} =
       ctx

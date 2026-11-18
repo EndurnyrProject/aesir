@@ -60,7 +60,7 @@ defmodule Aesir.ZoneServer.Mmo.PetManagement.PetDefinition do
           retaliate_rate: 0..10_001,
           change_target_rate: 0..10_001,
           allow_auto_feed: boolean(),
-          bonus_program: EquipScript.program(),
+          bonus_program: EquipScript.compiled(),
           support_ops: [SupportScript.support_op()],
           evolution: [evolution()]
         }

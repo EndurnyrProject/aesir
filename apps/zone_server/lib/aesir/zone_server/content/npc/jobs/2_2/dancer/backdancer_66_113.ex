@@ -42,14 +42,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Backdancer66113 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnSmile", ctx), do: emotion(ctx, :best)
   def on_event("OnOmg", ctx), do: emotion(ctx, :huk)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 end

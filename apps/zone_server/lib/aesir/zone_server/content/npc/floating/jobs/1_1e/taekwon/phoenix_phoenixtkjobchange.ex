@@ -57,13 +57,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M11e.Taekwon.PhoenixPhoenix
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FClearjobvar
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @guard_set 2101
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     job = Rathena.job_id(class(ctx))
     quest = get_char_var(ctx, :TK_Q, 0)

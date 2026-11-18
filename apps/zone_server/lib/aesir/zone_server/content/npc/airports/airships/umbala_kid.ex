@@ -33,10 +33,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.UmbalaKid do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = ctx |> emotion(:profusely_sweat) |> mes("[Kid]")
 

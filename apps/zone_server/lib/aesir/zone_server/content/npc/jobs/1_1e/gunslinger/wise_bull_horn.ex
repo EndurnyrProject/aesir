@@ -35,10 +35,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M11e.Gunslinger.WiseBullHorn do
       %{map: "payon", x: 184, y: 65, dir: 3, sprite: 866, name: "Wise Bull Horn", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     quest_progress(ctx, get_char_var(ctx, :GUNS_Q, 0))
   end

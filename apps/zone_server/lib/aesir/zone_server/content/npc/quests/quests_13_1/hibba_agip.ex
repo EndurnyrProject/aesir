@@ -33,11 +33,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.HibbaAgip do
       %{map: "mid_campin", x: 90, y: 121, dir: 5, sprite: 459, name: "Hibba Agip", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = cutin(ctx, "ep13_captin_edq", 2)
 

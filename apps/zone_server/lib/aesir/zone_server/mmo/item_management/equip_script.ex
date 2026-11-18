@@ -280,8 +280,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   @type pet_autobonus :: %{
           trigger: :attack | :when_hit | {:on_skill, pos_integer()},
           battle_flag: non_neg_integer(),
-          bonus: program(),
-          other: program() | nil,
+          bonus: compiled(),
+          other: compiled() | nil,
           rate: integer(),
           duration_ms: pos_integer()
         }
@@ -298,8 +298,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           rate: integer(),
           duration_ms: pos_integer(),
           battle_flag: non_neg_integer(),
-          primary: program(),
-          secondary: program()
+          primary: compiled(),
+          secondary: compiled()
         }
 
   @typedoc "A single bonus program statement."
@@ -318,6 +318,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   @typedoc "A bonus program: an ordered list of instructions."
   @type program :: [instr()]
+
+  @typedoc """
+  A program as code outside this module and its compiler carries it.
+
+  Definitions, player stats and evaluated registrations store programs and hand
+  them back to `evaluate/2`; they never read an instruction. They use this
+  shallow type because `t:program/0` is recursive, and Dialyzer expands it in
+  full inside every spec that reaches a struct holding one.
+  """
+  @type compiled :: [tuple()]
 
   @compare_ops [:>, :<, :>=, :<=, :==, :!=]
   @plain_arith_ops [:+, :-, :*]

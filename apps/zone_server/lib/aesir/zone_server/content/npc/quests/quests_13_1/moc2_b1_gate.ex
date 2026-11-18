@@ -41,16 +41,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Moc2B1Gate do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @basement {"que_dan02", 91, 11}
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: inspect_door(ctx)
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch", ctx), do: inspect_door(ctx)
 
   defp inspect_door(ctx) do

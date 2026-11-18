@@ -28,10 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbech.RyanDanger do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     player_header = "[#{char_name(ctx, 0)}]"
 

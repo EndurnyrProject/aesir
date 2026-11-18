@@ -39,14 +39,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.SmallFairy do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @laphine_ring 2782
   @fairy_report_quest 2158
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if base_level(ctx) > 69 and checkquest(ctx, @fairy_report_quest) == -1 do
       announce_fairy(ctx)

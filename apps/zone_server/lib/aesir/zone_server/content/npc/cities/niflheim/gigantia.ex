@@ -37,11 +37,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Niflheim.Gigantia do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx) do
     if wearing_horns?(ctx) do
       ctx
@@ -54,7 +52,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Niflheim.Gigantia do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if wearing_horns?(ctx) do
       straighten_horns(ctx)

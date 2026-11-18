@@ -39,13 +39,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Jan do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @delivery 6045
   @gift 12322
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :ep13_newbs, 0) do
       15 -> deliver(ctx)

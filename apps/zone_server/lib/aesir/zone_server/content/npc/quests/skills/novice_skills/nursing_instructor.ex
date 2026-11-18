@@ -40,12 +40,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.NoviceSkills.NursingInstruc
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @newbie_tag 7039
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx =
       ctx

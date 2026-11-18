@@ -39,11 +39,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Valkyrie.HeartOfYmir do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if base_level(ctx) > 98 and job_level(ctx) > 49 and
          Rathena.job_id(class(ctx)) >= Rathena.job_id(:knight) and

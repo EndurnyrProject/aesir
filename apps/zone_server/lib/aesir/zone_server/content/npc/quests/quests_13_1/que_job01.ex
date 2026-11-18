@@ -38,17 +38,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.QueJob01 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @hideout {"que_job01", 9, 94}
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnTouch_", ctx), do: enter(ctx)
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: enter(ctx)
 
   defp enter(ctx) do

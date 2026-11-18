@@ -41,13 +41,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.MageSkills.GreatWizard do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @energy_coat 157
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, choice} =
       ctx

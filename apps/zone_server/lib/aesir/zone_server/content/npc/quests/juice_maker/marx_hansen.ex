@@ -40,7 +40,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.JuiceMaker.MarxHansen do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @speaker "[Merchant Marx Hansen]"
@@ -48,7 +47,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.JuiceMaker.MarxHansen do
   @zeny_per_bottle 3
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       checkweight(ctx, [{1201, 1}]) == 0 -> encumbered(ctx)

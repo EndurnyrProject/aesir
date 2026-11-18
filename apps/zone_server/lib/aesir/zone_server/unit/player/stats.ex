@@ -154,8 +154,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           rate: pos_integer(),
           duration_ms: pos_integer(),
           battle_flag: non_neg_integer(),
-          primary: EquipScript.program(),
-          secondary: EquipScript.program(),
+          primary: EquipScript.compiled(),
+          secondary: EquipScript.compiled(),
           secondary_effects: [EquipScript.effect()]
         }
 
@@ -165,7 +165,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   active skill bonus, `nil` while it is off.
   """
   @type pet_bonus :: %{
-          program: EquipScript.program(),
+          program: EquipScript.compiled(),
           inputs: %{pet: %{atom() => integer() | String.t()}},
           skill_bonus: {atom(), integer()} | nil
         }

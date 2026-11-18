@@ -44,11 +44,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.StaffOfTheAcademy do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Metheus Sylphe]")
 

@@ -38,10 +38,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.KnightSkills.Knight78354 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :KNGT_SK, 0) in [3, 4] do
       confide(ctx)

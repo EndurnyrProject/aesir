@@ -43,14 +43,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.DancerSkills.Canell do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @charming_wink 1011
   @crystal_mirror 747
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       Rathena.job_id(base_job(ctx)) != Rathena.job_id(:dancer) -> greet_outsider(ctx)

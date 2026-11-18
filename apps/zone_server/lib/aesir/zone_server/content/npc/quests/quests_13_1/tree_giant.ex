@@ -39,14 +39,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.TreeGiant do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @laphine_ring 2782
   @giant_report_quest 2159
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if base_level(ctx) > 69 and checkquest(ctx, @giant_report_quest) == -1 do
       announce_giant(ctx)

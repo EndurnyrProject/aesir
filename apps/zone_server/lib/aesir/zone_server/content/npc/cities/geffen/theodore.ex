@@ -29,10 +29,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.Theodore do
       %{map: "geffen_in", x: 34, y: 170, dir: 0, sprite: 47, name: "Theodore", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx
     |> mes("[Theodore]")

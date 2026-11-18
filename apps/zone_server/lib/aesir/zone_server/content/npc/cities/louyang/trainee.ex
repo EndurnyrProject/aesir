@@ -93,10 +93,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Louyang.Trainee do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx |> mes("[Trainee]") |> mes("Yeeeyap~!") |> mes("Taaaaaah~~!!") |> mes("Hooo~.") |> close()
   end

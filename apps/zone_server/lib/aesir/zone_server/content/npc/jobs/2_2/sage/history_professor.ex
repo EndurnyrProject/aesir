@@ -48,7 +48,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.HistoryProfessor do
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx = mes(ctx, "[Saphien Layless]")
 

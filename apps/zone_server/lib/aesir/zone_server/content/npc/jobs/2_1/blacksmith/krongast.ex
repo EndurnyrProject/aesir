@@ -46,10 +46,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Blacksmith.Krongast do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       get_char_var(ctx, :BSMITH_Q, 0) == 11 and count_item(ctx, 1119) > 0 -> offer_delivery(ctx)

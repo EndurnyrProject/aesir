@@ -37,10 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Traces368180 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :mao_morocc2, 0) in [7, 8] do
       arrow(ctx)

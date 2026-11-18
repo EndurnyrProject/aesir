@@ -127,10 +127,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.WishMaiden1 do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FOkolnir
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, sub} = FOkolnir.call(ctx, [])
     ctx = set_local(ctx, :"sub$", sub)
@@ -276,7 +274,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.WishMaiden1 do
   end
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnEnable", ctx) do
     {ctx, sub} = FOkolnir.call(ctx, [])
     ctx |> set_local(:"sub$", sub) |> enablenpc("Wish Maiden##{sub}_gift") |> initnpctimer()

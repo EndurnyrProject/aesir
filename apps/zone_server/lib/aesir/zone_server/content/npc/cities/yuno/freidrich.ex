@@ -34,10 +34,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Yuno.Freidrich do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if Enum.random(1..5) == 1 do
       explain_junos_power(ctx)

@@ -40,7 +40,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.CampGuardCaptain do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @fairy_report 2158
@@ -50,7 +49,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.CampGuardCaptain do
   @pre_renewal_exp 70_000
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx =
       ctx

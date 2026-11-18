@@ -24,10 +24,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lutie.Duffle do
       %{map: "xmas_in", x: 167, y: 173, dir: 4, sprite: 711, name: "Duffle", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     case get_char_var(ctx, :xmas_npc, 0) do
       1 -> introduce_snowysnow(ctx)

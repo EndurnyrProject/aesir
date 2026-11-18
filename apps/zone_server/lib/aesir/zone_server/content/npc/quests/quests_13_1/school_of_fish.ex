@@ -74,7 +74,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.SchoolOfFish do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @fishing_quest 12060
@@ -93,7 +92,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.SchoolOfFish do
   @old_purple_box 617
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if checkquest(ctx, @fishing_quest, :playtime) == -1 and
          count_item(ctx, @piece_of_fish) < @fish_limit do

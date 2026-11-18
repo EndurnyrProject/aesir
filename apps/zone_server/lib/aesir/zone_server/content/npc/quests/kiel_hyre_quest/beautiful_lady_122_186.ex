@@ -36,10 +36,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.BeautifulLady122186 
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if checkweight(ctx, [{7496, 1}]) == 0 do
       ctx

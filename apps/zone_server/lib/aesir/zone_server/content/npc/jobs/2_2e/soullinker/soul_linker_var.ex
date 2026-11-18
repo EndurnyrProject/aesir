@@ -36,11 +36,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.SoulLinkerVar do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Todo
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     ctx =
       ctx

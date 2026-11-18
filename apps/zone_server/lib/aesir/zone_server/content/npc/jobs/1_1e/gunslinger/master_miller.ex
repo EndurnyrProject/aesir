@@ -37,11 +37,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M11e.Gunslinger.MasterMiller do
       %{map: "que_ng", x: 152, y: 167, dir: 3, sprite: 901, name: "Master Miller", scope: :shared}
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       upper(ctx) == 2 ->

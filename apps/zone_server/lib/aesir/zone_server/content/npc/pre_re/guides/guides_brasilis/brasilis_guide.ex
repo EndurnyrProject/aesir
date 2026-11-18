@@ -32,8 +32,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesBrasilis.BrasilisGuide
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @locations [
     {"[ Hotel ]", ["The Brasilis Hotel is located just above, ^FF3355+^000000."],
      {274, 151, 2, 0xFF3355}},
@@ -53,7 +51,6 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesBrasilis.BrasilisGuide
   ]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     {ctx, choice} =
       ctx

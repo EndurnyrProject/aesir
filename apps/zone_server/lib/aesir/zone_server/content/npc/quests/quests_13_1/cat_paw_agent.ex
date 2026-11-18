@@ -45,7 +45,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.CatPawAgent do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Functions.FCanopenstorage
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @storage_fee 60
@@ -57,7 +56,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.CatPawAgent do
   @ten_towns @nine_towns ++ [:lighthalzen]
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     at_points(ctx, get_char_var(ctx, :ep13_yong1, 0))
   end

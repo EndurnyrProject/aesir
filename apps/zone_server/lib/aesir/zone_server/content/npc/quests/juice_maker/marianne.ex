@@ -40,7 +40,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.JuiceMaker.Marianne do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @speaker "[Housewife Marianne]"
@@ -48,7 +47,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.JuiceMaker.Marianne do
   @misspelled_speaker "[Housewife Marinaa]"
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     cond do
       quest_known?(ctx) -> reveal_juice_rumour(ctx)

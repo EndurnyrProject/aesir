@@ -40,18 +40,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.MonsterMaster do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @map "mid_camp"
   @mob_event "#monster_master::OnMyMobDead"
   @captured_message "Breeder Taab: I've captured an escaped creature safely. Sorry for yelling so loud."
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: maybe_start_timer(ctx)
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnEnable", ctx), do: maybe_start_timer(ctx)
   def on_event("OnStop", ctx), do: ctx |> killmonster(@map, @mob_event) |> stopnpctimer()
 

@@ -37,11 +37,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Umbala.UtanKid do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
     if get_char_var(ctx, :event_umbala, 0) >= 3 do
       request_donation(ctx)

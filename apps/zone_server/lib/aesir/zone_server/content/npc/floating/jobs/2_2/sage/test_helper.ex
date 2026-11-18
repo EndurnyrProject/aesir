@@ -27,13 +27,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M22.Sage.TestHelper do
 
   use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
 
-  alias Aesir.ZoneServer.Script.Ctx
-
   @arena "job_sage"
   @bc_map 1
 
   @impl true
-  @spec on_event(String.t(), Ctx.t()) :: Ctx.t()
   def on_event("OnInit", ctx), do: disablenpc(ctx, "Test Helper#sg")
   def on_event("OnEnable", ctx), do: initnpctimer(ctx)
 
@@ -62,7 +59,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M22.Sage.TestHelper do
   end
 
   @impl true
-  @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx), do: ctx
 
   defp announce(ctx, text), do: mapannounce(ctx, @arena, text, @bc_map)
