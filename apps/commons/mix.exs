@@ -42,9 +42,11 @@ defmodule Commons.MixProject do
       {:credo, "~> 1.7", only: [:dev], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_check, "~> 0.16", only: [:dev, :test], runtime: false},
+      {:ex_machina, "~> 2.8", only: :test},
       {:ecto, "~> 3.13"},
       {:ecto_sql, "~> 3.13"},
       {:ex_doc, "~> 0.28", only: :dev, runtime: false},
+      {:faker, "~> 0.19", only: :test},
       {:hammox, "~> 1.0", only: :test},
       {:horde, "~> 0.10"},
       {:hush, "~> 1.2"},
@@ -62,7 +64,8 @@ defmodule Commons.MixProject do
       {:ranch, "~> 2.2"},
       {:recode, "~> 0.9", only: [:dev], runtime: false},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
-      {:tidewave, "~> 0.4", only: :dev}
+      {:tidewave, "~> 0.4", only: :dev},
+      {:typedstruct, "~> 0.6"}
     ]
   end
 

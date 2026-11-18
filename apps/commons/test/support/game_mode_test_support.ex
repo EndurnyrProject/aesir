@@ -21,6 +21,8 @@ defmodule Aesir.GameModeTestSupport do
           [game_mode: opposite_mode, integration_re: true, integration_pre_re: true]
       )
 
+    {:ok, _} = Application.ensure_all_started(:ex_machina)
     ExUnit.start(Keyword.put(opts, :exclude, exclusions))
+    Faker.start()
   end
 end
