@@ -21,11 +21,17 @@ defmodule Aesir.ZoneServer.Factory do
   alias Aesir.ZoneServer.Guild.State
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Homunculus.Ai.CandidateSnapshot
+  alias Aesir.ZoneServer.Mmo.Homunculus.Ai.Config, as: AiConfig
+  alias Aesir.ZoneServer.Mmo.Homunculus.Ai.HomunculusSnapshot
+  alias Aesir.ZoneServer.Mmo.Homunculus.Ai.OwnerSnapshot
+  alias Aesir.ZoneServer.Mmo.Homunculus.Ai.SkillSnapshot
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.PlayerStateFixture
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
@@ -309,6 +315,79 @@ defmodule Aesir.ZoneServer.Factory do
         fields
       )
     )
+  end
+
+  @doc "A rested level 1 Lif (class 6001) with a sequenced id and owner; every other field is the struct default."
+  @spec homunculus_state_factory() :: HomunculusState.t()
+  def homunculus_state_factory do
+    %HomunculusState{
+      id: sequence(:homunculus_state_id, & &1, start_at: 1),
+      owner_character_id: sequence(:homunculus_state_owner_id, & &1, start_at: 1),
+      class_id: 6001,
+      name: "Homunculus"
+    }
+  end
+
+  @doc """
+  A living owner as the Homunculus AI sees it: a sequenced player at `{0, 0}` with
+  100 of 100 HP and no target.
+  """
+  @spec ai_owner_snapshot_factory() :: OwnerSnapshot.t()
+  def ai_owner_snapshot_factory do
+    %OwnerSnapshot{
+      ref: {:player, sequence(:ai_owner_snapshot_id, & &1, start_at: 1)},
+      position: {0, 0},
+      hp: 100,
+      max_hp: 100,
+      alive?: true
+    }
+  end
+
+  @doc """
+  An active, idle Homunculus as its AI sees it: a sequenced ref at `{0, 0}`, 100 of
+  100 HP and SP, hunger 50 with no food, melee range, `Config.default/0`, no target
+  and no castable skills.
+  """
+  @spec ai_homunculus_snapshot_factory() :: HomunculusSnapshot.t()
+  def ai_homunculus_snapshot_factory do
+    %HomunculusSnapshot{
+      ref: {:homunculus, sequence(:ai_homunculus_snapshot_id, & &1, start_at: 1)},
+      lifecycle: :active,
+      alive?: true,
+      busy?: false,
+      standby?: false,
+      position: {0, 0},
+      hp: 100,
+      max_hp: 100,
+      sp: 100,
+      max_sp: 100,
+      hunger: 50,
+      food_available?: false,
+      attack_range: 1,
+      ai_config: AiConfig.default()
+    }
+  end
+
+  @doc """
+  An unclaimed, non-boss Poring (class 1002) with 100 of 100 HP at `{1, 0}`, in
+  melee range of a Homunculus at `{0, 0}`, with a sequenced mob ref.
+  """
+  @spec ai_candidate_snapshot_factory() :: CandidateSnapshot.t()
+  def ai_candidate_snapshot_factory do
+    %CandidateSnapshot{
+      ref: {:mob, sequence(:ai_candidate_snapshot_id, & &1, start_at: 1)},
+      position: {1, 0},
+      hp: 100,
+      max_hp: 100,
+      class_id: 1002,
+      boss?: false
+    }
+  end
+
+  @doc "A free, ready level 1 self-target skill (8001); set `id` for any other skill."
+  @spec ai_skill_snapshot_factory() :: SkillSnapshot.t()
+  def ai_skill_snapshot_factory do
+    %SkillSnapshot{id: 8001, level: 1, target: :self, sp_cost: 0, cooldown_ready?: true}
   end
 
   defp combatant(attrs) do

@@ -3,9 +3,12 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Growth do
   Random Homunculus level-growth and evolution rolls.
   """
 
+  alias Aesir.ZoneServer.Mmo.Homunculus.Catalog
+
   @stats ~w(hp sp str agi vit int dex luk)
   @base_stats ~w(str agi vit int dex luk)
 
+  @typedoc "One rolled increase per canonical stat."
   @type rolls :: %{
           hp: non_neg_integer(),
           sp: non_neg_integer(),
@@ -16,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Growth do
           dex: non_neg_integer(),
           luk: non_neg_integer()
         }
+  @typedoc "`roll` replaces the uniform inclusive roll; it receives the range's min and max."
   @type opts :: [roll: (non_neg_integer(), non_neg_integer() -> non_neg_integer())]
 
   @doc """
@@ -24,7 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Growth do
   The six base-stat growth ranges use tenths; their rolled fractional part is
   discarded before applying the increase to Aesir's whole-stat state.
   """
-  @spec level(map(), opts()) :: rolls()
+  @spec level(Catalog.species(), opts()) :: rolls()
   def level(species, opts \\ []) do
     species
     |> roll_ranges(:growth_min, :growth_max, opts)
@@ -35,7 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Growth do
   end
 
   @doc "Rolls one independent evolution bonus for every canonical stat."
-  @spec evolution(map(), opts()) :: rolls()
+  @spec evolution(Catalog.species(), opts()) :: rolls()
   def evolution(species, opts \\ []) do
     species
     |> roll_ranges(:evolution_min, :evolution_max, opts)

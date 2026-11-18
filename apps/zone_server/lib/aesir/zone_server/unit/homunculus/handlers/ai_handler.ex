@@ -4,7 +4,11 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler do
   """
 
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Mmo.Homunculus.Ai.CandidateSnapshot
   alias Aesir.ZoneServer.Mmo.Homunculus.Ai.Decision
+  alias Aesir.ZoneServer.Mmo.Homunculus.Ai.HomunculusSnapshot
+  alias Aesir.ZoneServer.Mmo.Homunculus.Ai.OwnerSnapshot
+  alias Aesir.ZoneServer.Mmo.Homunculus.Ai.SkillSnapshot
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit
@@ -163,7 +167,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler do
     owner = session.game_state
     {hp, max_hp} = owner_health(owner.stats)
 
-    %{
+    %OwnerSnapshot{
       ref: {:player, owner.character_id},
       position: {owner.x, owner.y},
       hp: hp,
@@ -182,7 +186,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler do
   defp homunculus_snapshot(session, candidates) do
     homunculus = session.homunculus
 
-    %{
+    %HomunculusSnapshot{
       ref: {:homunculus, homunculus.world_gid},
       lifecycle: homunculus.lifecycle,
       alive?: HomunculusState.living?(homunculus),
@@ -199,7 +203,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler do
       target: retained_target(homunculus.target, candidates),
       retaliation_target: retaliation_target(session, candidates),
       attack_range: homunculus.attack_range,
-      separated_ms: nil,
       ai_config: homunculus.ai_config,
       skills: skill_snapshots(homunculus)
     }
@@ -219,7 +222,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler do
     with {:ok, {MobState, %MobState{} = mob, _pid}} <- UnitRegistry.get_unit(:mob, id),
          {:ok, {x, y, _map}} <- SpatialIndex.get_unit_position(:mob, id) do
       [
-        %{
+        %CandidateSnapshot{
           ref: {:mob, id},
           position: {x, y},
           hp: mob.hp,
@@ -298,7 +301,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler do
         value -> value
       end
 
-    %{
+    %SkillSnapshot{
       id: id,
       level: level,
       target: target,

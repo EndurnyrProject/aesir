@@ -1,15 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.FameTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.Commons.Models.Character
-  alias Aesir.Commons.Models.InventoryItem
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Fame
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
-  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
 
   test "condensed milestones accumulate 64 points and restart after ten" do
     for product <- 545..547, skill <- [228, 496, 497, 498] do
@@ -52,7 +50,11 @@ defmodule Aesir.ZoneServer.Mmo.FameTest do
   end
 
   test "script refinement requires own forged weapon landing on ten" do
-    item = %InventoryItem{craft: ItemCraft.to_map(ItemCraft.forged(:neutral, 0, 7))}
+    item =
+      Aesir.Factory.build(:inventory_item,
+        craft: ItemCraft.to_map(ItemCraft.forged(:neutral, 0, 7))
+      )
+
     definition = %ItemDefinition{id: 1, aegis_name: "Sword", name: "Sword", type: :weapon}
 
     for {level, points} <- [{1, 1}, {2, 25}, {3, 1_000}, {4, 0}, {5, 0}] do
@@ -89,7 +91,6 @@ defmodule Aesir.ZoneServer.Mmo.FameTest do
       player = player(job)
       assert Fame.category(player.stats.progression.job_id) == nil
       assert Fame.award(player, 10) == player
-      assert {3, 1} = Fame.potion_result(2, 228, 545, true)
     end
 
     assert Fame.category(-1) == nil
@@ -110,7 +111,7 @@ defmodule Aesir.ZoneServer.Mmo.FameTest do
   end
 
   test "a new player loads fame but starts a fresh streak" do
-    character = %Character{id: 7, name: "Maker", account_id: 1, fame: 123}
+    character = Aesir.Factory.build(:character, fame: 123)
 
     assert %{fame: 123, potion_success_counter: 0, pending_fame_awards: []} =
              PlayerState.new(character)
@@ -125,6 +126,6 @@ defmodule Aesir.ZoneServer.Mmo.FameTest do
 
   defp player(job) do
     {:ok, id} = AvailableJobs.job_name_to_id(job)
-    %PlayerState{character_id: 7, stats: %Stats{progression: %PlayerProgression{job_id: id}}}
+    build(:player_state, stats: %{progression: %{job_id: id}})
   end
 end

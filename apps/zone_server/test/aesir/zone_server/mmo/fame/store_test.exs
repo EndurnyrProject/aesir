@@ -1,25 +1,14 @@
 defmodule Aesir.ZoneServer.Mmo.Fame.StoreTest do
-  use Aesir.DataCase, async: false
+  use Aesir.DataCase, async: true
 
-  alias Aesir.Commons.Models.Account
+  import Aesir.Factory
+
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Fame.Store
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
 
-  setup do
-    account =
-      Repo.insert!(%Account{
-        userid: "fame-store",
-        user_pass: "unused",
-        sex: "M",
-        email: "fame@test.local"
-      })
-
-    %{account: account}
-  end
-
-  test "persist stores an absolute total and advances tie order atomically", %{account: account} do
-    character = character(account, :blacksmith, 12)
+  test "persist stores an absolute total and advances tie order atomically" do
+    character = :blacksmith |> character(12) |> Repo.reload!()
     assert character.fame_order == 0
     assert :ok = Store.persist(character.id, 50)
     first = Repo.get!(Character, character.id)
@@ -36,9 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Fame.StoreTest do
     assert {:error, :character_not_found} = Store.persist(2_000_000_000, 1)
   end
 
-  test "rankings contain only the ten positive scores of the exact profession set", %{
-    account: account
-  } do
+  test "rankings contain only the ten positive scores of the exact profession set" do
     boards = [
       blacksmith: [
         :blacksmith,
@@ -61,17 +48,17 @@ defmodule Aesir.ZoneServer.Mmo.Fame.StoreTest do
     ]
 
     for {category, jobs} <- boards do
-      characters = Enum.map(jobs, &character(account, &1, 100))
-      character(account, hd(jobs), 0)
-      character(account, :novice, 999)
+      characters = Enum.map(jobs, &character(&1, 100))
+      character(hd(jobs), 0)
+      character(:novice, 999)
       assert {:ok, entries} = Store.ranking(category)
       assert Enum.map(entries, & &1.character_id) == Enum.map(characters, & &1.id)
       assert Enum.all?(entries, &(&1.fame == 100))
     end
   end
 
-  test "a new equal-score award enters at the tenth-place cutoff", %{account: account} do
-    characters = Enum.map(1..12, fn _ -> character(account, :alchemist, 50) end)
+  test "a new equal-score award enters at the tenth-place cutoff" do
+    characters = Enum.map(1..12, fn _ -> character(:alchemist, 50) end)
     assert {:ok, initial} = Store.ranking(:alchemist)
     assert Enum.map(initial, & &1.character_id) == Enum.map(Enum.take(characters, 10), & &1.id)
     outsider = List.last(characters)
@@ -83,11 +70,9 @@ defmodule Aesir.ZoneServer.Mmo.Fame.StoreTest do
            ]
   end
 
-  test "legacy equal scores use character ID until an award establishes order", %{
-    account: account
-  } do
-    first = character(account, :blacksmith, 1_000_000_000)
-    second = character(account, :blacksmith, 1_000_000_000)
+  test "legacy equal scores use character ID until an award establishes order" do
+    first = character(:blacksmith, 1_000_000_000)
+    second = character(:blacksmith, 1_000_000_000)
 
     assert {:ok, [%{character_id: first_id}, %{character_id: second_id}]} =
              Store.ranking(:blacksmith)
@@ -101,8 +86,8 @@ defmodule Aesir.ZoneServer.Mmo.Fame.StoreTest do
     assert {:ok, [%{character_id: ^first_id} | _]} = Store.ranking(:blacksmith)
   end
 
-  test "ranking membership and names follow current character rows", %{account: account} do
-    character = character(account, :blacksmith, 12)
+  test "ranking membership and names follow current character rows" do
+    character = character(:blacksmith, 12)
     {:ok, alchemist} = AvailableJobs.job_name_to_id(:alchemist)
 
     character =
@@ -120,27 +105,8 @@ defmodule Aesir.ZoneServer.Mmo.Fame.StoreTest do
     assert {:ok, []} = Store.ranking(:alchemist)
   end
 
-  test "database query errors are not successful empty rankings" do
-    SQL.query!(Repo, "ALTER TABLE characters RENAME TO fame_test_characters")
-    assert {:error, %Postgrex.Error{}} = Store.ranking(:blacksmith)
-  end
-
-  test "database write errors remain explicit", %{account: account} do
-    character = character(account, :blacksmith, 12)
-    SQL.query!(Repo, "ALTER SEQUENCE character_fame_order_seq RENAME TO fame_test_order_seq")
-    assert {:error, %Postgrex.Error{}} = Store.persist(character.id, 13)
-  end
-
-  defp character(account, job, fame) do
+  defp character(job, fame) do
     {:ok, class} = AvailableJobs.job_name_to_id(job)
-    n = System.unique_integer([:positive])
-
-    Repo.insert!(%Character{
-      account_id: account.id,
-      char_num: rem(n, 250),
-      name: "Maker#{n}",
-      class: class,
-      fame: fame
-    })
+    insert(:character, class: class, fame: fame)
   end
 end

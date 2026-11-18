@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Homunculus.Ai.DecisionTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Homunculus.Ai.Config
   alias Aesir.ZoneServer.Mmo.Homunculus.Ai.Decision
 
@@ -77,279 +79,258 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Ai.DecisionTest do
   end
 
   test "returns idle before every other action for inactive, dead, or busy companions" do
-    assert :idle = Decision.next(owner(), %{homunculus() | busy?: true, hunger: 1}, [candidate()])
-    assert :idle = Decision.next(owner(), %{homunculus() | lifecycle: :rested}, [candidate()])
-    assert :idle = Decision.next(owner(), %{homunculus() | alive?: false}, [candidate()])
+    target = build(:ai_candidate_snapshot)
+    ready = build(:ai_homunculus_snapshot, target: target.ref)
+    assert {:attack, target.ref} == Decision.next(build(:ai_owner_snapshot), ready, [target])
+
+    for not_ready <- [
+          %{ready | busy?: true},
+          %{ready | lifecycle: :rested},
+          %{ready | alive?: false}
+        ] do
+      assert :idle = Decision.next(build(:ai_owner_snapshot), not_ready, [target])
+    end
   end
 
   test "feeds before combat and falls through when food is absent" do
+    target = build(:ai_candidate_snapshot)
+
     homunculus =
-      %{
-        homunculus()
-        | ai_config: config(auto_feed: true),
-          hunger: 11,
-          food_available?: true,
-          target: candidate().ref
-      }
+      build(:ai_homunculus_snapshot,
+        ai_config: config(auto_feed: true),
+        hunger: 11,
+        food_available?: true,
+        target: target.ref
+      )
 
-    assert :feed = Decision.next(owner(), homunculus, [candidate()])
+    assert :feed = Decision.next(build(:ai_owner_snapshot), homunculus, [target])
 
-    assert {:attack, {:mob, 9}} =
-             Decision.next(owner(), %{homunculus | food_available?: false}, [candidate()])
+    assert {:attack, target.ref} ==
+             Decision.next(build(:ai_owner_snapshot), %{homunculus | food_available?: false}, [
+               target
+             ])
   end
 
-  test "recovers after three seconds of separation and follows outside the leash" do
-    assert {:recover, {0, 0}} =
-             Decision.next(owner(), %{homunculus() | separated_ms: 3_000, position: {20, 0}}, [])
+  test "follows the owner outside the leash" do
+    owner = build(:ai_owner_snapshot)
+    homunculus = build(:ai_homunculus_snapshot, position: {11, 0})
 
-    assert {:follow, {:player, 1}} =
-             Decision.next(owner(), %{homunculus() | position: {11, 0}}, [])
+    assert {:follow, owner.ref} == Decision.next(owner, homunculus, [])
   end
 
   test "standby blocks target selection while passive retains explicit targets" do
+    target = build(:ai_candidate_snapshot)
+    owner = build(:ai_owner_snapshot)
+
     assert :idle =
-             Decision.next(owner(), %{homunculus() | standby?: true, target: candidate().ref}, [
-               candidate()
-             ])
+             Decision.next(
+               owner,
+               build(:ai_homunculus_snapshot, standby?: true, target: target.ref),
+               [target]
+             )
 
     config = config(stance: :passive)
 
-    assert {:attack, {:mob, 9}} =
+    assert {:attack, target.ref} ==
              Decision.next(
-               owner(),
-               %{homunculus() | ai_config: config, target: candidate().ref},
-               [candidate()]
+               owner,
+               build(:ai_homunculus_snapshot, ai_config: config, target: target.ref),
+               [target]
              )
 
-    assert :idle = Decision.next(owner(), %{homunculus() | ai_config: config}, [candidate()])
+    assert :idle =
+             Decision.next(owner, build(:ai_homunculus_snapshot, ai_config: config), [target])
   end
 
   test "accepts only unclaimed or exact-owner claim roots" do
-    for {claim_root, expected} <- [
-          {{:player, 1}, {:attack, {:mob, 9}}},
-          {{:player, 2}, :idle},
-          {:missing, :idle},
-          {{:mob, 9}, :idle}
-        ] do
-      candidate =
-        case claim_root do
-          :missing -> Map.delete(candidate(), :claim_root)
-          claim_root -> candidate(claim_root: claim_root)
-        end
+    owner = build(:ai_owner_snapshot)
+    other_player = build(:ai_owner_snapshot)
 
-      assert expected == Decision.next(owner(), %{homunculus() | target: {:mob, 9}}, [candidate])
+    for {claim_root, attacks?} <- [
+          {nil, true},
+          {owner.ref, true},
+          {other_player.ref, false},
+          {{:mob, 1}, false}
+        ] do
+      candidate = build(:ai_candidate_snapshot, claim_root: claim_root)
+      homunculus = build(:ai_homunculus_snapshot, target: candidate.ref)
+      expected = if attacks?, do: {:attack, candidate.ref}, else: :idle
+
+      assert expected == Decision.next(owner, homunculus, [candidate])
     end
   end
 
   test "filters claim-unsafe, denied, boss, and dead candidates before target policy" do
-    config =
+    owner = build(:ai_owner_snapshot)
+    other_player = build(:ai_owner_snapshot)
+
+    denied =
       config(stance: :aggressive, allowed_mob_class_ids: [1_001], denied_mob_class_ids: [1_001])
 
     assert :idle =
-             Decision.next(owner(), %{homunculus() | ai_config: config}, [
-               candidate(class_id: 1_001)
+             Decision.next(owner, build(:ai_homunculus_snapshot, ai_config: denied), [
+               build(:ai_candidate_snapshot, class_id: 1_001)
              ])
 
-    unsafe = candidate(claim_root: {:player, 2})
+    aggressive = build(:ai_homunculus_snapshot, ai_config: config(stance: :aggressive))
 
-    assert :idle =
-             Decision.next(owner(), %{homunculus() | ai_config: config(stance: :aggressive)}, [
-               unsafe
-             ])
-
-    boss = candidate(boss?: true)
-
-    assert :idle =
-             Decision.next(owner(), %{homunculus() | ai_config: config(stance: :aggressive)}, [
-               boss
-             ])
-
-    dead = candidate(hp: 0)
-
-    assert :idle =
-             Decision.next(owner(), %{homunculus() | ai_config: config(stance: :aggressive)}, [
-               dead
-             ])
+    for candidate <- [
+          build(:ai_candidate_snapshot, claim_root: other_player.ref),
+          build(:ai_candidate_snapshot, boss?: true),
+          build(:ai_candidate_snapshot, hp: 0)
+        ] do
+      assert :idle = Decision.next(owner, aggressive, [candidate])
+    end
   end
 
-  test "selects owner target, retaliation, then nearest deterministic aggressive candidate" do
-    candidate = candidate()
-    owner_target = owner(target: candidate.ref)
-    assert {:attack, {:mob, 9}} = Decision.next(owner_target, homunculus(), [candidate])
+  test "aggressive stance picks the nearest candidate and breaks distance ties by ref" do
+    nearest = build(:ai_candidate_snapshot, ref: {:mob, 9}, position: {2, 0})
+    tied = build(:ai_candidate_snapshot, ref: {:mob, 8}, position: {0, 2})
+    farther = build(:ai_candidate_snapshot, ref: {:mob, 7}, position: {3, 0})
+    aggressive = build(:ai_homunculus_snapshot, ai_config: config(stance: :aggressive))
 
-    assert {:attack, {:mob, 9}} =
-             Decision.next(owner(), %{homunculus() | retaliation_target: candidate.ref}, [
-               candidate
-             ])
-
-    nearest = candidate(position: {2, 0})
-    tied = candidate(ref: {:mob, 8}, position: {0, 2})
-    aggressive = %{homunculus() | ai_config: config(stance: :aggressive)}
-    assert {:chase, {:mob, 8}} = Decision.next(owner(), aggressive, [nearest, tied])
+    assert {:chase, {:mob, 8}} =
+             Decision.next(build(:ai_owner_snapshot), aggressive, [farther, nearest, tied])
   end
 
   test "orders retained, owner, and retaliation targets deterministically" do
-    current = candidate(ref: {:mob, 9})
-    owner_target = candidate(ref: {:mob, 8})
-    retaliation = candidate(ref: {:mob, 7})
+    current = build(:ai_candidate_snapshot)
+    owner_target = build(:ai_candidate_snapshot)
+    retaliation = build(:ai_candidate_snapshot)
+    outside = build(:ai_candidate_snapshot)
 
-    assert {:attack, {:mob, 9}} =
+    assert {:attack, current.ref} ==
              Decision.next(
-               owner(target: owner_target.ref),
-               %{homunculus() | target: current.ref, retaliation_target: retaliation.ref},
+               build(:ai_owner_snapshot, target: owner_target.ref),
+               build(:ai_homunculus_snapshot,
+                 target: current.ref,
+                 retaliation_target: retaliation.ref
+               ),
                [current, owner_target, retaliation]
              )
 
-    assert {:attack, {:mob, 8}} =
+    assert {:attack, owner_target.ref} ==
              Decision.next(
-               owner(target: owner_target.ref),
-               %{homunculus() | retaliation_target: retaliation.ref},
+               build(:ai_owner_snapshot, target: owner_target.ref),
+               build(:ai_homunculus_snapshot, retaliation_target: retaliation.ref),
                [owner_target, retaliation]
              )
 
-    assert {:attack, {:mob, 7}} =
+    assert {:attack, retaliation.ref} ==
              Decision.next(
-               owner(target: {:mob, 99}),
-               %{homunculus() | retaliation_target: retaliation.ref},
+               build(:ai_owner_snapshot, target: outside.ref),
+               build(:ai_homunculus_snapshot, retaliation_target: retaliation.ref),
                [retaliation]
              )
 
-    assert {:attack, {:mob, 7}} =
+    assert {:attack, retaliation.ref} ==
              Decision.next(
-               owner(alive?: false, target: owner_target.ref),
-               %{homunculus() | retaliation_target: retaliation.ref},
+               build(:ai_owner_snapshot, alive?: false, target: owner_target.ref),
+               build(:ai_homunculus_snapshot, retaliation_target: retaliation.ref),
                [owner_target, retaliation]
              )
   end
 
-  test "casts eligible auto skills by priority with conjunctive thresholds and exact reserve" do
+  test "casts the highest-priority eligible auto skill" do
     config =
       config(
         skills: %{
-          8_001 => %{
-            mode: :auto,
-            priority: 50,
-            self_hp_threshold: 50,
-            owner_hp_threshold: nil,
-            target_hp_range: nil
-          },
-          8_002 => %{
-            mode: :auto,
-            priority: 100,
-            self_hp_threshold: nil,
-            owner_hp_threshold: 50,
-            target_hp_range: nil
-          },
-          8_003 => %{
-            mode: :auto,
-            priority: 100,
-            self_hp_threshold: nil,
-            owner_hp_threshold: nil,
-            target_hp_range: %{min_percent: 10, max_percent: 90}
-          }
+          8_001 => auto_row(priority: 50, self_hp_threshold: 50),
+          8_002 => auto_row(priority: 100, owner_hp_threshold: 50),
+          8_003 => auto_row(priority: 100, target_hp_range: %{min_percent: 10, max_percent: 90})
         }
       )
 
-    homunculus = %{
-      homunculus()
-      | ai_config: config,
+    target = build(:ai_candidate_snapshot, hp: 50)
+
+    homunculus =
+      build(:ai_homunculus_snapshot,
+        ai_config: config,
         hp: 40,
-        skills: skills(),
-        target: candidate().ref
-    }
+        target: target.ref,
+        skills: [
+          build(:ai_skill_snapshot, id: 8_001, level: 1, target: :self, sp_cost: 20),
+          build(:ai_skill_snapshot, id: 8_002, level: 2, target: :owner, sp_cost: 20),
+          build(:ai_skill_snapshot, id: 8_003, level: 3, target: :enemy, sp_cost: 20)
+        ]
+      )
 
-    assert {:cast, 8_003, 3, {:mob, 9}} =
-             Decision.next(owner(hp: 100), homunculus, [candidate(hp: 50)])
-
-    reserve = %{homunculus | sp: 39, max_sp: 100, skills: [%{hd(skills()) | sp_cost: 20}]}
-    assert {:attack, {:mob, 9}} = Decision.next(owner(hp: 100), reserve, [candidate()])
+    assert {:cast, 8_003, 3, target.ref} ==
+             Decision.next(build(:ai_owner_snapshot), homunculus, [target])
   end
 
   test "requires every configured self and owner threshold" do
     config = combined_config()
-    skill = %{id: 8_004, level: 1, target: :self, sp_cost: 0, cooldown_ready?: true}
+    skill = build(:ai_skill_snapshot, id: 8_004)
 
-    for {homunculus_hp, owner_hp, expected} <- [
-          {50, 50, {:cast, 8_004, 1, {:homunculus, 2}}},
-          {51, 50, :idle},
-          {50, 51, :idle}
-        ] do
-      homunculus = %{homunculus() | ai_config: config, hp: homunculus_hp, skills: [skill]}
-      assert expected == Decision.next(owner(hp: owner_hp), homunculus, [])
+    for {homunculus_hp, owner_hp, casts?} <- [{50, 50, true}, {51, 50, false}, {50, 51, false}] do
+      homunculus =
+        build(:ai_homunculus_snapshot, ai_config: config, hp: homunculus_hp, skills: [skill])
+
+      expected = if casts?, do: {:cast, 8_004, 1, homunculus.ref}, else: :idle
+      assert expected == Decision.next(build(:ai_owner_snapshot, hp: owner_hp), homunculus, [])
     end
   end
 
   test "uses inclusive target HP and SP reserve boundaries" do
     target_config =
-      config(
-        skills: %{
-          8_003 => %{
-            mode: :auto,
-            priority: 50,
-            self_hp_threshold: nil,
-            owner_hp_threshold: nil,
-            target_hp_range: %{min_percent: 30, max_percent: 70}
-          }
-        }
-      )
+      config(skills: %{8_003 => auto_row(target_hp_range: %{min_percent: 30, max_percent: 70})})
 
-    skill = %{id: 8_003, level: 1, target: :enemy, sp_cost: 0, cooldown_ready?: true}
+    skill = build(:ai_skill_snapshot, id: 8_003, target: :enemy)
 
-    for {hp, expected} <- [
-          {30, {:cast, 8_003, 1, {:mob, 9}}},
-          {70, {:cast, 8_003, 1, {:mob, 9}}},
-          {29, {:attack, {:mob, 9}}},
-          {71, {:attack, {:mob, 9}}}
-        ] do
-      target = candidate(hp: hp)
-      homunculus = %{homunculus() | ai_config: target_config, target: target.ref, skills: [skill]}
+    for {hp, casts?} <- [{30, true}, {70, true}, {29, false}, {71, false}] do
+      target = build(:ai_candidate_snapshot, hp: hp)
 
-      assert expected == Decision.next(owner(), homunculus, [target])
+      homunculus =
+        build(:ai_homunculus_snapshot,
+          ai_config: target_config,
+          target: target.ref,
+          skills: [skill]
+        )
+
+      expected = if casts?, do: {:cast, 8_003, 1, target.ref}, else: {:attack, target.ref}
+      assert expected == Decision.next(build(:ai_owner_snapshot), homunculus, [target])
     end
 
-    reserve_config =
-      config(
-        auto_cast_sp_reserve_percent: 20,
-        skills: %{
-          8_001 => %{
-            mode: :auto,
-            priority: 50,
-            self_hp_threshold: nil,
-            owner_hp_threshold: nil,
-            target_hp_range: nil
-          }
-        }
-      )
+    reserve_config = config(auto_cast_sp_reserve_percent: 20, skills: %{8_001 => auto_row([])})
+    reserve_skill = build(:ai_skill_snapshot, id: 8_001, sp_cost: 20)
 
-    reserve_skill = %{id: 8_001, level: 1, target: :self, sp_cost: 20, cooldown_ready?: true}
+    for {sp, casts?} <- [{40, true}, {39, false}] do
+      homunculus =
+        build(:ai_homunculus_snapshot, ai_config: reserve_config, sp: sp, skills: [reserve_skill])
 
-    for {sp, expected} <- [{40, {:cast, 8_001, 1, {:homunculus, 2}}}, {39, :idle}] do
-      assert expected ==
-               Decision.next(
-                 owner(),
-                 %{homunculus() | ai_config: reserve_config, sp: sp, skills: [reserve_skill]},
-                 []
-               )
+      expected = if casts?, do: {:cast, 8_001, 1, homunculus.ref}, else: :idle
+      assert expected == Decision.next(build(:ai_owner_snapshot), homunculus, [])
     end
   end
 
   test "attacks in range, chases outside range, and idles without a selected target" do
-    assert {:attack, {:mob, 9}} =
-             Decision.next(owner(), %{homunculus() | target: candidate().ref}, [candidate()])
+    owner = build(:ai_owner_snapshot)
+    near = build(:ai_candidate_snapshot)
+    far = build(:ai_candidate_snapshot, position: {2, 0})
 
-    assert {:chase, {:mob, 9}} =
-             Decision.next(owner(), %{homunculus() | target: candidate().ref}, [
-               candidate(position: {2, 0})
-             ])
+    assert {:attack, near.ref} ==
+             Decision.next(owner, build(:ai_homunculus_snapshot, target: near.ref), [near])
 
-    assert :idle = Decision.next(owner(), homunculus(), [])
+    assert {:chase, far.ref} ==
+             Decision.next(owner, build(:ai_homunculus_snapshot, target: far.ref), [far])
+
+    assert :idle = Decision.next(owner, build(:ai_homunculus_snapshot), [])
   end
 
-  defp config(overrides \\ []) do
-    Config.default()
-    |> Map.from_struct()
-    |> Map.merge(Map.new(overrides))
-    |> then(&struct!(Config, &1))
+  defp config(overrides), do: struct!(Config.default(), overrides)
+
+  defp auto_row(overrides) do
+    Map.merge(
+      %{
+        mode: :auto,
+        priority: 50,
+        self_hp_threshold: nil,
+        owner_hp_threshold: nil,
+        target_hp_range: nil
+      },
+      Map.new(overrides)
+    )
   end
 
   defp combined_config do
@@ -414,58 +395,5 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Ai.DecisionTest do
         }
       ]
     }
-  end
-
-  defp owner(overrides \\ []) do
-    Map.merge(
-      %{ref: {:player, 1}, alive?: true, position: {0, 0}, hp: 100, max_hp: 100, target: nil},
-      Map.new(overrides)
-    )
-  end
-
-  defp homunculus do
-    %{
-      ref: {:homunculus, 2},
-      lifecycle: :active,
-      alive?: true,
-      busy?: false,
-      standby?: false,
-      position: {0, 0},
-      separated_ms: nil,
-      hp: 100,
-      max_hp: 100,
-      sp: 100,
-      max_sp: 100,
-      hunger: 50,
-      food_available?: false,
-      target: nil,
-      retaliation_target: nil,
-      attack_range: 1,
-      ai_config: config(),
-      skills: []
-    }
-  end
-
-  defp candidate(overrides \\ []) do
-    Map.merge(
-      %{
-        ref: {:mob, 9},
-        class_id: 1_001,
-        boss?: false,
-        position: {1, 0},
-        hp: 100,
-        max_hp: 100,
-        claim_root: nil
-      },
-      Map.new(overrides)
-    )
-  end
-
-  defp skills do
-    [
-      %{id: 8_001, level: 1, target: :self, sp_cost: 20, cooldown_ready?: true},
-      %{id: 8_002, level: 2, target: :owner, sp_cost: 20, cooldown_ready?: true},
-      %{id: 8_003, level: 3, target: :enemy, sp_cost: 20, cooldown_ready?: true}
-    ]
   end
 end

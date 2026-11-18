@@ -3,6 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Ai.Config do
   Validated, durable configuration for fixed Homunculus AI behavior.
   """
 
+  use TypedStruct
+
   @type stance :: :passive | :assist | :aggressive
   @type skill_mode :: :manual | :auto
   @type threshold :: :self_hp | :owner_hp | :target_hp
@@ -19,44 +21,19 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Ai.Config do
           target_hp_range: %{min_percent: 0..100, max_percent: 0..100} | nil
         }
 
-  @enforce_keys [
-    :stance,
-    :leash_distance,
-    :join_owner_target,
-    :retaliate,
-    :avoid_bosses,
-    :allowed_mob_class_ids,
-    :denied_mob_class_ids,
-    :auto_feed,
-    :auto_feed_threshold,
-    :auto_cast_sp_reserve_percent,
-    :skills
-  ]
-  defstruct stance: :assist,
-            leash_distance: 10,
-            join_owner_target: true,
-            retaliate: true,
-            avoid_bosses: true,
-            allowed_mob_class_ids: [],
-            denied_mob_class_ids: [],
-            auto_feed: false,
-            auto_feed_threshold: 11,
-            auto_cast_sp_reserve_percent: 20,
-            skills: %{}
-
-  @type t() :: %__MODULE__{
-          stance: stance(),
-          leash_distance: 2..14,
-          join_owner_target: boolean(),
-          retaliate: boolean(),
-          avoid_bosses: boolean(),
-          allowed_mob_class_ids: [pos_integer()],
-          denied_mob_class_ids: [pos_integer()],
-          auto_feed: boolean(),
-          auto_feed_threshold: 1..75,
-          auto_cast_sp_reserve_percent: 0..100,
-          skills: %{optional(pos_integer()) => skill_config()}
-        }
+  typedstruct enforce: true do
+    field :stance, stance()
+    field :leash_distance, 2..14
+    field :join_owner_target, boolean()
+    field :retaliate, boolean()
+    field :avoid_bosses, boolean()
+    field :allowed_mob_class_ids, [pos_integer()]
+    field :denied_mob_class_ids, [pos_integer()]
+    field :auto_feed, boolean()
+    field :auto_feed_threshold, 1..75
+    field :auto_cast_sp_reserve_percent, 0..100
+    field :skills, %{optional(pos_integer()) => skill_config()}
+  end
 
   @config_keys ~w(stance leash_distance join_owner_target retaliate avoid_bosses allowed_mob_class_ids denied_mob_class_ids auto_feed auto_feed_threshold auto_cast_sp_reserve_percent skills)
   @skill_keys ~w(skill_id mode priority self_hp_threshold owner_hp_threshold target_hp_range)

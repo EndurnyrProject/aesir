@@ -6,12 +6,16 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.ExpTable do
   98. Runtime staging validates against `Source.mode/0`.
   """
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Db.Source
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalogs
 
+  @typedoc "EXP needed to advance from each level, keyed by level."
+  @type table :: %{pos_integer() => pos_integer()}
+
   @doc "Returns the complete level-to-next-level EXP table."
-  @spec all() :: %{pos_integer() => pos_integer()}
+  @spec all() :: table()
   def all, do: table()
 
   @doc "Returns the EXP required to advance from a level."
@@ -23,7 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.ExpTable do
   def reload, do: Catalogs.reload()
 
   @doc false
-  @spec stage() :: map()
+  @spec stage() :: table()
   def stage do
     "homunculus/exp.yml"
     |> Source.sources()
@@ -33,12 +37,12 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.ExpTable do
   end
 
   @doc false
-  @spec stage(Path.t()) :: map()
+  @spec stage(Path.t()) :: table()
   def stage(path), do: path |> YamlElixir.read_from_file!() |> stage_rows(Source.mode())
 
   @doc "Validates a decoded EXP corpus for a mode, raising on gaps or malformed values."
   @spec validate!([map()]) :: :ok
-  @spec validate!([map()], Aesir.Commons.GameMode.t()) :: :ok
+  @spec validate!([map()], GameMode.t()) :: :ok
   def validate!(rows, mode \\ Source.mode())
 
   def validate!(rows, mode) when is_list(rows) and mode in [:renewal, :pre_renewal] do

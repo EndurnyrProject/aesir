@@ -152,7 +152,7 @@ only if it is not obvious from the setup.
 - **Global state**: `:persistent_term` reloads (`Data.reload/0`, `DbTestSetup.configure_root/2`),
   `Application.put_env`, writes to boot-global ETS or named processes.
 - **DDL**: `ALTER TABLE`/`ALTER SEQUENCE` inside a sandbox takes an exclusive lock that stalls
-  every concurrent sandbox touching that table (`fame/store_test.exs`).
+  every concurrent sandbox touching that table (`fame/store_errors_test.exs`).
 - **Global Mimic mode**: a stub that must reach a process started outside the test's tree.
 - `IntegrationCase` files are always sync.
 

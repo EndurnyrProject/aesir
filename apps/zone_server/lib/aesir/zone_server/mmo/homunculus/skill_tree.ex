@@ -13,7 +13,9 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.SkillTree do
           |> Map.new(&{Atom.to_string(&1), &1})
   @requirement_fields ~w(skill_id level)a |> Map.new(&{Atom.to_string(&1), &1})
 
+  @typedoc "A skill level another skill in the same tree must reach first."
   @type requirement :: %{skill_id: pos_integer(), level: pos_integer()}
+  @typedoc "One skill of one class variant's tree, with its learning gates."
   @type entry :: %{
           class_id: pos_integer(),
           skill_id: pos_integer(),
@@ -21,8 +23,14 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.SkillTree do
           max_level: pos_integer(),
           required_level: non_neg_integer(),
           required_intimacy: non_neg_integer(),
-          form: atom(),
+          form: :any | :evolved,
           requires: [requirement()]
+        }
+  @typedoc "The staged trees: every row in order, grouped by class, and by `{class_id, skill_id}`."
+  @type index :: %{
+          all: [entry()],
+          by_class: %{pos_integer() => [entry()]},
+          by_key: %{{pos_integer(), pos_integer()} => entry()}
         }
 
   @doc "Returns all skill-tree rows ordered by class and skill id."
@@ -42,7 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.SkillTree do
   def reload, do: Catalogs.reload()
 
   @doc false
-  @spec stage() :: map()
+  @spec stage() :: index()
   def stage do
     "homunculus/skill_trees.yml"
     |> Source.sources()
@@ -52,7 +60,7 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.SkillTree do
   end
 
   @doc false
-  @spec stage(Path.t()) :: map()
+  @spec stage(Path.t()) :: index()
   def stage(path), do: path |> YamlElixir.read_from_file!() |> stage_rows()
 
   @doc "Validates decoded skill trees, raising on missing classes, bad gates, or bad prerequisites."

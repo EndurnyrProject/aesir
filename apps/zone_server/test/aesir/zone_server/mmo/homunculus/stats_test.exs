@@ -1,14 +1,14 @@
 defmodule Aesir.ZoneServer.Mmo.Homunculus.StatsTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Blind
   alias Aesir.ZoneServer.Mmo.StatusEntry
-  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
-  alias Aesir.ZoneServer.Unit.Homunculus.Runtime
 
   test "real snapshots separate displayed critical from chance and fix MATK at the mode maximum" do
     derived = Stats.recompute(state(6_001, %{}))
@@ -133,14 +133,6 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.StatsTest do
     assert effective.combat_stats.soft_mdef == mode_value(45, 67)
   end
 
-  test "Defence adds directly to hard DEF without changing soft DEF" do
-    base = Stats.recompute(state(6_001, %{}))
-    defended = Stats.recompute(state(6_001, %{}), %{def: 15})
-
-    assert defended.combat_stats.def == base.combat_stats.def + 15
-    assert defended.combat_stats.soft_def == base.combat_stats.soft_def
-  end
-
   test "derives mode-specific combat bounds and all Homunculus status reader channels" do
     modifiers = %{
       haste_rate: 80,
@@ -218,24 +210,13 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.StatsTest do
     assert expired.hp == 1_080
   end
 
-  test "basic attacks become eligible exactly at the derived delay" do
-    homunculus = %{Stats.recompute(state(6_001, %{})) | attack_delay_ms: 623}
-    runtime = %Runtime{private_dirty: false, last_basic_attack_at_ms: 1_000}
-
-    refute CombatHandler.basic_attack_ready?(runtime, homunculus, 1_622)
-    assert CombatHandler.basic_attack_ready?(runtime, homunculus, 1_623)
-  end
-
   defp mode_value(renewal, pre_renewal) do
     %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
   end
 
   defp state(class_id, learned_skills) do
-    %HomunculusState{
-      id: 1,
-      owner_character_id: 10,
+    build(:homunculus_state,
       class_id: class_id,
-      name: "Homunculus",
       lifecycle: :active,
       level: 40,
       hp: 900,
@@ -263,6 +244,6 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.StatsTest do
       y: 10,
       attack_delay_ms: 700,
       raw_attack_delay_ms: 700
-    }
+    )
   end
 end

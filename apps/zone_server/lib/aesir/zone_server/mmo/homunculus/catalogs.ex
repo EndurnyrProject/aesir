@@ -30,7 +30,9 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Catalogs do
   def generation, do: snapshot().generation
 
   @doc false
-  @spec state(:catalog | :exp_table | :skill_tree) :: map()
+  @spec state(:catalog) :: Catalog.index()
+  @spec state(:exp_table) :: ExpTable.table()
+  @spec state(:skill_tree) :: SkillTree.index()
   def state(component), do: Map.fetch!(snapshot(), component)
 
   @doc "Validates the currently loaded species and skill-tree catalogs."

@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Catalog do
   @range_fields ~w(base growth_min growth_max evolution_min evolution_max)a
                 |> Map.new(&{Atom.to_string(&1), &1})
 
+  @typedoc "One stat's base value and inclusive per-level growth and evolution bonus ranges."
   @type stat_range :: %{
           base: non_neg_integer(),
           growth_min: non_neg_integer(),
@@ -26,22 +27,26 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Catalog do
           evolution_min: non_neg_integer(),
           evolution_max: non_neg_integer()
         }
+  @typedoc "One original or evolved class variant, keyed by stat name in `stats`."
   @type species :: %{
           id: pos_integer(),
           variant: String.t(),
           name: String.t(),
-          form: atom(),
+          form: :original | :evolved,
           base_class_id: pos_integer(),
           evolution_class_id: pos_integer(),
           food: String.t(),
           hungry_delay: pos_integer(),
-          race: atom(),
-          element: atom(),
-          size: atom(),
+          race: :demi_human | :brute | :formless,
+          element: :neutral,
+          size: :small | :medium | :large,
           attack_delay: pos_integer(),
           stats: %{String.t() => stat_range()},
           skills: [pos_integer()]
         }
+
+  @typedoc "The staged catalog: every variant ordered by id, and the same rows by id."
+  @type index :: %{all: [species()], by_id: %{pos_integer() => species()}}
 
   @doc "Returns all class variants ordered by class id."
   @spec all() :: [species()]
@@ -60,7 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Catalog do
   def reload, do: Catalogs.reload()
 
   @doc false
-  @spec stage() :: map()
+  @spec stage() :: index()
   def stage do
     "homunculus/species.yml"
     |> Source.sources()
@@ -70,7 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Catalog do
   end
 
   @doc false
-  @spec stage(Path.t()) :: map()
+  @spec stage(Path.t()) :: index()
   def stage(path), do: path |> YamlElixir.read_from_file!() |> stage_rows()
 
   @doc "Validates a decoded species corpus, raising on incomplete or malformed data."
