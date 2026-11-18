@@ -12,6 +12,8 @@ defmodule Aesir.ZoneServer.Guild.State do
   entries of the guild's activity log, newest first.
   """
 
+  use TypedStruct
+
   alias Aesir.ZoneServer.Guild.Activity
   alias Aesir.ZoneServer.Guild.Member
   alias Aesir.ZoneServer.Guild.Position
@@ -21,40 +23,23 @@ defmodule Aesir.ZoneServer.Guild.State do
   @members_per_extension 6
   @gd_extension 10_004
 
-  @enforce_keys [:guild_id, :name, :master_char_id]
-  defstruct guild_id: nil,
-            name: nil,
-            master_char_id: nil,
-            emblem_id: 0,
-            notice: %{subject: "", body: ""},
-            notice_author: "",
-            notice_posted_at: 0,
-            positions: %{},
-            members: %{},
-            level: 1,
-            exp: 0,
-            skill_points: 0,
-            learned_skills: %{},
-            relations: %{},
-            activity: []
-
-  @type t() :: %__MODULE__{
-          guild_id: non_neg_integer(),
-          name: String.t(),
-          master_char_id: non_neg_integer(),
-          emblem_id: non_neg_integer(),
-          notice: %{subject: String.t(), body: String.t()},
-          notice_author: String.t(),
-          notice_posted_at: non_neg_integer(),
-          positions: %{non_neg_integer() => Position.t()},
-          members: %{non_neg_integer() => Member.t()},
-          level: pos_integer(),
-          exp: non_neg_integer(),
-          skill_points: non_neg_integer(),
-          learned_skills: %{non_neg_integer() => pos_integer()},
-          relations: %{pos_integer() => Relation.t()},
-          activity: [Activity.t()]
-        }
+  typedstruct do
+    field :guild_id, non_neg_integer(), enforce: true
+    field :name, String.t(), enforce: true
+    field :master_char_id, non_neg_integer(), enforce: true
+    field :emblem_id, non_neg_integer(), default: 0
+    field :notice, %{subject: String.t(), body: String.t()}, default: %{subject: "", body: ""}
+    field :notice_author, String.t(), default: ""
+    field :notice_posted_at, non_neg_integer(), default: 0
+    field :positions, %{non_neg_integer() => Position.t()}, default: %{}
+    field :members, %{non_neg_integer() => Member.t()}, default: %{}
+    field :level, pos_integer(), default: 1
+    field :exp, non_neg_integer(), default: 0
+    field :skill_points, non_neg_integer(), default: 0
+    field :learned_skills, %{non_neg_integer() => pos_integer()}, default: %{}
+    field :relations, %{pos_integer() => Relation.t()}, default: %{}
+    field :activity, [Activity.t()], default: []
+  end
 
   @doc "Total number of members, online or offline."
   @spec member_count(t()) :: non_neg_integer()

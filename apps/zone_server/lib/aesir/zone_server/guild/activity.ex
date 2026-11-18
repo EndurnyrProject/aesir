@@ -12,15 +12,14 @@ defmodule Aesir.ZoneServer.Guild.Activity do
   entry fills (see `GuildActivityKind` in the Protobuf schema).
   """
 
+  use TypedStruct
+
   import Ecto.Query
 
   alias Aesir.Commons.Models.GuildActivityLog
   alias Aesir.Repo
 
   @recent_limit 30
-
-  @enforce_keys [:kind, :at]
-  defstruct kind: nil, subject: "", actor: "", detail: "", skill_id: 0, level: 0, at: nil
 
   @type kind ::
           :created
@@ -38,15 +37,15 @@ defmodule Aesir.ZoneServer.Guild.Activity do
           | :castle_lost
 
   @typedoc "`at` is the unix time, in seconds, the entry was recorded."
-  @type t() :: %__MODULE__{
-          kind: kind(),
-          subject: String.t(),
-          actor: String.t(),
-          detail: String.t(),
-          skill_id: non_neg_integer(),
-          level: non_neg_integer(),
-          at: non_neg_integer()
-        }
+  typedstruct do
+    field :kind, kind(), enforce: true
+    field :subject, String.t(), default: ""
+    field :actor, String.t(), default: ""
+    field :detail, String.t(), default: ""
+    field :skill_id, non_neg_integer(), default: 0
+    field :level, non_neg_integer(), default: 0
+    field :at, non_neg_integer(), enforce: true
+  end
 
   @doc """
   Writes one activity row for `guild_id` and returns its entry. `attrs` holds

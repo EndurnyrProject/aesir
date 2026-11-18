@@ -1,9 +1,10 @@
 defmodule Aesir.ZoneServer.Guild.ProgressionTest do
   use Aesir.DataCase, async: false
 
+  import Aesir.Factory
+
   alias Aesir.Commons.ClusterTestHelper
   alias Aesir.Commons.GameMode
-  alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Guild, as: GuildModel
   alias Aesir.Repo
@@ -16,27 +17,8 @@ defmodule Aesir.ZoneServer.Guild.ProgressionTest do
     :ok
   end
 
-  defp char_fixture(name) do
-    {:ok, account} =
-      %Account{}
-      |> Account.changeset(%{
-        userid: name,
-        user_pass: "password",
-        sex: "M",
-        email: "#{name}@example.com"
-      })
-      |> Repo.insert()
-
-    {:ok, character} =
-      %{account_id: account.id, name: name, char_num: 0, class: 0, base_level: 1}
-      |> Character.new()
-      |> Repo.insert()
-
-    character
-  end
-
   defp guild_fixture(master_name) do
-    master = char_fixture(master_name)
+    master = insert(:character, name: master_name)
     {:ok, state} = Manager.create("Guild-#{master_name}", master)
     {master, state}
   end
@@ -184,7 +166,7 @@ defmodule Aesir.ZoneServer.Guild.ProgressionTest do
 
     test "a contribution from a character that is not a member is dropped" do
       {_master, state} = guild_fixture("ExpStranger")
-      stranger = char_fixture("ExpStrangerChar")
+      stranger = insert(:character, name: "ExpStrangerChar")
 
       assert :ok = Manager.contribute_exp(state.guild_id, stranger.id, 1_000)
 

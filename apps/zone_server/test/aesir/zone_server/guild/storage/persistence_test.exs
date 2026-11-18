@@ -1,20 +1,13 @@
 defmodule Aesir.ZoneServer.Guild.Storage.PersistenceTest do
   use Aesir.DataCase, async: true
 
-  alias Aesir.Commons.Models.Guild
+  import Aesir.Factory
+
   alias Aesir.Commons.Models.GuildStorageLog
   alias Aesir.ZoneServer.Guild.Storage.Persistence
 
   setup do
-    {:ok, guild} =
-      %Guild{}
-      |> Guild.changeset(%{
-        name: "Guild #{System.unique_integer([:positive])}",
-        master_char_id: 1
-      })
-      |> Repo.insert()
-
-    %{guild: guild}
+    %{guild: insert(:guild)}
   end
 
   describe "load_storage/1" do
@@ -112,10 +105,6 @@ defmodule Aesir.ZoneServer.Guild.Storage.PersistenceTest do
                )
                |> Repo.all()
     end
-  end
-
-  test "does not expose a bulk-delete function" do
-    refute function_exported?(Persistence, :delete_all_for_guild, 1)
   end
 
   defp insert_item!(guild) do

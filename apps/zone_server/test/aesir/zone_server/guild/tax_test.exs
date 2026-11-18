@@ -1,12 +1,12 @@
 defmodule Aesir.ZoneServer.Guild.TaxTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
   import Mimic
 
   alias Aesir.ZoneServer.Guild.Manager
   alias Aesir.ZoneServer.Guild.Tax
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
-  setup {Aesir.MimicMode, :global}
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
   defp player(guild_id, tax) do

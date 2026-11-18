@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Guild.ViewTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Net.GuildActivity
   alias Aesir.Net.GuildActivityKind
   alias Aesir.ZoneServer.Guild.Activity
@@ -24,7 +26,9 @@ defmodule Aesir.ZoneServer.Guild.ViewTest do
       ap: 87,
       max_ap: 200,
       online: true,
-      map_name: nil
+      map_name: nil,
+      exp: 1_234,
+      last_seen: 1_794_430_680
     }
 
     result = View.member(member)
@@ -42,17 +46,12 @@ defmodule Aesir.ZoneServer.Guild.ViewTest do
     assert result.max_ap == 200
     assert result.online == true
     assert result.map == ""
+    assert result.exp == 1_234
+    assert result.last_seen == 1_794_430_680
   end
 
-  test "member/1 defaults map to empty string when map_name is set" do
-    member = %Member{
-      char_id: 84,
-      name: "Bob",
-      base_level: 99,
-      position_index: 19,
-      online: false,
-      map_name: "prontera"
-    }
+  test "member/1 carries a set map_name as the map" do
+    member = build(:guild_member, map_name: "prontera")
 
     result = View.member(member)
 
@@ -61,22 +60,26 @@ defmodule Aesir.ZoneServer.Guild.ViewTest do
 
   test "position/1 maps every position field" do
     position = %Position{
-      index: 0,
-      name: "GuildMaster",
+      index: 4,
+      name: "Officer",
       can_invite: true,
       can_expel: true,
-      can_storage: false,
-      tax: 0
+      can_storage: true,
+      can_notice: true,
+      can_relations: true,
+      tax: 5
     }
 
-    result = View.position(position)
-
-    assert result.index == 0
-    assert result.name == "GuildMaster"
-    assert result.can_invite == true
-    assert result.can_expel == true
-    assert result.can_storage == false
-    assert result.tax == 0
+    assert %{
+             index: 4,
+             name: "Officer",
+             can_invite: true,
+             can_expel: true,
+             can_storage: true,
+             can_notice: true,
+             can_relations: true,
+             tax: 5
+           } = View.position(position)
   end
 
   test "guild_info/1 preserves guild fields and maps members and positions" do
@@ -151,15 +154,13 @@ defmodule Aesir.ZoneServer.Guild.ViewTest do
   end
 
   test "guild_info/1 maps relations sorted by guild id" do
-    guild = %State{
-      guild_id: 10,
-      name: "Aesir",
-      master_char_id: 42,
-      relations: %{
-        20 => %Relation{guild_id: 20, name: "Bragi", kind: :ally},
-        15 => %Relation{guild_id: 15, name: "Fenrir", kind: :antagonist}
-      }
-    }
+    guild =
+      build(:guild_state,
+        relations: %{
+          20 => %Relation{guild_id: 20, name: "Bragi", kind: :ally},
+          15 => %Relation{guild_id: 15, name: "Fenrir", kind: :antagonist}
+        }
+      )
 
     result = View.guild_info(guild)
 
@@ -175,50 +176,31 @@ defmodule Aesir.ZoneServer.Guild.ViewTest do
   end
 
   test "guild_info/1 yields an empty relation list when the guild has none" do
-    guild = %State{guild_id: 10, name: "Aesir", master_char_id: 42}
+    guild = build(:guild_state)
 
     result = View.guild_info(guild)
 
     assert result.relations == []
   end
 
-  test "member/1 and position/1 carry the contribution, last seen time and new flags" do
-    member = %Member{
-      char_id: 42,
-      name: "Alice",
-      base_level: 99,
-      online: false,
-      exp: 1_234,
-      last_seen: 1_794_430_680
-    }
-
-    assert %{exp: 1_234, last_seen: 1_794_430_680} = View.member(member)
-
-    position = %Position{index: 4, name: "Scribe", can_notice: true, can_relations: false}
-
-    assert %{can_notice: true, can_relations: false} = View.position(position)
-  end
-
   test "guild_info/1 carries capacity, the notice author and time, and the activity log in order" do
-    guild = %State{
-      guild_id: 10,
-      name: "Aesir",
-      master_char_id: 42,
-      learned_skills: %{10_004 => 2},
-      notice_author: "Alice",
-      notice_posted_at: 1_794_430_680,
-      activity: [
-        %Activity{kind: :skill_learned, actor: "Alice", skill_id: 10_004, level: 2, at: 30},
-        %Activity{
-          kind: :position_changed,
-          subject: "Bob",
-          actor: "Alice",
-          detail: "Officer",
-          at: 20
-        },
-        %Activity{kind: :created, actor: "Alice", at: 10}
-      ]
-    }
+    guild =
+      build(:guild_state,
+        learned_skills: %{10_004 => 2},
+        notice_author: "Alice",
+        notice_posted_at: 1_794_430_680,
+        activity: [
+          %Activity{kind: :skill_learned, actor: "Alice", skill_id: 10_004, level: 2, at: 30},
+          %Activity{
+            kind: :position_changed,
+            subject: "Bob",
+            actor: "Alice",
+            detail: "Officer",
+            at: 20
+          },
+          %Activity{kind: :created, actor: "Alice", at: 10}
+        ]
+      )
 
     result = View.guild_info(guild)
 
@@ -250,12 +232,10 @@ defmodule Aesir.ZoneServer.Guild.ViewTest do
       ~w(created joined left expelled position_changed skill_learned level_up alliance_formed
          alliance_broken antagonist_declared antagonist_removed castle_taken castle_lost)a
 
-    guild = %State{
-      guild_id: 10,
-      name: "Aesir",
-      master_char_id: 42,
-      activity: Enum.map(kinds, &%Activity{kind: &1, at: 1})
-    }
+    guild =
+      build(:guild_state,
+        activity: Enum.map(kinds, &%Activity{kind: &1, at: 1})
+      )
 
     mapped = Enum.map(View.guild_info(guild).activity, & &1.kind)
     defined = Enum.map(GuildActivityKind.constants(), &elem(&1, 1))
@@ -264,48 +244,32 @@ defmodule Aesir.ZoneServer.Guild.ViewTest do
   end
 
   test "guild_info/1 describes a guild with no live entry by what its relation was loaded with" do
-    guild = %State{
-      guild_id: 10,
-      name: "Aesir",
-      master_char_id: 42,
-      relations: %{
-        20 => %Relation{
-          guild_id: 20,
-          name: "Bragi",
-          kind: :ally,
-          level: 12,
-          member_count: 31,
-          master_name: "Brynhild",
-          emblem_id: 5
+    guild =
+      build(:guild_state,
+        relations: %{
+          20 => %Relation{
+            guild_id: 20,
+            name: "Bragi",
+            kind: :ally,
+            level: 12,
+            member_count: 31,
+            master_name: "Brynhild",
+            emblem_id: 5
+          }
         }
-      }
-    }
+      )
 
     assert [%{level: 12, member_count: 31, master_name: "Brynhild", emblem_id: 5, castles: []}] =
              View.guild_info(guild).relations
   end
 
   test "member_update/2 includes the guild id and complete member" do
-    member = %Member{
-      char_id: 42,
-      name: "Alice",
-      job_id: 4054,
-      base_level: 175,
-      position_index: 0,
-      hp: 12_345,
-      max_hp: 23_456,
-      sp: 1_234,
-      max_sp: 2_345,
-      ap: 87,
-      max_ap: 200,
-      online: true,
-      map_name: "prontera"
-    }
+    member = build(:guild_member, position_index: 0, map_name: "prontera")
 
     result = View.member_update(10, member)
 
     assert result.guild_id == 10
-    assert result.member.char_id == 42
+    assert result.member.char_id == member.char_id
     assert result.member.position_index == 0
     assert result.member.map == "prontera"
   end

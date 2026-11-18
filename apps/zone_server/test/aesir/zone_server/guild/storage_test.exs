@@ -2,8 +2,9 @@ defmodule Aesir.ZoneServer.Guild.StorageTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.ZoneServer.Guild.State
   alias Aesir.ZoneServer.Guild.Storage
   alias Aesir.ZoneServer.Mmo.ItemManagement
 
@@ -13,7 +14,7 @@ defmodule Aesir.ZoneServer.Guild.StorageTest do
   @restricted_card 4001
   @unknown_card 999_999
 
-  setup :set_mimic_private
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
   describe "capacity/1" do
@@ -78,14 +79,7 @@ defmodule Aesir.ZoneServer.Guild.StorageTest do
     end
   end
 
-  defp guild(level) do
-    %State{
-      guild_id: 1,
-      name: "Test Guild",
-      master_char_id: 1,
-      learned_skills: %{@guild_storage => level}
-    }
-  end
+  defp guild(level), do: build(:guild_state, learned_skills: %{@guild_storage => level})
 
   defp item(attrs \\ []) do
     struct(InventoryItem, Map.new(attrs))

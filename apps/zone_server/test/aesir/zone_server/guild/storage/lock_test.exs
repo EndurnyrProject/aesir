@@ -1,89 +1,86 @@
 defmodule Aesir.ZoneServer.Guild.Storage.LockTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   import Aesir.TestWait
 
-  alias Aesir.Commons.ClusterTestHelper
   alias Aesir.ZoneServer.Guild.Storage.Lock
 
   setup do
-    ClusterTestHelper.clear_all()
-    on_exit(&ClusterTestHelper.clear_all/0)
-    :ok
+    %{guild_id: System.unique_integer([:positive])}
   end
 
-  test "claim is exclusive and a losing claim returns immediately" do
+  test "claim is exclusive and a losing claim returns immediately", %{guild_id: guild_id} do
     holder_pid = anchor()
     other_pid = anchor()
 
-    assert :ok = Lock.claim(1, 10, holder_pid)
+    assert :ok = Lock.claim(guild_id, 10, holder_pid)
 
     # A losing claim must be a definitive answer, not a race to wait out. The
     # budget sits below the 250ms a five-attempt, 50ms-apart retry would take,
     # so reintroducing one fails here. The real path is sub-millisecond -
     # raising this number to chase a flake would make the check vacuous.
-    claim = Task.async(fn -> Lock.claim(1, 20, other_pid) end)
+    claim = Task.async(fn -> Lock.claim(guild_id, 20, other_pid) end)
     assert {:ok, {:error, :in_use}} = Task.yield(claim, 200)
   end
 
-  test "holder reports the claiming character and session" do
+  test "holder reports the claiming character and session", %{guild_id: guild_id} do
     holder_pid = anchor()
 
-    assert :error = Lock.holder(2)
-    assert :ok = Lock.claim(2, 30, holder_pid)
-    assert {:ok, %{char_id: 30, session_pid: ^holder_pid}} = Lock.holder(2)
+    assert :error = Lock.holder(guild_id)
+    assert :ok = Lock.claim(guild_id, 30, holder_pid)
+    assert {:ok, %{char_id: 30, session_pid: ^holder_pid}} = Lock.holder(guild_id)
   end
 
-  test "held_by? only recognizes the current session" do
+  test "held_by? only recognizes the current session", %{guild_id: guild_id} do
     holder_pid = anchor()
     other_pid = anchor()
 
-    refute Lock.held_by?(3, holder_pid)
-    assert :ok = Lock.claim(3, 40, holder_pid)
-    assert Lock.held_by?(3, holder_pid)
-    refute Lock.held_by?(3, other_pid)
+    refute Lock.held_by?(guild_id, holder_pid)
+    assert :ok = Lock.claim(guild_id, 40, holder_pid)
+    assert Lock.held_by?(guild_id, holder_pid)
+    refute Lock.held_by?(guild_id, other_pid)
   end
 
-  test "a non-holder cannot release another session's claim" do
+  test "a non-holder cannot release another session's claim", %{guild_id: guild_id} do
     holder_pid = anchor()
     other_pid = anchor()
 
-    assert :ok = Lock.claim(4, 50, holder_pid)
-    assert :ok = Lock.release(4, other_pid)
-    refute_eventually(fn -> Lock.holder(4) == :error end)
-    assert {:ok, %{char_id: 50, session_pid: ^holder_pid}} = Lock.holder(4)
-    assert {:error, :in_use} = Lock.claim(4, 60, other_pid)
+    assert :ok = Lock.claim(guild_id, 50, holder_pid)
+    assert :ok = Lock.release(guild_id, other_pid)
+    refute_eventually(fn -> Lock.holder(guild_id) == :error end)
+    assert {:ok, %{char_id: 50, session_pid: ^holder_pid}} = Lock.holder(guild_id)
+    assert {:error, :in_use} = Lock.claim(guild_id, 60, other_pid)
   end
 
-  test "the holder can release its claim" do
+  test "the holder can release its claim", %{guild_id: guild_id} do
     holder_pid = anchor()
     next_holder_pid = anchor()
 
-    assert :ok = Lock.claim(5, 70, holder_pid)
-    assert :ok = Lock.release(5, holder_pid)
-    assert_eventually(fn -> Lock.claim(5, 80, next_holder_pid) == :ok end)
-    assert {:ok, %{char_id: 80, session_pid: ^next_holder_pid}} = Lock.holder(5)
+    assert :ok = Lock.claim(guild_id, 70, holder_pid)
+    assert :ok = Lock.release(guild_id, holder_pid)
+    assert_eventually(fn -> Lock.claim(guild_id, 80, next_holder_pid) == :ok end)
+    assert {:ok, %{char_id: 80, session_pid: ^next_holder_pid}} = Lock.holder(guild_id)
   end
 
-  test "stop unconditionally drops a claim and is idempotent" do
+  test "stop unconditionally drops a claim and is idempotent", %{guild_id: guild_id} do
     holder_pid = anchor()
 
-    assert :ok = Lock.stop(6)
-    assert :ok = Lock.claim(6, 90, holder_pid)
-    assert :ok = Lock.stop(6)
-    assert_eventually(fn -> Lock.holder(6) == :error end)
-    assert :ok = Lock.stop(6)
+    assert :ok = Lock.stop(guild_id)
+    assert :ok = Lock.claim(guild_id, 90, holder_pid)
+    assert :ok = Lock.stop(guild_id)
+    assert_eventually(fn -> Lock.holder(guild_id) == :error end)
+    assert :ok = Lock.stop(guild_id)
   end
 
-  test "an anchor exit frees the guild for another session" do
+  test "an anchor exit frees the guild for another session", %{guild_id: guild_id} do
     holder_pid = anchor()
     next_holder_pid = anchor()
 
-    assert :ok = Lock.claim(7, 100, holder_pid)
+    assert :ok = Lock.claim(guild_id, 100, holder_pid)
     Process.exit(holder_pid, :kill)
 
-    assert_eventually(fn -> Lock.claim(7, 110, next_holder_pid) == :ok end)
-    assert {:ok, %{char_id: 110, session_pid: ^next_holder_pid}} = Lock.holder(7)
+    assert_eventually(fn -> Lock.claim(guild_id, 110, next_holder_pid) == :ok end)
+    assert {:ok, %{char_id: 110, session_pid: ^next_holder_pid}} = Lock.holder(guild_id)
   end
 
   defp anchor do

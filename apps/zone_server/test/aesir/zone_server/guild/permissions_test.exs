@@ -1,40 +1,27 @@
 defmodule Aesir.ZoneServer.Guild.PermissionsTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Guild.Member
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Guild.Permissions
   alias Aesir.ZoneServer.Guild.Position
-  alias Aesir.ZoneServer.Guild.State
 
-  @actions [:invite, :expel, :storage, :emblem, :notice, :positions, :assign]
-
-  defp member(char_id, position_index) do
-    Member.new(char_id, "member-#{char_id}", 50, true, position_index, "prontera")
-  end
-
-  defp state(members, positions) do
-    %State{
-      guild_id: 1,
-      name: "Test Guild",
-      master_char_id: 1,
-      positions: positions,
-      members: Map.new(members, &{&1.char_id, &1})
-    }
-  end
+  @actions [:invite, :expel, :storage, :emblem, :notice, :relations, :positions, :assign]
 
   describe "master" do
     test "is allowed every action" do
-      guild = state([member(1, 0)], Map.new(Position.defaults(), &{&1.index, &1}))
+      master = build(:guild_member, position_index: 0)
+      guild = build(:guild_state, master_char_id: master.char_id, members: [master])
 
       for action <- @actions do
-        assert Permissions.can?(guild, 1, action), "master denied #{action}"
+        assert Permissions.can?(guild, master.char_id, action), "master denied #{action}"
       end
     end
   end
 
   describe "non-member" do
     test "is denied every action" do
-      guild = state([member(1, 0)], %{})
+      guild = build(:guild_state, positions: Map.new(Position.defaults(), &{&1.index, &1}))
 
       for action <- @actions do
         refute Permissions.can?(guild, 999, action)
@@ -42,97 +29,54 @@ defmodule Aesir.ZoneServer.Guild.PermissionsTest do
     end
   end
 
-  describe "invite" do
-    test "denied when the member's position lacks can_invite" do
-      positions = %{5 => %Position{index: 5, can_invite: false}}
-      guild = state([member(1, 0), member(2, 5)], positions)
+  describe "position-gated actions" do
+    for {action, flag} <- [
+          invite: :can_invite,
+          expel: :can_expel,
+          storage: :can_storage,
+          notice: :can_notice,
+          relations: :can_relations
+        ] do
+      @action action
+      @flag flag
 
-      refute Permissions.can?(guild, 2, :invite)
-    end
+      test "#{action} follows the member's position #{flag}" do
+        granted = build(:guild_member, position_index: 5)
+        denied = build(:guild_member, position_index: 6)
 
-    test "allowed when the member's position grants can_invite" do
-      positions = %{5 => %Position{index: 5, can_invite: true}}
-      guild = state([member(1, 0), member(2, 5)], positions)
+        guild =
+          build(:guild_state,
+            members: [granted, denied],
+            positions: %{
+              5 => struct!(Position, [{:index, 5}, {@flag, true}]),
+              6 => %Position{index: 6}
+            }
+          )
 
-      assert Permissions.can?(guild, 2, :invite)
-    end
-  end
-
-  describe "expel" do
-    test "allowed when the member's position grants can_expel" do
-      positions = %{5 => %Position{index: 5, can_expel: true}}
-      guild = state([member(1, 0), member(2, 5)], positions)
-
-      assert Permissions.can?(guild, 2, :expel)
-    end
-
-    test "denied when the member's position lacks can_expel" do
-      positions = %{5 => %Position{index: 5, can_expel: false}}
-      guild = state([member(1, 0), member(2, 5)], positions)
-
-      refute Permissions.can?(guild, 2, :expel)
-    end
-  end
-
-  describe "storage" do
-    test "allowed when the member's position grants can_storage" do
-      positions = %{5 => %Position{index: 5, can_storage: true}}
-      guild = state([member(1, 0), member(2, 5)], positions)
-
-      assert Permissions.can?(guild, 2, :storage)
-    end
-
-    test "denied when the member's position lacks can_storage" do
-      positions = %{5 => %Position{index: 5, can_storage: false}}
-      guild = state([member(1, 0), member(2, 5)], positions)
-
-      refute Permissions.can?(guild, 2, :storage)
-    end
-  end
-
-  describe "master-only actions" do
-    test "emblem, positions, assign and notice are denied for any non-master" do
-      positions = %{5 => %Position{index: 5, can_invite: true, can_expel: true}}
-      guild = state([member(1, 0), member(2, 5)], positions)
-
-      for action <- [:emblem, :positions, :assign, :notice] do
-        refute Permissions.can?(guild, 2, action), "non-master allowed #{action}"
+        assert Permissions.can?(guild, granted.char_id, @action)
+        refute Permissions.can?(guild, denied.char_id, @action)
       end
     end
   end
 
-  describe "notice" do
-    test "allowed only when the member's position grants can_notice" do
-      positions = %{
-        5 => %Position{index: 5, can_notice: true},
-        6 => %Position{index: 6, can_relations: true}
+  describe "master-only actions" do
+    test "emblem, positions and assign are denied for a non-master holding every flag" do
+      officer = build(:guild_member, position_index: 5)
+
+      position = %Position{
+        index: 5,
+        can_invite: true,
+        can_expel: true,
+        can_storage: true,
+        can_notice: true,
+        can_relations: true
       }
 
-      guild = state([member(1, 0), member(2, 5), member(3, 6)], positions)
+      guild = build(:guild_state, members: [officer], positions: %{5 => position})
 
-      assert Permissions.can?(guild, 2, :notice)
-      refute Permissions.can?(guild, 3, :notice)
-    end
-  end
-
-  describe "relations" do
-    test "allowed only when the member's position grants can_relations" do
-      positions = %{
-        5 => %Position{index: 5, can_relations: true},
-        6 => %Position{index: 6, can_notice: true}
-      }
-
-      guild = state([member(1, 0), member(2, 5), member(3, 6)], positions)
-
-      assert Permissions.can?(guild, 2, :relations)
-      refute Permissions.can?(guild, 3, :relations)
-    end
-
-    test "the master is allowed and a non-member is denied" do
-      guild = state([member(1, 0)], Map.new(Position.defaults(), &{&1.index, &1}))
-
-      assert Permissions.can?(guild, 1, :relations)
-      refute Permissions.can?(guild, 999, :relations)
+      for action <- [:emblem, :positions, :assign] do
+        refute Permissions.can?(guild, officer.char_id, action), "non-master allowed #{action}"
+      end
     end
   end
 end

@@ -2,11 +2,10 @@ defmodule Aesir.ZoneServer.Guild.RelationsTest do
   use Aesir.DataCase, async: false
   use Mimic
 
+  import Aesir.Factory
   import Ecto.Query
 
   alias Aesir.Commons.ClusterTestHelper
-  alias Aesir.Commons.Models.Account
-  alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Guild, as: GuildModel
   alias Aesir.Commons.Models.GuildRelation
   alias Aesir.Repo
@@ -24,33 +23,8 @@ defmodule Aesir.ZoneServer.Guild.RelationsTest do
     :ok
   end
 
-  defp account_fixture(userid) do
-    {:ok, account} =
-      %Account{}
-      |> Account.changeset(%{
-        userid: userid,
-        user_pass: "password",
-        sex: "M",
-        email: "#{userid}@example.com"
-      })
-      |> Repo.insert()
-
-    account
-  end
-
-  defp char_fixture(name) do
-    account = account_fixture(name)
-
-    {:ok, character} =
-      %{account_id: account.id, name: name, char_num: 0, class: 0, base_level: 1}
-      |> Character.new()
-      |> Repo.insert()
-
-    character
-  end
-
   defp guild_fixture(master_name) do
-    master = char_fixture(master_name)
+    master = insert(:character, name: master_name)
     {:ok, state} = Manager.create("Guild-#{master_name}", master)
     state.guild_id
   end
@@ -135,7 +109,7 @@ defmodule Aesir.ZoneServer.Guild.RelationsTest do
     test "carries the other guild's level, member count, master name and emblem version" do
       a = guild_fixture("LoadSummaryA")
       b = guild_fixture("LoadSummaryB")
-      {:ok, _} = Manager.add_member(b, char_fixture("LoadSummaryMember"))
+      {:ok, _} = Manager.add_member(b, insert(:character, name: "LoadSummaryMember"))
       Repo.update_all(from(g in GuildModel, where: g.id == ^b), set: [level: 7, emblem_id: 4])
       assert :ok = Relations.declare_antagonist(a, b)
 

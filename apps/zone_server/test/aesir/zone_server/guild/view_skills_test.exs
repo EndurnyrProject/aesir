@@ -1,9 +1,10 @@
 defmodule Aesir.ZoneServer.Guild.ViewSkillsTest do
   use ExUnit.Case, async: false
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Net.GuildSkillEntry
   alias Aesir.ZoneServer.Guild.Progression.Data
-  alias Aesir.ZoneServer.Guild.State
   alias Aesir.ZoneServer.Guild.View
 
   @moduletag :tmp_dir
@@ -30,7 +31,7 @@ defmodule Aesir.ZoneServer.Guild.ViewSkillsTest do
   end
 
   test "guild_info/1 exposes every configured skill when none are learned" do
-    guild = %State{guild_id: 10, name: "Aesir", master_char_id: 42}
+    guild = build(:guild_state)
 
     result = View.guild_info(guild)
 
@@ -44,12 +45,10 @@ defmodule Aesir.ZoneServer.Guild.ViewSkillsTest do
   test "guild_info/1 combines configured and formerly learned skills without changing state" do
     learned_skills = %{99_999 => 3, 10_000 => 4}
 
-    guild = %State{
-      guild_id: 10,
-      name: "Aesir",
-      master_char_id: 42,
-      learned_skills: learned_skills
-    }
+    guild =
+      build(:guild_state,
+        learned_skills: learned_skills
+      )
 
     result = View.guild_info(guild)
 

@@ -2,12 +2,12 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
   use Aesir.DataCase, async: false
   use Mimic
 
+  import Aesir.Factory
   import Aesir.TestWait
   import Ecto.Query
   import ExUnit.CaptureLog
 
   alias Aesir.Commons.ClusterTestHelper
-  alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Guild, as: GuildModel
   alias Aesir.Commons.Models.GuildActivityLog
@@ -44,44 +44,15 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
     :ok
   end
 
-  defp account_fixture(userid) do
-    {:ok, account} =
-      %Account{}
-      |> Account.changeset(%{
-        userid: userid,
-        user_pass: "password",
-        sex: "M",
-        email: "#{userid}@example.com"
-      })
-      |> Repo.insert()
-
-    account
-  end
-
-  defp character_fixture(attrs) do
-    {:ok, character} =
-      attrs
-      |> Enum.into(%{char_num: 0, class: 0, base_level: 1})
-      |> Character.new()
-      |> Repo.insert()
-
-    character
-  end
-
-  defp char_fixture(name, attrs \\ %{}) do
-    account = account_fixture(name)
-    character_fixture(Map.merge(%{account_id: account.id, name: name}, attrs))
-  end
-
   defp guild_fixture(master_name) do
-    master = char_fixture(master_name)
+    master = insert(:character, name: master_name)
     {:ok, state} = Manager.create("Guild-#{master_name}", master)
     {master, state}
   end
 
   defp fill_to(state, count, prefix) do
     Enum.reduce((State.member_count(state) + 1)..count, state, fn n, acc ->
-      joiner = char_fixture("#{prefix}#{n}")
+      joiner = insert(:character, name: "#{prefix}#{n}")
       {:ok, next} = Manager.add_member(acc.guild_id, joiner)
       next
     end)
@@ -89,7 +60,8 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
 
   describe "create/2" do
     test "persists guild + 20 positions + master at guild_id/position 0 and starts an entry" do
-      master = char_fixture("Founder", %{class: 7, base_level: 50, hp: 500, max_hp: 1_000})
+      master =
+        insert(:character, name: "Founder", class: 7, base_level: 50, hp: 500, max_hp: 1_000)
 
       assert {:ok, %State{} = state} = Manager.create("Vanguard", master)
       assert state.name == "Vanguard"
@@ -128,8 +100,8 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
     end
 
     test "duplicate name returns {:error, :name_taken} with no partial writes" do
-      master1 = char_fixture("Owner1")
-      master2 = char_fixture("Owner2")
+      master1 = insert(:character, name: "Owner1")
+      master2 = insert(:character, name: "Owner2")
 
       assert {:ok, _state} = Manager.create("SameName", master1)
       assert {:error, :name_taken} = Manager.create("SameName", master2)
@@ -142,16 +114,18 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
     end
 
     test "blank name returns {:error, :invalid_name}" do
-      master = char_fixture("Blankster")
+      master = insert(:character, name: "Blankster")
       assert {:error, :invalid_name} = Manager.create("   ", master)
     end
   end
 
   describe "ensure_started/1" do
     test "rebuilds guild + positions + offline members from the DB" do
-      master = char_fixture("RebuildMaster", %{class: 9, base_level: 40, last_map: "geffen"})
+      master =
+        insert(:character, name: "RebuildMaster", class: 9, base_level: 40, last_map: "geffen")
+
       {:ok, created} = Manager.create("Rebuildable", master)
-      joiner = char_fixture("RebuildJoiner")
+      joiner = insert(:character, name: "RebuildJoiner")
       {:ok, _joined} = Manager.add_member(created.guild_id, joiner)
 
       ClusterTestHelper.clear_all()
@@ -216,7 +190,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
   describe "add_member/2" do
     test "joins at the Newbie position, persists, and broadcasts {:guild_updated, state}" do
       {_master, created} = guild_fixture("Joiners")
-      joiner = char_fixture("Newcomer")
+      joiner = insert(:character, name: "Newcomer")
 
       Phoenix.PubSub.subscribe(Aesir.PubSub, "guild:#{created.guild_id}")
 
@@ -236,13 +210,13 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
       {_master, created} = guild_fixture("Packed")
       full = fill_to(created, @max_members, "Packed")
 
-      overflow = char_fixture("Overflow")
+      overflow = insert(:character, name: "Overflow")
       assert {:error, :guild_full} = Manager.add_member(full.guild_id, overflow)
       assert Repo.get(Character, overflow.id).guild_id == 0
     end
 
     test "returns {:error, :not_found} when no entry is running" do
-      joiner = char_fixture("SoloJoin")
+      joiner = insert(:character, name: "SoloJoin")
       assert {:error, :not_found} = Manager.add_member(999_999, joiner)
     end
 
@@ -250,8 +224,8 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
       {_master, created} = guild_fixture("Race")
       filled = fill_to(created, @max_members - 1, "Race")
 
-      a = char_fixture("RaceA")
-      b = char_fixture("RaceB")
+      a = insert(:character, name: "RaceA")
+      b = insert(:character, name: "RaceB")
 
       [ra, rb] =
         [
@@ -268,8 +242,8 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
   describe "member slots" do
     test "a rebuilt entry numbers members by position, a joiner takes the lowest free slot" do
       {master, created} = guild_fixture("Slots")
-      first = char_fixture("SlotsFirst")
-      second = char_fixture("SlotsSecond")
+      first = insert(:character, name: "SlotsFirst")
+      second = insert(:character, name: "SlotsSecond")
       {:ok, _} = Manager.add_member(created.guild_id, first)
       {:ok, _} = Manager.add_member(created.guild_id, second)
 
@@ -282,7 +256,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
       {:ok, left} = Manager.remove_member(created.guild_id, second.id)
       assert slots(left) == %{master.id => 0, first.id => 2}
 
-      third = char_fixture("SlotsThird")
+      third = insert(:character, name: "SlotsThird")
       {:ok, joined} = Manager.add_member(created.guild_id, third)
       assert slots(joined) == %{master.id => 0, third.id => 1, first.id => 2}
     end
@@ -302,7 +276,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
   describe "remove_member/2" do
     test "drops a non-master member and resets its row" do
       {_master, created} = guild_fixture("Leavers")
-      joiner = char_fixture("Quitter")
+      joiner = insert(:character, name: "Quitter")
       {:ok, joined} = Manager.add_member(created.guild_id, joiner)
 
       Phoenix.PubSub.subscribe(Aesir.PubSub, "guild:#{joined.guild_id}")
@@ -317,7 +291,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
 
     test "the master leaving disbands the guild" do
       {master, created} = guild_fixture("MasterLeaves")
-      joiner = char_fixture("Follower")
+      joiner = insert(:character, name: "Follower")
       {:ok, _joined} = Manager.add_member(created.guild_id, joiner)
 
       Phoenix.PubSub.subscribe(Aesir.PubSub, "guild:#{created.guild_id}")
@@ -338,9 +312,9 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
   describe "disband/2" do
     test "resets every member, deletes positions/expulsions/guild, stops the entry, broadcasts" do
       {master, created} = guild_fixture("Doomed")
-      joiner = char_fixture("DoomedMember")
+      joiner = insert(:character, name: "DoomedMember")
       {:ok, _joined} = Manager.add_member(created.guild_id, joiner)
-      other = char_fixture("Expelled")
+      other = insert(:character, name: "Expelled")
       {:ok, _} = Manager.add_member(created.guild_id, other)
       {:ok, _} = Manager.expel(created.guild_id, master.id, other.id, "spam")
 
@@ -560,7 +534,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
   describe "expel/4" do
     test "master expels a member, resets the row, and writes exactly one expulsion" do
       {master, created} = guild_fixture("Expellers")
-      target = char_fixture("Troublemaker")
+      target = insert(:character, name: "Troublemaker")
       {:ok, _joined} = Manager.add_member(created.guild_id, target)
 
       Phoenix.PubSub.subscribe(Aesir.PubSub, "guild:#{created.guild_id}")
@@ -588,9 +562,9 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
 
     test "denies a requester without the EXPEL permission" do
       {_master, created} = guild_fixture("Gated")
-      member = char_fixture("Powerless")
+      member = insert(:character, name: "Powerless")
       {:ok, _} = Manager.add_member(created.guild_id, member)
-      target = char_fixture("Victim")
+      target = insert(:character, name: "Victim")
       {:ok, _} = Manager.add_member(created.guild_id, target)
 
       assert {:error, :no_permission} =
@@ -608,9 +582,9 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
 
     test "a member granted expel permission can expel" do
       {master, created} = guild_fixture("Delegated")
-      officer = char_fixture("Officer")
+      officer = insert(:character, name: "Officer")
       {:ok, _} = Manager.add_member(created.guild_id, officer)
-      target = char_fixture("Doomed2")
+      target = insert(:character, name: "Doomed2")
       {:ok, _} = Manager.add_member(created.guild_id, target)
 
       {:ok, _} =
@@ -650,7 +624,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
 
     test "denies a non-master" do
       {_master, created} = guild_fixture("EmblemGate")
-      member = char_fixture("NotMaster")
+      member = insert(:character, name: "NotMaster")
       {:ok, _} = Manager.add_member(created.guild_id, member)
 
       assert {:error, :no_permission} =
@@ -678,7 +652,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
 
     test "denies a non-master" do
       {_master, created} = guild_fixture("NoticeGate")
-      member = char_fixture("Grunt")
+      member = insert(:character, name: "Grunt")
       {:ok, _} = Manager.add_member(created.guild_id, member)
 
       assert {:error, :no_permission} =
@@ -768,7 +742,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
 
     test "denies a non-positions member" do
       {_master, created} = guild_fixture("PosGate")
-      member = char_fixture("Peon")
+      member = insert(:character, name: "Peon")
       {:ok, _} = Manager.add_member(created.guild_id, member)
 
       assert {:error, :no_permission} =
@@ -784,7 +758,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
   describe "assign_member_position/4" do
     test "master assigns a member to a position and it persists" do
       {master, created} = guild_fixture("Assigners")
-      member = char_fixture("Climber")
+      member = insert(:character, name: "Climber")
       {:ok, _} = Manager.add_member(created.guild_id, member)
 
       assert {:ok, state} =
@@ -796,9 +770,9 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
 
     test "denies a non-master" do
       {_master, created} = guild_fixture("AssignGate")
-      member = char_fixture("Nobody")
+      member = insert(:character, name: "Nobody")
       {:ok, _} = Manager.add_member(created.guild_id, member)
-      other = char_fixture("Other")
+      other = insert(:character, name: "Other")
       {:ok, _} = Manager.add_member(created.guild_id, other)
 
       assert {:error, :no_permission} =
@@ -807,7 +781,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
 
     test "rejects an out-of-range index" do
       {master, created} = guild_fixture("RangeCheck")
-      member = char_fixture("Ranged")
+      member = insert(:character, name: "Ranged")
       {:ok, _} = Manager.add_member(created.guild_id, member)
 
       assert {:error, :invalid_position} =
@@ -884,9 +858,9 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
 
   describe "member last_seen" do
     test "a rebuilt entry carries each offline member's last login, 0 when it never logged in" do
-      master = char_fixture("SeenMaster", %{last_login: ~N[2026-11-11 20:58:00]})
+      master = insert(:character, name: "SeenMaster", last_login: ~N[2026-11-11 20:58:00])
       {:ok, created} = Manager.create("SeenGuild", master)
-      joiner = char_fixture("SeenNever")
+      joiner = insert(:character, name: "SeenNever")
       {:ok, _} = Manager.add_member(created.guild_id, joiner)
 
       ClusterTestHelper.clear_all()
@@ -897,7 +871,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
     end
 
     test "coming online stamps it and going offline keeps the stamp" do
-      master = char_fixture("SeenOnline")
+      master = insert(:character, name: "SeenOnline")
       {:ok, created} = Manager.create("SeenOnlineGuild", master)
       ClusterTestHelper.clear_all()
       {:ok, _rebuilt} = Manager.ensure_started(created.guild_id)
@@ -918,8 +892,8 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
   describe "member contribution reset" do
     test "leaving and being expelled both zero the character's guild_exp" do
       {master, created} = guild_fixture("ExpReset")
-      leaver = char_fixture("ExpLeaver")
-      expelled = char_fixture("ExpExpelled")
+      leaver = insert(:character, name: "ExpLeaver")
+      expelled = insert(:character, name: "ExpExpelled")
       {:ok, _} = Manager.add_member(created.guild_id, leaver)
       {:ok, _} = Manager.add_member(created.guild_id, expelled)
       :ok = Manager.contribute_exp(created.guild_id, leaver.id, 100)
@@ -965,7 +939,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
 
     test "a member whose position grants can_notice edits the notice" do
       {master, created} = guild_fixture("NoticeGranted")
-      member = char_fixture("NoticeScribe")
+      member = insert(:character, name: "NoticeScribe")
       {:ok, _} = Manager.add_member(created.guild_id, member)
 
       {:ok, _} =
@@ -1033,8 +1007,8 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
 
     test "membership and position changes are logged newest first and survive a rebuild" do
       {master, created} = guild_fixture("LogMembers")
-      joiner = char_fixture("LogJoiner")
-      expelled = char_fixture("LogExpelled")
+      joiner = insert(:character, name: "LogJoiner")
+      expelled = insert(:character, name: "LogExpelled")
       {:ok, _} = Manager.add_member(created.guild_id, joiner, master.id)
       {:ok, _} = Manager.add_member(created.guild_id, expelled)
 
@@ -1075,7 +1049,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
 
     test "re-assigning a member to the position it already holds logs nothing" do
       {master, created} = guild_fixture("LogSamePosition")
-      joiner = char_fixture("LogStays")
+      joiner = insert(:character, name: "LogStays")
       {:ok, joined} = Manager.add_member(created.guild_id, joiner)
 
       {:ok, state} =

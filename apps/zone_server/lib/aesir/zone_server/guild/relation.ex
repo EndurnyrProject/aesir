@@ -12,24 +12,17 @@ defmodule Aesir.ZoneServer.Guild.Relation do
   always preferred (`Aesir.ZoneServer.Guild.View`).
   """
 
-  @enforce_keys [:guild_id, :name, :kind]
-  defstruct guild_id: nil,
-            name: nil,
-            kind: nil,
-            level: 0,
-            member_count: 0,
-            master_name: "",
-            emblem_id: 0
+  use TypedStruct
 
   @type kind :: :ally | :antagonist
 
-  @type t() :: %__MODULE__{
-          guild_id: pos_integer(),
-          name: String.t(),
-          kind: kind(),
-          level: non_neg_integer(),
-          member_count: non_neg_integer(),
-          master_name: String.t(),
-          emblem_id: non_neg_integer()
-        }
+  typedstruct do
+    field :guild_id, pos_integer(), enforce: true
+    field :name, String.t(), enforce: true
+    field :kind, kind(), enforce: true
+    field :level, non_neg_integer(), default: 0
+    field :member_count, non_neg_integer(), default: 0
+    field :master_name, String.t(), default: ""
+    field :emblem_id, non_neg_integer(), default: 0
+  end
 end
