@@ -4,8 +4,10 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
   require Logger
 
   alias Aesir.Net.PetCatchTargetCommand
+  alias Aesir.Net.PetEmotionCommand
   alias Aesir.Net.PetEquipAccessoryCommand
   alias Aesir.Net.PetMenuCommand
+  alias Aesir.Net.PetRenameCommand
   alias Aesir.Net.PetRequest
   alias Aesir.Net.PetResult
   alias Aesir.Net.PetSelectEggCommand
@@ -23,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
   alias Aesir.ZoneServer.Unit.Pet.Handlers.HungerHandler
   alias Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler
   alias Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Pet.Handlers.NameHandler
   alias Aesir.ZoneServer.Unit.Pet.PetState
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -79,6 +82,16 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
 
   defp run(_command, %SessionState{pet: nil} = session),
     do: {{:error, :PET_ERROR_NO_PET}, session}
+
+  defp run({:rename, %PetRenameCommand{name: name}}, session) do
+    case NameHandler.rename(session, name) do
+      {:ok, updated} -> {:ok, updated}
+      {:error, unchanged} -> {{:error, :PET_ERROR_INVALID_REQUEST}, unchanged}
+    end
+  end
+
+  defp run({:emotion, %PetEmotionCommand{data: data}}, session),
+    do: {:ok, NameHandler.emotion(session, data)}
 
   defp run(
          {:menu, %PetMenuCommand{}},
