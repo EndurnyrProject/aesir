@@ -213,15 +213,18 @@ defmodule Aesir.ZoneServer.Integration.PvpDeathIntegrationTest do
     end
 
     test "a normal-map death applies the exact base/job penalty" do
-      victim = insert_character("PvPNormal")
+      # The Novice line is exempt from the penalty, and Prontera is statically
+      # `noexppenalty`; the override lives in this test's own flag table.
+      victim = insert_character("PvPNormal", %{class: 7})
+      :ok = MapFlags.set_runtime(@map, :noexppenalty, false)
 
       session =
         start_player_session(character: victim, map_name: @map, position: {150, 150})
 
-      with_death_penalty(100, 100, fn ->
+      with_death_penalty(10_000, 10_000, fn ->
         before = get_player_state(session.pid).stats.progression
 
-        {base_loss, job_loss} = Leveling.death_penalty(before, 100, 100)
+        {base_loss, job_loss} = Leveling.death_penalty(before, 10_000, 10_000)
         assert base_loss > 0
         assert job_loss > 0
 

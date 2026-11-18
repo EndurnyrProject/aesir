@@ -607,7 +607,9 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
   end
 
   test "Redemptio refuses off-hours castle ground after its caster self-cost" do
-    caster = fighter(@map, class: 8, skills: %{"1014" => 1})
+    # Pre-renewal Redemptio needs 1% of the next level's base EXP, which at max
+    # level is the 99,999,999 cap.
+    caster = fighter(@map, class: 8, skills: %{"1014" => 1}, base_exp: 1_000_000)
     corpse = fighter(@map)
     {:ok, party} = PartyManager.create("Rescue#{caster.character.id}", caster.character)
     {:ok, _party} = PartyManager.add_member(party.party_id, corpse.character)

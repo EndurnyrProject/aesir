@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase2IntegrationTest do
 
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.ItemManagement
@@ -128,11 +129,16 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase2IntegrationTest do
     setup do
       assert Config.death_penalty_base() > 0
       assert Config.death_penalty_job() > 0
+      # Prontera is statically `noexppenalty`; the override lives in this test's
+      # own flag table. The Knight fixtures avoid the Novice-line exemption.
+      :ok = MapFlags.set_runtime("prontera", :noexppenalty, false)
       :ok
     end
 
     test "dying without insurance subtracts the renewal death EXP penalty" do
-      player = start_player_session(id: 9704, name: "Mortal", base_level: 50, job_level: 8)
+      player =
+        start_player_session(id: 9704, name: "Mortal", class: 7, base_level: 50, job_level: 8)
+
       {progression, base_loss, job_loss} = seed_exp_and_expected_loss(player)
 
       assert base_loss > 0
@@ -145,7 +151,9 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase2IntegrationTest do
     end
 
     test "dying with SC_LIFEINSURANCE preserves EXP" do
-      player = start_player_session(id: 9705, name: "Insured", base_level: 50, job_level: 8)
+      player =
+        start_player_session(id: 9705, name: "Insured", class: 7, base_level: 50, job_level: 8)
+
       char_id = player.character.id
       on_exit(fn -> StatusInterpreter.remove_status(:player, char_id, :sc_lifeinsurance) end)
 

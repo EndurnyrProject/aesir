@@ -230,7 +230,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
              {PlayerSession.get_state(player.pid).game_state.x,
               PlayerSession.get_state(player.pid).game_state.y}
 
-    refute_receive {:packet_sent, %{__struct__: Knockback}, _channel}, 50
+    # The capture still fixes the target's position on its own cell.
+    assert_receive {:packet_sent, %Knockback{unit_id: @caster_id, dst_x: 50, dst_y: 50}, _}
   end
 
   test "capturing a real mob pulls it onto the trap cell through its session", %{
