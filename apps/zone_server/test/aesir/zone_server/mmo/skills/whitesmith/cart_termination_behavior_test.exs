@@ -3,11 +3,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Whitesmith.CartTerminationBehaviorTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.TestMob
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
@@ -178,11 +178,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Whitesmith.CartTerminationBehaviorTest do
   end
 
   test "classic_card_exclusion_uses_real_damage_stage" do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 102)
+    attacker = build(:player_combatant, unit_id: 102)
     carded = %{attacker | equip_modifiers: %{{:addrace, :brute} => 50}}
 
     defender =
-      CombatTestHelper.create_mob_combatant(unit_id: 202, race: :brute, def: 0, soft_def: 0)
+      build(:mob_combatant, unit_id: 202, race: :brute, def: 0, soft_def: 0)
 
     opts = [skill_id: 485, base_damage: 1_000, skip_crit: true]
     {:ok, plain} = DamageCalculator.calculate_damage_ignoring_defense(attacker, defender, opts)

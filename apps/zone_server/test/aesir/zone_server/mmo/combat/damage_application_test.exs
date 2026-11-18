@@ -3,9 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Net.DamageDealt
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.Endure
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
@@ -14,7 +14,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -87,11 +86,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
   setup :verify_on_exit!
   setup :setup_ets_tables
 
-  setup do
-    Mimic.copy(EquipComa)
-    :ok
-  end
-
   test "reduces skill magic damage using the player target's equipment" do
     target_id = 29
     register_player_with_magic_reduction(target_id, 40)
@@ -140,11 +134,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     target_pid = spawn(fn -> Process.sleep(:infinity) end)
     stub_unit_info(target_id)
 
-    player_state = %PlayerState{
-      character_id: target_id,
-      action_state: :idle,
-      stats: %{current_state: %{hp: 1_000}}
-    }
+    player_state =
+      build(:player_state, character_id: target_id, stats: %{current_state: %{hp: 1_000}})
 
     stub(UnitRegistry, :get_unit, fn :player, ^target_id ->
       {:ok, {PlayerState, player_state, target_pid}}
@@ -624,8 +615,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
 
   test "a missed attack's coma is rolled and delivered for no damage" do
     target_pid = spawn(fn -> Process.sleep(:infinity) end)
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 20)
-    target = CombatTestHelper.create_mob_combatant(unit_id: 29)
+    attacker = build(:player_combatant, unit_id: 20)
+    target = build(:mob_combatant, unit_id: 29)
     test_pid = self()
 
     expect(EquipComa, :trigger?, fn ^attacker, ^target -> true end)
@@ -642,8 +633,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
   end
 
   test "a missed attack without a coma delivers nothing" do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 20)
-    target = CombatTestHelper.create_mob_combatant(unit_id: 29)
+    attacker = build(:player_combatant, unit_id: 20)
+    target = build(:mob_combatant, unit_id: 29)
 
     expect(EquipComa, :trigger?, fn ^attacker, ^target -> false end)
     reject(&MobSession.apply_coma/3)
@@ -654,11 +645,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
   defp devote(devotee_id, crusader_id) do
     crusader_pid = spawn(fn -> Process.sleep(:infinity) end)
 
-    crusader = %PlayerState{
-      character_id: crusader_id,
-      action_state: :idle,
-      stats: %{current_state: %{hp: 100}}
-    }
+    crusader =
+      build(:player_state, character_id: crusader_id, stats: %{current_state: %{hp: 100}})
 
     UnitRegistry.register_unit(:player, crusader_id, PlayerState, crusader, crusader_pid)
     SpatialIndex.add_player(devotee_id, 50, 50, "prontera")
@@ -730,11 +718,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
       crusader_id = 30
       crusader_pid = spawn(fn -> Process.sleep(:infinity) end)
 
-      crusader = %PlayerState{
-        character_id: crusader_id,
-        action_state: :idle,
-        stats: %{current_state: %{hp: 100}}
-      }
+      crusader =
+        build(:player_state, character_id: crusader_id, stats: %{current_state: %{hp: 100}})
 
       UnitRegistry.register_unit(:player, crusader_id, PlayerState, crusader, crusader_pid)
       SpatialIndex.add_player(devotee_id, 50, 50, "prontera")
@@ -858,7 +843,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
   test "one aggregate delivery produces one HP and death transition" do
     target_id = 15
     test_pid = self()
-    target_pid = spawn_link(fn -> death_session_loop(test_pid, struct(MobState, %{hp: 100})) end)
+    mob = build(:mob_state, hp: 100)
+    target_pid = spawn_link(fn -> death_session_loop(test_pid, mob) end)
 
     {_settled, :ok} =
       DamageApplication.apply_weapon_swing(
@@ -876,7 +862,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
 
   test "preserves the one-hit delivery error contract" do
     manager_pid = spawn(fn -> Process.sleep(:infinity) end)
-    Mimic.copy(SkillUnitManager)
 
     expect(SkillUnitManager, :damage_targetable_cell, fn ^manager_pid, 16, 150, {:player, 20} ->
       {:error, :not_targetable}
@@ -990,25 +975,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
 
   defp register_player_with_magic_reduction(target_id, percent) do
     player =
-      PlayerStateFixture.build(%{
+      build(:player_state,
         character_id: target_id,
         account_id: target_id,
         stats: %{
           combat_stats: %CombatStats{},
           modifiers: %{equipment: %{no_magic_damage: percent}}
         }
-      })
+      )
 
     UnitRegistry.register_player(player, self())
   end
 
   defp register_attacker(attacker_id, pid, equipment) do
     player =
-      PlayerStateFixture.build(%{
+      build(:player_state,
         character_id: attacker_id,
         account_id: attacker_id,
         stats: %{combat_stats: %CombatStats{}, modifiers: %{equipment: equipment}}
-      })
+      )
 
     UnitRegistry.register_player(player, pid)
   end

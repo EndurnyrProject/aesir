@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Cell do
 
   import Bitwise
 
+  alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
 
   @targetable 1
@@ -77,7 +78,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Cell do
   def visible, do: @visible
 
   @doc false
-  @spec to_combatant(t()) :: map()
+  @spec to_combatant(t()) :: Combatant.t()
   def to_combatant(%__MODULE__{} = cell), do: CombatTarget.to_combatant(cell)
 
   @doc """

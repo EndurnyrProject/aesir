@@ -1,9 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.RegionConsumableBonusesTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
@@ -17,20 +17,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RegionConsumableBonusesTest do
   setup :setup_ets_tables
 
   test "region attack buffs join equipment in each group and do not duplicate onto the left hand" do
-    attacker = CombatTestHelper.create_player_combatant()
-
-    attacker = %{
-      attacker
-      | equip_modifiers: %{
+    attacker =
+      build(:player_combatant,
+        equip_modifiers: %{
           {:addrace2, :manuk} => 3,
           {:left_addrace2, :manuk} => 5,
           {:addrace2, :splendide} => 4,
           {:left_addrace2, :splendide} => 7,
           {:arrow_addrace2, :manuk} => 100
         }
-    }
+      )
 
-    defender = %{CombatTestHelper.create_mob_combatant() | race2: [:manuk, :splendide]}
+    defender = build(:mob_combatant, race2: [:manuk, :splendide])
 
     modifiers =
       Map.merge(ManuAtk.modifiers(%{val1: 10}, %{}), SplAtk.modifiers(%{val1: 20}, %{}))
@@ -57,13 +55,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RegionConsumableBonusesTest do
   end
 
   test "region defense buffs add to the same card channel for weapon, magic and misc hits" do
-    attacker = %{CombatTestHelper.create_mob_combatant() | race2: [:manuk, :splendide]}
-    defender = CombatTestHelper.create_player_combatant()
+    attacker = build(:mob_combatant, race2: [:manuk, :splendide])
 
-    defender = %{
-      defender
-      | equip_modifiers: %{{:subrace2, :manuk} => 5, {:subrace2, :splendide} => 3}
-    }
+    defender =
+      build(:player_combatant,
+        equip_modifiers: %{{:subrace2, :manuk} => 5, {:subrace2, :splendide} => 3}
+      )
 
     modifiers =
       Map.merge(ManuDef.modifiers(%{val1: 7}, %{}), SplDef.modifiers(%{val1: 11}, %{}))
@@ -102,20 +99,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RegionConsumableBonusesTest do
   end
 
   test "magic input preparation combines both region buffs with cards and honors card suppression" do
-    attacker = CombatTestHelper.create_player_combatant()
+    attacker =
+      build(:player_combatant,
+        equip_modifiers: %{{:magic_addrace2, :manuk} => 3, {:magic_addrace2, :splendide} => 7}
+      )
 
-    attacker = %{
-      attacker
-      | equip_modifiers: %{{:magic_addrace2, :manuk} => 3, {:magic_addrace2, :splendide} => 7}
-    }
-
-    defender = CombatTestHelper.create_mob_combatant()
-
-    defender = %{
-      defender
-      | race2: [:manuk, :splendide],
-        combat_stats: Map.merge(defender.combat_stats, %{mdef: 0, soft_mdef: 0})
-    }
+    defender = build(:mob_combatant, race2: [:manuk, :splendide])
+    defender = %{defender | combat_stats: %{defender.combat_stats | mdef: 0, soft_mdef: 0}}
 
     modifiers =
       Map.merge(ManuMatk.modifiers(%{val1: 10}, %{}), SplMatk.modifiers(%{val1: 20}, %{}))

@@ -16,6 +16,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   alias Aesir.ZoneServer.Unit.Mob.Calculated
   alias Aesir.ZoneServer.Unit.Mob.Stats
   alias Aesir.ZoneServer.Unit.Ref
+  alias Aesir.ZoneServer.Unit.Stats.BaseStats
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
 
   @behaviour Aesir.ZoneServer.Unit
 
@@ -486,7 +488,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       social_root: {:mob, mob_state.instance_id},
       reward_root: nil,
       guild_id: mob_state.guild_id,
-      base_stats: %{
+      base_stats: %BaseStats{
         str: calculated.str,
         agi: calculated.agi,
         vit: calculated.vit,
@@ -494,7 +496,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
         dex: calculated.dex,
         luk: calculated.luk
       },
-      combat_stats: %{
+      combat_stats: %CombatStats{
         hit: calculated.hit,
         flee: calculated.flee,
         perfect_dodge: calculated.flee2,

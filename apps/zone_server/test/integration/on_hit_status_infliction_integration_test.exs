@@ -19,6 +19,8 @@ defmodule Aesir.ZoneServer.Integration.OnHitStatusInflictionIntegrationTest do
 
   @moduletag :capture_log
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Net.DamageDealt
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat
@@ -84,10 +86,10 @@ defmodule Aesir.ZoneServer.Integration.OnHitStatusInflictionIntegrationTest do
       wearer = start_player_session(position: {151, 150})
 
       attacker =
-        CombatTestHelper.create_player_combatant(unit_id: wearer.character.id)
+        build(:player_combatant, unit_id: wearer.character.id)
         |> with_combatant_equip_modifiers(%{{:add_eff, :sc_stun} => 10_000})
 
-      victim = CombatTestHelper.create_player_combatant(unit_id: player.character.id)
+      victim = build(:player_combatant, unit_id: player.character.id)
       landed = %{hit_class: :hit, attack_effects?: true, counter_effects?: true}
 
       assert :ok =

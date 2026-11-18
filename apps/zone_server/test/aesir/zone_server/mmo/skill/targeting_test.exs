@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
   use ExUnit.Case, async: false
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
@@ -476,7 +478,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
   describe "validate_skill_use/4" do
     import Bitwise
 
-    alias Aesir.ZoneServer.CombatTestHelper
     alias Aesir.ZoneServer.Mmo.Option
     alias Aesir.ZoneServer.Mmo.Skill.Definition
     alias Aesir.ZoneServer.Mmo.Skill.Origin
@@ -500,11 +501,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
           self()
         )
 
-      CombatTestHelper.create_player_combatant(unit_id: id)
+      build(:player_combatant, unit_id: id)
     end
 
     defp caster(attrs \\ []) do
-      CombatTestHelper.create_mob_combatant(unit_id: 9_801)
+      build(:mob_combatant, unit_id: 9_801)
       |> Map.merge(Map.new(attrs))
     end
 
@@ -544,7 +545,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
     end
 
     test "a hidden non-player is seen only by a detector" do
-      target = CombatTestHelper.create_mob_combatant(unit_id: 9_806)
+      target = build(:mob_combatant, unit_id: 9_806)
       :ok = StatusStorage.apply_status(:mob, 9_806, :sc_hiding)
 
       assert check(caster(class: :boss), target, skill()) ==
@@ -590,7 +591,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
     test "a hidden player's splash lands only for a skill usable while hidden" do
       caster = player_target(9_813)
       :ok = StatusStorage.apply_status(:player, 9_813, :sc_hiding)
-      target = CombatTestHelper.create_mob_combatant(unit_id: 9_814)
+      target = build(:mob_combatant, unit_id: 9_814)
 
       assert Targeting.validate_skill_use(caster, target, skill(), :splash) ==
                {:error, :caster_restricted}
@@ -615,7 +616,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
     test "classic Roki's Weil locks a splash except for the skill the caster is item-casting" do
       caster = player_target(9_816)
       :ok = StatusStorage.apply_status(:player, 9_816, :sc_rokisweil)
-      target = CombatTestHelper.create_mob_combatant(unit_id: 9_817)
+      target = build(:mob_combatant, unit_id: 9_817)
       item = %{invocation: :item, autocast_flag?: false}
       splash = fn -> Targeting.validate_skill_use(caster, target, skill(), :splash) end
 
@@ -639,7 +640,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
     test "renewal has no Roki's Weil lock" do
       caster = player_target(9_819)
       :ok = StatusStorage.apply_status(:player, 9_819, :sc_rokisweil)
-      target = CombatTestHelper.create_mob_combatant(unit_id: 9_820)
+      target = build(:mob_combatant, unit_id: 9_820)
 
       assert Targeting.validate_skill_use(caster, target, skill(), :splash) == :ok
     end
@@ -676,7 +677,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
   end
 
   describe "validate_cast_completion/3" do
-    alias Aesir.ZoneServer.CombatTestHelper
     alias Aesir.ZoneServer.Mmo.Skill.Definition
     alias Aesir.ZoneServer.Mmo.StatusStorage
 
@@ -690,7 +690,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
 
     defp damage_cast, do: completing(target_type: :target_enemy, damage_type: :damage)
 
-    defp mob_caster, do: CombatTestHelper.create_mob_combatant(unit_id: @caster_id)
+    defp mob_caster, do: build(:mob_combatant, unit_id: @caster_id)
 
     defp player_caster(id) do
       :ok =
@@ -702,7 +702,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
           self()
         )
 
-      CombatTestHelper.create_player_combatant(unit_id: id)
+      build(:player_combatant, unit_id: id)
     end
 
     test "a stunned, frozen, sleeping or petrified caster fails only a damage cast" do
@@ -773,7 +773,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
   end
 
   describe "validate_delivery/4" do
-    alias Aesir.ZoneServer.CombatTestHelper
     alias Aesir.ZoneServer.Mmo.Skill.Definition
     alias Aesir.ZoneServer.Mmo.StatusStorage
 
@@ -794,10 +793,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
         )
 
       :ok = StatusStorage.apply_status(:player, id, :sc_hiding)
-      CombatTestHelper.create_player_combatant(unit_id: id)
+      build(:player_combatant, unit_id: id)
     end
 
-    defp boss, do: CombatTestHelper.create_mob_combatant(unit_id: 9_831) |> Map.put(:class, :boss)
+    defp boss, do: build(:mob_combatant, unit_id: 9_831) |> Map.put(:class, :boss)
 
     test "a direct hit is never re-checked; a unit hit always is" do
       target = hidden_player(9_832)

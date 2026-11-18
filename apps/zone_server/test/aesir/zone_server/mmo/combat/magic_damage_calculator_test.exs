@@ -10,11 +10,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.GameMode
-  alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
 
   @element_status_keys [
     water: :subele_water,
@@ -27,74 +29,37 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
   setup :verify_on_exit!
 
   setup do
-    Mimic.copy(ModifierCalculator)
     stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
     :ok
   end
 
   defp attacker(matk, extra \\ %{}) do
-    %{unit_type: :player, unit_id: 1001, combat_stats: Map.merge(%{matk: matk}, extra)}
+    build(:player_combatant, combat_stats: struct!(CombatStats, Map.put(extra, :matk, matk)))
   end
 
   defp banded_attacker(min, max) do
-    %{
-      unit_type: :player,
-      unit_id: 1001,
-      combat_stats: %{matk: max, matk_min: min, matk_max: max}
-    }
+    build(:player_combatant, combat_stats: %CombatStats{matk: max, matk_min: min, matk_max: max})
   end
 
   defp defender(hard_mdef, soft_mdef, element \\ {:neutral, 1}, extra \\ %{}) do
-    %{
-      unit_type: :mob,
-      unit_id: 2001,
-      combat_stats: Map.merge(%{mdef: hard_mdef, soft_mdef: soft_mdef}, extra),
-      element: element
-    }
-  end
-
-  # Equipment reads require a real `%Combatant{}` (only those carry an
-  # `equip_modifiers` map); the plain-map fixtures above exercise the
-  # equipment-inert path.
-  defp full_combatant(overrides) do
-    defaults = %{
-      unit_id: 1,
-      unit_type: :player,
-      base_stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
-      combat_stats: %{matk: 100, matk_min: 100, matk_max: 100, mdef: 0, soft_mdef: 0},
-      progression: %{base_level: 1, job_level: 1},
-      element: {:neutral, 1},
-      race: :formless,
-      size: :medium,
-      weapon: %{type: :fist, element: :neutral, size: :medium},
-      attack_range: 1,
-      attack_delay_ms: 1000,
-      class: :normal,
-      equip_modifiers: %{}
-    }
-
-    struct!(Combatant, Map.merge(defaults, Map.new(overrides)))
+    stats = Map.merge(%{mdef: hard_mdef, soft_mdef: soft_mdef}, extra)
+    build(:mob_combatant, element: element, combat_stats: struct!(CombatStats, stats))
   end
 
   defp c_attacker(matk, equip, extra \\ []) do
-    full_combatant(
-      [
-        unit_id: 1001,
-        unit_type: :player,
-        combat_stats: %{matk: matk, matk_min: matk, matk_max: matk, mdef: 0, soft_mdef: 0},
-        equip_modifiers: equip
-      ] ++ extra
-    )
+    stats = %CombatStats{matk: matk, matk_min: matk, matk_max: matk, mdef: 0, soft_mdef: 0}
+    c_combatant([unit_id: 1001, combat_stats: stats, equip_modifiers: equip], extra)
   end
 
   defp c_defender(hard_mdef, soft_mdef, extra \\ []) do
-    full_combatant(
-      [
-        unit_id: 2001,
-        unit_type: :mob,
-        combat_stats: %{matk: 0, matk_min: 0, matk_max: 0, mdef: hard_mdef, soft_mdef: soft_mdef}
-      ] ++ extra
-    )
+    stats = %CombatStats{matk: 0, matk_min: 0, matk_max: 0, mdef: hard_mdef, soft_mdef: soft_mdef}
+    c_combatant([unit_id: 2001, unit_type: :mob, combat_stats: stats], extra)
+  end
+
+  defp c_combatant(defaults, extra) do
+    attrs = Keyword.merge([race: :formless, element: {:neutral, 1}] ++ defaults, extra)
+    factory = if attrs[:unit_type] == :mob, do: :mob_combatant, else: :player_combatant
+    build(factory, attrs)
   end
 
   defp magic_damage_with_defender_modifiers(attacker, defender, element, modifiers) do
@@ -385,22 +350,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
                )
     end
 
-    test "attacker without :smatk key applies no S.MAtk bonus" do
-      assert {:ok, %{damage: mode_value(86, 85), is_critical: false}} ==
-               MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5))
-    end
-
     test "mres reduces Renewal pre-MDEF damage and is inert in classic" do
       assert {:ok, %{damage: mode_value(50, 85), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(
                  attacker(100),
                  defender(10, 5, {:neutral, 1}, %{mres: 400})
                )
-    end
-
-    test "defender combat_stats without :mres takes full magic damage (no crash)" do
-      assert {:ok, %{damage: mode_value(86, 85), is_critical: false}} ==
-               MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5))
     end
 
     test "fixed_damage bypasses S.MAtk entirely" do

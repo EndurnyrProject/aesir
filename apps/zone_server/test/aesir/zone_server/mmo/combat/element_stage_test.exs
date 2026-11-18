@@ -7,19 +7,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementStageTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.GameMode
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
 
-  setup :set_mimic_private
+  setup :set_mimic_from_context
 
   setup do
-    Mimic.copy(ElementModifiers)
-    Mimic.copy(SizeModifiers)
-    Mimic.copy(ModifierCalculator)
     stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
     stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
     test_pid = self()
@@ -41,7 +39,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementStageTest do
   end
 
   defp fire_player(opts \\ []) do
-    CombatTestHelper.create_player_combatant(
+    build(
+      :player_combatant,
       Keyword.merge([weapon_type: :dagger, weapon_element: :fire, flat_atk: 7], opts)
     )
   end
@@ -50,7 +49,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementStageTest do
   test "renewal attributes status, weapon then equipment ATK of both hands" do
     attacker = fire_player()
     status = attacker.combat_stats.physical_attack.status_atk
-    defender = CombatTestHelper.create_mob_combatant(def: 0, element: {:neutral, 1})
+    defender = build(:mob_combatant, def: 0, element: {:neutral, 1})
 
     assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
 
@@ -69,8 +68,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementStageTest do
   test "renewal doubles right-hand status ATK after its attribute step" do
     attacker = fire_player(str: 14, flat_atk: 0)
     status = attacker.combat_stats.physical_attack.status_atk
-    ghost = CombatTestHelper.create_mob_combatant(def: 0, vit: 0, element: {:ghost, 1})
-    neutral = CombatTestHelper.create_mob_combatant(def: 0, vit: 0, element: {:neutral, 1})
+    ghost = build(:mob_combatant, def: 0, vit: 0, element: {:ghost, 1})
+    neutral = build(:mob_combatant, def: 0, vit: 0, element: {:neutral, 1})
 
     {:ok, %{damage: against_ghost}} =
       DamageCalculator.calculate_damage(attacker, ghost, skip_crit: true, element: :neutral)
@@ -87,7 +86,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementStageTest do
   @tag game_mode: :pre_renewal
   test "classic takes one attribute step after defense" do
     attacker = fire_player()
-    defender = CombatTestHelper.create_mob_combatant(def: 0, element: {:earth, 1})
+    defender = build(:mob_combatant, def: 0, element: {:earth, 1})
 
     assert {:ok, %{damage: damage}} =
              DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
@@ -103,18 +102,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementStageTest do
       _type, _id -> %{}
     end)
 
-    attacker = CombatTestHelper.create_player_combatant(weapon_element: :neutral)
-    defender = CombatTestHelper.create_mob_combatant(def: 0, element: {:earth, 1})
+    attacker = build(:player_combatant, weapon_element: :neutral)
+    defender = build(:mob_combatant, def: 0, element: {:earth, 1})
 
     assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
     assert [{:neutral, _hit}, {:fire, _share}] = steps()
   end
 
   test "a monster's basic attack takes no attribute step" do
-    attacker = CombatTestHelper.create_mob_combatant(unit_id: 3001, element: {:fire, 1})
+    attacker = build(:mob_combatant, unit_id: 3001, element: {:fire, 1})
 
     defender =
-      CombatTestHelper.create_player_combatant(unit_id: 1001) |> Map.put(:element, {:neutral, 1})
+      build(:player_combatant, unit_id: 1001) |> Map.put(:element, {:neutral, 1})
 
     assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
     assert steps() == []
@@ -122,11 +121,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementStageTest do
 
   test "a monster's skill takes its element after defense" do
     attacker =
-      CombatTestHelper.create_mob_combatant(unit_id: 3001, element: {:fire, 1})
+      build(:mob_combatant, unit_id: 3001, element: {:fire, 1})
       |> Map.update!(:weapon, &%{&1 | element: :fire})
 
     defender =
-      CombatTestHelper.create_player_combatant(unit_id: 1001) |> Map.put(:element, {:neutral, 1})
+      build(:player_combatant, unit_id: 1001) |> Map.put(:element, {:neutral, 1})
 
     assert {:ok, _} =
              DamageCalculator.calculate_damage(attacker, defender, skip_crit: true, skill_id: 5)
@@ -136,7 +135,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementStageTest do
 
   test "Cart Revolution takes a forced neutral step after its weapon element" do
     attacker = fire_player()
-    defender = CombatTestHelper.create_mob_combatant(def: 0, element: {:ghost, 1})
+    defender = build(:mob_combatant, def: 0, element: {:ghost, 1})
 
     assert {:ok, _} =
              DamageCalculator.calculate_damage(attacker, defender, skip_crit: true, skill_id: 153)
@@ -147,7 +146,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementStageTest do
   @tag game_mode: :pre_renewal
   test "classic Envenom adds its ATK after the step and takes its element again" do
     attacker = fire_player()
-    defender = CombatTestHelper.create_mob_combatant(def: 0, element: {:neutral, 1})
+    defender = build(:mob_combatant, def: 0, element: {:neutral, 1})
 
     assert {:ok, _} =
              DamageCalculator.calculate_damage(attacker, defender,
@@ -162,9 +161,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementStageTest do
   end
 
   test "an immune element deals 0 with no minimum; renewal status ATK stays neutral" do
-    attacker = CombatTestHelper.create_player_combatant(weapon_element: :holy)
+    attacker = build(:player_combatant, weapon_element: :holy)
     status = attacker.combat_stats.physical_attack.status_atk
-    defender = CombatTestHelper.create_mob_combatant(def: 0, vit: 0, element: {:holy, 1})
+    defender = build(:mob_combatant, def: 0, vit: 0, element: {:holy, 1})
 
     assert {:ok, %{damage: damage}} =
              DamageCalculator.calculate_damage(attacker, defender,

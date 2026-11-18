@@ -5,15 +5,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SpDrainTest do
   :code.unstick_mod(:rand)
   Mimic.copy(:rand)
 
-  alias Aesir.ZoneServer.CombatTestHelper
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Combat.SpDrain
 
   defp attacker(modifiers) do
-    %{CombatTestHelper.create_player_combatant() | equip_modifiers: modifiers}
+    %{build(:player_combatant) | equip_modifiers: modifiers}
   end
 
   defp defender(race) do
-    %{CombatTestHelper.create_mob_combatant() | race: race}
+    %{build(:mob_combatant) | race: race}
   end
 
   describe "roll/2" do

@@ -3,12 +3,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DevotionRerouteTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -16,12 +18,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DevotionRerouteTest do
   @crusader_id 2
   @attacker_id 3
   @range 10
-
-  defmodule LivingUnit do
-    @moduledoc false
-    defstruct []
-    def living?(_state), do: true
-  end
 
   setup :set_mimic_from_context
   setup :verify_on_exit!
@@ -69,16 +65,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DevotionRerouteTest do
   end
 
   defp stub_alive_crusader(crusader_pid) do
+    crusader_state = build(:player_state, character_id: @crusader_id)
+
     stub(UnitRegistry, :get_unit, fn :player, id ->
       if id == @crusader_id do
-        {:ok, {LivingUnit, %LivingUnit{}, crusader_pid}}
+        {:ok, {PlayerState, crusader_state, crusader_pid}}
       else
         {:error, :not_found}
       end
     end)
 
     stub(TargetResolver, :resolve, fn :player, @crusader_id ->
-      {:ok, crusader_pid, %{}, :player}
+      {:ok, crusader_pid, crusader_state, :player}
     end)
   end
 
@@ -170,8 +168,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DevotionRerouteTest do
       stub_positions(in_range_pos())
 
       proc = %{
-        attacker: %{unit_type: :mob},
-        target: %{unit_type: :player},
+        attacker: build(:mob_combatant, unit_id: @attacker_id),
+        target: build(:player_combatant, unit_id: @devotee_id),
         target_hp: 1_000,
         attack_flag: BattleFlags.build(:weapon, :short, false)
       }

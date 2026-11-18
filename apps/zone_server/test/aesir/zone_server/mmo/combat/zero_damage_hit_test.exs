@@ -4,12 +4,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ZeroDamageHitTest do
   its delivery to the monster and the attacker's additional-effect and counter stages.
   """
 
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
-  alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Combat.AutoAttack
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
@@ -17,7 +17,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ZeroDamageHitTest do
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoison
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -29,13 +28,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ZeroDamageHitTest do
   setup :set_mimic_from_context
   setup :verify_on_exit!
   setup :setup_ets_tables
-
-  setup do
-    Mimic.copy(OnHitEffects)
-    Mimic.copy(EquipComa)
-    Mimic.copy(EnchantPoison)
-    :ok
-  end
 
   @caster_id 1_001
   @mob_id 2_001
@@ -67,19 +59,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ZeroDamageHitTest do
 
   defp caster(autocasts \\ [], autobonuses \\ %{}) do
     state =
-      PlayerState.new(%Character{
-        id: @caster_id,
-        account_id: @caster_id,
-        name: "Dancer",
-        class: 20,
-        sex: "F",
-        last_map: "prontera",
-        last_x: 100,
-        last_y: 100,
-        base_level: 50,
-        hp: 100,
-        sp: 100
-      })
+      PlayerState.new(
+        Aesir.Factory.build(:character,
+          id: @caster_id,
+          account_id: @caster_id,
+          name: "Dancer",
+          class: 20,
+          sex: "F",
+          last_map: "prontera",
+          last_x: 100,
+          last_y: 100,
+          base_level: 50,
+          hp: 100,
+          sp: 100
+        )
+      )
 
     equipment = Enum.reduce(autocasts, %{}, &EquipAutocast.register(&2, &1, 0))
 
@@ -91,14 +85,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ZeroDamageHitTest do
   defp register_mob do
     {:ok, definition} = Mobs.by_id(1002)
 
-    spawn = %MobSpawn{
-      mob: 1002,
-      amount: 1,
-      respawn_time: 5_000,
-      spawn_area: %MobSpawn.SpawnArea{x: 103, y: 100, xs: 0, ys: 0}
-    }
-
-    mob = MobState.new(@mob_id, definition, spawn, "prontera", 103, 100)
+    mob = build(:mob_state, instance_id: @mob_id, mob_data: definition, x: 103)
     :ok = UnitRegistry.register_unit(:mob, @mob_id, MobState, mob, self())
     mob
   end

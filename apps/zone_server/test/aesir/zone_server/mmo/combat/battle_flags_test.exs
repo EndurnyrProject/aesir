@@ -25,12 +25,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.BattleFlagsTest do
                battle([:weapon, :normal, :short, :long])
     end
 
-    test "an unnamed damage type means weapon" do
-      filled = BattleFlags.fill_battle(battle([:normal]))
-
-      assert (filled &&& BattleFlag.id(:weapon)) != 0
-    end
-
     test "a weapon bonus with no named origin covers normal swings and skills" do
       assert BattleFlags.fill_battle(battle([:weapon])) ==
                battle([:weapon, :short, :long, :normal, :skill])

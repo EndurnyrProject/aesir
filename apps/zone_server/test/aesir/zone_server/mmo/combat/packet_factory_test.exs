@@ -1,9 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactoryTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Net.DamageDealt
   alias Aesir.Net.SkillDamage
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
@@ -34,8 +35,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactoryTest do
 
   describe "build_miss_packet/2 and build_perfect_dodge_packet/2" do
     test "a miss is a zero-damage normal hit and a perfect dodge a lucky dodge" do
-      attacker = CombatTestHelper.create_mob_combatant(unit_id: 44)
-      defender = CombatTestHelper.create_player_combatant()
+      attacker = build(:mob_combatant, unit_id: 44)
+      defender = build(:player_combatant)
 
       assert %DamageDealt{damage: 0, type: 0} =
                PacketFactory.build_miss_packet(attacker, defender)
@@ -47,8 +48,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactoryTest do
 
   describe "build_guard_packet/2" do
     test "publishes a zero-damage normal hit so the blocked swing still lands" do
-      attacker = CombatTestHelper.create_mob_combatant(unit_id: 44)
-      defender = CombatTestHelper.create_player_combatant(attack_delay_ms: 500)
+      attacker = build(:mob_combatant, unit_id: 44)
+      defender = build(:player_combatant, attack_delay_ms: 500)
 
       assert %DamageDealt{src_id: 44, damage: 0, damage2: 0, div: 1, type: 0} =
                PacketFactory.build_guard_packet(attacker, defender)
@@ -57,16 +58,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactoryTest do
 
   describe "build_weapon_swing_packet/3" do
     test "publishes one settled primary component" do
-      attacker = CombatTestHelper.create_player_combatant(attack_delay_ms: 500)
-      defender = CombatTestHelper.create_mob_combatant()
+      attacker = build(:player_combatant, attack_delay_ms: 500)
+      defender = build(:mob_combatant)
 
       assert %DamageDealt{damage: 100, damage2: 0, div: 1, type: 0} =
                PacketFactory.build_weapon_swing_packet(attacker, defender, swing(100))
     end
 
     test "publishes dual-dagger components without turning them into divisions" do
-      attacker = CombatTestHelper.create_player_combatant()
-      defender = CombatTestHelper.create_mob_combatant()
+      attacker = build(:player_combatant)
+      defender = build(:mob_combatant)
 
       assert %DamageDealt{damage: 100, damage2: 40, div: 1, type: 0} =
                PacketFactory.build_weapon_swing_packet(
@@ -77,8 +78,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactoryTest do
     end
 
     test "publishes the derived Katar secondary in damage2" do
-      attacker = CombatTestHelper.create_player_combatant()
-      defender = CombatTestHelper.create_mob_combatant()
+      attacker = build(:player_combatant)
+      defender = build(:mob_combatant)
 
       assert %DamageDealt{damage: 100, damage2: 21, div: 1, type: 0} =
                PacketFactory.build_weapon_swing_packet(
@@ -89,8 +90,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactoryTest do
     end
 
     test "uses div only for Double Attack presentation" do
-      attacker = CombatTestHelper.create_player_combatant()
-      defender = CombatTestHelper.create_mob_combatant()
+      attacker = build(:player_combatant)
+      defender = build(:mob_combatant)
 
       assert %DamageDealt{damage: 100, damage2: 0, div: 2, type: 8} =
                PacketFactory.build_weapon_swing_packet(
@@ -101,8 +102,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactoryTest do
     end
 
     test "retains the critical attack type for a critical swing" do
-      attacker = CombatTestHelper.create_player_combatant()
-      defender = CombatTestHelper.create_mob_combatant()
+      attacker = build(:player_combatant)
+      defender = build(:mob_combatant)
 
       assert %DamageDealt{damage: 200, damage2: 20, div: 1, type: 10} =
                PacketFactory.build_weapon_swing_packet(
@@ -113,8 +114,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactoryTest do
     end
 
     test "marks a Vellum replacement as SP damage" do
-      attacker = CombatTestHelper.create_player_combatant()
-      defender = CombatTestHelper.create_player_combatant()
+      attacker = build(:player_combatant)
+      defender = build(:player_combatant)
 
       assert %DamageDealt{damage: 100, is_sp_damage: true} =
                PacketFactory.build_weapon_swing_packet(
@@ -128,8 +129,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactoryTest do
 
   describe "src_speed / src_delay carry the attacker's attack cadence" do
     setup do
-      attacker = CombatTestHelper.create_player_combatant(attack_delay_ms: 500)
-      defender = CombatTestHelper.create_mob_combatant()
+      attacker = build(:player_combatant, attack_delay_ms: 500)
+      defender = build(:mob_combatant)
       {:ok, attacker: attacker, defender: defender}
     end
 
@@ -217,16 +218,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactoryTest do
   describe "attack speed is no longer inverted" do
     test "a higher-ASPD attacker emits a smaller src_speed than a lower-ASPD one" do
       fast =
-        CombatTestHelper.create_player_combatant(
+        build(:player_combatant,
           attack_delay_ms: AttackSpeed.calculate_delay(193)
         )
 
       slow =
-        CombatTestHelper.create_player_combatant(
+        build(:player_combatant,
           attack_delay_ms: AttackSpeed.calculate_delay(150)
         )
 
-      defender = CombatTestHelper.create_mob_combatant()
+      defender = build(:mob_combatant)
 
       result = %{damage: 100, is_critical: false}
 

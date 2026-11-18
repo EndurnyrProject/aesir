@@ -2,10 +2,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ForgedWeaponTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.GameMode
-  alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.MaximizePower
@@ -17,11 +17,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ForgedWeaponTest do
 
   setup :set_mimic_from_context
   setup :verify_on_exit!
-
-  setup do
-    Mimic.copy(ModifierCalculator)
-    :ok
-  end
 
   test "forged star damage stays constant while weapon variance changes or is maximized" do
     forged = combatant(forged_weapon(1101, :neutral, 3))
@@ -60,12 +55,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ForgedWeaponTest do
     assert Enum.uniq(maximized_star_contributions) == [40]
   end
 
-  test "three star crumbs contribute 40 mastery attack" do
-    combatant = combatant(forged_weapon(1101, :neutral, 3))
-
-    assert combatant.combat_stats.passive_atk == 40
-  end
-
   test "forged element applies when the weapon has no inherent element" do
     assert combatant(forged_weapon(1101, :fire, 0)).weapon.element == :fire
   end
@@ -80,7 +69,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ForgedWeaponTest do
 
   test "active endow overrides a forged element" do
     attacker = combatant(forged_weapon(1101, :fire, 0))
-    defender = CombatTestHelper.create_mob_combatant(element: {:earth, 1})
+    defender = build(:mob_combatant, element: {:earth, 1})
 
     stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
     :rand.seed(:exsss, {1, 2, 3})
@@ -106,27 +95,28 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ForgedWeaponTest do
   end
 
   defp combatant(item, equipment_modifiers \\ %{}, status_modifiers \\ %{}) do
-    character = %Character{
-      id: 91_013,
-      account_id: 1,
-      name: "Forger",
-      last_map: "prontera",
-      last_x: 100,
-      last_y: 100,
-      class: 0,
-      base_level: 1,
-      job_level: 1,
-      str: 1,
-      agi: 1,
-      vit: 1,
-      int: 1,
-      dex: 1,
-      luk: 1,
-      hp: 40,
-      max_hp: 40,
-      sp: 11,
-      max_sp: 11
-    }
+    character =
+      Aesir.Factory.build(:character,
+        id: 91_013,
+        account_id: 1,
+        name: "Forger",
+        last_map: "prontera",
+        last_x: 100,
+        last_y: 100,
+        class: 0,
+        base_level: 1,
+        job_level: 1,
+        str: 1,
+        agi: 1,
+        vit: 1,
+        int: 1,
+        dex: 1,
+        luk: 1,
+        hp: 40,
+        max_hp: 40,
+        sp: 11,
+        max_sp: 11
+      )
 
     state = PlayerState.new(character)
 

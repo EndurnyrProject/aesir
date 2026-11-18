@@ -1877,7 +1877,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   Whether a physical hit is ranged: the hit's explicit `:ranged` classification
   when given, otherwise a ranged weapon class or an attack range above 3 cells.
   """
-  @spec ranged_hit?(map(), keyword()) :: boolean()
+  @spec ranged_hit?(Combatant.t(), keyword()) :: boolean()
   def ranged_hit?(attacker, opts) do
     case Keyword.fetch(opts, :ranged) do
       {:ok, ranged?} when is_boolean(ranged?) ->
@@ -1894,7 +1894,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   the element a ground skill snapshots at placement (`skill_unitsetting`'s
   `rhw.ele` overridden by an enchant).
   """
-  @spec attack_element(map(), map()) :: atom()
+  @spec attack_element(Combatant.t(), map()) :: atom()
   def attack_element(attacker, attacker_modifiers) do
     DamageShared.endow_element(attacker_modifiers) || Map.get(attacker.weapon, :element, :neutral)
   end

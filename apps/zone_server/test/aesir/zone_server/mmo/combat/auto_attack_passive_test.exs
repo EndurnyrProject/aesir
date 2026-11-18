@@ -9,11 +9,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
   use ExUnit.Case, async: true
   use Mimic
   import ExUnit.CaptureLog
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
-  alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
@@ -23,16 +23,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
   setup do
@@ -56,46 +56,54 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
   end
 
   defp combatant(unit_id, type, opts \\ []) do
-    Combatant.new!(%{
-      unit_id: unit_id,
-      unit_type: type,
-      base_stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
-      combat_stats: %{
-        atk: 0,
-        def: 0,
-        hit: Keyword.get(opts, :hit, 200),
-        flee: Keyword.get(opts, :flee, 0),
-        perfect_dodge: Keyword.get(opts, :perfect_dodge, 0)
-      },
-      progression: %{base_level: 1, job_level: 1},
-      element: {:neutral, 1},
-      race: :formless,
-      size: :medium,
-      weapon: %{type: :fist, element: :neutral, size: :medium},
-      attack_range: Keyword.get(opts, :attack_range, 5),
-      attack_delay_ms: Keyword.get(opts, :attack_delay_ms, 500),
-      position: Keyword.get(opts, :position, {150, 150}),
-      map_name: Keyword.get(opts, :map_name, "prontera")
-    })
+    build(
+      :player_combatant,
+      roots(type, unit_id) ++
+        [
+          unit_id: unit_id,
+          unit_type: type,
+          base_level: 1,
+          str: 1,
+          agi: 1,
+          vit: 1,
+          int: 1,
+          dex: 1,
+          luk: 1,
+          combat_stats: %CombatStats{
+            atk: 0,
+            def: 0,
+            hit: 200,
+            flee: Keyword.get(opts, :flee, 0),
+            perfect_dodge: Keyword.get(opts, :perfect_dodge, 0)
+          },
+          element: {:neutral, 1},
+          race: :formless,
+          weapon: %{type: :fist, element: :neutral, size: :medium},
+          attack_range: 5,
+          position: Keyword.get(opts, :position, {150, 150}),
+          map_name: "prontera"
+        ]
+    )
   end
 
-  defp living_mob_state(combatant, x, y) do
-    Mimic.copy(MobState)
+  defp roots(:player, id), do: [social_root: {:player, id}, reward_root: {:player, id}]
+  defp roots(:mob, id), do: [social_root: {:mob, id}]
+  defp roots(:skill_unit, _id), do: []
 
+  defp living_mob_state(combatant, x, y) do
     state = mob_state(combatant, x, y)
     stub(MobState, :to_combatant, fn ^state -> combatant end)
     state
   end
 
   defp mob_state(combatant, x, y) do
-    struct(MobState, %{
+    build(:mob_state,
       instance_id: combatant.unit_id,
-      hp: 1_000,
-      is_dead: false,
+      map_name: combatant.map_name,
       x: x,
       y: y,
-      map_name: combatant.map_name
-    })
+      hp: 1_000
+    )
   end
 
   # Same-cell target keeps the projectile line-of-sight check trivial, matching
@@ -105,16 +113,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
     target = combatant(2001, :mob)
 
     player_state =
-      PlayerStateFixture.build(%{
+      build(:player_state,
         character_id: 1001,
-        x: 150,
-        y: 150,
-        map_name: "prontera",
         stats: %{
-          combat_stats: Map.merge(attacker.combat_stats, %{critical: 0, passive_atk: 0}),
+          combat_stats: %{attacker.combat_stats | critical: 0, passive_atk: 0},
           derived_stats: %{aspd: 150}
         }
-      })
+      )
 
     target_state = living_mob_state(target, 150, 150)
 
@@ -148,25 +153,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
 
   describe "execute_attack/3 confirmed ordinary hits" do
     setup :setup_mob_hit
-
-    test "a player-shaped map without a weapon type attacks short regardless of reach",
-         %{attacker: stats, player_state: player_state} do
-      attacker =
-        player_state
-        |> PlayerState.to_combatant()
-        |> Map.from_struct()
-        |> Map.put(:weapon, %{element: :neutral})
-        |> Map.put(:attack_range, 9)
-
-      player_state = %FakeUnit{combatant: attacker, stats: stats, x: 150, y: 150}
-
-      expect(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, attack_info ->
-        assert attack_info.attacker_short?
-        {:intercept, :blade_stop}
-      end)
-
-      assert :intercepted = Combat.execute_attack(stats, player_state, 2001)
-    end
 
     test "range_class_distance_independence_test", %{attacker: stats, player_state: player_state} do
       test_pid = self()
@@ -266,8 +252,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
 
     test "restores SP after a normal hit when the drain is non-zero",
          %{attacker: attacker, player_state: player_state} do
-      Mimic.copy(DamageApplication)
-      Mimic.copy(SpDrain)
       stub(SpDrain, :roll, fn _attacker, _damage -> 7 end)
       expect(DamageApplication, :apply_sp_heal, fn :player, 1001, 7 -> :ok end)
 
@@ -278,8 +262,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
 
     test "does not restore SP after a normal hit when the drain is zero",
          %{attacker: attacker, player_state: player_state} do
-      Mimic.copy(DamageApplication)
-      Mimic.copy(SpDrain)
       stub(SpDrain, :roll, fn _attacker, _damage -> 0 end)
       reject(&DamageApplication.apply_sp_heal/3)
 
@@ -450,8 +432,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
       target = combatant(9_000_001, :skill_unit)
       cell_state = %FakeSkillUnit{combatant: target, hp: 3}
 
-      Mimic.copy(CombatTarget)
-      Mimic.copy(DamageApplication)
       stub(CombatTarget, :target?, fn 9_000_001 -> true end)
       stub(CombatTarget, :resolve, fn 9_000_001 -> {:ok, self(), cell_state, :skill_unit} end)
       stub(DamageApplication, :damage_skill_unit, fn _pid, _id, _damage, _source -> :ok end)
@@ -463,17 +443,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
     end
 
     test "secondary splash hits never dispatch while the primary hit dispatches once" do
-      attacker =
-        1001
-        |> combatant(:player)
-        |> Map.put(:equip_modifiers, %{splash_range: 1})
+      attacker = %{combatant(1001, :player) | equip_modifiers: %{splash_range: 1}}
 
       player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
 
       primary = combatant(2001, :mob)
       secondary = combatant(2002, :mob, position: {151, 150})
 
-      Mimic.copy(MobState)
       primary_state = mob_state(primary, 150, 150)
       secondary_state = mob_state(secondary, 151, 150)
 

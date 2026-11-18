@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
 
   @typedoc "Result of a magic damage calculation. Magic never crits."
   @type magic_damage_result :: %{damage: integer(), is_critical: false}
@@ -53,7 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   Percentage equipment MDEF-ignore affects hard MDEF only and uses the active
   mode's rounding. Missing trait slots are zero; classic ignores them entirely.
   """
-  @spec calculate_magic_damage(Combatant.t() | map(), Combatant.t() | map(), keyword()) ::
+  @spec calculate_magic_damage(Combatant.t(), Combatant.t(), keyword()) ::
           {:ok, magic_damage_result()} | {:error, atom()}
   def calculate_magic_damage(attacker, defender, opts \\ []) do
     cond do
@@ -69,7 +70,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   end
 
   @doc "Rolls the half-open MATK band or its deterministic scalar when the band is absent."
-  @spec roll_matk(map()) :: non_neg_integer()
+  @spec roll_matk(CombatStats.t()) :: non_neg_integer()
   defdelegate roll_matk(combat_stats), to: DamageInputs
 
   defp calculate_pipeline_damage(attacker, defender, opts) do

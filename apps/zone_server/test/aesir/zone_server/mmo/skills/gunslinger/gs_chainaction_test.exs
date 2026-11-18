@@ -2,8 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Gunslinger.GsChainactionTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.Critical
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -135,13 +136,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Gunslinger.GsChainactionTest do
   end
 
   defp attacker(weapon, critical_rate) do
-    CombatTestHelper.create_player_combatant(weapon_type: weapon, dex: 200, luk: 0)
-    |> put_in([Access.key!(:combat_stats), :critical_rate], critical_rate)
+    build(:player_combatant, weapon_type: weapon, dex: 200, luk: 0)
+    |> put_in([Access.key!(:combat_stats), Access.key(:critical_rate)], critical_rate)
     |> Map.put(:equip_modifiers, %{perfect_hit: 100})
   end
 
   defp defender do
-    CombatTestHelper.create_mob_combatant(agi: 0, luk: 0, def: 0)
-    |> put_in([Access.key!(:combat_stats), :perfect_dodge], 0)
+    build(:mob_combatant, agi: 0, luk: 0, def: 0)
+    |> put_in([Access.key!(:combat_stats), Access.key(:perfect_dodge)], 0)
   end
 end

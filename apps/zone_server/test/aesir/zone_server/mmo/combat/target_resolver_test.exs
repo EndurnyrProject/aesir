@@ -2,17 +2,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TargetResolverTest do
   use ExUnit.Case, async: true
 
   import Mimic
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
   describe "resolve/2 for players" do
     test "resolves another player from the typed registry snapshot without a session call" do
-      snapshot = %PlayerState{character_id: 2001, stats: %{str: 1}}
+      snapshot = build(:player_state, character_id: 2001)
       other_pid = spawn(fn -> Process.sleep(:infinity) end)
       on_exit(fn -> Process.exit(other_pid, :kill) end)
 
@@ -30,7 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TargetResolverTest do
     end
 
     test "resolving the caller's own player uses the registry snapshot, never a session call" do
-      snapshot = %PlayerState{character_id: 1001, stats: %{str: 42}}
+      snapshot = build(:player_state, character_id: 1001)
       own_pid = self()
 
       stub(UnitRegistry, :get_player_pid, fn 1001 -> {:ok, own_pid} end)

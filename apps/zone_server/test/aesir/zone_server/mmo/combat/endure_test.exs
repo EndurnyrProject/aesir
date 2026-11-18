@@ -2,13 +2,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EndureTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
+  alias Aesir.TestMob
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.Endure
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :set_mimic_private
@@ -20,13 +20,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EndureTest do
   end
 
   defp player(map_name, equipment \\ %{}, status_effects \\ %{}) do
-    stats = %Stats{}
-    modifiers = %{stats.modifiers | equipment: equipment, status_effects: status_effects}
-    %PlayerState{character_id: 1, map_name: map_name, stats: %{stats | modifiers: modifiers}}
+    build(:player_state,
+      character_id: 1,
+      map_name: map_name,
+      stats: %{modifiers: %{equipment: equipment, status_effects: status_effects}}
+    )
   end
 
   defp mob(modes),
-    do: struct(MobState, instance_id: 7, mob_data: struct(MobDefinition, modes: modes))
+    do: build(:mob_state, instance_id: 7, mob_data: TestMob.definition(modes: modes))
 
   describe "endure?/5" do
     test "nothing endures by default" do

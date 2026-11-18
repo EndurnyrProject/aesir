@@ -2,8 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgustTest do
   use ExUnit.Case, async: false
   import Aesir.TestEtsSetup
   import Mimic
+  import Aesir.ZoneServer.Factory
 
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -140,7 +140,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgustTest do
     end
 
     test "does not keep a dead mob among supplied candidates" do
-      caster = CombatTestHelper.create_player_combatant(unit_id: @caster_id)
+      caster = build(:player_combatant, unit_id: @caster_id)
 
       definition =
         struct(MobDefinition,

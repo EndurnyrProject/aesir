@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.OverThrustTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
@@ -41,8 +43,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.OverThrustTest do
     stub(RaceModifiers, :player_race, fn -> :human end)
     stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
 
-    attacker = CombatTestHelper.create_player_combatant()
-    defender = CombatTestHelper.create_mob_combatant(def: 0)
+    attacker = build(:player_combatant)
+    defender = build(:mob_combatant, def: 0)
 
     stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
     :rand.seed(:exsss, {1, 2, 3})

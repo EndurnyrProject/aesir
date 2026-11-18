@@ -3,16 +3,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.WhitesmithBreakDecisionsTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
-  alias Aesir.ZoneServer.Unit.Player.WeaponHand
 
   setup :set_mimic_private
   setup :setup_ets_tables
@@ -169,7 +168,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.WhitesmithBreakDecisionsTest do
           :book,
           :huuma
         ] do
-      wearer = %{wearer(%{break_weapon_rate: 10_000}) | weapon: %{type: weapon}}
+      wearer = wearer(%{break_weapon_rate: 10_000}, weapon)
       stub(Config, :natural_break_rate, fn -> 10_000 end)
 
       assert EquipBreak.resolve_hit(%{context | wearer: wearer}, target(%{unbreakable: 100}),
@@ -195,16 +194,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.WhitesmithBreakDecisionsTest do
              rng: fn _ -> flunk("offhand axe self rolled") end
            ) == []
 
-    hand = %WeaponHand{
-      item_id: 1_301,
-      subtype: :one_handed_axe,
-      element: :neutral,
-      base_atk: 38,
-      weapon_level: 1,
-      refine_atk: 0,
-      overrefine_band: 0,
-      slot: :left_hand
-    }
+    hand =
+      build(:weapon_hand,
+        item_id: 1_301,
+        subtype: :one_handed_axe,
+        base_atk: 38,
+        slot: :left_hand
+      )
 
     combatant = %{wearer(%{}) | left_hand: hand}
 
@@ -222,11 +218,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.WhitesmithBreakDecisionsTest do
            ) == []
   end
 
-  defp wearer(mods) do
-    wearer =
-      CombatTestHelper.create_player_combatant(unit_id: 101, weapon_type: :one_handed_sword)
-
-    %{wearer | equip_modifiers: mods}
+  defp wearer(mods, weapon_type \\ :one_handed_sword) do
+    build(:player_combatant, unit_id: 101, weapon_type: weapon_type, equip_modifiers: mods)
   end
 
   defp target(mods \\ %{}) do

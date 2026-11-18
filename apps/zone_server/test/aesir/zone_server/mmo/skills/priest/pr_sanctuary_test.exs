@@ -2,11 +2,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
   use ExUnit.Case, async: false
   import Aesir.TestEtsSetup
   import Mimic
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
@@ -456,7 +456,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     }
 
     attacker =
-      CombatTestHelper.create_player_combatant(
+      build(:player_combatant,
         unit_id: 1_000,
         position: @center,
         map_name: "prontera"

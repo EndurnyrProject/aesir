@@ -2,8 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Gunslinger.GrounddriftPreReFlatTest do
   use ExUnit.Case, async: true
   import Mimic
   import Aesir.ZoneServer.TrapTestHelper
+  import Aesir.ZoneServer.Factory
 
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -22,7 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Gunslinger.GrounddriftPreReFlatTest do
   end
 
   defp damage(attacker, opts) do
-    defender = CombatTestHelper.create_mob_combatant(def: 0)
+    defender = build(:mob_combatant, def: 0)
     :rand.seed(:exsss, {4, 5, 6})
 
     {:ok, %{damage: damage}} =
@@ -49,7 +49,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Gunslinger.GrounddriftPreReFlatTest do
     }
 
   test "a player's hit adds 50 per level after the ratio" do
-    attacker = CombatTestHelper.create_player_combatant(luk: 0, flat_atk: 100)
+    attacker = build(:player_combatant, luk: 0, flat_atk: 100)
     assert damage(attacker, late_atk_bonus: 500) - damage(attacker, []) == 500
   end
 
@@ -74,7 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Gunslinger.GrounddriftPreReFlatTest do
   end
 
   test "a mob attacker ignores the flat term" do
-    attacker = CombatTestHelper.create_mob_combatant(atk: 100)
+    attacker = build(:mob_combatant, atk: 100)
     assert damage(attacker, late_atk_bonus: 500) == damage(attacker, [])
   end
 end

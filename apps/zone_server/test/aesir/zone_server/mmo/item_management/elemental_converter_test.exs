@@ -12,6 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ElementalConverterTest do
   use ExUnit.Case, async: false
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
@@ -104,8 +106,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ElementalConverterTest do
   end
 
   defp attack_undead do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: @char_id, str: 50)
-    defender = CombatTestHelper.create_mob_combatant(element: {:undead, 1})
+    attacker = build(:player_combatant, unit_id: @char_id, str: 50)
+    defender = build(:mob_combatant, element: {:undead, 1})
 
     assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender)
   end

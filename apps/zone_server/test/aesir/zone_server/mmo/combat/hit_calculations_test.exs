@@ -280,7 +280,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculationsTest do
 
       true_count = Enum.count(results, &(&1 == true))
       # Should be roughly 1% (10 out of 1000), but allow variance
-      assert true_count >= 0
       # Allow generous variance for randomness
       assert true_count <= 30
     end

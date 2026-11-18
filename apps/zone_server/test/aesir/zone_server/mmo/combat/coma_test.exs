@@ -1,12 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.ComaTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
   import Aesir.TestEtsSetup
   import Mimic
+  import Aesir.ZoneServer.Factory
 
-  alias Aesir.Commons.Models.Character
+  alias Aesir.TestMob
   alias Aesir.ZoneServer.Mmo.Combat.Coma
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -53,40 +53,36 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ComaTest do
   end
 
   defp player(id) do
-    PlayerState.new(%Character{
-      id: id,
-      account_id: id,
-      name: "Coma #{id}",
-      class: 0,
-      base_level: 50,
-      job_level: 1,
-      sex: "M",
-      last_map: "prontera",
-      last_x: 10,
-      last_y: 10,
-      hp: 2000,
-      sp: 100,
-      str: 10,
-      agi: 10,
-      vit: 10,
-      int: 10,
-      dex: 10,
-      luk: 0
-    })
+    PlayerState.new(
+      Aesir.Factory.build(:character,
+        id: id,
+        account_id: id,
+        name: "Coma #{id}",
+        class: 0,
+        base_level: 50,
+        job_level: 1,
+        sex: "M",
+        last_map: "prontera",
+        last_x: 10,
+        last_y: 10,
+        hp: 2000,
+        sp: 100,
+        str: 10,
+        agi: 10,
+        vit: 10,
+        int: 10,
+        dex: 10,
+        luk: 0
+      )
+    )
   end
 
   defp mob(id, extra_modes) do
     {:ok, definition} = Mobs.by_id(1002)
 
-    spawn = %MobSpawn{
-      mob: 1002,
-      amount: 1,
-      respawn_time: 5000,
-      spawn_area: %MobSpawn.SpawnArea{x: 10, y: 10, xs: 0, ys: 0}
-    }
+    state = build(:mob_state, instance_id: id, mob_data: definition, x: 10, y: 10)
 
-    state = MobState.new(id, definition, spawn, "prontera", 10, 10)
     modes = Enum.uniq(extra_modes ++ (state.mob_data.modes || []))
-    Aesir.TestMob.publish(%{state | mob_data: %{state.mob_data | modes: modes}})
+    TestMob.publish(%{state | mob_data: %{state.mob_data | modes: modes}})
   end
 end

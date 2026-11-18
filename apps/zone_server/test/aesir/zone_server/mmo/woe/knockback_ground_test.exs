@@ -3,8 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.KnockbackGroundTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
@@ -166,7 +166,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.KnockbackGroundTest do
     {target_id, target_state} = register_mob("aldeg_cas01", 151, 150)
 
     attacker =
-      CombatTestHelper.create_player_combatant(position: {150, 150})
+      build(:player_combatant, position: {150, 150})
       |> Map.put(:equip_modifiers, %{{:add_skill_blow, 18} => 2})
 
     target = MobState.to_combatant(target_state)

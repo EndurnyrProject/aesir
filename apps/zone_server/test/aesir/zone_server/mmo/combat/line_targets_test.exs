@@ -2,14 +2,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.LineTargetsTest do
   use ExUnit.Case, async: true
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
-  alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.GatType
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat.LineTargets
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -33,7 +32,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.LineTargetsTest do
   end
 
   defp lane_caster(map_name) do
-    %Character{
+    :character
+    |> Aesir.Factory.build(
       id: 1000,
       account_id: 1000,
       name: "Lane caster",
@@ -44,56 +44,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.LineTargetsTest do
       sp: 100,
       class: 0,
       sex: "M"
-    }
+    )
     |> PlayerState.new()
     |> PlayerState.to_combatant()
   end
 
   defp register_mob(id, map_name, x, y) do
     {:ok, definition} = Mobs.by_id(1002)
-
-    spawn = %MobSpawn{
-      mob: 1002,
-      amount: 1,
-      respawn_time: 5000,
-      spawn_area: %MobSpawn.SpawnArea{x: x, y: y, xs: 0, ys: 0}
-    }
-
-    mob = MobState.new(id, definition, spawn, map_name, x, y)
+    mob = build(:mob_state, instance_id: id, mob_data: definition, map_name: map_name, x: x, y: y)
     :ok = UnitRegistry.register_unit(:mob, id, MobState, mob, self())
     :ok = SpatialIndex.add_unit(:mob, id, x, y, map_name)
   end
 
   test "default line excludes a neighbour that the lane includes" do
-    caster =
-      %Character{
-        id: 1000,
-        account_id: 1000,
-        name: "Lane caster",
-        last_map: "prontera",
-        last_x: 100,
-        last_y: 100,
-        hp: 100,
-        sp: 100,
-        class: 0,
-        sex: "M"
-      }
-      |> PlayerState.new()
-      |> PlayerState.to_combatant()
-
-    {:ok, definition} = Mobs.by_id(1002)
-
-    spawn = %MobSpawn{
-      mob: 1002,
-      amount: 1,
-      respawn_time: 5000,
-      spawn_area: %MobSpawn.SpawnArea{x: 100, y: 100, xs: 0, ys: 0}
-    }
+    caster = lane_caster("prontera")
 
     for {id, x, y} <- [{2001, 105, 100}, {2002, 105, 101}] do
-      mob = MobState.new(id, definition, spawn, "prontera", x, y)
-      :ok = UnitRegistry.register_unit(:mob, id, MobState, mob, self())
-      :ok = SpatialIndex.add_unit(:mob, id, x, y, "prontera")
+      register_mob(id, "prontera", x, y)
     end
 
     assert LineTargets.select("prontera", {100, 100}, {109, 100}, caster) == [{:mob, 2001}]

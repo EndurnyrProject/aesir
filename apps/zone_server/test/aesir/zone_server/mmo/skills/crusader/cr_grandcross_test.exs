@@ -1,9 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
   use ExUnit.Case, async: true
   import Mimic
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
@@ -24,7 +24,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.Stats.CombatStats
 
   setup :set_mimic_private
   setup :verify_on_exit!
@@ -211,7 +210,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
   describe "unit_targets/3" do
     @tag game_mode: :renewal
     test "renewal never offers the caster to its own field" do
-      caster = CombatTestHelper.create_mob_combatant(unit_id: @mob_id)
+      caster = build(:mob_combatant, unit_id: @mob_id)
       stub(Combat, :resolve_combatant, fn :mob, @mob_id -> {:ok, caster} end)
       group = group(caster_type: :mob, caster_id: @mob_id, state: %{hits_caster: false})
 
@@ -220,7 +219,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
 
     @tag game_mode: :pre_renewal
     test "pre-renewal offers the caster to its own field, a monster included" do
-      caster = CombatTestHelper.create_mob_combatant(unit_id: @mob_id)
+      caster = build(:mob_combatant, unit_id: @mob_id)
       stub(Combat, :resolve_combatant, fn :mob, @mob_id -> {:ok, caster} end)
       group = group(caster_type: :mob, caster_id: @mob_id)
 
@@ -433,11 +432,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
   test "real PlayerState snapshots reach shared preparation and exact enemy delivery, and classic self delivery" do
     states =
       Map.new([@caster_id, @mob_id], fn id ->
-        stats =
-          struct!(
-            CombatStats,
-            Map.merge(combatant(:player, id).combat_stats, %{matk_min: 100, matk_max: 100})
-          )
+        stats = %{combatant(:player, id).combat_stats | matk_min: 100, matk_max: 100}
 
         state =
           PlayerStateFixture.build(%{
@@ -518,8 +513,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
   defp combatant(type, id) do
     base =
       case type do
-        :player -> CombatTestHelper.create_player_combatant(unit_id: id)
-        :mob -> CombatTestHelper.create_mob_combatant(unit_id: id)
+        :player -> build(:player_combatant, unit_id: id)
+        :mob -> build(:mob_combatant, unit_id: id)
       end
 
     stats =

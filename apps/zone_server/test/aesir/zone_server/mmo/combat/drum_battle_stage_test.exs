@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DrumBattleStageTest do
 
   import Aesir.TestEtsSetup
 
-  alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
@@ -21,25 +20,27 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DrumBattleStageTest do
 
   test "held Drum adds live damage to either hand without changing cached ATK or double counting on refold" do
     player =
-      PlayerState.new(%Character{
-        id: 8_140,
-        account_id: 8_140,
-        name: "Drum battle",
-        class: 12,
-        base_level: 50,
-        job_level: 1,
-        str: 10,
-        agi: 10,
-        vit: 10,
-        int: 10,
-        dex: 10,
-        luk: 0,
-        hp: 100,
-        sp: 50,
-        last_map: "prontera",
-        last_x: 50,
-        last_y: 50
-      })
+      PlayerState.new(
+        Aesir.Factory.build(:character,
+          id: 8_140,
+          account_id: 8_140,
+          name: "Drum battle",
+          class: 12,
+          base_level: 50,
+          job_level: 1,
+          str: 10,
+          agi: 10,
+          vit: 10,
+          int: 10,
+          dex: 10,
+          luk: 0,
+          hp: 100,
+          sp: 50,
+          last_map: "prontera",
+          last_x: 50,
+          last_y: 50
+        )
+      )
 
     :ok = UnitRegistry.register_player(player, self())
 

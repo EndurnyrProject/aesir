@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Npc.SkillCaster do
   @behaviour Aesir.ZoneServer.Mmo.Skill.Caster
 
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Unit.Stats.BaseStats
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
 
   @enforce_keys [:npc_gid, :stat_point, :base_level, :position, :map_name]
   defstruct [:npc_gid, :stat_point, :base_level, :position, :map_name]
@@ -71,7 +73,7 @@ defmodule Aesir.ZoneServer.Npc.SkillCaster do
       unit_type: :npc,
       social_root: {:npc, caster.npc_gid},
       reward_root: nil,
-      base_stats: %{
+      base_stats: %BaseStats{
         str: stat_point,
         agi: stat_point,
         vit: stat_point,
@@ -79,7 +81,7 @@ defmodule Aesir.ZoneServer.Npc.SkillCaster do
         dex: stat_point,
         luk: stat_point
       },
-      combat_stats: %{
+      combat_stats: %CombatStats{
         atk: 0,
         def: 0,
         flee: 0,

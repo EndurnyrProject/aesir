@@ -10,12 +10,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicMasteryStagesTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
-  alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
-  alias Aesir.ZoneServer.Unit.Player.WeaponHand
 
   @moduletag game_mode: :pre_renewal
 
@@ -29,10 +29,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicMasteryStagesTest do
   setup :verify_on_exit!
 
   setup do
-    Mimic.copy(ElementModifiers)
-    Mimic.copy(SizeModifiers)
-    Mimic.copy(ModifierCalculator)
-
     stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
     stub(ModifierCalculator, :get_all_modifiers, fn _type, _id -> %{} end)
     element_coefficient(1.0)
@@ -157,7 +153,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicMasteryStagesTest do
 
   defp attacker(snapshot) do
     attacker =
-      CombatTestHelper.create_player_combatant(
+      build(:player_combatant,
         str: 50,
         dex: 0,
         luk: 0,
@@ -166,23 +162,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicMasteryStagesTest do
         weapon_element: :neutral
       )
 
-    hand = %WeaponHand{
-      item_id: 1,
-      subtype: :dagger,
-      element: :neutral,
-      base_atk: 100,
-      weapon_level: 1,
-      refine_atk: 0,
-      overrefine_band: 0,
-      slot: :right_hand
-    }
-
     combat_stats =
       attacker.combat_stats
       |> Map.put(:max_weapon_damage, true)
       |> Map.update!(:physical_attack, &Map.merge(&1, legacy_mastery(snapshot)))
 
-    %{attacker | right_hand: hand, combat_stats: combat_stats}
+    %{attacker | right_hand: build(:weapon_hand), combat_stats: combat_stats}
   end
 
   # The legacy `mastery_atk` is every passive ATK plus the right Star Crumb.
@@ -195,5 +180,5 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicMasteryStagesTest do
   end
 
   defp defender,
-    do: CombatTestHelper.create_mob_combatant(def: 10, soft_def: 0, element: {:earth, 1})
+    do: build(:mob_combatant, def: 10, soft_def: 0, element: {:earth, 1})
 end

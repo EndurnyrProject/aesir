@@ -13,7 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WeaponEndowTest do
   use ExUnit.Case, async: true
   use Mimic
 
-  alias Aesir.ZoneServer.CombatTestHelper
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
@@ -45,8 +46,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WeaponEndowTest do
   end
 
   defp attack_undead do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: @attacker_id, str: 50)
-    defender = CombatTestHelper.create_mob_combatant(element: {:undead, 1})
+    attacker = build(:player_combatant, unit_id: @attacker_id, str: 50)
+    defender = build(:mob_combatant, element: {:undead, 1})
 
     assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender)
   end

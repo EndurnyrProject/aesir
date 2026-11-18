@@ -72,7 +72,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator do
     - `{:ok, %{damage: non_neg_integer(), is_critical: false}}` on success.
     - `{:error, reason}` on failure.
   """
-  @spec calculate_misc_damage(Combatant.t() | map(), Combatant.t() | map(), keyword()) ::
+  @spec calculate_misc_damage(Combatant.t(), Combatant.t(), keyword()) ::
           {:ok, misc_damage_result()} | {:error, atom()}
   def calculate_misc_damage(attacker, defender, opts \\ []) do
     case Keyword.get(opts, :fixed_damage) do
@@ -81,7 +81,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator do
     end
   end
 
-  @spec calculate_pipeline_damage(map(), map(), keyword()) :: {:ok, misc_damage_result()}
+  @spec calculate_pipeline_damage(Combatant.t(), Combatant.t(), keyword()) ::
+          {:ok, misc_damage_result()}
   defp calculate_pipeline_damage(attacker, defender, opts) do
     skill_id = Keyword.fetch!(opts, :skill_id)
     {:ok, definition} = Catalog.by_id(skill_id)

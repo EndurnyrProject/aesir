@@ -3,16 +3,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreakTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Config
-  alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
 
+  setup :set_mimic_from_context
   setup :setup_ets_tables
   setup :verify_on_exit!
 
@@ -120,12 +121,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreakTest do
 
   describe "combatant wearer" do
     defp wearer(equipment_mods, weapon_type \\ :one_handed_sword) do
-      struct(Combatant, %{
+      build(:player_combatant,
         unit_id: 1001,
-        unit_type: :player,
         equip_modifiers: equipment_mods,
         weapon: %{type: weapon_type, element: :neutral, size: :medium}
-      })
+      )
     end
 
     test "reads its equipment rates and keeps the natural self break" do

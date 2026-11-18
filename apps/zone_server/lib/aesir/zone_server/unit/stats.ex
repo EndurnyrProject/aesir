@@ -8,144 +8,114 @@ defmodule Aesir.ZoneServer.Unit.Stats do
   current state.
   """
 
+  use TypedStruct
+
   defmodule BaseStats do
     @moduledoc false
 
-    defstruct str: nil,
-              agi: nil,
-              vit: nil,
-              int: nil,
-              dex: nil,
-              luk: nil,
-              pow: 0,
-              sta: 0,
-              wis: 0,
-              spl: 0,
-              con: 0,
-              crt: 0
+    use TypedStruct
 
     @typedoc "Core attributes for all units"
-    @type t() :: %__MODULE__{
-            str: non_neg_integer() | nil,
-            agi: non_neg_integer() | nil,
-            vit: non_neg_integer() | nil,
-            int: non_neg_integer() | nil,
-            dex: non_neg_integer() | nil,
-            luk: non_neg_integer() | nil,
-            pow: non_neg_integer(),
-            sta: non_neg_integer(),
-            wis: non_neg_integer(),
-            spl: non_neg_integer(),
-            con: non_neg_integer(),
-            crt: non_neg_integer()
-          }
+    typedstruct do
+      field :str, non_neg_integer()
+      field :agi, non_neg_integer()
+      field :vit, non_neg_integer()
+      field :int, non_neg_integer()
+      field :dex, non_neg_integer()
+      field :luk, non_neg_integer()
+      field :pow, non_neg_integer(), default: 0
+      field :sta, non_neg_integer(), default: 0
+      field :wis, non_neg_integer(), default: 0
+      field :spl, non_neg_integer(), default: 0
+      field :con, non_neg_integer(), default: 0
+      field :crt, non_neg_integer(), default: 0
+    end
   end
 
   defmodule DerivedStats do
     @moduledoc false
 
-    defstruct max_hp: nil, max_sp: nil, aspd: nil, max_ap: 0
+    use TypedStruct
 
     @typedoc "Calculated values derived from base stats"
-    @type t() :: %__MODULE__{
-            max_hp: non_neg_integer() | nil,
-            max_sp: non_neg_integer() | nil,
-            aspd: integer() | nil,
-            max_ap: non_neg_integer()
-          }
+    typedstruct do
+      field :max_hp, non_neg_integer()
+      field :max_sp, non_neg_integer()
+      field :aspd, integer()
+      field :max_ap, non_neg_integer(), default: 0
+    end
   end
 
   defmodule CombatStats do
     @moduledoc false
 
+    use TypedStruct
+
     alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack
 
-    defstruct atk: nil,
-              physical_attack: nil,
-              matk: nil,
-              matk_min: nil,
-              matk_max: nil,
-              heal_matk_min: nil,
-              heal_matk_max: nil,
-              def: nil,
-              soft_def: nil,
-              mdef: nil,
-              soft_mdef: nil,
-              hit: nil,
-              flee: nil,
-              critical: nil,
-              critical_rate: nil,
-              perfect_dodge: nil,
-              passive_atk: nil,
-              hit_rate_bonus_pct: 0,
-              patk: 0,
-              smatk: 0,
-              res: 0,
-              mres: 0,
-              hplus: 0,
-              crate: 0,
-              overrefine_band: 0,
-              ignore_size_penalty: false,
-              max_weapon_damage: false
+    @typedoc """
+    Battle-related statistics.
 
-    @typedoc "Battle-related statistics"
-    @type t() :: %__MODULE__{
-            atk: non_neg_integer() | nil,
-            physical_attack: PhysicalAttack.snapshot() | nil,
-            matk: non_neg_integer() | nil,
-            matk_min: non_neg_integer() | nil,
-            matk_max: non_neg_integer() | nil,
-            heal_matk_min: non_neg_integer() | nil,
-            heal_matk_max: non_neg_integer() | nil,
-            def: non_neg_integer() | nil,
-            soft_def: non_neg_integer() | nil,
-            mdef: non_neg_integer() | nil,
-            soft_mdef: non_neg_integer() | nil,
-            hit: non_neg_integer() | nil,
-            flee: non_neg_integer() | nil,
-            critical: non_neg_integer() | nil,
-            critical_rate: integer() | nil,
-            perfect_dodge: non_neg_integer() | nil,
-            passive_atk: non_neg_integer() | nil,
-            hit_rate_bonus_pct: non_neg_integer(),
-            patk: non_neg_integer(),
-            smatk: non_neg_integer(),
-            res: non_neg_integer(),
-            mres: non_neg_integer(),
-            hplus: non_neg_integer(),
-            crate: non_neg_integer(),
-            overrefine_band: non_neg_integer(),
-            ignore_size_penalty: boolean(),
-            max_weapon_damage: boolean()
-          }
+    `atk_min`/`atk_max` bound the weapon roll of a unit without a weapon hand
+    (monsters and homunculi); players leave them nil.
+    """
+    typedstruct do
+      field :atk, non_neg_integer()
+      field :atk_min, non_neg_integer()
+      field :atk_max, non_neg_integer()
+      field :physical_attack, PhysicalAttack.snapshot()
+      field :matk, non_neg_integer()
+      field :matk_min, non_neg_integer()
+      field :matk_max, non_neg_integer()
+      field :heal_matk_min, non_neg_integer()
+      field :heal_matk_max, non_neg_integer()
+      field :def, non_neg_integer()
+      field :soft_def, non_neg_integer()
+      field :mdef, non_neg_integer()
+      field :soft_mdef, non_neg_integer()
+      field :hit, non_neg_integer()
+      field :flee, non_neg_integer()
+      field :critical, non_neg_integer()
+      field :critical_rate, integer()
+      field :perfect_dodge, non_neg_integer()
+      field :passive_atk, non_neg_integer()
+      field :hit_rate_bonus_pct, non_neg_integer(), default: 0
+      field :patk, non_neg_integer(), default: 0
+      field :smatk, non_neg_integer(), default: 0
+      field :res, non_neg_integer(), default: 0
+      field :mres, non_neg_integer(), default: 0
+      field :hplus, non_neg_integer(), default: 0
+      field :crate, non_neg_integer(), default: 0
+      field :overrefine_band, non_neg_integer(), default: 0
+      field :ignore_size_penalty, boolean(), default: false
+      field :max_weapon_damage, boolean(), default: false
+    end
   end
 
   defmodule CurrentState do
     @moduledoc false
 
-    defstruct hp: nil, sp: nil, ap: 0
+    use TypedStruct
 
     @typedoc "Current HP/SP values"
-    @type t() :: %__MODULE__{
-            hp: non_neg_integer() | nil,
-            sp: non_neg_integer() | nil,
-            ap: non_neg_integer()
-          }
+    typedstruct do
+      field :hp, non_neg_integer()
+      field :sp, non_neg_integer()
+      field :ap, non_neg_integer(), default: 0
+    end
   end
 
   defmodule Progression do
     @moduledoc false
 
-    defstruct [:base_level, :job_level]
+    use TypedStruct
 
     @typedoc "Level information"
-    @type t() :: %__MODULE__{
-            base_level: non_neg_integer() | nil,
-            job_level: non_neg_integer() | nil
-          }
+    typedstruct do
+      field :base_level, non_neg_integer()
+      field :job_level, non_neg_integer()
+    end
   end
-
-  defstruct [:base_stats, :derived_stats, :combat_stats, :current_state, :progression]
 
   @typedoc """
   Common stats structure for all units.
@@ -157,13 +127,13 @@ defmodule Aesir.ZoneServer.Unit.Stats do
   - `current_state`: Current HP/SP values
   - `progression`: Level information
   """
-  @type t() :: %__MODULE__{
-          base_stats: BaseStats.t() | nil,
-          derived_stats: DerivedStats.t() | nil,
-          combat_stats: CombatStats.t() | nil,
-          current_state: CurrentState.t() | nil,
-          progression: Progression.t() | nil
-        }
+  typedstruct do
+    field :base_stats, BaseStats.t()
+    field :derived_stats, DerivedStats.t()
+    field :combat_stats, CombatStats.t()
+    field :current_state, CurrentState.t()
+    field :progression, Progression.t()
+  end
 
   @doc """
   Creates a new stats structure with default values.

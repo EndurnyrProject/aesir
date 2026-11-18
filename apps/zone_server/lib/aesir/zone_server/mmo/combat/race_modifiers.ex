@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   scripted item-bonus engine.
   """
 
+  alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Race
 
   @typedoc "A combatant's primary race."
@@ -28,7 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   to a player defender. Returns `0` when the attacker has no Demon Bane level or
   the defender does not qualify.
   """
-  @spec demon_bane_atk(map(), map()) :: non_neg_integer()
+  @spec demon_bane_atk(Combatant.t(), Combatant.t()) :: non_neg_integer()
   def demon_bane_atk(%{demon_bane_level: level, progression: %{base_level: base_level}}, defender)
       when level > 0 do
     if bane_target?(defender), do: trunc(level * (base_level / 20.0 + 3.0)), else: 0
@@ -42,7 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   Returns four ATK per learned level when the defender is Brute or Insect,
   otherwise zero.
   """
-  @spec beast_bane_atk(map(), race()) :: non_neg_integer()
+  @spec beast_bane_atk(Combatant.t(), race()) :: non_neg_integer()
   def beast_bane_atk(%{beast_bane_level: level}, defender_race)
       when level > 0 and defender_race in @brute_insect,
       do: level * 4
@@ -59,7 +60,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   never applies against a player attacker. Returns `0` when the defender has no
   Divine Protection level or the attacker does not qualify.
   """
-  @spec divine_protection_def(map(), map()) :: non_neg_integer()
+  @spec divine_protection_def(Combatant.t(), Combatant.t()) :: non_neg_integer()
   def divine_protection_def(
         %{divine_protection_level: level, progression: %{base_level: base_level}},
         attacker
@@ -86,7 +87,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   this one rate. Returns `0` when the attacker has no Dragonology level or the
   target is not Dragon race.
   """
-  @spec dragonology_atk_rate(map(), race()) :: non_neg_integer()
+  @spec dragonology_atk_rate(Combatant.t(), race()) :: non_neg_integer()
   def dragonology_atk_rate(%{dragonology_level: level}, :dragon) when level > 0, do: level * 4
   def dragonology_atk_rate(_attacker, _defender_race), do: 0
 
@@ -95,7 +96,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   learned level. Returns `0` when the attacker has no Dragonology level or the
   target is not Dragon race.
   """
-  @spec dragonology_matk_rate(map(), race()) :: non_neg_integer()
+  @spec dragonology_matk_rate(Combatant.t(), race()) :: non_neg_integer()
   def dragonology_matk_rate(%{dragonology_level: level}, :dragon) when level > 0, do: level * 2
   def dragonology_matk_rate(_attacker, _defender_race), do: 0
 
@@ -106,7 +107,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   `0` when the defender has no Dragonology level or the attacker is not Dragon
   race.
   """
-  @spec dragonology_resist_rate(map(), race()) :: non_neg_integer()
+  @spec dragonology_resist_rate(Combatant.t(), race()) :: non_neg_integer()
   def dragonology_resist_rate(%{dragonology_level: level}, :dragon) when level > 0,
     do: level * 4
 

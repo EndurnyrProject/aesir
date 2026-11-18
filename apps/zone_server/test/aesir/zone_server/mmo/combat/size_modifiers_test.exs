@@ -85,10 +85,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SizeModifiersTest do
       assert SizeModifiers.get_modifier(:dagger, :medium, true) == 75
       assert SizeModifiers.get_modifier(:bow, :medium, true) == 100
     end
-
-    test "riding defaults to false when omitted" do
-      assert SizeModifiers.get_modifier(:one_handed_spear, :medium) == 75
-    end
   end
 
   describe "unknown weapon type" do

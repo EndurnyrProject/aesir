@@ -2,7 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkJointbeatTest do
   use ExUnit.Case, async: true
   use Mimic
 
-  alias Aesir.ZoneServer.CombatTestHelper
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -38,7 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkJointbeatTest do
     {:ok, definition} = Catalog.by_name(:lk_jointbeat)
 
     stub(Combat, :resolve_combatant, fn 6_150 ->
-      {:ok, CombatTestHelper.create_mob_combatant(unit_id: 6_150)}
+      {:ok, build(:mob_combatant, unit_id: 6_150)}
     end)
 
     expect(Combat, :execute_skill_attack, 2, fn ^caster, 6_150, opts ->
@@ -81,7 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkJointbeatTest do
     :ok = UnitRegistry.register_player(target, self())
     caster = spear_caster()
     {:ok, definition} = Catalog.by_name(:lk_jointbeat)
-    combatant = CombatTestHelper.create_player_combatant(unit_id: 6_150)
+    combatant = build(:player_combatant, unit_id: 6_150)
     combatant = %{combatant | base_stats: %{combatant.base_stats | str: 0}}
     stub(Combat, :resolve_combatant, fn 6_150 -> {:ok, combatant} end)
     stub(Combat, :execute_skill_attack, fn _caster, 6_150, _opts -> {:ok, %{hit?: true}} end)
@@ -122,7 +123,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkJointbeatTest do
   test "forwards a non-positive break chance" do
     caster = spear_caster()
     {:ok, definition} = Catalog.by_name(:lk_jointbeat)
-    combatant = CombatTestHelper.create_mob_combatant(unit_id: 6_150, str: 40)
+    combatant = build(:mob_combatant, unit_id: 6_150, str: 40)
     stub(Combat, :resolve_combatant, fn 6_150 -> {:ok, combatant} end)
     stub(Combat, :execute_skill_attack, fn _caster, 6_150, _opts -> {:ok, %{hit?: true}} end)
 
@@ -138,7 +139,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkJointbeatTest do
   test "a missed strike leaves an eligible target unwounded" do
     caster = spear_caster()
     {:ok, definition} = Catalog.by_name(:lk_jointbeat)
-    combatant = CombatTestHelper.create_mob_combatant(unit_id: 6_150, str: 0)
+    combatant = build(:mob_combatant, unit_id: 6_150, str: 0)
     stub(Combat, :resolve_combatant, fn 6_150 -> {:ok, combatant} end)
     stub(Combat, :execute_skill_attack, fn _caster, 6_150, _opts -> {:ok, %{hit?: false}} end)
     reject(&StatusInterpreter.apply_status/4)

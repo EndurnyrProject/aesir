@@ -2,13 +2,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscHitReportTest do
   use ExUnit.Case, async: true
   import Aesir.TestEtsSetup
   import Mimic
+  import Aesir.ZoneServer.Factory
 
-  alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -17,39 +16,33 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscHitReportTest do
   setup :set_mimic_private
 
   setup do
-    Mimic.copy(DamageApplication)
-
     caster =
-      PlayerState.new(%Character{
-        id: 17,
-        account_id: 17,
-        name: "Misc caster",
-        class: 0,
-        base_level: 50,
-        job_level: 1,
-        sex: "M",
-        last_map: "prontera",
-        last_x: 100,
-        last_y: 100,
-        str: 10,
-        agi: 10,
-        vit: 0,
-        int: 10,
-        dex: 10,
-        luk: 0
-      })
+      PlayerState.new(
+        Aesir.Factory.build(:character,
+          id: 17,
+          account_id: 17,
+          name: "Misc caster",
+          class: 0,
+          base_level: 50,
+          job_level: 1,
+          sex: "M",
+          last_map: "prontera",
+          last_x: 100,
+          last_y: 100,
+          str: 10,
+          agi: 10,
+          vit: 0,
+          int: 10,
+          dex: 10,
+          luk: 0
+        )
+      )
 
     :ok = UnitRegistry.register_player(caster, self())
     {:ok, definition} = Mobs.by_id(1002)
 
-    spawn = %MobSpawn{
-      mob: 1002,
-      amount: 1,
-      respawn_time: 5000,
-      spawn_area: %MobSpawn.SpawnArea{x: 101, y: 100, xs: 0, ys: 0}
-    }
+    mob = build(:mob_state, instance_id: 42, mob_data: definition, x: 101)
 
-    mob = MobState.new(42, definition, spawn, "prontera", 101, 100)
     mob = %{mob | calculated: %{mob.calculated | max_hp: 2000}}
     %{caster: caster, mob: mob}
   end

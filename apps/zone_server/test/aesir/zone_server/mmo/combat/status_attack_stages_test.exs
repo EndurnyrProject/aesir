@@ -14,9 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.StatusAttackStagesTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
-  alias Aesir.Commons.Models.Character
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
@@ -24,7 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.StatusAttackStagesTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
-  alias Aesir.ZoneServer.Unit.Player.WeaponHand
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
 
   setup :set_mimic_from_context
   setup :verify_on_exit!
@@ -57,7 +56,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.StatusAttackStagesTest do
     test "a bare hand rolls it as its maximum from an unscaled DEX minimum" do
       stub_modifiers(%{watk: 25, level4_watk: 100})
       pinned = attacker(nil)
-      unpinned = %{pinned | combat_stats: Map.delete(pinned.combat_stats, :max_weapon_damage)}
+      unpinned = %{pinned | combat_stats: %{pinned.combat_stats | max_weapon_damage: false}}
 
       assert weapon_atk(pinned, :primary) == 25
       # DEX 30 is capped to the maximum, so the roll has one value.
@@ -78,7 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.StatusAttackStagesTest do
       assert weapon_atk(attacker, :primary) == 172
 
       assert weapon_atk(
-               %{attacker | combat_stats: Map.delete(attacker.combat_stats, :max_weapon_damage)},
+               %{attacker | combat_stats: %{attacker.combat_stats | max_weapon_damage: false}},
                :primary
              ) in 142..172
     end
@@ -113,14 +112,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.StatusAttackStagesTest do
       formulas = Mechanics.mob_formulas()
       {atk_min, atk_max} = formulas.attack_bounds(mob, modifiers)
 
-      %{
-        CombatTestHelper.create_mob_combatant()
-        | combat_stats: %{
-            atk: formulas.status_attack(mob, 10, 0, modifiers),
-            atk_min: atk_min,
-            atk_max: atk_max
-          }
-      }
+      build(:mob_combatant,
+        combat_stats: %CombatStats{
+          atk: formulas.status_attack(mob, 10, 0, modifiers),
+          atk_min: atk_min,
+          atk_max: atk_max
+        }
+      )
     end
 
     @tag game_mode: :pre_renewal
@@ -146,12 +144,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.StatusAttackStagesTest do
     defp charged do
       :ok = StatusStorage.apply_status(:homunculus, 77, :sc_change, val2: 0, val3: 0)
 
-      %{
-        CombatTestHelper.create_mob_combatant()
-        | unit_type: :homunculus,
-          unit_id: 77,
-          combat_stats: %{atk: 30, atk_min: 40, atk_max: 60, matk_min: 100, matk_max: 150}
-      }
+      build(:mob_combatant,
+        unit_type: :homunculus,
+        unit_id: 77,
+        combat_stats: %CombatStats{
+          atk: 30,
+          atk_min: 40,
+          atk_max: 60,
+          matk_min: 100,
+          matk_max: 150
+        }
+      )
     end
 
     @tag game_mode: :pre_renewal
@@ -193,7 +196,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.StatusAttackStagesTest do
 
   defp attacker(right, left \\ nil) do
     attacker =
-      CombatTestHelper.create_player_combatant(str: 55, dex: 30, weapon_type: :dagger)
+      build(:player_combatant, str: 55, dex: 30, weapon_type: :dagger)
 
     %{
       attacker
@@ -204,37 +207,35 @@ defmodule Aesir.ZoneServer.Mmo.Combat.StatusAttackStagesTest do
   end
 
   defp weapon(slot, base_atk, weapon_level) do
-    %WeaponHand{
-      item_id: 1,
-      subtype: :dagger,
-      element: :neutral,
+    build(:weapon_hand,
       base_atk: base_atk,
       weapon_level: weapon_level,
       refine_atk: 10,
-      overrefine_band: 0,
       slot: slot
-    }
+    )
   end
 
   defp player_stats do
-    PlayerState.new(%Character{
-      id: 44,
-      account_id: 44,
-      name: "Batk holder",
-      class: 7,
-      base_level: 70,
-      job_level: 50,
-      sex: "M",
-      last_map: "prontera",
-      last_x: 100,
-      last_y: 100,
-      str: 60,
-      agi: 10,
-      vit: 10,
-      int: 10,
-      dex: 30,
-      luk: 20
-    }).stats
+    PlayerState.new(
+      Aesir.Factory.build(:character,
+        id: 44,
+        account_id: 44,
+        name: "Batk holder",
+        class: 7,
+        base_level: 70,
+        job_level: 50,
+        sex: "M",
+        last_map: "prontera",
+        last_x: 100,
+        last_y: 100,
+        str: 60,
+        agi: 10,
+        vit: 10,
+        int: 10,
+        dex: 30,
+        luk: 20
+      )
+    ).stats
   end
 
   defp with_status_modifiers(stats, modifiers),

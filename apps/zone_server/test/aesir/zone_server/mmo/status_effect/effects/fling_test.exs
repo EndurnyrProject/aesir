@@ -1,7 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FlingTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.CombatTestHelper
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Fling
 
@@ -33,7 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FlingTest do
   # A 101/101 DEF holder, run through the same defense reader the damage
   # calculator uses, so the assertion is the DEF the game applies.
   defp defense(instance) do
-    hole = CombatTestHelper.create_mob_combatant(def: 101, soft_def: 101)
+    hole = build(:mob_combatant, def: 101, soft_def: 101)
 
     DamageInputs.physical_defense(
       hole,

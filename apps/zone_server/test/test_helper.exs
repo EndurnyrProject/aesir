@@ -151,6 +151,21 @@ Mimic.copy(Aesir.ZoneServer.Unit.Pet.Clock)
 Mimic.copy(Aesir.ZoneServer.Mmo.PetManagement.Catalog)
 Mimic.copy(Aesir.Repo)
 
+Mimic.copy(Aesir.ZoneServer.Mmo.Combat.DamageApplication)
+Mimic.copy(Aesir.ZoneServer.Mmo.Combat.ElementModifiers)
+Mimic.copy(Aesir.ZoneServer.Mmo.Combat.EquipComa)
+Mimic.copy(Aesir.ZoneServer.Mmo.Combat.OnHitEffects)
+Mimic.copy(Aesir.ZoneServer.Mmo.Combat.SizeModifiers)
+Mimic.copy(Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoison)
+Mimic.copy(Aesir.ZoneServer.Mmo.Skill.Unit.Manager)
+Mimic.copy(Aesir.ZoneServer.Unit.Mob.MobState)
+Mimic.copy(Aesir.ZoneServer.Mmo.Combat.EquipVanish)
+Mimic.copy(Aesir.ZoneServer.Map.Cell)
+Mimic.copy(Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses)
+Mimic.copy(Aesir.ZoneServer.Mmo.Combat.RaceModifiers)
+Mimic.copy(Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget)
+Mimic.copy(Aesir.ZoneServer.Mmo.Combat.SpDrain)
+
 # Integration tests are excluded from the default run. From the umbrella root:
 #   mix test.integration   # integrations for the booted game mode
 # Explicit selectors must use :true so opposite-mode tags overridden to false stay excluded:

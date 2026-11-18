@@ -3,11 +3,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Whitesmith.MaxOverThrustBehaviorTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.TestMob
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
@@ -70,8 +70,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Whitesmith.MaxOverThrustBehaviorTest do
   test "maximum_over_thrust_adds_to_weapon_ratio" do
     mob = mob()
     :ok = UnitRegistry.register_unit(:mob, 201, MobState, mob, self())
-    attacker = CombatTestHelper.create_mob_combatant(unit_id: 201)
-    defender = CombatTestHelper.create_mob_combatant(unit_id: 202, def: 0, soft_def: 0)
+    attacker = build(:mob_combatant, unit_id: 201)
+    defender = build(:mob_combatant, unit_id: 202, def: 0, soft_def: 0)
     {:ok, definition} = Catalog.by_id(486)
     assert :ok = WsOverthrustmax.mob_cast(mob, {:unit, :mob, 201}, 5, definition, %{})
 
@@ -151,7 +151,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Whitesmith.MaxOverThrustBehaviorTest do
     stub(Config, :natural_break_rate, fn -> 0 end)
 
     wearer =
-      CombatTestHelper.create_player_combatant(unit_id: 101, weapon_type: :one_handed_sword)
+      build(:player_combatant, unit_id: 101, weapon_type: :one_handed_sword)
 
     assert :ok = apply_status(:sc_maxoverthrust)
     result = EquipBreak.resolve(wearer, {:mob, 202}, rng: fn _ -> 10 end)

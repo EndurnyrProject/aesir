@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TargetResolver do
 
   require Logger
 
+  alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell, as: SkillUnitCell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Unit
@@ -50,7 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TargetResolver do
 
   Homunculi require a typed reference; bare IDs retain legacy resolution.
   """
-  @spec resolve_combatant(target()) :: {:ok, struct()} | {:error, atom()}
+  @spec resolve_combatant(target()) :: {:ok, Combatant.t()} | {:error, atom()}
   def resolve_combatant(target) do
     with {:ok, _pid, state, _type} <- resolve(target) do
       {:ok, state.__struct__.to_combatant(state)}
@@ -58,7 +59,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TargetResolver do
   end
 
   @doc "Resolves a known unit type and id to its combatant struct."
-  @spec resolve_combatant(target_type(), integer()) :: {:ok, struct()} | {:error, atom()}
+  @spec resolve_combatant(target_type(), integer()) :: {:ok, Combatant.t()} | {:error, atom()}
   def resolve_combatant(unit_type, unit_id) do
     with {:ok, _pid, state, ^unit_type} <- resolve(unit_type, unit_id) do
       {:ok, state.__struct__.to_combatant(state)}

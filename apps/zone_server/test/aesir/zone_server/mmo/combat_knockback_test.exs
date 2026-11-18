@@ -2,8 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
   use ExUnit.Case, async: false
   import Aesir.TestEtsSetup
   import Mimic
+  import Aesir.ZoneServer.Factory
 
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.GatType
   alias Aesir.ZoneServer.Map.MapCache
@@ -104,10 +104,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
 
   test "skill combines native and equipment distances into one displacement" do
     attacker =
-      CombatTestHelper.create_player_combatant(position: @from)
+      build(:player_combatant, position: @from)
       |> Map.put(:equip_modifiers, %{{:add_skill_blow, 18} => 2})
 
-    target = CombatTestHelper.create_mob_combatant(unit_id: @mob_id, position: {151, 150})
+    target = build(:mob_combatant, unit_id: @mob_id, position: {151, 150})
 
     stub_movable_mob()
 
@@ -122,10 +122,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
 
   test "skill native gates do not suppress equipment-only distance" do
     attacker =
-      CombatTestHelper.create_player_combatant(position: @from)
+      build(:player_combatant, position: @from)
       |> Map.put(:equip_modifiers, %{{:add_skill_blow, 18} => 2})
 
-    target = CombatTestHelper.create_mob_combatant(unit_id: @mob_id, position: {151, 150})
+    target = build(:mob_combatant, unit_id: @mob_id, position: {151, 150})
     result = %{hit?: true, target_survives?: false, coma?: false}
     stub_movable_mob()
 
@@ -144,8 +144,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
   end
 
   test "skill coma counts as surviving for the native survival gate" do
-    attacker = CombatTestHelper.create_player_combatant(position: @from)
-    target = CombatTestHelper.create_mob_combatant(unit_id: @mob_id, position: {151, 150})
+    attacker = build(:player_combatant, position: @from)
+    target = build(:mob_combatant, unit_id: @mob_id, position: {151, 150})
     result = %{hit?: true, target_survives?: false, coma?: true}
     stub_movable_mob()
 
@@ -159,10 +159,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
   end
 
   test "skill misses and zero final distance do not request knockback" do
-    target = CombatTestHelper.create_mob_combatant(unit_id: @mob_id, position: {151, 150})
+    target = build(:mob_combatant, unit_id: @mob_id, position: {151, 150})
 
     attacker =
-      CombatTestHelper.create_player_combatant(position: @from)
+      build(:player_combatant, position: @from)
       |> Map.put(:equip_modifiers, %{{:add_skill_blow, 18} => -3})
 
     reject(&SpatialIndex.get_unit_position/2)
@@ -188,10 +188,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
 
   test "skill preserves a caller-supplied knockback origin" do
     attacker =
-      CombatTestHelper.create_player_combatant(position: @from)
+      build(:player_combatant, position: @from)
       |> Map.put(:equip_modifiers, %{{:add_skill_blow, 18} => 2})
 
-    target = CombatTestHelper.create_mob_combatant(unit_id: @mob_id, position: {151, 150})
+    target = build(:mob_combatant, unit_id: @mob_id, position: {151, 150})
     result = %{hit?: true, target_survives?: true, coma?: false}
     stub_movable_mob()
 
@@ -229,10 +229,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
 
     test "a boss attacker's skill knockback moves it" do
       attacker =
-        CombatTestHelper.create_mob_combatant(unit_id: 9_999, position: @from)
+        build(:mob_combatant, unit_id: 9_999, position: @from)
         |> Map.put(:class, :boss)
 
-      target = CombatTestHelper.create_mob_combatant(unit_id: @mob_id, position: {151, 150})
+      target = build(:mob_combatant, unit_id: @mob_id, position: {151, 150})
       result = %{hit?: true, target_survives?: true, coma?: false}
 
       assert {:ok, {153, 150}} = Knockback.skill(attacker, target, 18, result, base_distance: 2)
@@ -241,10 +241,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
 
   test "skill keeps existing boss knockback immunity" do
     attacker =
-      CombatTestHelper.create_player_combatant(position: @from)
+      build(:player_combatant, position: @from)
       |> Map.put(:equip_modifiers, %{{:add_skill_blow, 18} => 2})
 
-    target = CombatTestHelper.create_mob_combatant(unit_id: @mob_id, position: {151, 150})
+    target = build(:mob_combatant, unit_id: @mob_id, position: {151, 150})
     result = %{hit?: true, target_survives?: true, coma?: false}
     stub_movable_mob(modes: [:detector, :status_immune, :knockback_immune])
 
@@ -254,10 +254,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
 
   test "skill keeps existing blocked-cell collision behavior" do
     attacker =
-      CombatTestHelper.create_player_combatant(position: @from)
+      build(:player_combatant, position: @from)
       |> Map.put(:equip_modifiers, %{{:add_skill_blow, 18} => 2})
 
-    target = CombatTestHelper.create_mob_combatant(unit_id: @mob_id, position: {151, 150})
+    target = build(:mob_combatant, unit_id: @mob_id, position: {151, 150})
     result = %{hit?: true, target_survives?: true, coma?: false}
     stub_movable_mob(traversable?: fn _from, _to -> false end)
 

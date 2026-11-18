@@ -2,7 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ArmorElementTest do
   use ExUnit.Case, async: true
   use Mimic
 
-  alias Aesir.ZoneServer.CombatTestHelper
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
@@ -125,11 +126,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ArmorElementTest do
 
   defp assert_damage(element, expected) do
     attacker =
-      CombatTestHelper.create_mob_combatant(unit_id: @id + 1)
+      build(:mob_combatant, unit_id: @id + 1)
       |> Map.put(:combat_stats, %{matk: 1_000, matk_min: 1_000, matk_max: 1_000})
 
     defender =
-      CombatTestHelper.create_player_combatant(unit_id: @id)
+      build(:player_combatant, unit_id: @id)
       |> Map.put(:combat_stats, %{mdef: 0, soft_mdef: 0})
 
     assert {:ok, %{damage: ^expected}} =

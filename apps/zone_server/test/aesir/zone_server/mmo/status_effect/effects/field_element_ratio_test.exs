@@ -13,12 +13,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FieldElementRatioTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.GameMode
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @attacker_id 1001
@@ -58,14 +60,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FieldElementRatioTest do
   end
 
   defp fire_attacker do
-    CombatTestHelper.create_player_combatant(
+    build(:player_combatant,
       unit_id: @attacker_id,
       str: 50,
       weapon_element: :fire
     )
   end
 
-  defp earth_defender, do: CombatTestHelper.create_mob_combatant(element: {:earth, 1})
+  defp earth_defender, do: build(:mob_combatant, element: {:earth, 1})
 
   describe "Volcano" do
     test "a physical fire attack inside Volcano lv5 gains 20 ratio points end to end" do
@@ -82,14 +84,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FieldElementRatioTest do
       :ok =
         StatusStorage.apply_status(:player, @attacker_id, :sc_volcano, val1: 5, duration: 30_000)
 
-      caster = %{unit_type: :player, unit_id: @attacker_id, combat_stats: %{matk: 200}}
+      caster =
+        build(:player_combatant,
+          unit_id: @attacker_id,
+          combat_stats: %CombatStats{matk: 200}
+        )
 
-      target = %{
-        unit_type: :mob,
-        unit_id: 2001,
-        element: {:earth, 1},
-        combat_stats: %{mdef: 0, soft_mdef: 0}
-      }
+      target =
+        build(:mob_combatant,
+          unit_id: 2001,
+          element: {:earth, 1},
+          combat_stats: %CombatStats{mdef: 0, soft_mdef: 0}
+        )
 
       assert {:ok, _} =
                MagicDamageCalculator.calculate_magic_damage(caster, target, element: :fire)
@@ -109,7 +115,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FieldElementRatioTest do
       :ok =
         StatusStorage.apply_status(:player, @attacker_id, :sc_volcano, val1: 5, duration: 30_000)
 
-      attacker = CombatTestHelper.create_player_combatant(unit_id: @attacker_id, str: 50)
+      attacker = build(:player_combatant, unit_id: @attacker_id, str: 50)
 
       assert {:ok, _} = DamageCalculator.calculate_damage(attacker, earth_defender())
 
@@ -123,7 +129,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FieldElementRatioTest do
         StatusStorage.apply_status(:player, @attacker_id, :sc_deluge, val1: 5, duration: 30_000)
 
       attacker =
-        CombatTestHelper.create_player_combatant(
+        build(:player_combatant,
           unit_id: @attacker_id,
           str: 50,
           weapon_element: :water
@@ -144,7 +150,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FieldElementRatioTest do
         )
 
       attacker =
-        CombatTestHelper.create_player_combatant(
+        build(:player_combatant,
           unit_id: @attacker_id,
           str: 50,
           weapon_element: :wind

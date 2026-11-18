@@ -2,8 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.GameMode
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.AutospellForceFlag
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
@@ -12,7 +13,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.MobManagement
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.PolymorphPool
   alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
 
   import Aesir.TestEtsSetup
 
-  setup :set_mimic_private
+  setup :set_mimic_from_context
   setup :setup_ets_tables
 
   @cold_bolt 14
@@ -81,14 +81,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
     }
 
   defp player(id, mods, autobonuses \\ %{}) do
-    %{
-      CombatTestHelper.create_player_combatant(unit_id: id)
-      | equip_modifiers: Enum.reduce(mods, %{}, &EquipAutocast.register(&2, &1, 0)),
-        equip_autobonuses: autobonuses
-    }
+    build(:player_combatant,
+      unit_id: id,
+      equip_modifiers: Enum.reduce(mods, %{}, &EquipAutocast.register(&2, &1, 0)),
+      equip_autobonuses: autobonuses
+    )
   end
 
-  defp mob, do: CombatTestHelper.create_mob_combatant(unit_id: 2001)
+  defp mob, do: build(:mob_combatant, unit_id: 2001)
 
   defp hit(overrides \\ []) do
     Map.merge(
@@ -416,7 +416,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
     setup do
       test_pid = self()
       {:ok, data} = MobManagement.get_mob_by_id(1002)
-      spawn = %MobSpawn{mob: 1002, amount: 1, respawn_time: 5_000, spawn_area: nil}
+      mob_state = build(:mob_state, instance_id: @polymorph_target, mob_data: data, x: 1, y: 1)
 
       stub(MobSession, :polymorph, fn pid, replacement_id ->
         send(test_pid, {:polymorph, pid, replacement_id})
@@ -424,8 +424,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
       end)
 
       stub(UnitRegistry, :get_unit, fn :mob, @polymorph_target ->
-        {:ok,
-         {MobState, MobState.new(@polymorph_target, data, spawn, "prontera", 1, 1), test_pid}}
+        {:ok, {MobState, mob_state, test_pid}}
       end)
 
       :ok
@@ -435,7 +434,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
     defp wearer_with_class_change(rate),
       do: %{player(1001, []) | equip_modifiers: %{class_change: rate}}
 
-    defp polymorph_target, do: CombatTestHelper.create_mob_combatant(unit_id: @polymorph_target)
+    defp polymorph_target, do: build(:mob_combatant, unit_id: @polymorph_target)
 
     test "a weapon hit rolls the wearer's class change and polymorphs the monster" do
       stub(PolymorphPool, :pick, fn -> 1001 end)
@@ -552,7 +551,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
     end
 
     defp player_target(id \\ 2001),
-      do: %{type: :player, id: id, pid: self(), state: %{stats: victim_stats()}}
+      do: %{
+        type: :player,
+        id: id,
+        pid: self(),
+        state: build(:player_state, stats: victim_stats())
+      }
 
     defp summon(owner), do: %{mob() | proc_owner_id: owner}
 

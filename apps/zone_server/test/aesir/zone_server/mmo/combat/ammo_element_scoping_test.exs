@@ -1,10 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.AmmoElementScopingTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
   use Mimic
 
-  alias Aesir.Commons.Models.Character
+  import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
@@ -12,13 +13,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AmmoElementScopingTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold
 
-  setup :set_mimic_private
+  setup :set_mimic_from_context
   setup :setup_ets_tables
 
-  import Aesir.TestEtsSetup
-
   test "ammo_element_scoping_test" do
-    defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0, element: {:earth, 1})
+    defender = build(:mob_combatant, def: 0, soft_def: 0, element: {:earth, 1})
     opts = [force_crit: true]
 
     for weapon <- [:dagger, :musical, :whip, :fist] do
@@ -63,7 +62,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AmmoElementScopingTest do
 
   test "an endow overrides the arrow element, and an explicit skill element overrides both" do
     attacker = attacker(:dagger)
-    defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0, element: {:water, 1})
+    defender = build(:mob_combatant, def: 0, soft_def: 0, element: {:water, 1})
     opts = [force_crit: true, skill_id: 46]
     assert {:ok, fire} = DamageCalculator.calculate_damage(attacker, defender, opts)
 
@@ -111,14 +110,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AmmoElementScopingTest do
     stub(ItemManagement, :get_item_by_id, &Map.fetch(definitions, &1))
 
     state =
-      PlayerState.new(%Character{
-        id: 7_003,
-        account_id: 7_003,
-        name: "Ammo",
-        last_map: "prontera",
-        class: 0,
-        sex: "M"
-      })
+      PlayerState.new(
+        Aesir.Factory.build(:character,
+          id: 7_003,
+          account_id: 7_003,
+          name: "Ammo",
+          last_map: "prontera",
+          class: 0,
+          sex: "M"
+        )
+      )
 
     worn = [
       %InventoryItem{nameid: 90_001, equip: 2, identify: 1},
@@ -127,7 +128,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AmmoElementScopingTest do
 
     stats = EquipmentFold.apply_equipment_modifiers(state.stats, worn)
     combatant = state |> Map.put(:stats, stats) |> PlayerState.to_combatant()
-    combat_stats = CombatTestHelper.create_player_combatant(flat_atk: 100).combat_stats
+    combat_stats = build(:player_combatant, flat_atk: 100).combat_stats
     %{combatant | combat_stats: combat_stats}
   end
 end

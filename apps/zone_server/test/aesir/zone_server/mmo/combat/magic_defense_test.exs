@@ -2,8 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefenseTest do
   use ExUnit.Case, async: true
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -15,7 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefenseTest do
 
   test "reflected magic hits land without rolling again" do
     defender =
-      CombatTestHelper.create_player_combatant()
+      build(:player_combatant)
       |> Map.put(:magic_reduction, 100)
       |> Map.put(:equip_modifiers, %{magic_damage_return: 100})
 
@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefenseTest do
 
   test "full immunity misses before the reflection roll" do
     defender =
-      CombatTestHelper.create_player_combatant()
+      build(:player_combatant)
       |> Map.put(:magic_reduction, 100)
       |> Map.put(:equip_modifiers, %{magic_damage_return: 100})
 
@@ -37,7 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefenseTest do
 
   test "ground magic hits land without rolling for reflection" do
     defender =
-      CombatTestHelper.create_player_combatant()
+      build(:player_combatant)
       |> Map.put(:equip_modifiers, %{magic_damage_return: 100})
 
     roll = fn _chance -> flunk("ground hits must not roll") end
@@ -47,7 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefenseTest do
 
   test "successful equipment roll reflects from-caster magic" do
     defender =
-      CombatTestHelper.create_player_combatant()
+      build(:player_combatant)
       |> Map.put(:equip_modifiers, %{magic_damage_return: 35})
 
     assert MagicDefense.resolve(defender, %{from_caster?: true}, &(&1 == 35)) == :reflect
@@ -55,7 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefenseTest do
 
   test "the default roll reflects a one-hundred-percent chance" do
     defender =
-      CombatTestHelper.create_player_combatant()
+      build(:player_combatant)
       |> Map.put(:equip_modifiers, %{magic_damage_return: 100})
 
     assert MagicDefense.resolve(defender, %{from_caster?: true}) == :reflect
@@ -63,7 +63,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefenseTest do
 
   test "an unsuccessful equipment roll leaves the hit unchanged" do
     defender =
-      CombatTestHelper.create_player_combatant()
+      build(:player_combatant)
       |> Map.put(:equip_modifiers, %{magic_damage_return: 35})
 
     assert MagicDefense.resolve(defender, %{from_caster?: true}, fn _chance -> false end) == :hit
@@ -120,7 +120,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefenseTest do
   end
 
   test "mob defenders have no equipment magic defense" do
-    mob = CombatTestHelper.create_mob_combatant()
+    mob = build(:mob_combatant)
 
     assert MagicDefense.resolve(mob, %{from_caster?: true}, fn chance -> chance > 0 end) == :hit
     assert MagicDefense.reduce(100, :mob, mob.unit_id) == 100
@@ -128,7 +128,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefenseTest do
   end
 
   test "full immunity is pure over the defender combatant" do
-    defender = CombatTestHelper.create_player_combatant()
+    defender = build(:player_combatant)
 
     refute MagicDefense.full_immunity?(%{defender | magic_reduction: 99})
     assert MagicDefense.full_immunity?(%{defender | magic_reduction: 100})
@@ -179,10 +179,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefenseTest do
   end
 
   test "a hit that deals nothing is never reflected and never rolls" do
-    defender = %{
-      CombatTestHelper.create_player_combatant()
-      | equip_modifiers: %{magic_damage_return: 100}
-    }
+    defender = build(:player_combatant, equip_modifiers: %{magic_damage_return: 100})
 
     roll = fn _chance -> flunk("a hit that deals nothing must not roll reflection") end
 

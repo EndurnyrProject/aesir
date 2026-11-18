@@ -115,30 +115,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AttackSpeedTest do
     end
   end
 
-  describe "current_timestamp/0" do
-    test "returns current monotonic timestamp" do
-      timestamp1 = AttackSpeed.current_timestamp()
-      :timer.sleep(1)
-      timestamp2 = AttackSpeed.current_timestamp()
-
-      assert is_integer(timestamp1)
-      assert is_integer(timestamp2)
-      assert timestamp2 > timestamp1
-    end
-
-    test "timestamp is in milliseconds" do
-      timestamp = AttackSpeed.current_timestamp()
-
-      # Should be an integer (monotonic time can be negative)
-      assert is_integer(timestamp)
-
-      # Should change over time
-      :timer.sleep(1)
-      timestamp2 = AttackSpeed.current_timestamp()
-      assert timestamp2 > timestamp
-    end
-  end
-
   describe "integration with common ASPD values" do
     test "novice barehand ASPD ~156 gives reasonable delay" do
       delay = AttackSpeed.calculate_delay(156)
@@ -160,18 +136,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AttackSpeedTest do
   end
 
   describe "edge cases and error conditions" do
-    test "handles concurrent timestamp calls" do
-      # Test that multiple rapid calls work correctly
-      timestamps = Enum.map(1..10, fn _ -> AttackSpeed.current_timestamp() end)
-
-      # All should be integers
-      assert Enum.all?(timestamps, &is_integer/1)
-
-      # Should be in ascending order (allowing for same values due to speed)
-      sorted_timestamps = Enum.sort(timestamps)
-      assert timestamps == sorted_timestamps or length(Enum.uniq(timestamps)) == 1
-    end
-
     test "handles extreme delay values" do
       # Very large attack delay
       large_delay = 10_000

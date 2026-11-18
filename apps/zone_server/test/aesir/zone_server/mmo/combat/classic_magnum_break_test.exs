@@ -14,12 +14,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicMagnumBreakTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
-  alias Aesir.ZoneServer.Unit.Player.WeaponHand
 
   @moduletag game_mode: :pre_renewal
 
@@ -31,10 +32,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicMagnumBreakTest do
   setup :verify_on_exit!
 
   setup do
-    Mimic.copy(ElementModifiers)
-    Mimic.copy(SizeModifiers)
-    Mimic.copy(ModifierCalculator)
-
     stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
 
     CombatTestHelper.stub_element_coefficient(fn
@@ -66,7 +63,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicMagnumBreakTest do
       attacker()
       |> put_in([Access.key(:right_hand), Access.key(:refine_atk)], 7)
       |> update_in(
-        [Access.key(:combat_stats), :physical_attack],
+        [Access.key(:combat_stats), Access.key(:physical_attack)],
         &Map.merge(&1, %{mastery_atk: 4, weapon_mastery_atk: 4, star_atk: 10})
       )
       |> Map.put(:spirit_spheres, 2)
@@ -166,31 +163,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicMagnumBreakTest do
 
   defp attacker(element \\ :neutral, subtype \\ :dagger) do
     attacker =
-      CombatTestHelper.create_player_combatant(
+      build(:player_combatant,
         str: 50,
         dex: 0,
         luk: 0,
         base_level: 0,
         weapon_type: subtype,
-        weapon_element: element
+        weapon_element: element,
+        right_hand: build(:weapon_hand, subtype: subtype, element: element)
       )
 
-    hand = %WeaponHand{
-      item_id: 1,
-      subtype: subtype,
-      element: element,
-      base_atk: 100,
-      weapon_level: 1,
-      refine_atk: 0,
-      overrefine_band: 0,
-      slot: :right_hand
-    }
-
-    %{
-      attacker
-      | right_hand: hand,
-        combat_stats: Map.put(attacker.combat_stats, :max_weapon_damage, true)
-    }
+    %{attacker | combat_stats: %{attacker.combat_stats | max_weapon_damage: true}}
   end
 
   defp with_left_hand(attacker, base_atk) do
@@ -199,5 +182,5 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicMagnumBreakTest do
   end
 
   defp defender,
-    do: CombatTestHelper.create_mob_combatant(def: 10, soft_def: 0, element: {:earth, 1})
+    do: build(:mob_combatant, def: 10, soft_def: 0, element: {:earth, 1})
 end

@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
   use ExUnit.Case, async: true
 
   import Mimic
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.CombatTestHelper
@@ -14,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
 
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
   @landed %{hit_class: :hit, attack_effects?: true, counter_effects?: true}
@@ -39,10 +41,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       record_applications()
 
       attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        build(:player_combatant, unit_id: 1001)
         |> with_mods(%{{:add_eff, :sc_stun} => 500})
 
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
+      defender = build(:mob_combatant, unit_id: 2001)
 
       assert :ok =
                OnHitEffects.after_hit(attacker, defender, @landed,
@@ -60,10 +62,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       record_applications()
 
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_mods(%{{:add_eff, :sc_stun} => 500})
 
-      defender = CombatTestHelper.create_mob_combatant()
+      defender = build(:mob_combatant)
 
       assert :ok =
                OnHitEffects.after_hit(attacker, defender, @landed,
@@ -81,11 +83,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       roll = fn _rate -> flunk("the status defense makes the only roll") end
 
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_mods(%{{:add_eff, :sc_stun} => 500})
 
       defender =
-        CombatTestHelper.create_mob_combatant()
+        build(:mob_combatant)
         |> with_mods(%{{:res_eff, :sc_stun} => 500})
 
       assert :ok =
@@ -102,10 +104,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       reject(&StatusInterpreter.apply_status/4)
 
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_mods(%{{:add_eff, :sc_stun} => 0})
 
-      defender = CombatTestHelper.create_mob_combatant()
+      defender = build(:mob_combatant)
 
       assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: &always_hit/1)
     end
@@ -115,10 +117,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
     test "targets the attacker with the attacker as source" do
       record_applications()
 
-      attacker = CombatTestHelper.create_mob_combatant(unit_id: 1001)
+      attacker = build(:mob_combatant, unit_id: 1001)
 
       defender =
-        CombatTestHelper.create_player_combatant(unit_id: 2001)
+        build(:player_combatant, unit_id: 2001)
         |> with_mods(%{{:add_eff_when_hit, :sc_freeze} => 400})
 
       assert :ok =
@@ -136,11 +138,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       record_applications()
 
       attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        build(:player_combatant, unit_id: 1001)
         |> with_mods(%{{:res_eff, :sc_freeze} => 150})
 
       defender =
-        CombatTestHelper.create_player_combatant(unit_id: 2001)
+        build(:player_combatant, unit_id: 2001)
         |> with_mods(%{{:add_eff_when_hit, :sc_freeze} => 400})
 
       assert :ok =
@@ -159,10 +161,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       record_applications()
 
       attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        build(:player_combatant, unit_id: 1001)
         |> with_mods(%{{:add_eff2, :sc_curse} => 500})
 
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
+      defender = build(:mob_combatant, unit_id: 2001)
 
       assert :ok =
                OnHitEffects.after_hit(attacker, defender, @landed,
@@ -179,10 +181,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       record_applications()
 
       attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        build(:player_combatant, unit_id: 1001)
         |> with_mods(%{{:add_eff2, :sc_curse} => 500})
 
-      defender = CombatTestHelper.create_mob_combatant()
+      defender = build(:mob_combatant)
 
       assert :ok =
                OnHitEffects.after_hit(attacker, defender, @landed,
@@ -201,11 +203,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       reject(&StatusInterpreter.apply_status/4)
 
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_mods(%{{:add_eff, :sc_stun} => 10_000})
 
       defender =
-        CombatTestHelper.create_mob_combatant()
+        build(:mob_combatant)
         |> with_mods(%{{:add_eff_when_hit, :sc_freeze} => 10_000})
 
       miss = %{hit_class: :miss, attack_effects?: true, counter_effects?: false}
@@ -216,7 +218,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       record_applications()
 
       attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        build(:player_combatant, unit_id: 1001)
         |> with_mods(%{
           {:add_eff, :sc_stun} => 10_000,
           {:def_set_race_rate, :player_human} => 10_000,
@@ -224,7 +226,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
         })
 
       defender =
-        %{CombatTestHelper.create_player_combatant(unit_id: 2001) | race: :player_human}
+        build(:player_combatant, unit_id: 2001, race: :player_human)
         |> with_mods(%{{:add_eff_when_hit, :sc_freeze} => 10_000})
 
       block = %{hit_class: :block, attack_effects?: true, counter_effects?: false}
@@ -243,11 +245,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       record_applications()
 
       attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        build(:player_combatant, unit_id: 1001)
         |> with_mods(%{{:add_eff, :sc_stun} => 10_000})
 
       defender =
-        CombatTestHelper.create_player_combatant(unit_id: 2001)
+        build(:player_combatant, unit_id: 2001)
         |> with_mods(%{{:add_eff_when_hit, :sc_freeze} => 10_000})
 
       killed = %{hit_class: :hit, attack_effects?: false, counter_effects?: true}
@@ -266,10 +268,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       reject(&StatusInterpreter.apply_status/4)
 
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_mods(%{{:add_eff, :sc_stun} => 10_000})
 
-      defender = %{CombatTestHelper.create_mob_combatant() | unit_type: :skill_unit}
+      defender = build(:mob_combatant, unit_type: :skill_unit)
 
       assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: &always_hit/1)
     end
@@ -283,10 +285,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       end)
 
       attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        build(:player_combatant, unit_id: 1001)
         |> with_mods(%{{:add_eff, :sc_stun} => 10_000})
 
-      defender = CombatTestHelper.create_boss_mob(unit_id: 2999)
+      defender =
+        build(:mob_combatant,
+          unit_id: 2999,
+          base_level: 30,
+          str: 80,
+          agi: 25,
+          vit: 100,
+          int: 40,
+          dex: 50,
+          luk: 10,
+          element: :dark,
+          race: :demon,
+          size: :large,
+          class: :boss,
+          atk: 200,
+          def: 50
+        )
 
       assert :ok =
                OnHitEffects.after_hit(attacker, defender, @landed,
@@ -303,10 +321,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       record_applications()
 
       attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        build(:player_combatant, unit_id: 1001)
         |> with_mods(%{{:add_eff_on_skill, 110, :sc_stun} => 10_000})
 
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
+      defender = build(:mob_combatant, unit_id: 2001)
 
       assert :ok =
                OnHitEffects.after_hit(attacker, defender, @landed,
@@ -329,10 +347,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       record_applications()
 
       attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        build(:player_combatant, unit_id: 1001)
         |> with_mods(%{{:add_eff_on_skill, 110, :sc_stun} => 10_000})
 
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
+      defender = build(:mob_combatant, unit_id: 2001)
 
       assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: &always_hit/1)
 
@@ -343,11 +361,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       record_applications()
 
       attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        build(:player_combatant, unit_id: 1001)
         |> with_mods(%{{:add_eff_on_skill, 110, :sc_stun} => 3_000})
 
       defender =
-        CombatTestHelper.create_mob_combatant(unit_id: 2001)
+        build(:mob_combatant, unit_id: 2001)
         |> with_mods(%{{:res_eff, :sc_stun} => 1_000})
 
       assert :ok =
@@ -372,10 +390,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       record_applications()
 
       attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        build(:player_combatant, unit_id: 1001)
         |> with_mods(%{{:add_eff, {:sc_stun, trigger_flag([:magic])}} => 10_000})
 
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
+      defender = build(:mob_combatant, unit_id: 2001)
 
       assert :ok =
                OnHitEffects.after_hit(attacker, defender, @landed,
@@ -399,13 +417,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       flag = trigger_flag([:target])
 
       attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        build(:player_combatant, unit_id: 1001)
         |> with_mods(%{
           {:add_eff, {:sc_stun, flag}} => 10_000,
           {:add_eff_duration, {:sc_stun, flag}} => 5_000
         })
 
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
+      defender = build(:mob_combatant, unit_id: 2001)
 
       assert :ok =
                OnHitEffects.after_hit(attacker, defender, @landed,
@@ -422,13 +440,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       flag = trigger_flag([:target])
 
       attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        build(:player_combatant, unit_id: 1001)
         |> with_mods(%{
           {:add_eff, {:sc_stun, flag}} => 10_000,
           {:add_eff_duration, {:sc_stun, flag}} => 0
         })
 
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
+      defender = build(:mob_combatant, unit_id: 2001)
 
       assert :ok =
                OnHitEffects.after_hit(attacker, defender, @landed,
@@ -445,10 +463,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       record_applications()
 
       attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        build(:player_combatant, unit_id: 1001)
         |> with_mods(%{{:add_eff, {:sc_stun, trigger_flag([:self])}} => 10_000})
 
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
+      defender = build(:mob_combatant, unit_id: 2001)
 
       assert :ok =
                OnHitEffects.after_hit(attacker, defender, @landed,
@@ -464,10 +482,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       record_applications()
 
       attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        build(:player_combatant, unit_id: 1001)
         |> with_mods(%{{:add_eff, {:sc_stun, trigger_flag([:self, :target])}} => 10_000})
 
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
+      defender = build(:mob_combatant, unit_id: 2001)
 
       assert :ok =
                OnHitEffects.after_hit(attacker, defender, @landed,
@@ -483,10 +501,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
     test "a flagged when-hit bonus targets the attacker" do
       record_applications()
 
-      attacker = CombatTestHelper.create_player_combatant(unit_id: 1001)
+      attacker = build(:player_combatant, unit_id: 1001)
 
       defender =
-        CombatTestHelper.create_player_combatant(unit_id: 2001)
+        build(:player_combatant, unit_id: 2001)
         |> with_mods(%{{:add_eff_when_hit, {:sc_blind, trigger_flag([:target])}} => 10_000})
 
       assert :ok =
@@ -502,11 +520,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       record_applications()
 
       attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        build(:player_combatant, unit_id: 1001)
         |> with_mods(%{{:add_eff, {:sc_stun, trigger_flag([:target])}} => 3_000})
 
       defender =
-        CombatTestHelper.create_mob_combatant(unit_id: 2001)
+        build(:mob_combatant, unit_id: 2001)
         |> with_mods(%{{:res_eff, :sc_stun} => 1_000})
 
       assert :ok =
@@ -526,7 +544,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       record_applications()
 
       attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        build(:player_combatant, unit_id: 1001)
         |> with_mods(%{
           {:def_set_race_rate, :player_human} => 10_000,
           {:def_set_race_duration, :player_human} => 5_000,
@@ -536,10 +554,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
           {:mdef_set_race_value, :player_human} => 2
         })
 
-      defender = %{
-        CombatTestHelper.create_player_combatant(unit_id: 2001)
-        | race: :player_human
-      }
+      defender = build(:player_combatant, unit_id: 2001, race: :player_human)
 
       assert :ok =
                OnHitEffects.after_hit(attacker, defender, @landed,
@@ -560,15 +575,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       reject(&StatusInterpreter.apply_status/4)
 
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_mods(%{
           {:def_set_race_rate, :player_human} => 10_000,
           {:def_set_race_duration, :player_human} => 5_000,
           {:def_set_race_value, :player_human} => 1
         })
 
-      player = %{CombatTestHelper.create_player_combatant() | race: :player_human}
-      mob = %{CombatTestHelper.create_mob_combatant() | race: :player_human}
+      player = build(:player_combatant, race: :player_human)
+      mob = build(:mob_combatant, race: :player_human)
 
       assert :ok =
                OnHitEffects.after_hit(attacker, player, @landed,
@@ -593,14 +608,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       record_applications()
 
       attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        build(:player_combatant, unit_id: 1001)
         |> with_mods(%{
           {:no_recover_race_rate, :player_human} => 10_000,
           {:no_recover_race_duration, :player_human} => 10_000
         })
 
       defender =
-        %{CombatTestHelper.create_player_combatant(unit_id: 2001, luk: 10) | race: :player_human}
+        build(:player_combatant, unit_id: 2001, luk: 10, race: :player_human)
         |> with_mods(%{:luk => 2, {:res_eff, :sc_norecover_state} => 2_000})
 
       assert :ok =
@@ -621,10 +636,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
     @magic_long BattleFlags.build(:magic, :long, true)
     @weapon_long BattleFlags.build(:weapon, :long, true)
 
-    defp mob_target, do: CombatTestHelper.create_mob_combatant(unit_id: 2001)
+    defp mob_target, do: build(:mob_combatant, unit_id: 2001)
 
     defp player_with(mods),
-      do: CombatTestHelper.create_player_combatant(unit_id: 1001) |> with_mods(mods)
+      do: build(:player_combatant, unit_id: 1001) |> with_mods(mods)
 
     test "an unflagged bAddEff is a weapon proc: it never rolls on a magic hit" do
       record_applications()
@@ -704,10 +719,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
     test "a monster's when-hit entries roll nothing" do
       reject(&StatusInterpreter.apply_status/4)
 
-      attacker = CombatTestHelper.create_player_combatant(unit_id: 1001)
+      attacker = build(:player_combatant, unit_id: 1001)
 
       defender =
-        CombatTestHelper.create_mob_combatant(unit_id: 2001)
+        build(:mob_combatant, unit_id: 2001)
         |> with_mods(%{{:add_eff_when_hit, :sc_freeze} => 10_000})
 
       OnHitEffects.after_hit(attacker, defender, @landed, attack_flag: @weapon_short)
@@ -718,7 +733,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       self_target = Bitwise.bor(AutoTriggerFlag.id(:self), AutoTriggerFlag.id(:weapon))
 
       wearer =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        build(:player_combatant, unit_id: 1001)
         |> with_mods(%{
           {:add_eff_when_hit, :sc_freeze} => 10_000,
           {:add_eff_when_hit, {:sc_curse, BattleFlags.fill_trigger(self_target)}} => 10_000
@@ -757,7 +772,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
 
     test "a monster attacker rolls nothing" do
       reject(&StatusInterpreter.apply_status/4)
-      mob = CombatTestHelper.create_mob_combatant(unit_id: 3001)
+      mob = build(:mob_combatant, unit_id: 3001)
 
       OnHitEffects.direct(mob, {:player, 1001}, BattleFlags.type_bit(:misc), 119)
     end

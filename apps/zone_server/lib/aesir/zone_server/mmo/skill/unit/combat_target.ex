@@ -19,6 +19,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.Stats.BaseStats
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @default_combat %{
@@ -102,21 +104,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget do
   end
 
   @doc "Builds the lightweight defender used for basic attacks against a cell."
-  @spec to_combatant(Cell.t()) :: map()
+  @spec to_combatant(Cell.t()) :: Combatant.t()
   def to_combatant(%Cell{} = cell) do
     combat = Map.merge(@default_combat, Map.get(cell.state, :combat, %{}))
 
     %Combatant{
       unit_id: cell.cell_id,
       unit_type: :skill_unit,
-      base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
-      combat_stats: %{
+      base_stats: %BaseStats{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
+      combat_stats: %CombatStats{
         atk: 0,
         def: combat.def,
         hit: 0,
         flee: combat.flee,
         perfect_dodge: combat.perfect_dodge,
         matk: 0,
+        matk_min: 0,
+        matk_max: 0,
         mdef: Map.get(combat, :mdef, 0),
         soft_mdef: Map.get(combat, :soft_mdef, 0),
         soft_def: combat.soft_def
@@ -129,11 +133,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget do
       attack_range: 0,
       attack_delay_ms: 0,
       position: {cell.x, cell.y},
-      map_name: cell.map_name
+      map_name: cell.map_name,
+      hp: if(Map.get(cell.state, :trap_target, false), do: max(cell.hp, 1), else: cell.hp)
     }
-    |> Map.put(
-      :hp,
-      if(Map.get(cell.state, :trap_target, false), do: max(cell.hp, 1), else: cell.hp)
-    )
   end
 end

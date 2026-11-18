@@ -1048,8 +1048,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   defp long_range_attack?(%{unit_type: :player, weapon: %{type: type}}) when is_atom(type),
     do: WeaponTypes.long_range_attack?(type)
 
-  defp long_range_attack?(%{unit_type: :player}), do: false
-
   defp long_range_attack?(%{attack_range: range}), do: range > 3
 
   # Classifies trigger-flagged bonuses using the delivered hit's range class.

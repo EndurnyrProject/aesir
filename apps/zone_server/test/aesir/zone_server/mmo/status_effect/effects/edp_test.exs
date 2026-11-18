@@ -3,9 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EdpTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
@@ -59,10 +59,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EdpTest do
 
   @tag game_mode: :pre_renewal
   test "classic EDP boosts surviving mastery damage on a fled attack, only on the right hand" do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 1)
+    attacker = build(:player_combatant, unit_id: 1)
     physical = Map.put(attacker.combat_stats.physical_attack, :star_atk, 7)
     attacker = put_in(attacker.combat_stats.physical_attack, physical)
-    defender = CombatTestHelper.create_mob_combatant(element: :neutral, def: 0)
+    defender = build(:mob_combatant, element: :neutral, def: 0)
     :ok = StatusStorage.apply_status(:player, 1, :sc_edp, val1: 5, val2: 5, val3: 300)
 
     assert {:ok, %{damage: 28}} = DamageCalculator.calculate_fled_damage(attacker, defender, [])
@@ -73,8 +73,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EdpTest do
 
   @tag game_mode: :pre_renewal
   test "classic scalar EDP follows the elemental step and includes its truncated result" do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 1, weapon_element: :water)
-    defender = CombatTestHelper.create_mob_combatant(element: {:fire, 1}, def: 0, soft_def: 0)
+    attacker = build(:player_combatant, unit_id: 1, weapon_element: :water)
+    defender = build(:mob_combatant, element: {:fire, 1}, def: 0, soft_def: 0)
     :ok = StatusStorage.apply_status(:player, 1, :sc_edp, val1: 5, val2: 5, val3: 300)
 
     assert {:ok, %{damage: 600}} =

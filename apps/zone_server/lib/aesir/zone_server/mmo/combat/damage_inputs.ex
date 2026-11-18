@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @magic_attack_flag BattleFlags.build(:magic, :long, true)
@@ -65,7 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
   end
 
   @doc "Rolls selected player components without reconstructing display ATK."
-  @spec player_attack_parts(map(), keyword(), atom(), boolean()) :: PhysicalAttack.parts()
+  @spec player_attack_parts(Combatant.t(), keyword(), atom(), boolean()) :: PhysicalAttack.parts()
   def player_attack_parts(attacker, opts, attack_path, critical?) do
     snapshot = attacker.combat_stats.physical_attack
 
@@ -140,7 +141,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
   end
 
   @doc "Whether a hit uses ammunition: an ammo-consuming normal attack or an ammo-requiring skill."
-  @spec arrow_attack?(map(), non_neg_integer() | nil) :: boolean()
+  @spec arrow_attack?(Combatant.t(), non_neg_integer() | nil) :: boolean()
   def arrow_attack?(%{right_hand: %{subtype: subtype}}, nil),
     do: WeaponTypes.requires_ammo?(subtype)
 
@@ -220,7 +221,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
   is its maximum MATK, and in either mode a normal attack (no `:skill_id`)
   rolls its MATK bounds instead, with no status ATK.
   """
-  @spec non_player_base_attack(map(), keyword()) :: {:ok, integer()} | {:error, atom()}
+  @spec non_player_base_attack(Combatant.t(), keyword()) :: {:ok, integer()} | {:error, atom()}
   def non_player_base_attack(attacker, opts \\ [])
 
   def non_player_base_attack(%{unit_type: type} = attacker, opts)
@@ -297,7 +298,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
   end
 
   @doc "Resolves physical DEF using the existing status and equipment omission modes."
-  @spec physical_defense(map(), map() | nil, atom(), atom(), map()) :: {integer(), integer()}
+  @spec physical_defense(Combatant.t(), Combatant.t() | nil, atom(), atom(), map()) ::
+          {integer(), integer()}
   def physical_defense(defender, attacker, status_def_mode, def_ignore_mode, modifiers) do
     {unit_type, unit_id} = get_unit_type_and_id(defender)
 
@@ -422,7 +424,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
   channel, `:ignore_def_card` every target card channel, and `:ignore_element`
   the element channels on both sides.
   """
-  @spec magic_context(map(), map(), keyword(), map(), map()) :: MagicDamage.context()
+  @spec magic_context(Combatant.t(), Combatant.t(), keyword(), map(), map()) ::
+          MagicDamage.context()
   def magic_context(attacker, defender, opts, modifiers, defender_modifiers) do
     element = Keyword.get(opts, :element, :neutral)
     skill_id = Keyword.get(opts, :skill_id)
@@ -501,11 +504,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
   band is not degenerate, the half-open MATK roll minus `tmdef`; otherwise
   `matk_min - tmdef`. Either result is floored at 0.
   """
-  @spec magical_bullet_atk(map(), map()) :: non_neg_integer()
+  @spec magical_bullet_atk(CombatStats.t(), CombatStats.t()) :: non_neg_integer()
   def magical_bullet_atk(attacker_stats, defender_stats) do
-    tmdef = Map.get(defender_stats, :mdef, 0) + Map.get(defender_stats, :soft_mdef, 0)
-    matk_min = Map.fetch!(attacker_stats, :matk_min)
-    matk_max = Map.fetch!(attacker_stats, :matk_max)
+    tmdef = (defender_stats.mdef || 0) + (defender_stats.soft_mdef || 0)
+    matk_min = attacker_stats.matk_min
+    matk_max = attacker_stats.matk_max
 
     if matk_min > tmdef,
       do: max(DamageShared.roll(matk_min, matk_max) - tmdef, 0),
@@ -513,11 +516,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
   end
 
   @doc "Rolls the half-open MATK band, falling back to its deterministic scalar."
-  @spec roll_matk(map()) :: non_neg_integer()
+  @spec roll_matk(CombatStats.t()) :: non_neg_integer()
   def roll_matk(combat_stats) do
     DamageShared.roll(
-      Map.get(combat_stats, :matk_min, combat_stats.matk),
-      Map.get(combat_stats, :matk_max, combat_stats.matk)
+      combat_stats.matk_min || combat_stats.matk,
+      combat_stats.matk_max || combat_stats.matk
     )
   end
 

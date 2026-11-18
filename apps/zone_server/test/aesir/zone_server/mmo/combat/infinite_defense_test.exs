@@ -10,9 +10,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.InfiniteDefenseTest do
 
   import Aesir.TestEtsSetup
   import Bitwise
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
@@ -24,12 +24,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.InfiniteDefenseTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
-  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
-  alias Aesir.ZoneServer.Unit.Player.WeaponHand
-  alias Aesir.ZoneServer.Unit.Stats.BaseStats
-  alias Aesir.ZoneServer.Unit.Stats.DerivedStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @all_modes [:ignore_melee, :ignore_magic, :ignore_ranged, :ignore_misc]
@@ -229,9 +223,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.InfiniteDefenseTest do
     end
 
     test "a katar has no off-hand contact" do
-      katar =
-        accurate(weapon_type: :katar)
-        |> Map.put(:right_hand, hand(:right_hand, :katar, :neutral))
+      katar = accurate(weapon_type: :katar, right_hand: hand(:right_hand, :katar, :neutral))
 
       assert {:ok, %HandedAttack{raw_total: 1, secondary: nil}} =
                HandedAttack.calculate(player(), katar, target(@all_modes))
@@ -351,61 +343,53 @@ defmodule Aesir.ZoneServer.Mmo.Combat.InfiniteDefenseTest do
     do: %{dmg_type: :physical, is_short: true, skill_id: 5, infinite_defense: :ordinary}
 
   defp target(modes, opts \\ []) do
-    [element: {:neutral, 1}, def: 10]
+    [element: {:neutral, 1}, def: 10, ignore_modes: modes]
     |> Keyword.merge(opts)
-    |> CombatTestHelper.create_mob_combatant()
-    |> Map.put(:ignore_modes, modes)
+    |> then(&build(:mob_combatant, &1))
     |> no_dodge()
   end
 
   defp emperium do
-    [monster_id: 1288, race: :angel, element: {:holy, 1}, def: 64, soft_def: 80]
-    |> CombatTestHelper.create_mob_combatant()
-    |> Map.put(:ignore_modes, @all_modes)
+    build(:mob_combatant,
+      monster_id: 1288,
+      race: :angel,
+      element: {:holy, 1},
+      def: 64,
+      soft_def: 80,
+      ignore_modes: @all_modes
+    )
     |> no_dodge()
   end
 
   defp no_dodge(defender),
-    do: %{defender | combat_stats: Map.put(defender.combat_stats, :perfect_dodge, 0)}
+    do: %{defender | combat_stats: %{defender.combat_stats | perfect_dodge: 0}}
 
-  defp attacker, do: CombatTestHelper.create_player_combatant()
+  defp attacker, do: build(:player_combatant)
 
-  defp strong, do: CombatTestHelper.create_player_combatant(str: 300, flat_atk: 500)
+  defp strong, do: build(:player_combatant, str: 300, flat_atk: 500)
 
   defp accurate(opts \\ []) do
     opts
     |> Keyword.put_new(:dex, 500)
     |> Keyword.put_new(:flat_atk, 500)
-    |> CombatTestHelper.create_player_combatant()
-    |> Map.put(:equip_modifiers, %{perfect_hit_rate: 100})
+    |> Keyword.put(:equip_modifiers, %{perfect_hit_rate: 100})
+    |> then(&build(:player_combatant, &1))
   end
 
   defp dual_wield(element) do
-    accurate(weapon_element: element)
-    |> Map.put(:right_hand, hand(:right_hand, :dagger, element))
-    |> Map.put(:left_hand, hand(:left_hand, :dagger, element))
+    accurate(
+      weapon_element: element,
+      right_hand: hand(:right_hand, :dagger, element),
+      left_hand: hand(:left_hand, :dagger, element)
+    )
   end
 
-  defp hand(slot, subtype, element) do
-    %WeaponHand{
-      weapon_level: 1,
-      item_id: 1,
-      subtype: subtype,
-      element: element,
-      base_atk: 100,
-      refine_atk: 0,
-      overrefine_band: 0,
-      slot: slot
-    }
-  end
+  defp hand(slot, subtype, element),
+    do: build(:weapon_hand, slot: slot, subtype: subtype, element: element)
 
   defp player do
-    %PlayerState{
-      stats: %Stats{
-        base_stats: %BaseStats{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
-        derived_stats: %DerivedStats{max_hp: 100, max_sp: 100},
-        progression: %PlayerProgression{base_level: 50, job_level: 30, learned_skills: %{}}
-      }
-    }
+    build(:player_state,
+      stats: %{progression: %{base_level: 50, job_level: 30, learned_skills: %{}}}
+    )
   end
 end

@@ -2,9 +2,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
@@ -12,19 +13,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
-  alias Aesir.ZoneServer.Unit.Player.WeaponHand
-  alias Aesir.ZoneServer.Unit.Stats.BaseStats
-  alias Aesir.ZoneServer.Unit.Stats.DerivedStats
 
   @right_hand 2
   @both_hands 34
   @dagger_id 1201
   @katar_id 1250
 
+  setup :set_mimic_from_context
+  setup :verify_on_exit!
+
   test "unarmed attacks return one immutable swing component" do
     attacker = accurate_player()
     defender = defender()
-    player = %PlayerState{}
+    player = build(:player_state)
     inputs = {player, attacker, defender}
 
     assert {:ok,
@@ -112,7 +113,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
     target = defender() |> put_flee(10_000)
 
     assert {:ok, %HandedAttack{outcome: :critical, primary: %{is_critical: true}}} =
-             HandedAttack.calculate(%PlayerState{}, attacker, target)
+             HandedAttack.calculate(build(:player_state), attacker, target)
   end
 
   @tag game_mode: :pre_renewal
@@ -351,15 +352,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
     target = put_in(defender().base_stats.luk, 1)
 
     assert {:ok, %HandedAttack{outcome: :critical}} =
-             HandedAttack.calculate(%PlayerState{}, ranged, target)
+             HandedAttack.calculate(build(:player_state), ranged, target)
 
     assert {:ok, %HandedAttack{outcome: :hit}} =
-             HandedAttack.calculate(%PlayerState{}, melee, target)
+             HandedAttack.calculate(build(:player_state), melee, target)
   end
 
   describe "normal_ranged_hit_taken_flat" do
-    setup :set_mimic_private
-
     test "a ranged normal attack rolls against the defender's reduced hit rate" do
       defender = defender()
 
@@ -374,18 +373,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
       ranged = put_in(accurate_player(), [Access.key!(:weapon), Access.key!(:type)], :bow)
 
       assert {:ok, %HandedAttack{outcome: :miss}} =
-               HandedAttack.calculate(%PlayerState{}, ranged, defender)
+               HandedAttack.calculate(build(:player_state), ranged, defender)
 
       assert {:ok, %HandedAttack{outcome: :hit}} =
-               HandedAttack.calculate(%PlayerState{}, accurate_player(), defender)
+               HandedAttack.calculate(build(:player_state), accurate_player(), defender)
     end
   end
 
   describe "a fled swing" do
-    setup :set_mimic_private
-
     setup do
-      Mimic.copy(HitCalculations)
       stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :miss end)
       :ok
     end
@@ -395,7 +391,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
       attacker = with_hands(hand(:right_hand, 100), nil) |> put_star_atk(10)
 
       assert {:ok, %HandedAttack{primary: %{damage: 10}, raw_total: 10, outcome: :hit}} =
-               HandedAttack.calculate(%PlayerState{}, attacker, defender())
+               HandedAttack.calculate(build(:player_state), attacker, defender())
 
       assert {:ok, %HandedAttack{raw_total: 20, display_divisions: 2, outcome: :hit}} =
                HandedAttack.calculate(player(%{48 => 10}, :dagger), attacker, defender(),
@@ -408,7 +404,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
       attacker =
         with_hands(hand(:right_hand, 100), hand(:left_hand, 80))
         |> put_star_atk(10)
-        |> put_in([Access.key!(:combat_stats), :physical_attack, :left_star_atk], 20)
+        |> put_in([Access.key!(:combat_stats), Access.key(:physical_attack), :left_star_atk], 20)
 
       assert {:ok,
               %HandedAttack{
@@ -425,12 +421,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
       starred = plain |> put_star_atk(10)
 
       assert {:ok, %HandedAttack{raw_total: 0, outcome: :miss}} =
-               HandedAttack.calculate(%PlayerState{}, plain, defender())
+               HandedAttack.calculate(build(:player_state), plain, defender())
 
       stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :perfect_dodge end)
 
       assert {:ok, %HandedAttack{raw_total: 0, outcome: :perfect_dodge}} =
-               HandedAttack.calculate(%PlayerState{}, starred, defender())
+               HandedAttack.calculate(build(:player_state), starred, defender())
     end
 
     @tag game_mode: :renewal
@@ -438,13 +434,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
       attacker = with_hands(hand(:right_hand, 100), nil) |> put_star_atk(10)
 
       assert {:ok, %HandedAttack{raw_total: 0, outcome: :miss}} =
-               HandedAttack.calculate(%PlayerState{}, attacker, defender())
+               HandedAttack.calculate(build(:player_state), attacker, defender())
     end
   end
 
   test "minimal player context and mob combatants retain aggregate one-component behavior" do
     mob =
-      CombatTestHelper.create_mob_combatant(atk: 50, dex: 200, luk: 0)
+      build(:mob_combatant, atk: 50, dex: 200, luk: 0)
       |> put_hit(200)
 
     assert {:ok, %HandedAttack{primary: %{damage: damage}, secondary: nil, raw_total: damage}} =
@@ -457,7 +453,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
     attacker = %{accurate_player() | unit_type: :unknown}
 
     assert {:error, :unknown_unit_type} =
-             HandedAttack.calculate(%PlayerState{}, attacker, defender())
+             HandedAttack.calculate(build(:player_state), attacker, defender())
   end
 
   defp player(learned_skills, weapon_type) do
@@ -469,28 +465,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
 
     inventory = [%InventoryItem{nameid: item_id, amount: 1, equip: equip, identify: 1}]
 
-    stats = %Stats{
-      base_stats: %BaseStats{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
-      derived_stats: %DerivedStats{max_hp: 100, max_sp: 100},
-      progression: %PlayerProgression{
-        base_level: 50,
-        job_level: 30,
-        learned_skills: learned_skills
-      },
-      equipment: Stats.equipment_from_inventory(inventory)
-    }
-
-    %PlayerState{stats: stats}
+    build(:player_state,
+      stats: %{
+        progression: %PlayerProgression{
+          base_level: 50,
+          job_level: 30,
+          learned_skills: learned_skills
+        },
+        equipment: Stats.equipment_from_inventory(inventory)
+      }
+    )
   end
 
   defp accurate_player do
-    CombatTestHelper.create_player_combatant(dex: 200, luk: 0)
+    build(:player_combatant, dex: 200, luk: 0)
     |> put_hit(200)
     |> put_critical(0)
   end
 
   defp defender do
-    CombatTestHelper.create_mob_combatant(agi: 0, luk: 0, def: 0)
+    build(:mob_combatant, agi: 0, luk: 0, def: 0)
     |> put_flee(0)
     |> put_perfect_dodge(0)
   end
@@ -518,16 +512,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
   end
 
   defp hand(slot, base_atk \\ 100, subtype \\ :dagger) do
-    %WeaponHand{
-      weapon_level: 1,
+    build(:weapon_hand,
       item_id: if(subtype == :katar, do: @katar_id, else: @dagger_id),
       subtype: subtype,
-      element: :neutral,
       base_atk: base_atk,
-      refine_atk: 0,
-      overrefine_band: 0,
       slot: slot
-    }
+    )
   end
 
   defp zero_rate_flee do
@@ -538,7 +528,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
   end
 
   defp put_star_atk(combatant, star_atk),
-    do: put_in(combatant, [Access.key!(:combat_stats), :physical_attack, :star_atk], star_atk)
+    do:
+      put_in(
+        combatant,
+        [Access.key!(:combat_stats), Access.key(:physical_attack), :star_atk],
+        star_atk
+      )
 
   defp put_hit(combatant, hit), do: put_in(combatant.combat_stats.hit, hit)
   defp put_flee(combatant, flee), do: put_in(combatant.combat_stats.flee, flee)

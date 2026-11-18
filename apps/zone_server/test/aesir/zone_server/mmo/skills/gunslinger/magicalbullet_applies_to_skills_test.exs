@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Gunslinger.MagicalbulletAppliesToSkillsTes
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
@@ -30,12 +31,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Gunslinger.MagicalbulletAppliesToSkillsTes
     stub(RaceModifiers, :player_race, fn -> :human end)
     stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
-    attacker = CombatTestHelper.create_player_combatant(flat_atk: 101)
+    attacker = build(:player_combatant, flat_atk: 101)
     stats = Map.merge(attacker.combat_stats, %{matk_min: 100, matk_max: 101})
 
     %{
       attacker: %{attacker | combat_stats: stats},
-      defender: CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0)
+      defender: build(:mob_combatant, def: 0, soft_def: 0)
     }
   end
 

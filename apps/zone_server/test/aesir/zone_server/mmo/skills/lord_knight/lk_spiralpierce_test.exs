@@ -2,8 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
@@ -46,7 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
     assert :ok = PlayerCaster.check_weapon(caster, definition)
 
     stub(Combat, :resolve_combatant, fn 6_160 ->
-      {:ok, CombatTestHelper.create_mob_combatant(unit_id: 6_160, size: :medium)}
+      {:ok, build(:mob_combatant, unit_id: 6_160, size: :medium)}
     end)
 
     expect(Combat, :execute_skill_attack, fn ^caster, 6_160, opts ->
@@ -79,7 +80,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
     assert :ok = PlayerCaster.check_weapon(caster, definition)
 
     stub(Combat, :resolve_combatant, fn 6_160 ->
-      {:ok, CombatTestHelper.create_mob_combatant(unit_id: 6_160, size: :small)}
+      {:ok, build(:mob_combatant, unit_id: 6_160, size: :small)}
     end)
 
     expect(Combat, :execute_skill_attack, fn ^caster, 6_160, opts ->
@@ -119,7 +120,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
     target_ref = {:player, 6_161}
 
     stub(Combat, :resolve_combatant, fn ^target_ref ->
-      {:ok, CombatTestHelper.create_player_combatant(unit_id: 6_161)}
+      {:ok, build(:player_combatant, unit_id: 6_161)}
     end)
 
     expect(Combat, :execute_skill_attack, fn ^caster, ^target_ref, opts ->
@@ -145,10 +146,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
 
     stub(Combat, :resolve_combatant, fn
       {:player, 6_161} ->
-        {:ok, CombatTestHelper.create_player_combatant(unit_id: 6_161)}
+        {:ok, build(:player_combatant, unit_id: 6_161)}
 
       {:player, 6_162} ->
-        {:ok, CombatTestHelper.create_player_combatant(unit_id: 6_162, size: :large)}
+        {:ok, build(:player_combatant, unit_id: 6_162, size: :large)}
     end)
 
     # Classic Attack..Attack2 is 0..0; only the skill's (STR 50 / 10)^2 adds 25.
@@ -173,7 +174,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
     {:ok, definition} = Catalog.by_name(:lk_spiralpierce)
 
     stub(Combat, :resolve_combatant, fn {:player, 6_161} ->
-      {:ok, CombatTestHelper.create_player_combatant(unit_id: 6_161, size: :small)}
+      {:ok, build(:player_combatant, unit_id: 6_161, size: :small)}
     end)
 
     expect(Combat, :execute_skill_attack, fn ^caster, {:player, 6_161}, opts ->
@@ -191,7 +192,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
     {:ok, definition} = Catalog.by_name(:lk_spiralpierce)
 
     stub(Combat, :resolve_combatant, fn {:player, 6_161} ->
-      {:ok, CombatTestHelper.create_player_combatant(unit_id: 6_161)}
+      {:ok, build(:player_combatant, unit_id: 6_161)}
     end)
 
     expect(Combat, :execute_skill_attack, fn ^caster, {:player, 6_161}, opts ->
@@ -211,7 +212,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
     {:ok, definition} = Catalog.by_name(:lk_spiralpierce)
 
     stub(Combat, :resolve_combatant, fn {:player, 6_161} ->
-      {:ok, CombatTestHelper.create_player_combatant(unit_id: 6_161)}
+      {:ok, build(:player_combatant, unit_id: 6_161)}
     end)
 
     stub(Combat, :execute_skill_attack, fn _caster, _target, _opts ->
@@ -237,15 +238,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
     stub(Combat, :resolve_combatant, fn
       6_160 ->
         {:ok,
-         CombatTestHelper.create_mob_combatant(unit_id: 6_160, class: :normal)
+         build(:mob_combatant, unit_id: 6_160, class: :normal)
          |> Map.put(:status_immune, true)}
 
       6_161 ->
-        {:ok, CombatTestHelper.create_mob_combatant(unit_id: 6_161, class: :normal)}
+        {:ok, build(:mob_combatant, unit_id: 6_161, class: :normal)}
 
       6_162 ->
         {:ok,
-         CombatTestHelper.create_mob_combatant(unit_id: 6_162, class: :normal)
+         build(:mob_combatant, unit_id: 6_162, class: :normal)
          |> Map.put(:unit_type, :homunculus)}
     end)
 
@@ -268,7 +269,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
     {:ok, definition} = Catalog.by_name(:lk_spiralpierce)
 
     stub(Combat, :resolve_combatant, fn 6_160 ->
-      {:ok, CombatTestHelper.create_mob_combatant(unit_id: 6_160, class: :normal)}
+      {:ok, build(:mob_combatant, unit_id: 6_160, class: :normal)}
     end)
 
     stub(Combat, :execute_skill_attack, fn _caster, 6_160, _opts -> {:ok, %{hit?: true}} end)
@@ -291,12 +292,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
       6_160 ->
         {:ok,
          %{
-           CombatTestHelper.create_mob_combatant(unit_id: 6_160, class: :boss)
+           build(:mob_combatant, unit_id: 6_160, class: :boss)
            | status_immune: true
          }}
 
       6_161 ->
-        {:ok, CombatTestHelper.create_mob_combatant(unit_id: 6_161, class: :normal)}
+        {:ok, build(:mob_combatant, unit_id: 6_161, class: :normal)}
     end)
 
     stub(Combat, :execute_skill_attack, fn _caster, target_id, _opts ->

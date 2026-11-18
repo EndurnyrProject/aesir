@@ -3,9 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Map.MapFlags
@@ -481,14 +481,14 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
     castle: castle
   } do
     attacker =
-      CombatTestHelper.create_player_combatant(
+      build(:player_combatant,
         unit_id: 10_001,
         position: castle.emperium,
         map_name: castle.map
       )
 
     target =
-      CombatTestHelper.create_mob_combatant(
+      build(:mob_combatant,
         unit_id: @emperium_unit_id,
         monster_id: @emperium_mob_id,
         position: castle.emperium,
@@ -515,7 +515,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
   end
 
   defp player_combatant(guild_id, castle) do
-    CombatTestHelper.create_player_combatant(
+    build(:player_combatant,
       unit_id: 10_001,
       position: castle.emperium,
       map_name: castle.map
@@ -528,7 +528,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
   end
 
   defp emperium_combatant(castle, unit_id \\ @emperium_unit_id) do
-    CombatTestHelper.create_mob_combatant(
+    build(:mob_combatant,
       unit_id: unit_id,
       monster_id: @emperium_mob_id,
       position: castle.emperium,

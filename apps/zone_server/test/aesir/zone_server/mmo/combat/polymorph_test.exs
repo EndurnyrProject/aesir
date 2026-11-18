@@ -3,14 +3,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PolymorphTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Net.SpriteChange
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.MobManagement
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.PolymorphPool
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -22,7 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PolymorphTest do
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
-  setup :set_mimic_private
+  setup :set_mimic_from_context
   setup :setup_ets_tables
 
   test "class-change bonuses overwrite rather than sum, and ammunition cannot contribute" do
@@ -39,8 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PolymorphTest do
 
   test "changing a monster's attack delay cannot move its already established deadline" do
     {:ok, data} = MobManagement.get_mob_by_id(1002)
-    spawn = %MobSpawn{mob: 1002, amount: 1, respawn_time: 5000, spawn_area: nil}
-    state = MobState.new(919, data, spawn, "prontera", 100, 100)
+    state = build(:mob_state, instance_id: 919, mob_data: data)
     delayed = MobState.start_attack_delay(state, 10_000)
     deadline = 10_000 + MobState.get_attack_delay(state)
     changed = %{delayed | calculated: %{delayed.calculated | adelay: 5000, amotion: 4000}}
@@ -53,9 +53,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PolymorphTest do
   test "a form change rebuilds vitals but retains its level, loot, elapsed attack delay and fired effects" do
     {:ok, data} = MobManagement.get_mob_by_id(1002)
     {:ok, replacement} = MobManagement.get_mob_by_id(1001)
-    spawn = %MobSpawn{mob: 1002, amount: 1, respawn_time: 5000, spawn_area: nil}
     item = GroundItem.new(501, 3, 100, 100)
-    state = MobState.new(919, data, spawn, "prontera", 100, 100)
+    state = build(:mob_state, instance_id: 919, mob_data: data)
     state = MobState.start_attack_delay(state, 10_000)
 
     state = %{
@@ -108,8 +107,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PolymorphTest do
 
   test "a form change refuses an unchanged, unknown, treasure, guardian or summon form" do
     {:ok, data} = MobManagement.get_mob_by_id(1002)
-    spawn = %MobSpawn{mob: 1002, amount: 1, respawn_time: 5000, spawn_area: nil}
-    state = MobState.new(919, data, spawn, "prontera", 100, 100)
+    state = build(:mob_state, instance_id: 919, mob_data: data)
     UnitRegistry.register_unit(:mob, 919, MobState, state, self())
     stub(Broadcast, :to_in_range, fn _, _, _, _, _packet -> :ok end)
 
@@ -131,8 +129,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PolymorphTest do
 
   test "a form change resets the snapshot and later selections restore only what they select" do
     {:ok, data} = MobManagement.get_mob_by_id(1002)
-    spawn = %MobSpawn{mob: 1002, amount: 1, respawn_time: 5000, spawn_area: nil}
-    state = MobState.new(919, data, spawn, "prontera", 100, 100)
+    state = build(:mob_state, instance_id: 919, mob_data: data)
     UnitRegistry.register_unit(:mob, 919, MobState, state, self())
     SpatialIndex.add_unit(:mob, 919, 100, 100, "prontera")
     stub(Broadcast, :to_in_range, fn _, _, _, _, _packet -> :ok end)
@@ -164,8 +161,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PolymorphTest do
 
   test "a form change cancels an in-flight cast without writing a cooldown" do
     {:ok, data} = MobManagement.get_mob_by_id(1002)
-    spawn = %MobSpawn{mob: 1002, amount: 1, respawn_time: 5000, spawn_area: nil}
-    state = MobState.new(919, data, spawn, "prontera", 100, 100)
+    state = build(:mob_state, instance_id: 919, mob_data: data)
     timer = Process.send_after(self(), :stale_cast, 60_000)
 
     state = %{
@@ -186,19 +182,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PolymorphTest do
   end
 
   test "a form change without full recovery keeps the HP percentage and the damage history" do
-    previous = Application.get_env(:zone_server, :monster_class_change_full_recover)
-    Application.put_env(:zone_server, :monster_class_change_full_recover, false)
-
-    on_exit(fn ->
-      Application.put_env(:zone_server, :monster_class_change_full_recover, previous)
-    end)
+    stub(Config, :monster_class_change_full_recover?, fn -> false end)
 
     {:ok, data} = MobManagement.get_mob_by_id(1002)
     # A large old form makes a low percentage round to zero, which is the
     # branch the source floors at 1 HP.
     data = %{data | hp: 5_000}
-    spawn = %MobSpawn{mob: 1002, amount: 1, respawn_time: 5000, spawn_area: nil}
-    state = MobState.new(919, data, spawn, "prontera", 100, 100)
+    state = build(:mob_state, instance_id: 919, mob_data: data)
     state = %{state | hp: div(state.calculated.max_hp, 2), aggro_list: %{17 => 99}}
     UnitRegistry.register_unit(:mob, 919, MobState, state, self())
     SpatialIndex.add_unit(:mob, 919, 100, 100, "prontera")

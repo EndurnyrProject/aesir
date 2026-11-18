@@ -2,8 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
   use ExUnit.Case, async: true
   import Mimic
   import Aesir.ZoneServer.TrapTestHelper
+  import Aesir.ZoneServer.Factory
 
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -29,9 +29,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
   end
 
   test "Water damage overrides a Fire endow and cannot crit at maximum CRI" do
-    attacker = CombatTestHelper.create_player_combatant(luk: 0, flat_atk: 100)
-    attacker = put_in(attacker.combat_stats[:critical_rate], 1_000)
-    defender = CombatTestHelper.create_mob_combatant(element: {:fire, 1}, def: 0)
+    attacker = build(:player_combatant, luk: 0, flat_atk: 100)
+    attacker = put_in(attacker.combat_stats.critical_rate, 1_000)
+    defender = build(:mob_combatant, element: {:fire, 1}, def: 0)
 
     stub(ModifierCalculator, :get_all_modifiers, fn
       :player, 1001 -> %{attack_element: :fire}

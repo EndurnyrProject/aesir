@@ -3,10 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
-  alias Aesir.Commons.Models.Character
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
@@ -24,7 +23,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack.PreparedHit
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -58,18 +56,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   setup :verify_on_exit!
   setup :setup_ets_tables
 
-  setup do
-    Mimic.copy(Cell)
-    Mimic.copy(MapCache)
-    Mimic.copy(EquipProcDispatch)
-    Mimic.copy(EquipComa)
-    Mimic.copy(EquipVanish)
-    Mimic.copy(Knockback)
-    Mimic.copy(MiscDamageCalculator)
-    Mimic.copy(OnHitEffects)
-    :ok
-  end
-
   defp autobonus(trigger, battle_flag, source_order) do
     %{
       trigger: trigger,
@@ -84,37 +70,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     setup :set_mimic_private
 
     setup do
-      Mimic.copy(HitCalculations)
-
       caster =
-        PlayerState.new(%Character{
-          id: 1001,
-          account_id: 1001,
-          name: "Crit caster",
-          class: 0,
-          sex: "M",
-          last_map: "prontera",
-          last_x: 100,
-          last_y: 100,
-          base_level: 50,
-          str: 50,
-          dex: 1,
-          luk: 0,
-          hp: 100,
-          sp: 100
-        })
+        PlayerState.new(
+          Aesir.Factory.build(:character,
+            id: 1001,
+            account_id: 1001,
+            name: "Crit caster",
+            class: 0,
+            sex: "M",
+            last_map: "prontera",
+            last_x: 100,
+            last_y: 100,
+            base_level: 50,
+            str: 50,
+            dex: 1,
+            luk: 0,
+            hp: 100,
+            sp: 100
+          )
+        )
 
       {:ok, definition} = Mobs.by_id(1002)
       definition = %{definition | stats: %{definition.stats | agi: 9999, luk: 0}, def: 9999}
 
-      spawn = %MobSpawn{
-        mob: 1002,
-        amount: 1,
-        respawn_time: 5000,
-        spawn_area: %MobSpawn.SpawnArea{x: 101, y: 100, xs: 0, ys: 0}
-      }
-
-      mob = MobState.new(2001, definition, spawn, "prontera", 101, 100)
+      mob = build(:mob_state, instance_id: 2001, mob_data: definition, x: 101, y: 100)
       attacker = PlayerState.to_combatant(caster)
       target = MobState.to_combatant(mob)
 
@@ -342,9 +321,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   test "hit_rate_bonus_flat reaches the single-target hit roll" do
-    Mimic.copy(HitCalculations)
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
-    target = CombatTestHelper.create_player_combatant(unit_id: 2001, position: {101, 100})
+    attacker = build(:player_combatant, unit_id: 1001, position: {100, 100})
+    target = build(:player_combatant, unit_id: 2001, position: {101, 100})
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %TestUnit{combatant: target, hp: 100}
 
@@ -375,15 +353,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     wrong_key = {10, 1}
 
     attacker =
-      CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
-      |> Map.put(:equip_autobonuses, %{
-        attacker_key => autobonus(:attack, flag, 0),
-        wrong_key => autobonus(:attack, BattleFlags.build(:misc, :long, true), 1)
-      })
+      build(:player_combatant,
+        unit_id: 1001,
+        position: {100, 100},
+        equip_autobonuses: %{
+          attacker_key => autobonus(:attack, flag, 0),
+          wrong_key => autobonus(:attack, BattleFlags.build(:misc, :long, true), 1)
+        }
+      )
 
     target =
-      CombatTestHelper.create_player_combatant(unit_id: 2001, position: {101, 100})
-      |> Map.put(:equip_autobonuses, %{defender_key => autobonus(:when_hit, flag, 0)})
+      build(:player_combatant,
+        unit_id: 2001,
+        position: {101, 100},
+        equip_autobonuses: %{defender_key => autobonus(:when_hit, flag, 0)}
+      )
 
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %TestUnit{combatant: target, hp: 100}
@@ -443,14 +427,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     defender_key = {40, 0}
     wrong_key = {40, 1}
 
-    attacker = CombatTestHelper.create_mob_combatant(unit_id: 3001, position: {100, 100})
+    attacker = build(:mob_combatant, unit_id: 3001, position: {100, 100})
 
     target =
-      CombatTestHelper.create_player_combatant(unit_id: 2001, position: {101, 100})
-      |> Map.put(:equip_autobonuses, %{
-        defender_key => autobonus(:when_hit, flag, 0),
-        wrong_key => autobonus(:when_hit, BattleFlags.build(:weapon, :long, true), 1)
-      })
+      build(:player_combatant,
+        unit_id: 2001,
+        position: {101, 100},
+        equip_autobonuses: %{
+          defender_key => autobonus(:when_hit, flag, 0),
+          wrong_key => autobonus(:when_hit, BattleFlags.build(:weapon, :long, true), 1)
+        }
+      )
 
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %TestUnit{combatant: target, hp: 100}
@@ -514,15 +501,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     wrong_key = {30, 1}
 
     attacker =
-      CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
-      |> Map.put(:equip_autobonuses, %{
-        attacker_key => autobonus(:attack, flag, 0),
-        wrong_key => autobonus(:attack, BattleFlags.build(:weapon, :short, true), 1)
-      })
+      build(:player_combatant,
+        unit_id: 1001,
+        position: {100, 100},
+        equip_autobonuses: %{
+          attacker_key => autobonus(:attack, flag, 0),
+          wrong_key => autobonus(:attack, BattleFlags.build(:weapon, :short, true), 1)
+        }
+      )
 
     target =
-      CombatTestHelper.create_player_combatant(unit_id: 2001, position: {101, 100})
-      |> Map.put(:equip_autobonuses, %{defender_key => autobonus(:when_hit, flag, 0)})
+      build(:player_combatant,
+        unit_id: 2001,
+        position: {101, 100},
+        equip_autobonuses: %{defender_key => autobonus(:when_hit, flag, 0)}
+      )
 
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %TestUnit{combatant: target, hp: 100}
@@ -572,13 +565,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
 
   test "positive divisions normalize one calculation once before delivery" do
     attacker =
-      CombatTestHelper.create_player_combatant(
+      build(:player_combatant,
         unit_id: 1001,
         position: {100, 100},
         attack_range: 1
       )
 
-    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    target = build(:mob_combatant, unit_id: 2001, position: {101, 100})
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %TestUnit{combatant: target, hp: 1_000}
     test_pid = self()
@@ -666,8 +659,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   test "only a skill that declares ammunition resolves in the arrow-attack state" do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
-    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    attacker = build(:player_combatant, unit_id: 1001, position: {100, 100})
+    target = build(:mob_combatant, unit_id: 2001, position: {101, 100})
     caster_state = %TestUnit{combatant: attacker, hp: 100, x: 100, y: 100}
     target_state = %TestUnit{combatant: target, hp: 1_000, x: 101, y: 100}
     test_pid = self()
@@ -715,8 +708,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   test "negative divisions floor the total to an equal split before the target sees it" do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
-    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    attacker = build(:player_combatant, unit_id: 1001, position: {100, 100})
+    target = build(:mob_combatant, unit_id: 2001, position: {101, 100})
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %TestUnit{combatant: target, hp: 1_000}
     test_pid = self()
@@ -755,10 +748,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
 
   test "Stave Crasher hands one half-open MATK roll and its range class to the calculator" do
     attacker =
-      CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
+      build(:player_combatant, unit_id: 1001, position: {100, 100})
       |> Map.update!(:combat_stats, &Map.merge(&1, %{matk: 101, matk_min: 100, matk_max: 101}))
 
-    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    target = build(:mob_combatant, unit_id: 2001, position: {101, 100})
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %TestUnit{combatant: target, hp: 1_000}
 
@@ -794,7 +787,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   test "a monster's skill hit is short within 3 cells and long beyond, whatever it declares" do
-    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {100, 100})
+    target = build(:mob_combatant, unit_id: 2001, position: {100, 100})
     target_state = %TestUnit{combatant: target, hp: 1_000}
     test_pid = self()
 
@@ -818,7 +811,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
 
     for {position, short?} <- [{{103, 97}, true}, {{104, 100}, false}] do
       attacker =
-        CombatTestHelper.create_mob_combatant(unit_id: 2002, position: position)
+        build(:mob_combatant, unit_id: 2002, position: position)
         |> Map.put(:attack_range, 1)
 
       assert {:ok, %{hit?: true}} =
@@ -838,7 +831,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   test "a player's skill hit takes its class from the skill's range, not the weapon's reach" do
-    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    target = build(:mob_combatant, unit_id: 2001, position: {101, 100})
     target_state = %TestUnit{combatant: target, hp: 1_000}
     test_pid = self()
 
@@ -864,8 +857,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     # Bash (1 cell) with a bow's reach, Spear Stab (4 cells) with a fist's.
     for {skill_id, attack_range, short?} <- [{5, 9, true}, {58, 1, false}] do
       attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
-        |> Map.put(:attack_range, attack_range)
+        build(:player_combatant, unit_id: 1001, position: {100, 100}, attack_range: attack_range)
 
       assert {:ok, %{hit?: true}} =
                SkillAttack.execute_skill_attack(
@@ -885,8 +877,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   test "equipment skill blow needs a damaging hit and floors signed totals" do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
-    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    attacker = build(:player_combatant, unit_id: 1001, position: {100, 100})
+    target = build(:mob_combatant, unit_id: 2001, position: {101, 100})
     target_state = %TestUnit{combatant: target, hp: 100}
     map_name = target.map_name
 
@@ -961,10 +953,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
 
   test "connected HP-less no-report attacks deliver once and retain equipment knockback" do
     attacker =
-      CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
-      |> Map.replace!(:equip_modifiers, %{{:add_skill_blow, 7} => 2})
+      build(:player_combatant,
+        unit_id: 1001,
+        position: {100, 100},
+        equip_modifiers: %{{:add_skill_blow, 7} => 2}
+      )
 
-    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    target = build(:mob_combatant, unit_id: 2001, position: {101, 100})
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %HpLessUnit{combatant: target}
     map_name = target.map_name
@@ -1021,13 +1016,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   test "staged HP-less misses and calculation errors return before delivery" do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
+    attacker = build(:player_combatant, unit_id: 1001, position: {100, 100})
 
-    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    target = build(:mob_combatant, unit_id: 2001, position: {101, 100})
 
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %HpLessUnit{combatant: target}
-    Mimic.copy(HitCalculations)
     stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :miss end)
 
     stub(TargetResolver, :resolve, fn {:mob, 2001} ->
@@ -1064,13 +1058,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
 
   test "one coma decision marks the whole normalized attack and guarantees survival" do
     attacker =
-      CombatTestHelper.create_player_combatant(
+      build(:player_combatant,
         unit_id: 1001,
         position: {100, 100},
         attack_range: 1
       )
 
-    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    target = build(:mob_combatant, unit_id: 2001, position: {101, 100})
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %TestUnit{combatant: target, hp: 100}
 
@@ -1128,8 +1122,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   test "staged physical hits fix coma during preparation and retain it through delayed delivery" do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
-    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    attacker = build(:player_combatant, unit_id: 1001, position: {100, 100})
+    target = build(:mob_combatant, unit_id: 2001, position: {101, 100})
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %TestUnit{combatant: target, hp: 100}
     test_pid = self()
@@ -1188,9 +1182,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   test "physical splash targets make independent coma decisions" do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
-    first = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
-    second = CombatTestHelper.create_mob_combatant(unit_id: 2002, position: {102, 100})
+    attacker = build(:player_combatant, unit_id: 1001, position: {100, 100})
+    first = build(:mob_combatant, unit_id: 2001, position: {101, 100})
+    second = build(:mob_combatant, unit_id: 2002, position: {102, 100})
     caster_state = %TestUnit{combatant: attacker, hp: 100, x: 100, y: 100}
     first_state = %TestUnit{combatant: first, hp: 100, x: 101, y: 100}
     second_state = %TestUnit{combatant: second, hp: 100, x: 102, y: 100}
@@ -1264,13 +1258,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   test "a missed attack rolls coma and delivers nothing when the roll fails" do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
+    attacker = build(:player_combatant, unit_id: 1001, position: {100, 100})
 
-    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    target = build(:mob_combatant, unit_id: 2001, position: {101, 100})
 
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %TestUnit{combatant: target, hp: 100}
-    Mimic.copy(HitCalculations)
     stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :miss end)
 
     stub(TargetResolver, :resolve, fn {:mob, 2001} ->
@@ -1298,12 +1291,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
 
   describe "a fled skill attack" do
     setup do
-      attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
-      target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+      attacker = build(:player_combatant, unit_id: 1001, position: {100, 100})
+      target = build(:mob_combatant, unit_id: 2001, position: {101, 100})
       caster_state = %TestUnit{combatant: attacker, hp: 100}
       target_state = %TestUnit{combatant: target, hp: 100}
 
-      Mimic.copy(HitCalculations)
       stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :miss end)
       stub(TargetResolver, :resolve, fn {:mob, 2001} -> {:ok, self(), target_state, :mob} end)
       stub(TargetResolver, :ensure_targetable, fn ^target_state, :mob -> :ok end)
@@ -1367,8 +1359,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   test "a connected attack quantized to zero still rolls coma" do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
-    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    attacker = build(:player_combatant, unit_id: 1001, position: {100, 100})
+    target = build(:mob_combatant, unit_id: 2001, position: {101, 100})
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %TestUnit{combatant: target, hp: 100}
 
@@ -1398,8 +1390,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   test "a consumed coma roll does not mutate an owner when absorption reduces final damage to zero" do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
-    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    attacker = build(:player_combatant, unit_id: 1001, position: {100, 100})
+    target = build(:mob_combatant, unit_id: 2001, position: {101, 100})
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %TestUnit{combatant: target, hp: 100}
 
@@ -1441,8 +1433,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   test "a hit a blocking status stops reports a block, not a hit" do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
-    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    attacker = build(:player_combatant, unit_id: 1001, position: {100, 100})
+    target = build(:mob_combatant, unit_id: 2001, position: {101, 100})
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %TestUnit{combatant: target, hp: 100}
 
@@ -1469,8 +1461,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   test "a player's attack totalling below 1 shows one division" do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
-    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    attacker = build(:player_combatant, unit_id: 1001, position: {100, 100})
+    target = build(:mob_combatant, unit_id: 2001, position: {101, 100})
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %TestUnit{combatant: target, hp: 100}
     test_pid = self()
@@ -1503,8 +1495,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   test "physical coma marker reaches a player target owner" do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
-    target = CombatTestHelper.create_player_combatant(unit_id: 2001, position: {101, 100})
+    attacker = build(:player_combatant, unit_id: 1001, position: {100, 100})
+    target = build(:player_combatant, unit_id: 2001, position: {101, 100})
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %TestUnit{combatant: target, hp: 100}
 
@@ -1542,11 +1534,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   test "physical coma marker reaches a Homunculus owner" do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
+    attacker = build(:player_combatant, unit_id: 1001, position: {100, 100})
 
     target =
-      CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
-      |> Map.replace!(:unit_type, :homunculus)
+      build(:mob_combatant, unit_id: 2001, position: {101, 100}, unit_type: :homunculus)
 
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %TestUnit{combatant: target, hp: 100}
@@ -1594,11 +1585,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   test "a targetable skill unit receives ordinary physical damage without coma" do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
+    attacker = build(:player_combatant, unit_id: 1001, position: {100, 100})
 
     target =
-      CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
-      |> Map.replace!(:unit_type, :skill_unit)
+      build(:mob_combatant, unit_id: 2001, position: {101, 100}, unit_type: :skill_unit)
 
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %TestUnit{combatant: target, hp: 100}
@@ -1642,20 +1632,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   test "mob and Homunculus skill attackers cannot receive equipment coma" do
-    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    target = build(:mob_combatant, unit_id: 2001, position: {101, 100})
     target_state = %TestUnit{combatant: target, hp: 100}
     test_pid = self()
 
     attackers =
       for {unit_type, unit_id} <- [mob: 3001, homunculus: 3002] do
-        combatant =
-          CombatTestHelper.create_player_combatant(unit_id: unit_id, position: {100, 100})
-
-        %{
-          combatant
-          | unit_type: unit_type,
-            equip_modifiers: %{{:coma_race, target.race} => 10_000}
-        }
+        build(:player_combatant,
+          unit_id: unit_id,
+          position: {100, 100},
+          unit_type: unit_type,
+          equip_modifiers: %{{:coma_race, target.race} => 10_000}
+        )
       end
 
     stub(TargetResolver, :resolve, fn {:mob, 2001} ->
@@ -1712,14 +1700,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
 
   test "forced no-card single hits without a flee roll" do
     attacker =
-      CombatTestHelper.create_player_combatant(
+      build(:player_combatant,
         unit_id: 1001,
         position: {100, 100},
         attack_range: 1
       )
 
     target =
-      CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {109, 100})
+      build(:mob_combatant, unit_id: 2001, position: {109, 100})
       |> Map.update!(:combat_stats, &Map.put(&1, :perfect_dodge, 1_000))
 
     caster_state = %TestUnit{combatant: attacker, hp: 100}
@@ -1776,30 +1764,28 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   test "no-card delivery omits every attacker card, Dragonology included, but retains DEF-ignore and global hooks" do
-    attacker = %{
-      CombatTestHelper.create_player_combatant(
+    attacker =
+      build(:player_combatant,
         unit_id: 1001,
         position: {100, 100},
-        weapon_type: :sword
-      )
-      | dragonology_level: 5,
+        weapon_type: :sword,
+        dragonology_level: 5,
         equip_modifiers: %{
           {:addrace, :dragon} => 100,
           {:ignore_def_race, :dragon} => 100,
           {:skill_atk, 1004} => 20,
           long_atk_rate: 25
         }
-    }
+      )
 
-    target = %{
-      CombatTestHelper.create_mob_combatant(
+    target =
+      build(:mob_combatant,
         unit_id: 2001,
         position: {109, 100},
         race: :dragon,
-        def: 100
+        def: 100,
+        equip_modifiers: %{{:subrace, :human} => 10}
       )
-      | equip_modifiers: %{{:subrace, :human} => 10}
-    }
 
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %TestUnit{combatant: target, hp: 10_000}
@@ -1854,10 +1840,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   test "forced no-card splash forces each hit" do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
+    attacker = build(:player_combatant, unit_id: 1001, position: {100, 100})
 
     target =
-      CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+      build(:mob_combatant, unit_id: 2001, position: {101, 100})
       |> Map.update!(:combat_stats, &Map.put(&1, :perfect_dodge, 1_000))
 
     caster_state = %TestUnit{combatant: attacker, hp: 100, x: 100, y: 100}
@@ -1902,9 +1888,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     @gravitation 484
 
     setup do
-      Mimic.copy(HitCalculations)
-      attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
-      target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+      attacker = build(:player_combatant, unit_id: 1001, position: {100, 100})
+      target = build(:mob_combatant, unit_id: 2001, position: {101, 100})
       caster_state = %TestUnit{combatant: attacker, hp: 100, x: 100, y: 100}
       target_state = %TestUnit{combatant: target, hp: 100, x: 101, y: 100}
 

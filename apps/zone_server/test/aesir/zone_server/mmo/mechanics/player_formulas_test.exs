@@ -2,10 +2,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
   use ExUnit.Case, async: true
 
   import Mimic
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
@@ -72,7 +72,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     stats = Calculator.calculate_combat_stats(stats_fixture())
 
     attacker = %{
-      CombatTestHelper.create_player_combatant()
+      build(:player_combatant)
       | base_stats: stats.base_stats,
         progression: stats.progression,
         combat_stats: stats.combat_stats
@@ -105,7 +105,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
       |> Calculator.calculate_combat_stats()
 
     attacker = %{
-      CombatTestHelper.create_player_combatant(weapon_type: :dagger)
+      build(:player_combatant, weapon_type: :dagger)
       | base_stats: stats.base_stats,
         progression: stats.progression,
         combat_stats: stats.combat_stats,
@@ -114,7 +114,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     }
 
     defender =
-      CombatTestHelper.create_mob_combatant(
+      build(:mob_combatant,
         def: 0,
         soft_def: 0,
         size: :large,
@@ -202,7 +202,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     assert Map.fetch!(stats.combat_stats, :soft_def) == expected_soft
 
     defender = %{
-      CombatTestHelper.create_player_combatant()
+      build(:player_combatant)
       | base_stats: stats.base_stats,
         progression: stats.progression,
         combat_stats: stats.combat_stats,
@@ -224,7 +224,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     expected_status = if GameMode.mode() == :renewal, do: 833, else: 628
     assert {:ok, ^expected_status} = DamageCalculator.apply_defense_formula(1_000, boosted)
 
-    attacker = CombatTestHelper.create_mob_combatant()
+    attacker = build(:mob_combatant)
     opts = [base_damage: 1_000, skip_crit: true]
     expected_ignore_status = if GameMode.mode() == :renewal, do: 937, else: 700
 
@@ -240,12 +240,12 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
 
   test "legacy player defense derives soft DEF only when its snapshot is absent" do
     stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
-    defender = CombatTestHelper.create_player_combatant(vit: 30, agi: 4, base_level: 7)
+    defender = build(:player_combatant, vit: 30, agi: 4, base_level: 7)
     defender = put_in(defender.combat_stats.def, 0)
     expected = if GameMode.mode() == :renewal, do: 981, else: 970
     assert {:ok, ^expected} = DamageCalculator.apply_defense_formula(1_000, defender)
 
-    supplied = put_in(defender.combat_stats[:soft_def], 10)
+    supplied = put_in(defender.combat_stats.soft_def, 10)
     assert {:ok, 990} = DamageCalculator.apply_defense_formula(1_000, supplied)
   end
 
@@ -401,18 +401,16 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     assert Map.take(result.combat_stats, Map.keys(zero_slots)) === zero_slots
     assert result.combat_stats.hplus === 29
 
-    attacker = %{
-      unit_type: :player,
-      unit_id: 1001,
-      combat_stats: %{result.combat_stats | matk: 100, matk_min: 100, matk_max: 100}
-    }
+    attacker =
+      build(:player_combatant,
+        combat_stats: %{result.combat_stats | matk: 100, matk_min: 100, matk_max: 100}
+      )
 
-    defender = %{
-      unit_type: :mob,
-      unit_id: 2001,
-      combat_stats: %{result.combat_stats | mdef: 0, soft_mdef: 0},
-      element: {:neutral, 1}
-    }
+    defender =
+      build(:mob_combatant,
+        combat_stats: %{result.combat_stats | mdef: 0, soft_mdef: 0},
+        element: {:neutral, 1}
+      )
 
     zero_smatk = put_in(attacker.combat_stats.smatk, 0)
     zero_mres = put_in(defender.combat_stats.mres, 0)

@@ -2,7 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.RulesTest do
   use ExUnit.Case, async: false
   use Mimic
 
-  alias Aesir.ZoneServer.CombatTestHelper
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Guild.State, as: GuildState
@@ -160,7 +161,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.RulesTest do
   end
 
   defp player_combatant(guild_id: guild_id) do
-    CombatTestHelper.create_player_combatant(unit_id: 10_001, map_name: "aldeg_cas01")
+    build(:player_combatant, unit_id: 10_001, map_name: "aldeg_cas01")
     |> Map.merge(%{
       guild_id: guild_id,
       social_root: {:player, 10_001},
@@ -169,7 +170,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.RulesTest do
   end
 
   defp guardian_combatant(guild_id: guild_id) do
-    CombatTestHelper.create_mob_combatant(
+    build(:mob_combatant,
       unit_id: 20_101,
       monster_id: 1286,
       map_name: "aldeg_cas01"
@@ -178,7 +179,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.RulesTest do
   end
 
   defp emperium_combatant(castle) do
-    CombatTestHelper.create_mob_combatant(
+    build(:mob_combatant,
       unit_id: 20_001,
       monster_id: 1288,
       map_name: castle.map

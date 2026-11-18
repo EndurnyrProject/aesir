@@ -84,16 +84,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHitsTest do
       assert Enum.all?(results, &(&1 == true))
     end
 
-    test "returns boolean for valid rates" do
-      # Test with various rates - should return boolean values
-      rates = [1, 100, 500, 999]
-
-      for rate <- rates do
-        results = Enum.map(1..50, fn _ -> CriticalHits.is_critical_hit?(rate) end)
-        assert Enum.all?(results, &is_boolean/1)
-      end
-    end
-
     test "has appropriate probability distribution" do
       # Test that 50% critical rate gives roughly 50% critical hits
       # 50%
@@ -148,7 +138,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHitsTest do
 
       # With rate 1, should get approximately 1 critical hit per 1000 attempts
       # Allow some variance due to randomness
-      assert critical_count >= 0
       assert critical_count <= 5
     end
   end

@@ -9,10 +9,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MobCalculatedBoundaryTest do
   use ExUnit.Case, async: true
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
@@ -48,15 +47,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MobCalculatedBoundaryTest do
         size: :medium
       })
 
-    spawn_ref =
-      struct!(MobSpawn, %{
-        mob: 1001,
-        amount: 1,
-        respawn_time: 5000,
-        spawn_area: struct!(SpawnArea, %{x: 30, y: 30})
-      })
+    state =
+      build(:mob_state,
+        instance_id: 1001,
+        mob_data: mob_data,
+        map_name: "boundary_map",
+        x: 30,
+        y: 30
+      )
 
-    state = MobState.new(1001, mob_data, spawn_ref, "boundary_map", 30, 30)
     UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
     state
   end

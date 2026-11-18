@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RelationshipTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.Relationship
@@ -291,7 +293,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RelationshipTest do
     end
 
     test "a monster carrying the caster's guild is an ally" do
-      guardian = Combatant.new!(%{unit_type: :mob, unit_id: 300, guild_id: 3})
+      guardian = build(:mob_combatant, unit_id: 300, guild_id: 3)
       assert Relationship.ally?(player(10, guild_id: 3), guardian, :gvg)
     end
   end
@@ -324,11 +326,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RelationshipTest do
     assert Relationship.enemy?(caster, mob(300), {:gvg, true})
   end
 
-  defp player(id, overrides \\ []) do
-    Combatant.new!(Map.merge(%{unit_type: :player, unit_id: id}, Map.new(overrides)))
-  end
+  defp player(id, overrides \\ []),
+    do: build(:player_combatant, Keyword.put(overrides, :unit_id, id))
 
-  defp mob(id), do: Combatant.new!(%{unit_type: :mob, unit_id: id})
+  defp mob(id), do: build(:mob_combatant, unit_id: id)
 
   defp homunculus(id, owner_id) do
     Combatant.new!(%{

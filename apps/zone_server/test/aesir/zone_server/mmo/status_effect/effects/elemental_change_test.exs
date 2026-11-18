@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ElementalChangeTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
@@ -90,7 +92,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ElementalChangeTest do
   end
 
   defp attack_mob(mob_state) do
-    attacker = CombatTestHelper.create_player_combatant(str: 50)
+    attacker = build(:player_combatant, str: 50)
     defender = MobState.to_combatant(mob_state)
 
     assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender)

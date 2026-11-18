@@ -2,8 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdEternalchaosTest do
   use ExUnit.Case, async: false
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.Models.Character
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
@@ -99,7 +100,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdEternalchaosTest do
     player: player,
     mob: mob
   } do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 8_001, str: 100)
+    attacker = build(:player_combatant, unit_id: 8_001, str: 100)
 
     for {unit_type, unit_id, defender} <- [
           {:player, player.character_id, PlayerState.to_combatant(player)},

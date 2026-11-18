@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsSkintemperTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
@@ -24,7 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsSkintemperTest do
   end
 
   test "learned levels reduce fire damage by 5% and neutral damage by 1% each" do
-    attacker = CombatTestHelper.create_mob_combatant()
+    attacker = build(:mob_combatant)
     unlearned = combatant(0)
 
     assert {:ok, base_damage} =

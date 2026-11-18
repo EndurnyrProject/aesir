@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AttackSpeed do
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
   alias Aesir.ZoneServer.Mmo.JobManagement.JobMapid
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @jobl_third 0x1000
 
@@ -53,13 +54,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AttackSpeed do
   ## Returns
     - Attack delay in milliseconds
   """
-  @spec calculate_delay_from_stats(map()) :: integer()
+  @spec calculate_delay_from_stats(PlayerStats.t()) :: integer()
   def calculate_delay_from_stats(%{derived_stats: %{aspd: aspd}}) do
     calculate_delay(aspd)
   end
 
   @doc "A player's attack motion (status amotion): half its attack delay."
-  @spec amotion_from_stats(map()) :: integer()
+  @spec amotion_from_stats(PlayerStats.t()) :: integer()
   def amotion_from_stats(stats), do: div(calculate_delay_from_stats(stats), 2)
 
   @doc """

@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Gunslinger.PiercingshotRatioTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat
@@ -57,9 +59,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Gunslinger.PiercingshotRatioTest do
     end
 
     test "hard and soft DEF leave the damage untouched" do
-      attacker = CombatTestHelper.create_player_combatant(flat_atk: 101)
-      armored = CombatTestHelper.create_mob_combatant(def: 50, soft_def: 30)
-      bare = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0)
+      attacker = build(:player_combatant, flat_atk: 101)
+      armored = build(:mob_combatant, def: 50, soft_def: 30)
+      bare = build(:mob_combatant, def: 0, soft_def: 0)
 
       assert {:ok, %{damage: ignoring}} =
                DamageCalculator.calculate_damage_ignoring_defense(attacker, armored,

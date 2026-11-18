@@ -10,12 +10,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicStatusWatkTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
-  alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
-  alias Aesir.ZoneServer.Unit.Player.WeaponHand
 
   @moduletag game_mode: :pre_renewal
 
@@ -23,10 +23,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicStatusWatkTest do
   setup :verify_on_exit!
 
   setup do
-    Mimic.copy(ElementModifiers)
-    Mimic.copy(SizeModifiers)
-    Mimic.copy(ModifierCalculator)
-
     stub(SizeModifiers, :get_modifier, fn _, _, _ -> 50 end)
 
     stub(ModifierCalculator, :get_battle_modifiers, fn
@@ -73,28 +69,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicStatusWatkTest do
 
   defp attacker(weapon_level) do
     attacker =
-      CombatTestHelper.create_player_combatant(
+      build(:player_combatant,
         str: 50,
         dex: 0,
         luk: 0,
         base_level: 0,
         weapon_type: :dagger,
-        weapon_element: :neutral
+        weapon_element: :neutral,
+        right_hand: build(:weapon_hand, weapon_level: weapon_level)
       )
 
-    hand = %WeaponHand{
-      item_id: 1,
-      subtype: :dagger,
-      element: :neutral,
-      base_atk: 100,
-      weapon_level: weapon_level,
-      refine_atk: 0,
-      overrefine_band: 0,
-      slot: :right_hand
-    }
-
-    combat_stats = Map.put(attacker.combat_stats, :max_weapon_damage, true)
-    %{attacker | right_hand: hand, combat_stats: combat_stats}
+    %{attacker | combat_stats: %{attacker.combat_stats | max_weapon_damage: true}}
   end
 
   defp with_left_hand(attacker, weapon_level, base_atk) do
@@ -109,5 +94,5 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicStatusWatkTest do
   end
 
   defp defender,
-    do: CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0, element: {:earth, 1})
+    do: build(:mob_combatant, def: 0, soft_def: 0, element: {:earth, 1})
 end

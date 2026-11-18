@@ -3,9 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsWeaponperfectTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.Character
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsWeaponperfect
@@ -84,12 +84,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsWeaponperfectTest do
       |> Calculator.calculate_combat_stats()
 
     %{
-      CombatTestHelper.create_player_combatant(unit_id: player_id, weapon_type: :dagger)
+      build(:player_combatant, unit_id: player_id, weapon_type: :dagger)
       | combat_stats: stats.combat_stats
     }
   end
 
-  defp large_target, do: CombatTestHelper.create_mob_combatant(size: :large)
+  defp large_target, do: build(:mob_combatant, size: :large)
 
   defp player_state(char_id, opts) do
     %Character{

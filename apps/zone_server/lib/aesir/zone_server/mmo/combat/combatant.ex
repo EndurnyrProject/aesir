@@ -1,30 +1,19 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
   @moduledoc """
-  Standardized combatant structure for combat operations.
+  The unit snapshot every combat calculation reads: identity and relationship
+  roots, base and combat stats, element/race/size, weapon hands and the
+  precomputed passive levels.
 
-  This module defines the unified data structure used by all combat systems,
-  replacing the ad-hoc maps previously used for player and mob combat.
-  It provides type safety and a clear contract for combat operations.
+  Each unit module builds one with `to_combatant/1` (`PlayerState`, `MobState`,
+  `HomunculusState`, `Npc.SkillCaster`, skill-unit cells), so attackers and
+  defenders of any type pass through the same functions:
 
-  ## Benefits
-
-  - Type safety through struct definition
-  - Clear documentation of required fields
-  - Consistent interface for all unit types
-  - Easier testing and debugging
-  - Better IDE support
-
-  ## Usage
-
-      # Create combatant from player state
-      player_combatant = Combat.Unit.to_combatant(player_state)
-      
-      # Create combatant from mob state  
-      mob_combatant = Combat.Unit.to_combatant(mob_state)
-      
-      # Both can be used interchangeably in combat functions
-      DamageCalculator.calculate_damage(player_combatant, mob_combatant)
+      attacker = PlayerState.to_combatant(player_state)
+      defender = MobState.to_combatant(mob_state)
+      DamageCalculator.calculate_damage(attacker, defender)
   """
+
+  use TypedStruct
 
   import Bitwise
 
@@ -32,6 +21,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
+  alias Aesir.ZoneServer.Unit.Ref
+  alias Aesir.ZoneServer.Unit.Stats.BaseStats
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
+
+  @typedoc "A combatant's unit type."
+  @type unit_type :: :player | :mob | :npc | :homunculus | :skill_unit
 
   @typedoc """
   Standardized combatant structure containing all data needed for combat calculations.
@@ -49,200 +44,101 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
   `combat_stats.soft_def` is required for `:mob` combatants; it is optional for
   other unit types.
   """
-  @enforce_keys [
-    :unit_id,
-    :unit_type,
-    :base_stats,
-    :combat_stats,
-    :progression,
-    :element,
-    :race,
-    :size,
-    :weapon,
-    :attack_range,
-    :attack_delay_ms
-  ]
-  defstruct [
-    # Unit identification
-    unit_id: nil,
-    unit_type: nil,
-    social_root: nil,
-    reward_root: nil,
-    party_id: 0,
-    guild_id: 0,
+  typedstruct do
+    field :unit_id, integer(), enforce: true
+    field :unit_type, unit_type(), enforce: true
+    field :social_root, Ref.t()
+    field :reward_root, {:player, pos_integer()}
+    field :party_id, non_neg_integer(), default: 0
+    field :guild_id, non_neg_integer(), default: 0
 
-    # Base stats (STR, AGI, VIT, INT, DEX, LUK)
-    base_stats: nil,
+    field :base_stats, BaseStats.t(), enforce: true
+    field :combat_stats, CombatStats.t(), enforce: true
 
-    # Combat-derived stats (physical: atk/def, magic: matk/mdef/soft_mdef)
-    combat_stats: nil,
-    max_hp: nil,
-    max_sp: nil,
-    # Character progression
-    progression: nil,
+    field :max_hp, non_neg_integer()
+    field :max_sp, non_neg_integer()
 
-    # Element data (for damage calculation)
-    element: nil,
+    # Current HP, carried only by skill-unit cells (their durability), so
+    # enemy targeting can refuse a spent cell. Other units keep theirs in state.
+    field :hp, non_neg_integer()
+    field :progression, %{base_level: integer(), job_level: integer()}, enforce: true
+    field :element, tuple() | atom(), enforce: true
 
-    # Race data (secondary groups apply only to mobs; players and homunculi use [])
-    race: nil,
-    race2: [],
-
-    # Size data (for modifier calculation)
-    size: nil,
-
-    # Weapon information
-    weapon: nil,
-    ammo_atk: 0,
-    arrow_element: nil,
-    right_hand: nil,
-    left_hand: nil,
-
-    # Attack range for combat distance calculations
-    attack_range: nil,
+    # Secondary race groups apply only to mobs; players and homunculi use [].
+    field :race, atom(), enforce: true
+    field :race2, [atom()], default: []
+    field :size, atom(), enforce: true
+    field :weapon, %{type: atom(), element: atom(), size: atom()}, enforce: true
+    field :ammo_atk, non_neg_integer(), default: 0
+    field :arrow_element, atom()
+    field :right_hand, WeaponHand.t()
+    field :left_hand, WeaponHand.t()
+    field :attack_range, integer(), enforce: true
 
     # Attack cadence in milliseconds: the delay the combat loop uses to gate
     # attacks. Sent to the client as ZC_NOTIFY_ACT src_speed so the swing
     # animation duration matches real attack speed.
-    attack_delay_ms: nil,
+    field :attack_delay_ms, integer(), enforce: true
 
     # The attack animation length in milliseconds (status amotion): half the
     # attack delay for a player, the whole delay for a Homunculus, the
     # monster's own attack motion for a monster.
-    amotion: nil,
+    field :amotion, non_neg_integer()
 
-    # Position data (optional for some combat operations)
-    position: nil,
-
-    # Map context (optional)
-    map_name: nil,
+    field :position, {integer(), integer()}
+    field :map_name, String.t()
 
     # Passive skill levels precomputed at combatant-build time (0 for mobs).
-    divine_protection_level: 0,
-    demon_bane_level: 0,
-    beast_bane_level: 0,
-    dragonology_level: 0,
-    advanced_katar_level: 0,
-    faith_level: 0,
-    skin_temper_level: 0,
+    field :divine_protection_level, integer(), default: 0
+    field :demon_bane_level, integer(), default: 0
+    field :beast_bane_level, integer(), default: 0
+    field :dragonology_level, integer(), default: 0
+    field :advanced_katar_level, integer(), default: 0
+    field :faith_level, integer(), default: 0
+    field :skin_temper_level, integer(), default: 0
     # Learned levels that extend flagged skill ranges (0 for non-players).
-    vulture_eye_level: 0,
-    snake_eye_level: 0,
+    field :vulture_eye_level, non_neg_integer(), default: 0
+    field :snake_eye_level, non_neg_integer(), default: 0
 
     # Monster class for the class-keyed bonuses and rules. Players are always
     # :normal; a mob's class is derived from its modes (`MobMode.class/1`).
-    class: :normal,
+    field :class, MobMode.class(), default: :normal
 
     # Existing status-immunity mode projected for pure combat policies.
-    status_immune: false,
+    field :status_immune, boolean(), default: false
 
     # Detector mode (insect/demon detectors and every boss-class monster), which
     # sees through Hiding and Cloaking. Only monsters carry it.
-    detector: false,
+    field :detector, boolean(), default: false
 
-    # The monster's infinite-defense modes (`:ignore_melee`, `:ignore_magic`,
-    # `:ignore_ranged`, `:ignore_misc`); see `infinite_defense?/2`.
-    ignore_modes: [],
+    # The monster's infinite-defense modes; see `infinite_defense?/2`.
+    field :ignore_modes, [ignore_mode()], default: []
 
     # Monster database id (mob class), set only for mob defenders. Keys the
     # per-monster physical damage bonus (add_damage_class); nil for players.
-    monster_id: nil,
+    field :monster_id, integer()
 
     # The player whose equipment procs answer for this attacker's hits. Set for
     # a player-owned monster summon (its owner), nil otherwise.
-    proc_owner_id: nil,
+    field :proc_owner_id, integer()
 
     # Whether the attacker is mounted (Peco-Peco). Feeds the mounted-spear
     # size-modifier override; always false for mobs.
-    riding: false,
+    field :riding, boolean(), default: false
 
     # Folded equipment bonus map (players: `stats.modifiers.equipment`;
     # mobs: empty, since mobs carry no equipment).
-    equip_modifiers: %{},
-    magic_reduction: 0,
+    field :equip_modifiers, map(), default: %{}
+    field :magic_reduction, 0..100, default: 0
 
     # Current derived equipment autobonus registrations. Non-player combatants
     # have no equipment, so they retain the safe empty default.
-    equip_autobonuses: %{},
+    field :equip_autobonuses, %{Stats.autobonus_key() => Stats.autobonus_registration()},
+      default: %{}
 
     # Spirit spheres a player held when the combatant was built (0 for others).
-    spirit_spheres: 0
-  ]
-
-  @type t() :: %__MODULE__{
-          unit_id: integer(),
-          unit_type: :player | :mob | :npc | :homunculus | :skill_unit,
-          social_root: Aesir.ZoneServer.Unit.Ref.t() | nil,
-          reward_root: {:player, pos_integer()} | nil,
-          party_id: non_neg_integer(),
-          guild_id: non_neg_integer(),
-          base_stats: %{
-            str: integer(),
-            agi: integer(),
-            vit: integer(),
-            int: integer(),
-            dex: integer(),
-            luk: integer()
-          },
-          combat_stats: %{
-            optional(:ignore_size_penalty) => boolean(),
-            optional(:soft_def) => integer(),
-            atk: integer(),
-            def: integer(),
-            hit: integer(),
-            flee: integer(),
-            perfect_dodge: integer(),
-            matk: integer(),
-            matk_min: integer(),
-            matk_max: integer(),
-            mdef: integer(),
-            soft_mdef: integer()
-          },
-          max_hp: non_neg_integer() | nil,
-          max_sp: non_neg_integer() | nil,
-          progression: %{
-            base_level: integer(),
-            job_level: integer()
-          },
-          element: tuple() | atom(),
-          race: atom(),
-          race2: [atom()],
-          size: atom(),
-          weapon: %{
-            type: atom(),
-            element: atom(),
-            size: atom()
-          },
-          ammo_atk: non_neg_integer(),
-          arrow_element: atom() | nil,
-          right_hand: WeaponHand.t() | nil,
-          left_hand: WeaponHand.t() | nil,
-          attack_range: integer(),
-          attack_delay_ms: integer(),
-          amotion: non_neg_integer() | nil,
-          position: {integer(), integer()} | nil,
-          map_name: String.t() | nil,
-          divine_protection_level: integer(),
-          demon_bane_level: integer(),
-          beast_bane_level: integer(),
-          dragonology_level: integer(),
-          advanced_katar_level: integer(),
-          faith_level: integer(),
-          skin_temper_level: integer(),
-          vulture_eye_level: non_neg_integer(),
-          snake_eye_level: non_neg_integer(),
-          class: MobMode.class(),
-          status_immune: boolean(),
-          detector: boolean(),
-          ignore_modes: [ignore_mode()],
-          monster_id: integer() | nil,
-          proc_owner_id: integer() | nil,
-          riding: boolean(),
-          equip_modifiers: map(),
-          magic_reduction: 0..100,
-          equip_autobonuses: %{Stats.autobonus_key() => Stats.autobonus_registration()},
-          spirit_spheres: non_neg_integer()
-        }
+    field :spirit_spheres, non_neg_integer(), default: 0
+  end
 
   @typedoc "A monster mode that turns every matching hit into a 1-damage contact."
   @type ignore_mode :: :ignore_melee | :ignore_magic | :ignore_ranged | :ignore_misc
@@ -264,10 +160,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
   any misc hit against `:ignore_misc`. The invincibility status and the
   infinite-defense skill units that also grant it are not implemented.
   """
-  @spec infinite_defense?(t() | map(), BattleFlags.flag()) :: boolean()
-  def infinite_defense?(defender, attack_flag) when is_integer(attack_flag) do
-    modes = Map.get(defender, :ignore_modes, [])
-
+  @spec infinite_defense?(t(), BattleFlags.flag()) :: boolean()
+  def infinite_defense?(%__MODULE__{ignore_modes: modes}, attack_flag)
+      when is_integer(attack_flag) do
     (:ignore_melee in modes and (attack_flag &&& @weapon_short) == @weapon_short) or
       (:ignore_magic in modes and (attack_flag &&& @magic) != 0) or
       (:ignore_ranged in modes and (attack_flag &&& @weapon_long) == @weapon_long) or
@@ -275,9 +170,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
   end
 
   @doc """
-  Creates a new combatant struct with validation.
-
-  Validates that all required fields are present and have correct types.
+  Builds a combatant, defaulting the relationship roots of a player, mob or
+  NPC from its unit id and rejecting roots that do not fit its unit type (a
+  homunculus must carry its owner's player roots).
   """
   @spec new(map()) :: {:ok, t()} | {:error, String.t()}
   def new(attrs) when is_map(attrs) do
@@ -303,28 +198,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
       {:error, reason} -> raise ArgumentError, reason
     end
   end
-
-  @doc """
-  Gets the unit identifier for this combatant.
-
-  This is a convenience function that provides a unified way to get
-  the unit ID regardless of the combatant's internal structure.
-  """
-  @spec get_unit_id(t()) :: integer()
-  def get_unit_id(%__MODULE__{unit_id: unit_id}), do: unit_id
-
-  @doc """
-  Gets the unit type for this combatant.
-  """
-  @spec get_unit_type(t()) :: :player | :mob | :npc | :homunculus | :skill_unit
-  def get_unit_type(%__MODULE__{unit_type: unit_type}), do: unit_type
-
-  @doc """
-  Checks if this combatant is a player.
-  """
-  @spec player?(t()) :: boolean()
-  def player?(%__MODULE__{unit_type: :player}), do: true
-  def player?(_), do: false
 
   @doc """
   Checks if this combatant is a mob.

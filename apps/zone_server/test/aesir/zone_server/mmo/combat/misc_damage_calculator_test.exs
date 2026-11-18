@@ -12,19 +12,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculatorTest do
   use Mimic
 
   import Bitwise
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
-  alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
 
   setup :set_mimic_from_context
 
   setup do
     # The flat BF_MISC path now resolves the attacker's status modifiers for the
     # element-ratio seam; default to none so existing damage assertions hold.
-    Mimic.copy(ModifierCalculator)
     stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
     :ok
   end
@@ -42,24 +42,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculatorTest do
   @any_range_weapon_skill BattleFlags.build(:weapon, :short, true) |||
                             BattleFlags.range_bit(:long)
 
-  defp attacker do
-    struct(Combatant,
-      unit_type: :player,
-      unit_id: 1001,
-      combat_stats: %{},
-      race: :demi_human,
-      size: :medium
-    )
-  end
+  defp attacker, do: build(:player_combatant, race: :demi_human)
 
   defp player_defender(equip_modifiers) do
-    struct(Combatant,
-      unit_type: :player,
+    build(:player_combatant,
       unit_id: 3001,
-      combat_stats: %{},
       element: {:neutral, 1},
       race: :demi_human,
-      size: :medium,
       equip_modifiers: equip_modifiers
     )
   end
@@ -67,10 +56,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculatorTest do
   defp misc(opts), do: Keyword.merge([skill_id: @blitz_beat, attack_flag: @short_misc], opts)
 
   defp defender(hard_def, opts \\ []) do
-    struct(Combatant,
-      unit_type: :mob,
-      unit_id: 2001,
-      combat_stats: %{
+    build(:mob_combatant,
+      combat_stats: %CombatStats{
         def: hard_def,
         soft_mdef: Keyword.get(opts, :soft_mdef, 0),
         mdef: Keyword.get(opts, :mdef, 0)
@@ -239,7 +226,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculatorTest do
     end
 
     test "a monster's misc hit also matches the target's weapon-flagged cards" do
-      monster = struct(Combatant, unit_type: :mob, unit_id: 2002, combat_stats: %{}, race: :brute)
+      monster = build(:mob_combatant, unit_id: 2002, race: :brute)
       defender = player_defender(%{{:subrace, {:brute, @any_range_weapon_skill}} => 50})
 
       assert {:ok, %{damage: 500}} =

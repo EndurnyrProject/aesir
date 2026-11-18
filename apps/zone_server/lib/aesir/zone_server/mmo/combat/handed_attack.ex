@@ -20,6 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
   `&:rand.uniform/1`.
   """
 
+  use TypedStruct
+
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.Critical
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
@@ -32,27 +34,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
 
-  @enforce_keys [
-    :primary,
-    :secondary,
-    :raw_total,
-    :display_divisions,
-    :outcome,
-    :primary_element
-  ]
-  defstruct @enforce_keys ++ [stages: nil]
-
   @type outcome :: :hit | :critical | :miss | :perfect_dodge
   @type rng :: (pos_integer() -> pos_integer())
-  @type t :: %__MODULE__{
-          primary: DamageCalculator.damage_result(),
-          secondary: DamageCalculator.damage_result() | nil,
-          raw_total: non_neg_integer(),
-          display_divisions: pos_integer(),
-          outcome: outcome(),
-          primary_element: atom(),
-          stages: OnHitEffects.stages() | nil
-        }
+
+  typedstruct do
+    field :primary, DamageCalculator.damage_result(), enforce: true
+    field :secondary, DamageCalculator.damage_result() | nil, enforce: true
+    field :raw_total, non_neg_integer(), enforce: true
+    field :display_divisions, pos_integer(), enforce: true
+    field :outcome, outcome(), enforce: true
+    field :primary_element, atom(), enforce: true
+    field :stages, OnHitEffects.stages()
+  end
 
   @doc "Calculates one ordinary swing without delivery, mutation, or publication."
   @spec calculate(PlayerState.t(), Combatant.t(), Combatant.t(), keyword()) ::

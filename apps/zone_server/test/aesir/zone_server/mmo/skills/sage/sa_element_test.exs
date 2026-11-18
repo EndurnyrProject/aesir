@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaElementTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
@@ -113,7 +115,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaElementTest do
   end
 
   defp attack(mob_state) do
-    attacker = CombatTestHelper.create_player_combatant(str: 50)
+    attacker = build(:player_combatant, str: 50)
     defender = MobState.to_combatant(mob_state)
 
     assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender)

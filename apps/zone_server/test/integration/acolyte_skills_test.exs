@@ -55,6 +55,8 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
 
   @moduletag :capture_log
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.ItemAdded
@@ -65,7 +67,6 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
   alias Aesir.Net.SkillDamage
   alias Aesir.Net.SkillList
   alias Aesir.Repo
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
@@ -313,7 +314,7 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
       assert plain_combatant.demon_bane_level == 0
 
       undead =
-        CombatTestHelper.create_mob_combatant(
+        build(:mob_combatant,
           unit_id: 94_050,
           race: :undead,
           element: {:undead, 1},
@@ -326,7 +327,7 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
 
       # Against a non-undead/demon target the bonus is absent, so both are equal.
       brute =
-        CombatTestHelper.create_mob_combatant(
+        build(:mob_combatant,
           unit_id: 94_051,
           race: :brute,
           def: 30,
@@ -370,7 +371,7 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
       assert bare_combatant.divine_protection_level == 0
 
       undead_attacker =
-        CombatTestHelper.create_mob_combatant(
+        build(:mob_combatant,
           unit_id: 94_060,
           race: :undead,
           element: {:undead, 1},
@@ -383,7 +384,7 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
 
       # A non-undead/demon attacker triggers no Divine Protection, so both match.
       brute_attacker =
-        CombatTestHelper.create_mob_combatant(
+        build(:mob_combatant,
           unit_id: 94_061,
           race: :brute,
           atk: 300,

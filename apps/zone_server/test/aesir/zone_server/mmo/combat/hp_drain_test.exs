@@ -1,12 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.HpDrainTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.CombatTestHelper
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Combat.HpDrain
 
-  defp attacker(modifiers) do
-    %{CombatTestHelper.create_player_combatant() | equip_modifiers: modifiers}
-  end
+  defp attacker(modifiers), do: build(:player_combatant, equip_modifiers: modifiers)
 
   describe "roll/2" do
     test "recovers the drain percent of the damage when the roll always succeeds" do
@@ -35,9 +34,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HpDrainTest do
     end
 
     test "a mob carries no equipment, so it never drains" do
-      mob = CombatTestHelper.create_mob_combatant()
+      mob = build(:mob_combatant)
 
-      assert mob.equip_modifiers == %{}
       assert Enum.uniq(for _ <- 1..200, do: HpDrain.roll(mob, 500)) == [0]
     end
 

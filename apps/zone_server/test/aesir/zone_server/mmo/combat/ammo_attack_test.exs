@@ -1,13 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.AmmoAttackTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
-  alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.ItemManagement
@@ -19,7 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AmmoAttackTest do
   alias Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold
 
   setup :setup_ets_tables
-  setup :set_mimic_private
+  setup :set_mimic_from_context
 
   @tag game_mode: :pre_renewal
   test "ammo_atk_pre_re_variance_test" do
@@ -58,7 +57,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AmmoAttackTest do
   test "Bash with a revolver does not add ammunition ATK" do
     gun = attacker(:revolver, :bullet)
     empty = attacker(:revolver, :bullet, 0)
-    defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0, element: {:neutral, 1})
+    defender = build(:mob_combatant, def: 0, soft_def: 0, element: {:neutral, 1})
     opts = [skill_id: 5, skill_ratio: 130]
     :rand.seed(:exsss, {11, 12, 13})
 
@@ -74,7 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AmmoAttackTest do
   test "Venom Knife with a dagger adds ammunition ATK only in renewal" do
     dagger = attacker(:dagger, :dagger)
     empty = attacker(:dagger, :dagger, 0)
-    defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0, element: {:neutral, 1})
+    defender = build(:mob_combatant, def: 0, soft_def: 0, element: {:neutral, 1})
     opts = [skill_id: 1004, skill_ratio: if(GameMode.mode() == :renewal, do: 500, else: 100)]
 
     for {armed, unarmed} <- [
@@ -94,7 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AmmoAttackTest do
   test "ammo_atk_single_add_test" do
     gun = attacker(:revolver, :bullet)
     empty = attacker(:revolver, :bullet, 0)
-    defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0, element: {:neutral, 1})
+    defender = build(:mob_combatant, def: 0, soft_def: 0, element: {:neutral, 1})
     opts = [skill_id: 46, skill_ratio: 150]
     assert {:ok, baseline} = DamageCalculator.calculate_damage(empty, defender, opts)
     assert baseline.damage == if(GameMode.mode() == :pre_renewal, do: 1502, else: 1218)
@@ -140,7 +139,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AmmoAttackTest do
 
     gun = attacker(:revolver, :bullet)
     empty = attacker(:revolver, :bullet, 0)
-    defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0, element: {:water, 1})
+    defender = build(:mob_combatant, def: 0, soft_def: 0, element: {:water, 1})
     opts = [skill_id: 46, element: :fire]
 
     assert {:ok, result} = DamageCalculator.calculate_damage(gun, defender, opts)
@@ -173,15 +172,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AmmoAttackTest do
     stub(ItemManagement, :get_item_by_id, &Map.fetch(definitions, &1))
 
     state =
-      PlayerState.new(%Character{
-        id: 7_003,
-        account_id: 7_003,
-        name: "Ammo",
-        last_map: "prontera",
-        class: 0,
-        sex: "M",
-        dex: 200
-      })
+      PlayerState.new(
+        Aesir.Factory.build(:character,
+          id: 7_003,
+          account_id: 7_003,
+          name: "Ammo",
+          last_map: "prontera",
+          class: 0,
+          sex: "M",
+          dex: 200
+        )
+      )
 
     stats =
       state.stats

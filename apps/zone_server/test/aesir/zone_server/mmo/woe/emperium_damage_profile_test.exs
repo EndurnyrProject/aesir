@@ -2,8 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.GameMode
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
@@ -42,7 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
 
   test "ordinary STR, critical, and multiplier inflation obey the active profile" do
     attacker =
-      CombatTestHelper.create_player_combatant(str: 500, dex: 500, base_level: 200)
+      build(:player_combatant, str: 500, dex: 500, base_level: 200)
       |> maximize_weapon_damage()
 
     contacts = [
@@ -83,7 +84,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
 
   test "misses and perfect dodge remain zero-damage swing outcomes" do
     miss_attacker =
-      CombatTestHelper.create_player_combatant()
+      build(:player_combatant)
       |> then(fn attacker ->
         # A critical skips the hit roll, so the miss needs no critical rate.
         combat_stats =
@@ -250,7 +251,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
   end
 
   test "non-handed ordinary attacks use the profile while non-objective mobs remain ordinary" do
-    mob_attacker = CombatTestHelper.create_mob_combatant(atk: 5_000)
+    mob_attacker = build(:mob_combatant, atk: 5_000)
     player_attacker = accurate_player(str: 500) |> maximize_weapon_damage()
     angel = emperium(monster_id: 1002, element: {:neutral, 1}, def: 0, soft_def: 0)
 
@@ -306,7 +307,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
     {:ok, mob} = Mobs.by_id(opts[:monster_id])
 
     opts
-    |> CombatTestHelper.create_mob_combatant()
+    |> then(&build(:mob_combatant, &1))
     |> Map.put(:ignore_modes, ignore_modes(mob))
     |> then(fn defender ->
       %{defender | combat_stats: Map.put(defender.combat_stats, :perfect_dodge, 0)}
@@ -333,7 +334,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
     opts
     |> Keyword.put_new(:dex, 500)
     |> Keyword.put_new(:flat_atk, 500)
-    |> CombatTestHelper.create_player_combatant()
+    |> then(&build(:player_combatant, &1))
     |> Map.put(:equip_modifiers, %{perfect_hit_rate: 100})
   end
 

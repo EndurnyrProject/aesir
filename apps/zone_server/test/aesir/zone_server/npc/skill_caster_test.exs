@@ -6,13 +6,23 @@ defmodule Aesir.ZoneServer.Npc.SkillCasterTest do
   alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Npc.SkillCaster
+  alias Aesir.ZoneServer.Unit.Stats.BaseStats
 
   test "builds a complete combatant with deterministic magic attack" do
     combatant =
       SkillCaster.new(1_001, 99, 60, {150, 150}, "prontera") |> SkillCaster.to_combatant()
 
     assert %Combatant{} = combatant
-    assert combatant.base_stats == %{str: 99, agi: 99, vit: 99, int: 99, dex: 99, luk: 99}
+
+    assert combatant.base_stats == %BaseStats{
+             str: 99,
+             agi: 99,
+             vit: 99,
+             int: 99,
+             dex: 99,
+             luk: 99
+           }
+
     assert combatant.progression.base_level == 60
 
     assert %{matk: 215, matk_min: 215, matk_max: 215, heal_matk_min: 215, heal_matk_max: 215} =

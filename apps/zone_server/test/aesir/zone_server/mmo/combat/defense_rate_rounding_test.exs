@@ -10,14 +10,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DefenseRateRoundingTest do
 
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.CombatTestHelper
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.Stats.CombatStats
 
   defp defense(def, soft_def, modifiers) do
-    defender = CombatTestHelper.create_mob_combatant(def: def, soft_def: soft_def)
+    defender = build(:mob_combatant, def: def, soft_def: soft_def)
 
     DamageInputs.physical_defense(
       defender,

@@ -5,12 +5,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
   skill attack when no learned passive replacement procs first, returns a plain `:ok`
   (no combo stage), and may skip the hit/flee roll with `ignore_flee`.
   """
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
   use Mimic
+
   import ExUnit.CaptureLog
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.Combat
-  alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
@@ -20,11 +21,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   defmodule TestReplacement do
@@ -58,11 +59,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
   @attacker_id 41_001
   @target_id 42_001
 
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
   setup do
     Aesir.TestEtsSetup.setup_ets_tables(%{})
-    Mimic.copy(HitCalculations)
     Registry.register_module(TestReplacement)
     stub(EquipBreak, :resolve, fn _attacker, _target -> [] end)
     stub(Passives, :steal_proc, fn _player -> 0 end)
@@ -70,32 +71,28 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     stub(MobSession, :apply_damage, fn _pid, _damage, _attacker_id, _metadata -> :ok end)
 
-    attacker = combatant(@attacker_id, :player)
-    target = combatant(@target_id, :mob)
+    target = target_combatant()
 
     player_state =
-      PlayerStateFixture.build(%{
+      build(:player_state,
         character_id: @attacker_id,
-        x: 150,
-        y: 150,
-        map_name: "prontera",
         stats: %{
-          combat_stats: Map.merge(attacker.combat_stats, %{critical: 0, passive_atk: 0}),
+          combat_stats: %{
+            atk: 0,
+            def: 0,
+            hit: 200,
+            flee: 0,
+            perfect_dodge: 0,
+            critical: 0,
+            passive_atk: 0
+          },
           derived_stats: %{aspd: 150}
         }
-      })
+      )
 
     target_state =
-      struct(MobState, %{
-        instance_id: @target_id,
-        hp: 100,
-        is_dead: false,
-        x: 150,
-        y: 150,
-        map_name: "prontera"
-      })
+      build(:mob_state, instance_id: @target_id, map_name: "prontera", x: 150, y: 150, hp: 100)
 
-    Mimic.copy(MobState)
     stub(MobState, :to_combatant, fn ^target_state -> target end)
 
     stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
@@ -215,7 +212,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
 
   describe "execute_attack/3 with Sacrifice" do
     setup do
-      Mimic.copy(Helpers)
       stub(Helpers, :deal_damage, fn {:player, @attacker_id}, _amount -> :ok end)
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet, _opts -> :ok end)
 
@@ -240,7 +236,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
 
     test "the strike can be perfect-dodged and still spends the swing",
          %{attacker: attacker, player_state: player_state} do
-      dodging = put_in(combatant(@target_id, :mob).combat_stats.perfect_dodge, 1_000)
+      dodging = put_in(target_combatant().combat_stats.perfect_dodge, 1_000)
       stub(MobState, :to_combatant, fn _target_state -> dodging end)
       reject(&MobSession.apply_damage/4)
 
@@ -309,21 +305,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
       )
   end
 
-  defp combatant(unit_id, type) do
-    Combatant.new!(%{
-      unit_id: unit_id,
-      unit_type: type,
-      base_stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
-      combat_stats: %{atk: 0, def: 0, hit: 200, flee: 0, perfect_dodge: 0},
-      progression: %{base_level: 1, job_level: 1},
+  defp target_combatant do
+    build(:mob_combatant,
+      unit_id: @target_id,
+      social_root: {:mob, @target_id},
+      base_level: 1,
+      str: 1,
+      agi: 1,
+      vit: 1,
+      int: 1,
+      dex: 1,
+      luk: 1,
+      combat_stats: %CombatStats{atk: 0, def: 0, hit: 200, flee: 0, perfect_dodge: 0},
       element: {:neutral, 1},
       race: :formless,
-      size: :medium,
       weapon: %{type: :fist, element: :neutral, size: :medium},
       attack_range: 5,
-      attack_delay_ms: 500,
       position: {150, 150},
       map_name: "prontera"
-    })
+    )
   end
 end

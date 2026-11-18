@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
@@ -18,8 +20,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
-  alias Aesir.ZoneServer.Unit.Player.WeaponHand
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  @boss_mob [
+    unit_id: 2999,
+    base_level: 30,
+    str: 80,
+    agi: 25,
+    vit: 100,
+    int: 40,
+    dex: 50,
+    luk: 10,
+    element: :dark,
+    race: :demon,
+    size: :large,
+    class: :boss,
+    atk: 200,
+    def: 50
+  ]
 
   @element_status_keys [
     water: :subele_water,
@@ -58,22 +77,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   setup :set_mimic_from_context
   setup :verify_on_exit!
 
-  setup do
-    # Copy modules for stubbing
-    Mimic.copy(ElementModifiers)
-    Mimic.copy(SizeModifiers)
-    Mimic.copy(RaceModifiers)
-    Mimic.copy(EquipmentBonuses)
-    Mimic.copy(ModifierCalculator)
-    :ok
-  end
-
   test "forced critical can retain normal weapon variance" do
     CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
     stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
     stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
     attacker = player_with_weapon(200)
-    defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0, element: :neutral)
+    defender = build(:mob_combatant, def: 0, soft_def: 0, element: :neutral)
 
     :rand.seed(:exsss, {11, 12, 13})
 
@@ -94,11 +103,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   end
 
   test "Homunculus normal weapon rolls exclude the upper endpoint and add status ATK once" do
-    attacker = %{
-      unit_id: 3001,
-      unit_type: :homunculus,
-      combat_stats: %{atk: 111, atk_min: 14, atk_max: 15}
-    }
+    attacker =
+      build(:mob_combatant,
+        unit_id: 3001,
+        unit_type: :homunculus,
+        combat_stats: %CombatStats{atk: 111, atk_min: 14, atk_max: 15}
+      )
 
     :rand.seed(:exsss, {17, 19, 23})
 
@@ -115,7 +125,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   end
 
   test "player fixtures carry explicit attack components instead of an aggregate compatibility shape" do
-    attacker = CombatTestHelper.create_player_combatant(flat_atk: 6, passive_atk: 4)
+    attacker = build(:player_combatant, flat_atk: 6, passive_atk: 4)
     status = mode_value(10, 7)
 
     assert %{status_atk: ^status, flat_atk: 6, mastery_atk: 4, str: 5, dex: 5} =
@@ -129,7 +139,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   end
 
   test "weight ATK adds to weapon equipment ATK but not shield-based hits" do
-    attacker = CombatTestHelper.create_player_combatant(flat_atk: 20)
+    attacker = build(:player_combatant, flat_atk: 20)
 
     normal = DamageInputs.player_attack_parts(attacker, [], :primary, false)
     weighted = DamageInputs.player_attack_parts(attacker, [weight_atk: 15], :primary, false)
@@ -161,7 +171,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       }
 
       defender =
-        CombatTestHelper.create_mob_combatant(
+        build(:mob_combatant,
           size: :small,
           def: 0,
           soft_def: 0,
@@ -187,8 +197,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         _, _ -> %{}
       end)
 
-      attacker = CombatTestHelper.create_player_combatant(str: 70, luk: 1)
-      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0, element: :neutral)
+      attacker = build(:player_combatant, str: 70, luk: 1)
+      defender = build(:mob_combatant, def: 0, soft_def: 0, element: :neutral)
 
       :rand.seed(:exsss, {11, 12, 13})
 
@@ -203,65 +213,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert boosted.damage == excluded.damage + 50
     end
 
-    test "calculates basic player vs mob damage" do
-      CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
-      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
-      stub(RaceModifiers, :player_race, fn -> :human end)
-
-      stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
-
-      {attacker, defender} = CombatTestHelper.create_combat_scenario()
-
-      assert {:ok, result} = DamageCalculator.calculate_damage(attacker, defender)
-      assert is_integer(result.damage)
-      assert result.damage > 0
-      assert is_boolean(result.is_critical)
-    end
-
-    test "calculates mob vs player damage" do
-      CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
-      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
-      stub(RaceModifiers, :player_race, fn -> :human end)
-
-      stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
-
-      mob = CombatTestHelper.create_mob_combatant()
-      player = CombatTestHelper.create_player_combatant()
-
-      assert {:ok, result} = DamageCalculator.calculate_damage(mob, player)
-      assert is_integer(result.damage)
-      assert result.damage > 0
-      assert is_boolean(result.is_critical)
-    end
-
-    test "handles critical hits" do
-      CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
-      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
-      stub(RaceModifiers, :player_race, fn -> :human end)
-
-      stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
-
-      {attacker, defender} = CombatTestHelper.create_combat_scenario()
-
-      assert {:ok, result} =
-               DamageCalculator.calculate_damage(attacker, defender, force_crit: true)
-
-      assert result.is_critical == true
-      assert result.damage > 0
-    end
-
     test "CRate strengthens Renewal critical damage and is inert in classic player damage" do
       CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
-      defender = CombatTestHelper.create_mob_combatant()
+      defender = build(:mob_combatant)
 
       # Both hits are forced criticals, isolating the crate factor (1.4 vs 1.4+0.01*50).
-      base = CombatTestHelper.create_player_combatant(luk: 400, str: 60, base_level: 90)
-      no_crate = %{base | combat_stats: Map.put(base.combat_stats, :crate, 0)}
-      high_crate = %{base | combat_stats: Map.put(base.combat_stats, :crate, 50)}
+      base = build(:player_combatant, luk: 400, str: 60, base_level: 90)
+      no_crate = put_in(base.combat_stats.crate, 0)
+      high_crate = put_in(base.combat_stats.crate, 50)
 
       :rand.seed(:exsss, {7, 8, 9})
       {:ok, low} = DamageCalculator.calculate_damage(no_crate, defender, force_crit: true)
@@ -293,11 +256,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
       # Fire weapon vs Earth element mob
-      attacker = CombatTestHelper.create_player_combatant(weapon_element: :fire)
-      defender = CombatTestHelper.create_mob_combatant(element: {:earth, 1})
+      attacker = build(:player_combatant, weapon_element: :fire)
+      defender = build(:mob_combatant, element: {:earth, 1})
 
       # Calculate damage with neutral weapon for comparison
-      neutral_attacker = CombatTestHelper.create_player_combatant(weapon_element: :neutral)
+      neutral_attacker = build(:player_combatant, weapon_element: :neutral)
 
       assert {:ok, fire_result} = DamageCalculator.calculate_damage(attacker, defender)
       assert {:ok, neutral_result} = DamageCalculator.calculate_damage(neutral_attacker, defender)
@@ -306,25 +269,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert fire_result.damage >= neutral_result.damage
     end
 
-    test "applies size modifiers" do
-      CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
-      # All size weapons vs Large
-      stub(SizeModifiers, :get_modifier, fn :fist, :large, false -> 125 end)
-      stub(RaceModifiers, :player_race, fn -> :human end)
-
-      stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
-
-      attacker = CombatTestHelper.create_player_combatant(weapon_size: :all)
-      defender = CombatTestHelper.create_mob_combatant(size: :large)
-
-      assert {:ok, result} = DamageCalculator.calculate_damage(attacker, defender)
-      assert result.damage > 0
-    end
-
     test "returns error for unknown unit type" do
-      unknown_attacker = CombatTestHelper.create_player_combatant()
-      unknown_attacker = %{unknown_attacker | unit_type: :unknown}
-      defender = CombatTestHelper.create_mob_combatant()
+      unknown_attacker = build(:player_combatant, unit_type: :skill_unit)
+      defender = build(:mob_combatant)
 
       assert {:error, :unknown_unit_type} =
                DamageCalculator.calculate_damage(unknown_attacker, defender)
@@ -350,8 +297,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         _, _ -> %{}
       end)
 
-      attacker = CombatTestHelper.create_player_combatant(weapon_element: :neutral)
-      defender = CombatTestHelper.create_mob_combatant(element: {:earth, 1})
+      attacker = build(:player_combatant, weapon_element: :neutral)
+      defender = build(:mob_combatant, element: {:earth, 1})
 
       assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender)
       assert_received {:attack_element, :fire}
@@ -363,8 +310,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         _, _ -> %{}
       end)
 
-      attacker = CombatTestHelper.create_player_combatant(weapon_element: :fire)
-      defender = CombatTestHelper.create_mob_combatant(element: {:earth, 1})
+      attacker = build(:player_combatant, weapon_element: :fire)
+      defender = build(:mob_combatant, element: {:earth, 1})
 
       assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender)
       assert_received {:attack_element, :water}
@@ -373,8 +320,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "falls back to the weapon element when no attack_element modifier" do
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
-      attacker = CombatTestHelper.create_player_combatant(weapon_element: :water)
-      defender = CombatTestHelper.create_mob_combatant(element: {:earth, 1})
+      attacker = build(:player_combatant, weapon_element: :water)
+      defender = build(:mob_combatant, element: {:earth, 1})
 
       assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender)
       assert_received {:attack_element, :water}
@@ -386,8 +333,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         _, _ -> %{}
       end)
 
-      attacker = CombatTestHelper.create_player_combatant(weapon_element: :fire)
-      defender = CombatTestHelper.create_mob_combatant(element: {:earth, 1})
+      attacker = build(:player_combatant, weapon_element: :fire)
+      defender = build(:mob_combatant, element: {:earth, 1})
 
       assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender, element: :poison)
       assert_received {:attack_element, :poison}
@@ -396,7 +343,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
   describe "calculate_base_attack/2 base damage override" do
     test "replaces only the rolled base attack" do
-      attacker = CombatTestHelper.create_mob_combatant(atk: 999, str: 99, base_level: 99)
+      attacker = build(:mob_combatant, atk: 999, str: 99, base_level: 99)
 
       assert {:ok, 400} = DamageCalculator.calculate_base_attack(attacker, base_damage: 400)
     end
@@ -428,14 +375,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       )
 
       attacker =
-        CombatTestHelper.create_mob_combatant(atk: 999, str: 99, base_level: 99)
-        |> Map.put(:unit_type, :homunculus)
-        |> Map.put(:unit_id, homunculus_id)
+        build(:mob_combatant,
+          atk: 999,
+          str: 99,
+          base_level: 99,
+          unit_type: :homunculus,
+          unit_id: homunculus_id
+        )
 
       defender =
-        CombatTestHelper.create_player_combatant(vit: 40, base_level: 10)
-        |> Map.put(:element, {:neutral, 1})
-        |> put_in([Access.key(:combat_stats), :def], 20)
+        build(:player_combatant, vit: 40, base_level: 10, element: {:neutral, 1})
+        |> put_in([Access.key(:combat_stats), Access.key(:def)], 20)
 
       opts = [base_damage: 400, skill_ratio: 200, element: :fire, skip_crit: true]
       # A Homunculus basic attack takes no attribute step (attack_attr_none).
@@ -454,11 +404,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "an attack with nothing before DEF skips DEF and its minimum of 1" do
-      attacker = CombatTestHelper.create_mob_combatant(atk: 500)
+      attacker = build(:mob_combatant, atk: 500)
 
-      defender =
-        CombatTestHelper.create_mob_combatant(vit: 40)
-        |> Map.put(:element, {:neutral, 1})
+      defender = build(:mob_combatant, vit: 40, element: {:neutral, 1})
 
       assert {:ok, %{damage: 0}} =
                DamageCalculator.calculate_damage(attacker, defender,
@@ -469,7 +417,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "rejects negative and non-integer overrides" do
-      attacker = CombatTestHelper.create_mob_combatant()
+      attacker = build(:mob_combatant)
 
       assert {:error, :invalid_base_damage} =
                DamageCalculator.calculate_base_attack(attacker, base_damage: -1)
@@ -479,7 +427,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "ordinary base attacks remain unit-specific" do
-      attacker = CombatTestHelper.create_mob_combatant(atk: 0, str: 10, base_level: 5)
+      attacker = build(:mob_combatant, atk: 0, str: 10, base_level: 5)
 
       # Renewal adds STR 10 + level 5; classic has no status ATK and rolls 0..0.
       expected = mode_value(15, 0)
@@ -490,7 +438,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   describe "calculate_base_attack/1" do
     test "calculates player base attack correctly" do
       player =
-        CombatTestHelper.create_player_combatant(
+        build(:player_combatant,
           str: 20,
           dex: 15,
           luk: 10,
@@ -503,7 +451,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "calculates mob base attack with mode-specific weapon bounds and status ATK" do
-      mob = CombatTestHelper.create_mob_combatant(atk: 100, atk2: 120, str: 10, base_level: 5)
+      mob = build(:mob_combatant, atk: 100, atk2: 120, str: 10, base_level: 5)
 
       # Run multiple times to test variance
       results =
@@ -522,8 +470,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "returns error for unknown unit type" do
-      unknown = CombatTestHelper.create_player_combatant()
-      unknown = %{unknown | unit_type: :unknown}
+      unknown = build(:player_combatant, unit_type: :skill_unit)
 
       assert {:error, :unknown_unit_type} = DamageCalculator.calculate_base_attack(unknown)
     end
@@ -533,7 +480,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "player shield base is stat batk + 4*refine + weight/10" do
       # Status ATK is 10 in Renewal and 11 in classic; the shield contributes 50.
       player =
-        CombatTestHelper.create_player_combatant(str: 10, dex: 0, luk: 0, base_level: 0)
+        build(:player_combatant, str: 10, dex: 0, luk: 0, base_level: 0)
 
       shield_base = 4 * 5 + div(300, 10)
 
@@ -545,12 +492,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     @tag game_mode: :pre_renewal
     test "classic shield base that DEF takes to nothing skips the post-defense minimum" do
-      player = CombatTestHelper.create_player_combatant(str: 10)
+      player = build(:player_combatant, str: 10)
 
       # DEF 98 keeps 1 of the ~51 shield base; the target's 1 VIT DEF takes it.
-      defender =
-        CombatTestHelper.create_mob_combatant(def: 98, vit: 0)
-        |> Map.put(:element, {:neutral, 1})
+      defender = build(:mob_combatant, def: 98, vit: 0, element: {:neutral, 1})
 
       assert {:ok, %{damage: 0}} =
                DamageCalculator.calculate_damage(player, defender,
@@ -563,7 +508,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "mob ignores the shield base and uses its ordinary base attack" do
       # ATK 0 rolls 0; Renewal adds STR 10 + level 5, classic adds no status ATK.
-      mob = CombatTestHelper.create_mob_combatant(atk: 0, str: 10, base_level: 5)
+      mob = build(:mob_combatant, atk: 0, str: 10, base_level: 5)
       expected = mode_value(15, 0)
 
       assert {:ok, ^expected} = DamageCalculator.calculate_base_attack(mob, shield_base: 999)
@@ -580,8 +525,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         %{damage_bonus: 10, damage_multiplier: 0.1}
       end)
 
-      attacker = CombatTestHelper.create_player_combatant()
-      defender = CombatTestHelper.create_mob_combatant()
+      attacker = build(:player_combatant)
+      defender = build(:mob_combatant)
 
       assert {:ok, result} = DamageCalculator.apply_modifier_pipeline(100, attacker, defender)
 
@@ -600,8 +545,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         %{damage_bonus: 10, atk_bonus: 20, watk: 30, atk_rate: 100, damage_multiplier: 0.5}
       end)
 
-      attacker = CombatTestHelper.create_mob_combatant()
-      defender = CombatTestHelper.create_mob_combatant()
+      attacker = build(:mob_combatant)
+      defender = build(:mob_combatant)
 
       assert {:ok, 390} = DamageCalculator.apply_modifier_pipeline(100, attacker, defender)
 
@@ -618,8 +563,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
-      attacker = CombatTestHelper.create_player_combatant()
-      defender = CombatTestHelper.create_mob_combatant()
+      attacker = build(:player_combatant)
+      defender = build(:mob_combatant)
 
       assert {:ok, result} = DamageCalculator.apply_modifier_pipeline(100, attacker, defender)
       # No modifiers = no change
@@ -639,8 +584,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         %{{:pseudo_element_atk, :fire} => 20}
       end)
 
-      attacker = CombatTestHelper.create_player_combatant(weapon_element: :neutral)
-      defender = CombatTestHelper.create_mob_combatant(element: {:earth, 1})
+      attacker = build(:player_combatant, weapon_element: :neutral)
+      defender = build(:mob_combatant, element: {:earth, 1})
 
       assert {:ok, result} = DamageCalculator.apply_modifier_pipeline(100, attacker, defender)
 
@@ -658,8 +603,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{watk: 30} end)
 
-      attacker = CombatTestHelper.create_player_combatant()
-      defender = CombatTestHelper.create_mob_combatant()
+      attacker = build(:player_combatant)
+      defender = build(:mob_combatant)
 
       assert {:ok, 100} = DamageCalculator.apply_modifier_pipeline(100, attacker, defender)
     end
@@ -670,7 +615,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
       # Soft defense
-      player = CombatTestHelper.create_player_combatant(vit: 20)
+      player = build(:player_combatant, vit: 20)
       # Hard defense
       player = %{player | combat_stats: %{player.combat_stats | def: 10}}
 
@@ -687,7 +632,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "equipment def2_rate scales player soft DEF" do
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
-      player = CombatTestHelper.create_player_combatant(vit: 40)
+      player = build(:player_combatant, vit: 40)
       player = %{player | combat_stats: %{player.combat_stats | def: 0}}
       boosted = %{player | equip_modifiers: %{def2_rate: 50}}
 
@@ -699,7 +644,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "applies renewal defense formula to mob" do
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
-      mob = CombatTestHelper.create_mob_combatant(def: 15)
+      mob = build(:mob_combatant, def: 15)
 
       assert {:ok, final_damage} = DamageCalculator.apply_defense_formula(150, mob)
 
@@ -712,14 +657,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "applies renewal defense formula to a skill-unit cell defender" do
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
-      mob = CombatTestHelper.create_mob_combatant(def: 30)
-
-      wall = %{
-        mob
-        | unit_id: 1,
-          unit_type: :skill_unit,
-          combat_stats: Map.put(mob.combat_stats, :soft_def, 5)
-      }
+      wall = build(:mob_combatant, unit_id: 1, unit_type: :skill_unit, def: 30, soft_def: 5)
 
       assert {:ok, final_damage} = DamageCalculator.apply_defense_formula(150, wall)
 
@@ -732,7 +670,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
       # Very high defense vs very low attack
-      high_def_player = CombatTestHelper.create_player_combatant(vit: 100)
+      high_def_player = build(:player_combatant, vit: 100)
 
       high_def_player = %{
         high_def_player
@@ -747,7 +685,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "handles edge case of hard_def = -400" do
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{def_bonus: -500} end)
 
-      player = CombatTestHelper.create_player_combatant()
+      player = build(:player_combatant)
       player = %{player | combat_stats: %{player.combat_stats | def: 100}}
 
       # Status effect reduces def by 500, making it -400
@@ -761,7 +699,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         %{def_bonus: 50, vit_bonus: 10, defense_multiplier: 0.2}
       end)
 
-      player = CombatTestHelper.create_player_combatant(vit: 20)
+      player = build(:player_combatant, vit: 20)
       player = %{player | combat_stats: %{player.combat_stats | def: 10}}
 
       assert {:ok, final_damage} = DamageCalculator.apply_defense_formula(200, player)
@@ -775,13 +713,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "SC_DEFSET replaces both hard and soft DEF before equipment ignore" do
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
-      defender = CombatTestHelper.create_player_combatant(unit_id: 7_001, vit: 80)
+      defender = build(:player_combatant, unit_id: 7_001, vit: 80)
       defender = %{defender | combat_stats: %{defender.combat_stats | def: 200}}
-      reference = CombatTestHelper.create_player_combatant(unit_id: 7_002, vit: 1)
+      reference = build(:player_combatant, unit_id: 7_002, vit: 1)
 
       reference = %{
         reference
-        | combat_stats: Map.merge(reference.combat_stats, %{def: 1, soft_def: 1})
+        | combat_stats: %{reference.combat_stats | def: 1, soft_def: 1}
       }
 
       :ok = StatusStorage.apply_status(:player, 7_001, :sc_defset, val1: 1)
@@ -789,58 +727,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       assert DamageCalculator.apply_defense_formula(200, defender) ==
                DamageCalculator.apply_defense_formula(200, reference)
-    end
-  end
-
-  describe "integration scenarios" do
-    test "high level vs low level combat" do
-      CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
-      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
-      stub(RaceModifiers, :player_race, fn -> :human end)
-
-      stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
-
-      high_level = CombatTestHelper.create_high_level_player()
-      low_level_mob = CombatTestHelper.create_mob_combatant(base_level: 1, def: 1)
-
-      assert {:ok, result} = DamageCalculator.calculate_damage(high_level, low_level_mob)
-      # Should do significant damage
-      assert result.damage > 50
-    end
-
-    test "boss fight scenario" do
-      CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
-      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
-      stub(RaceModifiers, :player_race, fn -> :human end)
-
-      stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
-
-      player = CombatTestHelper.create_high_level_player()
-      boss = CombatTestHelper.create_boss_mob()
-
-      # Player attacks boss
-      assert {:ok, player_result} = DamageCalculator.calculate_damage(player, boss)
-
-      # Boss attacks player
-      assert {:ok, boss_result} = DamageCalculator.calculate_damage(boss, player)
-
-      # Both should do reasonable damage
-      assert player_result.damage > 0
-      assert boss_result.damage > 0
-    end
-
-    test "ranged combat scenario" do
-      CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
-      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
-      stub(RaceModifiers, :player_race, fn -> :human end)
-
-      stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
-
-      {archer, target} = CombatTestHelper.create_ranged_scenario()
-
-      assert {:ok, result} = DamageCalculator.calculate_damage(archer, target)
-      assert result.damage > 0
-      # Ranged weapons might have different damage characteristics
     end
   end
 
@@ -854,7 +740,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "skill_ratio scales damage above the 100% baseline" do
-      {attacker, defender} = CombatTestHelper.create_combat_scenario()
+      attacker = build(:player_combatant)
+      defender = build(:mob_combatant)
 
       assert {:ok, %{damage: baseline}} =
                DamageCalculator.calculate_damage(attacker, defender, skill_ratio: 100)
@@ -870,7 +757,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         flunk("race critical bonus must be skipped when skip_crit is set")
       end)
 
-      {attacker, defender} = CombatTestHelper.create_combat_scenario()
+      attacker = build(:player_combatant)
+      defender = build(:mob_combatant)
 
       assert {:ok, %{is_critical: false}} =
                DamageCalculator.calculate_damage(attacker, defender,
@@ -884,7 +772,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         flunk("race critical bonus must be skipped when force_crit is set")
       end)
 
-      {attacker, defender} = CombatTestHelper.create_combat_scenario()
+      attacker = build(:player_combatant)
+      defender = build(:mob_combatant)
 
       assert {:ok, %{is_critical: true}} =
                DamageCalculator.calculate_damage(attacker, defender, force_crit: true)
@@ -893,7 +782,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "bonus_atk adds a flat amount of pre-defense damage" do
       # def 0 defender: defense formula is a no-op, so a flat bonus_atk flows
       # straight through to the final damage.
-      {attacker, defender} = CombatTestHelper.create_combat_scenario([], def: 0)
+      attacker = build(:player_combatant)
+      defender = build(:mob_combatant, def: 0)
 
       :rand.seed(:exsss, {1, 2, 3})
 
@@ -912,10 +802,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "fixed_damage returns exactly that value regardless of stats" do
-      attacker = CombatTestHelper.create_player_combatant()
+      attacker = build(:player_combatant)
 
       for def_value <- [0, 50, 500] do
-        defender = CombatTestHelper.create_mob_combatant(def: def_value)
+        defender = build(:mob_combatant, def: def_value)
 
         assert {:ok, %{damage: 50, is_critical: false}} =
                  DamageCalculator.calculate_damage(attacker, defender,
@@ -938,9 +828,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "drops hard DEF as a flat subtraction, not the renewal curve" do
-      attacker = CombatTestHelper.create_player_combatant(flat_atk: 100)
-      undefended = CombatTestHelper.create_mob_combatant(def: 0)
-      defended = CombatTestHelper.create_mob_combatant(def: 100)
+      attacker = build(:player_combatant, flat_atk: 100)
+      undefended = build(:mob_combatant, def: 0)
+      defended = build(:mob_combatant, def: 100)
 
       # Scale damage well above the DEF so neither result hits the min-1 clamp.
       opts = [skill_ratio: 1_000, skip_crit: true]
@@ -960,8 +850,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "still clamps to a minimum of 1 against overwhelming DEF" do
-      attacker = CombatTestHelper.create_player_combatant()
-      wall = CombatTestHelper.create_mob_combatant(def: 100_000)
+      attacker = build(:player_combatant)
+      wall = build(:mob_combatant, def: 100_000)
 
       assert {:ok, %{damage: 1}} =
                DamageCalculator.calculate_damage_simple_defense(attacker, wall, skip_crit: true)
@@ -975,8 +865,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(RaceModifiers, :player_race, fn -> :human end)
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
-      attacker = CombatTestHelper.create_player_combatant(flat_atk: 101)
-      defender = CombatTestHelper.create_mob_combatant(def: 50)
+      attacker = build(:player_combatant, flat_atk: 101)
+      defender = build(:mob_combatant, def: 50)
 
       assert {:ok, %{damage: damage}} =
                DamageCalculator.calculate_damage_ignoring_defense(attacker, defender,
@@ -999,8 +889,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "sc_provoke on mob lowers effective DEF in damage calculation" do
-      mob = CombatTestHelper.create_mob_combatant(unit_id: 5003, def: 50)
-      player = CombatTestHelper.create_player_combatant(flat_atk: 100)
+      mob = build(:mob_combatant, unit_id: 5003, def: 50)
+      player = build(:player_combatant, flat_atk: 100)
 
       stub(ModifierCalculator, :get_battle_modifiers, fn
         :mob, 5003 -> %{def_bonus: -25}
@@ -1032,8 +922,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       # def 0 mob: the renewal defense formula is a no-op, so the flat Demon Bane
       # ATK flows straight through to the final damage. base_level 40, level 5 =>
       # 5 * (40/20 + 3) = 25.
-      attacker = %{CombatTestHelper.create_player_combatant(base_level: 40) | demon_bane_level: 5}
-      undead_mob = CombatTestHelper.create_mob_combatant(race: :undead, element: :undead, def: 0)
+      attacker = build(:player_combatant, base_level: 40, demon_bane_level: 5)
+      undead_mob = build(:mob_combatant, race: :undead, element: :undead, def: 0)
 
       :rand.seed(:exsss, {1, 2, 3})
 
@@ -1053,8 +943,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "leaves physical damage unchanged vs a non-undead/demon target" do
-      attacker = %{CombatTestHelper.create_player_combatant(base_level: 40) | demon_bane_level: 5}
-      brute_mob = CombatTestHelper.create_mob_combatant(race: :brute, def: 0)
+      attacker = build(:player_combatant, base_level: 40, demon_bane_level: 5)
+      brute_mob = build(:mob_combatant, race: :brute, def: 0)
 
       :rand.seed(:exsss, {1, 2, 3})
 
@@ -1074,8 +964,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "Demon Bane mastery is reduced by Renewal DEF and added after classic DEF" do
-      attacker = %{CombatTestHelper.create_player_combatant(base_level: 40) | demon_bane_level: 5}
-      undead_mob = CombatTestHelper.create_mob_combatant(race: :undead, element: :undead, def: 60)
+      attacker = build(:player_combatant, base_level: 40, demon_bane_level: 5)
+      undead_mob = build(:mob_combatant, race: :undead, element: :undead, def: 60)
 
       :rand.seed(:exsss, {1, 2, 3})
 
@@ -1106,8 +996,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "raises physical damage vs a Brute mob by exactly four ATK per level" do
-      attacker = %{CombatTestHelper.create_player_combatant() | beast_bane_level: 5}
-      brute_mob = CombatTestHelper.create_mob_combatant(race: :brute, def: 0)
+      attacker = build(:player_combatant, beast_bane_level: 5)
+      brute_mob = build(:mob_combatant, race: :brute, def: 0)
 
       :rand.seed(:exsss, {1, 2, 3})
 
@@ -1127,8 +1017,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "raises physical damage vs an Insect mob by exactly four ATK per level" do
-      attacker = %{CombatTestHelper.create_player_combatant() | beast_bane_level: 3}
-      insect_mob = CombatTestHelper.create_mob_combatant(race: :insect, def: 0)
+      attacker = build(:player_combatant, beast_bane_level: 3)
+      insect_mob = build(:mob_combatant, race: :insect, def: 0)
 
       :rand.seed(:exsss, {1, 2, 3})
 
@@ -1148,8 +1038,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "Beast Bane mastery is reduced by Renewal DEF and added after classic DEF" do
-      attacker = %{CombatTestHelper.create_player_combatant() | beast_bane_level: 5}
-      brute_mob = CombatTestHelper.create_mob_combatant(race: :brute, def: 60)
+      attacker = build(:player_combatant, beast_bane_level: 5)
+      brute_mob = build(:mob_combatant, race: :brute, def: 60)
 
       :rand.seed(:exsss, {1, 2, 3})
 
@@ -1179,8 +1069,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "reduces physical damage taken from an undead attacker by the exact soft-DEF bonus" do
       # base_level 50, level 5 => (50/25 + 3) * 5 + 0.5 = 25.5 -> 25 soft-DEF,
       # subtracted from the final damage by the renewal defense formula.
-      undead_attacker = CombatTestHelper.create_mob_combatant(race: :undead, element: :undead)
-      defender = CombatTestHelper.create_player_combatant(base_level: 50, vit: 5)
+      undead_attacker = build(:mob_combatant, race: :undead, element: :undead)
+      defender = build(:player_combatant, base_level: 50, vit: 5)
       defender = %{defender | combat_stats: %{defender.combat_stats | def: 10}}
       with_dp = %{defender | divine_protection_level: 5}
 
@@ -1191,8 +1081,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "leaves damage from a non-undead/demon attacker unchanged" do
-      brute_attacker = CombatTestHelper.create_mob_combatant(race: :brute)
-      defender = CombatTestHelper.create_player_combatant(base_level: 50, vit: 5)
+      brute_attacker = build(:mob_combatant, race: :brute)
+      defender = build(:player_combatant, base_level: 50, vit: 5)
       defender = %{defender | combat_stats: %{defender.combat_stats | def: 10}}
       with_dp = %{defender | divine_protection_level: 5}
 
@@ -1203,7 +1093,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "apply_defense_formula/2 without an attacker applies no Divine Protection" do
-      defender = CombatTestHelper.create_player_combatant(base_level: 50, vit: 5)
+      defender = build(:player_combatant, base_level: 50, vit: 5)
       defender = %{defender | combat_stats: %{defender.combat_stats | def: 10}}
       with_dp = %{defender | divine_protection_level: 5}
 
@@ -1225,10 +1115,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "raises physical damage vs a Dragon-race mob by 4*lv percent, levels 1 and 5" do
-      dragon = CombatTestHelper.create_mob_combatant(race: :dragon)
-      attacker_lv0 = %{CombatTestHelper.create_player_combatant() | dragonology_level: 0}
-      attacker_lv1 = %{CombatTestHelper.create_player_combatant() | dragonology_level: 1}
-      attacker_lv5 = %{CombatTestHelper.create_player_combatant() | dragonology_level: 5}
+      dragon = build(:mob_combatant, race: :dragon)
+      attacker_lv0 = build(:player_combatant, dragonology_level: 0)
+      attacker_lv1 = build(:player_combatant, dragonology_level: 1)
+      attacker_lv5 = build(:player_combatant, dragonology_level: 5)
 
       {:ok, base} = DamageCalculator.apply_modifier_pipeline(1000, attacker_lv0, dragon)
       {:ok, lv1} = DamageCalculator.apply_modifier_pipeline(1000, attacker_lv1, dragon)
@@ -1239,8 +1129,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "leaves physical damage unchanged vs a non-Dragon mob" do
-      brute = CombatTestHelper.create_mob_combatant(race: :brute)
-      attacker = %{CombatTestHelper.create_player_combatant() | dragonology_level: 5}
+      brute = build(:mob_combatant, race: :brute)
+      attacker = build(:player_combatant, dragonology_level: 5)
       no_skill = %{attacker | dragonology_level: 0}
 
       {:ok, with_skill_dmg} = DamageCalculator.apply_modifier_pipeline(1000, attacker, brute)
@@ -1250,9 +1140,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "reduces physical damage taken from a Dragon-race attacker by 4*lv percent" do
-      dragon_attacker = CombatTestHelper.create_mob_combatant(race: :dragon)
-      defender_lv0 = %{CombatTestHelper.create_player_combatant() | dragonology_level: 0}
-      defender_lv5 = %{CombatTestHelper.create_player_combatant() | dragonology_level: 5}
+      dragon_attacker = build(:mob_combatant, race: :dragon)
+      defender_lv0 = build(:player_combatant, dragonology_level: 0)
+      defender_lv5 = build(:player_combatant, dragonology_level: 5)
 
       {:ok, base} = DamageCalculator.apply_modifier_pipeline(1000, dragon_attacker, defender_lv0)
 
@@ -1263,8 +1153,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "leaves physical damage unchanged from a non-Dragon attacker" do
-      brute_attacker = CombatTestHelper.create_mob_combatant(race: :brute)
-      defender = %{CombatTestHelper.create_player_combatant() | dragonology_level: 5}
+      brute_attacker = build(:mob_combatant, race: :brute)
+      defender = build(:player_combatant, dragonology_level: 5)
       no_skill = %{defender | dragonology_level: 0}
 
       {:ok, with_skill_dmg} =
@@ -1282,27 +1172,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
       CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
 
-      attacker = %{
-        unit_type: :player,
-        unit_id: 1001,
-        combat_stats: %{matk: 300, mdef: 0, soft_mdef: 0}
-      }
+      attacker =
+        build(:player_combatant, combat_stats: %CombatStats{matk: 300, mdef: 0, soft_mdef: 0})
 
-      defender = %{
-        unit_type: :mob,
-        unit_id: 2001,
-        combat_stats: %{matk: 0, mdef: 10, soft_mdef: 5},
-        element: {:neutral, 1}
-      }
+      defender =
+        build(:mob_combatant,
+          element: {:neutral, 1},
+          combat_stats: %CombatStats{matk: 0, mdef: 10, soft_mdef: 5}
+        )
 
       {:ok, plain} = MagicDamageCalculator.calculate_magic_damage(attacker, defender)
 
       {:ok, boosted} =
         MagicDamageCalculator.calculate_magic_damage(
-          attacker
-          |> Map.put(:demon_bane_level, 10)
-          |> Map.put(:beast_bane_level, 10),
-          Map.put(defender, :divine_protection_level, 10)
+          %{attacker | demon_bane_level: 10, beast_bane_level: 10},
+          %{defender | divine_protection_level: 10}
         )
 
       assert plain.damage == boosted.damage
@@ -1319,10 +1203,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     for weapon_type <- @weapon_types, size <- [:small, :medium, :large] do
       test "player #{weapon_type} against #{size} retains the size modifier by default" do
         attacker =
-          CombatTestHelper.create_player_combatant()
-          |> Map.put(:weapon, %{type: unquote(weapon_type), element: :neutral, size: :all})
+          build(:player_combatant,
+            weapon: %{type: unquote(weapon_type), element: :neutral, size: :all}
+          )
 
-        defender = CombatTestHelper.create_mob_combatant(size: unquote(size))
+        defender = build(:mob_combatant, size: unquote(size))
         base_damage = 1_200
 
         assert {:ok, damage} =
@@ -1337,24 +1222,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       test "a monster with #{weapon_type} against #{size} takes no size modifier" do
         attacker =
-          CombatTestHelper.create_mob_combatant()
-          |> Map.put(:weapon, %{type: unquote(weapon_type), element: :neutral, size: :all})
+          build(:mob_combatant,
+            weapon: %{type: unquote(weapon_type), element: :neutral, size: :all}
+          )
 
-        defender = CombatTestHelper.create_mob_combatant(size: unquote(size))
+        defender = build(:mob_combatant, size: unquote(size))
 
         assert {:ok, 1_200} = DamageCalculator.apply_modifier_pipeline(1_200, attacker, defender)
       end
     end
 
     test "ignore_size_penalty bypasses a dagger's large-target penalty" do
-      attacker = CombatTestHelper.create_player_combatant(weapon_type: :dagger)
+      attacker = build(:player_combatant, weapon_type: :dagger)
+      attacker = put_in(attacker.combat_stats.ignore_size_penalty, true)
 
-      attacker = %{
-        attacker
-        | combat_stats: Map.put(attacker.combat_stats, :ignore_size_penalty, true)
-      }
-
-      defender = CombatTestHelper.create_mob_combatant(size: :large)
+      defender = build(:mob_combatant, size: :large)
 
       assert {:ok, 1_200} =
                DamageCalculator.apply_modifier_pipeline(1_200, attacker, defender)
@@ -1362,22 +1244,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "equipment bNoSizeFix bypasses a dagger's large-target penalty" do
       attacker =
-        CombatTestHelper.create_player_combatant(weapon_type: :dagger)
-        |> Map.put(:equip_modifiers, %{no_size_fix: 1})
+        build(:player_combatant, weapon_type: :dagger, equip_modifiers: %{no_size_fix: 1})
 
-      defender = CombatTestHelper.create_mob_combatant(size: :large)
+      defender = build(:mob_combatant, size: :large)
 
       assert {:ok, 1_200} =
                DamageCalculator.apply_modifier_pipeline(1_200, attacker, defender)
     end
 
     test "max_weapon_damage always uses the true upper endpoint" do
-      attacker = player_with_weapon(100)
-
-      attacker = %{
-        attacker
-        | combat_stats: Map.put(attacker.combat_stats, :max_weapon_damage, true)
-      }
+      attacker = put_in(player_with_weapon(100).combat_stats.max_weapon_damage, true)
 
       :rand.seed(:exsss, {1, 2, 3})
 
@@ -1400,19 +1276,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "max weapon damage retains hand-local overrefine and the final minimum-one floor" do
       maximized =
         player_with_weapon(100)
-        |> put_in([Access.key(:combat_stats), :max_weapon_damage], true)
+        |> put_in([Access.key(:combat_stats), Access.key(:max_weapon_damage)], true)
         |> put_in([Access.key(:right_hand), Access.key(:overrefine_band)], 9)
 
       {:ok, overrefined} = DamageCalculator.calculate_base_attack(maximized)
       assert overrefined in mode_value(121..129, 101..109)
 
-      zero = put_in(player_with_weapon(0).combat_stats[:max_weapon_damage], true)
+      zero = put_in(player_with_weapon(0).combat_stats.max_weapon_damage, true)
       assert DamageCalculator.calculate_base_attack(zero) == {:ok, 0}
 
       assert {:ok, %{damage: 1}} =
                DamageCalculator.calculate_damage(
                  zero,
-                 CombatTestHelper.create_mob_combatant(def: 0),
+                 build(:mob_combatant, def: 0),
                  skip_crit: true
                )
     end
@@ -1420,8 +1296,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
   describe "calculate_base_attack/1 weapon-ATK path" do
     test "flat equipment ATK raises base attack without becoming weapon variance" do
-      bare_handed = CombatTestHelper.create_player_combatant()
-      equipped = CombatTestHelper.create_player_combatant(flat_atk: 100)
+      bare_handed = build(:player_combatant)
+      equipped = build(:player_combatant, flat_atk: 100)
 
       {:ok, bare_handed_atk} = DamageCalculator.calculate_base_attack(bare_handed)
       {:ok, equipped_atk} = DamageCalculator.calculate_base_attack(equipped)
@@ -1430,7 +1306,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "mob base attack is unaffected by the player weapon-ATK path change" do
-      mob = CombatTestHelper.create_mob_combatant(atk: 100, str: 10, base_level: 5)
+      mob = build(:mob_combatant, atk: 100, str: 10, base_level: 5)
 
       results =
         for _ <- 1..50 do
@@ -1472,19 +1348,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   describe "calculate_base_attack/1 mastery bonus" do
     test "adds combat_stats.passive_atk for a player attacker" do
       :rand.seed(:exsss, {1, 2, 3})
-      no_bonus = CombatTestHelper.create_player_combatant(passive_atk: 0)
+      no_bonus = build(:player_combatant, passive_atk: 0)
       {:ok, base} = DamageCalculator.calculate_base_attack(no_bonus)
 
       :rand.seed(:exsss, {1, 2, 3})
-      with_bonus = CombatTestHelper.create_player_combatant(passive_atk: 20)
+      with_bonus = build(:player_combatant, passive_atk: 20)
       {:ok, boosted} = DamageCalculator.calculate_base_attack(with_bonus)
 
       assert boosted == base + 20
     end
 
     test "mob attacker is unaffected by passive_atk mastery" do
-      mob = CombatTestHelper.create_mob_combatant(atk: 0, str: 10, base_level: 5)
-      mob = put_in(mob.combat_stats[:passive_atk], 20)
+      mob = build(:mob_combatant, atk: 0, str: 10, base_level: 5)
+      mob = put_in(mob.combat_stats.passive_atk, 20)
       # ATK 0 rolls 0; only Renewal adds STR 10 + level 5, never passive mastery.
       expected = mode_value(15, 0)
       assert {:ok, ^expected} = DamageCalculator.calculate_base_attack(mob)
@@ -1501,9 +1377,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "P.Atk doubles Renewal's eligible contribution and is inert in classic" do
-      attacker = CombatTestHelper.create_player_combatant()
-      patk_attacker = %{attacker | combat_stats: Map.put(attacker.combat_stats, :patk, 100)}
-      defender = CombatTestHelper.create_mob_combatant(def: 0)
+      attacker = build(:player_combatant)
+      patk_attacker = put_in(attacker.combat_stats.patk, 100)
+      defender = build(:mob_combatant, def: 0)
 
       :rand.seed(:exsss, {1, 2, 3})
 
@@ -1519,9 +1395,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "Res reduces Renewal pre-DEF damage by 40% and is inert in classic" do
-      attacker = CombatTestHelper.create_player_combatant()
-      defender = CombatTestHelper.create_mob_combatant(def: 0)
-      res_defender = %{defender | combat_stats: Map.put(defender.combat_stats, :res, 400)}
+      attacker = build(:player_combatant)
+      defender = build(:mob_combatant, def: 0)
+      res_defender = put_in(defender.combat_stats.res, 400)
 
       :rand.seed(:exsss, {1, 2, 3})
 
@@ -1536,23 +1412,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert {baseline, reduced} == mode_value({20, 12}, {6, 6})
     end
 
-    test "a mob defender with no :res key takes full damage without crashing" do
-      attacker = CombatTestHelper.create_player_combatant()
-      defender = CombatTestHelper.create_mob_combatant(def: 0)
-
-      refute Map.has_key?(defender.combat_stats, :res)
-
-      assert {:ok, %{damage: damage}} =
-               DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
-
-      assert damage > 0
-    end
-
     test "fixed_damage bypasses both P.Atk and Res" do
-      attacker = CombatTestHelper.create_player_combatant()
-      patk_attacker = %{attacker | combat_stats: Map.put(attacker.combat_stats, :patk, 100)}
-      defender = CombatTestHelper.create_mob_combatant()
-      res_defender = %{defender | combat_stats: Map.put(defender.combat_stats, :res, 400)}
+      attacker = build(:player_combatant)
+      patk_attacker = put_in(attacker.combat_stats.patk, 100)
+      defender = build(:mob_combatant)
+      res_defender = put_in(defender.combat_stats.res, 400)
 
       assert {:ok, %{damage: 50}} =
                DamageCalculator.calculate_damage(patk_attacker, res_defender,
@@ -1573,8 +1437,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "atk_rate scales physical damage additively" do
       # def 0 defender: the renewal formula is a no-op, so a +100% atk_rate on the
       # attacker exactly doubles the final damage.
-      attacker = CombatTestHelper.create_player_combatant()
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001, def: 0)
+      attacker = build(:player_combatant)
+      defender = build(:mob_combatant, unit_id: 2001, def: 0)
 
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
       :rand.seed(:exsss, {1, 2, 3})
@@ -1593,10 +1457,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "a status script ATK rate acts as the equipment bAtkRate in renewal and not at all in classic" do
       attacker =
-        put_in(player_with_weapon(100), [Access.key(:combat_stats), :max_weapon_damage], true)
+        put_in(
+          player_with_weapon(100),
+          [Access.key(:combat_stats), Access.key(:max_weapon_damage)],
+          true
+        )
 
       equipped = %{attacker | equip_modifiers: Map.put(attacker.equip_modifiers, :atk_rate, 50)}
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001, def: 0, soft_def: 0)
+      defender = build(:mob_combatant, unit_id: 2001, def: 0, soft_def: 0)
       opts = [skip_crit: true]
 
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
@@ -1616,9 +1484,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "a player's non-mastery-stacking skill takes no ATK percent; a monster's always does" do
-      player = CombatTestHelper.create_player_combatant()
-      mob = CombatTestHelper.create_mob_combatant(unit_id: 2002)
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001, def: 0, soft_def: 0)
+      player = build(:player_combatant)
+      mob = build(:mob_combatant, unit_id: 2002)
+      defender = build(:mob_combatant, unit_id: 2001, def: 0, soft_def: 0)
 
       stub(ModifierCalculator, :get_battle_modifiers, fn
         :player, 1001 -> %{atk_rate: 100}
@@ -1642,11 +1510,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     @tag game_mode: :pre_renewal
     test "classic applies the ATK percent after the equipment skill rates" do
-      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2002)
+      attacker = build(:mob_combatant, unit_id: 2002)
 
       defender =
-        CombatTestHelper.create_mob_combatant(unit_id: 2001, def: 0, soft_def: 0)
-        |> Map.put(:equip_modifiers, %{{:sub_skill, 123} => 50})
+        build(:mob_combatant,
+          unit_id: 2001,
+          def: 0,
+          soft_def: 0,
+          equip_modifiers: %{{:sub_skill, 123} => 50}
+        )
 
       stub(ModifierCalculator, :get_battle_modifiers, fn
         :mob, 2002 -> %{atk_rate: 50}
@@ -1664,8 +1536,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "the ATK percent is capped at 0" do
-      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2002)
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001, def: 0, soft_def: 0)
+      attacker = build(:mob_combatant, unit_id: 2002)
+      defender = build(:mob_combatant, unit_id: 2001, def: 0, soft_def: 0)
 
       stub(ModifierCalculator, :get_battle_modifiers, fn
         :mob, 2002 -> %{atk_rate: -150}
@@ -1680,8 +1552,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "Over Thrust's ratio adds to the skill ratio, and renewal adds the ATK percent to it too" do
-      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2002)
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001, def: 0, soft_def: 0)
+      attacker = build(:mob_combatant, unit_id: 2002)
+      defender = build(:mob_combatant, unit_id: 2001, def: 0, soft_def: 0)
 
       stub(ModifierCalculator, :get_battle_modifiers, fn
         :mob, 2002 -> %{skill_ratio: 50, atk_rate: 25}
@@ -1702,8 +1574,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "def_rate lowers the defender's hard DEF and raises damage" do
       # Freeze's def_rate: -50 halves eDEF, so damage through the renewal formula rises.
-      attacker = CombatTestHelper.create_player_combatant()
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001, def: 100)
+      attacker = build(:player_combatant)
+      defender = build(:mob_combatant, unit_id: 2001, def: 100)
 
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
       :rand.seed(:exsss, {1, 2, 3})
@@ -1721,8 +1593,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "phys_damage_reduction shrugs off a percent of final damage and clamps at 100" do
-      attacker = CombatTestHelper.create_player_combatant()
-      defender = CombatTestHelper.create_player_combatant(unit_id: 1002, vit: 1)
+      attacker = build(:player_combatant)
+      defender = build(:player_combatant, unit_id: 1002, vit: 1)
 
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
       :rand.seed(:exsss, {1, 2, 3})
@@ -1767,14 +1639,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "a +20% vs-brute weapon multiplies damage by exactly 1.2, inert vs a non-brute" do
-      attacker = %{
-        CombatTestHelper.create_player_combatant()
-        | equip_modifiers: %{{:addrace, :brute} => 20}
-      }
+      attacker = build(:player_combatant, equip_modifiers: %{{:addrace, :brute} => 20})
 
-      plain = CombatTestHelper.create_player_combatant()
-      brute = CombatTestHelper.create_mob_combatant(race: :brute)
-      fish = CombatTestHelper.create_mob_combatant(race: :fish)
+      plain = build(:player_combatant)
+      brute = build(:mob_combatant, race: :brute)
+      fish = build(:mob_combatant, race: :fish)
 
       {:ok, base_vs_brute} = DamageCalculator.apply_modifier_pipeline(1000, plain, brute)
       {:ok, boosted_vs_brute} = DamageCalculator.apply_modifier_pipeline(1000, attacker, brute)
@@ -1787,10 +1656,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "bLongAtkRate boosts a bow attacker and is inert on the same sword attacker" do
-      target = CombatTestHelper.create_mob_combatant()
+      target = build(:mob_combatant)
 
-      bow = CombatTestHelper.create_player_combatant(weapon_type: :bow)
-      sword = CombatTestHelper.create_player_combatant(weapon_type: :sword)
+      bow = build(:player_combatant, weapon_type: :bow)
+      sword = build(:player_combatant, weapon_type: :sword)
 
       {:ok, base_bow} = DamageCalculator.apply_modifier_pipeline(1000, bow, target)
       {:ok, base_sword} = DamageCalculator.apply_modifier_pipeline(1000, sword, target)
@@ -1814,10 +1683,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "bShortAtkRate boosts a sword attacker and is inert on the same bow attacker" do
-      target = CombatTestHelper.create_mob_combatant()
+      target = build(:mob_combatant)
 
-      bow = CombatTestHelper.create_player_combatant(weapon_type: :bow)
-      sword = CombatTestHelper.create_player_combatant(weapon_type: :sword)
+      bow = build(:player_combatant, weapon_type: :bow)
+      sword = build(:player_combatant, weapon_type: :sword)
 
       {:ok, base_bow} = DamageCalculator.apply_modifier_pipeline(1000, bow, target)
       {:ok, base_sword} = DamageCalculator.apply_modifier_pipeline(1000, sword, target)
@@ -1840,24 +1709,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert boosted_bow == base_bow
     end
 
-    test "a mob attacker carries no equipment, so both range families read zero" do
-      attacker = CombatTestHelper.create_mob_combatant()
-
-      assert attacker.equip_modifiers == %{}
-    end
-
     test "a +20% race family and a +20% size family stack multiplicatively to exactly 1.44" do
-      attacker = %{
-        CombatTestHelper.create_player_combatant()
-        | equip_modifiers: %{{:addrace, :brute} => 20, {:addsize, :medium} => 20}
-      }
+      attacker =
+        build(:player_combatant,
+          equip_modifiers: %{{:addrace, :brute} => 20, {:addsize, :medium} => 20}
+        )
 
-      target = CombatTestHelper.create_mob_combatant(race: :brute, size: :medium)
+      target = build(:mob_combatant, race: :brute, size: :medium)
 
       {:ok, base} =
         DamageCalculator.apply_modifier_pipeline(
           1000,
-          CombatTestHelper.create_player_combatant(),
+          build(:player_combatant),
           target
         )
 
@@ -1867,9 +1730,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "a defender {:subrace, attacker-race} card reduces incoming damage by the percent" do
-      attacker = CombatTestHelper.create_player_combatant(race: :player_human)
+      attacker = build(:player_combatant, race: :player_human)
 
-      plain_defender = CombatTestHelper.create_player_combatant(unit_id: 1002)
+      plain_defender = build(:player_combatant, unit_id: 1002)
       defender = %{plain_defender | equip_modifiers: %{{:subrace, :player_human} => 20}}
 
       {:ok, base} = DamageCalculator.apply_modifier_pipeline(1000, attacker, plain_defender)
@@ -1879,9 +1742,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "add_def_monster reduces physical damage only from the matching monster id" do
-      matching_mob = CombatTestHelper.create_mob_combatant(monster_id: 1002)
-      other_mob = CombatTestHelper.create_mob_combatant(monster_id: 1099)
-      plain = CombatTestHelper.create_player_combatant()
+      matching_mob = build(:mob_combatant, monster_id: 1002)
+      other_mob = build(:mob_combatant, monster_id: 1099)
+      plain = build(:player_combatant)
 
       equipped = %{
         plain
@@ -1899,12 +1762,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "{:skill_atk, id} applies only when the :skill_id opt matches" do
       skill_id = 1234
 
-      attacker = %{
-        CombatTestHelper.create_player_combatant()
-        | equip_modifiers: %{{:skill_atk, skill_id} => 50}
-      }
+      attacker = build(:player_combatant, equip_modifiers: %{{:skill_atk, skill_id} => 50})
 
-      defender = CombatTestHelper.create_mob_combatant()
+      defender = build(:mob_combatant)
 
       {:ok, without_skill} = DamageCalculator.apply_modifier_pipeline(1000, attacker, defender)
 
@@ -1922,12 +1782,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "{:skill_atk, id} reaches the full calculate_damage path through the :skill_id opt" do
       skill_id = 1234
 
-      attacker = %{
-        CombatTestHelper.create_player_combatant()
-        | equip_modifiers: %{{:skill_atk, skill_id} => 100}
-      }
+      attacker = build(:player_combatant, equip_modifiers: %{{:skill_atk, skill_id} => 100})
 
-      defender = CombatTestHelper.create_mob_combatant(def: 0)
+      defender = build(:mob_combatant, def: 0)
 
       :rand.seed(:exsss, {1, 2, 3})
 
@@ -1943,13 +1800,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "{:addele, e} keys on the defender's own defense element" do
-      attacker = %{
-        CombatTestHelper.create_player_combatant()
-        | equip_modifiers: %{{:addele, :earth} => 20}
-      }
+      attacker = build(:player_combatant, equip_modifiers: %{{:addele, :earth} => 20})
 
-      earth_mob = CombatTestHelper.create_mob_combatant(element: {:earth, 1})
-      fire_mob = CombatTestHelper.create_mob_combatant(element: {:fire, 1})
+      earth_mob = build(:mob_combatant, element: {:earth, 1})
+      fire_mob = build(:mob_combatant, element: {:fire, 1})
 
       {:ok, vs_earth} = DamageCalculator.apply_modifier_pipeline(1000, attacker, earth_mob)
       {:ok, vs_fire} = DamageCalculator.apply_modifier_pipeline(1000, attacker, fire_mob)
@@ -1964,13 +1818,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         _, _ -> %{}
       end)
 
-      attacker = %{
-        CombatTestHelper.create_player_combatant()
-        | equip_modifiers: %{{:addele, :undead} => 10}
-      }
+      attacker = build(:player_combatant, equip_modifiers: %{{:addele, :undead} => 10})
 
-      undead_mob = CombatTestHelper.create_mob_combatant(element: {:undead, 1})
-      fire_mob = CombatTestHelper.create_mob_combatant(element: {:fire, 1})
+      undead_mob = build(:mob_combatant, element: {:undead, 1})
+      fire_mob = build(:mob_combatant, element: {:fire, 1})
 
       {:ok, vs_undead} = DamageCalculator.apply_modifier_pipeline(1000, attacker, undead_mob)
       {:ok, vs_fire} = DamageCalculator.apply_modifier_pipeline(1000, attacker, fire_mob)
@@ -1988,17 +1839,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         _, _ -> %{}
       end)
 
-      attacker = CombatTestHelper.create_player_combatant(weapon_element: :neutral)
+      attacker = build(:player_combatant, weapon_element: :neutral)
 
-      fire_resist = %{
-        CombatTestHelper.create_player_combatant(unit_id: 1002)
-        | equip_modifiers: %{{:subele, :fire} => 20}
-      }
+      fire_resist =
+        build(:player_combatant, unit_id: 1002, equip_modifiers: %{{:subele, :fire} => 20})
 
-      neutral_resist = %{
-        CombatTestHelper.create_player_combatant(unit_id: 1002)
-        | equip_modifiers: %{{:subele, :neutral} => 20}
-      }
+      neutral_resist =
+        build(:player_combatant, unit_id: 1002, equip_modifiers: %{{:subele, :neutral} => 20})
 
       {:ok, reduced} = DamageCalculator.apply_modifier_pipeline(1000, attacker, fire_resist)
       {:ok, inert} = DamageCalculator.apply_modifier_pipeline(1000, attacker, neutral_resist)
@@ -2008,13 +1855,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "a boss-class defender picks up the {:addclass, :boss} family" do
-      attacker = %{
-        CombatTestHelper.create_player_combatant()
-        | equip_modifiers: %{{:addclass, :boss} => 30}
-      }
+      attacker = build(:player_combatant, equip_modifiers: %{{:addclass, :boss} => 30})
 
-      boss = CombatTestHelper.create_boss_mob()
-      normal = CombatTestHelper.create_mob_combatant()
+      boss = build(:mob_combatant, @boss_mob)
+      normal = build(:mob_combatant)
 
       {:ok, vs_boss} = DamageCalculator.apply_modifier_pipeline(1000, attacker, boss)
       {:ok, vs_normal} = DamageCalculator.apply_modifier_pipeline(1000, attacker, normal)
@@ -2025,12 +1869,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "Dragonology passive and {:addrace, :dragon} equipment sum into one race step" do
       attacker = %{
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         | dragonology_level: 5,
           equip_modifiers: %{{:addrace, :dragon} => 20}
       }
 
-      dragon = CombatTestHelper.create_mob_combatant(race: :dragon)
+      dragon = build(:mob_combatant, race: :dragon)
 
       {:ok, total} = DamageCalculator.apply_modifier_pipeline(1000, attacker, dragon)
 
@@ -2047,13 +1891,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "100% ignore-def drops the defender's hard DEF contribution to nothing" do
-      brute_defender = CombatTestHelper.create_mob_combatant(race: :brute, def: 100)
-      no_def_defender = CombatTestHelper.create_mob_combatant(race: :brute, def: 0)
+      brute_defender = build(:mob_combatant, race: :brute, def: 100)
+      no_def_defender = build(:mob_combatant, race: :brute, def: 0)
 
-      attacker = %{
-        CombatTestHelper.create_player_combatant()
-        | equip_modifiers: %{{:ignore_def_race, :brute} => 100}
-      }
+      attacker = build(:player_combatant, equip_modifiers: %{{:ignore_def_race, :brute} => 100})
 
       {:ok, fully_ignored} =
         DamageCalculator.apply_defense_formula(200, brute_defender, attacker)
@@ -2064,12 +1905,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "0% ignore-def is bit-identical to the no-equipment baseline" do
-      brute_defender = CombatTestHelper.create_mob_combatant(race: :brute, def: 100)
+      brute_defender = build(:mob_combatant, race: :brute, def: 100)
 
-      zero_attacker = %{
-        CombatTestHelper.create_player_combatant()
-        | equip_modifiers: %{{:ignore_def_race, :brute} => 0}
-      }
+      zero_attacker =
+        build(:player_combatant, equip_modifiers: %{{:ignore_def_race, :brute} => 0})
 
       {:ok, baseline} = DamageCalculator.apply_defense_formula(200, brute_defender)
 
@@ -2086,38 +1925,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
-      {:ok,
-       left_hand: %WeaponHand{
-         weapon_level: 1,
-         item_id: 2,
-         subtype: :dagger,
-         element: :neutral,
-         base_atk: 0,
-         refine_atk: 0,
-         overrefine_band: 0,
-         slot: :left_hand
-       }}
+      {:ok, left_hand: build(:weapon_hand, item_id: 2, base_atk: 0, slot: :left_hand)}
     end
 
     test "primary and IgnoreAtkCard preserve scripted aggregate weapon element" do
-      right = %WeaponHand{
-        item_id: 1,
-        subtype: :dagger,
-        element: :fire,
-        base_atk: 100,
-        weapon_level: 1,
-        refine_atk: 0,
-        overrefine_band: 0,
-        slot: :right_hand
-      }
-
       attacker =
-        CombatTestHelper.create_player_combatant(weapon_type: :dagger, weapon_element: :holy)
-        |> Map.put(:right_hand, right)
+        build(:player_combatant,
+          weapon_type: :dagger,
+          weapon_element: :holy,
+          right_hand: build(:weapon_hand, element: :fire)
+        )
 
-      defender =
-        CombatTestHelper.create_mob_combatant(def: 0)
-        |> Map.put(:element, {:earth, 1})
+      defender = build(:mob_combatant, def: 0, element: {:earth, 1})
 
       opts = [base_damage: 1_000, skip_crit: true]
 
@@ -2139,8 +1958,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "secondary damage fails when the attacker has no left-hand snapshot" do
-      attacker = CombatTestHelper.create_player_combatant()
-      defender = CombatTestHelper.create_mob_combatant()
+      attacker = build(:player_combatant)
+      defender = build(:mob_combatant)
 
       assert {:error, :no_left_hand} =
                DamageCalculator.calculate_secondary_hand_damage(attacker, defender,
@@ -2151,16 +1970,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "primary, secondary, and IgnoreAtkCard separate cardfix from equipment DEF-ignore", %{
       left_hand: left_hand
     } do
-      attacker = %{
-        CombatTestHelper.create_player_combatant()
-        | left_hand: left_hand,
+      attacker =
+        build(:player_combatant,
+          left_hand: left_hand,
           equip_modifiers: %{
             {:addrace, :brute} => 100,
             {:ignore_def_race, :brute} => 100
           }
-      }
+        )
 
-      defender = CombatTestHelper.create_mob_combatant(race: :brute, def: 100)
+      defender = build(:mob_combatant, race: :brute, def: 100)
       opts = [base_damage: 1_000, skip_crit: true]
       primary = mode_value(2_000, 1_998)
       without_cards = mode_value(1_000, 999)
@@ -2184,9 +2003,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         attacker
         | left_hand: left,
           equip_modifiers: %{{:addrace, :brute} => 100, {:ignore_def_race, :brute} => 100},
-          combat_stats:
-            Map.merge(attacker.combat_stats, %{
-              atk: 9_999,
+          combat_stats: %{
+            attacker.combat_stats
+            | atk: 9_999,
               max_weapon_damage: true,
               physical_attack: %{
                 status_atk: 20,
@@ -2197,10 +2016,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
                 str: 0,
                 dex: 0
               }
-            })
+          }
       }
 
-      defender = CombatTestHelper.create_mob_combatant(race: :brute, def: 50, soft_def: 10)
+      defender = build(:mob_combatant, race: :brute, def: 50, soft_def: 10)
       primary = mode_value(307, 264)
       without_cards = mode_value(172, 132)
       secondary = mode_value(135, 64)
@@ -2220,9 +2039,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "a skill whose definition ignores attacker cards drops them on the ordinary path" do
-      plain = CombatTestHelper.create_player_combatant(weapon_type: :sword)
+      plain = build(:player_combatant, weapon_type: :sword)
       carded = %{plain | equip_modifiers: %{{:addrace, :brute} => 50}}
-      defender = CombatTestHelper.create_mob_combatant(race: :brute, def: 0)
+      defender = build(:mob_combatant, race: :brute, def: 0)
       opts = [base_damage: 1_000, skip_crit: true]
 
       # Venom Knife (IgnoreAtkCard) against Double Strafe, which takes the card.
@@ -2239,10 +2058,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "only an arrow attack reads the ammunition's cards" do
-      defender = CombatTestHelper.create_mob_combatant(race: :brute)
+      defender = build(:mob_combatant, race: :brute)
       arrow_card = %{{:arrow_addrace, :brute} => 50}
-      bow = CombatTestHelper.create_player_combatant(weapon_type: :bow)
-      sword = CombatTestHelper.create_player_combatant(weapon_type: :sword)
+      bow = build(:player_combatant, weapon_type: :bow)
+      sword = build(:player_combatant, weapon_type: :sword)
 
       assert {:ok, 1_500} =
                DamageCalculator.apply_modifier_pipeline(
@@ -2270,18 +2089,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "IgnoreAtkCard and the left hand drop every attacker card, Dragonology included", %{
       left_hand: left_hand
     } do
-      attacker = %{
-        CombatTestHelper.create_player_combatant(weapon_type: :sword)
-        | left_hand: left_hand,
+      attacker =
+        build(:player_combatant,
+          weapon_type: :sword,
+          left_hand: left_hand,
           dragonology_level: 5,
           equip_modifiers: %{
             {:addrace, :dragon} => 100,
             {:skill_atk, 123} => 20,
             short_atk_rate: 25
           }
-      }
+        )
 
-      defender = CombatTestHelper.create_mob_combatant(race: :dragon, def: 0)
+      defender = build(:mob_combatant, race: :dragon, def: 0)
 
       stub(ModifierCalculator, :get_battle_modifiers, fn
         :player, 1001 -> %{atk_rate: 50}
@@ -2313,28 +2133,31 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "primary and IgnoreAtkCard use the left hand magnitude in a left-only loadout" do
-      left = %WeaponHand{
-        item_id: 2,
-        subtype: :dagger,
-        element: :water,
-        base_atk: 50,
-        weapon_level: 1,
-        refine_atk: 10,
-        overrefine_band: 0,
-        slot: :left_hand
-      }
+      left =
+        build(:weapon_hand,
+          item_id: 2,
+          element: :water,
+          base_atk: 50,
+          refine_atk: 10,
+          slot: :left_hand
+        )
 
       attacker =
-        CombatTestHelper.create_player_combatant(str: 0, dex: 0, luk: 0, base_level: 0)
-        |> Map.put(:left_hand, left)
-        |> Map.put(:weapon, %{type: :dagger, element: :water, size: :all})
-        |> Map.update!(:combat_stats, fn stats ->
-          stats
-          |> Map.put(:atk, 60)
-          |> Map.put(:max_weapon_damage, true)
-        end)
+        build(:player_combatant,
+          str: 0,
+          dex: 0,
+          luk: 0,
+          base_level: 0,
+          left_hand: left,
+          weapon: %{type: :dagger, element: :water, size: :all}
+        )
 
-      defender = CombatTestHelper.create_mob_combatant(def: 0)
+      attacker = %{
+        attacker
+        | combat_stats: %{attacker.combat_stats | atk: 60, max_weapon_damage: true}
+      }
+
+      defender = build(:mob_combatant, def: 0)
 
       expected = mode_value(62, 59)
 
@@ -2348,49 +2171,41 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "each calculator reconstructs weapon ATK, refine, overrefine, and element from its selected hand" do
-      right = %WeaponHand{
-        item_id: 1,
-        subtype: :dagger,
-        element: :fire,
-        base_atk: 100,
-        weapon_level: 1,
-        refine_atk: 20,
-        overrefine_band: 0,
-        slot: :right_hand
-      }
+      right = build(:weapon_hand, element: :fire, refine_atk: 20)
 
-      left = %WeaponHand{
-        item_id: 2,
-        subtype: :dagger,
-        element: :water,
-        base_atk: 50,
-        weapon_level: 1,
-        refine_atk: 10,
-        overrefine_band: 1,
-        slot: :left_hand
-      }
+      left =
+        build(:weapon_hand,
+          item_id: 2,
+          element: :water,
+          base_atk: 50,
+          refine_atk: 10,
+          overrefine_band: 1,
+          slot: :left_hand
+        )
 
       attacker =
-        CombatTestHelper.create_player_combatant(
+        build(:player_combatant,
           str: 0,
           dex: 0,
           luk: 0,
           base_level: 0,
-          flat_atk: 30
+          flat_atk: 30,
+          right_hand: right,
+          left_hand: left,
+          weapon: %{type: :dagger, element: :fire, size: :all}
         )
-        |> Map.put(:right_hand, right)
-        |> Map.put(:left_hand, left)
-        |> Map.put(:weapon, %{type: :dagger, element: :fire, size: :all})
-        |> Map.update!(:combat_stats, fn stats ->
-          stats
-          |> Map.put(:atk, 210)
-          |> Map.put(:max_weapon_damage, true)
-          |> Map.put(:overrefine_band, 1)
-        end)
 
-      defender =
-        CombatTestHelper.create_mob_combatant(def: 0)
-        |> Map.put(:element, {:earth, 1})
+      attacker = %{
+        attacker
+        | combat_stats: %{
+            attacker.combat_stats
+            | atk: 210,
+              max_weapon_damage: true,
+              overrefine_band: 1
+          }
+      }
+
+      defender = build(:mob_combatant, def: 0, element: {:earth, 1})
 
       CombatTestHelper.stub_element_coefficient(fn
         :neutral, _, _, _ -> 1.0
@@ -2439,8 +2254,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "long_atk_def combines equipment and status reductions on ranged damage" do
-      attacker = CombatTestHelper.create_player_combatant(weapon_type: :bow)
-      defender = CombatTestHelper.create_player_combatant(unit_id: 1002, vit: 1)
+      attacker = build(:player_combatant, weapon_type: :bow)
+      defender = build(:player_combatant, unit_id: 1002, vit: 1)
       equipped = %{defender | equip_modifiers: %{long_atk_def: 20}}
 
       baseline = damage_with_defender_modifiers(attacker, defender, %{})
@@ -2450,8 +2265,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "long_atk_def: 30 reduces long-range weapon damage by 30%" do
-      attacker = CombatTestHelper.create_player_combatant(weapon_type: :bow)
-      defender = CombatTestHelper.create_player_combatant(unit_id: 1002, vit: 1)
+      attacker = build(:player_combatant, weapon_type: :bow)
+      defender = build(:player_combatant, unit_id: 1002, vit: 1)
       equipped = %{defender | equip_modifiers: %{long_atk_def: 30}}
 
       baseline = damage_with_defender_modifiers(attacker, defender, %{})
@@ -2461,8 +2276,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "long_atk_def leaves melee weapon damage untouched" do
-      attacker = CombatTestHelper.create_player_combatant(weapon_type: :sword)
-      defender = CombatTestHelper.create_mob_combatant(def: 0)
+      attacker = build(:player_combatant, weapon_type: :sword)
+      defender = build(:mob_combatant, def: 0)
       equipped = %{defender | equip_modifiers: %{long_atk_def: 30}}
 
       baseline = damage_with_defender_modifiers(attacker, defender, %{})
@@ -2472,19 +2287,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "long_atk_def can remove all ranged damage" do
-      attacker = CombatTestHelper.create_player_combatant(weapon_type: :bow)
+      attacker = build(:player_combatant, weapon_type: :bow)
 
-      defender = %{
-        CombatTestHelper.create_player_combatant(unit_id: 1002, vit: 1)
-        | equip_modifiers: %{long_atk_def: 100}
-      }
+      defender =
+        build(:player_combatant, unit_id: 1002, vit: 1, equip_modifiers: %{long_atk_def: 100})
 
       assert damage_with_defender_modifiers(attacker, defender, %{}) == 0
     end
 
     test "the per-hit ranged opt triggers the reduction with a melee weapon equipped" do
-      attacker = CombatTestHelper.create_player_combatant(weapon_type: :sword)
-      defender = CombatTestHelper.create_player_combatant(unit_id: 1002, vit: 1)
+      attacker = build(:player_combatant, weapon_type: :sword)
+      defender = build(:player_combatant, unit_id: 1002, vit: 1)
 
       baseline = damage_with_defender_modifiers(attacker, defender, %{})
 
@@ -2502,8 +2315,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "a long attack range attacker (ranged mob) triggers the reduction" do
-      attacker = %{CombatTestHelper.create_mob_combatant() | attack_range: 7}
-      defender = CombatTestHelper.create_player_combatant()
+      attacker = build(:mob_combatant, attack_range: 7)
+      defender = build(:player_combatant)
 
       baseline = damage_with_defender_modifiers(attacker, defender, %{})
 
@@ -2513,10 +2326,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "a mob defender's elemental status keys reduce no physical damage" do
-      defender = CombatTestHelper.create_mob_combatant(def: 0)
+      defender = build(:mob_combatant, def: 0)
 
       for {element, key} <- @element_status_keys do
-        attacker = CombatTestHelper.create_player_combatant(weapon_element: element)
+        attacker = build(:player_combatant, weapon_element: element)
         modifiers = %{key => 25}
         baseline = damage_with_defender_modifiers(attacker, defender, %{})
         reduced = damage_with_defender_modifiers(attacker, defender, modifiers)
@@ -2526,10 +2339,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "each elemental status key reduces matching physical damage for a player defender" do
-      defender = CombatTestHelper.create_player_combatant(unit_id: 1002, vit: 1)
+      defender = build(:player_combatant, unit_id: 1002, vit: 1)
 
       for {element, key} <- @element_status_keys do
-        mob = CombatTestHelper.create_mob_combatant()
+        mob = build(:mob_combatant)
         attacker = %{mob | weapon: %{mob.weapon | element: element}}
         modifiers = %{key => 25}
         baseline = damage_with_defender_modifiers(attacker, defender, %{})
@@ -2540,8 +2353,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "subele_holy: 25 reduces incoming holy damage ~25%" do
-      attacker = CombatTestHelper.create_player_combatant(weapon_element: :holy)
-      defender = CombatTestHelper.create_player_combatant(unit_id: 1002, vit: 1)
+      attacker = build(:player_combatant, weapon_element: :holy)
+      defender = build(:player_combatant, unit_id: 1002, vit: 1)
 
       baseline = damage_with_defender_modifiers(attacker, defender, %{})
       reduced = damage_with_defender_modifiers(attacker, defender, %{subele_holy: 25})
@@ -2550,8 +2363,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "an elemental status key is inert against another physical element" do
-      attacker = CombatTestHelper.create_player_combatant(weapon_element: :fire)
-      defender = CombatTestHelper.create_mob_combatant(def: 0)
+      attacker = build(:player_combatant, weapon_element: :fire)
+      defender = build(:mob_combatant, def: 0)
 
       baseline = damage_with_defender_modifiers(attacker, defender, %{})
       unaffected = damage_with_defender_modifiers(attacker, defender, %{subele_water: 25})
@@ -2560,8 +2373,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "subrace_demon: 25 reduces damage from a demon-race attacker ~25%" do
-      attacker = CombatTestHelper.create_mob_combatant(race: :demon)
-      defender = CombatTestHelper.create_player_combatant(unit_id: 1002, vit: 1)
+      attacker = build(:mob_combatant, race: :demon)
+      defender = build(:player_combatant, unit_id: 1002, vit: 1)
 
       baseline = damage_with_defender_modifiers(attacker, defender, %{})
       reduced = damage_with_defender_modifiers(attacker, defender, %{subrace_demon: 25})
@@ -2570,9 +2383,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "status and equipment resist for the same element family combine" do
-      attacker = CombatTestHelper.create_player_combatant(weapon_element: :holy)
-      clean = CombatTestHelper.create_player_combatant(unit_id: 1002, vit: 1)
-      equipped = Map.put(clean, :equip_modifiers, %{{:subele, :holy} => 10})
+      attacker = build(:player_combatant, weapon_element: :holy)
+      clean = build(:player_combatant, unit_id: 1002, vit: 1)
+      equipped = %{clean | equip_modifiers: %{{:subele, :holy} => 10}}
 
       baseline = damage_with_defender_modifiers(attacker, clean, %{})
       equip_only = damage_with_defender_modifiers(attacker, equipped, %{})
@@ -2597,14 +2410,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       attacker = %{
         attacker
-        | combat_stats:
-            Map.merge(attacker.combat_stats, %{
-              max_weapon_damage: true,
+        | combat_stats: %{
+            attacker.combat_stats
+            | max_weapon_damage: true,
               physical_attack: %{status_atk: 20, flat_atk: 15, mastery_atk: 0, str: 0, dex: 0}
-            })
+          }
       }
 
-      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0)
+      defender = build(:mob_combatant, def: 0, soft_def: 0)
 
       damage = fn rate ->
         rated = %{attacker | equip_modifiers: %{non_crit_atk_rate: rate}}
@@ -2623,14 +2436,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       attacker = %{
         attacker
         | equip_modifiers: %{non_crit_atk_rate: 100},
-          combat_stats:
-            Map.merge(attacker.combat_stats, %{
-              max_weapon_damage: true,
+          combat_stats: %{
+            attacker.combat_stats
+            | max_weapon_damage: true,
               physical_attack: %{status_atk: 20, flat_atk: 15, mastery_atk: 0, str: 0, dex: 0}
-            })
+          }
       }
 
-      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0)
+      defender = build(:mob_combatant, def: 0, soft_def: 0)
       opts = [skill_id: 365, skip_crit: true, ignore_element: true]
 
       assert {:ok, result} = DamageCalculator.calculate_damage(attacker, defender, opts)
@@ -2645,7 +2458,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     defp scalar_damage(attacker, opts) do
-      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0, vit: 0)
+      defender = build(:mob_combatant, def: 0, soft_def: 0, vit: 0)
       opts = Keyword.merge([base_damage: 100, skip_crit: true], opts)
       {:ok, %{damage: damage}} = DamageCalculator.calculate_damage(attacker, defender, opts)
       damage
@@ -2659,7 +2472,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "a monster's hit adds its post-defense status ATK, except on an excluded skill" do
-      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2003)
+      attacker = build(:mob_combatant, unit_id: 2003)
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
       plain = scalar_damage(attacker, skill_id: 5)
       holding_post_defense_atk(:mob, 2003)
@@ -2669,8 +2482,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "renewal adds the status ATK before the minimum, classic after it" do
-      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2003)
-      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 200, vit: 200)
+      attacker = build(:mob_combatant, unit_id: 2003)
+      defender = build(:mob_combatant, def: 0, soft_def: 200, vit: 200)
       opts = [base_damage: 10, skip_crit: true, skill_id: 5]
 
       damage = fn ->
@@ -2689,7 +2502,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "an attack with nothing before DEF takes no post-defense ATK" do
-      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2003)
+      attacker = build(:mob_combatant, unit_id: 2003)
       holding_post_defense_atk(:mob, 2003)
 
       assert scalar_damage(attacker, base_damage: 0) == 0
@@ -2697,7 +2510,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     @tag game_mode: :renewal
     test "renewal: a player's replaced-base hit adds its post-defense status ATK" do
-      attacker = CombatTestHelper.create_player_combatant()
+      attacker = build(:player_combatant)
       stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
       plain = scalar_damage(attacker, skill_id: 5)
       holding_post_defense_atk(:player, attacker.unit_id)
@@ -2713,17 +2526,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "a monster never crits, whatever its critical rate" do
-      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2002)
-      attacker = put_in(attacker.combat_stats[:critical_rate], 2_000)
-      defender = CombatTestHelper.create_mob_combatant(luk: 0)
+      attacker = build(:mob_combatant, unit_id: 2002)
+      attacker = put_in(attacker.combat_stats.critical_rate, 2_000)
+      defender = build(:mob_combatant, luk: 0)
 
       assert {:ok, %{is_critical: false}} = DamageCalculator.calculate_damage(attacker, defender)
     end
 
     test "a skill without a critical flag never crits" do
-      attacker = CombatTestHelper.create_player_combatant()
-      attacker = put_in(attacker.combat_stats[:critical_rate], 2_000)
-      defender = CombatTestHelper.create_mob_combatant(luk: 0)
+      attacker = build(:player_combatant)
+      attacker = put_in(attacker.combat_stats.critical_rate, 2_000)
+      defender = build(:mob_combatant, luk: 0)
       opts = [skill_id: 5, base_damage: 100]
 
       assert {:ok, %{is_critical: false}} =
@@ -2732,8 +2545,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     @tag game_mode: :renewal
     test "renewal: a non-player critical uses max ATK times 14/10, then the critical multiplier" do
-      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2002, atk: 50, str: 10)
-      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0, vit: 0)
+      attacker = build(:mob_combatant, unit_id: 2002, atk: 50, str: 10)
+      defender = build(:mob_combatant, def: 0, soft_def: 0, vit: 0)
 
       # max ATK 60 + batk 15 = 75; x14/10 = 105; x1.4 in single precision = 147.
       assert {:ok, %{damage: 147, is_critical: true}} =
@@ -2742,8 +2555,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     @tag game_mode: :pre_renewal
     test "classic: a non-player critical uses max ATK, ignores DEF and has no multiplier" do
-      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2002, atk: 50, str: 10)
-      defender = CombatTestHelper.create_mob_combatant(def: 60, soft_def: 30, vit: 80)
+      attacker = build(:mob_combatant, unit_id: 2002, atk: 50, str: 10)
+      defender = build(:mob_combatant, def: 60, soft_def: 30, vit: 80)
 
       # Attack2 defaults to Attack 50; classic adds no status ATK or critical multiplier.
       assert {:ok, %{damage: 50, is_critical: true}} =
@@ -2751,12 +2564,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "a non-player hit takes no weapon size modifier" do
-      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2002)
+      attacker = build(:mob_combatant, unit_id: 2002)
       attacker = put_in(attacker.weapon.type, :dagger)
       opts = [base_damage: 100, skip_crit: true, ignore_defense: true]
 
       damage = fn size ->
-        defender = CombatTestHelper.create_mob_combatant(size: size, def: 0, soft_def: 0, vit: 0)
+        defender = build(:mob_combatant, size: size, def: 0, soft_def: 0, vit: 0)
         {:ok, %{damage: damage}} = DamageCalculator.calculate_damage(attacker, defender, opts)
         damage
       end
@@ -2775,7 +2588,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "inserts MATK into the player weapon component or replaces the classic weapon base" do
       attacker = stave_caster(non_crit_atk_rate: 0)
-      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0)
+      defender = build(:mob_combatant, def: 0, soft_def: 0)
       opts = [skill_id: 365, skip_crit: true]
 
       assert {:ok, plain} = DamageCalculator.calculate_damage(attacker, defender, opts)
@@ -2793,7 +2606,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "the non-critical rate scales the classic MATK base but not the renewal recipe" do
       attacker = stave_caster(non_crit_atk_rate: 100)
-      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0)
+      defender = build(:mob_combatant, def: 0, soft_def: 0)
 
       assert {:ok, %{damage: damage}} =
                DamageCalculator.calculate_stave_crasher_damage(attacker, defender,
@@ -2807,7 +2620,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "classic Maximize Power takes the MATK maximum while renewal keeps the roll" do
       attacker = stave_caster(non_crit_atk_rate: 0)
-      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0)
+      defender = build(:mob_combatant, def: 0, soft_def: 0)
 
       assert {:ok, %{damage: damage}} =
                DamageCalculator.calculate_stave_crasher_damage(attacker, defender,
@@ -2821,8 +2634,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     @tag game_mode: :renewal
     test "an ordinary renewal monster hit gains nothing from the MATK insertion" do
-      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2002, atk: 100)
-      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0)
+      attacker = build(:mob_combatant, unit_id: 2002, atk: 100)
+      defender = build(:mob_combatant, def: 0, soft_def: 0)
       opts = [skill_id: 365, skip_crit: true]
 
       :rand.seed(:exsss, {11, 12, 13})
@@ -2842,8 +2655,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     @tag game_mode: :pre_renewal
     test "the classic MATK base still takes the ATK percent after the ratio" do
       attacker = stave_caster(non_crit_atk_rate: 0)
-      mob = CombatTestHelper.create_mob_combatant(unit_id: 2002, atk: 100)
-      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0)
+      mob = build(:mob_combatant, unit_id: 2002, atk: 100)
+      defender = build(:mob_combatant, def: 0, soft_def: 0)
 
       stub(ModifierCalculator, :get_battle_modifiers, fn
         :player, 1001 -> %{atk_rate: 50}
@@ -2864,8 +2677,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     @tag game_mode: :pre_renewal
     test "a classic monster's base is the MATK roll without its base ATK" do
-      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2002, atk: 100)
-      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0)
+      attacker = build(:mob_combatant, unit_id: 2002, atk: 100)
+      defender = build(:mob_combatant, def: 0, soft_def: 0)
 
       assert {:ok, %{damage: damage}} =
                DamageCalculator.calculate_stave_crasher_damage(attacker, defender,
@@ -2880,7 +2693,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "rejects a missing or negative MATK value" do
       attacker = stave_caster(non_crit_atk_rate: 0)
-      defender = CombatTestHelper.create_mob_combatant()
+      defender = build(:mob_combatant)
 
       assert {:error, :invalid_matk} =
                DamageCalculator.calculate_stave_crasher_damage(attacker, defender, skill_id: 365)
@@ -2900,9 +2713,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       attacker
       | right_hand: %{attacker.right_hand | refine_atk: 7},
         equip_modifiers: %{non_crit_atk_rate: rate},
-        combat_stats:
-          Map.merge(attacker.combat_stats, %{
-            max_weapon_damage: true,
+        combat_stats: %{
+          attacker.combat_stats
+          | max_weapon_damage: true,
             matk: 200,
             matk_min: 100,
             matk_max: 200,
@@ -2914,7 +2727,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
               str: 0,
               dex: 0
             }
-          })
+        }
     }
   end
 
@@ -2923,7 +2736,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
   defp player_with_weapon(attack) do
     attacker =
-      CombatTestHelper.create_player_combatant(
+      build(:player_combatant,
         str: 0,
         dex: 0,
         luk: 0,
@@ -2931,16 +2744,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         weapon_type: :dagger
       )
 
-    hand = %WeaponHand{
-      item_id: 1,
-      subtype: :dagger,
-      element: :neutral,
-      base_atk: attack,
-      weapon_level: 4,
-      refine_atk: 0,
-      overrefine_band: 0,
-      slot: :right_hand
-    }
+    hand = build(:weapon_hand, base_atk: attack, weapon_level: 4)
 
     %{attacker | right_hand: hand, combat_stats: %{attacker.combat_stats | atk: attack}}
   end

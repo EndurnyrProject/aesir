@@ -37,8 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TraitStatsIntegrationTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.GameMode
-  alias Aesir.Commons.Models.Account
-  alias Aesir.Commons.Models.Character
+  alias Aesir.Factory
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
@@ -62,23 +61,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TraitStatsIntegrationTest do
   setup :setup_ets_tables
 
   setup do
-    Mimic.copy(ModifierCalculator)
     stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
     :ok
   end
 
   setup do
-    {:ok, account} =
-      %Account{}
-      |> Account.changeset(%{
-        username: "trait_stats_user",
-        userid: "trait_stats_user",
-        user_pass: "password",
-        email: "trait_stats@test.com"
-      })
-      |> Repo.insert()
-
-    %{account: account}
+    %{account: Factory.insert(:account)}
   end
 
   setup do
@@ -208,27 +196,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TraitStatsIntegrationTest do
   end
 
   defp spawn_character(account, name, char_num, class \\ 1, base_level \\ 50) do
-    {:ok, character} =
-      %Character{}
-      |> Character.changeset(%{
-        account_id: account.id,
-        char_num: char_num,
-        name: name,
-        class: class,
-        base_level: base_level,
-        last_map: "prontera",
-        last_x: 50,
-        last_y: 50,
-        str: 10,
-        agi: 10,
-        vit: 10,
-        int: 10,
-        dex: 10,
-        luk: 10
-      })
-      |> Repo.insert()
-
-    character
+    Factory.insert(:character,
+      account: account,
+      char_num: char_num,
+      name: name,
+      class: class,
+      base_level: base_level,
+      last_map: "prontera",
+      last_x: 50,
+      last_y: 50,
+      str: 10,
+      agi: 10,
+      vit: 10,
+      int: 10,
+      dex: 10,
+      luk: 10
+    )
   end
 
   defp equip(character, nameid, equip_bitmask, refine \\ 0) do

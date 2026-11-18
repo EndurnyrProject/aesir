@@ -1,5 +1,5 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiersTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers

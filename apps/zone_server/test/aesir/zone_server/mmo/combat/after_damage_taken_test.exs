@@ -3,13 +3,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
-  alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @victim_id 1
@@ -45,11 +45,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
   setup :set_mimic_from_context
   setup :verify_on_exit!
   setup :setup_ets_tables
-
-  setup do
-    Mimic.copy(EquipComa)
-    :ok
-  end
 
   defp stub_unit_info(char_id) do
     stub(UnitRegistry, :get_unit_info, fn :player, ^char_id ->
@@ -117,7 +112,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
     %{victim_pid: victim_pid, attacker_pid: attacker_pid}
   end
 
-  defp player_state(char_id), do: PlayerStateFixture.build(%{character_id: char_id, stats: %{}})
+  defp player_state(char_id), do: build(:player_state, character_id: char_id)
 
   defp melee_hit, do: %{dmg_type: :physical, is_short: true, element: :neutral}
 
@@ -265,7 +260,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
       Registry.register_module(InertStatus)
       :ok = Interpreter.apply_status(:player, @victim_id, :sc_test_inert_reflect)
 
-      stub(TargetResolver, :resolve, fn @attacker_id -> {:ok, attacker, %{}, :player} end)
+      stub(TargetResolver, :resolve, fn @attacker_id ->
+        {:ok, attacker, player_state(@attacker_id), :player}
+      end)
 
       DamageApplication.apply_unit_damage(
         :player,

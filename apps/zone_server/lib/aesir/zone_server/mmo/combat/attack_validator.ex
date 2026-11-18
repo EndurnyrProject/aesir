@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AttackValidator do
 
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.LineOfSight
+  alias Aesir.ZoneServer.Mmo.Combat.Combatant
 
   @doc """
   Validates an attack between two combatants.
@@ -16,7 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AttackValidator do
   skill range the interpreter already validated), and — with `:projectile?` and
   a ranged attacker — an unobstructed projectile path.
   """
-  @spec validate(map(), map(), keyword()) :: :ok | {:error, atom()}
+  @spec validate(Combatant.t(), Combatant.t(), keyword()) :: :ok | {:error, atom()}
   def validate(attacker, target, opts) do
     with :ok <- validate_same_map(attacker, target),
          :ok <- validate_attack_distance(attacker, target, opts) do
@@ -33,7 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AttackValidator do
   mobs (attack_range == 1) can only reach adjacent cells, so the seam is a no-op
   for them.
   """
-  @spec validate_mob_attack(map(), map()) :: :ok | {:error, atom()}
+  @spec validate_mob_attack(Combatant.t(), Combatant.t()) :: :ok | {:error, atom()}
   def validate_mob_attack(attacker, target) do
     with :ok <- validate_attack_range(attacker, target) do
       validate_projectile_path(attacker, target, projectile?: true)

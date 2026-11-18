@@ -1,18 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecoveryTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.Combat.PotionRecovery
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
-  alias Aesir.ZoneServer.Unit.Mob.MobState
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
-  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
-  alias Aesir.ZoneServer.Unit.Stats.CurrentState
-  alias Aesir.ZoneServer.Unit.Stats.DerivedStats
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
 
   @thrower_id 66_001
   @target_id 66_002
@@ -291,14 +286,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecoveryTest do
     end
 
     test "a monster recipient scales by its VIT and INT only" do
-      spawn = %MobSpawn{
-        mob: 1002,
-        amount: 1,
-        respawn_time: 0,
-        spawn_area: %MobSpawn.SpawnArea{x: 0, y: 0}
-      }
-
-      mob = MobState.new(66_004, Aesir.TestMob.definition(), spawn, "test", 0, 0)
+      mob = build(:mob_state, instance_id: 66_004, map_name: "test", x: 0, y: 0)
 
       # VIT 10: 100 * 120% = 120; INT 5: 50 * 110% = 55.
       assert PotionRecovery.slim_receive({100, 50}, PotionRecovery.recipient(mob, 478)) ==
@@ -315,28 +303,28 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecoveryTest do
   end
 
   defp player(id, opts) do
-    %PlayerState{
+    build(:player_state,
       character_id: id,
       account_id: 1,
-      stats: %Stats{
+      stats: %{
         base_stats: %{vit: Keyword.get(opts, :vit, 0), int: Keyword.get(opts, :int, 0)},
-        current_state: %CurrentState{hp: 10, sp: 10},
-        derived_stats: %DerivedStats{max_hp: 1_000, max_sp: 500, aspd: 150},
-        combat_stats: %{hplus: Keyword.get(opts, :hplus, 0)},
+        current_state: %{hp: 10, sp: 10},
+        derived_stats: %{max_hp: 1_000, max_sp: 500, aspd: 150},
+        combat_stats: %CombatStats{hplus: Keyword.get(opts, :hplus, 0)},
         modifiers: %{
           equipment: Keyword.get(opts, :equipment, %{}),
           status_effects: %{},
           job_bonuses: %{},
           passive: %{}
         },
-        progression: %PlayerProgression{
+        progression: %{
           base_level: 1,
           job_level: 1,
           job_id: 0,
           learned_skills: Keyword.get(opts, :learned, %{})
         }
       }
-    }
+    )
   end
 
   defp homunculus do

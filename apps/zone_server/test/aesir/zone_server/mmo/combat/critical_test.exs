@@ -1,7 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.CriticalTest do
   use ExUnit.Case, async: false
 
-  alias Aesir.ZoneServer.CombatTestHelper
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Combat.Critical
   alias Aesir.ZoneServer.Mmo.StatusStorage
 
@@ -13,11 +14,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalTest do
   end
 
   defp player(critical_rate, opts \\ []) do
-    attacker = CombatTestHelper.create_player_combatant(opts)
+    attacker = build(:player_combatant, opts)
     %{attacker | combat_stats: Map.put(attacker.combat_stats, :critical_rate, critical_rate)}
   end
 
-  defp mob(opts \\ []), do: CombatTestHelper.create_mob_combatant(opts)
+  defp mob(opts \\ []), do: build(:mob_combatant, opts)
 
   describe "chance/3" do
     test "a player's chance loses twice the target's LUK" do
@@ -26,7 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalTest do
 
     test "units outside the critical-capable types never crit" do
       attacker = %{mob() | combat_stats: Map.put(mob().combat_stats, :critical_rate, 500)}
-      defender = CombatTestHelper.create_player_combatant(luk: 1)
+      defender = build(:player_combatant, luk: 1)
 
       assert Critical.chance(attacker, defender, []) == 0
     end
@@ -53,7 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalTest do
 
     test "a player target's critical defense scales the chance last" do
       defender =
-        CombatTestHelper.create_player_combatant(luk: 20)
+        build(:player_combatant, luk: 20)
         |> Map.update!(:equip_modifiers, &Map.put(&1, :critical_def, 50))
 
       # (300 - 40) halved by the skill, then * (100 - 50) / 100
@@ -90,7 +91,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalTest do
 
     test "a mercenary attacking a player loses three times its LUK" do
       attacker = %{player(300) | unit_type: :mercenary}
-      defender = CombatTestHelper.create_player_combatant(unit_id: 1002, luk: 10)
+      defender = build(:player_combatant, unit_id: 1002, luk: 10)
 
       assert Critical.chance(attacker, defender, []) == 300 - 30
     end
@@ -128,7 +129,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalTest do
     end
 
     test "non-players never crit" do
-      defender = CombatTestHelper.create_player_combatant(luk: 0)
+      defender = build(:player_combatant, luk: 0)
       attacker = %{mob() | combat_stats: Map.put(mob().combat_stats, :critical_rate, 2_000)}
 
       refute Critical.normal_attack?(attacker, defender, [])

@@ -2,7 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkHeadcrushTest do
   use ExUnit.Case, async: true
   use Mimic
 
-  alias Aesir.ZoneServer.CombatTestHelper
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
@@ -54,9 +55,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkHeadcrushTest do
     {:ok, definition} = Catalog.by_name(:lk_headcrush)
 
     targets = %{
-      6_130 => CombatTestHelper.create_mob_combatant(unit_id: 6_130, element: {:undead, 1}),
-      6_131 => CombatTestHelper.create_mob_combatant(unit_id: 6_131, race: :undead),
-      6_132 => CombatTestHelper.create_mob_combatant(unit_id: 6_132, race: :demon)
+      6_130 => build(:mob_combatant, unit_id: 6_130, element: {:undead, 1}),
+      6_131 => build(:mob_combatant, unit_id: 6_131, race: :undead),
+      6_132 => build(:mob_combatant, unit_id: 6_132, race: :demon)
     }
 
     stub(Combat, :resolve_combatant, fn id -> {:ok, Map.fetch!(targets, id)} end)
@@ -83,7 +84,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkHeadcrushTest do
     caster = %PlayerState{character_id: 5_130}
 
     stub(Combat, :resolve_combatant, fn 6_130 ->
-      {:ok, CombatTestHelper.create_mob_combatant(unit_id: 6_130)}
+      {:ok, build(:mob_combatant, unit_id: 6_130)}
     end)
 
     expect(Combat, :execute_skill_attack, fn ^caster, 6_130, opts ->
@@ -105,7 +106,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkHeadcrushTest do
     target_ref = {:mob, 6_130}
 
     stub(Combat, :resolve_combatant, fn ^target_ref ->
-      {:ok, CombatTestHelper.create_mob_combatant(unit_id: 6_130)}
+      {:ok, build(:mob_combatant, unit_id: 6_130)}
     end)
 
     stub(Combat, :execute_skill_attack, fn _caster, ^target_ref, _opts ->

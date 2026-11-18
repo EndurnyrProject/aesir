@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Gunslinger.GsFlingTest do
   use ExUnit.Case, async: true
   import Mimic
+  import Aesir.ZoneServer.Factory
 
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
   alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
@@ -42,10 +42,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Gunslinger.GsFlingTest do
 
   test "the damage is the job level whatever the target's DEF, element and flee" do
     definition = GsFling.definition()
-    attacker = CombatTestHelper.create_player_combatant(job_level: 42)
+    attacker = build(:player_combatant, job_level: 42)
 
-    armored = CombatTestHelper.create_mob_combatant(def: 500, soft_def: 500, element: :water)
-    evasive = CombatTestHelper.create_mob_combatant(flee: 5_000, agi: 200)
+    armored = build(:mob_combatant, def: 500, soft_def: 500, element: :water)
+    evasive = build(:mob_combatant, agi: 200)
+    evasive = %{evasive | combat_stats: %{evasive.combat_stats | flee: 5_000}}
 
     opts = [skill_id: definition.id, attack_flag: 0x20, base_damage: 42]
 

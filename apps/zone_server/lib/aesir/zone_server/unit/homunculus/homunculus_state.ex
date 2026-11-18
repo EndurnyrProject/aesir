@@ -9,6 +9,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.HomunculusState do
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Ref
+  alias Aesir.ZoneServer.Unit.Stats.BaseStats
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
 
   @behaviour Unit
 
@@ -263,8 +265,9 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.HomunculusState do
       unit_type: :homunculus,
       social_root: {:player, state.owner_character_id},
       reward_root: {:player, state.owner_character_id},
-      base_stats: base_stats(state),
-      combat_stats: state.combat_stats,
+      base_stats: struct!(BaseStats, base_stats(state)),
+      combat_stats:
+        struct!(CombatStats, Map.drop(state.combat_stats, [:hp_regen_rate, :sp_regen_rate])),
       max_hp: state.max_hp,
       max_sp: state.max_sp,
       progression: %{base_level: state.level, job_level: 1},

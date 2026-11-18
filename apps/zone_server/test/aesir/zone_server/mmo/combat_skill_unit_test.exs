@@ -31,6 +31,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.Stats.BaseStats
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :set_mimic_private
@@ -55,8 +57,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     %Combatant{
       unit_id: @caster_id,
       unit_type: :player,
-      base_stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
-      combat_stats: %{
+      base_stats: %BaseStats{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
+      combat_stats: %CombatStats{
         atk: 1,
         def: 1,
         hit: 1,

@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.TrapCombatTarget do
   party, guild or continued presence does not protect it from such an attack.
   """
 
+  alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -19,7 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.TrapCombatTarget do
   def targetable?(_target_ref), do: false
 
   @doc "Returns the trap's defender without inheriting an owner's friendly relationship."
-  @spec to_combatant(Cell.t()) :: {:ok, map()} | {:error, :target_not_found}
+  @spec to_combatant(Cell.t()) :: {:ok, Combatant.t()} | {:error, :target_not_found}
   def to_combatant(%Cell{} = cell) do
     with {:ok, ^cell} <- resolve({:skill_unit, cell.cell_id}),
          do: {:ok, CombatTarget.to_combatant(cell)}

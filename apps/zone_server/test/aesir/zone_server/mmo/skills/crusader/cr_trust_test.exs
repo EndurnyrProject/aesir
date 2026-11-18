@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrTrustTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
@@ -70,9 +72,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrTrustTest do
 
   describe "holy damage resistance through the families bridge" do
     test "reduces incoming physical holy damage by 5*lv percent" do
-      attacker = CombatTestHelper.create_mob_combatant()
-      defender_lv0 = %{CombatTestHelper.create_player_combatant() | faith_level: 0}
-      defender_lv5 = %{CombatTestHelper.create_player_combatant() | faith_level: 5}
+      attacker = build(:mob_combatant)
+      defender_lv0 = %{build(:player_combatant) | faith_level: 0}
+      defender_lv5 = %{build(:player_combatant) | faith_level: 5}
 
       {:ok, base} =
         DamageCalculator.apply_modifier_pipeline(1000, attacker, defender_lv0, element: :holy)
@@ -84,9 +86,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrTrustTest do
     end
 
     test "leaves incoming physical non-holy damage unaffected" do
-      attacker = CombatTestHelper.create_mob_combatant()
-      defender_lv0 = %{CombatTestHelper.create_player_combatant() | faith_level: 0}
-      defender_lv5 = %{CombatTestHelper.create_player_combatant() | faith_level: 5}
+      attacker = build(:mob_combatant)
+      defender_lv0 = %{build(:player_combatant) | faith_level: 0}
+      defender_lv5 = %{build(:player_combatant) | faith_level: 5}
 
       {:ok, unaffected_lv0} =
         DamageCalculator.apply_modifier_pipeline(1000, attacker, defender_lv0, element: :fire)
@@ -98,8 +100,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrTrustTest do
     end
 
     test "reduces incoming magic holy damage by 5*lv percent" do
-      attacker = with_matk(CombatTestHelper.create_mob_combatant(), 1000)
-      defender_lv0 = with_mdef(CombatTestHelper.create_player_combatant(), 0, 0)
+      attacker = with_matk(build(:mob_combatant), 1000)
+      defender_lv0 = with_mdef(build(:player_combatant), 0, 0)
       defender_lv5 = %{defender_lv0 | faith_level: 5}
 
       assert {:ok, %{damage: base}} =
@@ -116,8 +118,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrTrustTest do
     end
 
     test "leaves incoming magic non-holy damage unaffected" do
-      attacker = with_matk(CombatTestHelper.create_mob_combatant(), 1000)
-      defender_lv0 = with_mdef(CombatTestHelper.create_player_combatant(), 0, 0)
+      attacker = with_matk(build(:mob_combatant), 1000)
+      defender_lv0 = with_mdef(build(:player_combatant), 0, 0)
       defender_lv5 = %{defender_lv0 | faith_level: 5}
 
       assert {:ok, %{damage: unaffected_lv0}} =

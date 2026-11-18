@@ -4,7 +4,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalWoundHealingTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.GameMode
-  alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Combat.PotionRecovery
   alias Aesir.ZoneServer.Mmo.Combat.SkillHeal
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
@@ -41,20 +40,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalWoundHealingTest do
 
   setup do
     player =
-      PlayerState.new(%Character{
-        id: @id,
-        account_id: @id,
-        name: "CriticalWound",
-        class: 0,
-        base_level: 60,
-        vit: 0,
-        int: 0,
-        hp: 1,
-        sp: 1,
-        last_map: "prontera",
-        last_x: 100,
-        last_y: 100
-      })
+      PlayerState.new(
+        Aesir.Factory.build(:character,
+          id: @id,
+          account_id: @id,
+          name: "CriticalWound",
+          class: 0,
+          base_level: 60,
+          vit: 0,
+          int: 0,
+          hp: 1,
+          sp: 1,
+          last_map: "prontera",
+          last_x: 100,
+          last_y: 100
+        )
+      )
 
     :ok = UnitRegistry.register_unit(:player, @id, PlayerState, player, self())
     %{player: player}

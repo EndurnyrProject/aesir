@@ -11,12 +11,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicFledAttackTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
-  alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
-  alias Aesir.ZoneServer.Unit.Player.WeaponHand
 
   @cart_revolution 153
   @envenom 52
@@ -26,10 +26,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicFledAttackTest do
   setup :verify_on_exit!
 
   setup do
-    Mimic.copy(ElementModifiers)
-    Mimic.copy(SizeModifiers)
-    Mimic.copy(ModifierCalculator)
-
     stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
     stub(ModifierCalculator, :get_battle_modifiers, fn _type, _id -> %{} end)
 
@@ -70,7 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicFledAttackTest do
 
       # (10 Star Crumb + 150) doubled by poison.
       assert fled(attacker(%{star_atk: 10}), opts) == 320
-      assert fled(CombatTestHelper.create_mob_combatant(), opts) == 300
+      assert fled(build(:mob_combatant), opts) == 300
     end
 
     test "the Magnum Break share's base is the Star Crumb and sphere bonus alone" do
@@ -121,21 +117,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicFledAttackTest do
   end
 
   defp attacker(snapshot) do
-    attacker = CombatTestHelper.create_player_combatant(weapon_type: :dagger)
-
-    hand = %WeaponHand{
-      item_id: 1,
-      subtype: :dagger,
-      element: :neutral,
-      base_atk: 100,
-      weapon_level: 1,
-      refine_atk: 0,
-      overrefine_band: 0,
-      slot: :right_hand
-    }
+    attacker = build(:player_combatant, weapon_type: :dagger)
 
     combat_stats = Map.update!(attacker.combat_stats, :physical_attack, &Map.merge(&1, snapshot))
-    %{attacker | right_hand: hand, combat_stats: combat_stats}
+    %{attacker | right_hand: build(:weapon_hand), combat_stats: combat_stats}
   end
 
   defp with_left_hand(attacker) do
@@ -143,5 +128,5 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicFledAttackTest do
   end
 
   defp defender,
-    do: CombatTestHelper.create_mob_combatant(def: 10, soft_def: 0, element: {:earth, 1})
+    do: build(:mob_combatant, def: 10, soft_def: 0, element: {:earth, 1})
 end

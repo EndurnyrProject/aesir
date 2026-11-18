@@ -3,9 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguardTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
@@ -236,8 +236,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguardTest do
 
   describe "weapon-skill block through the combat pipeline" do
     setup do
-      attacker = CombatTestHelper.create_player_combatant(unit_id: 1000, position: {100, 100})
-      target = CombatTestHelper.create_player_combatant(unit_id: 5000, position: {100, 101})
+      attacker = build(:player_combatant, unit_id: 1000, position: {100, 100})
+      target = build(:player_combatant, unit_id: 5000, position: {100, 101})
       caster_state = %PlayerState{character_id: 1000}
       target_state = %PlayerState{character_id: 5000}
 

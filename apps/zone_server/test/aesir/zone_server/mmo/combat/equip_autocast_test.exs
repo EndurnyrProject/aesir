@@ -6,7 +6,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutocastTest do
 
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.CombatTestHelper
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.AutospellForceFlag
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
@@ -42,10 +43,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutocastTest do
   defp melee_swing, do: BattleFlags.build(:weapon, :short, false)
 
   defp attacker_with(entries) do
-    CombatTestHelper.create_player_combatant(unit_id: 1001) |> with_mods(registered(entries))
+    build(:player_combatant, unit_id: 1001) |> with_mods(registered(entries))
   end
 
-  defp defender, do: CombatTestHelper.create_mob_combatant(unit_id: 2001)
+  defp defender, do: build(:mob_combatant, unit_id: 2001)
 
   describe "register/3" do
     defp attack_list(mods), do: Enum.map(mods[{:auto_cast, :attack}], &{&1.rate, &1.card_id})
@@ -60,7 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutocastTest do
     test "different cards keep separate entries, each its own candidate" do
       mods = registered([{entry(rate: 300), 4_001}, {entry(rate: 500), 4_002}])
 
-      attacker = CombatTestHelper.create_player_combatant(unit_id: 1001) |> with_mods(mods)
+      attacker = build(:player_combatant, unit_id: 1001) |> with_mods(mods)
 
       assert attack_list(mods) == [{300, 4_001}, {500, 4_002}]
 
@@ -215,8 +216,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutocastTest do
     end
 
     test "a mob attacker carries no equipment and procs nothing" do
-      mob = CombatTestHelper.create_mob_combatant(unit_id: 3001)
-      player = CombatTestHelper.create_player_combatant(unit_id: 1001)
+      mob = build(:mob_combatant, unit_id: 3001)
+      player = build(:player_combatant, unit_id: 1001)
 
       assert [] = EquipAutocast.on_attack(mob, player, melee_swing(), false)
     end
@@ -277,7 +278,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutocastTest do
   describe "when_hit/3" do
     test "the defender's proc targets the attacker" do
       defender =
-        CombatTestHelper.create_player_combatant(unit_id: 2001)
+        build(:player_combatant, unit_id: 2001)
         |> with_mods(registered([entry(trigger: :when_hit, flag: BattleFlags.fill_battle(0))]))
 
       assert [%{branch: :counter, skill_id: @cold_bolt, level: 3, target: {:unit, 1001}}] =
@@ -286,7 +287,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutocastTest do
 
     test "long-range weapon damage halves the chance" do
       defender =
-        CombatTestHelper.create_player_combatant(unit_id: 2001)
+        build(:player_combatant, unit_id: 2001)
         |> with_mods(
           registered([entry(trigger: :when_hit, rate: 600, flag: BattleFlags.fill_battle(0))])
         )
@@ -299,7 +300,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutocastTest do
 
     test "attack entries never fire on the when-hit trigger" do
       defender =
-        CombatTestHelper.create_player_combatant(unit_id: 2001)
+        build(:player_combatant, unit_id: 2001)
         |> with_mods(registered([entry(trigger: :attack)]))
 
       assert [] = EquipAutocast.when_hit(defender, 1001, melee_swing())

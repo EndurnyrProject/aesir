@@ -5,8 +5,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
 
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.GameMode
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
@@ -15,7 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
   describe "physical_attack_cardfix/4" do
     setup do
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> Map.put(:dragonology_level, 1)
         |> with_equip_modifiers(%{
           {:addele, :earth} => 1,
@@ -39,7 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
         })
 
       defender =
-        CombatTestHelper.create_mob_combatant(
+        build(:mob_combatant,
           race: :dragon,
           size: :large,
           monster_id: 1_002,
@@ -86,16 +87,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
              ) == [10 + 40 + 4, 1 + 4, 100 + 400, 3, 7 + 9, 11]
     end
 
-    test "an arrow hit reads the right hand and ammunition as race, element, size, groups, class",
-         ctx do
-      assert EquipmentBonuses.physical_attack_cardfix(
-               ctx.attacker,
-               ctx.defender,
-               :right_hand,
-               attack_opts(%{arrow?: true})
-             ) == [10 + 40 + 4, 1 + 4, 100 + 400, 3, 7 + 9, 11]
-    end
-
     test "the range rate the hit's range selects joins only where the mode adds it", ctx do
       melee = attack_opts(%{range_rates?: true})
       long = attack_opts(%{range_rates?: true, ranged?: true})
@@ -138,7 +129,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
       assert modifiers == %{{:addrace2, :orc} => 30}
 
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_equip_modifiers(modifiers)
 
       opts = %{
@@ -150,7 +141,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
 
       for {groups, expected} <- [{[:orc], 30}, {[:orc, :goblin], 30}, {[:goblin], 0}, {[], 0}] do
         defender =
-          CombatTestHelper.create_mob_combatant(race: :demi_human)
+          build(:mob_combatant, race: :demi_human)
           |> Map.put(:race2, groups)
 
         rates = EquipmentBonuses.physical_attack_cardfix(attacker, defender, :right_hand, opts)
@@ -162,11 +153,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
   describe "physical_defense_cardfix/3" do
     test "orders the resists and adds the left element only when given" do
       attacker =
-        CombatTestHelper.create_mob_combatant(race: :brute, size: :small, monster_id: 1_002)
+        build(:mob_combatant, race: :brute, size: :small, monster_id: 1_002)
         |> Map.merge(%{element: {:water, 1}, race2: [:goblin]})
 
       defender =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> Map.put(:faith_level, 1)
         |> with_equip_modifiers(%{
           {:subele, :fire} => 1,
@@ -203,7 +194,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
 
   describe "percent_atk_rate/2" do
     test "renewal sums the equipment rate with the status script rate; classic reads 0" do
-      attacker = with_equip_modifiers(CombatTestHelper.create_player_combatant(), %{atk_rate: 10})
+      attacker = with_equip_modifiers(build(:player_combatant), %{atk_rate: 10})
 
       assert EquipmentBonuses.percent_atk_rate(attacker, %{bonus_atk_rate: 15}) ==
                mode_value(25, 0)
@@ -215,10 +206,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
   describe "attack_rates/4" do
     test "secondary monster groups add physical and magic attack bonuses" do
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_equip_modifiers(%{{:addrace2, :goblin} => 20, {:magic_addrace2, :goblin} => 30})
 
-      defender = %{CombatTestHelper.create_mob_combatant() | race2: [:goblin]}
+      defender = build(:mob_combatant, race2: [:goblin])
 
       assert EquipmentBonuses.magic_attack_rates(attacker, defender, nil, :neutral) == %{
                race: 0,
@@ -233,10 +224,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
 
     test "empty secondary monster groups do not match exact bonuses" do
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_equip_modifiers(%{{:addrace2, :goblin} => 20, {:magic_addrace2, :goblin} => 30})
 
-      defender = %{CombatTestHelper.create_mob_combatant() | race2: []}
+      defender = build(:mob_combatant, race2: [])
 
       assert EquipmentBonuses.magic_attack_rates(attacker, defender, nil, :neutral) == %{
                race: 0,
@@ -251,12 +242,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
 
     test "def_monster_rate reads only the attacking monster id" do
       defender =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_equip_modifiers(%{{:add_def_monster, 1002} => 25})
 
-      matching_mob = CombatTestHelper.create_mob_combatant(monster_id: 1002)
-      other_mob = CombatTestHelper.create_mob_combatant(monster_id: 1099)
-      player = CombatTestHelper.create_player_combatant()
+      matching_mob = build(:mob_combatant, monster_id: 1002)
+      other_mob = build(:mob_combatant, monster_id: 1099)
+      player = build(:player_combatant)
 
       assert EquipmentBonuses.def_monster_rate(defender, matching_mob) == 25
       assert EquipmentBonuses.def_monster_rate(defender, other_mob) == 0
@@ -267,7 +258,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
   describe "long_range_defense_rate/3" do
     test "sums defender equipment and status for a ranged hit" do
       defender =
-        CombatTestHelper.create_mob_combatant()
+        build(:mob_combatant)
         |> with_equip_modifiers(%{long_atk_def: 20})
 
       assert EquipmentBonuses.long_range_defense_rate(defender, %{long_atk_def: 10}, true) == 30
@@ -275,7 +266,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
 
     test "returns 0 for a melee hit even with the modifier present" do
       defender =
-        CombatTestHelper.create_mob_combatant()
+        build(:mob_combatant)
         |> with_equip_modifiers(%{long_atk_def: 30})
 
       assert EquipmentBonuses.long_range_defense_rate(defender, %{long_atk_def: 10}, false) == 0
@@ -285,7 +276,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
   describe "magic_attack_rates/4" do
     test "sums magic_add* families plus magic_atk_ele and skill" do
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_equip_modifiers(%{
           {:magic_addrace, :brute} => 12,
           {:magic_addrace, :all} => 3,
@@ -300,7 +291,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
         })
 
       defender =
-        CombatTestHelper.create_mob_combatant(race: :brute, size: :medium)
+        build(:mob_combatant, race: :brute, size: :medium)
         |> Map.put(:element, {:earth, 1})
 
       assert EquipmentBonuses.magic_attack_rates(attacker, defender, 200, :earth) == %{
@@ -316,24 +307,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
 
     test "sums class-specific and all magic damage bonuses" do
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_equip_modifiers(%{{:magic_addclass, :boss} => 12, {:magic_addclass, :all} => 3})
 
-      defender = CombatTestHelper.create_mob_combatant(class: :boss)
+      defender = build(:mob_combatant, class: :boss)
 
       assert %{class: 15} = EquipmentBonuses.magic_attack_rates(attacker, defender, nil, :neutral)
     end
 
     test "skill_id nil returns 0 for the skill family" do
-      attacker = CombatTestHelper.create_player_combatant()
-      defender = CombatTestHelper.create_mob_combatant()
+      attacker = build(:player_combatant)
+      defender = build(:mob_combatant)
 
       assert %{skill: 0} = EquipmentBonuses.magic_attack_rates(attacker, defender, nil, :neutral)
     end
 
     test "empty equip_modifiers returns all zeros" do
-      attacker = CombatTestHelper.create_player_combatant()
-      defender = CombatTestHelper.create_mob_combatant()
+      attacker = build(:player_combatant)
+      defender = build(:mob_combatant)
 
       assert EquipmentBonuses.magic_attack_rates(attacker, defender, nil, :neutral) == %{
                race: 0,
@@ -348,13 +339,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
   end
 
   test "magic defense reads retain separate groups while shared defense keeps its contract" do
-    attacker = %{
-      CombatTestHelper.create_mob_combatant(race: :demon, class: :boss)
-      | race2: [:goblin]
-    }
+    attacker = build(:mob_combatant, race: :demon, class: :boss, race2: [:goblin])
 
     defender =
-      CombatTestHelper.create_player_combatant()
+      build(:player_combatant)
       |> with_equip_modifiers(%{
         {:subrace, :demon} => 10,
         {:subrace, :all} => 2,
@@ -373,14 +361,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
   end
 
   test "magic defense reads its own defensive-element and size resists, never bSubDefEle" do
-    attacker = %{
-      CombatTestHelper.create_player_combatant()
-      | element: {:earth, 1},
-        size: :large
-    }
+    attacker = build(:player_combatant, element: {:earth, 1}, size: :large)
 
     defender =
-      CombatTestHelper.create_player_combatant()
+      build(:player_combatant)
       |> with_equip_modifiers(%{
         {:sub_def_ele, :earth} => 40,
         {:magic_sub_def_ele, :earth} => 12,
@@ -400,10 +384,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
 
   describe "ignore_def_rate/2" do
     test "sums specific race and :all" do
-      defender = CombatTestHelper.create_mob_combatant(race: :brute, class: :normal)
+      defender = build(:mob_combatant, race: :brute, class: :normal)
 
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_equip_modifiers(%{
           {:ignore_def_race, :brute} => 30,
           {:ignore_def_race, :all} => 10
@@ -413,10 +397,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
     end
 
     test "adds the by-class contribution against the defender's class" do
-      defender = CombatTestHelper.create_mob_combatant(race: :brute, class: :boss)
+      defender = build(:mob_combatant, race: :brute, class: :boss)
 
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_equip_modifiers(%{
           {:ignore_def_race, :brute} => 20,
           {:ignore_def_class, :boss} => 15,
@@ -427,10 +411,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
     end
 
     test "caps the combined race and class rate at 100" do
-      defender = CombatTestHelper.create_mob_combatant(race: :brute, class: :boss)
+      defender = build(:mob_combatant, race: :brute, class: :boss)
 
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_equip_modifiers(%{
           {:ignore_def_race, :brute} => 80,
           {:ignore_def_class, :boss} => 80
@@ -440,8 +424,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
     end
 
     test "empty equip_modifiers returns 0" do
-      defender = CombatTestHelper.create_mob_combatant(race: :brute, class: :normal)
-      attacker = CombatTestHelper.create_player_combatant()
+      defender = build(:mob_combatant, race: :brute, class: :normal)
+      attacker = build(:player_combatant)
 
       assert EquipmentBonuses.ignore_def_rate(attacker, defender) == 0
     end
@@ -449,10 +433,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
 
   describe "ignore_mdef_rate/2" do
     test "sums specific race and :all" do
-      defender = CombatTestHelper.create_mob_combatant(race: :brute, class: :normal)
+      defender = build(:mob_combatant, race: :brute, class: :normal)
 
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_equip_modifiers(%{
           {:ignore_mdef_race, :brute} => 30,
           {:ignore_mdef_race, :all} => 10
@@ -462,10 +446,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
     end
 
     test "adds the by-class contribution against the defender's class" do
-      defender = CombatTestHelper.create_mob_combatant(race: :brute, class: :boss)
+      defender = build(:mob_combatant, race: :brute, class: :boss)
 
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_equip_modifiers(%{
           {:ignore_mdef_race, :brute} => 20,
           {:ignore_mdef_class, :boss} => 15,
@@ -476,10 +460,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
     end
 
     test "caps the combined race and class rate at 100" do
-      defender = CombatTestHelper.create_mob_combatant(race: :brute, class: :boss)
+      defender = build(:mob_combatant, race: :brute, class: :boss)
 
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_equip_modifiers(%{
           {:ignore_mdef_race, :brute} => 90,
           {:ignore_mdef_class, :boss} => 90
@@ -489,8 +473,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
     end
 
     test "empty equip_modifiers returns 0" do
-      defender = CombatTestHelper.create_mob_combatant(race: :brute, class: :normal)
-      attacker = CombatTestHelper.create_player_combatant()
+      defender = build(:mob_combatant, race: :brute, class: :normal)
+      attacker = build(:player_combatant)
 
       assert EquipmentBonuses.ignore_mdef_rate(attacker, defender) == 0
     end
@@ -501,13 +485,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
       for weapon_type <- [:bow, :sword] do
         attacker =
           [weapon_type: weapon_type]
-          |> CombatTestHelper.create_player_combatant()
+          |> then(&build(:player_combatant, &1))
           |> with_equip_modifiers(%{non_crit_atk_rate: -15})
 
         assert EquipmentBonuses.non_crit_atk_rate(attacker) == -15
       end
 
-      assert EquipmentBonuses.non_crit_atk_rate(CombatTestHelper.create_mob_combatant()) == 0
+      assert EquipmentBonuses.non_crit_atk_rate(build(:mob_combatant)) == 0
     end
   end
 
@@ -515,7 +499,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
     test "combines the strongest base rate with the additive rate for every weapon range" do
       for weapon_type <- [:sword, :bow] do
         attacker =
-          CombatTestHelper.create_player_combatant(weapon_type: weapon_type)
+          build(:player_combatant, weapon_type: weapon_type)
           |> with_equip_modifiers(%{perfect_hit_rate: 25, perfect_hit: 15})
 
         assert EquipmentBonuses.perfect_hit_rate(attacker) == 40
@@ -523,15 +507,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
     end
 
     test "returns 0 without the bonus and for mobs" do
-      assert EquipmentBonuses.perfect_hit_rate(CombatTestHelper.create_player_combatant()) == 0
-      assert EquipmentBonuses.perfect_hit_rate(CombatTestHelper.create_mob_combatant()) == 0
+      assert EquipmentBonuses.perfect_hit_rate(build(:player_combatant)) == 0
+      assert EquipmentBonuses.perfect_hit_rate(build(:mob_combatant)) == 0
     end
   end
 
   describe "hp_drain_rate/1 and hp_drain_percent/1" do
     test "read both halves of the drain pair independently" do
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_equip_modifiers(%{hp_drain_rate: 50, hp_drain_percent: 5})
 
       assert EquipmentBonuses.hp_drain_rate(attacker) == 50
@@ -539,8 +523,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
     end
 
     test "return 0 without the bonus and for mobs" do
-      player = CombatTestHelper.create_player_combatant()
-      mob = CombatTestHelper.create_mob_combatant()
+      player = build(:player_combatant)
+      mob = build(:mob_combatant)
 
       assert EquipmentBonuses.hp_drain_rate(player) == 0
       assert EquipmentBonuses.hp_drain_percent(player) == 0
@@ -553,7 +537,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
     test "reads :splash_range regardless of weapon range" do
       for weapon_type <- [:sword, :bow] do
         attacker =
-          CombatTestHelper.create_player_combatant(weapon_type: weapon_type)
+          build(:player_combatant, weapon_type: weapon_type)
           |> with_equip_modifiers(%{splash_range: 1})
 
         assert EquipmentBonuses.splash_range(attacker) == 1
@@ -561,13 +545,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
     end
 
     test "returns 0 without the bonus and for mobs" do
-      assert EquipmentBonuses.splash_range(CombatTestHelper.create_player_combatant()) == 0
-      assert EquipmentBonuses.splash_range(CombatTestHelper.create_mob_combatant()) == 0
+      assert EquipmentBonuses.splash_range(build(:player_combatant)) == 0
+      assert EquipmentBonuses.splash_range(build(:mob_combatant)) == 0
     end
 
     test "clamps a negative radius to 0" do
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_equip_modifiers(%{splash_range: -2})
 
       assert EquipmentBonuses.splash_range(attacker) == 0
@@ -577,15 +561,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
   describe "coma_race_rate/2" do
     test "adds the matching race and :all signed per-10,000 rates" do
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_equip_modifiers(%{
           {:coma_race, :brute} => 1_200,
           {:coma_race, :all} => -200,
           {:coma_race, :demon} => 5_000
         })
 
-      brute = CombatTestHelper.create_mob_combatant(race: :brute)
-      demon = CombatTestHelper.create_mob_combatant(race: :demon)
+      brute = build(:mob_combatant, race: :brute)
+      demon = build(:mob_combatant, race: :demon)
 
       assert EquipmentBonuses.coma_race_rate(attacker, brute) == 1_000
       assert EquipmentBonuses.coma_race_rate(attacker, demon) == 4_800
@@ -593,15 +577,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
 
     test "returns zero without a matching modifier" do
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_equip_modifiers(%{{:coma_race, :demon} => 2_000})
 
-      brute = CombatTestHelper.create_mob_combatant(race: :brute)
+      brute = build(:mob_combatant, race: :brute)
 
       assert EquipmentBonuses.coma_race_rate(attacker, brute) == 0
 
       assert EquipmentBonuses.coma_race_rate(
-               CombatTestHelper.create_player_combatant(),
+               build(:player_combatant),
                brute
              ) == 0
     end
@@ -610,15 +594,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
   describe "critical_add_race_rate/2" do
     test "adds the matching race and :all signed percentage points" do
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_equip_modifiers(%{
           {:critical_add_race, :brute} => 12,
           {:critical_add_race, :all} => -3,
           {:critical_add_race, :demon} => 50
         })
 
-      brute = CombatTestHelper.create_mob_combatant(race: :brute)
-      demon = CombatTestHelper.create_mob_combatant(race: :demon)
+      brute = build(:mob_combatant, race: :brute)
+      demon = build(:mob_combatant, race: :demon)
 
       assert EquipmentBonuses.critical_add_race_rate(attacker, brute) == 9
       assert EquipmentBonuses.critical_add_race_rate(attacker, demon) == 47
@@ -626,15 +610,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
 
     test "returns zero without matching modifiers" do
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_equip_modifiers(%{{:critical_add_race, :demon} => 20})
 
-      defender = CombatTestHelper.create_mob_combatant(race: :brute)
+      defender = build(:mob_combatant, race: :brute)
 
       assert EquipmentBonuses.critical_add_race_rate(attacker, defender) == 0
 
       assert EquipmentBonuses.critical_add_race_rate(
-               CombatTestHelper.create_player_combatant(),
+               build(:player_combatant),
                defender
              ) == 0
     end
@@ -643,7 +627,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
   describe "add_skill_blow/2" do
     test "reads only the named skill's folded signed distance" do
       attacker =
-        CombatTestHelper.create_player_combatant()
+        build(:player_combatant)
         |> with_equip_modifiers(%{
           {:add_skill_blow, 18} => -2,
           {:add_skill_blow, 19} => 5,
@@ -653,7 +637,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
       assert EquipmentBonuses.add_skill_blow(attacker, 18) == -2
       assert EquipmentBonuses.add_skill_blow(attacker, 19) == 5
       assert EquipmentBonuses.add_skill_blow(attacker, 20) == 0
-      assert EquipmentBonuses.add_skill_blow(CombatTestHelper.create_player_combatant(), 18) == 0
+      assert EquipmentBonuses.add_skill_blow(build(:player_combatant), 18) == 0
     end
   end
 

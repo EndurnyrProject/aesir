@@ -1,20 +1,17 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargetsTest do
   use ExUnit.Case, async: true
   import Mimic
+  import Aesir.ZoneServer.Factory
 
+  alias Aesir.TestMob
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
-  alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
-  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.Stats.BaseStats
-  alias Aesir.ZoneServer.Unit.Stats.CurrentState
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
   @caster_id 1000
@@ -22,79 +19,29 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargetsTest do
   @center {150, 150}
 
   defp build_caster do
-    stats = %Stats{
-      base_stats: %BaseStats{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
-      combat_stats: %{atk: 1, def: 1, hit: 200, flee: 1, perfect_dodge: 1},
-      derived_stats: %{max_hp: 100, max_sp: 50, aspd: 150},
-      current_state: %CurrentState{hp: 100, sp: 50, ap: 0},
-      progression: %PlayerProgression{base_level: 1, job_level: 1, learned_skills: %{}},
-      equipment: %Equipment{}
-    }
-
-    %PlayerState{
+    build(:player_state,
       character_id: @caster_id,
       account_id: @caster_id,
       x: 150,
       y: 150,
       map_name: @map_name,
-      action_state: :idle,
-      stats: stats
-    }
+      stats: %{
+        combat_stats: %CombatStats{atk: 1, def: 1, hit: 200, flee: 1, perfect_dodge: 1},
+        derived_stats: %{max_hp: 100, max_sp: 50, aspd: 150},
+        current_state: %{hp: 100, sp: 50},
+        progression: %{base_level: 1, job_level: 1}
+      }
+    )
   end
 
   defp build_mob(unit_id, x, y) do
-    mob_definition = %MobDefinition{
-      id: 1002,
-      aegis_name: "TEST_MOB",
-      name: "TestMob",
-      level: 1,
-      hp: 100,
-      sp: 50,
-      base_exp: 10,
-      job_exp: 5,
-      atk: 10,
-      matk: 0,
-      def: 5,
-      mdef: 3,
-      stats: %{str: 10, agi: 10, vit: 10, int: 5, dex: 10, luk: 5},
-      attack_range: 1,
-      skill_range: 10,
-      chase_range: 12,
-      element: {:neutral, 1},
-      race: :formless,
-      size: :medium,
-      walk_speed: 200,
-      attack_delay: 1000,
-      attack_motion: 500,
-      client_attack_motion: 500,
-      damage_motion: 400,
-      ai_type: 0,
-      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class([]),
-      modes: [],
-      drops: []
-    }
-
-    mob_spawn = %MobSpawn{
-      mob: 1002,
-      amount: 1,
-      respawn_time: 5_000,
-      spawn_area: %MobSpawn.SpawnArea{x: x, y: y, xs: 0, ys: 0}
-    }
-
-    %MobState{
+    build(:mob_state,
       instance_id: unit_id,
-      mob_id: 1002,
-      mob_data: mob_definition,
-      spawn_ref: mob_spawn,
-      x: x,
-      y: y,
+      mob_data: TestMob.definition(sp: 50, def: 5, mdef: 3),
       map_name: @map_name,
-      hp: 100,
-      sp: 50,
-      spawned_at: System.system_time(:second),
-      aggro_list: %{}
-    }
-    |> Aesir.TestMob.publish(max_hp: 100, max_sp: 50)
+      x: x,
+      y: y
+    )
   end
 
   defp stub_ground_unit_footprint do

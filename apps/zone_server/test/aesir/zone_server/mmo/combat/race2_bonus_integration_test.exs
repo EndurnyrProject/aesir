@@ -6,9 +6,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Race2BonusIntegrationTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
-  alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
@@ -17,10 +18,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Race2BonusIntegrationTest do
   setup :verify_on_exit!
 
   setup do
-    Mimic.copy(ElementModifiers)
-    Mimic.copy(SizeModifiers)
-    Mimic.copy(ModifierCalculator)
-
     CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
     stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
     stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
@@ -30,12 +27,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Race2BonusIntegrationTest do
 
   test "subrace2 reduces physical damage only from an in-group mob" do
     defender = %{
-      CombatTestHelper.create_player_combatant()
+      build(:player_combatant)
       | equip_modifiers: %{{:subrace2, :goblin} => 20}
     }
 
-    in_group = %{CombatTestHelper.create_mob_combatant() | race2: [:goblin]}
-    out_of_group = %{CombatTestHelper.create_mob_combatant() | race2: []}
+    in_group = %{build(:mob_combatant) | race2: [:goblin]}
+    out_of_group = %{build(:mob_combatant) | race2: []}
 
     assert {:ok, 800} = DamageCalculator.apply_modifier_pipeline(1_000, in_group, defender)
 
@@ -45,12 +42,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Race2BonusIntegrationTest do
 
   test "addrace2 raises physical damage against an in-group mob" do
     attacker = %{
-      CombatTestHelper.create_player_combatant()
+      build(:player_combatant)
       | equip_modifiers: %{{:addrace2, :goblin} => 20}
     }
 
-    in_group = %{CombatTestHelper.create_mob_combatant() | race2: [:goblin]}
-    out_of_group = %{CombatTestHelper.create_mob_combatant() | race2: []}
+    in_group = %{build(:mob_combatant) | race2: [:goblin]}
+    out_of_group = %{build(:mob_combatant) | race2: []}
 
     assert {:ok, 1_200} = DamageCalculator.apply_modifier_pipeline(1_000, attacker, in_group)
 
@@ -60,13 +57,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Race2BonusIntegrationTest do
 
   test "magic_addrace2 raises magic damage against an in-group mob" do
     attacker = %{
-      CombatTestHelper.create_player_combatant()
+      build(:player_combatant)
       | combat_stats: %{matk: 100, matk_min: 100, matk_max: 100},
         equip_modifiers: %{{:magic_addrace2, :goblin} => 20}
     }
 
     in_group = %{
-      CombatTestHelper.create_mob_combatant()
+      build(:mob_combatant)
       | combat_stats: %{mdef: 0, soft_mdef: 0},
         race2: [:goblin]
     }
@@ -82,13 +79,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Race2BonusIntegrationTest do
 
   test "subrace2 reduces magic damage only from an in-group attacker" do
     defender = %{
-      CombatTestHelper.create_player_combatant()
+      build(:player_combatant)
       | combat_stats: %{mdef: 0, soft_mdef: 0},
         equip_modifiers: %{{:subrace2, :goblin} => 20}
     }
 
     in_group = %{
-      CombatTestHelper.create_mob_combatant()
+      build(:mob_combatant)
       | combat_stats: %{matk: 100, matk_min: 100, matk_max: 100},
         race2: [:goblin]
     }

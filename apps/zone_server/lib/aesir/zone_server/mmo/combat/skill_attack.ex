@@ -7,22 +7,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     only by `SkillAttack.deliver_prepared_skill_hit/1`.
     """
 
-    @enforce_keys [
-      :attacker,
-      :target_type,
-      :target,
-      :skill_id,
-      :skill_level,
-      :damage_result,
-      :divisions,
-      :element,
-      :long?,
-      :coma?,
-      :knockback_options
-    ]
-    defstruct @enforce_keys
+    use TypedStruct
 
-    @opaque t :: %__MODULE__{}
+    alias Aesir.ZoneServer.Mmo.Combat.Combatant
+    alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
+    alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+
+    typedstruct visibility: :opaque, enforce: true do
+      field :attacker, Combatant.t()
+      field :target_type, TargetResolver.target_type()
+      field :target, Combatant.t()
+      field :skill_id, non_neg_integer()
+      field :skill_level, pos_integer()
+      field :damage_result, DamageCalculator.damage_result()
+      field :divisions, pos_integer()
+      field :element, atom()
+      field :long?, boolean()
+      field :coma?, boolean()
+      field :knockback_options, keyword()
+    end
   end
 
   @moduledoc """

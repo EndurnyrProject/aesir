@@ -3,21 +3,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.WhitesmithBreakDispatchTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.TestMob
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Mechanics
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.Stats, as: MobStats
   alias Aesir.ZoneServer.Unit.Stats.CombatStats
@@ -38,7 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.WhitesmithBreakDispatchTest do
     :ok = UnitRegistry.register_unit(:mob, 202, MobState, target, self())
 
     %{
-      attacker: CombatTestHelper.create_mob_combatant(unit_id: 201),
+      attacker: build(:mob_combatant, unit_id: 201),
       target: target,
       player_target: %{type: :player, id: 301, pid: self(), state: victim}
     }
@@ -64,8 +61,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.WhitesmithBreakDispatchTest do
       MobStats.recalculate(target, entries, Mechanics.mob_formulas().expand_calc_flags(["Vit"]))
 
     assert calculated.vit == target.base.vit - div(target.base.vit * 40, 100)
-    source = CombatTestHelper.create_mob_combatant(unit_id: 202)
-    victim = CombatTestHelper.create_mob_combatant(unit_id: 203, def: 0, soft_def: 0)
+    source = build(:mob_combatant, unit_id: 202)
+    victim = build(:mob_combatant, unit_id: 203, def: 0, soft_def: 0)
 
     {:ok, reduced} =
       DamageCalculator.calculate_damage(source, victim, base_damage: 100, skip_crit: true)
@@ -87,9 +84,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.WhitesmithBreakDispatchTest do
     :ok = UnitRegistry.register_player(master_state, self())
 
     master =
-      CombatTestHelper.create_player_combatant(unit_id: 101, weapon_type: :one_handed_sword)
+      build(:player_combatant,
+        unit_id: 101,
+        weapon_type: :one_handed_sword,
+        equip_modifiers: %{break_weapon_rate: 100, break_armor_rate: 100}
+      )
 
-    master = %{master | equip_modifiers: %{break_weapon_rate: 100, break_armor_rate: 100}}
     stub(TargetResolver, :resolve_combatant, fn {:player, 101} -> {:ok, master} end)
     summon = %{attacker | proc_owner_id: 101}
 
@@ -157,9 +157,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.WhitesmithBreakDispatchTest do
     stub(Config, :natural_break_rate, fn -> 10_000 end)
 
     wearer =
-      CombatTestHelper.create_player_combatant(unit_id: 101, weapon_type: :one_handed_sword)
-
-    wearer = %{wearer | equip_modifiers: %{break_weapon_rate: 10_000, break_armor_rate: 10_000}}
+      build(:player_combatant,
+        unit_id: 101,
+        weapon_type: :one_handed_sword,
+        equip_modifiers: %{break_weapon_rate: 10_000, break_armor_rate: 10_000}
+      )
 
     for id <- [337, 485] do
       assert :ok = dispatch(wearer, target, hit(skill_id: id), weapon(), id)
@@ -182,13 +184,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.WhitesmithBreakDispatchTest do
     StatusStorage.clear_unit_statuses(:mob, 202)
 
     boss =
-      MobState.new(
-        202,
-        TestMob.definition(modes: [:status_immune, :knockback_immune, :detector]),
-        target.spawn_ref,
-        "prontera",
-        10,
-        10
+      build(:mob_state,
+        instance_id: 202,
+        mob_data: TestMob.definition(modes: [:status_immune, :knockback_immune, :detector]),
+        x: 10,
+        y: 10
       )
 
     :ok = UnitRegistry.register_unit(:mob, 202, MobState, boss, self())
@@ -212,22 +212,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.WhitesmithBreakDispatchTest do
   defp meltdown(type, id),
     do: Interpreter.apply_status(type, id, :sc_meltdown, val1: 10, duration: 60_000)
 
-  defp player(id),
-    do:
-      PlayerStateFixture.build(%{
-        character_id: id,
-        account_id: id,
-        stats: %{combat_stats: %CombatStats{}, equipment: %{right_hand: 1_101}}
-      })
-
-  defp mob(id) do
-    spawn = %MobSpawn{
-      mob: 1_002,
-      amount: 1,
-      respawn_time: 5_000,
-      spawn_area: %SpawnArea{x: 10, y: 10}
-    }
-
-    MobState.new(id, TestMob.definition(), spawn, "prontera", 10, 10)
+  defp player(id) do
+    build(:player_state,
+      character_id: id,
+      account_id: id,
+      stats: %{combat_stats: %CombatStats{}, equipment: %{right_hand: 1_101}}
+    )
   end
+
+  defp mob(id), do: build(:mob_state, instance_id: id, x: 10, y: 10)
 end

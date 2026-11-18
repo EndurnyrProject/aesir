@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillHealTest do
 
   import Aesir.TestEtsSetup
 
-  alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Combat.SkillHeal
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -253,19 +252,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillHealTest do
 
   defp register_target(equipment) do
     target =
-      PlayerState.new(%Character{
-        id: 2000,
-        account_id: 2000,
-        name: "HealTarget",
-        class: 0,
-        sex: "M",
-        last_map: "prontera",
-        last_x: 100,
-        last_y: 100,
-        base_level: 60,
-        hp: 100,
-        sp: 100
-      })
+      PlayerState.new(
+        Aesir.Factory.build(:character,
+          id: 2000,
+          account_id: 2000,
+          name: "HealTarget",
+          class: 0,
+          sex: "M",
+          last_map: "prontera",
+          last_x: 100,
+          last_y: 100,
+          base_level: 60,
+          hp: 100,
+          sp: 100
+        )
+      )
 
     target = put_in(target.stats.modifiers.equipment, equipment)
     :ok = UnitRegistry.register_unit(:player, 2000, PlayerState, target, self())

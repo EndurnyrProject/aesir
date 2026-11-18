@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Gunslinger.GsBullseyeTest do
   use ExUnit.Case, async: true
   import Mimic
+  import Aesir.ZoneServer.Factory
 
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.Coma
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
@@ -53,9 +53,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Gunslinger.GsBullseyeTest do
   end
 
   test "bullseye_flags_test: attacker cards and Auto Guard do not touch the hit" do
-    plain = CombatTestHelper.create_player_combatant(weapon_type: :revolver)
+    plain = build(:player_combatant, weapon_type: :revolver)
     carded = %{plain | equip_modifiers: %{{:addrace, :brute} => 50}}
-    defender = CombatTestHelper.create_mob_combatant(race: :brute, def: 0)
+    defender = build(:mob_combatant, race: :brute, def: 0)
     opts = [skill_id: 503, base_damage: 1_000, skip_crit: true]
 
     assert DamageCalculator.calculate_damage(carded, defender, opts) ==
