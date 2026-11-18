@@ -10,6 +10,7 @@
   {"lib/aesir/zone_server/party/manager.ex", :call_without_opaque},
   {"lib/aesir/zone_server/guild/manager.ex", :call_without_opaque},
   {"lib/aesir/zone_server/unit/homunculus/persistence.ex", :call_without_opaque},
+  {"lib/aesir/zone_server/unit/pet/persistence.ex", :call_without_opaque},
 
   # The NPC interaction task intentionally never returns: it runs the script and
   # ends with `exit(:normal)` so the session's monitor clears the dialog lock. The

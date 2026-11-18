@@ -84,6 +84,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
           optional(:defense_mode) => :normal | :simple | :ignore | :soft_only,
           optional(:flat_bonus) => integer(),
           optional(:post_card_equip_atk) => integer(),
+          optional(:post_card_weapon_atk) => non_neg_integer(),
           optional(:atk_rate) => integer(),
           optional(:status_skill_ratio) => integer(),
           optional(:post_defense_atk) => integer(),

@@ -7,6 +7,9 @@ defmodule Aesir.ZoneServer.Constants.DespawnReason do
   animation).
   """
 
+  @typedoc "The client's unit despawn reason code."
+  @type t :: 0 | 1 | 2 | 3
+
   @doc "Entity left the player's area of interest."
   @spec out_of_sight() :: 0
   def out_of_sight, do: 0

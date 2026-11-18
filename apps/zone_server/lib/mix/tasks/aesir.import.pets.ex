@@ -120,12 +120,11 @@ defmodule Mix.Tasks.Aesir.Import.Pets do
   defp evolution!(resolvers, evolutions) do
     evolutions
     |> Enum.map(fn evolution ->
-      requirements =
-        Enum.map(
-          evolution["ItemRequirements"] || missing_requirements!(evolution),
-          &requirement!(resolvers, &1)
-        )
+      items =
+        evolution["ItemRequirements"] ||
+          Mix.raise("evolution #{inspect(evolution["Target"])} is missing ItemRequirements")
 
+      requirements = Enum.map(items, &requirement!(resolvers, &1))
       {mob!(resolvers, evolution["Target"]), requirements}
     end)
     |> merge_in_order()
@@ -145,9 +144,6 @@ defmodule Mix.Tasks.Aesir.Import.Pets do
     if amount > @max_amount, do: Mix.raise("evolution amount #{amount} exceeds #{@max_amount}")
     {item!(resolvers, item), amount}
   end
-
-  defp missing_requirements!(evolution),
-    do: Mix.raise("evolution #{inspect(evolution["Target"])} is missing ItemRequirements")
 
   # A repeated target merges its requirements and a repeated item keeps the
   # later amount, as the reference's `evolution_data`/`requirements` maps do.

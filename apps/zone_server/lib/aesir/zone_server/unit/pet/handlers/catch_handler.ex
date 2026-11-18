@@ -215,7 +215,8 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CatchHandler do
     do: MessageRouter.send_to(session.connection_pid, %PetCatchResult{success: success})
 
   @doc "Sends message 669, the refusal to catch a pet on this map."
-  @spec send_catch_refusal(%{connection_pid: pid()}) :: :ok
+  @spec send_catch_refusal(%{required(:connection_pid) => pid(), optional(atom()) => term()}) ::
+          :ok
   def send_catch_refusal(session) do
     MessageRouter.send_to(session.connection_pid, %ChatNotice{kind: :INFO, text: @catch_refusal})
     :ok

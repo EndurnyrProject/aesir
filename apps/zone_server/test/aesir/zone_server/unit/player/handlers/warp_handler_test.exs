@@ -546,6 +546,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
       assert_eventually(fn -> Lock.claim(guild_id, 2_000, next_holder) == :ok end)
     end
 
+    test "cross-map item-script warp accepts partial session state" do
+      state = Map.take(state_with_storage(%{0 => :placeholder}), [:game_state, :connection_pid])
+
+      ctx = Dsl.warp(Ctx.from_session(state, {:item, 602}), "geffen", 100, 120)
+
+      assert %{map_name: "geffen", storage: nil} = ctx.session_state.game_state
+    end
+
     test "cross-map item-script warp force-closes personal storage" do
       state = state_with_storage(%{0 => :placeholder})
 

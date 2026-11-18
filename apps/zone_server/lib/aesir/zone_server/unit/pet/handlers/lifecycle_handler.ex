@@ -89,9 +89,9 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler do
   Carries the pet along an owner warp: it leaves the map out of sight with its
   owner, stops walking and thinking, and stands on the destination cell
   facing the owner's direction until `spawned_after_map_load/1`.
+  Partial item-script sessions do not carry pet state and pass through unchanged.
   """
-  @spec detach_for_warp(SessionState.t(), {String.t(), integer(), integer()}) ::
-          SessionState.t()
+  @spec detach_for_warp(map(), {String.t(), integer(), integer()}) :: map()
   def detach_for_warp(
         %SessionState{pet: %PetState{intimate: 0} = pet, game_state: owner} = session,
         _destination
@@ -123,7 +123,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler do
     StateCommit.detach(session, pet)
   end
 
-  def detach_for_warp(%SessionState{} = session, _destination), do: session
+  def detach_for_warp(session, _destination) when is_map(session), do: session
 
   @doc """
   Returns the pet to its egg: the egg

@@ -474,18 +474,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   skill declaring the weapon's own range - so a range passive can never apply
   to some of them and not others.
   """
-  @spec attack_range(t()) :: non_neg_integer()
+  @spec attack_range(t() | nil) :: non_neg_integer()
   def attack_range(stats), do: weapon_range(stats) + passive_range(stats)
 
   @doc "Returns the equipped weapons' reach before passive bonuses."
-  @spec weapon_range(t()) :: pos_integer()
+  @spec weapon_range(t() | nil) :: pos_integer()
   def weapon_range(%{modifiers: %{equipment: equipment}}) do
     max(max(Map.get(equipment, :rh_range, 0), Map.get(equipment, :lh_range, 0)), 1)
   end
 
   def weapon_range(_stats), do: 1
 
-  @spec passive_range(t()) :: integer()
+  @spec passive_range(t() | nil) :: integer()
   defp passive_range(%{modifiers: %{passive: passive}}) when is_map(passive),
     do: Map.get(passive, :range, 0)
 
