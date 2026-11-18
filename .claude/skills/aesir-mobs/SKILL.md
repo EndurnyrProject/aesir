@@ -1,6 +1,6 @@
 ---
 name: aesir-mobs
-description: How to work on mobs in Aesir - MobSession/AI, the mob and spawn databases, and the mob skill system (trigger rows, Executor dispatch through the real skill catalog, denylist). Use when adding mobs, spawns, mob AI behavior, or mob skill rows.
+description: How to work on mobs in Aesir - MobSession/AI, the mob and spawn databases, and the mob skill system (trigger rows, Executor dispatch through the real skill catalog, derived castability). Use when adding mobs, spawns, mob AI behavior, or mob skill rows.
 ---
 
 # Mobs and mob skills in Aesir
@@ -18,7 +18,7 @@ Parity"). A mob row naming a skill with no module is skipped, which is itself a 
   (two-axis: boss-flag vs MVP).
 - Spawns: `priv/db/<mode>/spawns/<map>.yml` (`mix aesir.import.spawns`); map `Coordinator` owns
   spawning and the death path.
-- Runtime: `unit/mob/mob_session.ex` — one GenServer per mob instance. The hard think
+- Runtime: `unit/mob/mob_session.ex`: one GenServer per mob instance. The hard think
   (`AIStateMachine.process_ai/3`) is driven per player by the map: `Map.Coordinator`'s
   100 ms `:hard_ai_tick` runs `MobSupervisor.drive_hard_ai/2`, sending `{:ai, {:hard,
   player_id}}` to every mob within 18 cells of each player (a mob near two players
@@ -41,6 +41,8 @@ Parity"). A mob row naming a skill with no module is skipped, which is itself a 
   `unit/mob/mvp_reward.ex`) runs *outside* the dying mob's process to avoid a reciprocal
   player↔mob deadlock. Death/teleport advance the mob's `deferred_epoch`; the epoch/token rule
   for delayed work is in `aesir-units`.
+- Steal/loot: `MobSession.attempt_steal/3` with atomic `MobState.stolen_from`; `:boss`
+  excluded.
 
 ## Mob skills: one skill system, not two
 
@@ -50,12 +52,12 @@ The split is:
 - **Trigger layer**: `mmo/mob_skill/` (`Db`, `Importer`, `Selector`, `Event`): the imported
   rows (`priv/db/<mode>/mob_skills/`) own cast time, rate, state conditions, target codes. The
   cast lifecycle itself is the mob's `CastingHandler` (`unit/mob/handlers/`).
-- **Execution** — `MobSkill.Executor` resolves `Skill.Catalog.by_id(row.skill_id)` and
+- **Execution**: `MobSkill.Executor` resolves `Skill.Catalog.by_id(row.skill_id)` and
   dispatches to the real `Skill.Active` module with a `%MobState{}` caster, calling
   `mob_cast/5` when the module exports it (raw unit-typed target + full row, giving access
   to `condition.val1..val5`), otherwise `cast/4` with an **adapted** target:
   `{:unit, _type, id}` → `{:unit, id}`; ground-type rows re-center onto the target's live
-  cell; self-targets become `{:unit, instance_id}` — never bare `:self`.
+  cell; self-targets become `{:unit, instance_id}`, never bare `:self`.
 
 Rules and gotchas:
 
@@ -64,10 +66,10 @@ Rules and gotchas:
   rows that fail it. Making a skill mob-castable means giving it a caster-generic path and
   removing the requirement, not editing rows. Per-level arrays must still cover every level a
   mob row casts.
-- `Targeting.validate_enemy/2` blocks mob→mob (PvE faction rule) — this is the only thing
+- `Targeting.validate_enemy/2` blocks mob→mob (PvE faction rule); this is the only thing
   keeping mob-cast ground groups from friendly fire; `apply_skill_unit_damage` has no gate
   of its own. Splash enumeration via `Combat.splash_targets` must receive the **resolved
-  caster combatant** — a bare int id is assumed to be a player id and silently drops targets.
+  caster combatant**: a bare int id is assumed to be a player id and silently drops targets.
 - Physical skill attacks roll hit/flee for mobs too; NPC elemental attack modules widen
   `mob_data.attack_range` → skill range before `execute_skill_attack` so chase/angry rows
   fire out of melee.
@@ -78,8 +80,6 @@ Rules and gotchas:
 
 ## Testing
 
-- Mob skill rows and the denylist are data: test `Executor` dispatch and `mob_cast/5` logic,
-  not that a row exists. Cast lifecycle (interrupt, cooldown) is session behaviour and belongs
-  in one integration test per path, not per skill. See AGENTS.md "What to test".
-- Steal/loot: `MobSession.attempt_steal/3` with atomic `MobState.stolen_from`; `:boss`
-  excluded.
+- Mob skill rows are data: test `Executor` dispatch and `mob_cast/5` logic, not that a row
+  exists. Cast lifecycle (interrupt, cooldown) is session behaviour and belongs in one
+  integration test per path, not per skill. See AGENTS.md "What to test".

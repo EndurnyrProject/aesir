@@ -6,7 +6,7 @@ description: How units and their GenServer sessions work in Aesir - the PlayerSe
 # Units and their sessions in Aesir
 
 Every live entity (player, mob, NPC) is a `Unit`. Players and mobs each run one GenServer
-per instance; both are **routing shells** — the process owns the mailbox and state, all real
+per instance; both are **routing shells**: the process owns the mailbox and state, all real
 work lives in handler modules. Never add inline domain logic to a session module.
 
 ## The Unit behaviour
@@ -15,7 +15,7 @@ work lives in handler modules. Never add inline domain logic to a session module
 (`unit/player/player_state.ex`) and `MobState` (`unit/mob/mob_state.ex`): race, element, size,
 boss flag, stats, identity, process pid, immunities, `to_combatant/1`, liveness (read the
 `@callback`s for the current list). Combat/status/skills
-consume units through this behaviour, not by pattern-matching concrete struct keys — do the
+consume units through this behaviour, not by pattern-matching concrete struct keys; do the
 same in new code so a skill/status stays caster-generic across players and mobs.
 
 ## Shared runtime views (`unit/`)
@@ -23,20 +23,20 @@ same in new code so a skill/status stays caster-generic across players and mobs.
 Sessions publish to and read from ETS-backed shared views; these are the only correct way to
 observe another unit without messaging its process:
 
-- **`UnitRegistry`** (`unit/unit_registry.ex`) — ETS snapshot of each unit's authoritative
+- **`UnitRegistry`** (`unit/unit_registry.ex`): ETS snapshot of each unit's authoritative
   state keyed by `{unit_type, unit_id}`, plus PID lookup. `update_unit_state/3` publishes a
   new snapshot; reads are lock-free.
-- **`SpatialIndex`** (`unit/spatial_index.ex`) — ETS position/AoI index for proximity queries.
-- **`Broadcast`** (`unit/broadcast.ex`) — resolves registry+spatial recipients and pushes
+- **`SpatialIndex`** (`unit/spatial_index.ex`): ETS position/AoI index for proximity queries.
+- **`Broadcast`** (`unit/broadcast.ex`): resolves registry+spatial recipients and pushes
   packets to nearby players.
-- **`SnapshotBuilder`** (`unit/snapshot_builder.ex`) — **not session-owned**. `Map.Coordinator`
+- **`SnapshotBuilder`** (`unit/snapshot_builder.ex`): **not session-owned**. `Map.Coordinator`
   (`map/coordinator.ex`) reads registry snapshots and chunks AoI datagrams on its own loop.
   A session mutating its own state does not push world snapshots itself.
 
 ## PlayerSession: shell + SessionState + handlers
 
 - `unit/player/player_session.ex` routes tagged `handle_cast/handle_call/handle_info`.
-  Decoded client ingress arrives via `ZoneServer.forward_to_player_session/2` →
+  Decoded client ingress arrives via `ZoneServer.handle_message/3` →
   `PlayerSession.deliver_message/2` → `{:message, msg}` → `Handlers.PacketHandler.handle_message/2`.
   (Tests inject the same envelope with `simulate_incoming_message/2`; see `aesir-workflow`.)
 - **`SessionState`** (`unit/player/session_state.ex`) is the GenServer state. It wraps the
@@ -44,19 +44,19 @@ observe another unit without messaging its process:
   bookkeeping the game state must NOT carry: `connection_pid`/monitor, `client_capabilities`,
   the single-dialog `interaction_lock`, `pending_skill_text_input`/`pending_skill_menu`,
   `deferred_skill_result`, party/guild invite slots, homunculus + `homunculus_runtime`.
-  Optional slots are real struct fields (default `nil`) — set/clear with struct updates,
+  Optional slots are real struct fields (default `nil`): set/clear with struct updates,
   never dynamic map keys.
 - **Every handler threads `SessionState` in and out.** The handlers live in
   `unit/player/handlers/`, one module per domain (`PacketHandler` routes ingress; movement,
   combat, skills, stats/status, inventory/equipment, cart/storage/vending, trade, NPC, party/
   guild, chat, ...). List the directory and extend the owning handler before adding a new one.
 - **Committing state**: when a handler produces a new `PlayerState`, publish it with
-  **`StateCommit.commit/2`** (`unit/player/state_commit.ex`) — it writes the snapshot to
+  **`StateCommit.commit/2`** (`unit/player/state_commit.ex`): it writes the snapshot to
   `UnitRegistry` and best-effort-syncs party/guild views, returning the session carrying the
   new `game_state`. Party/guild sync never rolls back the authoritative session/registry.
 - **Movement completion** is shell-level cross-domain routing keyed by
   `{action_state, movement_intent}`; movement also fires status `on_movement_intent`
-  callbacks (`handlers/movement_handler.ex`) — e.g. Cloaking reacts to intent there.
+  callbacks (`handlers/movement_handler.ex`): e.g. Cloaking reacts to intent there.
 
 ## MobSession: shell + handlers
 
@@ -78,8 +78,8 @@ observe another unit without messaging its process:
 
 - A player/mob is mutated **only through its own mailbox/handlers**. Never write another
   entity's live state directly, and never `GenServer.call(self(), ...)` from inside a
-  handler (self-call deadlock) — continue deferred work with self-`send`/`cast` instead.
-- **`StatusStorage` is the deliberate exception** — it is *not* single-writer: debuffs write
+  handler (self-call deadlock); continue deferred work with self-`send`/`cast` instead.
+- **`StatusStorage` is the deliberate exception**: it is *not* single-writer: debuffs write
   a target's status rows cross-process, and immobilization is pull-based (`can_move?`/
   `can_attack?` checked per action/tick), so no session needs a synchronous notification.
 - **No cross-session transactions.** Do not build offer/claim or two-phase-commit protocols
@@ -97,7 +97,7 @@ observe another unit without messaging its process:
   `Skill.defer/3` (`mmo/skill.ex`), which schedules `{:skill, {:deferred, module, payload}}`
   on the *current* session. Both shells invoke `module.deferred/2` (an `Active` callback)
   with the current snapshot and retain their session state (`player_session.ex`,
-  `mob_session.ex`). **Never add per-skill clauses to a session** — `session_hygiene_test`
+  `mob_session.ex`). **Never add per-skill clauses to a session**: `session_hygiene_test`
   forbids concrete `Mmo.Skills` references in the session modules.
 - Deferred / delayed work that can be invalidated must carry an **epoch or token** captured
   at schedule time and re-checked at run time: cast completion uses a cast token, combo/
@@ -115,8 +115,8 @@ into a handler / behind the deferred seam", not "loosen the test".
 
 ## Related skills
 
-- `aesir-workflow` — how to test sessions without flakes (integration isolation,
+- `aesir-workflow`: how to test sessions without flakes (integration isolation,
   `simulate_incoming_message`, the determinism checklist, Mimic sharp edges).
-- `aesir-skills` — skills run inside these sessions (`on_place` self-call hazard, deferred).
-- `aesir-status-effects` — `StatusStorage` semantics and process placement of callbacks.
-- `aesir-mobs` — mob AI, mob cast state, and mob-skill execution.
+- `aesir-skills`: skills run inside these sessions (`on_place` self-call hazard, deferred).
+- `aesir-status-effects`: `StatusStorage` semantics and process placement of callbacks.
+- `aesir-mobs`: mob AI, mob cast state, and mob-skill execution.

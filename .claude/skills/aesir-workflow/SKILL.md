@@ -36,10 +36,9 @@ jj's normal state, not a problem.
 ## Feature flow
 
 Non-trivial features follow **brainstorming → generate-tasks → implementing-tasks** (the
-corresponding skills). Documents live in the Obsidian vault at
-`~/Library/Mobile Documents/com~apple~CloudDocs/vaults/aesir` under
-`specs/YYYY-MM-DD-<topic>/` as `design.md` and `tasks.md` (older specs use `spec.md` +
-`architecture.md`). Deferred work is recorded in the spec folder (`deferred.md`); read
+corresponding skills). Documents live in the Obsidian vault under
+`specs/YYYY-MM-DD-<topic>/` as `design.md` and `tasks.md`.
+Deferred work is recorded in the spec folder (`deferred.md`); read
 existing specs before relitigating scope decisions.
 
 ### Mechanics parity procedure
@@ -64,17 +63,9 @@ accepted divergences. How to apply it:
 - **Rulings record ambiguities, never divergences.** A `## Rulings` entry may explain how the
   reference was mapped onto Aesir's structure; it may not accept behaving differently.
 
-Lessons from past divergences (all were real bugs):
-
-- SP is consumed **before** the skill's effect (`skill_consume_requirement` type 1), and
-  `SKILL_NOCONSUME_REQ` spares items only. A skill whose effect depends on the caster's SP, or
-  that fails after the requirement step, must still spend the SP.
-- Many statuses react at **cast start** (Foresight charges, pre-renewal Mystical
-  Amplification arming, Suffragium), not when the skill resolves.
-- `RE_LVL_DMOD` scales only above base level 99; positive HitCount multiplies one damage roll
-  (`DAMAGE_DIV_FIX`); cast-time flags (`IgnoreDex`, `IgnoreStatus`, `IgnoreItemBonus`) matter.
-- Ground units can have per-cell lifetimes and per-cell placement failures; units already
-  standing in a new group's cells are affected at placement.
+Lessons from past divergences (all were real bugs) are listed per subsystem: the "Parity
+first" traps in `aesir-skills` (SP timing, cast start vs cast end, `RE_LVL_DMOD`, HitCount,
+ground-unit cells) and in `aesir-status-effects`.
 
 ### Proportionality stop
 
@@ -179,9 +170,8 @@ Every flake the suite has had traces to one of these. Check them before diagnosi
 ## Engineering conventions not owned by another skill
 
 - **Clause budget for generated code**: the BEAM JIT dies above ~6-7k clauses in one function.
-  Item `on_equip` scripts (~10k in renewal) are therefore interpreted IR (`EquipScript`); item
-  `on_use` scripts (~2.5k) are boot-compiled into the single `CompiledItemScripts` dispatch
-  module. Never generate one clause or module per item for a corpus that can exceed the budget.
+  Never generate one clause or module per entry for a corpus that can exceed the budget (the
+  item-script case is in `aesir-items`).
 - **Restricted entry points over bypass booleans**: when a path must skip validations, add a
   separate narrow entry point documenting exactly what it skips (the skill Interpreter's
   `cast/4` vs `auto_cast/4` vs `item_cast/4`, see `aesir-skills`), never a bypass flag

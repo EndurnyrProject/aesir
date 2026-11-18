@@ -15,7 +15,8 @@ described in `aesir-workflow`. The task brief's formulas are a summary, not the 
 
 Recurring traps, each a past bug:
 
-- **Cost timing.** SP is spent before the effect runs. A skill that fails after the
+- **Cost timing.** SP is spent before the effect runs (`skill_consume_requirement` type 1;
+  `SKILL_NOCONSUME_REQ` spares items only). A skill that fails after the
   requirement step (missed roll, immune target, already affected, HP charge too high) still
   spends SP; return `{:ok, caster, :no_consume}` only to spare items. When the effect reads
   the caster's SP, use the `dynamic_cost/4` pattern (`sp: 0` + `sp_requirement`) and deduct
@@ -28,11 +29,15 @@ Recurring traps, each a past bug:
   silence fails nothing already under way, and the failure is silent with nothing spent.
   Keep `damage_type` equal to the skill_db `NoDamage` flag; it decides this, the castend
   on-skill arming and when-hit procs.
-- **Cast start.** Statuses that react to a cast starting run through
-  `Caster.on_cast_start/2` (instant casts) and `SkillHandler` (timed casts at bar start).
+- **Cast start.** Statuses that react to a cast starting (Foresight charges, pre-renewal
+  Mystical Amplification arming, Suffragium) run through `Caster.on_cast_start/2` (instant
+  casts) and `SkillHandler` (timed casts at bar start).
 - **Level modifier and multi-hit.** Use `Combat.LevelModifier.skill_ratio/2` wherever the
-  reference uses `RE_LVL_DMOD`; HitCount is a logical division count on one roll (see
-  "Engine contracts" below).
+  reference uses `RE_LVL_DMOD` (it scales only above base level 99); HitCount is a logical
+  division count on one roll (see "Engine contracts" below). Cast-time flags (`IgnoreDex`,
+  `IgnoreStatus`, `IgnoreItemBonus`) matter.
+- **Ground cells.** Ground units can have per-cell lifetimes and per-cell placement failures;
+  units already standing in a new group's cells are affected at placement.
 - **Targeting.** Match the reference `TargetType` (a ground skill is `:ground`, even if a unit
   version would be easier) and its `Flags` (traps, hidden targets, Emperium).
 - **Mob casting.** If the reference lets monsters cast it, support it; never narrow targets
@@ -46,12 +51,12 @@ Recurring traps, each a past bug:
   `skills/npc/`.
 - `use Aesir.ZoneServer.Mmo.Skill, id:, name:, display_name:, max_level:, target_type:, ...`
   declares the static `Skill.Definition` (element, range, cast times, sp_cost as per-level
-  lists, damage_type/kind, etc. — see `mmo/skill/definition.ex` for all fields).
+  lists, damage_type/kind, etc.; see `mmo/skill/definition.ex` for all fields).
 - **No registration step**: `Skill.Catalog` (`mmo/skill/catalog.ex`) discovers every module
   under `Aesir.ZoneServer.Mmo.Skills` at runtime into `:persistent_term` (`reload/0` after
   edits). Lookups: `Catalog.by_id/1`, `by_name/1` (both return `{:ok, defn} | :error`).
 - Learnability comes from the skill tree YAMLs: `apps/zone_server/priv/db/<mode>/skill_tree/<job>.yml`
-  (mode dir `re/` or `pre-re/`; a skill absent from a mode's tree is unreachable in that mode —
+  (mode dir `re/` or `pre-re/`; a skill absent from a mode's tree is unreachable in that mode;
   that's how era-gating works, see `aesir-game-modes`).
   Skill name atoms are lowercase (`:nv_basic`, not `:NV_BASIC`).
 
@@ -59,35 +64,36 @@ Recurring traps, each a past bug:
 
 Declared in `mmo/skill/`:
 
-- **`Skill.Active`** — `cast(caster, target, level, definition)`; optional `validate/4`,
+- **`Skill.Active`**: `cast(caster, target, level, definition)`; optional `validate/4`,
   `deferred/2` (effects that must run later in the caster's session), `mob_cast/5` (raw
   unit-typed target + full mob-skill row), `dynamic_cost/4`, `dynamic_cast_time/4`
   (e.g. instant-cast combo skills). The caster is a `PlayerState`, `MobState` or
   `HomunculusState` (caster kinds in `mmo/skill/caster/`). Keep the code caster-generic; a
   skill that genuinely needs a player facility declares it in `requires:` (see "Mob casting").
-- **`Skill.Passive`** — optional bonus callbacks (`atk_bonus/2`, `hit_bonus/2`, ...),
+- **`Skill.Passive`**: optional bonus callbacks (`atk_bonus/2`, `hit_bonus/2`, ...),
   `attack_proc/2` (carries `:chance`), `attack_replacement/2`, `skill_rider/4` (e.g. Fatal
   Blow riding Bash).
-- Ground and menu skills have their own module sets under `mmo/skill/ground*` and
-  `mmo/skill/unit*` (see below) — the catalog indexes active/ground/passive/menu separately.
+- Ground skills have their own module set under `mmo/skill/ground*` and `mmo/skill/unit*`
+  (see below); menu skills implement `Skill.Menu` (see "Skill menus"). The catalog indexes
+  active/ground/passive/menu separately.
 
 ## Interpreter entry points (never add bypass booleans)
 
 `Mmo.Skill.Interpreter` (`mmo/skill/interpreter.ex`) has these narrow entry points:
 
-- `cast/4` — player-initiated, full `validate_cast` chain (learned, SP, catalysts, cooldown).
-- `auto_cast/4` — status procs: no cast time or ordinary requirement, a fixed 2/3 raw SP charge
+- `cast/4`: player-initiated, full `validate_cast` chain (learned, SP, catalysts, cooldown).
+- `auto_cast/4`: status procs; no cast time or ordinary requirement, a fixed 2/3 raw SP charge
   spent before the effect, the after-cast delay armed either way, no autocast flag set.
-- `proc_cast/5` — equipment autocasts (after `check_proc_usable/3`): the requirement is consumed
+- `proc_cast/5`: equipment autocasts (after `check_proc_usable/3`); the requirement is consumed
   before the effect with the wearer's runtime autocast flag waiving the SP; no cooldown, no item
   consumption.
-- `item_cast/4` — `itemskill` from item scripts and the direct item-cast entry; runs the same
+- `item_cast/4`: `itemskill` from item scripts and the direct item-cast entry; runs the same
   player stages with the source's cast-begin item branch: it bypasses the learned rank and, for a
   plain item cast, every other requirement (weight, SP, zeny, spheres, HP, weapon, equipment,
   statuses), while `keep_requirement` keeps them. The item is claimed inside the cast begin, so an
   out-of-range or refused-after-claim cast loses it, and `validate/4`/`skilluse_check/4`/
   `after_range_check/4` run where the player path runs them.
-- `begin_cast/5` with `learned?: false, origin: :script` plus `complete_script_cast/4` — a script's
+- `begin_cast/5` with `learned?: false, origin: :script` plus `complete_script_cast/4`: a script's
   `unitskilluseid` cast: the ordinary begin and cast end, with only the learned-rank check (begin)
   and re-check (end) skipped. `SkillHandler.start_script_cast/3` starts it on the player's own unit
   and the session routes `origin: :script` completions to `complete_script_cast/4`.
@@ -148,14 +154,14 @@ rider effects on the returned `hit?` when the skill has on-hit riders.
 Placement flows cast → Interpreter → `Skill.Unit.place/4` → `place_group/2` → the skill's
 `on_place/1`.
 
-- **`on_place/1` runs inside the caster's own PlayerSession** — any caster lookup there
+- **`on_place/1` runs inside the caster's own PlayerSession**: any caster lookup there
   (e.g. `Combat.resolve_combatant(caster_id)`) is a self-call deadlock. Read the caster cell
   from `%Group{origin: {px, py}}` (stamped by `place_group/2`; fall back `origin: nil ->
   {1, 0}` for direction math). `on_interval`/`on_touch` run in `Skill.Unit.Manager` and may
   resolve the caster safely. (`TargetResolver` self-heals the self-call case via the
   UnitRegistry snapshot, but don't rely on it from `on_place`.)
 - Per-level data arrays (durations etc.) must cover every level a mob row can cast
-  (mob rows carry levels past 10 — an out-of-range level nil-crashes `on_place`).
+  (mob rows carry levels past 10: an out-of-range level nil-crashes `on_place`).
 
 ## Deferred effects
 
@@ -164,12 +170,21 @@ Effects that must run later in the caster's session go through `Skill.defer/3` +
 carries an epoch or token. Both rules, and the single-writer/no-deadlock rules that govern
 where skill code runs, are owned by `aesir-units`.
 
-## Skill-staged dialogs (client menus without new proto messages)
+## Skill menus and dialogs
 
-When a skill needs a client menu (arrow crafting style): `cast/4` stages a dialog module on
-`PlayerState.pending_interaction`; the handler's `drain_interaction` starts a
-`Script.Interaction` with synthetic gid `0x6000_0000` and takes the interaction lock. Reuse
-this before inventing new wire messages.
+When a skill needs the player to pick from a list (Identify, Auto Spell, Weapon Repair,
+Weapon Refine, Create Converter, ...), implement `Skill.Menu` (`mmo/skill/menu.ex`) next to
+`Active`: `cast/4` writes the offer to `PlayerState.pending_menu_offer`
+(`%{skill_id, kind, entry_ids, level}`), the session sends it as a `SkillMenu` after the cast
+commits, and `SkillMenuHandler` validates the `SkillMenuReply` before calling
+`on_menu_reply/3` (or `/4` with the session context). Optional `on_menu_cancel/1` runs the
+close-time reaction. A spent failure returns `{:failed, state, reason}` and keeps the cost.
+
+A free-text prompt on a ground skill (Talkie Box, Graffiti) exports `cast_with_input/5`;
+`SkillTextInputHandler` collects the text first. The older
+`PlayerState.pending_interaction` path, a `Script.Interaction` dialog with synthetic gid
+`0x6000_0000`, remains only for NPC-style dialog flows (Arrow Crafting). Reuse these before
+inventing new wire messages.
 
 ## Mob casting
 

@@ -143,21 +143,21 @@ adaptation. Do not label original Aesir content as imported.
 All ops thread a `Script.Ctx` (fields: `char_id`, `account_id`, `game_state`, `source`,
 `npc_gid`, `session_pid`, `vars`, ...). Three families:
 
-- **Dialog primitives** — `mes/2` buffers text without blocking. `next/1`, `select/2`, and
+- **Dialog primitives**: `mes/2` buffers text without blocking. `next/1`, `select/2`, and
   `input/2` flush a page and suspend the `Script.Interaction` Task until the client responds.
   `close/1` flushes a `CLOSE` frame and returns the context without blocking or throwing;
   subsequent pipeline effects still run.
-- **Effect ops** `(ctx, args) -> ctx` — `heal`, `sc_start`, `sc_end`, `warp`, `give_item`,
+- **Effect ops** `(ctx, args) -> ctx`: `heal`, `sc_start`, `sc_end`, `warp`, `give_item`,
   `delitem`, `pay_zeny`, `set_char_var`, `jobchange`, `savepoint`, `summon_mob`, `npctalk`,
   `emotion`, `specialeffect`, `cutin`, timer ops, `enablenpc`/`disablenpc`, ... Player-state
   mutations route to the PlayerSession via the `{:script_apply, op}` seam (handled in
   `ScriptEffectHandler`).
-- **Read ops** `(ctx) -> value` — `zeny`, `count_item`, `get_char_var`, `base_level`,
+- **Read ops** `(ctx) -> value`: `zeny`, `count_item`, `get_char_var`, `base_level`,
   `class`, `char_name`, `job_name`, `can_change_job?`, `getskilllv`, ...
 
 Script variables (`Script.Vars`): `$` server-permanent (Postgres `server_variables`),
 `$@` server-temp (ETS), `#`/`##` account (Postgres `account_variables`, sigil kept in the
-key), `.` NPC-scoped (ETS keyed `{ctx.source, name}` — shared across placements of a
+key), `.` NPC-scoped (ETS keyed `{ctx.source, name}`, shared across placements of a
 script), `@`/plain char vars via the session. String vars keep the trailing `$` in the key.
 External-store vars are read/written directly by the interaction Task, not via
 `{:script_apply}`.
@@ -166,7 +166,7 @@ External-store vars are read/written directly by the interaction Task, not via
 
 - `Npc.Events` is the only dispatch seam: `trigger` (donpcevent, detached), `trigger_all`,
   `trigger_gid`, `trigger_attached`, `run_on_init` (boot). Detached ctx has
-  `game_state: nil` — a command that needs the player ends the script (`Ctx.halt/2`,
+  `game_state: nil`: a command that needs the player ends the script (`Ctx.halt/2`,
   `{:error, :no_player}`), as do player reads.
 - Script commands follow the reference's failure model. A command that fails goes on
   (`Ctx.fail/3`: logs, records `ctx.failures`, returns the ctx and the value the reference
@@ -233,7 +233,7 @@ Rules that repeatedly bite:
 - Unsupported buildins become runtime-raising `todo(ctx, :name, args)` stubs. Implementing
   one = add a DSL op + a `CommandMap` entry (or `@call_reads`/`@functions` for reads and
   global callfuncs), then force-regen. Codegen-native reads must also be added to Analyzer
-  `@native_cmds` — keep the two in sync. Buildin lookups are case-insensitive; `read/1`
+  `@native_cmds`; keep the two in sync. Buildin lookups are case-insensitive; `read/1`
   params and `function/1` names are case-sensitive.
 - Global upstream functions map onto DSL primitives via `CommandMap.function/1`
   (`Job_Change` → `jobchange` is the template).

@@ -9,7 +9,7 @@ Aesir serves two first-class rulesets from one artifact: **renewal** and **pre-r
 (trans-era classic: levels 99/70, 2-2 + trans classes, no 3rd/4th jobs, no trait substats).
 The mode is chosen at boot by `AESIR_DB_MODE` (`renewal` | `pre_renewal`), frozen for the
 node's lifetime, and can never disagree between data and mechanics. Never introduce a
-compile-time mode switch (`Application.compile_env`) — the seam is runtime, by decision
+compile-time mode switch (`Application.compile_env`): the seam is runtime, by decision
 (spec `2026-08-24-pre-renewal-mode`).
 
 ## Identifying mode differences in rAthena (the research method)
@@ -26,14 +26,14 @@ and always check whether it is mode-gated:
 - **The seven toggles** (`src/config/renewal.hpp`): `RENEWAL` (master formula switch),
   `RENEWAL_CAST` (VCT/FCT split), `RENEWAL_DROP` / `RENEWAL_EXP` (level-gap penalties),
   `RENEWAL_LVDMG` (>99 level damage scaling), `RENEWAL_ASPD`, `RENEWAL_STAT` (stat cost /
-  HP-SP model). Aesir does NOT mirror the sub-toggles — one mode flag drives everything.
+  HP-SP model). Aesir does NOT mirror the sub-toggles: one mode flag drives everything.
 - **Macro helpers** (`src/config/const.hpp`): `RE_LVL_DMOD`/`RE_LVL_MDMOD` (renewal skill
   level scaling), `VARCAST_REDUCTION`, `MOB_HIT`/`MOB_FLEE` (mode-dependent mob baselines),
   `MAP_DEFAULT_*` (start map: renewal `iz_int`, pre-re `new_1-1`).
 - **Data**: shared root `db/*.yml` declare `Imports:` rows tagged `Mode: Renewal` /
   `Mode: Prerenewal` pointing into `db/re/` / `db/pre-re/`. A table present only under
   `db/re/` (e.g. `level_penalty.yml`, `elemental_db.yml`) means the system does not exist
-  in pre-re at all — absence is the mechanic.
+  in pre-re at all: absence is the mechanic.
 - **NPCs/scripts**: `npc/` root categories are shared; `npc/re/` and `npc/pre-re/` are mode
   overlays selected by
   `npc/{re,pre-re}/scripts_main.conf`. The `re/`-only delta is mostly 3rd-job content,
@@ -48,12 +48,12 @@ and always check whether it is mode-gated:
   pre-re is `hit = level + dex`, `flee = level + agi`. Renewal DEF₂ can go negative;
   pre-re floors at 1. Soft-def/soft-mdef formulas differ entirely.
 - **Trait substats** (POW/STA/WIS/SPL/CON/CRT and P.Atk/S.Matk/Res/Mres/H.Plus/C.Rate):
-  renewal-only. In pre-re they are allocation-refused and all-zero — formulas never read
+  renewal-only. In pre-re they are allocation-refused and all-zero: formulas never read
   them; zeroed traits make downstream consumers (patk multiplier, crate, hplus) naturally
   inert.
 - **Cast time**: renewal splits variable (reduced by `sqrt((2*DEX+INT)/530)`) + fixed
   (only gear/buffs reduce it). Pre-re is a single cast scaled by
-  `(dex_scale - DEX)/dex_scale` — no fixed component.
+  `(dex_scale - DEX)/dex_scale`: no fixed component.
 - **ASPD**: renewal is a float formula (AGI-dominant, sqrt term, shield/dual-wield
   penalties); pre-re is integer weapon-delay amotion (`amotion -= amotion*(4*agi+dex)/1000`,
   dual wield `(a+b)*7/10`).
@@ -65,7 +65,7 @@ and always check whether it is mode-gated:
 - **Skill map restrictions**: each mode's `skill_nocast` masks differ (renewal keeps several
   songs and dances to versus ground and Greed out of town zones), and so do the item
   restriction zones. They are data, read by `Skill.NoCast` and the item-use gates.
-- **EXP/drop level-gap penalty**: renewal-only (data tables). Pre-re has none — in Aesir
+- **EXP/drop level-gap penalty**: renewal-only (data tables). Pre-re has none; in Aesir
   the `level_penalty*` domains are mode-optional and absent means neutral rates.
 - **Stat points**: renewal raise-cost curve vs classic `2 + (value-1)/10`, cap 99.
 - **Era content**: pre-re = trans-era. No 3rd/4th jobs, their skills, their gear, doram,
@@ -78,7 +78,7 @@ and always check whether it is mode-gated:
 
 ## The Aesir seam
 
-- **Data** (live today): `Db.Layout` + `Db.Source` resolve every domain through the mode —
+- **Data** (live today): `Db.Layout` + `Db.Source` resolve every domain through the mode:
   `priv/db/re/` vs `priv/db/pre-re/`, shared top-level domains ignore mode. Importers take
   `--mode re|pre-re` (default `re`) and write that mode's dir; they ignore `AESIR_DB_MODE`.
   Mode-optional domains (a mode list in `Layout`'s domain table, e.g. `level_penalty.yml` is
@@ -107,5 +107,5 @@ and always check whether it is mode-gated:
   mutate application/system env or `:persistent_term`; mode-specific integration relies on the
   mode aliases (`mix test.pre_re`, ...) to boot the right mode.
 - Trans-era boundary check for content: if it requires a 3rd/4th job, a trait stat, or a
-  renewal-era system (instances, doram), it is renewal-only content — keep it out of
+  renewal-era system (instances, doram), it is renewal-only content; keep it out of
   pre-re data/skill trees rather than guarding it in code.

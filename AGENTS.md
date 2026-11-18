@@ -113,7 +113,7 @@ Always verify the exact signature in the source before use; do not assume.
 
 Ecto schemas live in `apps/commons/lib/aesir/commons/models/` (`Aesir.Commons.Models.*`). The core
 ones are `Account`, `Character` and `InventoryItem`; the rest cover storage and cart items,
-party/guild/castle data, quests, homunculi, persisted statuses and cooldowns, and script
+party/guild/castle data, quests, homunculi, pets, persisted statuses and cooldowns, and script
 variables. List the directory rather than assuming a schema exists.
 
 Most zone-server runtime state (live unit state, status effects, map cells, NPC placements) is held
@@ -140,11 +140,14 @@ verifiers, warps, shops, mob skills, castles, ...) and then starts the runtime s
   individual skill modules), `status_effect/` (definition behaviour, interpreter, registry, ETS
   storage, tick manager, display metadata, and the individual effect modules), `job_management/`,
   `item_management/` (includes `ScriptCompiler` that compiles item scripts), `mob_management/`,
-  plus `Leveling`, `StatPoint`, `SkillTree`, and generated `constants/` (`Efst`, `Opt1/2/3`,
-  `Option`, `EffectId`).
+  `mob_skill/`, `homunculus/`, `pet_management/`, `quest_management/`, `woe/` (castles, guardians,
+  economy, scheduler), plus `Leveling`, `StatPoint`, `SkillTree`, and generated `constants/`
+  (`Efst`, `Opt1/2/3`, `Option`, `EffectId`, ...).
 - **`map/`** - `MapCache` (ETS walkability from `priv/maps.mcache`), `GatLoader`/`CacheLoader`
   (build the cache from `.gat`), `Coordinator` (per-map game loop: spatial index, spawns, snapshot
   broadcast), `MapManager` (lifecycle). `Pathfinding` (A*) and `Geometry` live at the app root.
+- **`navigation/`** - Cross-map route search over the cached portal graph (`Router`, `PortalGraph`).
+- **`party/` + `guild/`** - Party and guild managers, membership, EXP share, guild storage.
 - **`npc/` + `script/`** - The NPC system and scripting engine (see below).
 - **`gm/`** - `Dispatcher` parses a `GmCommand` line, gates on GM level, runs `Command` modules
   (e.g. `@item`, `@warp`) and replies with a `ChatNotice`.
@@ -279,6 +282,7 @@ Integration-test isolation, the determinism checklist, and Mimic sharp edges are
 - **Run pre-renewal integrations (umbrella root)**: `mix test.integration.pre_re`
 - **Run a single test file**: `mix test path/to/test_file.exs`
 - **Run a single test**: `mix test path/to/test_file.exs:line_number`
+- Dialyzer is run via `mix dialyzer` in each app; the umbrella root does not have a Dialyzer PLT.
 
 The four mode aliases override an inherited `AESIR_DB_MODE` before boot and forward normal test
 arguments (paths, `--only`); run them serially in separate Mix invocations when the gate above
@@ -328,7 +332,7 @@ failure. Re-run only the failing file to see the full output.
 - **Reduce coupling**: Prefer `Phoenix.PubSub` to decouple subsystems when possible; broadcast events
   rather than calling another subsystem's modules directly, so producers and consumers stay independent.
 - **Keep compile times low**: Avoid baking large/derived data into compile-time module attributes or
-  generated functions — they recompile every dependent module on change. Prefer loading data at runtime
+  generated functions: they recompile every dependent module on change. Prefer loading data at runtime
   and caching it in `:persistent_term` (with a `reload/0`), as in
   `Aesir.ZoneServer.Mmo.ItemManagement.Items` and `MobManagement.Mobs`.
 
