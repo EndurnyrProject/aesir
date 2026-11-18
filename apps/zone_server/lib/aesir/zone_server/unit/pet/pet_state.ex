@@ -3,8 +3,10 @@ defmodule Aesir.ZoneServer.Unit.Pet.PetState do
   A hatched pet's gameplay state with its world snapshot.
 
   The owning `PlayerSession` keeps this struct in `SessionState.pet`, and only
-  `Pet.StateCommit` replaces it. Race, element and size come from the mob
-  catalog entry of the pet's class. Timer and movement bookkeeping belongs to
+  `Pet.StateCommit` replaces it. `mob_db_id` is the mob catalog entry the pet
+  was set up from when it came out: race, element, size, ranges and the mob
+  walk speed come from it, and an evolution changes `class_id` but keeps it
+  until the pet next comes out. Timer and movement bookkeeping belongs to
   `Pet.Runtime`. `combat_stats`, `rate_fix` and `loot` are filled by the
   support features.
   """
@@ -29,6 +31,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.PetState do
     :owner_char_id,
     :owner_account_id,
     :class_id,
+    :mob_db_id,
     :name,
     :level,
     :egg_id,
@@ -40,6 +43,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.PetState do
             owner_char_id: nil,
             owner_account_id: nil,
             class_id: nil,
+            mob_db_id: nil,
             name: nil,
             level: nil,
             egg_id: nil,
@@ -66,6 +70,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.PetState do
           owner_char_id: pos_integer(),
           owner_account_id: pos_integer(),
           class_id: pos_integer(),
+          mob_db_id: pos_integer(),
           name: String.t(),
           level: pos_integer(),
           egg_id: pos_integer(),
@@ -100,6 +105,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.PetState do
       owner_char_id: owner.character_id,
       owner_account_id: owner.account_id,
       class_id: row.class,
+      mob_db_id: row.class,
       name: row.name,
       level: row.level,
       egg_id: row.egg_id,
@@ -118,35 +124,36 @@ defmodule Aesir.ZoneServer.Unit.Pet.PetState do
 
   @doc """
   The pet's normal walk speed for `pet_walk_speed` (`get_pet_walk_speed`):
-  1 the owner's current speed, 2 the default 150, 3 the mob database speed.
+  1 the owner's current speed, 2 the default 150, 3 the speed of mob
+  `mob_db_id`.
   """
   @spec base_walk_speed(pos_integer(), PlayerState.t()) :: pos_integer()
-  def base_walk_speed(class_id, %PlayerState{} = owner),
-    do: walk_speed(Config.pet_walk_speed(), class_id, owner)
+  def base_walk_speed(mob_db_id, %PlayerState{} = owner),
+    do: walk_speed(Config.pet_walk_speed(), mob_db_id, owner)
 
-  defp walk_speed(2, _class_id, _owner), do: @default_walk_speed
-  defp walk_speed(3, class_id, _owner), do: mob!(class_id).walk_speed
-  defp walk_speed(_master, _class_id, owner), do: StatusManager.current_walk_speed(owner)
+  defp walk_speed(2, _mob_db_id, _owner), do: @default_walk_speed
+  defp walk_speed(3, mob_db_id, _owner), do: mob!(mob_db_id).walk_speed
+  defp walk_speed(_master, _mob_db_id, owner), do: StatusManager.current_walk_speed(owner)
 
-  @doc "Returns the race of the pet's mob class."
+  @doc "Returns the race of the pet's mob entry."
   @impl Unit
   @spec get_race(t()) :: Unit.entity_race()
-  def get_race(%__MODULE__{class_id: class_id}), do: mob!(class_id).race
+  def get_race(%__MODULE__{mob_db_id: mob_db_id}), do: mob!(mob_db_id).race
 
-  @doc "Returns the element of the pet's mob class."
+  @doc "Returns the element of the pet's mob entry."
   @impl Unit
   @spec get_element(t()) :: {Unit.entity_element(), integer()}
-  def get_element(%__MODULE__{class_id: class_id}), do: mob!(class_id).element
+  def get_element(%__MODULE__{mob_db_id: mob_db_id}), do: mob!(mob_db_id).element
 
   @doc "Pets never carry boss protection."
   @impl Unit
   @spec is_boss?(t()) :: boolean()
   def is_boss?(%__MODULE__{}), do: false
 
-  @doc "Returns the size of the pet's mob class."
+  @doc "Returns the size of the pet's mob entry."
   @impl Unit
   @spec get_size(t()) :: Unit.entity_size()
-  def get_size(%__MODULE__{class_id: class_id}), do: mob!(class_id).size
+  def get_size(%__MODULE__{mob_db_id: mob_db_id}), do: mob!(mob_db_id).size
 
   @doc "Returns the pet's level as its only formula stat."
   @impl Unit
@@ -178,8 +185,8 @@ defmodule Aesir.ZoneServer.Unit.Pet.PetState do
   @spec corpse?(t()) :: boolean()
   def corpse?(%__MODULE__{}), do: false
 
-  defp mob!(class_id) do
-    {:ok, mob} = Mobs.by_id(class_id)
+  defp mob!(mob_db_id) do
+    {:ok, mob} = Mobs.by_id(mob_db_id)
     mob
   end
 end

@@ -84,7 +84,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.AiHandler do
   end
 
   defp in_range(%SessionState{pet: pet, game_state: owner} = session, now_ms) do
-    base = PetState.base_walk_speed(pet.class_id, owner)
+    base = PetState.base_walk_speed(pet.mob_db_id, owner)
 
     cond do
       pet.walk_speed == base ->
@@ -128,8 +128,8 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.AiHandler do
   defp or_random_walk({:error, :unreachable}, session, now_ms),
     do: MovementHandler.random_walk(session, now_ms)
 
-  defp chase_range(%PetState{class_id: class_id}) do
-    {:ok, mob} = Mobs.by_id(class_id)
+  defp chase_range(%PetState{mob_db_id: mob_db_id}) do
+    {:ok, mob} = Mobs.by_id(mob_db_id)
     mob.chase_range
   end
 

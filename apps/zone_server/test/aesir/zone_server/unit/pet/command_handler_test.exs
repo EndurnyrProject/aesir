@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.CommandHandlerTest do
       owner_char_id: 1,
       owner_account_id: 1,
       class_id: 1002,
+      mob_db_id: 1002,
       name: "Poring",
       level: 1,
       egg_id: 1,

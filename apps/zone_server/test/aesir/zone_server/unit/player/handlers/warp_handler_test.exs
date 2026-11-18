@@ -231,6 +231,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
         owner_char_id: 1000,
         owner_account_id: 2000,
         class_id: 1002,
+        mob_db_id: 1002,
         name: "Poring",
         level: 1,
         egg_id: 9001,

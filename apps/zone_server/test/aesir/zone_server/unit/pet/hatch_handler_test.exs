@@ -236,6 +236,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.HatchHandlerTest do
       owner_char_id: ctx.character.id,
       owner_account_id: ctx.character.account_id,
       class_id: 1002,
+      mob_db_id: 1002,
       name: "Poring",
       level: 1,
       egg_id: ctx.definition.egg_item_id,

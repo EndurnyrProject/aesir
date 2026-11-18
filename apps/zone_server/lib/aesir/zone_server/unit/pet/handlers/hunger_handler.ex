@@ -240,7 +240,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.HungerHandler do
   defp change_intimacy(pet, value), do: %{pet | intimate: value |> max(0) |> min(@intimate_max)}
 
   defp run_away_speed(pet, %SessionState{game_state: owner}),
-    do: %{pet | walk_speed: PetState.base_walk_speed(pet.class_id, owner)}
+    do: %{pet | walk_speed: PetState.base_walk_speed(pet.mob_db_id, owner)}
 
   # Saves the pet with `inventory` (the owner's after the slots in `removed`
   # lost one item) and the egg upkeep: the egg is deleted at intimacy 0,

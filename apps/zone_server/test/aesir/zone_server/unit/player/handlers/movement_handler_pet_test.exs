@@ -78,6 +78,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerPetTest do
       owner_char_id: 7,
       owner_account_id: 1_007,
       class_id: 1_002,
+      mob_db_id: 1_002,
       name: "Poring",
       level: 5,
       egg_id: 9_001,

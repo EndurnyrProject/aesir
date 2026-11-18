@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
   alias Aesir.Net.PetCatchTargetCommand
   alias Aesir.Net.PetEmotionCommand
   alias Aesir.Net.PetEquipAccessoryCommand
+  alias Aesir.Net.PetEvolveCommand
   alias Aesir.Net.PetMenuCommand
   alias Aesir.Net.PetRenameCommand
   alias Aesir.Net.PetRequest
@@ -21,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
   alias Aesir.ZoneServer.Unit.Pet.Handlers.AccessoryHandler
   alias Aesir.ZoneServer.Unit.Pet.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Pet.Handlers.CatchHandler
+  alias Aesir.ZoneServer.Unit.Pet.Handlers.EvolutionHandler
   alias Aesir.ZoneServer.Unit.Pet.Handlers.HatchHandler
   alias Aesir.ZoneServer.Unit.Pet.Handlers.HungerHandler
   alias Aesir.ZoneServer.Unit.Pet.Handlers.LifecycleHandler
@@ -38,7 +40,8 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
   pet out and is always acknowledged, its outcome going in `PetCatchResult`;
   the menu needs a pet out with intimacy above 0. An accessory equip first
   passes the gear equip request checks; an accessory equip or unequip
-  succeeds only when the pet's accessory changed.
+  succeeds only when the pet's accessory changed. An evolution answers with
+  its outcome in `error`, `PET_ERROR_EVOLUTION_SUCCESS` included.
   """
   @spec request(PetRequest.t(), SessionState.t()) :: {:noreply, SessionState.t()}
   def request(%PetRequest{} = request, %SessionState{} = session) do
@@ -48,6 +51,9 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
       case result do
         :ok ->
           %PetResult{request_id: request.request_id, success: true}
+
+        {:ok, outcome} ->
+          %PetResult{request_id: request.request_id, success: true, error: outcome}
 
         {:error, error} ->
           %PetResult{request_id: request.request_id, success: false, error: error}
@@ -79,6 +85,9 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler do
       %SessionState{pet: nil} -> {{:error, :PET_ERROR_NO_PET}, session}
     end
   end
+
+  defp run({:evolve, %PetEvolveCommand{egg_item_id: egg_item_id}}, session),
+    do: EvolutionHandler.evolve(session, egg_item_id)
 
   defp run(_command, %SessionState{pet: nil} = session),
     do: {{:error, :PET_ERROR_NO_PET}, session}

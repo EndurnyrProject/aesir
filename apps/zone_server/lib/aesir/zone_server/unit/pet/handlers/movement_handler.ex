@@ -330,7 +330,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Handlers.MovementHandler do
   # concealed from it. A pet has no mob modes or class, so it is never a boss
   # or detector.
   defp owner_visible?(%PetState{} = pet, %PlayerState{} = owner) do
-    {:ok, mob} = Mobs.by_id(pet.class_id)
+    {:ok, mob} = Mobs.by_id(pet.mob_db_id)
     viewer = %{class: :normal, detector: false}
 
     pet.map_name == owner.map_name and distance(pet, owner) <= mob.skill_range and
