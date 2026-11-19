@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Geometry
@@ -1515,7 +1516,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
   end
 
   defp homunculus_state(owner_character_id) do
-    %HomunculusState{
+    build(:homunculus_state,
       id: 501,
       owner_character_id: owner_character_id,
       owner_session_pid: self(),
@@ -1540,7 +1541,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       active_remaining_ms: 1_000_000,
       learned_skills: %{},
       cooldowns: %{},
-      ai_config: %{},
       world_gid: 501,
       map_name: "prontera",
       x: 100,
@@ -1567,7 +1567,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         mdef: 10,
         soft_mdef: 0
       }
-    }
+    )
   end
 
   defp attacked_mob(skill_state, attacker, modes \\ [:can_move, :can_attack]) do

@@ -364,13 +364,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         :homunculus,
         homunculus_id,
         HomunculusState,
-        %HomunculusState{
+        build(:homunculus_state,
           id: 30_001,
           owner_character_id: 30_002,
           class_id: 6003,
           name: "Fleet test",
           world_gid: homunculus_id
-        },
+        ),
         self()
       )
 

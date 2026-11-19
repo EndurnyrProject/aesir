@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
 
   import Aesir.TestEtsSetup
   import Mimic
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
   alias Aesir.Net.GroundSkill
@@ -475,8 +476,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
   end
 
   defp homunculus(overrides \\ %{}) do
-    struct!(
-      HomunculusState,
+    build(
+      :homunculus_state,
       Map.merge(
         %{
           id: 1,

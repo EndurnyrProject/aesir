@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Integration.HomunculusAmistrSkillsTest do
   use Aesir.ZoneServer.IntegrationCase
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
@@ -20,7 +22,6 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAmistrSkillsTest do
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.StateCommit
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -548,8 +549,8 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAmistrSkillsTest do
   end
 
   defp amistr(overrides) do
-    struct!(
-      HomunculusState,
+    build(
+      :homunculus_state,
       Map.merge(
         %{
           id: 5,

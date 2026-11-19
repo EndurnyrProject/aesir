@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionetteTest do
   use ExUnit.Case, async: true
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionette
@@ -210,7 +211,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionetteTest do
   end
 
   defp homunculus(owner_id) do
-    %HomunculusState{
+    build(:homunculus_state,
       id: 1,
       world_gid: 90_001,
       owner_character_id: owner_id,
@@ -234,7 +235,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionetteTest do
       y: 100,
       action_state: :idle,
       movement_state: :standing
-    }
+    )
   end
 
   defp player(id, opts \\ []) do

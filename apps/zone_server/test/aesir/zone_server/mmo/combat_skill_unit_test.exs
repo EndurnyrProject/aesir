@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
 
   @moduletag :capture_log
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
@@ -26,7 +28,6 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Broadcast
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -618,23 +619,24 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
         end
       end)
 
-    homunculus = %HomunculusState{
-      id: 1,
-      owner_character_id: 3_000,
-      owner_session_pid: owner,
-      class_id: 6_001,
-      name: "Lif",
-      lifecycle: :active,
-      action_state: :idle,
-      hp: 100,
-      max_hp: 100,
-      sp: 50,
-      max_sp: 50,
-      world_gid: homunculus_id,
-      map_name: @map_name,
-      x: 151,
-      y: 150
-    }
+    homunculus =
+      build(:homunculus_state,
+        id: 1,
+        owner_character_id: 3_000,
+        owner_session_pid: owner,
+        class_id: 6_001,
+        name: "Lif",
+        lifecycle: :active,
+        action_state: :idle,
+        hp: 100,
+        max_hp: 100,
+        sp: 50,
+        max_sp: 50,
+        world_gid: homunculus_id,
+        map_name: @map_name,
+        x: 151,
+        y: 150
+      )
 
     stub(TargetResolver, :resolve, fn
       :player, ^player_id -> {:ok, self(), player, :player}

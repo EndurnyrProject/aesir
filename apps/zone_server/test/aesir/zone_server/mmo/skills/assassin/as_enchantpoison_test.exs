@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoisonTest do
   use ExUnit.Case, async: false
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -181,19 +182,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoisonTest do
   end
 
   defp register_homunculus(gid, owner_id) do
-    homunculus = %HomunculusState{
-      id: gid,
-      world_gid: gid,
-      owner_character_id: owner_id,
-      class_id: 6_001,
-      name: "Lif",
-      lifecycle: :active,
-      hp: 50,
-      max_hp: 100,
-      map_name: "prontera",
-      x: 50,
-      y: 50
-    }
+    homunculus =
+      build(:homunculus_state,
+        id: gid,
+        world_gid: gid,
+        owner_character_id: owner_id,
+        class_id: 6_001,
+        name: "Lif",
+        lifecycle: :active,
+        hp: 50,
+        max_hp: 100,
+        map_name: "prontera",
+        x: 50,
+        y: 50
+      )
 
     :ok = UnitRegistry.register_unit(:homunculus, gid, HomunculusState, homunculus, self())
   end

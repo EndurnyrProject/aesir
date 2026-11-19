@@ -2,13 +2,14 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.HungerHandlerTest do
   use Aesir.DataCase, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Homunculus
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.Homunculus.Ai.Config
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.HungerHandler
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Persistence
   alias Aesir.ZoneServer.Unit.Homunculus.Runtime
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
@@ -454,8 +455,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.HungerHandlerTest do
   end
 
   defp state(attrs) do
-    struct!(
-      HomunculusState,
+    build(
+      :homunculus_state,
       Map.merge(
         %{
           id: 1,

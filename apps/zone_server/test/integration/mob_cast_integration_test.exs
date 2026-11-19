@@ -654,13 +654,15 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
   end
 
   describe "HT_FREEZINGTRAP ground lifecycle" do
+    # Pre-renewal Freeze resistance adds (target level - caster level) * 10, so the
+    # hit targets stay below Marionette's level with luk 0 to make the freeze certain.
     test "MobSession places it under its target and the next pass sets off Water splash and Freeze" do
       activator =
         start_player_session(
           id: 9_815,
           name: "Activator",
           class: 7,
-          base_level: 99,
+          base_level: 1,
           position: {150, 150},
           map_name: @map,
           hp: 2_000,
@@ -674,7 +676,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
           id: 9_816,
           name: "Connected",
           class: 7,
-          base_level: 99,
+          base_level: 1,
           position: {150, 151},
           map_name: @map,
           hp: 2_000,

@@ -30,22 +30,23 @@ defmodule Aesir.ZoneServer.Map.CoordinatorFlushTest do
   end
 
   defp register_homunculus do
-    homunculus = %HomunculusState{
-      id: 1,
-      owner_character_id: 1001,
-      class_id: 6_001,
-      name: "Lif",
-      lifecycle: :active,
-      level: 50,
-      hp: 950,
-      max_hp: 1_000,
-      world_gid: 70_001,
-      map_name: @map_name,
-      x: 52,
-      y: 50,
-      dir: 1,
-      movement_state: :moving
-    }
+    homunculus =
+      build(:homunculus_state,
+        id: 1,
+        owner_character_id: 1001,
+        class_id: 6_001,
+        name: "Lif",
+        lifecycle: :active,
+        level: 50,
+        hp: 950,
+        max_hp: 1_000,
+        world_gid: 70_001,
+        map_name: @map_name,
+        x: 52,
+        y: 50,
+        dir: 1,
+        movement_state: :moving
+      )
 
     SpatialIndex.add_unit(
       :homunculus,

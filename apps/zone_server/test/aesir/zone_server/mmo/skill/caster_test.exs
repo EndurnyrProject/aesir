@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
   use ExUnit.Case, async: true
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
@@ -20,7 +21,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Npc.Transpiler.Parser
   alias Aesir.ZoneServer.PlayerStateFixture
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
@@ -514,7 +514,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
   end
 
   defp homunculus do
-    %HomunculusState{
+    build(:homunculus_state,
       id: 201,
       owner_character_id: 101,
       class_id: 6_001,
@@ -524,7 +524,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
       x: 11,
       y: 21,
       attack_range: 3
-    }
+    )
   end
 
   defp mob do

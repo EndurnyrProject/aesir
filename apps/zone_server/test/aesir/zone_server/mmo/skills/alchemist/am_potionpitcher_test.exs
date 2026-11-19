@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcherTest do
   use ExUnit.Case, async: false
   import Mimic
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
@@ -117,7 +118,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcherTest do
   end
 
   defp homunculus(owner_id, gid, opts \\ []) do
-    %HomunculusState{
+    build(:homunculus_state,
       id: gid + 1,
       owner_character_id: owner_id,
       class_id: 6_001,
@@ -130,7 +131,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcherTest do
       map_name: "test",
       x: 10,
       y: 10
-    }
+    )
   end
 
   test "each level throws its own potion, read from the potion's script", %{

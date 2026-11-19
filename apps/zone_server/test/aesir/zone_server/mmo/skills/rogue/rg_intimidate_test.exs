@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidateTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
@@ -9,7 +11,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidateTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidate
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -105,13 +106,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidateTest do
   test "a monster's damaging hit on a Homunculus rolls with the Homunculus level" do
     caster = %{mob() | instance_id: @caster_id, deferred_epoch: 7}
 
-    homunculus = %HomunculusState{
-      id: 9,
-      owner_character_id: 1,
-      class_id: 6001,
-      name: "Lif",
-      level: 1
-    }
+    homunculus =
+      build(:homunculus_state,
+        id: 9,
+        owner_character_id: 1,
+        class_id: 6001,
+        name: "Lif",
+        level: 1
+      )
 
     stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), homunculus, :homunculus} end)
 
@@ -177,19 +179,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidateTest do
     owner_pid = spawn(fn -> Process.sleep(:infinity) end)
     on_exit(fn -> Process.exit(owner_pid, :kill) end)
 
-    homunculus = %HomunculusState{
-      id: 9,
-      world_gid: 9,
-      owner_character_id: 1,
-      class_id: 6001,
-      name: "Lif",
-      map_name: "prontera",
-      x: 11,
-      y: 10,
-      hp: 50,
-      lifecycle: :active,
-      action_state: :idle
-    }
+    homunculus =
+      build(:homunculus_state,
+        id: 9,
+        world_gid: 9,
+        owner_character_id: 1,
+        class_id: 6001,
+        name: "Lif",
+        map_name: "prontera",
+        x: 11,
+        y: 10,
+        hp: 50,
+        lifecycle: :active,
+        action_state: :idle
+      )
 
     stub(TargetResolver, :resolve, fn {:homunculus, 9} ->
       {:ok, owner_pid, homunculus, :homunculus}

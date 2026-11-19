@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AttackersTest do
   use ExUnit.Case, async: false
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.Attackers
@@ -64,18 +65,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.AttackersTest do
     UnitRegistry.update_unit_state(:player, 100, %{owner | casting: %{target: {:unit, 100}}})
     assert Attackers.random(owner) == :none
 
-    homunculus = %HomunculusState{
-      id: 1,
-      owner_character_id: 300,
-      class_id: 6_004,
-      name: "Vanilmirth",
-      world_gid: 400,
-      map_name: @map,
-      x: 21,
-      y: 20,
-      target: {:player, 100},
-      action_state: :moving
-    }
+    homunculus =
+      build(:homunculus_state,
+        id: 1,
+        owner_character_id: 300,
+        class_id: 6_004,
+        name: "Vanilmirth",
+        world_gid: 400,
+        map_name: @map,
+        x: 21,
+        y: 20,
+        target: {:player, 100},
+        action_state: :moving
+      )
 
     UnitRegistry.register_unit(:homunculus, 400, HomunculusState, homunculus, self())
     SpatialIndex.add_unit(:homunculus, 400, 21, 20, @map)

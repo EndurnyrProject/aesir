@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
   use ExUnit.Case, async: true
   import Mimic
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Combat
@@ -83,13 +84,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
 
   test "an owner-local Homunculus heal carries zero under Hermode",
        %{caster: caster, definition: definition} do
-    homunculus = %HomunculusState{
-      id: 1,
-      world_gid: @ally_id,
-      owner_character_id: caster.character_id,
-      class_id: 6001,
-      name: "Lif"
-    }
+    homunculus =
+      build(:homunculus_state,
+        id: 1,
+        world_gid: @ally_id,
+        owner_character_id: caster.character_id,
+        class_id: 6001,
+        name: "Lif"
+      )
 
     :ok = UnitRegistry.register_unit(:homunculus, @ally_id, HomunculusState, homunculus, self())
 
@@ -160,13 +162,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
       mob = %{mob_caster(base_level: 50, int: 50, matk: 50) | instance_id: @ally_id}
       :ok = UnitRegistry.register_unit(:mob, @ally_id, MobState, mob, self())
 
-      homunculus = %HomunculusState{
-        id: 1,
-        world_gid: @ally_id,
-        owner_character_id: caster.character_id,
-        class_id: 6001,
-        name: "Lif"
-      }
+      homunculus =
+        build(:homunculus_state,
+          id: 1,
+          world_gid: @ally_id,
+          owner_character_id: caster.character_id,
+          class_id: 6001,
+          name: "Lif"
+        )
 
       friendly = HomunculusState.to_combatant(homunculus)
 

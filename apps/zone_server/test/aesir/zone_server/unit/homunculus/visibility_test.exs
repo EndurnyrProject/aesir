@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.VisibilityTest do
 
   import Aesir.TestEtsSetup
   import Mimic
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.UnitSpawn
@@ -400,7 +401,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.VisibilityTest do
   end
 
   defp homunculus do
-    %HomunculusState{
+    build(:homunculus_state,
       id: 123,
       owner_character_id: 42,
       owner_session_pid: self(),
@@ -423,6 +424,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.VisibilityTest do
       y: 120,
       dir: 4,
       movement_state: :standing
-    }
+    )
   end
 end

@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusRewardsTest do
   @moduletag :capture_log
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
@@ -366,7 +367,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusRewardsTest do
   end
 
   defp homunculus_state(gid, owner_id, map, hp) do
-    %HomunculusState{
+    build(:homunculus_state,
       id: gid + 1_000,
       owner_character_id: owner_id,
       class_id: 6_001,
@@ -380,7 +381,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusRewardsTest do
       map_name: map,
       x: 50,
       y: 50
-    }
+    )
   end
 
   defp mode_value(renewal, pre_renewal) do

@@ -325,15 +325,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
 
       place(:player, 6, PlayerState, standing(6, %{}), {100, 101})
 
-      companion = %HomunculusState{
-        id: 1,
-        class_id: 6001,
-        name: "Lif",
-        world_gid: 500,
-        owner_character_id: 2,
-        map_name: "prontera",
-        hp: 100
-      }
+      companion =
+        build(:homunculus_state,
+          id: 1,
+          class_id: 6001,
+          name: "Lif",
+          world_gid: 500,
+          owner_character_id: 2,
+          map_name: "prontera",
+          hp: 100
+        )
 
       place(:homunculus, 500, HomunculusState, companion, {102, 102})
 

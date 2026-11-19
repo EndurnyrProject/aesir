@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
 
   import Aesir.TestEtsSetup
   import Mimic
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
@@ -733,7 +734,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
   end
 
   defp homunculus do
-    %HomunculusState{
+    build(:homunculus_state,
       id: 1,
       owner_character_id: 42,
       owner_session_pid: self(),
@@ -745,14 +746,13 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
       sp: 50,
       max_sp: 50,
       hunger: 50,
-      ai_config: Config.default([]),
       world_gid: 700,
       map_name: @map,
       x: 2,
       y: 2,
       action_state: :idle,
       movement_state: :standing
-    }
+    )
   end
 
   defp config(overrides) do

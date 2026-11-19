@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   use ExUnit.Case, async: true
   import Mimic
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
@@ -37,7 +38,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
@@ -3201,17 +3201,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
   describe "stamped homunculus summary" do
     test "carries a living Vanilmirth's Instruction Change rank and 0 once it is dead" do
-      vanilmirth = %HomunculusState{
-        id: 1,
-        owner_character_id: 1000,
-        class_id: 6004,
-        name: "Vanil",
-        lifecycle: :active,
-        action_state: :idle,
-        hp: 50,
-        max_hp: 100,
-        learned_skills: %{8015 => 4}
-      }
+      vanilmirth =
+        build(:homunculus_state,
+          id: 1,
+          owner_character_id: 1000,
+          class_id: 6004,
+          name: "Vanil",
+          lifecycle: :active,
+          action_state: :idle,
+          hp: 50,
+          max_hp: 100,
+          learned_skills: %{8015 => 4}
+        )
 
       state = Map.put(casting_state(45), :homunculus, vanilmirth)
       rank = HomunculusStats.instruction_change_rank(vanilmirth)

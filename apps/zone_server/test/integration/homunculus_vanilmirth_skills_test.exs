@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
   use Aesir.ZoneServer.IntegrationCase
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
@@ -828,7 +830,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
   end
 
   defp vanilmirth do
-    %HomunculusState{
+    build(:homunculus_state,
       id: 1,
       owner_character_id: 100,
       owner_session_pid: self(),
@@ -865,7 +867,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
         hp_regen_rate: 0,
         sp_regen_rate: 0
       }
-    }
+    )
   end
 
   # The AI target lock refuses units it cannot fight (an absent player among

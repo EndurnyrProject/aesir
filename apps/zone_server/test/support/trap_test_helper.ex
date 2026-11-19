@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.TrapTestHelper do
   """
 
   import Mimic
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
@@ -72,7 +73,7 @@ defmodule Aesir.ZoneServer.TrapTestHelper do
 
   @doc "A living, active Homunculus owned by `owner_id`."
   def homunculus(id, owner_id) do
-    %HomunculusState{
+    build(:homunculus_state,
       id: id,
       world_gid: id,
       owner_character_id: owner_id,
@@ -84,7 +85,7 @@ defmodule Aesir.ZoneServer.TrapTestHelper do
       map_name: "prontera",
       x: 50,
       y: 50
-    }
+    )
   end
 
   @doc "Resolves `UnitRegistry.get_unit/2` from the given unit states only."

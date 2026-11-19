@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.HomunculusInstructionTest do
   use Aesir.DataCase, async: false
   import Mimic
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
@@ -11,7 +12,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.HomunculusInstructionTe
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes.Recipe
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -213,7 +213,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.HomunculusInstructionTe
   end
 
   defp homunculus(class_id, learned_skills) do
-    %HomunculusState{
+    build(:homunculus_state,
       id: 1,
       owner_character_id: 1,
       class_id: class_id,
@@ -221,7 +221,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.HomunculusInstructionTe
       lifecycle: :active,
       hp: 1,
       learned_skills: learned_skills
-    }
+    )
   end
 
   defp pharmacy_recipe do

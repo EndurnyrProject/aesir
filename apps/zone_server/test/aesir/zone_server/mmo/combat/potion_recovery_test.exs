@@ -6,7 +6,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecoveryTest do
 
   alias Aesir.ZoneServer.Mmo.Combat.PotionRecovery
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Stats.CombatStats
 
   @thrower_id 66_001
@@ -328,7 +327,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecoveryTest do
   end
 
   defp homunculus do
-    %HomunculusState{
+    build(:homunculus_state,
       id: 1,
       owner_character_id: @thrower_id,
       class_id: 6_001,
@@ -344,6 +343,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecoveryTest do
       map_name: "test",
       x: 10,
       y: 10
-    }
+    )
   end
 end

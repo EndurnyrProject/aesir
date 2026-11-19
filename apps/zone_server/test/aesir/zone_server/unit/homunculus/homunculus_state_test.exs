@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Unit.Homunculus.HomunculusStateTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
@@ -105,7 +107,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.HomunculusStateTest do
   end
 
   defp homunculus do
-    %HomunculusState{
+    build(:homunculus_state,
       id: 123,
       owner_character_id: 42,
       owner_session_pid: self(),
@@ -130,7 +132,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.HomunculusStateTest do
       active_remaining_ms: 1_000_000,
       learned_skills: %{8001 => 3},
       cooldowns: %{},
-      ai_config: %{},
       world_gid: 70_001,
       map_name: "prontera",
       x: 100,
@@ -157,6 +158,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.HomunculusStateTest do
         mdef: 30,
         soft_mdef: 15
       }
-    }
+    )
   end
 end

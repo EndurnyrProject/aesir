@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Integration.HomunculusLifSkillsTest do
   use Aesir.ZoneServer.IntegrationCase
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
@@ -430,28 +432,26 @@ defmodule Aesir.ZoneServer.Integration.HomunculusLifSkillsTest do
   end
 
   defp formula_lif(level, int, brain_rank, matk) do
-    %Aesir.ZoneServer.Unit.Homunculus.HomunculusState{
-      id: 1,
-      owner_character_id: 42,
-      class_id: 6_001,
-      name: "Lif",
-      lifecycle: :active,
-      level: level,
-      hp: 100,
-      max_hp: 100,
-      sp: 500,
-      max_sp: 500,
-      int: int,
-      learned_skills: %{8_001 => 5, 8_003 => brain_rank},
-      world_gid: 700,
-      map_name: @map,
-      x: 1,
-      y: 1,
-      combat_stats: %{
-        Aesir.ZoneServer.Unit.Homunculus.HomunculusState.__struct__().combat_stats
-        | matk_min: matk,
-          matk_max: matk
-      }
-    }
+    homunculus =
+      build(:homunculus_state,
+        id: 1,
+        owner_character_id: 42,
+        class_id: 6_001,
+        name: "Lif",
+        lifecycle: :active,
+        level: level,
+        hp: 100,
+        max_hp: 100,
+        sp: 500,
+        max_sp: 500,
+        int: int,
+        learned_skills: %{8_001 => 5, 8_003 => brain_rank},
+        world_gid: 700,
+        map_name: @map,
+        x: 1,
+        y: 1
+      )
+
+    %{homunculus | combat_stats: %{homunculus.combat_stats | matk_min: matk, matk_max: matk}}
   end
 end

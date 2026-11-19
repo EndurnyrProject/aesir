@@ -1,9 +1,10 @@
 defmodule Aesir.ZoneServer.Unit.Homunculus.LifecycleHandlerTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleHandler
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Runtime
 
   test "fresh active clocks last thirty minutes" do
@@ -482,6 +483,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.LifecycleHandlerTest do
       casting: nil
     }
 
-    struct!(HomunculusState, defaults |> Map.merge(lifecycle_defaults) |> Map.merge(attrs))
+    build(:homunculus_state, defaults |> Map.merge(lifecycle_defaults) |> Map.merge(attrs))
   end
 end

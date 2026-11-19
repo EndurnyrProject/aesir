@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   use ExUnit.Case, async: false
   import Aesir.TestEtsSetup
   import Mimic
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
@@ -39,7 +40,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.TestSupport.EnsembleSkill
   alias Aesir.ZoneServer.Unit.Broadcast
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -583,21 +583,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     end
 
     test "timed Homunculus casts keep the shared begin shape and dispatch their origin" do
-      caster = %HomunculusState{
-        id: 1,
-        owner_character_id: 100,
-        owner_session_pid: self(),
-        class_id: 6_001,
-        name: "Lif",
-        lifecycle: :active,
-        hp: 100,
-        sp: 100,
-        learned_skills: %{8_001 => 1},
-        world_gid: 1_500_001,
-        map_name: "prontera",
-        x: 10,
-        y: 10
-      }
+      caster =
+        build(:homunculus_state,
+          id: 1,
+          owner_character_id: 100,
+          owner_session_pid: self(),
+          class_id: 6_001,
+          name: "Lif",
+          lifecycle: :active,
+          hp: 100,
+          sp: 100,
+          learned_skills: %{8_001 => 1},
+          world_gid: 1_500_001,
+          map_name: "prontera",
+          x: 10,
+          y: 10
+        )
 
       assert {:casting, ^caster, %{skill_id: 8_001}} =
                Interpreter.begin_cast(caster, 8_001, 1, :self)
@@ -4002,7 +4003,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     test "rejects a non-player caster" do
       assert {:error, :unsupported_caster} =
-               Interpreter.item_cast(struct(HomunculusState), 6, 1, :self)
+               Interpreter.item_cast(build(:homunculus_state), 6, 1, :self)
     end
 
     test "casts a skill the player never learned" do

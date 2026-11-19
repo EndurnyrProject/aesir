@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpAssumptioTest do
   use ExUnit.Case, async: false
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
@@ -117,13 +118,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpAssumptioTest do
   end
 
   defp register_homunculus(gid, owner_id) do
-    homunculus = %HomunculusState{
-      id: gid,
-      world_gid: gid,
-      owner_character_id: owner_id,
-      class_id: 6_001,
-      name: "Lif"
-    }
+    homunculus =
+      build(:homunculus_state,
+        id: gid,
+        world_gid: gid,
+        owner_character_id: owner_id,
+        class_id: 6_001,
+        name: "Lif"
+      )
 
     :ok = UnitRegistry.register_unit(:homunculus, gid, HomunculusState, homunculus, self())
   end

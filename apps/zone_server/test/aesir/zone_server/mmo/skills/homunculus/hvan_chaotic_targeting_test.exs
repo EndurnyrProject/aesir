@@ -2,9 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanChaoticTargetingTest do
   use ExUnit.Case, async: false
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanChaotic
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -26,15 +26,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanChaoticTargetingTest do
     UnitRegistry.register_unit(:player, 200, PlayerState, attacker, self())
     SpatialIndex.add_unit(:player, 200, 21, 20, owner.map_name)
 
-    caster = %HomunculusState{
-      id: 1,
-      owner_character_id: 100,
-      class_id: 6_004,
-      name: "Vanilmirth",
-      world_gid: 1_500_001,
-      level: 50,
-      int: 50
-    }
+    caster =
+      build(:homunculus_state,
+        id: 1,
+        owner_character_id: 100,
+        class_id: 6_004,
+        name: "Vanilmirth",
+        world_gid: 1_500_001,
+        level: 50,
+        int: 50
+      )
 
     seed =
       Enum.find(1..100, fn n ->

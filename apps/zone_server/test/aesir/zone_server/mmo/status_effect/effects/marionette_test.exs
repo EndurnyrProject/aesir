@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MarionetteTest do
   use ExUnit.Case, async: true
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Skills.Clown.Formulas
@@ -164,31 +165,32 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MarionetteTest do
   end
 
   defp pair_with_homunculus(link) do
-    homunculus = %HomunculusState{
-      id: 1,
-      world_gid: @gid,
-      owner_character_id: 17,
-      owner_session_pid: self(),
-      class_id: 6_001,
-      name: "Lif",
-      lifecycle: :active,
-      level: 50,
-      hp: 1_000,
-      max_hp: 1_000,
-      sp: 100,
-      max_sp: 100,
-      str: 60,
-      agi: 10,
-      vit: 0,
-      int: 10,
-      dex: 10,
-      luk: 0,
-      map_name: "prontera",
-      x: 100,
-      y: 100,
-      action_state: :idle,
-      movement_state: :standing
-    }
+    homunculus =
+      build(:homunculus_state,
+        id: 1,
+        world_gid: @gid,
+        owner_character_id: 17,
+        owner_session_pid: self(),
+        class_id: 6_001,
+        name: "Lif",
+        lifecycle: :active,
+        level: 50,
+        hp: 1_000,
+        max_hp: 1_000,
+        sp: 100,
+        max_sp: 100,
+        str: 60,
+        agi: 10,
+        vit: 0,
+        int: 10,
+        dex: 10,
+        luk: 0,
+        map_name: "prontera",
+        x: 100,
+        y: 100,
+        action_state: :idle,
+        movement_state: :standing
+      )
 
     :ok = UnitRegistry.register_unit(:homunculus, @gid, HomunculusState, homunculus, self())
 

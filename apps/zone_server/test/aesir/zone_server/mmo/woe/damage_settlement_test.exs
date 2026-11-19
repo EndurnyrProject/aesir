@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
@@ -606,20 +607,21 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
   end
 
   test "same-owner Homunculus settlement and prepared returns are cast to the owner" do
-    homunculus = %HomunculusState{
-      id: 62,
-      world_gid: 62,
-      owner_character_id: 63,
-      owner_session_pid: self(),
-      class_id: 6001,
-      name: "settlement",
-      lifecycle: :active,
-      map_name: @castle_map,
-      x: 50,
-      y: 50,
-      hp: 100,
-      max_hp: 100
-    }
+    homunculus =
+      build(:homunculus_state,
+        id: 62,
+        world_gid: 62,
+        owner_character_id: 63,
+        owner_session_pid: self(),
+        class_id: 6001,
+        name: "settlement",
+        lifecycle: :active,
+        map_name: @castle_map,
+        x: 50,
+        y: 50,
+        hp: 100,
+        max_hp: 100
+      )
 
     :ok = UnitRegistry.register_unit(:homunculus, 62, HomunculusState, homunculus, self())
     _owner = register_player(63, @castle_map)

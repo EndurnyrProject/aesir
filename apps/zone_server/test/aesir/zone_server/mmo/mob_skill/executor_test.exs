@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
   alias Aesir.Net.SkillCasting
@@ -217,7 +218,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   end
 
   defp homunculus_state(gid, hp) do
-    %HomunculusState{
+    build(:homunculus_state,
       id: gid,
       owner_character_id: 42,
       class_id: 6001,
@@ -226,7 +227,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
       lifecycle: if(hp > 0, do: :active, else: :dead),
       action_state: if(hp > 0, do: :idle, else: :dead),
       hp: hp
-    }
+    )
   end
 
   defp stub_living_player_target(id \\ 42) do

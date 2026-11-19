@@ -2,13 +2,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastContextTest do
   use ExUnit.Case, async: false
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.Skill.CastContext
   alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlIncagi
   alias Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifHeal
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
@@ -82,7 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastContextTest do
   end
 
   defp homunculus do
-    %HomunculusState{
+    build(:homunculus_state,
       id: 201,
       owner_character_id: 101,
       class_id: 6_001,
@@ -93,6 +93,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastContextTest do
       y: 21,
       dex: 12,
       int: 18
-    }
+    )
   end
 end

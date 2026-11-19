@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
 
   import Aesir.TestEtsSetup
   import Mimic
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
@@ -14,7 +15,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Suffragium
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
@@ -507,7 +507,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
 
   defp homunculus(overrides \\ []) do
     struct!(
-      %HomunculusState{
+      build(:homunculus_state,
         id: 201,
         owner_character_id: 101,
         class_id: 6_001,
@@ -518,7 +518,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
         sp: 100,
         action_state: :idle,
         movement_state: :standing
-      },
+      ),
       overrides
     )
   end

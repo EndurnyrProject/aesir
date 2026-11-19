@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
   use Aesir.ZoneServer.IntegrationCase
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
@@ -415,44 +417,45 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
   defp duration(5), do: 40_000
 
   defp session(opts) do
-    homunculus = %HomunculusState{
-      id: Keyword.get(opts, :id, 901),
-      owner_character_id: Keyword.get(opts, :owner_character_id, 900),
-      class_id: 6011,
-      name: "Filir",
-      lifecycle: :active,
-      hp: 1_000,
-      max_hp: 1_000,
-      sp: Keyword.get(opts, :sp, 100),
-      max_sp: 100,
-      intimacy_hundredths: Keyword.get(opts, :intimacy_hundredths, 91_000),
-      learned_skills: Keyword.fetch!(opts, :learned_skills),
-      ai_config: Keyword.get(opts, :ai_config, %{}),
-      world_gid: @gid,
-      map_name: @map,
-      x: @origin_x,
-      y: @origin_y,
-      race: :brute,
-      size: :medium,
-      combat_stats: %{
-        atk: 0,
-        atk_min: 100,
-        atk_max: 100,
-        def: 0,
-        soft_def: 0,
-        hit: 10_000,
-        flee: 0,
-        perfect_dodge: 0,
-        critical: 0,
-        matk: 0,
-        matk_min: 0,
-        matk_max: 0,
-        mdef: 0,
-        soft_mdef: 0,
-        hp_regen_rate: 0,
-        sp_regen_rate: 0
-      }
-    }
+    homunculus =
+      build(:homunculus_state,
+        id: Keyword.get(opts, :id, 901),
+        owner_character_id: Keyword.get(opts, :owner_character_id, 900),
+        class_id: 6011,
+        name: "Filir",
+        lifecycle: :active,
+        hp: 1_000,
+        max_hp: 1_000,
+        sp: Keyword.get(opts, :sp, 100),
+        max_sp: 100,
+        intimacy_hundredths: Keyword.get(opts, :intimacy_hundredths, 91_000),
+        learned_skills: Keyword.fetch!(opts, :learned_skills),
+        ai_config: Keyword.get(opts, :ai_config, AiConfig.default()),
+        world_gid: @gid,
+        map_name: @map,
+        x: @origin_x,
+        y: @origin_y,
+        race: :brute,
+        size: :medium,
+        combat_stats: %{
+          atk: 0,
+          atk_min: 100,
+          atk_max: 100,
+          def: 0,
+          soft_def: 0,
+          hit: 10_000,
+          flee: 0,
+          perfect_dodge: 0,
+          critical: 0,
+          matk: 0,
+          matk_min: 0,
+          matk_max: 0,
+          mdef: 0,
+          soft_mdef: 0,
+          hp_regen_rate: 0,
+          sp_regen_rate: 0
+        }
+      )
 
     owner = %PlayerState{
       character_id: homunculus.owner_character_id,

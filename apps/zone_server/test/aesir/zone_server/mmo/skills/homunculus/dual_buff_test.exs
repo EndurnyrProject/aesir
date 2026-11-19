@@ -7,11 +7,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.DualBuffTest do
   use ExUnit.Case, async: false
 
   import Mimic
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.Skills.Homunculus.HamiDefence
   alias Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifAvoid
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
 
   setup :set_mimic_from_context
   setup :verify_on_exit!
@@ -20,7 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.DualBuffTest do
   @world_gid 1_500_001
 
   defp homunculus do
-    %HomunculusState{
+    build(:homunculus_state,
       id: 1,
       owner_character_id: @owner_id,
       owner_session_pid: self(),
@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.DualBuffTest do
       y: 10,
       action_state: :idle,
       movement_state: :standing
-    }
+    )
   end
 
   test "Defence still starts on the Homunculus when the owner refuses it" do

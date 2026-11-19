@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
   use ExUnit.Case, async: true
   use Mimic
   import ExUnit.CaptureLog
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Net.DamageDealt
   alias Aesir.Net.SkillDamage
@@ -687,23 +688,24 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       target_state = %{target_state | character_id: 3001}
       target_pid = self()
 
-      attacker_state = %HomunculusState{
-        id: 1,
-        owner_character_id: 1001,
-        owner_session_pid: self(),
-        class_id: 6001,
-        name: "Attacker",
-        lifecycle: :active,
-        hp: 100,
-        max_hp: 100,
-        sp: 50,
-        max_sp: 50,
-        world_gid: 4001,
-        map_name: "prontera",
-        x: 150,
-        y: 150,
-        combat_stats: %{HomunculusState.__struct__().combat_stats | hit: 200}
-      }
+      attacker_state =
+        build(:homunculus_state,
+          id: 1,
+          owner_character_id: 1001,
+          owner_session_pid: self(),
+          class_id: 6001,
+          name: "Attacker",
+          lifecycle: :active,
+          hp: 100,
+          max_hp: 100,
+          sp: 50,
+          max_sp: 50,
+          world_gid: 4001,
+          map_name: "prontera",
+          x: 150,
+          y: 150,
+          combat_stats: %{HomunculusState.__struct__().combat_stats | hit: 200}
+        )
 
       stub(MapFlags, :get, fn
         "prontera", :pvp -> true
@@ -738,23 +740,24 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
       target_pid = start_relay()
 
-      target_state = %HomunculusState{
-        id: 1,
-        owner_character_id: 3001,
-        owner_session_pid: target_pid,
-        class_id: 6001,
-        name: "Target",
-        lifecycle: :active,
-        hp: 100,
-        max_hp: 100,
-        sp: 50,
-        max_sp: 50,
-        world_gid: 4001,
-        map_name: "prontera",
-        x: 150,
-        y: 150,
-        combat_stats: %{HomunculusState.__struct__().combat_stats | flee: 0}
-      }
+      target_state =
+        build(:homunculus_state,
+          id: 1,
+          owner_character_id: 3001,
+          owner_session_pid: target_pid,
+          class_id: 6001,
+          name: "Target",
+          lifecycle: :active,
+          hp: 100,
+          max_hp: 100,
+          sp: 50,
+          max_sp: 50,
+          world_gid: 4001,
+          map_name: "prontera",
+          x: 150,
+          y: 150,
+          combat_stats: %{HomunculusState.__struct__().combat_stats | flee: 0}
+        )
 
       stub(MapFlags, :get, fn
         "prontera", :pvp -> true

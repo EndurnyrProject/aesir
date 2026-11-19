@@ -6,7 +6,10 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.HomunculusState do
   timer and movement bookkeeping belongs to `Runtime`, not this snapshot.
   """
 
+  use TypedStruct
+
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Homunculus.Ai.Config
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
@@ -47,131 +50,79 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.HomunculusState do
           sp_regen_rate: integer()
         }
 
-  @enforce_keys [:id, :owner_character_id, :class_id, :name]
-  defstruct id: nil,
-            owner_character_id: nil,
-            owner_session_pid: nil,
-            class_id: nil,
-            name: nil,
-            rename_available: true,
-            lifecycle: :rested,
-            level: 1,
-            exp: 0,
-            skill_points: 0,
-            hp: 0,
-            max_hp: 0,
-            raw_max_hp: nil,
-            sp: 0,
-            max_sp: 0,
-            raw_max_sp: nil,
-            str: 0,
-            raw_str: nil,
-            agi: 0,
-            raw_agi: nil,
-            vit: 0,
-            raw_vit: nil,
-            int: 0,
-            raw_int: nil,
-            dex: 0,
-            raw_dex: nil,
-            luk: 0,
-            raw_luk: nil,
-            hunger: 32,
-            intimacy_hundredths: 2_100,
-            active_remaining_ms: 1_800_000,
-            learned_skills: %{},
-            cooldowns: %{},
-            ai_config: %{},
-            world_gid: nil,
-            map_name: nil,
-            x: nil,
-            y: nil,
-            dir: 0,
-            action_state: :idle,
-            movement_state: :standing,
-            standby?: false,
-            target: nil,
-            casting: nil,
-            race: :formless,
-            element: {:neutral, 1},
-            size: :medium,
-            attack_range: 1,
-            attack_delay_ms: 500,
-            raw_attack_delay_ms: nil,
-            owner_walk_speed: 150,
-            combat_stats: %{
-              atk: 0,
-              atk_min: 0,
-              atk_max: 0,
-              def: 0,
-              soft_def: 0,
-              hit: 0,
-              flee: 0,
-              perfect_dodge: 0,
-              critical: 0,
-              matk: 0,
-              matk_min: 0,
-              matk_max: 0,
-              mdef: 0,
-              soft_mdef: 0,
-              hp_regen_rate: 0,
-              sp_regen_rate: 0
-            }
+  typedstruct enforce: true do
+    field :id, pos_integer()
+    field :owner_character_id, pos_integer()
+    field :owner_session_pid, pid() | nil, default: nil
+    field :class_id, pos_integer()
+    field :name, String.t()
+    field :rename_available, boolean(), default: true
+    field :lifecycle, lifecycle(), default: :rested
+    field :level, pos_integer(), default: 1
+    field :exp, non_neg_integer(), default: 0
+    field :skill_points, non_neg_integer(), default: 0
+    field :hp, non_neg_integer(), default: 0
+    field :max_hp, non_neg_integer(), default: 0
+    field :raw_max_hp, non_neg_integer() | nil, default: nil
+    field :sp, non_neg_integer(), default: 0
+    field :max_sp, non_neg_integer(), default: 0
+    field :raw_max_sp, non_neg_integer() | nil, default: nil
+    field :str, integer(), default: 0
+    field :raw_str, integer() | nil, default: nil
+    field :agi, integer(), default: 0
+    field :raw_agi, integer() | nil, default: nil
+    field :vit, integer(), default: 0
+    field :raw_vit, integer() | nil, default: nil
+    field :int, integer(), default: 0
+    field :raw_int, integer() | nil, default: nil
+    field :dex, integer(), default: 0
+    field :raw_dex, integer() | nil, default: nil
+    field :luk, integer(), default: 0
+    field :raw_luk, integer() | nil, default: nil
+    field :hunger, non_neg_integer(), default: 32
+    field :intimacy_hundredths, non_neg_integer(), default: 2_100
+    field :active_remaining_ms, non_neg_integer(), default: 1_800_000
+    field :learned_skills, %{optional(integer()) => pos_integer()}, default: %{}
+    field :cooldowns, map(), default: %{}
+    field :ai_config, Config.t()
+    field :world_gid, pos_integer() | nil, default: nil
+    field :map_name, String.t() | nil, default: nil
+    field :x, integer() | nil, default: nil
+    field :y, integer() | nil, default: nil
+    field :dir, 0..7, default: 0
+    field :action_state, action_state(), default: :idle
+    field :movement_state, movement_state(), default: :standing
+    field :standby?, boolean(), default: false
+    field :target, Ref.t() | nil, default: nil
+    field :casting, map() | nil, default: nil
+    field :race, race(), default: :formless
+    field :element, {Unit.entity_element(), pos_integer()}, default: {:neutral, 1}
+    field :size, Unit.entity_size(), default: :medium
+    field :attack_range, pos_integer(), default: 1
+    field :attack_delay_ms, pos_integer(), default: 500
+    field :raw_attack_delay_ms, pos_integer() | nil, default: nil
+    field :owner_walk_speed, pos_integer(), default: 150
 
-  @type t() :: %__MODULE__{
-          id: pos_integer(),
-          owner_character_id: pos_integer(),
-          owner_session_pid: pid() | nil,
-          class_id: pos_integer(),
-          name: String.t(),
-          rename_available: boolean(),
-          lifecycle: lifecycle(),
-          level: pos_integer(),
-          exp: non_neg_integer(),
-          skill_points: non_neg_integer(),
-          hp: non_neg_integer(),
-          max_hp: non_neg_integer(),
-          raw_max_hp: non_neg_integer() | nil,
-          sp: non_neg_integer(),
-          max_sp: non_neg_integer(),
-          raw_max_sp: non_neg_integer() | nil,
-          str: integer(),
-          raw_str: integer() | nil,
-          agi: integer(),
-          raw_agi: integer() | nil,
-          vit: integer(),
-          raw_vit: integer() | nil,
-          int: integer(),
-          raw_int: integer() | nil,
-          dex: integer(),
-          raw_dex: integer() | nil,
-          luk: integer(),
-          raw_luk: integer() | nil,
-          hunger: non_neg_integer(),
-          intimacy_hundredths: non_neg_integer(),
-          active_remaining_ms: non_neg_integer(),
-          learned_skills: %{optional(integer()) => pos_integer()},
-          cooldowns: map(),
-          ai_config: map(),
-          world_gid: pos_integer() | nil,
-          map_name: String.t() | nil,
-          x: integer() | nil,
-          y: integer() | nil,
-          dir: 0..7,
-          action_state: action_state(),
-          movement_state: movement_state(),
-          standby?: boolean(),
-          target: Ref.t() | nil,
-          casting: map() | nil,
-          race: race(),
-          element: {Unit.entity_element(), pos_integer()},
-          size: Unit.entity_size(),
-          attack_range: pos_integer(),
-          attack_delay_ms: pos_integer(),
-          raw_attack_delay_ms: pos_integer() | nil,
-          owner_walk_speed: pos_integer(),
-          combat_stats: combat_stats()
-        }
+    field :combat_stats, combat_stats(),
+      default: %{
+        atk: 0,
+        atk_min: 0,
+        atk_max: 0,
+        def: 0,
+        soft_def: 0,
+        hit: 0,
+        flee: 0,
+        perfect_dodge: 0,
+        critical: 0,
+        matk: 0,
+        matk_min: 0,
+        matk_max: 0,
+        mdef: 0,
+        soft_mdef: 0,
+        hp_regen_rate: 0,
+        sp_regen_rate: 0
+      }
+  end
 
   @doc "Returns the Homunculus race for status and combat calculations."
   @impl Unit

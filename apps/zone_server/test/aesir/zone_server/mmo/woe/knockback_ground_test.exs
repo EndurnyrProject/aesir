@@ -209,20 +209,21 @@ defmodule Aesir.ZoneServer.Mmo.Woe.KnockbackGroundTest do
     {_owner_id, owner} = register_player(map_name, x - 1, y)
     id = :erlang.unique_integer([:positive])
 
-    homunculus = %HomunculusState{
-      id: id,
-      owner_character_id: owner.game_state.character_id,
-      owner_session_pid: self(),
-      class_id: 6001,
-      name: "Lif",
-      lifecycle: :active,
-      hp: 100,
-      max_hp: 100,
-      world_gid: id,
-      map_name: map_name,
-      x: x,
-      y: y
-    }
+    homunculus =
+      build(:homunculus_state,
+        id: id,
+        owner_character_id: owner.game_state.character_id,
+        owner_session_pid: self(),
+        class_id: 6001,
+        name: "Lif",
+        lifecycle: :active,
+        hp: 100,
+        max_hp: 100,
+        world_gid: id,
+        map_name: map_name,
+        x: x,
+        y: y
+      )
 
     :ok = UnitRegistry.register_unit(:homunculus, id, HomunculusState, homunculus, self())
     :ok = SpatialIndex.add_unit(:homunculus, id, x, y, map_name)

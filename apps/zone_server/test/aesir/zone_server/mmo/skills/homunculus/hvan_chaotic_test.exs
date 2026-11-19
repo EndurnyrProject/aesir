@@ -2,9 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanChaoticTest do
   use ExUnit.Case, async: false
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanChaotic
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -81,7 +81,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanChaoticTest do
   end
 
   defp vanilmirth do
-    %HomunculusState{
+    build(:homunculus_state,
       id: 1,
       owner_character_id: 100,
       owner_session_pid: self(),
@@ -101,6 +101,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanChaoticTest do
       action_state: :idle,
       movement_state: :standing,
       combat_stats: %{matk: 7, matk_min: 7, matk_max: 7}
-    }
+    )
   end
 end

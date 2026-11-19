@@ -1,8 +1,9 @@
 defmodule Aesir.ZoneServer.Unit.Homunculus.NaturalRegenTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.NaturalRegen
   alias Aesir.ZoneServer.Unit.Homunculus.Runtime
 
@@ -56,7 +57,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.NaturalRegenTest do
   end
 
   defp homunculus(class_id, learned_skills) do
-    %HomunculusState{
+    build(:homunculus_state,
       id: 1,
       owner_character_id: 2,
       class_id: class_id,
@@ -87,7 +88,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.NaturalRegenTest do
       map_name: "regen_test",
       x: 1,
       y: 1
-    }
+    )
   end
 
   defp runtime, do: %Runtime{private_dirty: false}

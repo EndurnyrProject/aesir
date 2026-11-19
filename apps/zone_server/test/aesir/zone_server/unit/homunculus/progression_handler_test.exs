@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.ProgressionHandlerTest do
   use Aesir.DataCase, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
@@ -11,7 +13,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.ProgressionHandlerTest do
   alias Aesir.ZoneServer.Mmo.Homunculus.ExpTable
   alias Aesir.ZoneServer.Mmo.Homunculus.Growth
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ProgressionHandler
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Persistence
 
   setup :verify_on_exit!
@@ -494,7 +495,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.ProgressionHandlerTest do
   end
 
   defp state(row) do
-    %HomunculusState{
+    build(:homunculus_state,
       id: row.id,
       owner_character_id: row.character_id,
       class_id: row.class_id,
@@ -515,7 +516,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.ProgressionHandlerTest do
       luk: row.luk,
       intimacy_hundredths: row.intimacy_hundredths,
       learned_skills: row.learned_skills,
-      ai_config: Config.default(),
       world_gid: nil,
       map_name: "progression_test",
       x: 10,
@@ -526,6 +526,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.ProgressionHandlerTest do
       element: {:neutral, 1},
       size: :small,
       attack_delay_ms: 700
-    }
+    )
   end
 end

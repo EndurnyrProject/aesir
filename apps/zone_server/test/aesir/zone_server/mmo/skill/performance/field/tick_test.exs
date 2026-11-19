@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field.TickTest do
 
   import Aesir.TestEtsSetup
   import Mimic
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Combat
@@ -112,17 +113,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field.TickTest do
 
       :ok = UnitRegistry.register_player(player(1), self())
 
-      homunculus = %HomunculusState{
-        id: 5,
-        owner_character_id: 2,
-        class_id: 6001,
-        name: "Lif",
-        lifecycle: :active,
-        action_state: :idle,
-        hp: 50,
-        max_hp: 100,
-        world_gid: 77
-      }
+      homunculus =
+        build(:homunculus_state,
+          id: 5,
+          owner_character_id: 2,
+          class_id: 6001,
+          name: "Lif",
+          lifecycle: :active,
+          action_state: :idle,
+          hp: 50,
+          max_hp: 100,
+          world_gid: 77
+        )
 
       :ok = UnitRegistry.register_unit(:homunculus, 77, HomunculusState, homunculus, self())
       group = group(5, :idun_heal, 0)

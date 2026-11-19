@@ -1,10 +1,11 @@
 defmodule Aesir.ZoneServer.Integration.OwnerAttackerHealingTest do
   use Aesir.ZoneServer.IntegrationCase
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanChaotic
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
 
   test "Benediction heals a selected player attacker through that player's session" do
@@ -26,18 +27,19 @@ defmodule Aesir.ZoneServer.Integration.OwnerAttackerHealingTest do
     end)
 
     :sys.replace_state(owner.pid, fn session ->
-      homunculus = %HomunculusState{
-        id: 1,
-        owner_character_id: owner.character.id,
-        class_id: 6_004,
-        name: "Vanilmirth",
-        world_gid: 1_500_001,
-        map_name: owner.map_name,
-        x: 20,
-        y: 20,
-        level: 50,
-        int: 50
-      }
+      homunculus =
+        build(:homunculus_state,
+          id: 1,
+          owner_character_id: owner.character.id,
+          class_id: 6_004,
+          name: "Vanilmirth",
+          world_gid: 1_500_001,
+          map_name: owner.map_name,
+          x: 20,
+          y: 20,
+          level: 50,
+          int: 50
+        )
 
       seed =
         Enum.find(1..100, fn n ->

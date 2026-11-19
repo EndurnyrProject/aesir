@@ -317,14 +317,18 @@ defmodule Aesir.ZoneServer.Factory do
     )
   end
 
-  @doc "A rested level 1 Lif (class 6001) with a sequenced id and owner; every other field is the struct default."
+  @doc """
+  A rested level 1 Lif (class 6001) with a sequenced id and owner and
+  `Config.default/0` AI; every other field is the struct default.
+  """
   @spec homunculus_state_factory() :: HomunculusState.t()
   def homunculus_state_factory do
     %HomunculusState{
       id: sequence(:homunculus_state_id, & &1, start_at: 1),
       owner_character_id: sequence(:homunculus_state_owner_id, & &1, start_at: 1),
       class_id: 6001,
-      name: "Homunculus"
+      name: "Homunculus",
+      ai_config: AiConfig.default()
     }
   end
 

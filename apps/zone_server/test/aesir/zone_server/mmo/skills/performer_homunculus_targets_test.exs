@@ -3,13 +3,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.PerformerHomunculusTargetsTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skills.Bard.BaFrostjoker
   alias Aesir.ZoneServer.Mmo.Skills.Dancer.DcScream
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
@@ -38,19 +38,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.PerformerHomunculusTargetsTest do
         }
         |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
 
-      target = %HomunculusState{
-        id: 3,
-        owner_character_id: 2,
-        class_id: 6001,
-        name: "Lif",
-        world_gid: 3,
-        map_name: "prontera",
-        x: 101,
-        y: 100,
-        hp: 100,
-        max_hp: 100,
-        lifecycle: :active
-      }
+      target =
+        build(:homunculus_state,
+          id: 3,
+          owner_character_id: 2,
+          class_id: 6001,
+          name: "Lif",
+          world_gid: 3,
+          map_name: "prontera",
+          x: 101,
+          y: 100,
+          hp: 100,
+          max_hp: 100,
+          lifecycle: :active
+        )
 
       stub(SpatialIndex, :get_unit_position, fn :mob, 1 -> {:ok, {100, 100, "prontera"}} end)
 
@@ -90,19 +91,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.PerformerHomunculusTargetsTest do
           stats: %{current_state: %{hp: 100}}
         })
 
-      target = %HomunculusState{
-        id: 3,
-        owner_character_id: 1,
-        class_id: 6001,
-        name: "Lif",
-        world_gid: 3,
-        map_name: "prontera",
-        x: 101,
-        y: 100,
-        hp: 100,
-        max_hp: 100,
-        lifecycle: :active
-      }
+      target =
+        build(:homunculus_state,
+          id: 3,
+          owner_character_id: 1,
+          class_id: 6001,
+          name: "Lif",
+          world_gid: 3,
+          map_name: "prontera",
+          x: 101,
+          y: 100,
+          hp: 100,
+          max_hp: 100,
+          lifecycle: :active
+        )
 
       stub(SpatialIndex, :get_unit_position, fn :player, 1 -> {:ok, {100, 100, "prontera"}} end)
 

@@ -304,20 +304,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
   test "heals a living injured Homunculus through typed delivery regardless of caster ownership" do
     gid = 1_500_001
 
-    homunculus = %HomunculusState{
-      id: 1,
-      owner_character_id: 9_999,
-      class_id: 6_001,
-      name: "Lif",
-      world_gid: gid,
-      lifecycle: :active,
-      action_state: :idle,
-      map_name: "prontera",
-      hp: 500,
-      max_hp: 1_000,
-      element: {:neutral, 1},
-      race: :demi_human
-    }
+    homunculus =
+      build(:homunculus_state,
+        id: 1,
+        owner_character_id: 9_999,
+        class_id: 6_001,
+        name: "Lif",
+        world_gid: gid,
+        lifecycle: :active,
+        action_state: :idle,
+        map_name: "prontera",
+        hp: 500,
+        max_hp: 1_000,
+        element: {:neutral, 1},
+        race: :demi_human
+      )
 
     stub_caster()
 

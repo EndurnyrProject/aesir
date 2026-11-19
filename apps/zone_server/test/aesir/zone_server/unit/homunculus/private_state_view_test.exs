@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Unit.Homunculus.PrivateStateViewTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Net.HomunculusAiSkillConfig
   alias Aesir.Net.HomunculusCooldown
   alias Aesir.Net.HomunculusHpRange
@@ -221,7 +223,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.PrivateStateViewTest do
       }
     }
 
-    %HomunculusState{
+    build(:homunculus_state,
       id: 42,
       owner_character_id: 7,
       owner_session_pid: self(),
@@ -269,6 +271,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.PrivateStateViewTest do
         matk_max: 0,
         soft_mdef: 0
       }
-    }
+    )
   end
 end

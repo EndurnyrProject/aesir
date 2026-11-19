@@ -2,9 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HamiCastleTest do
   use ExUnit.Case, async: false
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.Skills.Homunculus.HamiCastle
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -14,13 +14,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HamiCastleTest do
   setup :setup_ets_tables
 
   defp caster do
-    %HomunculusState{
+    build(:homunculus_state,
       id: 1,
       world_gid: @gid,
       owner_character_id: @owner_id,
       class_id: 6_003,
       name: "Amistr"
-    }
+    )
   end
 
   defp register_owner(owner) do

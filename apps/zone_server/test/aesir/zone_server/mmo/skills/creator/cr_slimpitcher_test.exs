@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Creator.CrSlimpitcherTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
@@ -90,21 +91,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Creator.CrSlimpitcherTest do
     stub(MapCache, :get, fn "prontera" -> {:ok, MapData.new("prontera", 200, 200)} end)
     caster = place_player(player(10, learned: %{478 => 1}), {100, 100})
 
-    companion = %HomunculusState{
-      id: 1,
-      owner_character_id: 10,
-      class_id: 6_001,
-      name: "Lif",
-      lifecycle: :active,
-      hp: 50,
-      max_hp: 900,
-      vit: 30,
-      int: 20,
-      world_gid: 500,
-      map_name: "prontera",
-      x: 101,
-      y: 100
-    }
+    companion =
+      build(:homunculus_state,
+        id: 1,
+        owner_character_id: 10,
+        class_id: 6_001,
+        name: "Lif",
+        lifecycle: :active,
+        hp: 50,
+        max_hp: 900,
+        vit: 30,
+        int: 20,
+        world_gid: 500,
+        map_name: "prontera",
+        x: 101,
+        y: 100
+      )
 
     :ok = UnitRegistry.register_unit(:homunculus, 500, HomunculusState, companion, self())
     :ok = SpatialIndex.add_unit(:homunculus, 500, 101, 100, "prontera")

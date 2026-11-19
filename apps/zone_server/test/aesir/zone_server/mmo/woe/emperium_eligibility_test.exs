@@ -540,7 +540,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
   defp homunculus_state(castle, owner_id, homunculus_id) do
     {x, y} = castle.emperium
 
-    %HomunculusState{
+    build(:homunculus_state,
       id: 1,
       owner_character_id: owner_id,
       class_id: 6001,
@@ -554,7 +554,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
       map_name: castle.map,
       x: x,
       y: y
-    }
+    )
   end
 
   defp guild_state(guild_id, learned_skills) do

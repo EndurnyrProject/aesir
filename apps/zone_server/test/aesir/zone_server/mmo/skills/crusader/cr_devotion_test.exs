@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
   use ExUnit.Case, async: true
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
@@ -435,19 +436,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
   end
 
   defp register_homunculus(gid, owner_id) do
-    state = %HomunculusState{
-      id: gid,
-      world_gid: gid,
-      owner_character_id: owner_id,
-      class_id: 6001,
-      name: "DevotionHomunculus",
-      lifecycle: :active,
-      action_state: :idle,
-      hp: 100,
-      map_name: "prontera",
-      x: 50,
-      y: 50
-    }
+    state =
+      build(:homunculus_state,
+        id: gid,
+        world_gid: gid,
+        owner_character_id: owner_id,
+        class_id: 6001,
+        name: "DevotionHomunculus",
+        lifecycle: :active,
+        action_state: :idle,
+        hp: 100,
+        map_name: "prontera",
+        x: 50,
+        y: 50
+      )
 
     :ok = UnitRegistry.register_unit(:homunculus, gid, HomunculusState, state, self())
     state
