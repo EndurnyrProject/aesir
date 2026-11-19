@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
+  alias Aesir.ZoneServer.Mmo.Skill.CastTime
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -577,7 +578,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
       item_skill_fixed_rate: skill_fixed_rate(caster, skill_id),
       item_global_fixed_flat: equip_modifier(caster, :fixed_cast),
       item_skill_fixed_flat: equip_modifier(caster, {:skill_fixed_cast, skill_id}),
-      statuses: cast_statuses(caster.character_id)
+      statuses:
+        :player
+        |> StatusStorage.get_unit_statuses(caster.character_id)
+        |> CastTime.held_statuses()
     }
   end
 
@@ -835,21 +839,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
         pending_inventory_persist:
           caster.pending_inventory_persist ++ [{caster.inventory, inventory, change}]
     }
-  end
-
-  defp cast_statuses(character_id) do
-    :player
-    |> StatusStorage.get_unit_statuses(character_id)
-    |> Enum.reduce(%{}, fn entry, statuses ->
-      reduction = Map.get(entry.state || %{}, :cast_time_reduction, 0)
-
-      case entry.type do
-        :sc_memorize -> Map.put(statuses, :memorize, true)
-        :sc_suffragium -> Map.put(statuses, :suffragium, reduction)
-        :sc_poembragi -> Map.put(statuses, :bragi, reduction)
-        _ -> statuses
-      end
-    end)
   end
 
   defp skill_fixed_rate(caster, skill_id) do

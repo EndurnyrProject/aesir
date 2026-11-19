@@ -116,7 +116,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     @impl true
     def cast_with_origin(game_state, _target, _level, _definition, origin) do
       send(self(), {:cast_origin, origin})
-      send(self(), {:skill_origin, Aesir.ZoneServer.Mmo.Skill.Origin.current()})
+      send(self(), {:skill_origin, Origin.current()})
       {:ok, game_state}
     end
 
@@ -129,7 +129,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     @impl true
     def cast(game_state, _target, _level, _definition) do
-      Aesir.ZoneServer.Mmo.Skill.Origin.mark_skill_attack()
+      Origin.mark_skill_attack()
       {:ok, game_state}
     end
 
@@ -3276,10 +3276,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
 
       stub(StatusStorage, :get_unit_statuses, fn :player, 1000 ->
-        [%StatusEntry{state: %{delay_reduction: 50}}]
+        [%StatusEntry{type: :sc_poembragi, state: %{delay_reduction: 50}}]
       end)
 
       gs = game_state(100, %{6 => 1})
+      stub(UnitRegistry, :get_unit_info, fn :player, 1000 -> {:ok, %{stats: gs.stats}} end)
       before = System.monotonic_time(:millisecond)
 
       assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
@@ -3320,10 +3321,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
 
       stub(StatusStorage, :get_unit_statuses, fn :player, 1000 ->
-        [%StatusEntry{state: %{delay_reduction: 30}}]
+        [%StatusEntry{type: :sc_poembragi, state: %{delay_reduction: 30}}]
       end)
 
       gs = game_state(100, %{6 => 1}, %{delay_rate: -20})
+      stub(UnitRegistry, :get_unit_info, fn :player, 1000 -> {:ok, %{stats: gs.stats}} end)
       before = System.monotonic_time(:millisecond)
 
       assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
@@ -3339,12 +3341,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       stub(StatusStorage, :get_unit_statuses, fn :player, 1000 ->
         [
-          %StatusEntry{state: %{delay_reduction: 30}},
-          %StatusEntry{state: %{delay_reduction: 20}}
+          %StatusEntry{type: :sc_poembragi, state: %{delay_reduction: 30}},
+          %StatusEntry{type: :sc_poembragi, state: %{delay_reduction: 20}}
         ]
       end)
 
       gs = game_state(100, %{6 => 1})
+      stub(UnitRegistry, :get_unit_info, fn :player, 1000 -> {:ok, %{stats: gs.stats}} end)
       before = System.monotonic_time(:millisecond)
 
       assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
@@ -3359,10 +3362,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
 
       stub(StatusStorage, :get_unit_statuses, fn :player, 1000 ->
-        [%StatusEntry{state: %{delay_reduction: 150}}]
+        [%StatusEntry{type: :sc_poembragi, state: %{delay_reduction: 150}}]
       end)
 
       gs = game_state(100, %{6 => 1})
+      stub(UnitRegistry, :get_unit_info, fn :player, 1000 -> {:ok, %{stats: gs.stats}} end)
 
       assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
 

@@ -33,6 +33,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Memorize do
      |> put_state(:charges, @charges)}
   end
 
+  @impl true
+  def cast_time_input(_instance), do: {:memorize, true}
+
   @doc "Spends one timing charge and ends Foresight after the fifth."
   @spec consume_charge(atom(), integer()) :: :ok
   def consume_charge(type, id) do

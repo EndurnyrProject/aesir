@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.CastTime do
   @moduledoc """
-  Pure, mode-aware early and late cast-time computation.
+  Mode-aware early and late cast-time computation, pure apart from the status
+  registry lookup in `held_statuses/1`.
 
   The caster adapter provides effective combat DEX/INT, raw item bonus channels,
   named status values, effective skill-table membership and caster kind. Early
@@ -11,6 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTime do
 
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry, as: StatusRegistry
+  alias Aesir.ZoneServer.Mmo.StatusEntry
 
   @typedoc "A status's effect on the owning caster at a cast timing boundary."
   @type reaction :: :consume_memorize | :end_suffragium
@@ -43,6 +46,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTime do
             | :gloomy_day
           ) => boolean()
         }
+
+  @typedoc "One held status's contribution: a `statuses()` key and its value."
+  @type status_input :: {atom(), integer() | boolean()}
 
   @typedoc "Named source inputs; missing optional item/status channels are zero."
   @type inputs :: %{
@@ -77,6 +83,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTime do
 
   @typedoc "Late timing and its own reactions."
   @type resolved :: %{timing: result(), reactions: [reaction()]}
+
+  @doc """
+  Folds a caster's held status entries into the cast-time `statuses()` input.
+
+  Each status declares its own input through the status definition's
+  `cast_time_input/1` callback; statuses without one contribute nothing.
+  """
+  @spec held_statuses([StatusEntry.t()]) :: statuses()
+  def held_statuses(entries) do
+    Enum.reduce(entries, %{}, fn %StatusEntry{type: type} = entry, statuses ->
+      with %{module: module} <- StatusRegistry.get_definition(type),
+           {key, value} <- module.cast_time_input(entry) do
+        Map.put(statuses, key, value)
+      else
+        _ -> statuses
+      end
+    end)
+  end
 
   @doc "Computes early cast timing without reading or changing status state."
   @spec early(Definition.t(), pos_integer(), inputs()) :: stage_result()

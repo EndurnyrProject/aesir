@@ -27,4 +27,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PoemBragi do
        delay_reduction: instance.val3
      })}
   end
+
+  @impl true
+  def cast_time_input(instance),
+    do: {:bragi, Map.get(instance.state || %{}, :cast_time_reduction, 0)}
+
+  @impl true
+  def after_cast_delay_reduction(instance, _definition),
+    do: Map.get(instance.state || %{}, :delay_reduction, 0)
 end

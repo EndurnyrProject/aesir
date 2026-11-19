@@ -95,8 +95,10 @@ and always check whether it is mode-gated:
 
 ## Writing rules for mode-aware work
 
-- Describe the mechanic in docs; citing the rAthena function, file or constant it comes from
-  is fine for provenance. **Never cite line numbers**: they go stale with every rAthena update.
+- Describe the mechanic in code docs (`@moduledoc`, `@doc`, comments) in its own terms. **Never
+  cite rAthena in code docs**: no function, file, constant, flag or `val` field names from the
+  reference. Citations belong only in design docs (the vault specs), and never with line
+  numbers, which go stale with every rAthena update.
 - A skill/status whose behaviour differs by mode implements both behaviours, and its
   `@moduledoc` describes both.
 - New formula work goes through the `Mechanics` family seam, never inline

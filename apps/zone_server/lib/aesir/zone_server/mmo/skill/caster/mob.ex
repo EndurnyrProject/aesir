@@ -42,16 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Mob do
     statuses =
       :mob
       |> StatusStorage.get_unit_statuses(caster.instance_id)
-      |> Enum.reduce(%{}, fn entry, acc ->
-        value = Map.get(entry.state || %{}, :cast_time_reduction, 0)
-
-        case entry.type do
-          :sc_memorize -> Map.put(acc, :memorize, true)
-          :sc_poembragi -> Map.put(acc, :bragi, value)
-          :sc_suffragium -> Map.put(acc, :suffragium, value)
-          _ -> acc
-        end
-      end)
+      |> CastTime.held_statuses()
 
     %{
       caster_kind: :mob,

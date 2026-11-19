@@ -10,8 +10,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.AfterCastDelay do
   bonuses, the equipment's delay for that skill (`{:skill_delay, skill_id}`) is
   added next.
 
-  Two percentages then sum into one reduction, capped at 100: Bragi's, unless
-  the skill ignores status reductions (`ignore_status_delay`), and the
+  Two percentages then sum into one reduction, capped at 100: the held
+  statuses' (each status's `after_cast_delay_reduction/2`, such as Bragi's),
+  unless the skill ignores status reductions (`ignore_status_delay`), and the
   equipment delay rate (`:delay_rate`, negative for less delay), unless it
   ignores item bonuses (`ignore_item_delay`). The delay is scaled by one minus
   that reduction, a factor computed in single precision as the source does, and
@@ -19,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.AfterCastDelay do
   """
 
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry, as: StatusRegistry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
@@ -49,10 +51,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.AfterCastDelay do
 
   defp status_reduction(_caster, %Definition{ignore_status_delay: true}), do: 0
 
-  defp status_reduction(%{character_id: id}, _definition) when is_integer(id) do
+  defp status_reduction(%{character_id: id}, definition) when is_integer(id) do
     :player
     |> StatusStorage.get_unit_statuses(id)
-    |> Enum.reduce(0, fn entry, acc -> acc + Map.get(entry.state || %{}, :delay_reduction, 0) end)
+    |> Enum.reduce(0, fn entry, acc ->
+      case StatusRegistry.get_definition(entry.type) do
+        %{module: module} -> acc + module.after_cast_delay_reduction(entry, definition)
+        nil -> acc
+      end
+    end)
   end
 
   defp status_reduction(_caster, _definition), do: 0

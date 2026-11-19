@@ -27,6 +27,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Suffragium do
     {:ok, %{instance | val2: value} |> put_state(:cast_time_reduction, value)}
   end
 
+  @impl true
+  def cast_time_input(instance),
+    do: {:suffragium, Map.get(instance.state || %{}, :cast_time_reduction, 0)}
+
   @doc "Variable cast reduction in percent: 5 plus 5 per level in renewal, 15 per level in classic."
   @spec reduction(pos_integer()) :: pos_integer()
   def reduction(level) do

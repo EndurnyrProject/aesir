@@ -101,6 +101,14 @@ ground-unit cells) and in `aesir-status-effects`.
   siblings (dead modifier keys, missing resolver entries) instead of patching one instance.
   An inert bug can mask a crash; when fixing "this value is never read", check what happens
   once it is.
+- **Variant knowledge lives with the variant**: a consumer (a formula, an engine module, a
+  caster) must not `case` over the ids of another subsystem's members (`:sc_*`, skill ids,
+  item ids) to pull per-member values. Give the members' behaviour an optional callback with
+  a neutral default (`StatusEffect.Definition.cast_time_input/1`, `dynamic_option/1`), let
+  each module answer for itself, and have the consumer fold the answers. Use a protocol when
+  the variants are distinct structs; a behaviour callback when they share one struct and
+  differ by module (statuses, skills). Duplicated reducers across casters or handlers are the
+  same smell: extract once, dispatch through the behaviour.
 
 ## Related skills
 

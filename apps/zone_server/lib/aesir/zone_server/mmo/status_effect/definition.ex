@@ -118,6 +118,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   """
 
   alias Aesir.ZoneServer.Mmo.DefinitionValidation
+  alias Aesir.ZoneServer.Mmo.Skill.CastTime
+  alias Aesir.ZoneServer.Mmo.Skill.Definition, as: SkillDefinition
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Ref
@@ -424,6 +426,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   """
   @callback dynamic_option(StatusEntry.t()) :: atom() | [atom()] | nil
 
+  @doc """
+  The cast-time input this status gives its holder, as one
+  `Skill.CastTime.statuses()` key and value, or `nil` (the default). The value
+  is the status's percent, flat delay, count or presence; the mode formula
+  decides whether the key applies.
+  """
+  @callback cast_time_input(StatusEntry.t()) :: CastTime.status_input() | nil
+
+  @doc """
+  The percent this status takes off its holder's after-cast delay for the
+  skill `definition` (negative adds delay). Defaults to 0.
+  """
+  @callback after_cast_delay_reduction(StatusEntry.t(), SkillDefinition.t()) :: integer()
+
   @known_target_types [:player, :mob, :homunculus]
 
   @known_properties [
@@ -590,6 +606,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       def dynamic_option(_instance), do: nil
 
       @impl true
+      def cast_time_input(_instance), do: nil
+
+      @impl true
+      def after_cast_delay_reduction(_instance, _definition), do: 0
+
+      @impl true
       def overlap(_target, held, incoming),
         do: Definition.level_overlap(metadata(), held, incoming)
 
@@ -601,6 +623,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
                      resolve_duration: 2,
                      on_contact: 4,
                      dynamic_option: 1,
+                     cast_time_input: 1,
+                     after_cast_delay_reduction: 2,
                      overlap: 3
     end
   end

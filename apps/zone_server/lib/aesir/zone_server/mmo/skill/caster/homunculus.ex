@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Homunculus do
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalog, as: HomunculusCatalog
   alias Aesir.ZoneServer.Mmo.Homunculus.SkillTree, as: HomunculusSkillTree
+  alias Aesir.ZoneServer.Mmo.Skill.CastTime
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -165,7 +166,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Homunculus do
       int: max(caster.int, 0),
       base_level: caster.level,
       effective_skill?: true,
-      statuses: cast_statuses(caster.world_gid)
+      statuses:
+        :homunculus
+        |> StatusStorage.get_unit_statuses(caster.world_gid)
+        |> CastTime.held_statuses()
     }
   end
 
@@ -178,21 +182,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Homunculus do
 
   defp validate_relationship(_caster, _target, :target_any), do: :ok
   defp validate_relationship(_caster, _target, _target_type), do: {:error, :invalid_target}
-
-  defp cast_statuses(world_gid) do
-    :homunculus
-    |> StatusStorage.get_unit_statuses(world_gid)
-    |> Enum.reduce(%{}, fn entry, statuses ->
-      reduction = Map.get(entry.state || %{}, :cast_time_reduction, 0)
-
-      case entry.type do
-        :sc_memorize -> Map.put(statuses, :memorize, true)
-        :sc_suffragium -> Map.put(statuses, :suffragium, reduction)
-        :sc_poembragi -> Map.put(statuses, :bragi, reduction)
-        _ -> statuses
-      end
-    end)
-  end
 
   defp homunculus_tree_entry(class_id, skill_id) do
     case HomunculusSkillTree.entry(class_id, skill_id) do

@@ -84,7 +84,16 @@ Parrying live here, in `Interpreter`'s `@block_stage` after Basilica; it runs on
 a dual-wield or katar swing, so a callback spending a session-owned resource tracks the swing's
 spend under `hit_info.swing` as Energy Coat does, and effects on another unit's session go
 through `Helpers` casts such as `walk_delay/2`), `on_contact/4`,
-`dynamic_option/1`.
+`dynamic_option/1`, `cast_time_input/1`, `after_cast_delay_reduction/2`.
+
+**A status owns its effect on other subsystems.** Anything another subsystem needs from a
+status comes from a callback on the status module, never from a `case entry.type` table in
+the consumer. Example: a status that changes cast time implements `cast_time_input/1`,
+returning its `Skill.CastTime.statuses()` key and the value rAthena reads (`val` field or
+presence); `CastTime.held_statuses/1` only folds the answers. A status that shortens
+after-cast delay implements `after_cast_delay_reduction/2` (it receives the skill definition,
+for reductions limited to some skills). When a new status needs a hook
+that does not exist, add an optional callback with a neutral default to `Definition`.
 
 **Process placement**: `on_apply` runs inside the applier's session (self-call hazards:
 resolve units via `TargetResolver`, never GenServer-call your own session); `on_tick` runs
