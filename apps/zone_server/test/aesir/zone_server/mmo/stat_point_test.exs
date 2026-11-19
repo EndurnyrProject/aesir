@@ -37,9 +37,8 @@ defmodule Aesir.ZoneServer.Mmo.StatPointTest do
 
     @tag game_mode: :renewal
     test "displayed next cost respects the higher trait-job primary cap" do
-      assert StatPoint.next_cost(134, 4252) == 40
-      assert StatPoint.next_cost(135, 4252) == 0
-      assert StatPoint.cost_to_raise(135) == 44
+      assert StatPoint.next_cost(129, 4252) == 36
+      assert StatPoint.next_cost(130, 4252) == 0
     end
 
     test "points_needed sums per-point costs" do
@@ -99,22 +98,43 @@ defmodule Aesir.ZoneServer.Mmo.StatPointTest do
 
   describe "job-aware caps" do
     @tag game_mode: :renewal
-    test "max_parameter is 135 for trait jobs and 99 otherwise" do
-      assert StatPoint.max_parameter(4252) == 135
-      assert StatPoint.max_parameter(4054) == 99
+    test "max_parameter follows the class cascade" do
+      for {job_id, cap} <- [
+            {0, 99},
+            {13, 99},
+            {4008, 99},
+            {4023, 80},
+            {4045, 80},
+            {4220, 80},
+            {4096, 117},
+            {4054, 130},
+            {4060, 130},
+            {4211, 130},
+            {4215, 130},
+            {4218, 130},
+            {4252, 130},
+            {4280, 130},
+            {31, 0},
+            {99_999, 0}
+          ] do
+        assert StatPoint.max_parameter(job_id) == cap, "job #{job_id}"
+      end
     end
 
     @tag game_mode: :renewal
-    test "max_trait_parameter is 100 for trait jobs and 0 otherwise" do
-      assert StatPoint.max_trait_parameter(4252) == 100
+    test "max_trait_parameter is 110 for trait jobs and 0 otherwise" do
+      assert StatPoint.max_trait_parameter(4252) == 110
       assert StatPoint.max_trait_parameter(4054) == 0
     end
 
     @tag game_mode: :pre_renewal
-    test "classic caps primary stats at 99 and refuses all trait allocation" do
-      for job <- [0, 1, 4054, 4252] do
-        assert StatPoint.max_parameter(job) == 99
-        assert StatPoint.max_trait_parameter(job) == 0
+    test "classic applies the same cascade and has no cap for jobs outside its corpus" do
+      for {job_id, cap} <- [{0, 99}, {4008, 99}, {4023, 80}, {4045, 80}, {4054, 0}, {4252, 0}] do
+        assert StatPoint.max_parameter(job_id) == cap, "job #{job_id}"
+      end
+
+      for job_id <- [0, 4054, 4252] do
+        assert StatPoint.max_trait_parameter(job_id) == 0
       end
     end
   end

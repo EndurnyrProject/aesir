@@ -160,27 +160,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
 
     @tag game_mode: :renewal
     test "the last trait increase spends one point and clears its next-cost indicator" do
-      state = state(@trait_job, [pow: 99], trait_point: 5)
+      state = state(@trait_job, [pow: 109], trait_point: 5)
 
       assert {:noreply, result} =
                StatAllocationHandler.handle_status_up(StatusParams.pow(), 1, state)
 
-      assert result.game_state.stats.base_stats.pow == 100
+      assert result.game_state.stats.base_stats.pow == 110
       assert result.game_state.stats.progression.trait_point == 4
       upow = StatusParams.upow()
       assert_received {:params, %{^upow => 0}}
     end
 
     @tag game_mode: :renewal
-    test "cannot raise a trait stat past the cap of 100" do
-      state = state(@trait_job, [pow: 100], trait_point: 5)
+    test "cannot raise a trait stat past the cap of 110" do
+      state = state(@trait_job, [pow: 110], trait_point: 5)
 
       {:noreply, new_state} =
         StatAllocationHandler.handle_status_up(StatusParams.pow(), 1, state)
 
       assert new_state == state
       pow_id = StatusParams.pow()
-      assert_received {:ack, %StatUpResult{stat_id: ^pow_id, ok: false, value: 100}}
+      assert_received {:ack, %StatUpResult{stat_id: ^pow_id, ok: false, value: 110}}
     end
 
     @tag game_mode: :renewal
@@ -254,14 +254,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
     end
 
     @tag game_mode: :renewal
-    test "STR can be raised toward the 135 cap with the renewal scaling cost" do
-      state = state(@trait_job, [str: 130], status_point: 999)
+    test "STR can be raised to the 130 cap with the renewal scaling cost" do
+      state = state(@trait_job, [str: 129], status_point: 999)
 
       {:noreply, new_state} =
         StatAllocationHandler.handle_status_up(StatusParams.str(), 1, state)
 
-      assert new_state.game_state.stats.base_stats.str == 131
-      assert new_state.game_state.stats.progression.status_point == 959
+      assert new_state.game_state.stats.base_stats.str == 130
+      assert new_state.game_state.stats.progression.status_point == 963
     end
 
     test "publishes recalculated maxima and post-clamp current resources" do

@@ -28,12 +28,4 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.StatCostTest do
       assert PreRenewal.cost_to_raise(value) === expected
     end
   end
-
-  test "pre-renewal caps primary stats and disables trait stats" do
-    # rAthena src/map/pc.cpp:8816-8828,14338-14402,15234-15243.
-    assert PreRenewal.max_parameter(0) === 99
-    assert PreRenewal.max_parameter(4252) === 99
-    assert PreRenewal.max_trait_parameter(0) === 0
-    assert PreRenewal.max_trait_parameter(4252) === 0
-  end
 end

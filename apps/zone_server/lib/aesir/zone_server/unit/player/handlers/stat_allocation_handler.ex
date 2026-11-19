@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler do
   }
 
   # Trait (4th-job) stats: spent from the separate trait-point pool at a flat
-  # 1-point cost, capped by `max_trait_parameter` (100 on trait jobs, 0 else).
+  # 1-point cost, capped by `StatPoint.max_trait_parameter/1`.
   @trait_stats %{
     StatusParams.pow() => {:pow, StatusParams.upow()},
     StatusParams.sta() => {:sta, StatusParams.usta()},
