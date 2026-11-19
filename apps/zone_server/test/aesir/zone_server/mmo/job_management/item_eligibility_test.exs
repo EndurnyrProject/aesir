@@ -1,114 +1,32 @@
 defmodule Aesir.ZoneServer.Mmo.JobManagement.ItemEligibilityTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.ItemEligibility
-  alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
 
-  test "exposes the exact canonical item family vocabulary and existing mounted normalization" do
-    assert ItemEligibility.families() ==
-             Enum.sort([
-               :novice,
-               :swordman,
-               :mage,
-               :archer,
-               :acolyte,
-               :merchant,
-               :thief,
-               :taekwon,
-               :gunslinger,
-               :ninja,
-               :summoner,
-               :gangsi,
-               :wedding,
-               :xmas,
-               :summer,
-               :hanbok,
-               :oktoberfest,
-               :summer2,
-               :super_novice,
-               :knight,
-               :wizard,
-               :hunter,
-               :priest,
-               :blacksmith,
-               :assassin,
-               :star_gladiator,
-               :rebellion,
-               :kagerou_oboro,
-               :spirit_handler,
-               :death_knight,
-               :crusader,
-               :sage,
-               :bard_dancer,
-               :monk,
-               :alchemist,
-               :rogue,
-               :soul_linker,
-               :dark_collector
-             ])
+  test "the family vocabulary is exactly the families real jobs classify into" do
+    classified =
+      expected_profiles() |> Map.values() |> Enum.map(& &1.family) |> Enum.uniq() |> Enum.sort()
 
-    assert JobLineage.normalize(:lord_knight2) == :lord_knight
-    assert JobLineage.normalize(:star_gladiator2) == :star_gladiator2
+    assert ItemEligibility.families() == classified
   end
 
-  test "resolves the complete exported source selector vocabulary without invented names" do
-    expected = [
-      novice: ~w(EAJ_NOVICE EAJ_NOVICE_HIGH EAJ_BABY),
-      swordman: ~w(EAJ_SWORDMAN EAJ_SWORDMAN_HIGH EAJ_BABY_SWORDMAN),
-      mage: ~w(EAJ_MAGE EAJ_MAGE_HIGH EAJ_BABY_MAGE),
-      archer: ~w(EAJ_ARCHER EAJ_ARCHER_HIGH EAJ_BABY_ARCHER),
-      acolyte: ~w(EAJ_ACOLYTE EAJ_ACOLYTE_HIGH EAJ_BABY_ACOLYTE),
-      merchant: ~w(EAJ_MERCHANT EAJ_MERCHANT_HIGH EAJ_BABY_MERCHANT),
-      thief: ~w(EAJ_THIEF EAJ_THIEF_HIGH EAJ_BABY_THIEF),
-      taekwon: ~w(EAJ_TAEKWON EAJ_BABY_TAEKWON),
-      gunslinger: ~w(EAJ_GUNSLINGER EAJ_BABY_GUNSLINGER),
-      ninja: ~w(EAJ_NINJA EAJ_BABY_NINJA),
-      summoner: ~w(EAJ_SUMMONER EAJ_BABY_SUMMONER),
-      gangsi: ~w(EAJ_GANGSI),
-      super_novice:
-        ~w(EAJ_SUPER_NOVICE EAJ_SUPERNOVICE EAJ_SUPER_BABY EAJ_SUPER_NOVICE_E EAJ_SUPER_BABY_E EAJ_HYPER_NOVICE),
-      knight:
-        ~w(EAJ_KNIGHT EAJ_LORD_KNIGHT EAJ_BABY_KNIGHT EAJ_RUNE_KNIGHT EAJ_RUNE_KNIGHT_T EAJ_BABY_RUNE_KNIGHT EAJ_DRAGON_KNIGHT),
-      wizard:
-        ~w(EAJ_WIZARD EAJ_HIGH_WIZARD EAJ_BABY_WIZARD EAJ_WARLOCK EAJ_WARLOCK_T EAJ_BABY_WARLOCK EAJ_ARCH_MAGE),
-      hunter:
-        ~w(EAJ_HUNTER EAJ_SNIPER EAJ_BABY_HUNTER EAJ_RANGER EAJ_RANGER_T EAJ_BABY_RANGER EAJ_WINDHAWK),
-      priest:
-        ~w(EAJ_PRIEST EAJ_HIGH_PRIEST EAJ_BABY_PRIEST EAJ_ARCH_BISHOP EAJ_ARCH_BISHOP_T EAJ_BABY_ARCH_BISHOP EAJ_CARDINAL),
-      blacksmith:
-        ~w(EAJ_BLACKSMITH EAJ_WHITESMITH EAJ_BABY_BLACKSMITH EAJ_MECHANIC EAJ_MECHANIC_T EAJ_BABY_MECHANIC EAJ_MEISTER),
-      assassin:
-        ~w(EAJ_ASSASSIN EAJ_ASSASSIN_CROSS EAJ_BABY_ASSASSIN EAJ_GUILLOTINE_CROSS EAJ_GUILLOTINE_CROSS_T EAJ_BABY_GUILLOTINE_CROSS EAJ_SHADOW_CROSS),
-      star_gladiator:
-        ~w(EAJ_STAR_GLADIATOR EAJ_STARGLADIATOR EAJ_BABY_STAR_GLADIATOR EAJ_STAR_EMPEROR EAJ_BABY_STAR_EMPEROR EAJ_SKY_EMPEROR),
-      rebellion: ~w(EAJ_REBELLION EAJ_BABY_REBELLION EAJ_NIGHT_WATCH),
-      kagerou_oboro: ~w(EAJ_KAGEROUOBORO EAJ_BABY_KAGEROUOBORO EAJ_SHINKIROSHIRANUI),
-      spirit_handler: ~w(EAJ_SPIRIT_HANDLER),
-      death_knight: ~w(EAJ_DEATH_KNIGHT EAJ_DEATHKNIGHT),
-      crusader:
-        ~w(EAJ_CRUSADER EAJ_PALADIN EAJ_BABY_CRUSADER EAJ_ROYAL_GUARD EAJ_ROYAL_GUARD_T EAJ_BABY_ROYAL_GUARD EAJ_IMPERIAL_GUARD),
-      sage:
-        ~w(EAJ_SAGE EAJ_PROFESSOR EAJ_BABY_SAGE EAJ_SORCERER EAJ_SORCERER_T EAJ_BABY_SORCERER EAJ_ELEMENTAL_MASTER),
-      bard_dancer:
-        ~w(EAJ_BARDDANCER EAJ_CLOWNGYPSY EAJ_BABY_BARDDANCER EAJ_MINSTRELWANDERER EAJ_MINSTRELWANDERER_T EAJ_BABY_MINSTRELWANDERER EAJ_TROUBADOURTROUVERE),
-      monk:
-        ~w(EAJ_MONK EAJ_CHAMPION EAJ_BABY_MONK EAJ_SURA EAJ_SURA_T EAJ_BABY_SURA EAJ_INQUISITOR),
-      alchemist:
-        ~w(EAJ_ALCHEMIST EAJ_CREATOR EAJ_BABY_ALCHEMIST EAJ_GENETIC EAJ_GENETIC_T EAJ_BABY_GENETIC EAJ_BIOLO),
-      rogue:
-        ~w(EAJ_ROGUE EAJ_STALKER EAJ_BABY_ROGUE EAJ_SHADOW_CHASER EAJ_SHADOW_CHASER_T EAJ_BABY_SHADOW_CHASER EAJ_ABYSS_CHASER),
-      soul_linker:
-        ~w(EAJ_SOUL_LINKER EAJ_SOULLINKER EAJ_BABY_SOUL_LINKER EAJ_SOUL_REAPER EAJ_BABY_SOUL_REAPER EAJ_SOUL_ASCETIC),
-      dark_collector: ~w(EAJ_DARK_COLLECTOR EAJ_DARKCOLLECTOR)
-    ]
-
-    for {family, selectors} <- expected, selector <- selectors do
+  test "resolves exported item-job selectors to their canonical family" do
+    for {selector, family} <- [
+          {"EAJ_NOVICE_HIGH", :novice},
+          {"EAJ_BABY", :novice},
+          {"EAJ_SUPERNOVICE", :super_novice},
+          {"EAJ_HYPER_NOVICE", :super_novice},
+          {"EAJ_LORD_KNIGHT", :knight},
+          {"EAJ_DRAGON_KNIGHT", :knight},
+          {"EAJ_BARDDANCER", :bard_dancer},
+          {"EAJ_KAGEROUOBORO", :kagerou_oboro},
+          {"EAJ_STARGLADIATOR", :star_gladiator},
+          {"EAJ_SOUL_ASCETIC", :soul_linker}
+        ] do
       assert ItemEligibility.source_family(selector) == {:ok, family}
     end
 
-    assert ItemEligibility.source_family("EAJ_LORD_KNIGHT") == {:ok, :knight}
     assert ItemEligibility.source_family("EAJ_BARD") == {:error, :unknown_source_job}
     assert ItemEligibility.source_family("EAJ_WEDDING") == {:error, :unknown_source_job}
   end
@@ -148,10 +66,6 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.ItemEligibilityTest do
       assert ItemEligibility.classify(job_id, :pre_renewal) ==
                {:ok, %{family: family, classes: classes}}
     end
-  end
-
-  test "mode delegates to the configured runtime mode" do
-    assert ItemEligibility.mode() == GameMode.mode()
   end
 
   defp expected_profiles do

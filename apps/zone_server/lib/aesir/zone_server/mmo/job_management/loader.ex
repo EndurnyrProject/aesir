@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.Loader do
           by_name: %{atom() => Job.t()}
         }
 
-  @cache_file "jobs_v2.etf"
+  @cache_file "jobs_v3.etf"
 
   @field_names Job
                |> struct(%{})

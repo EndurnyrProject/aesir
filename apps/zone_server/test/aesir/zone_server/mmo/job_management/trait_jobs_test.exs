@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.TraitJobsTest do
       assert TraitJobs.change_allowed?(progression, 4252) == {:error, :requirements_not_met}
     end
 
+    @tag game_mode: :renewal
     test "error when job level is below the parent's max_job_level" do
       progression = %PlayerProgression{job_id: 4054, base_level: 200, job_level: 69}
 

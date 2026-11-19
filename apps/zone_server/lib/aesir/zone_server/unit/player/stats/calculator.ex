@@ -360,23 +360,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
         transcendent? = JobLineage.transcendent?(stats.progression.job_id)
 
         max_hp =
-          calculate_max_hp(
-            job_stats.base_hp,
-            effective_vit,
-            job_stats.hp_factor,
-            job_stats.hp_increase,
-            transcendent?,
-            stats
-          )
+          calculate_max_hp(job_stats.hp, effective_vit, transcendent?, stats)
 
         max_sp =
-          calculate_max_sp(
-            job_stats.base_sp,
-            effective_int,
-            job_stats.sp_increase,
-            transcendent?,
-            stats
-          )
+          calculate_max_sp(job_stats.sp, effective_int, transcendent?, stats)
 
         # Calculate ASPD
         aspd = calculate_aspd(stats)
@@ -762,35 +749,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
   defp left_weapon_delay(_stats, _job_name), do: nil
 
   defp get_job_stats_for_level(job_name, base_level) do
-    with {:ok, base_stats} <- JobManagement.get_base_stats_for_level(job_name, base_level),
-         {:ok, job} <- JobManagement.get_job_by_name(job_name) do
-      %{
-        base_hp: base_stats.hp,
-        base_sp: base_stats.sp,
-        hp_factor: job.hp_factor,
-        hp_increase: job.hp_increase,
-        sp_increase: job.sp_increase
-      }
-    else
+    case JobManagement.get_base_stats_for_level(job_name, base_level) do
+      {:ok, base_stats} ->
+        base_stats
+
       _ ->
         raise "Failed to get job stats for level #{base_level} of job #{job_name}"
     end
   end
 
-  defp calculate_max_hp(
-         base_hp,
-         effective_vit,
-         hp_factor,
-         hp_increase,
-         transcendent?,
-         stats
-       ) do
+  defp calculate_max_hp(base_hp, effective_vit, transcendent?, stats) do
     Mechanics.player_formulas().max_hp(%{
       base_hp: base_hp,
       vit: effective_vit,
       equipment_vit: equipment_primary_stat_bonus(stats, :vit),
-      hp_factor: hp_factor,
-      hp_increase: hp_increase,
       flat_bonus: get_hp_bonus_flat(stats),
       equipment_rate:
         Stats.get_equipment_modifier(stats, :max_hp_rate) +
@@ -800,12 +772,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
     })
   end
 
-  defp calculate_max_sp(base_sp, effective_int, sp_increase, transcendent?, stats) do
+  defp calculate_max_sp(base_sp, effective_int, transcendent?, stats) do
     Mechanics.player_formulas().max_sp(%{
       base_sp: base_sp,
       int: effective_int,
       equipment_int: equipment_primary_stat_bonus(stats, :int),
-      sp_increase: sp_increase,
       flat_bonus: get_sp_bonus_flat(stats),
       equipment_rate:
         Stats.get_equipment_modifier(stats, :max_sp_rate) +

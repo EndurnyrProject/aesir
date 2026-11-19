@@ -7,11 +7,23 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   alias Aesir.ZoneServer.Mmo.JobManagement.Job
   alias Aesir.ZoneServer.Mmo.JobManagement.Jobs
 
+  @typedoc "Why a per-level job table lookup failed."
+  @type level_error :: :job_not_found | :no_stats_defined | :level_out_of_range
+
+  @typedoc "A job's base pools and bonus stats at one base level."
+  @type base_stats :: %{
+          hp: non_neg_integer(),
+          sp: non_neg_integer(),
+          ap: non_neg_integer(),
+          bonus_stats: Job.BonusStats.t() | nil,
+          max_weight: non_neg_integer()
+        }
+
   @doc """
   Get a job by its ID.
   Returns {:ok, job} or {:error, reason}
   """
-  @spec get_job_by_id(integer()) :: {:ok, Job.t()} | {:error, atom()}
+  @spec get_job_by_id(integer()) :: {:ok, Job.t()} | {:error, :job_not_found}
   def get_job_by_id(job_id) when is_integer(job_id) do
     case Jobs.by_id(job_id) do
       {:ok, job} -> {:ok, job}
@@ -23,7 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   Get a job by its name.
   Returns {:ok, job} or {:error, reason}
   """
-  @spec get_job_by_name(atom()) :: {:ok, Job.t()} | {:error, atom()}
+  @spec get_job_by_name(atom()) :: {:ok, Job.t()} | {:error, :job_not_found}
   def get_job_by_name(job_name) when is_atom(job_name) do
     case Jobs.by_name(job_name) do
       {:ok, job} -> {:ok, job}
@@ -35,7 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   Get base HP for a job at a specific level.
   Returns {:ok, hp_value} or {:error, reason}
   """
-  @spec get_base_hp(atom(), integer()) :: {:ok, non_neg_integer()} | {:error, atom()}
+  @spec get_base_hp(atom(), integer()) :: {:ok, non_neg_integer()} | {:error, level_error()}
   def get_base_hp(job_name, level) when is_atom(job_name) and is_integer(level) do
     with {:ok, job} <- get_job_by_name(job_name), do: fetch_level(job.base_hp, level)
   end
@@ -44,7 +56,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   Get base SP for a job at a specific level.
   Returns {:ok, sp_value} or {:error, reason}
   """
-  @spec get_base_sp(atom(), integer()) :: {:ok, non_neg_integer()} | {:error, atom()}
+  @spec get_base_sp(atom(), integer()) :: {:ok, non_neg_integer()} | {:error, level_error()}
   def get_base_sp(job_name, level) when is_atom(job_name) and is_integer(level) do
     with {:ok, job} <- get_job_by_name(job_name), do: fetch_level(job.base_sp, level)
   end
@@ -53,7 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   Get base AP for a job at a specific level.
   Returns {:ok, ap_value} or {:error, reason}
   """
-  @spec get_base_ap(atom(), integer()) :: {:ok, non_neg_integer()} | {:error, atom()}
+  @spec get_base_ap(atom(), integer()) :: {:ok, non_neg_integer()} | {:error, level_error()}
   def get_base_ap(job_name, level) when is_atom(job_name) and is_integer(level) do
     with {:ok, job} <- get_job_by_name(job_name), do: fetch_level(job.base_ap, level)
   end
@@ -62,7 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   Get job exp required for a specific level.
   Returns {:ok, exp_value} or {:error, reason}
   """
-  @spec get_job_exp(atom(), integer()) :: {:ok, non_neg_integer()} | {:error, atom()}
+  @spec get_job_exp(atom(), integer()) :: {:ok, non_neg_integer()} | {:error, level_error()}
   def get_job_exp(job_name, level) when is_atom(job_name) and is_integer(level) do
     with {:ok, job} <- get_job_by_name(job_name), do: fetch_level(job.job_exp, level)
   end
@@ -71,7 +83,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   Get base exp required for a specific level.
   Returns {:ok, exp_value} or {:error, reason}
   """
-  @spec get_base_exp(atom(), integer()) :: {:ok, non_neg_integer()} | {:error, atom()}
+  @spec get_base_exp(atom(), integer()) :: {:ok, non_neg_integer()} | {:error, level_error()}
   def get_base_exp(job_name, level) when is_atom(job_name) and is_integer(level) do
     with {:ok, job} <- get_job_by_name(job_name), do: fetch_level(job.base_exp, level)
   end
@@ -80,7 +92,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   Get bonus stats for a job at a specific level.
   Returns {:ok, stats} or {:error, reason}
   """
-  @spec get_bonus_stats(atom(), integer()) :: {:ok, Job.BonusStats.t()} | {:error, atom()}
+  @spec get_bonus_stats(atom(), integer()) :: {:ok, Job.BonusStats.t()} | {:error, level_error()}
   def get_bonus_stats(job_name, level) when is_atom(job_name) and is_integer(level) do
     with {:ok, job} <- get_job_by_name(job_name), do: fetch_level(job.bonus_stats, level)
   end
@@ -90,7 +102,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   Returns {:ok, aspd_value} or {:error, reason}
   """
   @spec get_base_aspd(atom(), atom()) ::
-          {:ok, non_neg_integer()} | {:error, atom()}
+          {:ok, non_neg_integer()} | {:error, :job_not_found | :weapon_type_not_found}
   def get_base_aspd(job_name, weapon_type) when is_atom(job_name) and is_atom(weapon_type) do
     with {:ok, job} <- get_job_by_name(job_name),
          %Job.BaseAspd{} = base_aspd <- job.base_aspd,
@@ -104,42 +116,20 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
 
   @doc """
   Get all base stats for a job at a specific level.
-  Returns a map with hp, sp, ap, and bonus_stats.
+
+  A level missing from a table reads as 0 for the HP/SP/AP pools and nil for
+  the bonus stats.
   """
-  @spec get_base_stats_for_level(atom(), integer()) :: {:ok, map()} | {:error, atom()}
-  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  @spec get_base_stats_for_level(atom(), integer()) ::
+          {:ok, base_stats()} | {:error, :job_not_found}
   def get_base_stats_for_level(job_name, level) when is_atom(job_name) and is_integer(level) do
     with {:ok, job} <- get_job_by_name(job_name) do
-      hp =
-        case fetch_level(job.base_hp, level) do
-          {:ok, v} -> v
-          _ -> 0
-        end
-
-      sp =
-        case fetch_level(job.base_sp, level) do
-          {:ok, v} -> v
-          _ -> 0
-        end
-
-      ap =
-        case fetch_level(job.base_ap, level) do
-          {:ok, v} -> v
-          _ -> 0
-        end
-
-      bonus_stats =
-        case fetch_level(job.bonus_stats, level) do
-          {:ok, stats} -> stats
-          _ -> nil
-        end
-
       {:ok,
        %{
-         hp: hp,
-         sp: sp,
-         ap: ap,
-         bonus_stats: bonus_stats,
+         hp: Map.get(job.base_hp, level, 0),
+         sp: Map.get(job.base_sp, level, 0),
+         ap: Map.get(job.base_ap, level, 0),
+         bonus_stats: Map.get(job.bonus_stats, level),
          max_weight: job.max_weight
        }}
     end
@@ -156,6 +146,9 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
     end
   end
 
+  @doc """
+  Check if a job level is valid for a specific job.
+  """
   @spec is_valid_job_level?(atom(), integer()) :: boolean()
   def is_valid_job_level?(job_name, level) when is_atom(job_name) and is_integer(level) do
     case get_job_by_name(job_name) do
@@ -164,6 +157,9 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
     end
   end
 
+  @spec fetch_level(%{pos_integer() => value}, integer()) ::
+          {:ok, value} | {:error, :no_stats_defined | :level_out_of_range}
+        when value: term()
   defp fetch_level(table, _level) when map_size(table) == 0, do: {:error, :no_stats_defined}
 
   defp fetch_level(table, level) do

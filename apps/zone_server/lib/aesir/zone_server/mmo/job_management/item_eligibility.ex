@@ -189,13 +189,15 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.ItemEligibility do
   @typedoc "A character class category used by item restrictions."
   @type category :: :normal | :upper | :baby | :third | :third_upper | :third_baby | :fourth
 
+  @typedoc "A job's item family and the class categories its items may require."
+  @type profile :: %{family: family(), classes: [category()]}
+
   @doc "Returns the active game ruleset used for item class interpretation."
   @spec mode() :: mode()
   def mode, do: GameMode.mode()
 
   @doc "Classifies a character job into its item family and permitted class categories."
-  @spec classify(integer(), mode()) ::
-          {:ok, %{family: family(), classes: [category()]}} | {:error, :unknown_job}
+  @spec classify(integer(), mode()) :: {:ok, profile()} | {:error, :unknown_job}
   def classify(job_id, mode) when is_integer(job_id) and mode in [:renewal, :pre_renewal] do
     with {:ok, job} <- AvailableJobs.job_id_to_name(job_id),
          job = JobLineage.normalize(job),
@@ -220,6 +222,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.ItemEligibility do
     end
   end
 
+  @spec family_mapid(atom()) :: integer()
   defp family_mapid(job) do
     job
     |> then(&Map.get(@alternate_jobs, &1, &1))
@@ -227,6 +230,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.ItemEligibility do
     |> band(0x3FF)
   end
 
+  @spec classes(category(), mode()) :: [category()]
   defp classes(:third_baby, :pre_renewal),
     do: [:baby, :upper, :third, :third_upper, :third_baby]
 

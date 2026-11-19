@@ -82,13 +82,16 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.Importer do
 
   @type bodies :: %{stats: [map()], basepoints: [map()], aspd: [map()], exp: [map()]}
 
+  @typedoc "An own-schema job map with string keys, as written to the jobs YAML."
+  @type job_map :: %{String.t() => term()}
+
   @doc """
   Builds the full list of own-schema job maps from the four parsed rAthena bodies.
 
   Raises with a descriptive message on any unmapped job/weapon or missing data -
   this is a dev tool meant to fail loud.
   """
-  @spec build(bodies()) :: [map()]
+  @spec build(bodies()) :: [job_map()]
   def build(%{stats: stats, basepoints: basepoints, aspd: aspd, exp: exp}) do
     stats_by = expand(stats)
     points_by = expand(basepoints)
@@ -108,7 +111,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.Importer do
   @doc """
   Returns the tier file basename (without extension) a job map belongs to.
   """
-  @spec tier(map()) :: String.t()
+  @spec tier(job_map()) :: String.t()
   def tier(%{"id" => id, "name" => name}) do
     cond do
       String.contains?(name, "baby") -> "baby"
@@ -142,7 +145,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.Importer do
     Enum.filter(left, &MapSet.member?(right, &1))
   end
 
-  @spec to_map(non_neg_integer(), map(), map(), map(), map(), map()) :: map()
+  @spec to_map(non_neg_integer(), map(), map(), map(), map(), map()) :: job_map()
   defp to_map(job_id, stats_by, points_by, aspd_by, base_exp_by, job_exp_by) do
     {:ok, name} = AvailableJobs.job_id_to_name(job_id)
     stats = Map.get(stats_by, job_id, %{})
@@ -175,7 +178,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.Importer do
   end
 
   # Drops empty/all-zero tables so the loader falls back to struct defaults.
-  @spec prune(map()) :: map()
+  @spec prune(job_map()) :: job_map()
   defp prune(map) do
     Map.reject(map, fn {_k, v} ->
       v in [[], %{}] or (is_list(v) and Enum.all?(v, &(&1 == 0)))

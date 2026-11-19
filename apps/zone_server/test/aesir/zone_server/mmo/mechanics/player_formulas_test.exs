@@ -11,7 +11,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
-  alias Aesir.ZoneServer.Mmo.JobManagement.Job
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.PreRenewal
   alias Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.Renewal
@@ -485,7 +484,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
       {:ok, %{hp: 1_000, sp: 1_000}}
     end)
 
-    stub(JobManagement, :get_job_by_name, fn :swordman -> {:ok, %Job{name: :swordman}} end)
     stub(JobManagement, :get_base_aspd, fn :swordman, :fist -> {:ok, 650} end)
 
     cases = [
@@ -648,7 +646,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     end)
 
     stub(JobManagement, :get_base_stats_for_level, fn _job, 1 -> {:ok, %{hp: 100, sp: 10}} end)
-    stub(JobManagement, :get_job_by_name, fn job -> {:ok, %Job{name: job}} end)
     stub(JobManagement, :get_base_aspd, fn _job, :fist -> {:ok, 650} end)
 
     for {job_id, expected?} <- [{13, false}, {4036, false}, {4014, true}, {99_999, false}] do
@@ -725,8 +722,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
         base_hp: 1_000,
         vit: 0,
         equipment_vit: 0,
-        hp_factor: 0,
-        hp_increase: 0,
         flat_bonus: 0,
         equipment_rate: 0,
         modifier_rate: 0,
@@ -742,7 +737,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
         base_sp: 1_000,
         int: 0,
         equipment_int: 0,
-        sp_increase: 0,
         flat_bonus: 0,
         equipment_rate: 0,
         modifier_rate: 0,

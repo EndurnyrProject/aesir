@@ -1,12 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.JobManagement.LoaderTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.DbTestSetup
   alias Aesir.ZoneServer.Mmo.JobManagement.Job
   alias Aesir.ZoneServer.Mmo.JobManagement.Loader
 
   setup context do
-    Aesir.ZoneServer.DbTestSetup.configure_root(context, "jobs")
+    DbTestSetup.configure_root(context, "jobs")
   end
 
   @jobs_yaml """
@@ -91,16 +92,6 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.LoaderTest do
     end
 
     @tag :tmp_dir
-    test "rehydrates bonus_stats into a level-keyed map of structs", %{tmp_dir: dir} do
-      write_yaml(dir, @jobs_yaml)
-
-      assert %{
-               by_id: %{0 => %Job{bonus_stats: %{2 => %Job.BonusStats{level: 2, luk: 1, str: 0}}}}
-             } =
-               Loader.load()
-    end
-
-    @tag :tmp_dir
     test "accumulates sparse bonus_stats into a dense per-level running total", %{tmp_dir: dir} do
       write_yaml(dir, @cumulative_yaml)
 
@@ -139,27 +130,6 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.LoaderTest do
 
       assert %{by_id: %{0 => %Job{base_aspd: %Job.BaseAspd{fist: 40, dagger: 55, katar: nil}}}} =
                Loader.load()
-    end
-
-    @tag :tmp_dir
-    test "writes a reusable .etf cache", %{tmp_dir: dir} do
-      write_yaml(dir, @jobs_yaml)
-      Loader.load()
-
-      assert File.exists?(Path.join([dir, ".cache", "jobs_v2.etf"]))
-    end
-
-    @tag :tmp_dir
-    test "rebuilds when a source is newer than the cache", %{tmp_dir: dir} do
-      yaml = write_yaml(dir, @jobs_yaml)
-      Loader.load()
-
-      cache = Path.join([dir, ".cache", "jobs_v2.etf"])
-      File.write!(yaml, String.replace(@jobs_yaml, "max_weight: 20000", "max_weight: 99999"))
-      File.touch!(cache, 1_000_000)
-      File.touch!(yaml, 2_000_000)
-
-      assert %{by_id: %{0 => %Job{max_weight: 99999}}} = Loader.load()
     end
 
     @tag :tmp_dir

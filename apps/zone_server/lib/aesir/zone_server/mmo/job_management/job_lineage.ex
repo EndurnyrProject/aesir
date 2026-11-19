@@ -223,6 +223,13 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobLineage do
   end
 
   @doc false
+  @spec validate_graph!(
+          %{atom() => [atom()]},
+          MapSet.t(atom()),
+          %{atom() => atom()},
+          [{integer(), atom()}],
+          [{integer(), atom()}]
+        ) :: :ok
   def validate_graph!(parents, roots, aliases, available_jobs, database_jobs) do
     represented? = fn job ->
       Map.has_key?(parents, job) or MapSet.member?(roots, job) or Map.has_key?(aliases, job)

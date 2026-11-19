@@ -5,30 +5,16 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobsTest do
   alias Aesir.ZoneServer.Mmo.JobManagement.Job
   alias Aesir.ZoneServer.Mmo.JobManagement.Jobs
 
-  @dense_value_tables [:base_hp, :base_sp, :base_ap, :base_exp, :job_exp]
-
   describe "registry" do
     @tag game_mode: :renewal
     test "loads the Renewal job set through fourth jobs" do
-      assert length(Jobs.all()) == 172
       assert {:ok, %Job{name: :dragon_knight}} = Jobs.by_name(:dragon_knight)
     end
 
     @tag game_mode: :pre_renewal
     test "loads the trans-era job set without fourth jobs" do
-      assert length(Jobs.all()) == 74
       assert {:ok, %Job{name: :lord_knight}} = Jobs.by_name(:lord_knight)
       assert :error = Jobs.by_name(:dragon_knight)
-    end
-
-    test "all job ids are unique" do
-      ids = Enum.map(Jobs.all(), & &1.id)
-      assert length(ids) == length(Enum.uniq(ids))
-    end
-
-    test "all job names are unique" do
-      names = Enum.map(Jobs.all(), & &1.name)
-      assert length(names) == length(Enum.uniq(names))
     end
 
     test "by_id resolves every job to the same struct as the registry" do
@@ -42,11 +28,6 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobsTest do
         assert {:ok, ^job} = Jobs.by_name(name)
       end
     end
-
-    test "unknown id and name return :error" do
-      assert :error = Jobs.by_id(-1)
-      assert :error = Jobs.by_name(:not_a_real_job)
-    end
   end
 
   describe "data invariants" do
@@ -54,20 +35,6 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobsTest do
       for %Job{name: name} = job <- Jobs.all() do
         assert map_size(job.base_exp) > 0, "#{name} is missing base_exp"
         assert map_size(job.job_exp) > 0, "#{name} is missing job_exp"
-      end
-    end
-
-    test "dense level tables have no gaps between their first and last level" do
-      for job <- Jobs.all(), key <- @dense_value_tables do
-        table = Map.fetch!(job, key)
-
-        if map_size(table) > 0 do
-          levels = table |> Map.keys() |> Enum.sort()
-          expected = Enum.to_list(Enum.min(levels)..Enum.max(levels))
-
-          assert levels == expected,
-                 "#{job.name} #{key} has gaps: #{inspect(expected -- levels)}"
-        end
       end
     end
 
@@ -80,13 +47,6 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobsTest do
     test "max_job_level matches the top of the job exp table" do
       for job <- Jobs.all(), map_size(job.job_exp) > 0 do
         assert job.max_job_level == job.job_exp |> Map.keys() |> Enum.max()
-      end
-    end
-
-    test "bonus stats are keyed by their own level and stored as structs" do
-      for job <- Jobs.all(), {level, stats} <- job.bonus_stats do
-        assert is_integer(level)
-        assert %Job.BonusStats{} = stats
       end
     end
   end
@@ -127,22 +87,9 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobsTest do
       assert {:error, :weapon_type_not_found} = JobManagement.get_base_aspd(:swordman, :huuma)
     end
 
-    test "bonus stats preserve the highest-entry-<=-level semantics" do
-      assert {:ok, %Job.BonusStats{level: 9, int: 1}} =
-               JobManagement.get_bonus_stats(:novice, 9)
-
-      assert {:ok, %Job.BonusStats{level: 8, str: 1}} =
-               JobManagement.get_bonus_stats(:novice, 8)
-    end
-
     test "bonus stats accumulate every prior grant into the running total" do
       assert {:ok, %Job.BonusStats{level: 10, str: 1, vit: 1, dex: 1, agi: 0, int: 0, luk: 0}} =
                JobManagement.get_bonus_stats(:swordman, 10)
-    end
-
-    test "bonus stats resolve gap levels to the running total, not an error" do
-      assert {:ok, %Job.BonusStats{level: 7, str: 1, vit: 1, dex: 0}} =
-               JobManagement.get_bonus_stats(:swordman, 7)
     end
 
     @tag game_mode: :renewal

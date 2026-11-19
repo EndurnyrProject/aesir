@@ -1,4 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs do
+  @moduledoc """
+  The closed job vocabulary: every numeric job id and its Aesir job name.
+
+  Also resolves the canonical source spellings the job importer reads.
+  """
+
   @job_id_to_name %{
     # Basic Jobs
     0 => :novice,
@@ -257,7 +263,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs do
                       |> Map.put("Supernovice", {23, :super_novice})
 
   @doc "Returns the current job catalog IDs in deterministic order."
-  @spec ids() :: [integer()]
+  @spec ids() :: [non_neg_integer()]
   def ids, do: @job_id_to_name |> Map.keys() |> Enum.sort()
 
   @doc "Resolves an exact canonical source spelling to its numeric ID and Aesir name."
@@ -270,6 +276,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs do
     end
   end
 
+  @doc "Resolves a numeric job id to its Aesir job name."
   @spec job_id_to_name(integer()) :: {:ok, atom()} | {:error, :unknown_job_id}
   def job_id_to_name(job_id) when is_integer(job_id) do
     case Map.get(@job_id_to_name, job_id) do
@@ -278,7 +285,8 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs do
     end
   end
 
-  @spec job_name_to_id(atom()) :: {:ok, integer} | {:error, :unknown_job}
+  @doc "Resolves an Aesir job name to its numeric job id."
+  @spec job_name_to_id(atom()) :: {:ok, non_neg_integer()} | {:error, :unknown_job}
   def job_name_to_id(job_name) when is_atom(job_name) do
     case Map.get(@job_name_to_id, job_name) do
       nil -> {:error, :unknown_job}

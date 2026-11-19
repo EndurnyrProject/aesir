@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.JobManagement.Jobs do
   @moduledoc """
-  Registry of job definitions, loaded as data from `priv/db/re/jobs/*.yml`.
+  Registry of job definitions, loaded as data from `priv/db/<mode>/jobs/*.yml`.
 
   The id/name index is built once via `Loader` and cached in `:persistent_term`;
   `reload/0` rebuilds it after the data files change in a long-running session.
