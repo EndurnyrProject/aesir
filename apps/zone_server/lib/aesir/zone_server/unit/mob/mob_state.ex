@@ -562,7 +562,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   # amplified cached MATK band.
   defp heal_matk(mob_state, calculated) do
     data = %{mob_state.mob_data | level: get_level(mob_state)}
-    {minimum, maximum} = Mechanics.mob_formulas().magic_attack_bounds(data, calculated.int, %{})
+    {minimum, maximum} = Mechanics.mob_formulas().magic_attack_bounds(data, calculated.int)
     {minimum + mob_state.mob_data.matk, maximum + mob_state.mob_data.matk}
   end
 

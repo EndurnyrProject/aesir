@@ -90,7 +90,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHits do
   end
 
   defp natural_critical_rate(luk, base_level) do
-    %{base_rate: rate} = Mechanics.player_formulas().critical(%{luk: luk, base_level: base_level})
+    rate = Mechanics.player_formulas().critical(%{luk: luk, base_level: base_level})
     calculate_critical_rate(%{critical: rate})
   end
 end

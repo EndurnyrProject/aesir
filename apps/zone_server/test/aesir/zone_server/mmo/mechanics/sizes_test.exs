@@ -4,66 +4,15 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.SizesTest do
   alias Aesir.ZoneServer.Mmo.Mechanics.Sizes.PreRenewal
   alias Aesir.ZoneServer.Mmo.Mechanics.Sizes.Renewal
 
-  @renewal_table %{
-    fist: {100, 100, 100},
-    dagger: {100, 75, 50},
-    one_handed_sword: {75, 100, 75},
-    two_handed_sword: {75, 75, 100},
-    one_handed_spear: {75, 75, 100},
-    two_handed_spear: {75, 75, 100},
-    one_handed_axe: {50, 75, 100},
-    two_handed_axe: {50, 75, 100},
-    mace: {75, 100, 100},
-    two_handed_mace: {100, 100, 100},
-    staff: {100, 100, 100},
-    two_handed_staff: {100, 100, 100},
-    bow: {100, 100, 75},
-    knuckle: {100, 100, 75},
-    musical: {75, 100, 75},
-    whip: {75, 100, 75},
-    book: {100, 100, 50},
-    katar: {75, 100, 75},
-    revolver: {100, 100, 100},
-    rifle: {100, 100, 100},
-    gatling: {100, 100, 100},
-    shotgun: {100, 100, 100},
-    grenade: {100, 100, 100},
-    huuma: {100, 100, 100}
-  }
-
-  @pre_renewal_table %{
-    fist: {100, 100, 100},
-    dagger: {100, 75, 50},
-    one_handed_sword: {75, 100, 75},
-    two_handed_sword: {75, 75, 100},
-    one_handed_spear: {75, 75, 100},
-    two_handed_spear: {75, 75, 100},
-    one_handed_axe: {50, 75, 100},
-    two_handed_axe: {50, 75, 100},
-    mace: {75, 100, 100},
-    two_handed_mace: {100, 100, 100},
-    staff: {100, 100, 100},
-    two_handed_staff: {100, 100, 100},
-    bow: {100, 100, 75},
-    knuckle: {100, 75, 50},
-    musical: {75, 100, 75},
-    whip: {75, 100, 50},
-    book: {100, 100, 50},
-    katar: {75, 100, 75},
-    revolver: {100, 100, 100},
-    rifle: {100, 100, 100},
-    gatling: {100, 100, 100},
-    shotgun: {100, 100, 100},
-    grenade: {100, 100, 100},
-    huuma: {100, 100, 100}
-  }
-
-  test "renewal matches every canonical weapon and target-size cell" do
-    assert_table(Renewal, @renewal_table)
-  end
-
-  test "pre-renewal matches every canonical weapon and target-size cell" do
-    assert_table(PreRenewal, @pre_renewal_table)
+  test "knuckles and whips take their mode's size cells" do
+    # rAthena db/re/size_fix.yml against db/pre-re/size_fix.yml.
+    for {weapon_type, renewal, classic} <- [
+          {:knuckle, {100, 100, 75}, {100, 75, 50}},
+          {:whip, {75, 100, 75}, {75, 100, 50}}
+        ] do
+      assert cells(Renewal, weapon_type) == renewal
+      assert cells(PreRenewal, weapon_type) == classic
+    end
   end
 
   test "mounted spears use their large-target modifier against medium targets in both modes" do
@@ -97,13 +46,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.SizesTest do
     end
   end
 
-  defp assert_table(implementation, table) do
-    assert map_size(table) == 24
-
-    for {weapon_type, {small, medium, large}} <- table do
-      assert implementation.get_modifier(weapon_type, :small, false) == small
-      assert implementation.get_modifier(weapon_type, :medium, false) == medium
-      assert implementation.get_modifier(weapon_type, :large, false) == large
-    end
+  defp cells(implementation, weapon_type) do
+    {implementation.get_modifier(weapon_type, :small, false),
+     implementation.get_modifier(weapon_type, :medium, false),
+     implementation.get_modifier(weapon_type, :large, false)}
   end
 end

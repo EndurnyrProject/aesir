@@ -119,6 +119,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
           defense: Defense.physical_context()
         }
 
+  @typedoc "The short- and long-attack rates a hit's range selected."
+  @type range_rates :: %{short_atk_rate: integer(), long_atk_rate: integer()}
+
   @doc """
   Applies the attacker's card percentages as one per-mille factor: each
   percentage multiplies the factor in order, truncating, and the damage takes
@@ -166,11 +169,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
     do: Map.get(context, :skill_ratio, 100) + Map.get(context, :status_skill_ratio, 0)
 
   @doc "Adds the short- and long-attack rates the hit's range selected, in that order."
-  @spec range_damage(integer(), %{
-          optional(:short_atk_rate) => integer(),
-          optional(:long_atk_rate) => integer(),
-          optional(atom()) => term()
-        }) :: integer()
+  @spec range_damage(integer(), context() | range_rates()) :: integer()
   def range_damage(damage, context) do
     damage
     |> add_rate(Map.get(context, :short_atk_rate, 0))

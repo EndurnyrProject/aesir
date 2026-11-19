@@ -15,6 +15,35 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTime do
   @typedoc "A status's effect on the owning caster at a cast timing boundary."
   @type reaction :: :consume_memorize | :end_suffragium
 
+  @typedoc """
+  The caster's held cast-time statuses: a reduction or penalty in percent, a
+  flat delay in milliseconds (`paralysis`), a count (`mandragora`), or presence.
+  """
+  @type statuses :: %{
+          optional(
+            :slowcast
+            | :laziness
+            | :suffragium
+            | :water_insignia
+            | :telekinesis_intense
+            | :soulfairy
+            | :bragi
+            | :sacrament
+            | :dance_with_wug
+            | :heat_barrel
+            | :mandragora
+            | :paralysis
+          ) => integer(),
+          optional(
+            :izayoi
+            | :memorize
+            | :freezing
+            | :swing_dance
+            | :elemental_option
+            | :gloomy_day
+          ) => boolean()
+        }
+
   @typedoc "Named source inputs; missing optional item/status channels are zero."
   @type inputs :: %{
           required(:dex) => integer(),
@@ -29,7 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTime do
           optional(:item_skill_fixed_rate) => integer() | nil,
           optional(:item_global_fixed_flat) => integer(),
           optional(:item_skill_fixed_flat) => integer(),
-          optional(:statuses) => map(),
+          optional(:statuses) => statuses(),
           optional(:effective_skill?) => boolean(),
           optional(:radius_level) => non_neg_integer(),
           optional(:cast_rate) => integer(),

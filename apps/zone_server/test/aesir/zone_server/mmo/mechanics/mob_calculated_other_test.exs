@@ -2,14 +2,13 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedOtherTest do
   use ExUnit.Case, async: true
 
   import Bitwise, only: [bor: 2]
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.PreRenewal
   alias Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.Renewal
   alias Aesir.ZoneServer.Mmo.MobManagement.Importer
   alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.StatusEntry
-  alias Aesir.ZoneServer.Unit.Mob.MobState
 
   @modes [:can_move, :looter, :can_attack, :aggressive]
 
@@ -33,13 +32,11 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedOtherTest do
         modes: @modes
     }
 
-    spawn = %MobSpawn{mob: form.id, amount: 1, respawn_time: 0, spawn_area: nil}
-    %{form: form, spawn: spawn}
+    %{form: form}
   end
 
   test "movement keeps the strongest slow and haste, then applies the overrides", %{
-    form: form,
-    spawn: spawn
+    form: form
   } do
     cases = [
       {[], 300},
@@ -60,16 +57,15 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedOtherTest do
     ]
 
     for {held, expected} <- cases do
-      assert speed(Renewal, state(form, spawn), held) == expected
-      assert speed(PreRenewal, state(form, spawn), held) == expected
+      assert speed(Renewal, state(form), held) == expected
+      assert speed(PreRenewal, state(form), held) == expected
     end
   end
 
   test "movement penalises a renewal-only fatigue and the emergency speed in both modes", %{
-    form: form,
-    spawn: spawn
+    form: form
   } do
-    state = state(form, spawn)
+    state = state(form)
     fatigue = [entry(:sc_ensemblefatigue, 1, 30)]
 
     assert speed(Renewal, state, fatigue) == 390
@@ -80,8 +76,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedOtherTest do
   end
 
   test "attack timing subtracts one bucket, the potion tier and each penalty in order", %{
-    form: form,
-    spawn: spawn
+    form: form
   } do
     cases = [
       {[], {1_000, 800, 1_000}},
@@ -97,16 +92,15 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedOtherTest do
     ]
 
     for {held, expected} <- cases do
-      assert timing(Renewal, state(form, spawn), held) == expected
-      assert timing(PreRenewal, state(form, spawn), held) == expected
+      assert timing(Renewal, state(form), held) == expected
+      assert timing(PreRenewal, state(form), held) == expected
     end
   end
 
   test "only the classic Spear Quicken and Gravitation contribute their rate", %{
-    form: form,
-    spawn: spawn
+    form: form
   } do
-    state = state(form, spawn)
+    state = state(form)
     spear = [entry(:sc_spearquicken, 5, 250)]
     gravitation = [entry(:sc_gravitation, 5, 250)]
 
@@ -117,21 +111,19 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedOtherTest do
   end
 
   test "attack motion clamps to the source bounds and never exceeds its own delay", %{
-    form: form,
-    spawn: spawn
+    form: form
   } do
     slow = [entry(:sc_jointbeat, 1, 0x06)]
 
-    assert timing(Renewal, state(%{form | attack_motion: 50}, spawn), []) == {1_000, 100, 1_000}
+    assert timing(Renewal, state(%{form | attack_motion: 50}), []) == {1_000, 100, 1_000}
 
-    assert timing(Renewal, state(%{form | attack_motion: 7_900}, spawn), slow) ==
+    assert timing(Renewal, state(%{form | attack_motion: 7_900}), slow) ==
              {1_350, 8_000, 8_000}
   end
 
   test "resources take the flat bonus first, then the aggregate rate, and only cap the ceiling",
        %{
-         form: form,
-         spawn: spawn
+         form: form
        } do
     cases = [
       {[], {1_000, 100}},
@@ -141,7 +133,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedOtherTest do
     ]
 
     for {held, expected} <- cases do
-      state = state(form, spawn)
+      state = state(form)
 
       assert {resource(Renewal, state, held, "MaxHp"), resource(Renewal, state, held, "MaxSp")} ==
                expected
@@ -149,8 +141,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedOtherTest do
   end
 
   test "HP potion flat amounts apply to monsters but SP item percentages do not", %{
-    form: form,
-    spawn: spawn
+    form: form
   } do
     held = [
       entry(:sc_promote_health_reserch, 1, 1, 830),
@@ -159,14 +150,14 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedOtherTest do
     ]
 
     for formulas <- [Renewal, PreRenewal] do
-      assert resource(formulas, state(form, spawn), held, "MaxHp") == 2_196
-      assert resource(formulas, state(form, spawn), held, "MaxSp") == 100
+      assert resource(formulas, state(form), held, "MaxHp") == 2_196
+      assert resource(formulas, state(form), held, "MaxSp") == 100
     end
   end
 
   test "renewal resources add the Angelus flat HP and the Nibelungen outcome, classic does not",
-       %{form: form, spawn: spawn} do
-    state = state(form, spawn)
+       %{form: form} do
+    state = state(form)
 
     held = [
       entry(:sc_angelus, 3),
@@ -181,10 +172,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedOtherTest do
   end
 
   test "attack element follows its fixed priority, not the most recent application", %{
-    form: form,
-    spawn: spawn
+    form: form
   } do
-    state = state(form, spawn)
+    state = state(form)
 
     for formulas <- [Renewal, PreRenewal] do
       assert attack(formulas, state, []) == :neutral
@@ -204,10 +194,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedOtherTest do
   end
 
   test "defence element and level follow their ordered overrides and the raw base", %{
-    form: form,
-    spawn: spawn
+    form: form
   } do
-    state = state(form, spawn)
+    state = state(form)
 
     for formulas <- [Renewal, PreRenewal] do
       assert defense(formulas, state, []) == {:neutral, 2}
@@ -224,10 +213,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedOtherTest do
   end
 
   test "mode applies the set, add and remove masks in order and derives the class", %{
-    form: form,
-    spawn: spawn
+    form: form
   } do
-    state = state(form, spawn)
+    state = state(form)
     base_mode = MobMode.mask(@modes)
     can_move = MobMode.mask([:can_move])
     aggressive = MobMode.mask([:aggressive])
@@ -254,13 +242,12 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedOtherTest do
     assert mode_class(state, [entry(:sc_modechange, 1, can_move, boss)]) == :boss
     assert mode_class(state, [entry(:sc_modechange, 1, can_move)]) == :normal
 
-    mvp = state(%{form | modes: [:mvp]}, spawn)
+    mvp = state(%{form | modes: [:mvp]})
     assert selected_mode(mvp, [entry(:sc_modechange, 1, can_move)]) == bor(can_move, 0x80000)
   end
 
   test "a selection only rewrites its own fields and an empty selection changes nothing", %{
-    form: form,
-    spawn: spawn
+    form: form
   } do
     held = [
       entry(:sc_decreaseagi, 5),
@@ -288,7 +275,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedOtherTest do
     ]
 
     for formulas <- [Renewal, PreRenewal] do
-      state = state(form, spawn)
+      state = state(form)
       assert formulas.recalculate(state, held, []) == state.calculated
 
       speed_only = formulas.recalculate(state, held, ["Speed"])
@@ -309,10 +296,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedOtherTest do
     end
   end
 
-  defp state(form, spawn) do
-    state = MobState.new(1101, form, spawn, "prontera", 100, 100)
-    %{state | base: state.base, calculated: state.base}
-  end
+  defp state(form), do: build(:mob_state, mob_data: form)
 
   defp speed(formulas, state, held), do: formulas.recalculate(state, held, ["Speed"]).speed
 

@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.MechanicsTest do
   alias Aesir.ZoneServer.Mmo.Mechanics.Sizes
   alias Aesir.ZoneServer.Mmo.Mechanics.StatCost
 
-  setup :set_mimic_private
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
   test "selects every formula family for each game mode" do

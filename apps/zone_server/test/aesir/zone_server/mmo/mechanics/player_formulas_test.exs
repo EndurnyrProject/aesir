@@ -22,23 +22,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
-  alias Aesir.ZoneServer.Unit.Player.WeaponHand
   alias Aesir.ZoneServer.Unit.Stats, as: UnitStats
 
-  defmodule FormulaProbe do
-    @moduledoc false
-
-    def max_hp(inputs), do: probe(:max_hp_inputs, inputs)
-    def max_sp(inputs), do: probe(:max_sp_inputs, inputs)
-    def aspd(_inputs), do: 1
-
-    defp probe(tag, inputs) do
-      send(self(), {tag, inputs})
-      1
-    end
-  end
-
-  setup :set_mimic_private
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
   test "classic scalar leaves use the trans-era formulas" do
@@ -48,16 +34,13 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     assert {
              PreRenewal.base_atk(values, false),
              PreRenewal.base_atk(values, true),
-             PreRenewal.base_def(values),
              PreRenewal.base_matk(values),
              PreRenewal.soft_mdef(values),
              PreRenewal.hit(values),
              PreRenewal.flee(values),
              PreRenewal.critical(values),
              PreRenewal.perfect_dodge(values)
-           } ===
-             {86, 58, 0, %{min: 98, max: 130}, 64, 95, 100,
-              %{strategy: :exact_tenths, base_rate: 80}, 31}
+           } === {86, 58, %{min: 98, max: 130}, 64, 95, 100, 80, 31}
   end
 
   test "base ATK includes secondary stats and LUK and swaps the ranged primary stat" do
@@ -172,7 +155,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
   test "physical stat defense is soft, with mode-specific fractional rounding" do
     values = %{vit: 30, agi: 4, base_level: 7}
 
-    assert {Renewal.base_def(values), PreRenewal.base_def(values)} == {0, 0}
     assert Renewal.soft_def(values) == 19
     assert PreRenewal.soft_def(values) == 30
 
@@ -268,15 +250,13 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     values = %{formula_values(stats) | base_level: 0}
     assert Enum.all?([:str, :agi, :vit, :int, :dex, :luk], &(Map.fetch!(values, &1) < 0))
 
-    critical = PreRenewal.critical(values)
-
     assert {
              PreRenewal.base_atk(values, false),
              PreRenewal.base_atk(values, true),
              PreRenewal.soft_mdef(values),
              PreRenewal.hit(values),
              PreRenewal.flee(values),
-             critical.base_rate,
+             PreRenewal.critical(values),
              PreRenewal.perfect_dodge(values)
            } === {0, 0, 0, 1, 1, 10, 10}
 
@@ -358,7 +338,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
 
     stats = %{
       fixture
-      | base_stats: %UnitStats.BaseStats{fixture.base_stats | dex: 1, agi: 1},
+      | base_stats: %{fixture.base_stats | dex: 1, agi: 1},
         progression: %{fixture.progression | base_level: 1},
         modifiers: %Modifiers{
           status_effects: %{hit: -2, flee: -2},
@@ -379,7 +359,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
 
     stats = %{
       fixture
-      | base_stats: %UnitStats.BaseStats{
+      | base_stats: %{
           fixture.base_stats
           | pow: 41,
             sta: 43,
@@ -452,9 +432,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
 
     assert {PreRenewal.max_hp(hp_inputs(vit: 10, equipment_vit: 10)),
             PreRenewal.max_sp(sp_inputs(int: 10, equipment_int: 10))} === {1_110, 1_110}
-
-    assert {PreRenewal.max_hp(hp_inputs(transcendent?: true)),
-            PreRenewal.max_sp(sp_inputs(transcendent?: true))} === {1_250, 1_250}
   end
 
   test "vitality retains fractional bases and applies item rates alongside equipment rates" do
@@ -568,7 +545,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     for {right_hand, status_effects, {expected_rate, expected_display}} <- cases do
       stats = %{
         fixture
-        | base_stats: %UnitStats.BaseStats{fixture.base_stats | luk: 20},
+        | base_stats: %{fixture.base_stats | luk: 20},
           right_hand: right_hand,
           modifiers: %Modifiers{status_effects: status_effects}
       }
@@ -589,7 +566,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
 
     stats = %{
       fixture
-      | base_stats: %UnitStats.BaseStats{fixture.base_stats | luk: 20},
+      | base_stats: %{fixture.base_stats | luk: 20},
         right_hand: weapon_hand(:katar, :right_hand),
         modifiers: %Modifiers{
           equipment: %{critical: 1},
@@ -608,7 +585,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
 
     stats = %{
       fixture
-      | base_stats: %UnitStats.BaseStats{fixture.base_stats | luk: 20},
+      | base_stats: %{fixture.base_stats | luk: 20},
         modifiers: %Modifiers{equipment: %{luk: 1}}
     }
 
@@ -624,7 +601,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
 
     stats = %{
       fixture
-      | base_stats: %UnitStats.BaseStats{fixture.base_stats | luk: 20},
+      | base_stats: %{fixture.base_stats | luk: 20},
         right_hand: weapon_hand(:katar, :right_hand),
         modifiers: %Modifiers{
           equipment: %{luk: 1, critical: 1},
@@ -637,9 +614,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     assert CriticalHits.calculate_critical_rate(result) == 318
   end
 
-  test "mounted normal, baby, transcendent, and unknown jobs classify without a public normalizer" do
-    stub(Mechanics, :player_formulas, fn -> FormulaProbe end)
-
+  test "only transcendent jobs, mounted or not, take the 25% HP and SP bonus" do
     stub(AvailableJobs, :job_id_to_name, fn
       99_999 -> {:ok, :unknown}
       job_id -> call_original(AvailableJobs, :job_id_to_name, [job_id])
@@ -648,15 +623,19 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     stub(JobManagement, :get_base_stats_for_level, fn _job, 1 -> {:ok, %{hp: 100, sp: 10}} end)
     stub(JobManagement, :get_base_aspd, fn _job, :fist -> {:ok, 650} end)
 
-    for {job_id, expected?} <- [{13, false}, {4036, false}, {4014, true}, {99_999, false}] do
-      Calculator.calculate_derived_stats(derived_fixture(job_id))
-      assert_receive {:max_hp_inputs, %{transcendent?: ^expected?}}
-      assert_receive {:max_sp_inputs, %{transcendent?: ^expected?}}
+    for {job_id, expected} <- [
+          {13, {100, 10}},
+          {4036, {100, 10}},
+          {4014, {125, 12}},
+          {99_999, {100, 10}}
+        ] do
+      %{derived_stats: derived} = Calculator.calculate_derived_stats(derived_fixture(job_id))
+      assert {derived.max_hp, derived.max_sp} === expected
     end
   end
 
   defp stats_fixture do
-    %Stats{
+    build(:player_stats,
       base_stats: %UnitStats.BaseStats{
         str: 50,
         agi: 40,
@@ -671,10 +650,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
         con: 2,
         crt: 12
       },
-      progression: %Stats.PlayerProgression{base_level: 60, job_level: 40, job_id: 1},
-      equipment: %Stats.Equipment{},
-      modifiers: %Modifiers{}
-    }
+      progression: %Stats.PlayerProgression{base_level: 60, job_level: 40, job_id: 1}
+    )
   end
 
   defp derived_fixture(job_id) do
@@ -703,18 +680,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
   defp zero_base_stats,
     do: %UnitStats.BaseStats{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0}
 
-  defp weapon_hand(subtype, slot) do
-    %WeaponHand{
-      weapon_level: 1,
-      item_id: 1,
-      subtype: subtype,
-      element: :neutral,
-      base_atk: 1,
-      refine_atk: 0,
-      overrefine_band: 0,
-      slot: slot
-    }
-  end
+  defp weapon_hand(subtype, slot),
+    do: build(:weapon_hand, subtype: subtype, slot: slot, base_atk: 1)
 
   defp hp_inputs(overrides) do
     inputs(
@@ -767,7 +734,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.CriticalBasisTest do
 
   test "each mode retains its native critical tenths before display rounding", context do
     values = %{luk: context.luk, base_level: context.base_level}
-    assert Renewal.critical(values) == %{strategy: :exact_tenths, base_rate: context.renewal}
-    assert PreRenewal.critical(values) == %{strategy: :exact_tenths, base_rate: context.classic}
+    assert Renewal.critical(values) == context.renewal
+    assert PreRenewal.critical(values) == context.classic
   end
 end

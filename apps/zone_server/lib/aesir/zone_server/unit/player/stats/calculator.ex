@@ -433,7 +433,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
     formulas = Mechanics.player_formulas()
     values = formula_values(stats)
 
-    critical_basis = formulas.critical(values)
+    critical_base_rate = formulas.critical(values)
 
     status_atk =
       values
@@ -443,7 +443,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
     base_atk = apply_rate(status_atk, Stats.get_equipment_modifier(stats, :atk_rate))
 
     %{min: base_matk_min, max: base_matk_max} = formulas.base_matk(values)
-    base_def = formulas.base_def(values)
     skill_passive_atk = Passives.atk_bonus(stats)
     star_atk = forged_star_damage(stats.worn_items, :right_hand)
     passive_atk = skill_passive_atk + star_atk
@@ -454,7 +453,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
 
     {critical, critical_rate} =
       calculate_critical(
-        critical_basis,
+        critical_base_rate,
         passive_critical,
         flat_critical,
         Stats.get_status_modifier(stats, :critical_rate),
@@ -519,7 +518,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
       heal_matk_max: heal_matk_max,
       def:
         override(
-          base_def + Stats.get_status_modifier(stats, :def) +
+          Stats.get_status_modifier(stats, :def) +
             EquipmentFold.scaled_equipment_def(stats.modifiers.equipment),
           stats,
           :def_override
@@ -597,7 +596,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
   defp hand_bonus(hand), do: hand.bonus_atk
 
   defp calculate_critical(
-         %{strategy: :exact_tenths, base_rate: base_rate},
+         base_rate,
          passive_critical,
          flat_critical,
          critical_rate,

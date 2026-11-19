@@ -9,26 +9,17 @@ defmodule Aesir.ZoneServer.Unit.CombatCalculations do
   ## Implementation Notes
 
   - Player calculations are complex, involving equipment, status effects, and job bonuses
-  - Mob calculations are simpler, following basic rAthena formulas
-  - Future unit types (NPCs, pets) can implement their own specific formulas
+  - Mob combat stats come from `Mechanics.mob_formulas/0` through `Unit.Mob.Stats`
 
   ## Required Callbacks
 
-  All callbacks receive unit-specific data and return calculated stat values.
-  The exact structure of unit_data depends on the implementing module.
+  All callbacks receive the unit's stats and return calculated stat values.
   """
 
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
-  @typedoc """
-  Unit-specific data structure.
-
-  For players: PlayerStats.t()
-  For mobs: MobDefinition.t() 
-  For other units: Implementation-specific structure
-  """
-  @type unit_data :: PlayerStats.t() | MobDefinition.t()
+  @typedoc "The stats a unit's combat values derive from."
+  @type unit_data :: PlayerStats.t()
 
   @doc """
   Calculates the hit stat for accuracy calculations.

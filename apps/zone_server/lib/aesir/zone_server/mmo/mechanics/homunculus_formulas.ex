@@ -17,10 +17,16 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas do
           luk: integer()
         }
 
-  @typedoc "Already aggregated stat-derivation modifiers, not damage-stage rates."
+  @typedoc """
+  Already aggregated stat-derivation modifiers, not damage-stage rates. `batk`
+  and `batk_rate` are the status ATK stages, `watk` the status weapon ATK.
+  """
   @type modifiers :: %{
           optional(
-            :def
+            :batk
+            | :batk_rate
+            | :watk
+            | :def
             | :def_cut_rate
             | :mdef
             | :hit
@@ -60,6 +66,20 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas do
           perfect_dodge: 0
         }
 
+  @typedoc "A mode's combat values before the shared accuracy, MATK and critical finish."
+  @type mode_combat_stats :: %{
+          atk: integer(),
+          atk_min: integer(),
+          atk_max: integer(),
+          def: integer(),
+          soft_def: integer(),
+          mdef: integer(),
+          soft_mdef: integer(),
+          hit: integer(),
+          flee: integer(),
+          matk: integer()
+        }
+
   @typedoc "Derived combat snapshot and attack delay, without resource or persistence changes."
   @type result :: %{combat_stats: combat_stats(), attack_delay_ms: pos_integer()}
 
@@ -77,7 +97,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas do
   end
 
   @doc false
-  @spec finish(map(), input(), integer()) :: result()
+  @spec finish(mode_combat_stats(), input(), integer()) :: result()
   def finish(combat, input, stat_delay) do
     haste = input.modifiers |> Map.get(:hom_aspd_rate, 0) |> max(0) |> min(1_000)
     bounded_delay = stat_delay |> max(100) |> min(8_000)

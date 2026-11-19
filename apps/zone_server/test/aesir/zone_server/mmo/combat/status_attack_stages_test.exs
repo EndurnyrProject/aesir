@@ -1,8 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.StatusAttackStagesTest do
   @moduledoc """
-  Where status ATK (`:batk`) and status weapon ATK (`:watk`) enter a unit's
-  attack: a player's status ATK before its rate, a player's weapon roll (the
-  classic maximum, the renewal centre) per hand, and a non-player's base.
+  Where status ATK (`:batk`) and status weapon ATK (`:watk`) enter a player's
+  attack: its status ATK before its rate and its weapon roll (the classic
+  maximum, the renewal centre) per hand. A non-player's base is checked from its
+  arranged combat stats.
 
   Every weapon roll is pinned to its maximum (`max_weapon_damage`). The player
   weapon is 100 ATK, +10 refine, level 3, with primary stat 55 and DEX 30, so
@@ -17,8 +18,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.StatusAttackStagesTest do
   import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
-  alias Aesir.ZoneServer.Mmo.Mechanics
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -129,36 +128,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.StatusAttackStagesTest do
   end
 
   describe "a non-player's base" do
-    defp mob_combatant(modifiers) do
-      mob = struct(MobDefinition, level: 5, atk: 50, atk2: 60)
-      formulas = Mechanics.mob_formulas()
-      {atk_min, atk_max} = formulas.attack_bounds(mob, modifiers)
-
-      build(:mob_combatant,
-        combat_stats: %CombatStats{
-          atk: formulas.status_attack(mob, 10, 0, modifiers),
-          atk_min: atk_min,
-          atk_max: atk_max
-        }
-      )
-    end
-
     @tag game_mode: :pre_renewal
-    test "a classic mob's bounds both take status weapon ATK and no status ATK" do
-      # Attack2 60 plus status weapon ATK 20 is the critical maximum; no batk.
-      assert DamageInputs.non_player_base_attack(mob_combatant(%{watk: 20, batk: 7}),
-               critical: true
-             ) ==
-               {:ok, 80}
-    end
+    test "a classic critical adds status ATK to the roll maximum without scaling" do
+      mob = build(:mob_combatant, combat_stats: %CombatStats{atk: 7, atk_min: 60, atk_max: 80})
 
-    @tag game_mode: :renewal
-    test "a renewal mob's base takes status ATK and ignores status weapon ATK" do
-      # (50 * 120 / 100 + 10 + 5 + 7) * 14 / 10 for the critical maximum.
-      assert DamageInputs.non_player_base_attack(mob_combatant(%{watk: 20, batk: 7}),
-               critical: true
-             ) ==
-               {:ok, 114}
+      assert DamageInputs.non_player_base_attack(mob, critical: true) == {:ok, 87}
     end
   end
 

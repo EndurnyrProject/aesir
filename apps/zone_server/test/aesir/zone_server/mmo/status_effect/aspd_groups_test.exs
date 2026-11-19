@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.AspdGroupsTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
   import Mimic
 
   alias Aesir.Commons.GameMode
@@ -9,7 +10,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AspdGroupsTest do
   alias Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.PreRenewal
   alias Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.Renewal
   alias Aesir.ZoneServer.Mmo.MobManagement
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Adrenaline
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.AssassinCross
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Berserk
@@ -20,7 +20,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AspdGroupsTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
@@ -122,17 +121,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AspdGroupsTest do
 
   test "mob_quicken_group_test: mob rate maximum and Madness remain in per-mille units" do
     {:ok, form} = MobManagement.get_mob_by_id(1002)
-    spawn = %MobSpawn{mob: form.id, amount: 1, respawn_time: 0, spawn_area: nil}
-
-    state =
-      MobState.new(
-        1,
-        %{form | attack_motion: 800, attack_delay: 1_000},
-        spawn,
-        "prontera",
-        100,
-        100
-      )
+    state = build(:mob_state, mob_data: %{form | attack_motion: 800, attack_delay: 1_000})
 
     held = [
       %StatusEntry{type: :sc_twohandquicken, val2: 300},
@@ -158,8 +147,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AspdGroupsTest do
     end
 
     state = %{state | base: %{state.base | batk: 10}, calculated: %{state.calculated | batk: 10}}
-    assert PreRenewal.recalculate_combat(state, [madness, fever], ["Batk"]).batk == 230
-    assert Renewal.recalculate_combat(state, [madness, fever], ["Batk"]).batk == 10
+    assert PreRenewal.recalculate(state, [madness, fever], ["Batk"]).batk == 230
+    assert Renewal.recalculate(state, [madness, fever], ["Batk"]).batk == 10
   end
 
   test "renewal Quagmire suppresses only the fixed quicken group" do

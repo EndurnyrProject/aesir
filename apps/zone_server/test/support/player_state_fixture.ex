@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.PlayerStateFixture do
     |> build()
   end
 
-  defp stats(%PlayerStats{} = stats) do
+  @doc false
+  def stats(%PlayerStats{} = stats) do
     %{
       stats
       | base_stats:
@@ -31,7 +32,7 @@ defmodule Aesir.ZoneServer.PlayerStateFixture do
     }
   end
 
-  defp stats(stats) when is_map(stats), do: PlayerStats |> struct!(stats) |> stats()
+  def stats(stats) when is_map(stats), do: PlayerStats |> struct!(stats) |> stats()
 
   defp nested(nil, default), do: default
   defp nested(%module{} = value, %module{}), do: value

@@ -15,7 +15,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas do
           pow: integer(),
           base_level: non_neg_integer()
         }
-  @type base_def_inputs :: %{vit: integer(), base_level: non_neg_integer()}
   @typedoc "Effective player attributes used to derive status DEF before per-hit modifiers."
   @type soft_def_inputs :: %{vit: integer(), agi: integer(), base_level: non_neg_integer()}
   @type base_matk_inputs :: %{
@@ -46,7 +45,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas do
           flat_bonus: integer()
         }
   @type critical_inputs :: %{luk: integer(), base_level: non_neg_integer()}
-  @type critical_basis :: %{strategy: :exact_tenths, base_rate: integer()}
   @type perfect_dodge_inputs :: %{luk: integer()}
   @type matk_band :: %{min: integer(), max: integer()}
 
@@ -138,7 +136,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas do
   end
 
   @callback base_atk(base_atk_inputs(), ranged? :: boolean()) :: integer()
-  @callback base_def(base_def_inputs()) :: integer()
   @doc "Derives player status DEF, independent of equipment hard DEF."
   @callback soft_def(soft_def_inputs()) :: non_neg_integer()
   @callback base_matk(base_matk_inputs()) :: matk_band()
@@ -146,7 +143,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas do
   @callback hit_rate_base() :: 0 | 80
   @callback hit(hit_inputs()) :: integer()
   @callback flee(flee_inputs()) :: integer()
-  @callback critical(critical_inputs()) :: critical_basis()
+  @doc "The natural critical rate in tenths of a percent, before any modifier."
+  @callback critical(critical_inputs()) :: integer()
   @callback perfect_dodge(perfect_dodge_inputs()) :: integer()
   @callback aspd(aspd_inputs()) :: integer()
   @callback max_hp(max_hp_inputs()) :: pos_integer()

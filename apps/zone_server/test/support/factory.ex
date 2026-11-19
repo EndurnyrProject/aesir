@@ -35,13 +35,14 @@ defmodule Aesir.ZoneServer.Factory do
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Entry, as: RandomOptionEntry
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Group, as: RandomOptionGroup
   alias Aesir.ZoneServer.Mmo.Mechanics
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Mmo.Skill.Definition, as: SkillDefinition
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
   alias Aesir.ZoneServer.Unit.Stats.CombatStats
@@ -181,6 +182,23 @@ defmodule Aesir.ZoneServer.Factory do
     |> struct!(attrs)
   end
 
+  @doc """
+  A player's stats with `PlayerStateFixture`'s defaults for every section the
+  attributes leave out: all base stats 1, 100 of 100 HP and SP, job 0, no
+  equipment and no modifiers. Nested sections take a struct or a partial map.
+  """
+  @spec player_stats_factory(map()) :: PlayerStats.t()
+  def player_stats_factory(attrs), do: PlayerStateFixture.stats(attrs)
+
+  @doc """
+  A level 10 skill 1 (`:test_skill`) with every cast, cost and flag field at its
+  struct default: instant, no fixed cast and DEX-scaled.
+  """
+  @spec skill_definition_factory() :: SkillDefinition.t()
+  def skill_definition_factory do
+    %SkillDefinition{id: 1, name: :test_skill, display_name: "Test Skill", max_level: 10}
+  end
+
   @doc "A level 1 neutral dagger in the right hand: item 1, 100 base ATK, no refine."
   @spec weapon_hand_factory() :: WeaponHand.t()
   def weapon_hand_factory do
@@ -274,24 +292,25 @@ defmodule Aesir.ZoneServer.Factory do
   Besides any `Combatant` field, takes the inputs its combat stats derive from:
   `base_level`, the six base stats, the database `atk` (50) and classic `atk2`
   (defaults to `atk`), and `def` (10) / `soft_def` (0). Status ATK and the weapon
-  roll bounds come from the booted mode's mob formulas with no status modifiers;
-  HIT (`base_level + dex + 5`), FLEE (`base_level + agi + 3`) and perfect dodge
-  (`luk / 10 + 1`) are arranged values. Built through `Combatant.new!/1`; an
-  unknown key raises.
+  roll bounds are the booted mode's raw monster base (`MobState.new/6`) with no
+  status modifiers; HIT (`base_level + dex + 5`), FLEE (`base_level + agi + 3`)
+  and perfect dodge (`luk / 10 + 1`) are arranged values. Built through
+  `Combatant.new!/1`; an unknown key raises.
   """
   @spec mob_combatant_factory(map()) :: Combatant.t()
   def mob_combatant_factory(attrs) do
     {inputs, fields} = split_combatant_attrs(@mob_combatant_inputs, attrs)
-    formulas = Mechanics.mob_formulas()
 
     mob =
-      struct(MobDefinition,
+      TestMob.definition(
         level: inputs.base_level,
         atk: inputs.atk,
-        atk2: inputs.atk2 || inputs.atk
+        atk2: inputs.atk2 || inputs.atk,
+        stats: Map.take(inputs, [:str, :agi, :vit, :int, :dex, :luk])
       )
 
-    {atk_min, atk_max} = formulas.attack_bounds(mob, %{})
+    %{batk: status_atk, watk_min: atk_min, watk_max: atk_max} =
+      build(:mob_state, mob_data: mob).base
 
     combatant(
       Map.merge(
@@ -301,7 +320,7 @@ defmodule Aesir.ZoneServer.Factory do
           monster_id: 1002,
           base_stats: base_stats(inputs),
           combat_stats: %CombatStats{
-            atk: formulas.status_attack(mob, inputs.str, 0, %{}),
+            atk: status_atk,
             atk_min: min(atk_min, atk_max),
             atk_max: atk_max,
             def: inputs.def,

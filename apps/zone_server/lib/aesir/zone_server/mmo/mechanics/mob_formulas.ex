@@ -4,12 +4,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas do
 
   Construction uses captured spawn inputs and retains an unmodified base;
   held status contributions belong to subsequent selective calculations.
-
-  Shared helpers implement the status MATK steps both modes take on a monster:
-  flat (pseudo-buff) MATK and Mystical Amplification's percentage, each added
-  to both bounds and truncated. A MATK rate and the `:atk` channel are player
-  bonuses (item scripts, or renewal equipment ATK a monster's damage never
-  sums) and never apply.
   """
 
   import Bitwise, only: [band: 2, bnot: 1, bor: 2]
@@ -26,11 +20,29 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas do
   @typedoc "Mob definition used by formula implementations."
   @type mob_data :: MobDefinition.t()
 
-  @typedoc "A unit's aggregated status modifiers."
-  @type modifiers :: %{optional(atom()) => number()}
-
   @typedoc "A roll's minimum and maximum."
   @type bounds :: {integer(), integer()}
+
+  @typedoc "The held status entries keyed by their status type."
+  @type held :: %{optional(atom()) => StatusEntry.t()}
+
+  @typedoc """
+  The mode-specific fields of a first-calculation snapshot: accuracy, soft
+  defenses, status and weapon ATK bounds, MATK bounds and hard defenses.
+  """
+  @type snapshot_values :: %{
+          hit: integer(),
+          flee: integer(),
+          def2: integer(),
+          mdef2: integer(),
+          batk: integer(),
+          watk_min: integer(),
+          watk_max: integer(),
+          matk_min: integer(),
+          matk_max: integer(),
+          def: integer(),
+          mdef: integer()
+        }
 
   @emperium_id 1_288
 
@@ -55,15 +67,20 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas do
   @doc "Recalculates the selected fields from the raw base and the captured held entries."
   @callback recalculate(MobState.t(), [StatusEntry.t()], [CalcFlags.flag()]) :: Calculated.t()
 
-  @doc "Builds raw base data with captured spawn adjustments, never held statuses."
+  @doc """
+  Builds raw base data with captured spawn adjustments, never held statuses.
+
+  Reads `stat_bonus` (a guardian's or a script's flat `:atk`, `:def`, `:mdef`
+  and `:aspd_rate`), `hp_override` and `guardian_hp_bonus` (maximum HP),
+  `master_speed` (a slave inherits its master's walk speed), `form_modes`,
+  `level_up` and `special_size` with `size_influence` (rescaled primaries), and
+  `summon_kind` with `summon_level` (a Flora or Sphere summon's fixed changes).
+  Other spawn options pass through unread.
+  """
   @callback base(MobState.t(), keyword()) :: Calculated.t()
 
   @doc "Expands monster-only primary dependencies without player resource or timing edges."
   @callback expand_calc_flags([CalcFlags.flag()]) :: [CalcFlags.flag()]
-
-  @doc "Recalculates selected combat fields from the raw base and captured held entries."
-  @callback recalculate_combat(MobState.t(), [StatusEntry.t()], [CalcFlags.flag()]) ::
-              Calculated.t()
 
   @doc false
   @spec expand_calc_flags([CalcFlags.flag()], :renewal | :pre_renewal) :: [CalcFlags.flag()]
@@ -369,7 +386,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas do
   defp clamp(value, minimum, maximum), do: value |> max(minimum) |> min(maximum)
 
   @doc false
-  @spec value(map(), atom(), atom()) :: integer()
+  @spec value(held(), atom(), atom()) :: integer()
   def value(held, status, field) do
     case held[status] do
       nil -> 0
@@ -378,31 +395,13 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas do
   end
 
   @doc false
-  @spec fixed(map(), atom(), integer()) :: integer()
+  @spec fixed(held(), atom(), integer()) :: integer()
   def fixed(held, status, amount), do: if(Map.has_key?(held, status), do: amount, else: 0)
 
-  @callback calculate_hit(mob_data()) :: integer()
-  @callback calculate_flee(mob_data()) :: integer()
-  @callback calculate_perfect_dodge(mob_data()) :: integer()
-  @callback calculate_aspd(mob_data()) :: integer()
-  @callback calculate_base_attack(mob_data()) :: integer()
-
-  @doc "The weapon roll's bounds from the database attack and status (weapon) ATK."
-  @callback attack_bounds(mob_data(), modifiers()) :: bounds()
-
   @doc """
-  Status ATK added after the roll, from the current STR and the base status ATK
-  a guardian's Guard Up grants (`status_calc_mob`).
+  MATK bounds from the current INT, without status MATK stages, floored at zero.
   """
-  @callback status_attack(mob_data(), str :: integer(), guard_up :: integer(), modifiers()) ::
-              integer()
-
-  @doc "MATK bounds from the current INT and the status MATK stages."
-  @callback magic_attack_bounds(mob_data(), int :: integer(), modifiers()) :: bounds()
-  @callback calculate_defense(mob_data()) :: integer()
-  @callback calculate_soft_defense(mob_data()) :: integer()
-  @callback calculate_magic_defense(mob_data()) :: integer()
-  @callback calculate_soft_mdef(mob_data()) :: integer()
+  @callback magic_attack_bounds(mob_data(), int :: integer()) :: bounds()
 
   @doc false
   @spec adjusted_base(MobState.t(), keyword(), module(), 8 | 16) :: Calculated.t()
@@ -568,7 +567,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas do
   end
 
   @doc false
-  @spec base_snapshot(MobState.t(), map()) :: Calculated.t()
+  @spec base_snapshot(MobState.t(), snapshot_values()) :: Calculated.t()
   def base_snapshot(state, mode_values) do
     data = state.mob_data
     {element, element_level} = data.element
@@ -626,20 +625,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas do
       end)
 
     struct!(Calculated, values)
-  end
-
-  @doc "Adds flat status MATK to both bounds."
-  @spec add_flat(bounds(), modifiers()) :: bounds()
-  def add_flat({min, max}, modifiers) do
-    flat = Map.get(modifiers, :matk, 0)
-    {min + flat, max + flat}
-  end
-
-  @doc "Applies Mystical Amplification's percentage to both bounds."
-  @spec amplify(bounds(), modifiers()) :: bounds()
-  def amplify({min, max}, modifiers) do
-    rate = Map.get(modifiers, :base_matk_rate, 0)
-    {min + div(min * rate, 100), max + div(max * rate, 100)}
   end
 
   @doc "Floors both bounds at zero."

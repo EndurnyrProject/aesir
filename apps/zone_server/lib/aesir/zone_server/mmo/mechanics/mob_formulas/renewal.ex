@@ -11,8 +11,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.Renewal do
   @behaviour Aesir.ZoneServer.Mmo.Mechanics.MobFormulas
 
   alias Aesir.ZoneServer.Mmo.Mechanics.MobFormulas
-  alias Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.Combat
-  alias Aesir.ZoneServer.Mmo.Mechanics.StatusAttack
 
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.StatusEffect.CalcFlags
@@ -50,71 +48,14 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.Renewal do
   def expand_calc_flags(flags), do: MobFormulas.expand_calc_flags(flags, :renewal)
 
   @impl true
-  @spec recalculate_combat(MobState.t(), [StatusEntry.t()], [CalcFlags.flag()]) :: Calculated.t()
-  def recalculate_combat(state, entries, flags),
-    do: Combat.recalculate(state, entries, flags, :renewal)
-
-  @impl true
   @spec recalculate(MobState.t(), [StatusEntry.t()], [CalcFlags.flag()]) :: Calculated.t()
   def recalculate(state, entries, flags),
     do: MobFormulas.recalculate(state, entries, flags, :renewal)
 
   @impl true
-  def calculate_hit(%MobDefinition{} = mob_data) do
-    mob_data.level + mob_data.stats.dex + 150
-  end
-
-  @impl true
-  def calculate_flee(%MobDefinition{} = mob_data) do
-    mob_data.level + mob_data.stats.agi + 100
-  end
-
-  @impl true
-  def calculate_perfect_dodge(%MobDefinition{}), do: 0
-
-  @impl true
-  def calculate_aspd(%MobDefinition{} = mob_data) do
-    max(100, 200 - div(mob_data.attack_delay, 10))
-  end
-
-  @impl true
-  def calculate_base_attack(%MobDefinition{} = mob_data) do
-    mob_data.atk
-  end
-
-  @impl true
-  def calculate_defense(%MobDefinition{} = mob_data) do
-    mob_data.def
-  end
-
-  @impl true
-  def calculate_soft_defense(%MobDefinition{} = mob_data) do
-    div(mob_data.level + mob_data.stats.vit, 2)
-  end
-
-  @impl true
-  def attack_bounds(%MobDefinition{atk: atk}, _modifiers),
-    do: {div(atk * 80, 100), div(atk * 120, 100)}
-
-  @impl true
-  def status_attack(%MobDefinition{level: level}, str, guard_up, modifiers),
-    do: StatusAttack.modify(str + level + guard_up, modifiers)
-
-  @impl true
-  def magic_attack_bounds(%MobDefinition{level: level, matk: matk}, int, modifiers) do
-    {int + level + div(matk * 70, 100), int + level + div(matk * 130, 100)}
-    |> MobFormulas.amplify(modifiers)
-    |> MobFormulas.add_flat(modifiers)
-    |> MobFormulas.floor_zero()
-  end
-
-  @impl true
-  def calculate_magic_defense(%MobDefinition{} = mob_data) do
-    mob_data.mdef
-  end
-
-  @impl true
-  def calculate_soft_mdef(%MobDefinition{} = mob_data) do
-    div(mob_data.stats.int + mob_data.level, 4)
+  def magic_attack_bounds(%MobDefinition{level: level, matk: matk}, int) do
+    MobFormulas.floor_zero(
+      {int + level + div(matk * 70, 100), int + level + div(matk * 130, 100)}
+    )
   end
 end

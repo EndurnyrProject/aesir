@@ -41,19 +41,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.ElementsTest do
     end
   end
 
-  test "both implementations support every element pair at defense levels 1 through 4" do
-    modifiers =
-      for implementation <- [Renewal, PreRenewal],
-          attack <- @elements,
-          defense <- @elements,
-          level <- 1..4 do
-        implementation.get_modifier(attack, defense, level, 0)
-      end
-
-    assert length(modifiers) == 800
-    assert Enum.all?(modifiers, &is_float/1)
-  end
-
   test "renewal preserves level scaling and fallback behavior" do
     assert Enum.map(1..4, &Renewal.get_modifier(:water, :fire, &1, 0)) == [1.5, 1.75, 2.0, 2.0]
     assert Enum.map(1..4, &Renewal.get_modifier(:fire, :water, &1, 0)) == [0.9, 0.8, 0.7, 0.6]

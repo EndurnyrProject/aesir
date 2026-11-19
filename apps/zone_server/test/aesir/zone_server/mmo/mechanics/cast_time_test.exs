@@ -1,9 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Mechanics.CastTimeTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Mechanics.CastTime.PreRenewal
   alias Aesir.ZoneServer.Mmo.Mechanics.CastTime.Renewal
-  alias Aesir.ZoneServer.Mmo.Skill.Definition
 
   test "named stages preserve source binary32 conversions and reactions" do
     classic = definition([1_000])
@@ -270,14 +271,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.CastTimeTest do
   end
 
   defp definition(cast_time, fixed_cast_time \\ [], ignore_dex \\ false) do
-    %Definition{
-      id: 83,
-      name: :test_skill,
-      display_name: "Test Skill",
-      max_level: 10,
+    build(:skill_definition,
       cast_time: cast_time,
       fixed_cast_time: fixed_cast_time,
       ignore_dex: ignore_dex
-    }
+    )
   end
 end

@@ -1,12 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedCombatTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.PreRenewal
   alias Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.Renewal
   alias Aesir.ZoneServer.Mmo.MobManagement.Importer
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.StatusEntry
-  alias Aesir.ZoneServer.Unit.Mob.MobState
 
   test "monster primary dependencies retain the mode split without player resource or timing edges" do
     assert Renewal.expand_calc_flags(["Agi", "Dex"]) ==
@@ -35,8 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedCombatTest do
         "Str" => 101
       })
 
-    spawn = %MobSpawn{mob: form.id, amount: 1, respawn_time: 0, spawn_area: nil}
-    state = MobState.new(301, form, spawn, "prontera", 100, 100)
+    state = build(:mob_state, mob_data: form)
 
     entries = [
       StatusEntry.new(:sc_incallstatus, 1, 0, 0, 0, 0, 0),
@@ -51,11 +50,11 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedCombatTest do
       calculated = %{base | int: 999, batk: 777}
       state = %{state | base: base, calculated: calculated}
       flags = formulas.expand_calc_flags(["Str"])
-      result = formulas.recalculate_combat(state, entries, flags)
+      result = formulas.recalculate(state, entries, flags)
 
       assert result == %{calculated | str: 58, batk: batk}
-      assert formulas.recalculate_combat(%{state | calculated: result}, [], []) == result
-      restored = formulas.recalculate_combat(state, entries, formulas.expand_calc_flags(["All"]))
+      assert formulas.recalculate(%{state | calculated: result}, [], []) == result
+      restored = formulas.recalculate(state, entries, formulas.expand_calc_flags(["All"]))
       assert {restored.str, restored.int, restored.dex} == {58, 6, 6}
     end
   end
@@ -74,8 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedCombatTest do
         "Luk" => 47
       })
 
-    spawn = %MobSpawn{mob: form.id, amount: 1, respawn_time: 0, spawn_area: nil}
-    state = MobState.new(302, form, spawn, "prontera", 100, 100)
+    state = build(:mob_state, mob_data: form)
 
     entries = [
       StatusEntry.new(:sc_concentrate, 3, 20, 7, 9, 0, 0),
@@ -103,10 +101,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedCombatTest do
       base = formulas.base(state)
       state = %{state | base: base, calculated: base}
       flags = formulas.expand_calc_flags(~w(Str Agi Vit Int Dex Luk))
-      calculated = formulas.recalculate_combat(state, entries, flags)
+      calculated = formulas.recalculate(state, entries, flags)
       assert Map.take(calculated, [:str, :agi, :vit, :int, :dex, :luk]) == expected
       quagmire = StatusEntry.new(:sc_quagmire, 1, 20, 0, 0, 0, 0)
-      calculated = formulas.recalculate_combat(state, [quagmire | entries], flags)
+      calculated = formulas.recalculate(state, [quagmire | entries], flags)
       assert {calculated.agi, calculated.dex} == slowed
     end
   end
@@ -123,8 +121,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedCombatTest do
         "Luk" => 17
       })
 
-    spawn = %MobSpawn{mob: form.id, amount: 1, respawn_time: 0, spawn_area: nil}
-    state = MobState.new(303, form, spawn, "prontera", 100, 100)
+    state = build(:mob_state, mob_data: form)
 
     entries = [
       StatusEntry.new(:sc_inchit, 11, 0, 0, 0, 0, 0),
@@ -159,7 +156,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedCombatTest do
       base = %{formulas.base(state) | cri: 50, flee2: 40}
       calculated = %{base | dex: 22, agi: 22, luk: 22}
       state = %{state | base: base, calculated: calculated}
-      result = formulas.recalculate_combat(state, entries, ~w(Hit Flee Cri Flee2))
+      result = formulas.recalculate(state, entries, ~w(Hit Flee Cri Flee2))
       assert {result.hit, result.flee, result.cri, result.flee2} == expected
       fields = [:hit, :flee, :cri, :flee2]
       assert Map.drop(result, fields) == Map.drop(calculated, fields)
@@ -176,16 +173,15 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedCombatTest do
         "Agi" => 19
       })
 
-    spawn = %MobSpawn{mob: form.id, amount: 1, respawn_time: 0, spawn_area: nil}
-    state = MobState.new(304, form, spawn, "prontera", 100, 100)
+    state = build(:mob_state, mob_data: form)
     rate = StatusEntry.new(:sc_incfleerate, 20, 0, 0, 0, 0, 0)
     agiup = StatusEntry.new(:sc_agiup, 50, 100, 0, 0, 0, 0)
 
     for formulas <- [Renewal, PreRenewal] do
       base = formulas.base(state)
       state = %{state | base: base, calculated: base}
-      flee = formulas.recalculate_combat(state, [rate], ~w(Flee)).flee
-      buffed = formulas.recalculate_combat(state, [rate, agiup], ~w(Flee)).flee
+      flee = formulas.recalculate(state, [rate], ~w(Flee)).flee
+      buffed = formulas.recalculate(state, [rate, agiup], ~w(Flee)).flee
       assert buffed == flee + div(flee * 100, 100)
     end
   end
@@ -205,8 +201,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedCombatTest do
         "MagicDefense" => 51
       })
 
-    spawn = %MobSpawn{mob: form.id, amount: 1, respawn_time: 0, spawn_area: nil}
-    state = MobState.new(304, form, spawn, "prontera", 100, 100)
+    state = build(:mob_state, mob_data: form)
 
     entries = [
       StatusEntry.new(:sc_drumbattle, 1, 0, 7, 0, 0, 0),
@@ -231,13 +226,13 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedCombatTest do
       base = formulas.base(state)
       calculated = %{base | vit: 18, agi: 21, int: 23, dex: 26}
       state = %{state | base: base, calculated: calculated}
-      result = formulas.recalculate_combat(state, entries, ~w(Def Def2 Mdef Mdef2))
+      result = formulas.recalculate(state, entries, ~w(Def Def2 Mdef Mdef2))
       assert {result.def, result.def2, result.mdef, result.mdef2} == expected
       steelbody = StatusEntry.new(:sc_steelbody, 1, 0, 0, 0, 0, 0)
-      result = formulas.recalculate_combat(state, [steelbody | entries], ~w(Def Mdef))
+      result = formulas.recalculate(state, [steelbody | entries], ~w(Def Mdef))
       assert {result.def, result.mdef} == if(formulas == Renewal, do: {29, 90}, else: {90, 90})
       chaos = StatusEntry.new(:sc_eternalchaos, 1, 0, 0, 0, 0, 0)
-      result = formulas.recalculate_combat(state, [chaos | entries], ~w(Def Def2))
+      result = formulas.recalculate(state, [chaos | entries], ~w(Def Def2))
       assert {result.def, result.def2} == if(formulas == Renewal, do: {0, 0}, else: {15, 0})
     end
   end
@@ -256,8 +251,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedCombatTest do
       })
 
     form = %{form | atk2: 180}
-    spawn = %MobSpawn{mob: form.id, amount: 1, respawn_time: 0, spawn_area: nil}
-    state = MobState.new(305, form, spawn, "prontera", 100, 100)
+    state = build(:mob_state, mob_data: form)
 
     entries = [
       StatusEntry.new(:sc_volcano, 1, 7, 0, 0, 0, 0),
@@ -281,11 +275,11 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedCombatTest do
       base = %{base | batk: base.batk + 11, watk2: 5}
       calculated = %{base | str: 45, int: 23, watk: 999}
       state = %{state | base: base, calculated: calculated}
-      result = formulas.recalculate_combat(state, [amplification | entries], ~w(Batk Watk Matk))
+      result = formulas.recalculate(state, [amplification | entries], ~w(Batk Watk Matk))
       assert {result.batk, result.watk_min, result.watk_max, result.watk, result.watk2} == attack
       assert {result.matk_min, result.matk_max} == unarmed_matk
       armed = %{amplification | state: %{armed: true}}
-      result = formulas.recalculate_combat(state, [armed | entries], ["Matk"])
+      result = formulas.recalculate(state, [armed | entries], ["Matk"])
       assert {result.matk_min, result.matk_max} == armed_matk
     end
   end
@@ -301,13 +295,12 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedCombatTest do
         "Agi" => 1
       })
 
-    spawn = %MobSpawn{mob: form.id, amount: 1, respawn_time: 0, spawn_area: nil}
-    state = MobState.new(306, form, spawn, "prontera", 100, 100)
+    state = build(:mob_state, mob_data: form)
 
     for {formulas, expected} <- [{Renewal, 8}, {PreRenewal, 1}] do
       base = formulas.base(state)
       state = %{state | base: base, calculated: %{base | agi: 21}}
-      result = formulas.recalculate_combat(state, [], ["Def2"])
+      result = formulas.recalculate(state, [], ["Def2"])
       assert result.def2 == expected
     end
   end
@@ -321,8 +314,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedCombatTest do
         "Agi" => 20
       })
 
-    spawn = %MobSpawn{mob: form.id, amount: 1, respawn_time: 0, spawn_area: nil}
-    state = MobState.new(307, form, spawn, "prontera", 100, 100)
+    state = build(:mob_state, mob_data: form)
 
     entries = [
       StatusEntry.new(:sc_incallstatus, 32_752, 0, 0, 0, 0, 0),
@@ -339,7 +331,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedCombatTest do
       state = %{state | base: base, calculated: calculated}
 
       result =
-        formulas.recalculate_combat(
+        formulas.recalculate(
           state,
           entries,
           formulas.expand_calc_flags(~w(Str Luk Cri Flee2))
@@ -348,7 +340,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedCombatTest do
       assert {result.str, result.luk, result.batk, result.cri, result.flee2} ==
                {str, 0, 555, 99, 777}
 
-      result = formulas.recalculate_combat(state, [], ~w(Def2 Mdef2))
+      result = formulas.recalculate(state, [], ~w(Def2 Mdef2))
       assert {result.def2, result.mdef2} == defenses
     end
   end
@@ -363,8 +355,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedCombatTest do
         "MagicDefense" => 32_767
       })
 
-    spawn = %MobSpawn{mob: form.id, amount: 1, respawn_time: 0, spawn_area: nil}
-    state = MobState.new(309, form, spawn, "prontera", 100, 100)
+    state = build(:mob_state, mob_data: form)
 
     entries = [
       StatusEntry.new(:sc_drumbattle, 1, 0, 15, 0, 0, 0),
@@ -375,7 +366,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedCombatTest do
       base = formulas.base(state)
 
       result =
-        formulas.recalculate_combat(
+        formulas.recalculate(
           %{state | base: base, calculated: base},
           entries,
           ~w(Def Mdef)
@@ -395,8 +386,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedCombatTest do
         "Attack2" => 65_535
       })
 
-    spawn = %MobSpawn{mob: form.id, amount: 1, respawn_time: 0, spawn_area: nil}
-    state = MobState.new(308, form, spawn, "prontera", 100, 100)
+    state = build(:mob_state, mob_data: form)
     amplification = StatusEntry.new(:sc_magicpower, 10, 0, 50, 1, 0, 0)
 
     for {formulas, expected, right} <- [
@@ -405,7 +395,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedCombatTest do
         ] do
       base = %{formulas.base(state) | watk: 5, watk2: 10}
       state = %{state | base: base, calculated: %{base | int: 32_767, watk: 999, watk2: 777}}
-      result = formulas.recalculate_combat(state, [amplification], ~w(Watk Matk))
+      result = formulas.recalculate(state, [amplification], ~w(Watk Matk))
       assert {result.matk_min, result.matk_max} == expected
       assert {result.watk, result.watk2} == {right, 777}
     end

@@ -21,9 +21,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.PreRenewal do
   end
 
   @impl true
-  def base_def(_values), do: 0
-
-  @impl true
   @spec soft_def(PlayerFormulas.soft_def_inputs()) :: non_neg_integer()
   def soft_def(%{vit: vit}), do: max(vit, 0)
 
@@ -50,9 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.PreRenewal do
   end
 
   @impl true
-  def critical(%{luk: luk}) do
-    %{strategy: :exact_tenths, base_rate: 10 + div(max(luk, 0) * 10, 3)}
-  end
+  def critical(%{luk: luk}), do: 10 + div(max(luk, 0) * 10, 3)
 
   @impl true
   def perfect_dodge(%{luk: luk}), do: max(luk, 0) + 10
