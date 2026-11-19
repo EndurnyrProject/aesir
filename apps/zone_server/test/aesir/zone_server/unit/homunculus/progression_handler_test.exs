@@ -353,7 +353,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.ProgressionHandlerTest do
     assert evolved.size == :medium
     assert evolved.race == :demi_human
     assert evolved.element == {:neutral, 1}
-    assert evolved.attack_delay_ms == %{renewal: 623, pre_renewal: 661}[GameMode.mode()]
+    assert evolved.attack_delay_ms == %{renewal: 610, pre_renewal: 661}[GameMode.mode()]
     assert evolved.intimacy_hundredths == 1_000
     assert evolved.level == 42
     assert evolved.exp == 123

@@ -13,7 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.StatsTest do
   test "real snapshots separate displayed critical from chance and fix MATK at the mode maximum" do
     derived = Stats.recompute(state(6_001, %{}))
     combatant = HomunculusState.to_combatant(derived)
-    expected_matk = %{renewal: 90, pre_renewal: 50}[GameMode.mode()]
+    expected_matk = %{renewal: 98, pre_renewal: 50}[GameMode.mode()]
 
     assert derived.combat_stats.critical == 4
     assert derived.combat_stats.critical_rate == 0
@@ -58,9 +58,9 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.StatsTest do
     full_strip =
       Stats.recompute(state(6_001, %{}), %{vit: 60, def: 30, vit_cut_rate: 40, def_cut_rate: 15})
 
-    # VIT 78 cut to 47, VIT share 9 - 3 = 6. Renewal: 68 cut to 58; classic: 37 cut to 32.
-    # Cutting after the VIT share would give 63 and 37.
-    assert full_strip.combat_stats.def == %{renewal: 64, pre_renewal: 38}[GameMode.mode()]
+    # VIT 78 cut to 47, VIT share 9 - 3 = 6. Renewal: 72 cut to 62; classic: 37 cut to 32.
+    # Cutting after the VIT share would give 67 and 37.
+    assert full_strip.combat_stats.def == %{renewal: 68, pre_renewal: 38}[GameMode.mode()]
   end
 
   test "Brain Surgery applies only to Lif forms without compounding" do
@@ -85,13 +85,13 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.StatsTest do
     effective = Stats.recompute(state(6_002, %{8_007 => 4}))
 
     assert effective.max_hp == 1_080
-    assert effective.combat_stats.def == mode_value(54, 23)
+    assert effective.combat_stats.def == mode_value(58, 23)
     assert effective.combat_stats.hp_regen_rate == 20
     assert effective.hp == 900
 
     unlearned = Stats.recompute(state(6_002, %{}))
     assert unlearned.max_hp == 1_000
-    assert unlearned.combat_stats.def == mode_value(38, 7)
+    assert unlearned.combat_stats.def == mode_value(42, 7)
   end
 
   test "Instruction Change uses exact rank tables for original and evolved Vanilmirth" do
@@ -112,10 +112,10 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.StatsTest do
     end
 
     rank_five = Stats.recompute(state(6_004, %{8_015 => 5}))
-    assert rank_five.combat_stats.mdef == mode_value(29, 9)
-    assert rank_five.combat_stats.soft_mdef == mode_value(24, 39)
-    assert rank_five.combat_stats.matk_min == mode_value(96, 66)
-    assert rank_five.combat_stats.matk_max == mode_value(96, 66)
+    assert rank_five.combat_stats.mdef == mode_value(32, 9)
+    assert rank_five.combat_stats.soft_mdef == mode_value(28, 39)
+    assert rank_five.combat_stats.matk_min == mode_value(104, 66)
+    assert rank_five.combat_stats.matk_max == mode_value(104, 66)
 
     wrong_species = Stats.recompute(state(6_003, %{8_015 => 5}))
     assert wrong_species.str == 31
@@ -127,10 +127,10 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.StatsTest do
 
     assert effective.vit == 47
     assert effective.int == 44
-    assert effective.combat_stats.def == mode_value(59, 28)
-    assert effective.combat_stats.soft_def == mode_value(42, 47)
-    assert effective.combat_stats.mdef == mode_value(37, 19)
-    assert effective.combat_stats.soft_mdef == mode_value(45, 67)
+    assert effective.combat_stats.def == mode_value(63, 28)
+    assert effective.combat_stats.soft_def == mode_value(48, 47)
+    assert effective.combat_stats.mdef == mode_value(40, 19)
+    assert effective.combat_stats.soft_mdef == mode_value(49, 67)
   end
 
   test "derives mode-specific combat bounds and all Homunculus status reader channels" do
@@ -147,20 +147,32 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.StatsTest do
     effective = Stats.recompute(state(6_001, %{}), modifiers)
 
     assert %{str: 31, agi: 20, vit: 48, int: 45, dex: 40, luk: 10} = effective
-    assert effective.combat_stats.atk == mode_value(111, 40)
-    assert effective.combat_stats.atk_min == mode_value(14, 40)
-    assert effective.combat_stats.atk_max == mode_value(27, 71)
-    assert effective.combat_stats.def == mode_value(59, 28)
-    assert effective.combat_stats.soft_def == mode_value(43, 48)
-    assert effective.combat_stats.mdef == mode_value(31, 13)
-    assert effective.combat_stats.soft_mdef == mode_value(47, 69)
+    assert effective.combat_stats.atk == mode_value(115, 40)
+    assert effective.combat_stats.atk_min == mode_value(15, 40)
+    assert effective.combat_stats.atk_max == mode_value(31, 71)
+    assert effective.combat_stats.def == mode_value(63, 28)
+    assert effective.combat_stats.soft_def == mode_value(49, 48)
+    assert effective.combat_stats.mdef == mode_value(34, 13)
+    assert effective.combat_stats.soft_mdef == mode_value(51, 69)
     assert effective.combat_stats.hit == mode_value(230, 80)
-    assert effective.combat_stats.flee == 110
+    assert effective.combat_stats.flee == mode_value(114, 110)
     assert effective.combat_stats.critical == 4
     assert effective.combat_stats.critical_rate == 0
-    assert effective.combat_stats.matk_min == mode_value(116, 126)
-    assert effective.combat_stats.matk_max == mode_value(116, 126)
-    assert effective.attack_delay_ms == 542
+    assert effective.combat_stats.matk_min == mode_value(124, 126)
+    assert effective.combat_stats.matk_max == mode_value(124, 126)
+    assert effective.attack_delay_ms == mode_value(530, 542)
+  end
+
+  test "status ATK, status weapon ATK and flat status MATK reach the mode formulas" do
+    effective =
+      Stats.recompute(state(6_001, %{}), %{batk: 9, batk_rate: 20, watk: 20, matk: 30})
+
+    # Renewal: (115 + 9) + 124 * 20 / 100; weapon ATK never moves the bounds.
+    assert effective.combat_stats.atk == mode_value(148, 58)
+    assert effective.combat_stats.atk_min == mode_value(15, 60)
+    assert effective.combat_stats.atk_max == mode_value(31, 91)
+    assert effective.combat_stats.matk == mode_value(128, 80)
+    assert effective.combat_stats.matk_max == mode_value(128, 80)
   end
 
   describe "walk_speed/3" do

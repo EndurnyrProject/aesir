@@ -2,9 +2,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas.PreRenewal do
   @moduledoc """
   Classic Homunculus stats with unshifted accuracy and percentage hard defenses.
 
-  Initial hard defenses precede passives. The DEX/AGI attack-delay reduction
-  uses one combined division, and an excessive DEX collapses the weapon range
-  to its maximum. Effective MATK is fixed at its maximum.
+  Initial hard defenses precede passives. The weapon range is base DEX to base
+  STR plus level, each moved only by status weapon ATK and held to `0..65_535`;
+  an excessive DEX collapses it to its maximum. The DEX/AGI attack-delay
+  reduction uses one combined division. Effective MATK is fixed at its maximum.
   """
 
   @behaviour Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas
@@ -15,14 +16,14 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas.PreRenewal do
   @impl true
   @spec derive(HomunculusFormulas.input()) :: HomunculusFormulas.result()
   def derive(%{level: level, raw: raw, base: base, effective: stats, modifiers: mods} = input) do
-    status_watk = Map.get(mods, :watk, 0)
-    weapon_max = stats.str + level + status_watk
+    weapon_min = HomunculusFormulas.status_watk(base.dex, mods)
+    weapon_max = HomunculusFormulas.status_watk(base.str + level, mods)
     hard_def = (div(level, 10) + div(raw.vit, 5)) |> max(0) |> min(99)
     hard_mdef = (div(level, 10) + div(raw.int, 5)) |> max(0) |> min(99)
 
     combat = %{
       atk: StatusAttack.modify(stats.str + div(stats.str, 10) * div(stats.str, 10), mods),
-      atk_min: min(stats.dex + status_watk, weapon_max),
+      atk_min: min(weapon_min, weapon_max),
       atk_max: weapon_max,
       def:
         HomunculusFormulas.status_def(hard_def + 4 * input.skin_rank, mods) +

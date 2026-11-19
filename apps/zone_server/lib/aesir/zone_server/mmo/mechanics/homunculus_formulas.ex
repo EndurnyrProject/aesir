@@ -19,13 +19,15 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas do
 
   @typedoc """
   Already aggregated stat-derivation modifiers, not damage-stage rates. `batk`
-  and `batk_rate` are the status ATK stages, `watk` the status weapon ATK.
+  and `batk_rate` are the status ATK stages, `watk` the status weapon ATK and
+  `matk` the flat status MATK.
   """
   @type modifiers :: %{
           optional(
             :batk
             | :batk_rate
             | :watk
+            | :matk
             | :def
             | :def_cut_rate
             | :mdef
@@ -96,6 +98,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas do
     value - div(value * Map.get(modifiers, :def_cut_rate, 0), 100)
   end
 
+  @doc "A weapon bound plus the flat status weapon ATK, held to `0..65_535`."
+  @spec status_watk(integer(), modifiers()) :: non_neg_integer()
+  def status_watk(bound, modifiers), do: clamp_ushort(bound + Map.get(modifiers, :watk, 0))
+
   @doc false
   @spec finish(mode_combat_stats(), input(), integer()) :: result()
   def finish(combat, input, stat_delay) do
@@ -104,13 +110,15 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas do
     delay = div(bounded_delay * (1_000 - haste), 1_000) |> max(100) |> min(8_000)
 
     blind_rate = Map.get(input.modifiers, :blind_accuracy_rate, 0)
+    matk = clamp_ushort(combat.matk + Map.get(input.modifiers, :matk, 0))
 
     combat =
       Map.merge(combat, %{
         hit: max(combat.hit - div(combat.hit * blind_rate, 100), 1),
         flee: max(combat.flee - div(combat.flee * blind_rate, 100), 1),
-        matk_min: combat.matk,
-        matk_max: combat.matk,
+        matk: matk,
+        matk_min: matk,
+        matk_max: matk,
         critical: 1 + div(input.effective.luk, 3),
         critical_rate: 0,
         perfect_dodge: 0
@@ -118,4 +126,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas do
 
     %{combat_stats: combat, attack_delay_ms: delay}
   end
+
+  defp clamp_ushort(value), do: value |> max(0) |> min(65_535)
 end

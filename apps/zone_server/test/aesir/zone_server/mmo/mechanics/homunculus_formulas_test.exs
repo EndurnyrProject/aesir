@@ -5,29 +5,32 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulasTest do
   alias Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas.Renewal
 
   test "derives independent baseline combat snapshots for both modes" do
-    common = %{critical: 4, critical_rate: 0, perfect_dodge: 0, flee: 60}
+    common = %{critical: 4, critical_rate: 0, perfect_dodge: 0}
 
-    for {module, expected} <- [
+    # Renewal adds the level stat weight (40 / 10 = 4) to every hom stat read.
+    for {module, expected, delay} <- [
           {Renewal,
            %{
-             atk: 111,
-             atk_min: 14,
-             atk_max: 27,
+             atk: 115,
+             atk_min: 15,
+             atk_max: 31,
              hit: 230,
-             def: 38,
-             soft_def: 28,
-             mdef: 27,
-             soft_mdef: 21,
-             matk: 90,
-             matk_min: 90,
-             matk_max: 90
-           }},
+             flee: 64,
+             def: 42,
+             soft_def: 34,
+             mdef: 30,
+             soft_mdef: 25,
+             matk: 98,
+             matk_min: 98,
+             matk_max: 98
+           }, 603},
           {PreRenewal,
            %{
              atk: 40,
              atk_min: 40,
              atk_max: 71,
              hit: 80,
+             flee: 60,
              def: 7,
              soft_def: 18,
              mdef: 9,
@@ -35,11 +38,11 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulasTest do
              matk: 50,
              matk_min: 50,
              matk_max: 50
-           }}
+           }, 616}
         ] do
       assert module.derive(input()) == %{
                combat_stats: Map.merge(common, expected),
-               attack_delay_ms: 616
+               attack_delay_ms: delay
              }
     end
   end
@@ -58,7 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulasTest do
         modifiers: %{def: 15, mdef: 7}
     }
 
-    assert %{combat_stats: %{def: 75, mdef: 40, soft_def: 42, soft_mdef: 37}} =
+    assert %{combat_stats: %{def: 79, mdef: 43, soft_def: 48, soft_mdef: 41}} =
              Renewal.derive(inputs)
 
     assert %{combat_stats: %{def: 44, mdef: 18, soft_def: 47, soft_mdef: 64}} =
@@ -69,11 +72,11 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulasTest do
     base = %{stats() | vit: 19, agi: 21}
     inputs = %{input() | raw: base, base: base, effective: %{base | vit: 20, agi: 22, dex: 41}}
 
-    assert %{combat_stats: %{soft_def: 29, soft_mdef: 22}} = Renewal.derive(inputs)
+    assert %{combat_stats: %{soft_def: 35, soft_mdef: 26}} = Renewal.derive(inputs)
     assert %{combat_stats: %{soft_def: 20, soft_mdef: 34}} = PreRenewal.derive(inputs)
 
     inputs = %{inputs | effective: %{base | vit: 18, agi: 20, dex: 39}}
-    assert %{combat_stats: %{soft_def: 29, soft_mdef: 22}} = Renewal.derive(inputs)
+    assert %{combat_stats: %{soft_def: 35, soft_mdef: 26}} = Renewal.derive(inputs)
     assert %{combat_stats: %{soft_def: 18, soft_mdef: 34}} = PreRenewal.derive(inputs)
   end
 
@@ -81,7 +84,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulasTest do
     inputs = %{input() | effective: %{stats() | luk: 27}}
 
     assert %{
-             combat_stats: %{hit: 236, flee: 63, critical: 10, critical_rate: 0, perfect_dodge: 0}
+             combat_stats: %{hit: 236, flee: 67, critical: 10, critical_rate: 0, perfect_dodge: 0}
            } = Renewal.derive(inputs)
 
     assert %{combat_stats: %{hit: 80, flee: 60, critical: 10, critical_rate: 0, perfect_dodge: 0}} =
@@ -106,30 +109,53 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulasTest do
   test "status ATK joins the base in both modes; status weapon ATK moves only classic bounds" do
     inputs = %{input() | modifiers: %{batk: 9, watk: 20}}
 
-    assert %{combat_stats: %{atk: 120, atk_min: 14, atk_max: 27}} = Renewal.derive(inputs)
+    assert %{combat_stats: %{atk: 124, atk_min: 15, atk_max: 31}} = Renewal.derive(inputs)
     assert %{combat_stats: %{atk: 49, atk_min: 60, atk_max: 91}} = PreRenewal.derive(inputs)
+  end
+
+  test "weapon bounds come from base stats, so a transient STR or DEX leaves them" do
+    inputs = %{input() | effective: %{stats() | str: 61, dex: 70, luk: 40}}
+
+    assert %{combat_stats: %{atk_min: 15, atk_max: 31}} = Renewal.derive(inputs)
+    assert %{combat_stats: %{atk_min: 40, atk_max: 71}} = PreRenewal.derive(inputs)
+  end
+
+  test "classic status weapon ATK holds each bound at zero" do
+    inputs = %{input() | modifiers: %{watk: -60}}
+    assert %{combat_stats: %{atk_min: 0, atk_max: 11}} = PreRenewal.derive(inputs)
+
+    inputs = %{input() | modifiers: %{watk: -100}}
+    assert %{combat_stats: %{atk_min: 0, atk_max: 0}} = PreRenewal.derive(inputs)
+  end
+
+  test "flat status MATK joins the fixed maximum in both modes" do
+    inputs = %{input() | modifiers: %{matk: 30}}
+
+    assert %{combat_stats: %{matk: 128, matk_min: 128, matk_max: 128}} = Renewal.derive(inputs)
+    assert %{combat_stats: %{matk: 80, matk_min: 80, matk_max: 80}} = PreRenewal.derive(inputs)
   end
 
   test "the status ATK rate scales status ATK after the flat statuses in both modes" do
     inputs = %{input() | modifiers: %{batk: 9, batk_rate: 20}}
 
-    # Renewal 120 + 120 * 20 / 100 = 144; classic 49 + 49 * 20 / 100 = 49 + 9.
-    assert %{combat_stats: %{atk: 144}} = Renewal.derive(inputs)
+    # Renewal 124 + 124 * 20 / 100 = 148; classic 49 + 49 * 20 / 100 = 49 + 9.
+    assert %{combat_stats: %{atk: 148}} = Renewal.derive(inputs)
     assert %{combat_stats: %{atk: 58}} = PreRenewal.derive(inputs)
   end
 
   test "classic excessive DEX collapses the weapon interval without inflating ATK" do
-    inputs = %{input() | effective: %{stats() | dex: 500}}
+    dex = %{stats() | dex: 500}
+    inputs = %{input() | base: dex, effective: dex}
     assert %{combat_stats: %{atk: 40, atk_min: 71, atk_max: 71}} = PreRenewal.derive(inputs)
   end
 
   test "attack delay distinguishes combined and separate truncation before haste" do
     inputs = %{input() | effective: %{stats() | agi: 11, dex: 11}}
-    assert Renewal.derive(inputs).attack_delay_ms == 663
+    assert Renewal.derive(inputs).attack_delay_ms == 648
     assert PreRenewal.derive(inputs).attack_delay_ms == 661
 
     inputs = %{inputs | modifiers: %{hom_aspd_rate: 150}}
-    assert Renewal.derive(inputs).attack_delay_ms == 563
+    assert Renewal.derive(inputs).attack_delay_ms == 550
     assert PreRenewal.derive(inputs).attack_delay_ms == 561
   end
 
@@ -148,8 +174,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulasTest do
                module.derive(%{inputs | modifiers: %{hit: -1_000, flee: -1_000}})
     end
 
+    # Renewal soft DEF keeps the level stat weight: 4 + 4 / 2.
     assert PreRenewal.derive(inputs).combat_stats.soft_def == 1
-    assert Renewal.derive(inputs).combat_stats.soft_def == 0
+    assert Renewal.derive(inputs).combat_stats.soft_def == 6
   end
 
   defp input do

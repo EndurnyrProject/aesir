@@ -56,7 +56,19 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Stats do
       skin_rank: skin,
       modifiers:
         Map.new(
-          [:def, :def_cut_rate, :mdef, :hit, :flee, :hom_aspd_rate, :blind_accuracy_rate],
+          [
+            :batk,
+            :batk_rate,
+            :watk,
+            :matk,
+            :def,
+            :def_cut_rate,
+            :mdef,
+            :hit,
+            :flee,
+            :hom_aspd_rate,
+            :blind_accuracy_rate
+          ],
           &{&1, modifier(modifiers, &1)}
         )
     }
