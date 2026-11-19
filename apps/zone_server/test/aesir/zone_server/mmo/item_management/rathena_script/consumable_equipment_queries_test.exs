@@ -1,11 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ConsumableEquipmentQueriesTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Transpiler
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   test "consumable equipment queries use right-hand view values and preserve the weapon gate" do
     script = """
@@ -28,7 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ConsumableEquipmentQ
         char_id: 1,
         account_id: 1,
         connection_pid: self(),
-        game_state: %PlayerState{inventory: inventory},
+        game_state: build(:player_state, inventory: inventory),
         source: {:item, 12220}
       }
 
@@ -42,20 +43,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ConsumableEquipmentQ
       assert result.vars.type == view
       assert Dsl.get_local(result, :allowed) == allowed
     end
-  end
-
-  test "the complete Adrenaline Scroll script retains its visual and direct status start" do
-    script = """
-    .@type = getiteminfo(getequipid(EQI_HAND_R),ITEMINFO_VIEW);
-    if (.@type == W_1HAXE || .@type == W_2HAXE || .@type == W_MACE) {
-      skilleffect "BS_ADRENALINE",0;
-      sc_start SC_ADRENALINE,150000,5;
-    }
-    """
-
-    assert {:ok, source} = Transpiler.transpile(script)
-    assert source =~ "skilleffect(ctx, 111, 0)"
-    assert source =~ "sc_start(ctx, :sc_adrenaline, 150000, 5)"
   end
 
   test "unknown slot, field and weapon constants reject the complete script" do

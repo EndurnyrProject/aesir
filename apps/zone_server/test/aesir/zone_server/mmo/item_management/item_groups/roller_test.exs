@@ -1,12 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.RollerTest do
   use ExUnit.Case, async: false
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Entry
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Group
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.ItemGroupPool
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Roller
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.SubGroup
 
   setup do
     previous_catalog = :persistent_term.get(ItemGroups, :missing)
@@ -21,27 +20,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.RollerTest do
     :ok
   end
 
-  test "roll_full includes every entry from all subgroups" do
+  test "roll_full grants every all entry and one weighted grant from each random subgroup" do
     group =
-      group(:all_group, [%SubGroup{number: 0, algorithm: :all, entries: [entry(501), entry(502)]}])
-
-    assert group |> Roller.roll_full(fn _max -> 1 end) |> Enum.map(& &1.item_id) == [501, 502]
-  end
-
-  test "roll_full includes one weighted grant from each random subgroup" do
-    group =
-      group(:full_random_group, [
-        %SubGroup{number: 0, algorithm: :all, entries: [entry(701)]},
-        %SubGroup{
-          number: 1,
-          algorithm: :random,
-          entries: [entry(702, rate: 1), entry(703, rate: 2)]
-        },
-        %SubGroup{number: 2, algorithm: :random, entries: [entry(704, rate: 1)]}
-      ])
+      build(:item_group,
+        subgroups: [
+          build(:item_subgroup, number: 0, algorithm: :all, entries: [entry(701), entry(705)]),
+          build(:item_subgroup,
+            number: 1,
+            algorithm: :random,
+            entries: [entry(702, rate: 1), entry(703, rate: 2)]
+          ),
+          build(:item_subgroup, number: 2, algorithm: :random, entries: [entry(704, rate: 1)])
+        ]
+      )
 
     assert group |> Roller.roll_full(fn max -> max end) |> Enum.map(& &1.item_id) == [
              701,
+             705,
              703,
              704
            ]
@@ -49,13 +44,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.RollerTest do
 
   test "pick_grant picks one entry and uses the requested quantity" do
     group =
-      group(:pick_quantity, [
-        %SubGroup{
-          number: 1,
-          algorithm: :random,
-          entries: [entry(901, rate: 1), entry(902, rate: 1)]
-        }
-      ])
+      build(:item_group,
+        subgroups: [
+          build(:item_subgroup,
+            number: 1,
+            algorithm: :random,
+            entries: [entry(901, rate: 1), entry(902, rate: 1)]
+          )
+        ]
+      )
 
     assert %{item_id: item_id, amount: 5, identify?: false, refine: 0, bound: nil} =
              Roller.pick_grant(group, 1, 5, rng: fn _max -> 1 end)
@@ -64,10 +61,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.RollerTest do
   end
 
   test "pick_grant carries the identify request" do
-    group =
-      group(:pick_identify, [
-        %SubGroup{number: 1, algorithm: :random, entries: [entry(904, rate: 1)]}
-      ])
+    subgroup =
+      build(:item_subgroup, number: 1, algorithm: :random, entries: [entry(904, rate: 1)])
+
+    group = build(:item_group, subgroups: [subgroup])
 
     assert %{item_id: 904, identify?: true} =
              Roller.pick_grant(group, 1, 1, identify?: true, rng: fn _max -> 1 end)
@@ -75,18 +72,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.RollerTest do
 
   test "pick_grant with quantity zero uses the entry's own amount" do
     group =
-      group(:pick_default_amount, [
-        %SubGroup{number: 2, algorithm: :all, entries: [entry(903, amount: 7)]}
-      ])
+      build(:item_group,
+        subgroups: [
+          build(:item_subgroup, number: 2, algorithm: :all, entries: [entry(903, amount: 7)])
+        ]
+      )
 
     assert %{item_id: 903, amount: 7} = Roller.pick_grant(group, 2, 0, rng: fn _max -> 1 end)
   end
 
   test "pick_grant consumes one shared-pool copy" do
-    group =
-      group(:pick_pool, [
-        %SubGroup{number: 5, algorithm: :shared_pool, entries: [entry(850, rate: 1)]}
-      ])
+    subgroup =
+      build(:item_subgroup, number: 5, algorithm: :shared_pool, entries: [entry(850, rate: 1)])
+
+    group = build(:item_group, subgroups: [subgroup])
 
     :persistent_term.put(ItemGroups, %{group.key => group})
 
@@ -99,20 +98,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.RollerTest do
   end
 
   test "pick_grant returns nil for a missing subgroup" do
-    group =
-      group(:pick_missing, [%SubGroup{number: 1, algorithm: :random, entries: [entry(501)]}])
+    subgroup = build(:item_subgroup, number: 1, algorithm: :random, entries: [entry(501)])
+    group = build(:item_group, subgroups: [subgroup])
 
     assert Roller.pick_grant(group, 9, 1) == nil
   end
 
   test "pick_id is algorithm-aware and consumes a shared-pool copy" do
-    subgroup = %SubGroup{
-      number: 3,
-      algorithm: :shared_pool,
-      entries: [entry(801, rate: 2)]
-    }
+    subgroup =
+      build(:item_subgroup, number: 3, algorithm: :shared_pool, entries: [entry(801, rate: 2)])
 
-    group = group(:depleting_pick, [subgroup])
+    group = build(:item_group, subgroups: [subgroup])
+
     :persistent_term.put(ItemGroups, %{group.key => group})
 
     assert Roller.pick_id(group, 3) == {:ok, 801}
@@ -124,26 +121,26 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.RollerTest do
 
   test "pick_id uses the random subgroup weights" do
     group =
-      group(:weighted_pick, [
-        %SubGroup{
-          number: 1,
-          algorithm: :random,
-          entries: [entry(601, rate: 1), entry(602, rate: 3)]
-        }
-      ])
+      build(:item_group,
+        subgroups: [
+          build(:item_subgroup,
+            number: 1,
+            algorithm: :random,
+            entries: [entry(601, rate: 1), entry(602, rate: 3)]
+          )
+        ]
+      )
 
     assert Roller.pick_id(group, 1, fn _max -> 1 end) == {:ok, 601}
     assert Roller.pick_id(group, 1, fn max -> max end) == {:ok, 602}
   end
 
   test "roll_full draws one grant from a shared-pool subgroup" do
-    subgroup = %SubGroup{
-      number: 5,
-      algorithm: :shared_pool,
-      entries: [entry(850, rate: 1)]
-    }
+    subgroup =
+      build(:item_subgroup, number: 5, algorithm: :shared_pool, entries: [entry(850, rate: 1)])
 
-    group = group(:roller_full_shared_pool, [subgroup])
+    group = build(:item_group, subgroups: [subgroup])
+
     :persistent_term.put(ItemGroups, %{group.key => group})
 
     assert [%{item_id: 850, drawn: {5, [850]}}] = Roller.roll_full(group, fn _max -> 1 end)
@@ -153,16 +150,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.RollerTest do
   end
 
   test "roll_n delegates shared-pool draws, refills, and marks each copy for rollback" do
-    subgroup = %SubGroup{
-      number: 4,
-      algorithm: :shared_pool,
-      entries: [
-        entry(901, rate: 1, refine_min: 2, refine_max: 4, grade_min: 1, grade_max: 3),
-        entry(902, rate: 2, refine_min: 2, refine_max: 4, grade_min: 1, grade_max: 3)
-      ]
-    }
+    ranges = [refine_min: 2, refine_max: 4, grade_min: 1, grade_max: 3]
 
-    group = group(:roller_shared_pool, [subgroup])
+    subgroup =
+      build(:item_subgroup,
+        number: 4,
+        algorithm: :shared_pool,
+        entries: [entry(901, [rate: 1] ++ ranges), entry(902, [rate: 2] ++ ranges)]
+      )
+
+    group = build(:item_group, subgroups: [subgroup])
     :persistent_term.put(ItemGroups, %{group.key => group})
 
     grants = Roller.roll_n(group, 4, 5, fn max -> max end)
@@ -177,13 +174,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.RollerTest do
   end
 
   test "roll_n samples an all subgroup when a count is requested" do
-    subgroup = %SubGroup{
-      number: 6,
-      algorithm: :all,
-      entries: [entry(951, rate: 1), entry(952, rate: 2)]
-    }
+    subgroup =
+      build(:item_subgroup,
+        number: 6,
+        algorithm: :all,
+        entries: [entry(951, rate: 1), entry(952, rate: 2)]
+      )
 
-    grants = Roller.roll_n(group(:sampled_all, [subgroup]), 6, 3, fn max -> max end)
+    grants = Roller.roll_n(build(:item_group, subgroups: [subgroup]), 6, 3, fn max -> max end)
 
     assert Enum.map(grants, & &1.item_id) == [952, 952, 952]
   end
@@ -206,9 +204,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.RollerTest do
         stacked?: false
       )
 
-    subgroup = %SubGroup{number: 7, algorithm: :random, entries: [selected]}
+    subgroup = build(:item_subgroup, number: 7, algorithm: :random, entries: [selected])
+    group = build(:item_group, subgroups: [subgroup])
 
-    assert [grant] = Roller.roll_n(group(:attribute_group, [subgroup]), 7, 1, fn max -> max end)
+    assert [grant] = Roller.roll_n(group, 7, 1, fn max -> max end)
 
     assert grant == %{
              item_id: 960,
@@ -231,19 +230,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.RollerTest do
            }
   end
 
-  test "roll_n makes weighted picks from a random subgroup" do
-    subgroup = %SubGroup{
-      number: 1,
-      algorithm: :random,
-      entries: [entry(601, rate: 1), entry(602, rate: 3)]
-    }
-
-    group = group(:weighted_group, [subgroup])
-
-    assert [%{item_id: 601}] = Roller.roll_n(group, 1, 1, fn _max -> 1 end)
-    assert [%{item_id: 602}] = Roller.roll_n(group, 1, 1, fn max -> max end)
-  end
-
-  defp group(key, subgroups), do: %Group{key: key, subgroups: subgroups}
-  defp entry(item_id, attrs \\ []), do: struct!(Entry, Keyword.put(attrs, :item_id, item_id))
+  defp entry(item_id, attrs \\ []),
+    do: build(:item_group_entry, Keyword.put(attrs, :item_id, item_id))
 end

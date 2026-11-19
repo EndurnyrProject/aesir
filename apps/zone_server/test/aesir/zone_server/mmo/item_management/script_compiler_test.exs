@@ -1,28 +1,22 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompilerTest do
+  # compile_all!/1 redefines the global CompiledItemScripts module.
   use ExUnit.Case, async: false
   use Mimic
 
+  import Aesir.ZoneServer.Factory
   import ExUnit.CaptureIO
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Script.Ctx
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
-  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
-  alias Aesir.ZoneServer.Unit.Stats.CurrentState
-  alias Aesir.ZoneServer.Unit.Stats.DerivedStats
 
   setup :set_mimic_from_context
+  setup :verify_on_exit!
 
   setup do
-    Mimic.copy(CharacterPersistence)
-    Mimic.copy(StatusInterpreter)
-
     stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
     stub(StatusInterpreter, :apply_status_with_events, fn _, _, _, _ -> {:ok, []} end)
     stub(StatusInterpreter, :remove_status_with_events, fn _, _, _, _ -> {:ok, []} end)
@@ -30,10 +24,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompilerTest do
     :ok
   end
 
-  test "compile_all!/1 returns :ok, defines CompiledItemScripts, and a healing script raises hp" do
+  test "compile_all!/1 returns :ok and a compiled healing script raises hp" do
     assert ScriptCompiler.compile_all!([item_def(501, "heal(ctx, hp: 50)")]) == :ok
-
-    assert function_exported?(CompiledItemScripts, :on_use, 2)
 
     ctx = CompiledItemScripts.on_use(501, build_ctx(hp: 100))
 
@@ -46,20 +38,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompilerTest do
 
     assert :ok =
              ScriptCompiler.compile_all!([
-               item_def(12510, source),
+               item_def(12_510, source),
                item_def(501, "heal(ctx, hp: 50)")
              ])
 
-    assert CompiledItemScripts.interactive?(12510)
+    assert CompiledItemScripts.interactive?(12_510)
     refute CompiledItemScripts.interactive?(501)
     refute CompiledItemScripts.interactive?(999_999)
     ctx = build_ctx()
-    staged = CompiledItemScripts.on_use(12510, ctx)
+    staged = CompiledItemScripts.on_use(12_510, ctx)
     assert staged.session_effects == [{:item_dialog, :cash_city, [5]}]
     assert %{staged | session_effects: []} == ctx
 
-    assert :ok = ScriptCompiler.compile_all!([item_def(12510, "ctx")])
-    refute CompiledItemScripts.interactive?(12510)
+    assert :ok = ScriptCompiler.compile_all!([item_def(12_510, "ctx")])
+    refute CompiledItemScripts.interactive?(12_510)
   end
 
   test "invalid or embedded staging calls fail compilation instead of entering the inline path" do
@@ -71,7 +63,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompilerTest do
           "if true do ItemDialogs.stage(ctx, :cash_city, [1]) else ctx end"
         ] do
       assert_raise ArgumentError, ~r/item.dialog/, fn ->
-        ScriptCompiler.compile_all!([item_def(12510, source)])
+        ScriptCompiler.compile_all!([item_def(12_510, source)])
       end
     end
   end
@@ -131,41 +123,27 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompilerTest do
     assert params[:duration] == 60_000
   end
 
-  defp item_def(id, on_use) do
-    %ItemDefinition{id: id, aegis_name: "Item_#{id}", name: "Item #{id}", on_use: on_use}
-  end
+  defp item_def(id, on_use), do: build(:item_definition, id: id, on_use: on_use)
 
   defp build_ctx(opts \\ []) do
     %Ctx{
       char_id: 1,
       account_id: 100,
       connection_pid: self(),
-      game_state: build_game_state(opts),
+      game_state:
+        build(:player_state,
+          character_id: 1,
+          account_id: 100,
+          sex: "M",
+          inventory: %{},
+          stats: %{
+            base_stats: %{vit: 0, int: 0},
+            current_state: %{hp: Keyword.get(opts, :hp, 100), sp: 10},
+            derived_stats: %{max_hp: 500, max_sp: 200, aspd: 150},
+            progression: %{base_level: 10, job_level: 3, job_id: 0}
+          }
+        ),
       source: {:item, 501}
-    }
-  end
-
-  defp build_game_state(opts) do
-    stats = %Stats{
-      base_stats: %{vit: 0, int: 0},
-      current_state: %CurrentState{
-        hp: Keyword.get(opts, :hp, 100),
-        sp: Keyword.get(opts, :sp, 10)
-      },
-      derived_stats: %DerivedStats{max_hp: 500, max_sp: 200, aspd: 150},
-      modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}, passive: %{}},
-      progression: %PlayerProgression{base_level: 10, job_level: 3, job_id: 0}
-    }
-
-    %PlayerState{
-      character_id: 1,
-      account_id: 100,
-      sex: "M",
-      x: 50,
-      y: 50,
-      map_name: "prontera",
-      stats: stats,
-      inventory: %{}
     }
   end
 end

@@ -2,23 +2,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EligibilityTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.Eligibility
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Unit.Inventory
 
-  setup :set_mimic_private
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
-  setup do
-    Mimic.copy(ItemManagement)
-    :ok
-  end
-
   test "invalid identity never becomes unrestricted access" do
-    item = definition()
+    item = build(:item_definition)
 
     for context <- [
           %{},
@@ -32,13 +28,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EligibilityTest do
 
   test "admits an item when level, gender, family, and class all match" do
     item =
-      definition(%{
+      build(:item_definition,
         jobs: [:swordman],
         classes: [:normal],
         gender: :male,
         equip_level_min: 10,
         equip_level_max: 50
-      })
+      )
 
     assert :ok =
              Eligibility.check(
@@ -52,29 +48,29 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EligibilityTest do
     swordman = %{job_id: job_id(:swordman), base_level: 25, sex: "M"}
 
     assert {:error, :level_restricted} =
-             Eligibility.check(definition(%{equip_level_min: 30}), swordman, :renewal)
+             Eligibility.check(build(:item_definition, equip_level_min: 30), swordman, :renewal)
 
     assert {:error, :level_restricted} =
-             Eligibility.check(definition(%{equip_level_max: 20}), swordman, :renewal)
+             Eligibility.check(build(:item_definition, equip_level_max: 20), swordman, :renewal)
 
     assert {:error, :gender_restricted} =
-             Eligibility.check(definition(%{gender: :female}), swordman, :renewal)
+             Eligibility.check(build(:item_definition, gender: :female), swordman, :renewal)
 
     assert {:error, :job_restricted} =
-             Eligibility.check(definition(%{jobs: [:mage]}), swordman, :renewal)
+             Eligibility.check(build(:item_definition, jobs: [:mage]), swordman, :renewal)
 
     assert {:error, :class_restricted} =
-             Eligibility.check(definition(%{classes: [:upper]}), swordman, :renewal)
+             Eligibility.check(build(:item_definition, classes: [:upper]), swordman, :renewal)
   end
 
   test "checks restrictions in level, gender, family, then class order" do
     item =
-      definition(%{
+      build(:item_definition,
         equip_level_min: 99,
         gender: :female,
         jobs: [:mage],
         classes: [:upper]
-      })
+      )
 
     context = %{job_id: job_id(:swordman), base_level: 1, sex: "M"}
     assert {:error, :level_restricted} = Eligibility.check(item, context, :renewal)
@@ -84,22 +80,26 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EligibilityTest do
     context = %{job_id: job_id(:swordman), base_level: 1, sex: "M"}
 
     assert {:error, :job_restricted} =
-             Eligibility.check(definition(%{jobs: []}), context, :renewal)
+             Eligibility.check(build(:item_definition, jobs: []), context, :renewal)
 
     assert {:error, :class_restricted} =
-             Eligibility.check(definition(%{jobs: :all, classes: []}), context, :renewal)
+             Eligibility.check(
+               build(:item_definition, jobs: :all, classes: []),
+               context,
+               :renewal
+             )
 
-    assert :ok = Eligibility.check(definition(%{jobs: :all}), context, :renewal)
+    assert :ok = Eligibility.check(build(:item_definition, jobs: :all), context, :renewal)
   end
 
   describe "ineligible_equipment/3" do
     test "returns sorted indices for permission failures only" do
       definitions = %{
-        10 => definition(),
-        11 => definition(%{jobs: [:mage]}),
-        12 => definition(%{classes: [:upper]}),
-        13 => definition(%{gender: :female}),
-        14 => definition(%{equip_level_min: 99})
+        10 => build(:item_definition),
+        11 => build(:item_definition, jobs: [:mage]),
+        12 => build(:item_definition, classes: [:upper]),
+        13 => build(:item_definition, gender: :female),
+        14 => build(:item_definition, equip_level_min: 99)
       }
 
       stub(ItemManagement, :get_item_by_id, fn id -> {:ok, Map.fetch!(definitions, id)} end)
@@ -139,13 +139,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EligibilityTest do
   end
 
   defp inventory_item(nameid, equip), do: %InventoryItem{nameid: nameid, amount: 1, equip: equip}
-
-  defp definition(attrs \\ %{}) do
-    struct(
-      ItemDefinition,
-      Map.merge(%{id: 1, aegis_name: "Test", name: "Test"}, attrs)
-    )
-  end
 
   defp job_id(name) do
     {:ok, id} = AvailableJobs.job_name_to_id(name)

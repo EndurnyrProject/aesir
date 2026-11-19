@@ -17,21 +17,22 @@ defmodule Aesir.ZoneServer.Integration.ItemDropTest do
 
   @moduletag :capture_log
 
-  alias Aesir.Commons.Models.Account
-  alias Aesir.Commons.Models.Character
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Factory
   alias Aesir.Net.ItemAdded
   alias Aesir.Net.ItemOnGround
   alias Aesir.Net.ItemVanished
   alias Aesir.Net.PickupItemRequest
   alias Aesir.Net.PickupResult
-  alias Aesir.Repo
+  alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Map.MapManager
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
   alias Aesir.ZoneServer.Pathfinding
+  alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Phoenix.PubSub
 
   @map "prontera"
@@ -39,14 +40,9 @@ defmodule Aesir.ZoneServer.Integration.ItemDropTest do
   @potion 501
   @ttl_ms 60_000
 
-  setup do
-    {:ok, coordinator} = ensure_coordinator(@map)
-    %{coordinator: coordinator}
-  end
-
   describe "drop -> see -> pick up" do
     test "killing a mob drops an item the player sees and can pick up" do
-      player = start_looter(name: "Looter", position: {150, 150})
+      player = start_looter(position: {150, 150})
 
       # Kill a mob right under the player's feet with a guaranteed Red Potion
       # drop. The level matches the killer's so the level penalty is a no-op.
@@ -79,12 +75,11 @@ defmodule Aesir.ZoneServer.Integration.ItemDropTest do
   describe "move-to-pickup" do
     test "a player more than 2 cells from a reachable item walks to it and picks it up" do
       origin = nearest_walkable({150, 150})
-      player = start_looter(name: "Walker", position: origin)
+      player = start_looter(position: origin)
 
       {item_x, item_y} = reachable_target(origin, 3)
       item = GroundItem.new(@potion, 1, item_x, item_y)
       GroundItemStore.put(@map, item)
-      on_exit(fn -> GroundItemStore.claim(@map, item.id) end)
       flush_packets()
 
       # The item is out of pickup range, so the request walks the player to it
@@ -104,26 +99,22 @@ defmodule Aesir.ZoneServer.Integration.ItemDropTest do
 
   describe "expiry" do
     test "an item past its lifetime is swept and a nearby player sees it vanish" do
-      player = start_looter(name: "Watcher", position: {150, 150})
+      player = start_looter(position: {150, 150})
 
-      stale = %GroundItem{
-        id: System.unique_integer([:positive, :monotonic]),
-        nameid: @potion,
-        amount: 1,
-        x: 150,
-        y: 150,
-        sub_x: 3,
-        sub_y: 3,
-        identified: true,
-        dropped_at: System.monotonic_time(:millisecond) - (@ttl_ms + 1_000)
-      }
+      stale =
+        build(:ground_item,
+          nameid: @potion,
+          x: 150,
+          y: 150,
+          dropped_at: System.monotonic_time(:millisecond) - (@ttl_ms + 1_000)
+        )
 
       GroundItemStore.put(@map, stale)
       flush_packets()
 
       # Drive the coordinator's real expiry sweep deterministically instead of
       # waiting out the 60 s lifetime.
-      send(player.coordinator, :expire_ground_items)
+      send(ProcessTree.get({Coordinator, @map}), :expire_ground_items)
 
       assert_receive {:packet_sent, %ItemVanished{ground_id: id, reason: :EXPIRED}, _}, 1_000
       assert id == stale.id
@@ -135,12 +126,11 @@ defmodule Aesir.ZoneServer.Integration.ItemDropTest do
     test "spawning into range of a lying item sends a non-falling ItemOnGround" do
       item = GroundItem.new(@potion, 1, 150, 150)
       GroundItemStore.put(@map, item)
-      on_exit(fn -> GroundItemStore.claim(@map, item.id) end)
 
       # The item is already on the ground; the player walks up (spawns into
       # range), so the visibility diff sends it as a non-falling item. Keep the
       # spawn packets (no flush) so the discovery packet survives.
-      player = start_looter(name: "Stroller", position: {150, 150}, flush: false)
+      player = start_looter(position: {150, 150}, flush: false)
 
       assert_receive {:packet_sent,
                       %ItemOnGround{ground_id: id, nameid: @potion, is_falling: false}, _},
@@ -239,11 +229,9 @@ defmodule Aesir.ZoneServer.Integration.ItemDropTest do
   end
 
   defp start_looter(opts) do
-    character = insert_character(Keyword.fetch!(opts, :name))
-
     session =
       start_player_session(
-        character: character,
+        character: Factory.insert(:character),
         map_name: @map,
         position: Keyword.fetch!(opts, :position)
       )
@@ -252,48 +240,6 @@ defmodule Aesir.ZoneServer.Integration.ItemDropTest do
     if Keyword.get(opts, :flush, true), do: flush_packets()
 
     session
-    |> Map.put(:character, character)
-    |> Map.put(:coordinator, coordinator_pid())
-  end
-
-  defp insert_character(prefix) do
-    uniq = System.unique_integer([:positive])
-
-    {:ok, account} =
-      %Account{}
-      |> Account.changeset(%{
-        username: "#{prefix}#{uniq}",
-        userid: "#{prefix}#{uniq}",
-        user_pass: "password",
-        email: "#{prefix}#{uniq}@aesir.test"
-      })
-      |> Repo.insert()
-
-    {:ok, character} =
-      %Character{}
-      |> Character.changeset(%{
-        account_id: account.id,
-        char_num: 0,
-        name: "#{prefix}#{uniq}",
-        class: 0,
-        base_level: 50,
-        job_level: 50,
-        str: 10,
-        agi: 10,
-        vit: 10,
-        int: 10,
-        dex: 10,
-        luk: 10,
-        last_map: @map,
-        last_x: 150,
-        last_y: 150,
-        save_map: @map,
-        save_x: 150,
-        save_y: 150
-      })
-      |> Repo.insert()
-
-    character
   end
 
   defp held(inventory, nameid) do
@@ -304,34 +250,6 @@ defmodule Aesir.ZoneServer.Integration.ItemDropTest do
   end
 
   defp load_inventory(char_id) do
-    Aesir.ZoneServer.Unit.Inventory.Persistence.load_inventory(char_id)
-  end
-
-  defp ensure_coordinator(map_name) do
-    {:ok, _pid} = ensure_coordinator(map_name, 40)
-  end
-
-  defp ensure_coordinator(map_name, 0), do: MapManager.get_coordinator(map_name)
-
-  defp ensure_coordinator(map_name, retries) do
-    case MapManager.get_coordinator(map_name) do
-      {:ok, pid} ->
-        {:ok, pid}
-
-      _ ->
-        Process.sleep(50)
-        ensure_coordinator(map_name, retries - 1)
-    end
-  end
-
-  defp coordinator_pid do
-    case ProcessTree.get({Aesir.ZoneServer.Map.Coordinator, @map}) do
-      nil ->
-        {:ok, pid} = MapManager.get_coordinator(@map)
-        pid
-
-      pid ->
-        pid
-    end
+    Persistence.load_inventory(char_id)
   end
 end

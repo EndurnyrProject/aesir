@@ -26,6 +26,14 @@ defmodule Aesir.ZoneServer.Factory do
   alias Aesir.ZoneServer.Mmo.Homunculus.Ai.HomunculusSnapshot
   alias Aesir.ZoneServer.Mmo.Homunculus.Ai.OwnerSnapshot
   alias Aesir.ZoneServer.Mmo.Homunculus.Ai.SkillSnapshot
+  alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Entry, as: ItemGroupEntry
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Group, as: ItemGroup
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.SubGroup
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes.Recipe
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Entry, as: RandomOptionEntry
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Group, as: RandomOptionGroup
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
@@ -392,6 +400,86 @@ defmodule Aesir.ZoneServer.Factory do
   @spec ai_skill_snapshot_factory() :: SkillSnapshot.t()
   def ai_skill_snapshot_factory do
     %SkillSnapshot{id: 8001, level: 1, target: :self, sp_cost: 0, cooldown_ready?: true}
+  end
+
+  @doc """
+  A plain `:etc` item definition named after its id. The id is sequenced from
+  9,000,001, beyond every item-db id, so it never resolves to a real item; pass
+  `id:` when the test needs a catalog item.
+  """
+  @spec item_definition_factory(map()) :: ItemDefinition.t()
+  def item_definition_factory(attrs) do
+    {id, attrs} =
+      Map.pop_lazy(attrs, :id, fn -> sequence(:item_definition_id, & &1, start_at: 9_000_001) end)
+
+    %ItemDefinition{id: id, aegis_name: "Item_#{id}", name: "Item #{id}"}
+    |> merge_attributes(attrs)
+    |> evaluate_lazy_attributes()
+  end
+
+  @doc """
+  One identified, public, plain Red Potion (501) on the cell `{100, 100}` at
+  sub-cell `{3, 3}`, with a sequenced ground id, dropped at monotonic time 0.
+  """
+  @spec ground_item_factory() :: GroundItem.t()
+  def ground_item_factory do
+    %GroundItem{
+      id: sequence(:ground_item_id, & &1, start_at: 1),
+      nameid: 501,
+      amount: 1,
+      x: 100,
+      y: 100,
+      sub_x: 3,
+      sub_y: 3,
+      identified: true,
+      dropped_at: 0
+    }
+  end
+
+  @doc "An item-group entry granting one Red Potion (501) at rate 0; set `rate:` to weight it."
+  @spec item_group_entry_factory() :: ItemGroupEntry.t()
+  def item_group_entry_factory, do: %ItemGroupEntry{item_id: 501}
+
+  @doc "A `:random` subgroup 1 with no entries."
+  @spec item_subgroup_factory() :: SubGroup.t()
+  def item_subgroup_factory, do: %SubGroup{number: 1, algorithm: :random, entries: []}
+
+  @doc "An item group with a sequenced key and no subgroups."
+  @spec item_group_factory() :: ItemGroup.t()
+  def item_group_factory do
+    %ItemGroup{key: sequence(:item_group_key, &:"test_group_#{&1}"), subgroups: []}
+  end
+
+  @doc """
+  A random-option candidate for option 1 with the fixed value 1, parameter 0 and a
+  10,000 (always) chance.
+  """
+  @spec random_option_entry_factory() :: RandomOptionEntry.t()
+  def random_option_entry_factory do
+    %RandomOptionEntry{option_id: 1, min: 1, max: 1, param: 0, chance: 10_000}
+  end
+
+  @doc "A random option group with a sequenced id, no fixed slots and no random picks."
+  @spec random_option_group_factory() :: RandomOptionGroup.t()
+  def random_option_group_factory do
+    id = sequence(:random_option_group_id, & &1, start_at: 1)
+    %RandomOptionGroup{id: id, name: "Group #{id}", slots: [], max_random: 0, random: []}
+  end
+
+  @doc """
+  A level 1 Pharmacy (228) recipe for a Red Potion (501), item level 22, made from
+  one Jellopy (1002), with a sequenced recipe id.
+  """
+  @spec production_recipe_factory() :: Recipe.t()
+  def production_recipe_factory do
+    %Recipe{
+      id: sequence(:production_recipe_id, & &1, start_at: 1),
+      product_id: 501,
+      item_level: 22,
+      skill_id: 228,
+      skill_level: 1,
+      materials: [%{item_id: 1002, amount: 1}]
+    }
   end
 
   defp combatant(attrs) do

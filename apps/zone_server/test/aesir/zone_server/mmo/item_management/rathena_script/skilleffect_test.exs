@@ -1,5 +1,5 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.SkilleffectTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.Importer
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition

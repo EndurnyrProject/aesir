@@ -14,9 +14,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.ItemGroupPool do
 
   @idle_timeout :timer.minutes(5)
 
+  @typep counts() :: %{pos_integer() => non_neg_integer()}
+
   @type state() :: %{
           catalog: Group.t(),
-          subs: %{non_neg_integer() => %{pos_integer() => non_neg_integer()}}
+          subs: %{non_neg_integer() => counts()}
         }
 
   @doc "Starts the pool owner for a group if necessary and returns its pid."
@@ -97,14 +99,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.ItemGroupPool do
   defp via_name(key),
     do: {:via, Horde.Registry, {Cluster.registry(), {:item_group_pool, key}}}
 
-  @spec seed_subgroups(Group.t()) :: map()
+  @spec seed_subgroups(Group.t()) :: %{non_neg_integer() => counts()}
   defp seed_subgroups(catalog) do
     catalog.subgroups
     |> Enum.filter(&(&1.algorithm == :shared_pool))
     |> Map.new(&{&1.number, seed_counts(&1)})
   end
 
-  @spec refill(Group.t(), non_neg_integer()) :: map()
+  @spec refill(Group.t(), non_neg_integer()) :: counts()
   defp refill(catalog, sub) do
     case Enum.find(catalog.subgroups, &(&1.number == sub and &1.algorithm == :shared_pool)) do
       %SubGroup{} = subgroup -> seed_counts(subgroup)
@@ -112,7 +114,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.ItemGroupPool do
     end
   end
 
-  @spec seed_counts(SubGroup.t()) :: map()
+  @spec seed_counts(SubGroup.t()) :: counts()
   defp seed_counts(subgroup) do
     Enum.reduce(subgroup.entries, %{}, fn entry, counts ->
       if entry.rate > 0 do
@@ -123,8 +125,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.ItemGroupPool do
     end)
   end
 
-  @spec take_weighted(map(), map(), pos_integer(), [pos_integer()]) ::
-          {:ok, [pos_integer()], map()} | {:error, :empty}
+  @spec take_weighted(counts(), counts(), non_neg_integer(), [pos_integer()]) ::
+          {:ok, [pos_integer()], counts()} | {:error, :empty}
   defp take_weighted(counts, refill, count, picked \\ [])
   defp take_weighted(counts, _refill, 0, picked), do: {:ok, Enum.reverse(picked), counts}
 
@@ -142,7 +144,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.ItemGroupPool do
     take_weighted(remaining, refill, count - 1, [item_id | picked])
   end
 
-  @spec weighted_pick(map(), pos_integer()) :: pos_integer()
+  @spec weighted_pick(counts(), pos_integer()) :: pos_integer()
   defp weighted_pick(counts, roll) do
     Enum.reduce_while(counts, roll, fn {item_id, copies}, remaining ->
       if remaining <= copies do
@@ -153,7 +155,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.ItemGroupPool do
     end)
   end
 
-  @spec decrement(map(), pos_integer()) :: map()
+  @spec decrement(counts(), pos_integer()) :: counts()
   defp decrement(counts, item_id) do
     case counts[item_id] do
       1 -> Map.delete(counts, item_id)
@@ -161,7 +163,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.ItemGroupPool do
     end
   end
 
-  @spec return_copies(map(), [pos_integer()]) :: map()
+  @spec return_copies(counts(), [pos_integer()]) :: counts()
   defp return_copies(counts, item_ids) do
     Enum.reduce(item_ids, counts, &Map.update(&2, &1, 1, fn copies -> copies + 1 end))
   end

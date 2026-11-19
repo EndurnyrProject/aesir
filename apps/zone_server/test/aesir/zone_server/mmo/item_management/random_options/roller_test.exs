@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.RollerTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Entry
-  alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Group
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Roller
 
   # Each roll takes the next scripted value; `{n, v}` also checks the roll's range.
@@ -18,14 +18,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.RollerTest do
     end
   end
 
-  defp entry(id, chance, min \\ 1, max \\ 1, param \\ 0),
-    do: %Entry{option_id: id, min: min, max: max, param: param, chance: chance}
-
-  defp group(slots, max_random \\ 0, random \\ []),
-    do: %Group{id: 1, name: "G", slots: slots, max_random: max_random, random: random}
+  defp entry(id, chance),
+    do: build(:random_option_entry, option_id: id, chance: chance, min: 1, max: 1, param: 0)
 
   test "a fixed slot picks uniformly until a chance roll passes, then rolls the value inclusively" do
-    slot = [entry(3, 2_000, 1, 5, 7), entry(4, 9_000)]
+    slot = [
+      build(:random_option_entry, option_id: 3, chance: 2_000, min: 1, max: 5, param: 7),
+      entry(4, 9_000)
+    ]
 
     rng =
       scripted([
@@ -38,7 +38,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.RollerTest do
         {5, 5}
       ])
 
-    assert Roller.roll(group([slot]), rng) == [%{id: 3, value: 5, param: 7}]
+    assert Roller.roll(build(:random_option_group, slots: [slot]), rng) == [
+             %{id: 3, value: 5, param: 7}
+           ]
   end
 
   test "a fixed slot whose size * 3 picks all fail takes one more pick without a chance roll" do
@@ -47,7 +49,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.RollerTest do
 
     rng = scripted(failed ++ [{2, 2}, {1, 1}])
 
-    assert Roller.roll(group([slot]), rng) == [%{id: 4, value: 1, param: 0}]
+    assert Roller.roll(build(:random_option_group, slots: [slot]), rng) == [
+             %{id: 4, value: 1, param: 0}
+           ]
   end
 
   test "random picks fill only the empty positions below MaxRandom, each chance-gated" do
@@ -68,7 +72,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.RollerTest do
         {1, 1}
       ])
 
-    assert Roller.roll(group([fixed], 3, random), rng) == [
+    assert Roller.roll(
+             build(:random_option_group, slots: [fixed], max_random: 3, random: random),
+             rng
+           ) == [
              %{id: 3, value: 1, param: 0},
              %{id: 9, value: 1, param: 0}
            ]
@@ -78,7 +85,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.RollerTest do
     fixed = [[entry(3, 10_000)], [entry(4, 10_000)]]
     rng = scripted([{1, 1}, {10_000, 1}, {1, 1}, {1, 1}, {10_000, 1}, {1, 1}])
 
-    assert Roller.roll(group(fixed, 2, [entry(8, 10_000)]), rng) == [
+    assert Roller.roll(
+             build(:random_option_group, slots: fixed, max_random: 2, random: [entry(8, 10_000)]),
+             rng
+           ) == [
              %{id: 3, value: 1, param: 0},
              %{id: 4, value: 1, param: 0}
            ]

@@ -18,14 +18,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ArrowCrafting do
   defmodule Recipe do
     @moduledoc false
 
-    @enforce_keys [:source_id, :makes]
-    defstruct [:source_id, :makes]
+    use TypedStruct
 
     @typedoc "One crafting recipe: 1 source item -> the produced item stacks."
-    @type t() :: %__MODULE__{
-            source_id: integer(),
-            makes: [%{item_id: integer(), amount: pos_integer()}]
-          }
+    typedstruct enforce: true do
+      field :source_id, integer()
+      field :makes, [%{item_id: integer(), amount: pos_integer()}]
+    end
   end
 
   @doc "Every recipe, in source-id order."

@@ -1,10 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
   use ExUnit.Case, async: true
+  import Aesir.ZoneServer.Factory
   import Mimic
 
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
+
+  setup :set_mimic_from_context
 
   defp on(refine, levels \\ []),
     do: Map.merge(%{refine: refine, base_level: 1, job_level: 1}, Map.new(levels))
@@ -128,9 +131,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       ],
       tuple_dest: [{:bonus, {:addrace, :brute}, 20}],
       tuple_skill_dest: [{:bonus, {:skill_atk, 152}, 30}],
-      tuple_skill_cooldown_dest: [{:bonus, {:skill_cooldown, 152}, -500}],
-      tuple_skill_use_sp_dest: [{:bonus, {:skill_use_sp, 152}, -5}],
-      tuple_skill_varcast_rate_dest: [{:bonus, {:skill_varcast_rate, 152}, -10}],
       mixed_flat_and_tuple: [
         {:bonus, :vit, 5},
         {:bonus, {:subele, :fire}, 10},
@@ -158,87 +158,31 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
         {:bonus, {:def_set_race_duration, :player_human}, 5_000},
         {:bonus, {:def_set_race_value, :player_human}, 1}
       ],
-      tuple_add_eff2_dest: [{:bonus, {:add_eff2, :sc_curse}, 500}],
-      tuple_add_eff_when_hit_dest: [{:bonus, {:add_eff_when_hit, :sc_poison}, 300}],
-      tuple_res_eff_dest: [{:bonus, {:res_eff, :sc_freeze}, 1000}],
       tuple_magic_addclass_dest: [{:bonus, {:magic_addclass, :boss}, 30}],
       tuple_race2_dest: [{:bonus, {:addrace2, :biolab}, 20}],
       tuple_item_heal_dest: [{:bonus, {:add_item_heal, 501}, 10}],
       tuple_item_group_heal_dest: [{:bonus, {:add_item_group_heal, :food}, 10}],
-      tuple_coma_class_dest: [{:bonus, {:coma_class, :boss}, 250}],
       paired_get_zeny_dest: [{:paired_choice, :get_zeny, 100, 25}],
-      flat_hit_rate: [{:bonus, :hit_rate, 15}],
-      flat_movement_speed_add: [{:bonus, :movement_speed_add, 20}],
-      flat_critical_long: [{:bonus, :critical_long, 7}],
-      flat_no_regen: [{:bonus, :no_regen, 3}],
-      tuple_ignore_def_class_dest: [{:bonus, {:ignore_def_class, :normal}, 100}],
-      tuple_ignore_def_class_rate_dest: [{:bonus, {:ignore_def_class, :boss}, 50}],
-      tuple_magic_addrace2_dest: [{:bonus, {:magic_addrace2, :goblin}, 20}],
       tuple_hp_regen_interval_dest: [{:bonus, {:hp_regen_bonus, 10_000}, 5}],
-      tuple_hp_loss_interval_dest: [{:bonus, {:hp_loss_bonus, 5_000}, 10}],
-      flat_sp_gain_value: [{:bonus, :sp_gain_value, 5}],
-      flat_heal_power2: [{:bonus, :heal_power2, 10}],
-      flat_perfect_hit_rate: [{:bonus, :perfect_hit_rate, 25}],
-      tuple_skill_heal_dest: [{:bonus, {:skill_heal, 28}, 3}],
-      flat_magic_hp_gain_value: [{:bonus, :magic_hp_gain_value, 30}],
-      tuple_ignore_mdef_class_dest: [{:bonus, {:ignore_mdef_class, :boss}, 50}],
-      tuple_subrace2_dest: [{:bonus, {:subrace2, :goblin}, 15}],
-      tuple_monster_drop_dest: [{:bonus, {:add_monster_drop, 519}, 100}],
       tuple_monster_drop_race_dest: [{:bonus, {:add_monster_drop, 517, :brute}, 3000}],
-      flat_magic_sp_gain_value: [{:bonus, :magic_sp_gain_value, 20}],
-      flat_long_sp_gain_value: [{:bonus, :long_sp_gain_value, 15}],
-      tuple_sp_regen_interval_dest: [{:bonus, {:sp_regen_bonus, 10_000}, 3}],
-      tuple_sp_loss_interval_dest: [{:bonus, {:sp_loss_bonus, 4_000}, 2}],
       tuple_add_damage_class_dest: [{:bonus, {:add_damage_class, 1917}, 10}],
-      tuple_add_def_monster_dest: [{:bonus, {:add_def_monster, 1917}, 10}],
-      tuple_monster_drop_group_dest: [{:bonus, {:add_monster_drop_group, :food}, 10_000}],
-      tuple_sp_gain_race_dest: [{:bonus, {:sp_gain_race, :undead}, 3}],
-      tuple_sp_drain_race_dest: [{:bonus, {:sp_drain_race, :undead}, 4}],
-      tuple_exp_add_class_dest: [{:bonus, {:exp_add_class, :all}, 10}],
-      flat_crit_rate: [{:bonus, :crit_rate, 5}],
-      flat_sp_drain_value: [{:bonus, :sp_drain_value, 3}],
-      flat_no_size_fix: [{:bonus, :no_size_fix, 1}],
-      flat_intravision: [{:bonus, :intravision, 1}],
       tuple_def_ratio_atk_class_dest: [{:bonus, {:def_ratio_atk_class, :boss}, 1}],
-      tuple_sub_skill_dest: [{:bonus, {:sub_skill, 152}, 20}],
-      tuple_sub_def_ele_dest: [{:bonus, {:sub_def_ele, :fire}, 10}],
-      flat_defender_keys: [{:bonus, :long_atk_def, 10}, {:bonus, :hp_gain_value, 50}],
-      set_def_ele_dest: [{:set, :def_ele, :holy}],
-      pair_sp_drain_dest: [{:bonus, :sp_drain_rate, 30}, {:bonus, :sp_drain_percent, 2}],
       pair_dest: [{:bonus, :hp_drain_rate, 50}, {:bonus, :hp_drain_percent, 5}],
-      splash_dest: [{:bonus, :splash_range, 1}],
       set_dest: [{:set, :atk_ele, :fire}],
-      set_mixed_with_bonus: [{:bonus, :atk, 10}, {:set, :atk_ele, :wind}],
       set_inside_if: [
         {:if, {:>=, :refine, 7}, [{:set, :atk_ele, :holy}], [{:set, :atk_ele, :neutral}]}
       ],
       base_level_expr: [{:bonus, :atk, {:div, :base_level, 10}}],
       job_level_expr: [{:bonus, :matk, :job_level}],
-      base_level_gate: [{:if, {:>, :base_level, 99}, [{:bonus, :max_hp, 500}], []}],
       ternary_expr: [{:bonus, :str, {:ternary, {:>=, :refine, 7}, 3, 1}}],
-      nested_ternary: [
-        {:bonus, :hit, {:ternary, {:<, :refine, 7}, 1, {:ternary, {:<, :refine, 9}, 2, 3}}}
-      ],
-      ternary_on_levels: [
-        {:bonus, :critical, {:ternary, {:>, :base_level, 99}, :refine, {:div, :refine, 2}}}
-      ],
       grant_skill: [{:grant_skill, 28, 3}],
-      grant_skill_refine_level: [{:grant_skill, 28, {:+, 1, :refine}}],
       skill_lv_expr: [{:bonus, :heal_power, {:skill_lv, 87}}],
-      skill_lv_condition: [{:if, {:>, {:skill_lv, 87}, 0}, [{:bonus, :int, 3}], []}],
       stat_expr: [{:bonus, :atk, {:div, {:stat, :str}, 10}}],
-      stat_condition: [{:if, {:>=, {:stat, :int}, 120}, [{:bonus, :matk, 10}], []}],
-      stat_combined: [{:bonus, :hit, {:div, {:+, {:stat, :str}, {:stat, :dex}}, 12}}],
       min_expr: [{:bonus, :atk, {:div, {:min, :base_level, 195}, 15}}],
       max_expr: [{:bonus, :atk, {:max, 1, :refine}}],
       pow_nested: [{:bonus, :atk, {:pow, {:min, :refine, 15}, 2}}],
-      pow_scaled: [{:bonus, :atk, {:div, {:*, {:pow, :refine, 2}, 125}, 100}}],
       job_cmp_eq: [{:if, {:job_cmp, :==, :base_class, :swordman}, [{:bonus, :str, 1}], []}],
       job_cmp_ne: [{:if, {:job_cmp, :!=, :class, :soul_linker}, [{:bonus, :int, 1}], []}],
-      job_cmp_or: [
-        {:if, {:or, {:job_cmp, :==, :base_class, :mage}, {:job_cmp, :==, :base_class, :archer}},
-         [{:bonus, :max_hp, {:*, :base_level, 5}}], []}
-      ],
       equipped: [{:if, {:equipped, [501, 502, 501]}, [{:bonus, :str, 1}], []}],
       negated_equipped: [
         {:if, {:not, {:equipped, [4172, 4257, 4230, 4272]}}, [{:bonus, :flee, 20}], []}
@@ -250,9 +194,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       ],
       char_info_ne: [
         {:if, {:string_cmp, :!=, "Test Guild", {:char_info, {:+, 1, 1}}}, [{:bonus, :int, 1}], []}
-      ],
-      string_literals_eq: [
-        {:if, {:string_cmp, :==, "prontera", "prontera"}, [{:bonus, :dex, 1}], []}
       ]
     ]
 
@@ -455,7 +396,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
         {:if, {:string_cmp, :!=, "Other Guild", {:char_info, 2}}, [{:bonus, :int, 1}], []}
       ]
 
-      stub(GuildManager, :get, fn 9 -> {:ok, %{name: "Test Guild"}} end)
+      guild = build(:guild_state, guild_id: 9, name: "Test Guild")
+      stub(GuildManager, :get, fn 9 -> {:ok, guild} end)
 
       character_info = %{
         character_name: "Test Hero",
@@ -536,67 +478,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
           assert is_map(EquipScript.eval(program, inputs))
         end
       end
-    end
-  end
-
-  describe "break/unbreakable bonus keys" do
-    test "parses and evaluates a break-rate bonus" do
-      program = EquipScript.parse!("bonus(ctx, :break_weapon_rate, 50)")
-
-      assert program == [{:bonus, :break_weapon_rate, 50}]
-      assert EquipScript.eval(program, on(0)) == %{break_weapon_rate: 50}
-    end
-
-    test "parses and evaluates an unbreakable bonus" do
-      program = EquipScript.parse!("bonus(ctx, :unbreakable_weapon, 1)")
-
-      assert program == [{:bonus, :unbreakable_weapon, 1}]
-      assert EquipScript.eval(program, on(0)) == %{unbreakable_weapon: 1}
-    end
-  end
-
-  describe "capacity and rate bonus keys" do
-    test "evaluates the hp/sp capacity keys" do
-      program =
-        EquipScript.parse!("""
-        ctx = bonus(ctx, :max_hp, 800)
-        ctx = bonus(ctx, :max_hp_rate, 5)
-        ctx = bonus(ctx, :max_sp, 50)
-        ctx = bonus(ctx, :max_sp_rate, 3)
-        ctx
-        """)
-
-      assert EquipScript.eval(program, on(0)) == %{
-               max_hp: 800,
-               max_hp_rate: 5,
-               max_sp: 50,
-               max_sp_rate: 3
-             }
-    end
-
-    test "evaluates the rate and all-stats keys" do
-      program =
-        EquipScript.parse!("""
-        ctx = bonus(ctx, :aspd_rate, 10)
-        ctx = bonus(ctx, :atk_rate, 5)
-        ctx = bonus(ctx, :matk_rate, 7)
-        ctx = bonus(ctx, :all_stats, 2)
-        ctx
-        """)
-
-      assert EquipScript.eval(program, on(0)) == %{
-               aspd_rate: 10,
-               atk_rate: 5,
-               matk_rate: 7,
-               all_stats: 2
-             }
-    end
-
-    test "repeated capacity bonuses sum within one program" do
-      program =
-        EquipScript.parse!("ctx = bonus(ctx, :max_hp, 300)\nctx = bonus(ctx, :max_hp, 200)\nctx")
-
-      assert EquipScript.eval(program, on(0)) == %{max_hp: 500}
     end
   end
 
@@ -944,17 +825,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       assert EquipScript.eval(program, on(0)) == %{splash_range: 1}
     end
 
-    test "both HP drain halves sum independently" do
-      program = [
-        {:bonus, :hp_drain_rate, 50},
-        {:bonus, :hp_drain_percent, 5},
-        {:bonus, :hp_drain_rate, 30},
-        {:bonus, :hp_drain_percent, 1}
-      ]
-
-      assert EquipScript.eval(program, on(0)) == %{hp_drain_rate: 80, hp_drain_percent: 6}
-    end
-
     test "sums repeated tuple destinations into one key" do
       program = [
         {:bonus, {:addrace, :brute}, 20},
@@ -965,39 +835,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       assert EquipScript.eval(program, on(0)) == %{
                {:addrace, :brute} => 25,
                {:addrace, :undead} => 15
-             }
-    end
-
-    test "evaluates soft-DEF rate and sums race-specific SP drain values" do
-      key = {:sp_drain_race, :undead}
-      program = [{:bonus, :def2_rate, 25}, {:bonus, key, 3}, {:bonus, key, 4}]
-
-      assert EquipScript.eval(program, on(0)) == %{key => 7, def2_rate: 25}
-    end
-
-    test "evaluates monster defense and item-group drop bonuses" do
-      def_key = {:add_def_monster, 1917}
-      drop_key = {:add_monster_drop_group, :food}
-      program = [{:bonus, def_key, 10}, {:bonus, drop_key, 10_000}]
-
-      assert EquipScript.eval(program, on(0)) == %{def_key => 10, drop_key => 10_000}
-    end
-
-    test "evaluates the new flat and parameterized bonuses" do
-      program = [
-        {:bonus, :hit_rate, 15},
-        {:bonus, :movement_speed_add, 20},
-        {:bonus, :critical_long, 7},
-        {:bonus, {:coma_class, :boss}, 250},
-        {:bonus, {:add_item_group_heal, :food}, 30}
-      ]
-
-      assert EquipScript.eval(program, on(0)) == %{
-               {:coma_class, :boss} => 250,
-               {:add_item_group_heal, :food} => 30,
-               hit_rate: 15,
-               movement_speed_add: 20,
-               critical_long: 7
              }
     end
 

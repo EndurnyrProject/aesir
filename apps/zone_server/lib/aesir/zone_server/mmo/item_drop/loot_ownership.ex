@@ -3,6 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership do
   Determines ranked loot owners and enforces phased ground-item pickup rights.
   """
 
+  use TypedStruct
+
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
@@ -10,13 +12,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
-  defstruct first: nil, second: nil, third: nil
-
-  @type t() :: %__MODULE__{
-          first: integer() | nil,
-          second: integer() | nil,
-          third: integer() | nil
-        }
+  @typedoc "The ranked loot owners' character ids, `nil` where a rank is empty."
+  typedstruct do
+    field :first, integer()
+    field :second, integer()
+    field :third, integer()
+  end
 
   @type party_ctx() :: %{party_id: non_neg_integer(), pickup_share: boolean()}
 
@@ -52,7 +53,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership do
   The full typed log determines the bonus. It is added once to the reward owner
   of the first eligible actual contributor; ties retain earliest hit order.
   """
-  @spec determine_typed(MobState.t(), (map(), String.t() -> boolean())) :: t()
+  @spec determine_typed(MobState.t(), (MobState.typed_contribution(), String.t() -> boolean())) ::
+          t()
   def determine_typed(mob_state, eligible? \\ &default_typed_eligible?/2) do
     damage_log = MobState.typed_damage_log(mob_state)
     bonus = div(Enum.sum_by(damage_log, & &1.damage) * Config.first_attack_loot_bonus(), 100)
@@ -101,10 +103,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership do
           :ok | {:error, :protected}
   def can_claim?(item, char_id, party_ctx, now, owner_party_resolver \\ &default_owner_party/1)
 
-  def can_claim?(%{owners: nil}, _char_id, _party_ctx, _now, _owner_party_resolver), do: :ok
+  def can_claim?(%GroundItem{owners: nil}, _char_id, _party_ctx, _now, _owner_party_resolver),
+    do: :ok
 
   def can_claim?(
-        %{owners: {first, second, third}, unlock_at: {t1, t2, t3}},
+        %GroundItem{owners: {first, second, third}, unlock_at: {t1, t2, t3}},
         char_id,
         party_ctx,
         now,

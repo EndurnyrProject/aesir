@@ -7,23 +7,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript.Result do
   preserve their own source order.
   """
 
+  use TypedStruct
+
   alias Aesir.ZoneServer.Mmo.Combat.EquipAddEff
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
 
-  @enforce_keys [:modifiers, :auto_casts, :autobonuses, :effects]
-  defstruct modifiers: %{},
-            auto_casts: [],
-            autobonuses: [],
-            pet_autobonuses: [],
-            add_effs: [],
-            effects: []
-
-  @type t() :: %__MODULE__{
-          modifiers: map(),
-          auto_casts: [EquipScript.auto_cast()],
-          add_effs: [EquipAddEff.bonus()],
-          autobonuses: [EquipScript.autobonus()],
-          pet_autobonuses: [EquipScript.pet_autobonus()],
-          effects: [EquipScript.effect()]
-        }
+  @typedoc "The evaluated modifiers, procs and effects of one equipment script."
+  typedstruct enforce: true do
+    field :modifiers, map()
+    field :auto_casts, [EquipScript.auto_cast()]
+    field :autobonuses, [EquipScript.autobonus()]
+    field :pet_autobonuses, [EquipScript.pet_autobonus()], default: []
+    field :add_effs, [EquipAddEff.bonus()], default: []
+    field :effects, [EquipScript.effect()]
+  end
 end

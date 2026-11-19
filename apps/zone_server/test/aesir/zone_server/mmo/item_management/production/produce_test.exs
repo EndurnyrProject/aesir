@@ -1,9 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ProduceTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.Commons.Models.Character
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.Factory
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Produce
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -59,52 +60,65 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ProduceTest do
 
   describe "fits_inventory?/2" do
     test "a non-stackable product always fits" do
-      assert Produce.fits_inventory?(%{0 => stack(900, 30_000)}, item_def(:weapon, %{}))
+      weapon = build(:item_definition, type: :weapon)
+
+      assert Produce.fits_inventory?(%{0 => stack(weapon.id, 30_000)}, weapon)
     end
 
     test "one more copy must fit the item's own inventory stack limit" do
-      limited = item_def(:usable, %{inventory: 5})
+      limited = build(:item_definition, type: :usable, stack_limit: %{inventory: 5})
 
-      assert Produce.fits_inventory?(%{0 => stack(900, 4)}, limited)
-      refute Produce.fits_inventory?(%{0 => stack(900, 5)}, limited)
-      refute Produce.fits_inventory?(%{}, item_def(:usable, %{inventory: 0}))
+      assert Produce.fits_inventory?(%{0 => stack(limited.id, 4)}, limited)
+      refute Produce.fits_inventory?(%{0 => stack(limited.id, 5)}, limited)
+
+      refute Produce.fits_inventory?(
+               %{},
+               build(:item_definition, type: :usable, stack_limit: %{inventory: 0})
+             )
     end
 
     test "only the first slot holding the item is checked against the 30,000 cap" do
-      plain = item_def(:usable, %{})
+      plain = build(:item_definition, type: :usable)
 
-      assert Produce.fits_inventory?(%{3 => stack(900, 1), 50 => stack(900, 29_999)}, plain)
-      refute Produce.fits_inventory?(%{3 => stack(900, 30_000), 50 => stack(900, 1)}, plain)
+      assert Produce.fits_inventory?(
+               %{3 => stack(plain.id, 1), 50 => stack(plain.id, 29_999)},
+               plain
+             )
+
+      refute Produce.fits_inventory?(
+               %{3 => stack(plain.id, 30_000), 50 => stack(plain.id, 1)},
+               plain
+             )
     end
 
     test "a held stack beyond the usable inventory slots does not fit" do
-      plain = item_def(:usable, %{})
+      plain = build(:item_definition, type: :usable)
 
-      assert Produce.fits_inventory?(%{99 => stack(900, 1)}, plain)
-      refute Produce.fits_inventory?(%{100 => stack(900, 1)}, plain)
+      assert Produce.fits_inventory?(%{99 => stack(plain.id, 1)}, plain)
+      refute Produce.fits_inventory?(%{100 => stack(plain.id, 1)}, plain)
     end
   end
 
   describe "fits_inventory?/3" do
     test "a quantity above 30,000 never fits, stackable or not" do
-      refute Produce.fits_inventory?(%{}, item_def(:weapon, %{}), 30_001)
-      assert Produce.fits_inventory?(%{}, item_def(:usable, %{}), 30_000)
+      refute Produce.fits_inventory?(%{}, build(:item_definition, type: :weapon), 30_001)
+      assert Produce.fits_inventory?(%{}, build(:item_definition, type: :usable), 30_000)
     end
 
     test "the quantity must fit the item's stack limit, held copies included" do
-      limited = item_def(:usable, %{inventory: 5})
+      limited = build(:item_definition, type: :usable, stack_limit: %{inventory: 5})
 
       assert Produce.fits_inventory?(%{}, limited, 5)
       refute Produce.fits_inventory?(%{}, limited, 6)
-      assert Produce.fits_inventory?(%{0 => stack(900, 2)}, limited, 3)
-      refute Produce.fits_inventory?(%{0 => stack(900, 2)}, limited, 4)
+      assert Produce.fits_inventory?(%{0 => stack(limited.id, 2)}, limited, 3)
+      refute Produce.fits_inventory?(%{0 => stack(limited.id, 2)}, limited, 4)
     end
 
     test "the first held stack plus the quantity must stay within 30,000" do
-      plain = item_def(:usable, %{})
+      plain = build(:item_definition, type: :usable)
 
-      assert Produce.fits_inventory?(%{0 => stack(900, 29_800)}, plain, 200)
-      refute Produce.fits_inventory?(%{0 => stack(900, 29_801)}, plain, 200)
+      assert Produce.fits_inventory?(%{0 => stack(plain.id, 29_800)}, plain, 200)
+      refute Produce.fits_inventory?(%{0 => stack(plain.id, 29_801)}, plain, 200)
     end
   end
 
@@ -144,29 +158,21 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ProduceTest do
     end
   end
 
-  defp item_def(type, stack_limit),
-    do: %ItemDefinition{
-      id: 900,
-      aegis_name: "Test",
-      name: "Test",
-      type: type,
-      stack_limit: stack_limit
-    }
-
   defp stack(id, amount), do: %InventoryItem{nameid: id, amount: amount, identify: 1}
 
   defp caster(learned, items) do
+    character =
+      Factory.build(:character, class: 10, base_level: 99, job_level: 70, dex: 99, luk: 99)
+
     stats =
-      %Character{class: 10, base_level: 99, job_level: 70, dex: 99, luk: 99}
+      character
       |> Stats.from_character()
       |> put_in([Access.key!(:progression), Access.key!(:learned_skills)], learned)
 
     inventory =
       items
       |> Enum.with_index()
-      |> Map.new(fn {{id, amount}, index} ->
-        {index, %InventoryItem{nameid: id, amount: amount, identify: 1}}
-      end)
+      |> Map.new(fn {{id, amount}, index} -> {index, stack(id, amount)} end)
 
     %PlayerState{character_id: 1, stats: stats, inventory: inventory}
   end

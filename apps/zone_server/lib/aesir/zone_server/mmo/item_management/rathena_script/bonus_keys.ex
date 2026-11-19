@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
 
   Parameterized `bonus2` keys live in `@param_keys`, mapping each key to a
   `t:param_schema/0` (`family` + `param` kind + `unit`); `param_schema/1`,
-  `families/0`, and `param_domain/1` expose them to the codegen and to
+  `family_param/1`, and `param_domain/1` expose them to the codegen and to
   `EquipScript.parse!/1` destination validation.
 
   A third table, `@value_keys`, covers single-argument `bonus` keys whose
@@ -712,23 +712,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     do: Map.fetch(@bonus3_drop_keys, String.downcase(name))
 
   @doc """
-  The deduplicated set of family atoms every recognized `bonus2` and
-  flag-param key maps to.
-  """
-  @spec families() :: [atom()]
-  def families do
-    vanish_families = Enum.flat_map([@vanish_schemas, @race_vanish_schemas], &schema_families/1)
-
-    (Map.values(@param_keys) ++ Map.values(@flag_param_keys))
-    |> Enum.map(& &1.family)
-    |> Kernel.++(Map.values(@interval_keys))
-    |> Kernel.++(Map.values(@status_duration_families))
-    |> Kernel.++(vanish_families)
-    |> Kernel.++(@defender_proc_families)
-    |> Enum.uniq()
-  end
-
-  @doc """
   The valid atom values for a `bonus2` param domain, used to validate `bonus2`
   arguments at `EquipScript.parse!` time. The `:status` domain is derived from
   `Resolver.effs/0` rather than hardcoded, so it can never drift out of lockstep
@@ -750,12 +733,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   """
   @spec value_schema(String.t()) :: {:ok, value_schema()} | :error
   def value_schema(name) when is_binary(name), do: Map.fetch(@value_keys, String.downcase(name))
-
-  @doc """
-  The deduplicated set of destination atoms every recognized value key maps to.
-  """
-  @spec value_destinations() :: [destination()]
-  def value_destinations, do: @value_keys |> Map.values() |> Enum.map(& &1.dest) |> Enum.uniq()
 
   @doc """
   Resolves a value-key destination atom back to its param kind, derived from the

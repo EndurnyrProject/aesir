@@ -24,11 +24,4 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.AnvilTest do
   test "returns zero without an anvil" do
     assert 0 = Anvil.best(%{0 => %InventoryItem{nameid: 501, amount: 1}})
   end
-
-  test "does not consume the selected anvil" do
-    inventory = %{0 => %InventoryItem{nameid: 989, amount: 1}}
-
-    assert 1000 = Anvil.best(inventory)
-    assert %{0 => %InventoryItem{nameid: 989, amount: 1}} = inventory
-  end
 end

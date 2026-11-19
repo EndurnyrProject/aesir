@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
+
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
   import Mimic
 
   alias Aesir.ZoneServer.Config
@@ -12,13 +14,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Entry
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Group
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.SubGroup
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Transpiler
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
 
+  setup :set_mimic_from_context
   setup :setup_ets_tables
   setup :verify_on_exit!
 
@@ -30,13 +30,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
   defp drop(rate), do: %MobDrop{item: "Red_Potion", rate: rate}
 
   describe "drop_rate/5" do
-    test "leaves a no-penalty rate unchanged" do
-      stub(LevelPenalty, :drop, fn _, _ -> 100 end)
-
-      assert DropCalculator.drop_rate(10_000, 0, 1, 1, 0) == 10_000
-      assert DropCalculator.drop_rate(8_000, 0, 1, 1, 0) == 8_000
-    end
-
     test "does not reduce items whose base rate is already above the 90% cap" do
       stub(LevelPenalty, :drop, fn _, _ -> 100 end)
 
@@ -92,11 +85,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
       :ok
     end
 
-    test ":common matches drop_rate/5 under default config" do
-      assert DropCalculator.drop_rate(4_000, 7, 50, 60, 50, :common) ==
-               DropCalculator.drop_rate(4_000, 7, 50, 60, 50)
-    end
-
     test "scales the base rate by the category multiplier" do
       stub(Config, :item_drop_rate, fn :equip -> 200 end)
       stub(Config, :item_drop_bounds, fn :equip -> {1, 10_000} end)
@@ -135,7 +123,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
 
     test "roll/9 keeps a guaranteed slot guaranteed under the level penalty" do
       stub(ItemManagement, :get_item_by_aegis, fn "Red_Potion" ->
-        {:ok, %{id: 501, type: :healing}}
+        {:ok, build(:item_definition, id: 501, type: :healing)}
       end)
 
       :ets.insert(EtsTable.table_for(:map_cache), {"prontera", MapData.new("prontera", 300, 300)})
@@ -153,15 +141,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
       :ets.insert(EtsTable.table_for(:map_cache), {"prontera", MapData.new("prontera", 300, 300)})
 
       stub(ItemManagement, :get_item_by_aegis, fn "Red_Potion" ->
-        {:ok, %{id: 501, type: :healing}}
+        {:ok, build(:item_definition, id: 501, type: :healing)}
       end)
 
       :ok
-    end
-
-    test "a guaranteed slot always yields its item at the death cell" do
-      assert [{501, 1, 150, 150, true}] =
-               DropCalculator.roll([drop(10_000)], 0, 1, 1, 0, "prontera", 150, 150)
     end
 
     test "skips an aegis name absent from ItemManagement without crashing" do
@@ -217,37 +200,28 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
                DropCalculator.roll([drop(10_000), drop(10_000)], 0, 1, 1, 0, "prontera", 150, 150)
     end
 
-    test "marks dropped pet armour and shadow gear unidentified" do
+    test "unidentifies dropped weapons, armour, pet armour and shadow gear only" do
       stub(ItemManagement, :get_item_by_aegis, fn
-        "Pet_Armor" -> {:ok, %{id: 10_011, type: :pet_armor}}
-        "Shadow_Armor" -> {:ok, %{id: 2401, type: :shadow_gear}}
-      end)
-
-      drops = [
-        %MobDrop{item: "Pet_Armor", rate: 10_000},
-        %MobDrop{item: "Shadow_Armor", rate: 10_000}
-      ]
-
-      assert [{10_011, 1, _, _, false}, {2401, 1, _, _, false}] =
-               DropCalculator.roll(drops, 0, 1, 1, 0, "prontera", 150, 150)
-    end
-
-    test "marks dropped weapons and armor unidentified while other items stay identified" do
-      stub(ItemManagement, :get_item_by_aegis, fn
-        "Knife" -> {:ok, %{id: 1201, type: :weapon}}
-        "Cotton_Shirt" -> {:ok, %{id: 2301, type: :armor}}
-        "Red_Potion" -> {:ok, %{id: 501, type: :healing}}
+        "Knife" -> {:ok, build(:item_definition, id: 1201, type: :weapon)}
+        "Cotton_Shirt" -> {:ok, build(:item_definition, id: 2301, type: :armor)}
+        "Pet_Armor" -> {:ok, build(:item_definition, id: 10_011, type: :pet_armor)}
+        "Shadow_Armor" -> {:ok, build(:item_definition, id: 2401, type: :shadow_gear)}
+        "Red_Potion" -> {:ok, build(:item_definition, id: 501, type: :healing)}
       end)
 
       drops = [
         %MobDrop{item: "Knife", rate: 10_000},
         %MobDrop{item: "Cotton_Shirt", rate: 10_000},
+        %MobDrop{item: "Pet_Armor", rate: 10_000},
+        %MobDrop{item: "Shadow_Armor", rate: 10_000},
         drop(10_000)
       ]
 
       assert [
                {1201, 1, _, _, false},
                {2301, 1, _, _, false},
+               {10_011, 1, _, _, false},
+               {2401, 1, _, _, false},
                {501, 1, _, _, true}
              ] = DropCalculator.roll(drops, 0, 1, 1, 0, "prontera", 150, 150)
     end
@@ -282,8 +256,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
       :ets.insert(EtsTable.table_for(:map_cache), {"prontera", MapData.new("prontera", 300, 300)})
 
       stub(ItemManagement, :get_item_by_id, fn
-        501 -> {:ok, %{id: 501, type: :healing}}
-        1201 -> {:ok, %{id: 1201, type: :weapon}}
+        501 -> {:ok, build(:item_definition, id: 501, type: :healing)}
+        1201 -> {:ok, build(:item_definition, id: 1201, type: :weapon)}
         _ -> {:error, :item_not_found}
       end)
 
@@ -348,43 +322,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
                DropCalculator.roll_equipment_drops(mods, :brute, nil, "prontera", 150, 150)
     end
 
-    test "a dropped pet armour is unidentified" do
-      stub(ItemManagement, :get_item_by_id, fn
-        10_011 -> {:ok, %{id: 10_011, type: :pet_armor}}
-        _other -> {:error, :item_not_found}
-      end)
-
-      mods = %{{:add_monster_drop, 10_011} => 10_000}
-
-      assert [{10_011, 1, _, _, false}] =
-               DropCalculator.roll_equipment_drops(mods, :brute, nil, "prontera", 150, 150)
-    end
-
     test "a group bonus drop identifies by item type, not the entry's own flag" do
-      previous_catalog = :persistent_term.get(ItemGroups, :missing)
+      group =
+        build(:item_group,
+          key: :type_rule_drop,
+          subgroups: [
+            build(:item_subgroup,
+              number: 0,
+              algorithm: :all,
+              entries: [
+                build(:item_group_entry, item_id: 501, identify?: false),
+                build(:item_group_entry, item_id: 1201, identify?: true)
+              ]
+            )
+          ]
+        )
 
-      on_exit(fn ->
-        case previous_catalog do
-          :missing -> :persistent_term.erase(ItemGroups)
-          catalog -> :persistent_term.put(ItemGroups, catalog)
-        end
-      end)
-
-      group = %Group{
-        key: :type_rule_drop,
-        subgroups: [
-          %SubGroup{
-            number: 0,
-            algorithm: :all,
-            entries: [
-              %Entry{item_id: 501, identify?: false},
-              %Entry{item_id: 1201, identify?: true}
-            ]
-          }
-        ]
-      }
-
-      :persistent_term.put(ItemGroups, %{type_rule_drop: group})
+      stub(ItemGroups, :fetch, fn :type_rule_drop -> {:ok, group} end)
       mods = %{{:add_monster_drop_group, :type_rule_drop} => 10_000}
 
       assert [
@@ -394,30 +348,22 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
     end
 
     test "a guaranteed item-group bonus rolls and scatters every grant" do
-      previous_catalog = :persistent_term.get(ItemGroups, :missing)
+      group =
+        build(:item_group,
+          key: :bonus_drop,
+          subgroups: [
+            build(:item_subgroup,
+              number: 0,
+              algorithm: :all,
+              entries: [
+                build(:item_group_entry, item_id: 501, amount: 2, identify?: true),
+                build(:item_group_entry, item_id: 1201, identify?: false)
+              ]
+            )
+          ]
+        )
 
-      on_exit(fn ->
-        case previous_catalog do
-          :missing -> :persistent_term.erase(ItemGroups)
-          catalog -> :persistent_term.put(ItemGroups, catalog)
-        end
-      end)
-
-      group = %Group{
-        key: :bonus_drop,
-        subgroups: [
-          %SubGroup{
-            number: 0,
-            algorithm: :all,
-            entries: [
-              %Entry{item_id: 501, amount: 2, identify?: true},
-              %Entry{item_id: 1201, identify?: false}
-            ]
-          }
-        ]
-      }
-
-      :persistent_term.put(ItemGroups, %{bonus_drop: group})
+      stub(ItemGroups, :fetch, fn :bonus_drop -> {:ok, group} end)
       mods = %{{:add_monster_drop_group, :bonus_drop} => 10_000}
 
       assert [

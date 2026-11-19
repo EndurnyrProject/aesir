@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Produce do
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes.Recipe
   alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Mmo.Skill.Menu
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -91,9 +92,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Produce do
   @doc "Runs the production selected from a production list opened with `trigger`."
   @spec on_menu_reply(
           PlayerState.t(),
-          %{id: non_neg_integer(), extras: [non_neg_integer()]},
+          Menu.selection(),
           integer(),
-          map()
+          Menu.context()
         ) :: {:ok, PlayerState.t()} | {:silent, PlayerState.t()} | {:error, atom()}
   def on_menu_reply(_caster, _selection, _trigger, %{trading?: true}), do: {:error, :skill_failed}
 

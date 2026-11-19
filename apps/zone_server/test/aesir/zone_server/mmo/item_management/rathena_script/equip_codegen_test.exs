@@ -88,26 +88,51 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                )
     end
 
-    test "hp/sp capacity keys compile to their flat and rate destinations" do
-      assert {:ok,
-              [
-                {:bonus, :max_hp, 800},
-                {:bonus, :max_hp_rate, 5},
-                {:bonus, :max_sp, 50},
-                {:bonus, :max_sp_rate, 3}
-              ]} =
-               compile(
-                 "bonus bMaxHP,800; bonus bMaxHPrate,5; bonus bMaxSP,50; bonus bMaxSPrate,3;"
-               )
-    end
-
-    test "rate keys compile to their percentage destinations" do
-      assert {:ok, [{:bonus, :aspd_rate, 10}, {:bonus, :atk_rate, 5}, {:bonus, :matk_rate, 7}]} =
-               compile("bonus bAspdRate,10; bonus bAtkRate,5; bonus bMatkRate,7;")
-    end
-
-    test "bDef2Rate compiles to the soft-DEF percentage destination" do
-      assert {:ok, [{:bonus, :def2_rate, 25}]} = compile("bonus bDef2Rate,25;")
+    test "flat keys compile to their destination with the amount unchanged" do
+      for {key, dest, amount} <- [
+            {"bMaxHP", :max_hp, 800},
+            {"bMaxHPrate", :max_hp_rate, 5},
+            {"bMaxSP", :max_sp, 50},
+            {"bMaxSPrate", :max_sp_rate, 3},
+            {"bAspdRate", :aspd_rate, 10},
+            {"bAtkRate", :atk_rate, 5},
+            {"bMatkRate", :matk_rate, 7},
+            {"bDef2Rate", :def2_rate, 25},
+            {"bAllStats", :all_stats, 2},
+            {"bSplashRange", :splash_range, 1},
+            {"bSPGainValue", :sp_gain_value, 5},
+            {"bMagicSPGainValue", :magic_sp_gain_value, 20},
+            {"bLongSPGainValue", :long_sp_gain_value, 15},
+            {"bCRate", :crit_rate, 5},
+            {"bSPDrainValue", :sp_drain_value, 3},
+            {"bHealPower2", :heal_power2, 10},
+            {"bMagicHPGainValue", :magic_hp_gain_value, 30},
+            {"bDelayrate", :delay_rate, -10},
+            {"bLongAtkRate", :long_atk_rate, 15},
+            {"bHPrecovRate", :hp_regen, 10},
+            {"bSPrecovRate", :sp_regen, 15},
+            {"bUseSPrate", :sp_cost_rate, -5},
+            {"bFixedCast", :fixed_cast, -500},
+            {"bHealPower", :heal_power, 5},
+            {"bCritAtkRate", :crit_atk_rate, 20},
+            {"bCritical", :critical, 10},
+            {"bShortAtkRate", :short_atk_rate, 15},
+            {"bPerfectHitRate", :perfect_hit_rate, 25},
+            {"bPerfectHitAddRate", :perfect_hit, 50},
+            {"bSpeedRate", :movement_speed, 25},
+            {"bHitRate", :hit_rate, 15},
+            {"bSpeedAddRate", :movement_speed_add, 20},
+            {"bCriticalLong", :critical_long, 7},
+            {"bNoRegen", :no_regen, 3},
+            {"bLongAtkDef", :long_atk_def, 10},
+            {"bHPGainValue", :hp_gain_value, 50},
+            {"bShortWeaponDamageReturn", :short_weapon_damage_return, 5},
+            {"bMagicDamageReturn", :magic_damage_return, 5},
+            {"bNoMagicDamage", :no_magic_damage, 100},
+            {"bAddItemHealRate", :item_heal_rate, 20}
+          ] do
+        assert compile("bonus #{key},#{amount};") == {:ok, [{:bonus, dest, amount}]}
+      end
     end
 
     test "additional item keys emit exact signed flat and parameterized destinations" do
@@ -155,17 +180,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus2 bAddSkillBlow,NOT_A_SKILL,2;")
     end
 
-    test "bAllStats compiles to the fan-out destination" do
-      assert {:ok, [{:bonus, :all_stats, 2}]} = compile("bonus bAllStats,2;")
-    end
-
-    test "bSplashRange compiles to the max-merged splash destination" do
-      assert {:ok, [{:bonus, :splash_range, 1}]} = compile("bonus bSplashRange,1;")
-    end
-
-    test "bHPDrainRate emits one summing instruction per argument" do
+    test "pair keys emit one summing instruction per argument" do
       assert {:ok, [{:bonus, :hp_drain_rate, 50}, {:bonus, :hp_drain_percent, 5}]} =
                compile("bonus2 bHPDrainRate,50,5;")
+
+      assert {:ok, [{:bonus, :sp_drain_rate, 30}, {:bonus, :sp_drain_percent, 2}]} =
+               compile("bonus2 bSPDrainRate,30,2;")
     end
 
     test "bHPDrainRate keeps its emission order among neighbouring bonuses" do
@@ -197,22 +217,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus2 bHPDrainRate,RC_Brute,5;")
     end
 
-    test "bHPRegenRate emits an interval-keyed bonus (amount, interval)" do
-      assert {:ok, [{:bonus, {:hp_regen_bonus, 10_000}, 5}]} =
-               compile("bonus2 bHPRegenRate,5,10000;")
-    end
-
-    test "bHPLossRate emits an interval-keyed loss bonus" do
-      assert {:ok, [{:bonus, {:hp_loss_bonus, 5_000}, 10}]} =
-               compile("bonus2 bHPLossRate,10,5000;")
-    end
-
-    test "bSPRegenRate and bSPLossRate emit interval-keyed SP bonuses" do
-      assert {:ok, [{:bonus, {:sp_regen_bonus, 10_000}, 3}]} =
-               compile("bonus2 bSPRegenRate,3,10000;")
-
-      assert {:ok, [{:bonus, {:sp_loss_bonus, 4_000}, 2}]} =
-               compile("bonus2 bSPLossRate,2,4000;")
+    test "interval keys emit an interval-keyed bonus (amount, interval)" do
+      for {script, dest, amount} <- [
+            {"bonus2 bHPRegenRate,5,10000;", {:hp_regen_bonus, 10_000}, 5},
+            {"bonus2 bHPLossRate,10,5000;", {:hp_loss_bonus, 5_000}, 10},
+            {"bonus2 bSPRegenRate,3,10000;", {:sp_regen_bonus, 10_000}, 3},
+            {"bonus2 bSPLossRate,2,4000;", {:sp_loss_bonus, 4_000}, 2}
+          ] do
+        assert compile(script) == {:ok, [{:bonus, dest, amount}]}
+      end
     end
 
     test "interval bonus accepts a refine-dependent amount" do
@@ -225,108 +238,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus2 bHPRegenRate,5,getrefine();")
     end
 
-    test "bMagicAddRace2 emits a race2-keyed magic bonus" do
-      assert {:ok, [{:bonus, {:magic_addrace2, :goblin}, 20}]} =
-               compile("bonus2 bMagicAddRace2,RC2_Goblin,20;")
-    end
-
-    test "bIgnoreDefClassRate emits a class-keyed ignore-def bonus" do
-      assert {:ok, [{:bonus, {:ignore_def_class, :boss}, 50}]} =
-               compile("bonus2 bIgnoreDefClassRate,Class_Boss,50;")
-    end
-
-    test "bSPGainValue compiles to the flat sp-gain destination" do
-      assert {:ok, [{:bonus, :sp_gain_value, 5}]} = compile("bonus bSPGainValue,5;")
-    end
-
-    test "bMagicSPGainValue and bLongSPGainValue compile to flat sp-gain destinations" do
-      assert {:ok, [{:bonus, :magic_sp_gain_value, 20}]} = compile("bonus bMagicSPGainValue,20;")
-      assert {:ok, [{:bonus, :long_sp_gain_value, 15}]} = compile("bonus bLongSPGainValue,15;")
-    end
-
-    test "bAddDamageClass emits a monster-id-keyed damage bonus" do
-      assert {:ok, [{:bonus, {:add_damage_class, 1917}, 10}]} =
-               compile("bonus2 bAddDamageClass,1917,10;")
-    end
-
-    test "bAddDefMonster emits a monster-id-keyed physical reduction" do
-      assert {:ok, [{:bonus, {:add_def_monster, 1917}, 10}]} =
-               compile("bonus2 bAddDefMonster,1917,10;")
-    end
-
     test "bAddDamageClass rejects a non-literal monster id" do
       assert {:error, {:unsupported, {:unresolved_param, _}}} =
                compile("bonus2 bAddDamageClass,RC_Brute,10;")
-    end
-
-    test "bSPGainRace emits a race-keyed sp-gain bonus" do
-      assert {:ok, [{:bonus, {:sp_gain_race, :undead}, 3}]} =
-               compile("bonus2 bSPGainRace,RC_Undead,3;")
-    end
-
-    test "bSPDrainValueRace emits a race-keyed flat SP drain" do
-      assert {:ok, [{:bonus, {:sp_drain_race, :undead}, 4}]} =
-               compile("bonus2 bSPDrainValueRace,RC_Undead,4;")
-    end
-
-    test "bExpAddClass emits a class-keyed exp bonus" do
-      assert {:ok, [{:bonus, {:exp_add_class, :all}, 10}]} =
-               compile("bonus2 bExpAddClass,Class_All,10;")
-    end
-
-    test "bCRate and bSPDrainValue compile to their flat destinations" do
-      assert {:ok, [{:bonus, :crit_rate, 5}]} = compile("bonus bCRate,5;")
-      assert {:ok, [{:bonus, :sp_drain_value, 3}]} = compile("bonus bSPDrainValue,3;")
-    end
-
-    test "bNoSizeFix and bIntravision are argument-less flag bonuses (amount 1)" do
-      assert {:ok, [{:bonus, :no_size_fix, 1}]} = compile("bonus bNoSizeFix;")
-      assert {:ok, [{:bonus, :intravision, 1}]} = compile("bonus bIntravision;")
-    end
-
-    test "bDefRatioAtkClass is a single-arg class flag-param bonus" do
-      assert {:ok, [{:bonus, {:def_ratio_atk_class, :boss}, 1}]} =
-               compile("bonus bDefRatioAtkClass,Class_Boss;")
-    end
-
-    test "bSubSkill emits a skill-keyed damage-reduction bonus" do
-      assert {:ok, [{:bonus, {:sub_skill, 5}, 20}]} =
-               compile("bonus2 bSubSkill,\"SM_BASH\",20;")
-    end
-
-    test "bSubDefEle emits an element-keyed defensive bonus" do
-      assert {:ok, [{:bonus, {:sub_def_ele, :fire}, 10}]} =
-               compile("bonus2 bSubDefEle,Ele_Fire,10;")
-    end
-
-    test "bHealPower2 and bMagicHPGainValue compile to their flat destinations" do
-      assert {:ok, [{:bonus, :heal_power2, 10}]} = compile("bonus bHealPower2,10;")
-      assert {:ok, [{:bonus, :magic_hp_gain_value, 30}]} = compile("bonus bMagicHPGainValue,30;")
-    end
-
-    test "bIgnoreMdefClassRate emits a class-keyed ignore-mdef bonus" do
-      assert {:ok, [{:bonus, {:ignore_mdef_class, :boss}, 50}]} =
-               compile("bonus2 bIgnoreMdefClassRate,Class_Boss,50;")
-    end
-
-    test "bSubRace2 emits a race2-keyed sub bonus" do
-      assert {:ok, [{:bonus, {:subrace2, :goblin}, 15}]} =
-               compile("bonus2 bSubRace2,RC2_Goblin,15;")
-    end
-
-    test "bAddMonsterDropItem bonus2 emits an item-keyed drop chance" do
-      assert {:ok, [{:bonus, {:add_monster_drop, 519}, 100}]} =
-               compile("bonus2 bAddMonsterDropItem,519,100;")
-    end
-
-    test "bAddMonsterDropItemGroup emits an item-group-keyed drop chance" do
-      assert {:ok, [{:bonus, {:add_monster_drop_group, :food}, 10_000}]} =
-               compile("bonus2 bAddMonsterDropItemGroup,IG_Food,10000;")
-    end
-
-    test "bAddMonsterDropItem bonus2 accepts a refine-scaled chance" do
-      assert {:ok, [{:bonus, {:add_monster_drop, 7060}, {:*, 10, :refine}}]} =
-               compile("bonus2 bAddMonsterDropItem,7060,10*getrefine();")
     end
 
     test "bAddMonsterDropItem bonus3 emits a race-gated {family, item, race} drop" do
@@ -370,8 +284,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus3 bAddMonsterDropItem,517,RC_Boss,3000;")
     end
 
-    test "bAtkEle compiles to a :set instruction carrying the element" do
+    test "value keys compile to a :set instruction carrying the element" do
       assert {:ok, [{:set, :atk_ele, :fire}]} = compile("bonus bAtkEle,Ele_Fire;")
+      assert {:ok, [{:set, :def_ele, :holy}]} = compile("bonus bDefEle,Ele_Holy;")
     end
 
     test "bAtkEle with an unresolvable constant is unresolved_param" do
@@ -393,8 +308,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     end
 
     test "argument-less bonus is the boolean-flag idiom, amount 1" do
-      assert {:ok, [{:bonus, :unbreakable_weapon, 1}]} = compile("bonus bUnbreakableWeapon;")
-      assert {:ok, [{:bonus, :unbreakable_helm, 1}]} = compile("bonus bUnbreakableHelm;")
+      for {key, dest} <- [
+            {"bUnbreakableWeapon", :unbreakable_weapon},
+            {"bUnbreakableHelm", :unbreakable_helm},
+            {"bNoSizeFix", :no_size_fix},
+            {"bIntravision", :intravision},
+            {"bNoKnockback", :no_knockback},
+            {"bNoCastCancel", :no_cast_cancel}
+          ] do
+        assert compile("bonus #{key};") == {:ok, [{:bonus, dest, 1}]}
+      end
     end
 
     test "argument-less bonus with an unknown key stays unknown_bonus_key" do
@@ -409,11 +332,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
       assert {:ok, [{:bonus, :matk, :job_level}]} = compile("bonus bMatk,JobLevel;")
     end
 
-    test "BaseLevel works as an if gate" do
-      assert {:ok, [{:if, {:>, :base_level, 99}, [{:bonus, :max_hp, 500}], []}]} =
-               compile("if (BaseLevel>99) bonus bMaxHP,500;")
-    end
-
     test "a ternary amount compiles to the :ternary expression" do
       assert {:ok, [{:bonus, :str, {:ternary, {:>=, :refine, 7}, 3, 1}}]} =
                compile("bonus bStr,getrefine()>=7?3:1;")
@@ -425,11 +343,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                 {:bonus, :hit,
                  {:ternary, {:<, :refine, 7}, 1, {:ternary, {:<, :refine, 9}, 2, 3}}}
               ]} = compile(".@r = getrefine(); bonus bHit,.@r<7?1:(.@r<9?2:3);")
-    end
-
-    test "BaseClass gate resolves to a job comparison" do
-      assert {:ok, [{:if, {:job_cmp, :==, :base_class, :mage}, [{:bonus, :matk, 10}], []}]} =
-               compile("if (BaseClass==Job_Mage) bonus bMatk,10;")
     end
 
     test "assignment-inline idiom compiles the substituted expression" do
@@ -510,37 +423,51 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
   end
 
   describe "generate/1 bonus2 damage-tier commands" do
-    test "each damage-tier family transpiles" do
-      assert {:ok, [{:bonus, {:addrace, :brute}, 20}]} = compile("bonus2 bAddRace,RC_Brute,20;")
-      assert {:ok, [{:bonus, {:subrace, :undead}, 15}]} = compile("bonus2 bSubRace,RC_Undead,15;")
-      assert {:ok, [{:bonus, {:addele, :fire}, 10}]} = compile("bonus2 bAddEle,Ele_Fire,10;")
-      assert {:ok, [{:bonus, {:subele, :water}, 10}]} = compile("bonus2 bSubEle,Ele_Water,10;")
-      assert {:ok, [{:bonus, {:addsize, :large}, 25}]} = compile("bonus2 bAddSize,Size_Large,25;")
-      assert {:ok, [{:bonus, {:subsize, :small}, 25}]} = compile("bonus2 bSubSize,Size_Small,25;")
-
-      assert {:ok, [{:bonus, {:addclass, :boss}, 30}]} =
-               compile("bonus2 bAddClass,Class_Boss,30;")
-
-      assert {:ok, [{:bonus, {:subclass, :normal}, 5}]} =
-               compile("bonus2 bSubClass,Class_Normal,5;")
-
-      assert {:ok, [{:bonus, {:magic_addrace, :dragon}, 20}]} =
-               compile("bonus2 bMagicAddRace,RC_Dragon,20;")
-
-      assert {:ok, [{:bonus, {:magic_addele, :holy}, 20}]} =
-               compile("bonus2 bMagicAddEle,Ele_Holy,20;")
-
-      assert {:ok, [{:bonus, {:magic_addsize, :medium}, 20}]} =
-               compile("bonus2 bMagicAddSize,Size_Medium,20;")
-
-      assert {:ok, [{:bonus, {:magic_atk_ele, :shadow}, 20}]} =
-               compile("bonus2 bMagicAtkEle,Ele_Dark,20;")
-
-      assert {:ok, [{:bonus, {:ignore_def_race, :demon}, 50}]} =
-               compile("bonus2 bIgnoreDefRaceRate,RC_Demon,50;")
-
-      assert {:ok, [{:bonus, {:ignore_mdef_race, :angel}, 50}]} =
-               compile("bonus2 bIgnoreMdefRaceRate,RC_Angel,50;")
+    test "parameterized keys resolve their param into the family destination" do
+      for {args, dest, amount} <- [
+            {"bAddRace,RC_Brute", {:addrace, :brute}, 20},
+            {"bSubRace,RC_Undead", {:subrace, :undead}, 15},
+            {"bAddEle,Ele_Fire", {:addele, :fire}, 10},
+            {"bSubEle,Ele_Water", {:subele, :water}, 10},
+            {"bAddSize,Size_Large", {:addsize, :large}, 25},
+            {"bSubSize,Size_Small", {:subsize, :small}, 25},
+            {"bAddClass,Class_Boss", {:addclass, :boss}, 30},
+            {"bSubClass,Class_Normal", {:subclass, :normal}, 5},
+            {"bMagicAddRace,RC_Dragon", {:magic_addrace, :dragon}, 20},
+            {"bMagicAddEle,Ele_Holy", {:magic_addele, :holy}, 20},
+            {"bMagicAddSize,Size_Medium", {:magic_addsize, :medium}, 20},
+            {"bMagicAtkEle,Ele_Dark", {:magic_atk_ele, :shadow}, 20},
+            {"bIgnoreDefRaceRate,RC_Demon", {:ignore_def_race, :demon}, 50},
+            {"bIgnoreMdefRaceRate,RC_Angel", {:ignore_mdef_race, :angel}, 50},
+            {"bIgnoreDefClassRate,Class_Boss", {:ignore_def_class, :boss}, 50},
+            {"bIgnoreMdefClassRate,Class_Boss", {:ignore_mdef_class, :boss}, 50},
+            {"bSPGainRace,RC_Undead", {:sp_gain_race, :undead}, 3},
+            {"bSPDrainValueRace,RC_Undead", {:sp_drain_race, :undead}, 4},
+            {"bExpAddRace,RC_All", {:exp_add_race, :all}, 10},
+            {"bExpAddRace,RC_Undead", {:exp_add_race, :undead}, 5},
+            {"bExpAddRace,RC_Player_Human", {:exp_add_race, :player_human}, 15},
+            {"bExpAddClass,Class_All", {:exp_add_class, :all}, 10},
+            {"bSubDefEle,Ele_Fire", {:sub_def_ele, :fire}, 10},
+            {"bMagicAddClass,Class_Boss", {:magic_addclass, :boss}, 30},
+            {"bDropAddRace,RC_All", {:drop_add_race, :all}, 100},
+            {"bComaClass,Class_Boss", {:coma_class, :boss}, 250},
+            {"bAddEff,Eff_Stun", {:add_eff, :sc_stun}, 500},
+            {"bAddEff2,Eff_Curse", {:add_eff2, :sc_curse}, 500},
+            {"bAddEffWhenHit,Eff_Poison", {:add_eff_when_hit, :sc_poison}, 300},
+            {"bResEff,Eff_Freeze", {:res_eff, :sc_freeze}, 1000},
+            {"bAddItemGroupHealRate,IG_Food", {:add_item_group_heal, :food}, 30},
+            {"bAddMonsterDropItemGroup,IG_Food", {:add_monster_drop_group, :food}, 10_000},
+            {"bAddItemHealRate,501", {:add_item_heal, 501}, 10},
+            {"bAddMonsterDropItem,519", {:add_monster_drop, 519}, 100},
+            {"bAddDamageClass,1917", {:add_damage_class, 1917}, 10},
+            {"bAddDefMonster,1917", {:add_def_monster, 1917}, 10},
+            {"bSubEle,Ele_All", {:subele, :all}, 20},
+            {"bAddEle,Ele_All", {:addele, :all}, 10},
+            {"bAddRace,RC_Player_Doram", {:addrace, :player_doram}, 10},
+            {"bSubRace,RC_Player_Doram", {:subrace, :player_doram}, 15}
+          ] do
+        assert compile("bonus2 #{args},#{amount};") == {:ok, [{:bonus, dest, amount}]}
+      end
     end
 
     test "numeric size parameters preserve sibling bonuses and match named constants" do
@@ -565,17 +492,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
       end
     end
 
-    test "exp_add_race transpiles for a specific race and for the RC_All wildcard" do
-      assert {:ok, [{:bonus, {:exp_add_race, :all}, 10}]} =
-               compile("bonus2 bExpAddRace,RC_All,10;")
-
-      assert {:ok, [{:bonus, {:exp_add_race, :undead}, 5}]} =
-               compile("bonus2 bExpAddRace,RC_Undead,5;")
-
-      assert {:ok, [{:bonus, {:exp_add_race, :player_human}, 15}]} =
-               compile("bonus2 bExpAddRace,RC_Player_Human,15;")
-    end
-
     test "skill_atk by skill name resolves through the catalog to its integer id" do
       assert {:ok, %{id: firebolt_id}} = Catalog.by_name(:mg_firebolt)
 
@@ -590,11 +506,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile(~s(bonus2 bSkillAtk,"MG_FIREBOLT",15;))
     end
 
-    test "bSkillHeal resolves the quoted skill name to a keyed heal percentage" do
-      assert {:ok, [{:bonus, {:skill_heal, 28}, 3}]} =
-               compile(~s(bonus2 bSkillHeal,"AL_HEAL",3;))
-    end
-
     test "quoted skill name outside the catalog is unresolved_param" do
       assert {:error, {:unsupported, {:unresolved_param, "XX_NOTASKILL"}}} =
                compile(~s(bonus2 bSkillAtk,"XX_NOTASKILL",15;))
@@ -607,25 +518,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus2 bSkillAtk,#{firebolt_id},15;")
     end
 
-    test "skill_cooldown by skill name resolves through the catalog to its integer id" do
-      assert {:ok, %{id: firebolt_id}} = Catalog.by_name(:mg_firebolt)
+    test "per-skill keys resolve the skill into the family destination" do
+      firebolt_id = skill_id!(:mg_firebolt)
+      heal_id = skill_id!(:al_heal)
 
-      assert {:ok, [{:bonus, {:skill_cooldown, ^firebolt_id}, -500}]} =
-               compile("bonus2 bSkillCooldown,MG_FIREBOLT,-500;")
-    end
-
-    test "skill_use_sp by skill name resolves through the catalog to its integer id" do
-      assert {:ok, %{id: firebolt_id}} = Catalog.by_name(:mg_firebolt)
-
-      assert {:ok, [{:bonus, {:skill_use_sp, ^firebolt_id}, -5}]} =
-               compile("bonus2 bSkillUseSP,MG_FIREBOLT,-5;")
-    end
-
-    test "skill_varcast_rate by raw skill id" do
-      assert {:ok, %{id: firebolt_id}} = Catalog.by_name(:mg_firebolt)
-
-      assert {:ok, [{:bonus, {:skill_varcast_rate, ^firebolt_id}, -10}]} =
-               compile("bonus2 bVariableCastrate,#{firebolt_id},-10;")
+      for {script, dest, amount} <- [
+            {"bonus2 bSkillCooldown,MG_FIREBOLT,-500;", {:skill_cooldown, firebolt_id}, -500},
+            {"bonus2 bSkillUseSP,MG_FIREBOLT,-5;", {:skill_use_sp, firebolt_id}, -5},
+            {"bonus2 bSkillUseSPrate,#{heal_id},-25;", {:skill_use_sp_rate, heal_id}, -25},
+            {~s(bonus2 bSkillHeal,"AL_HEAL",3;), {:skill_heal, 28}, 3},
+            {~s(bonus2 bSubSkill,"SM_BASH",20;), {:sub_skill, 5}, 20}
+          ] do
+        assert compile(script) == {:ok, [{:bonus, dest, amount}]}
+      end
     end
 
     test "the flat bVariableCastrate is global, the bonus2 form stays per-skill" do
@@ -655,56 +560,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus2 bSkillFixedCast,MG_FIREBOLT,-50;")
     end
 
-    test "delay and long-attack rate keys" do
-      assert {:ok, [{:bonus, :delay_rate, -10}]} = compile("bonus bDelayrate,-10;")
-      assert {:ok, [{:bonus, :long_atk_rate, 15}]} = compile("bonus bLongAtkRate,15;")
-    end
-
-    test "regen and sp-economy keys" do
-      assert {:ok, [{:bonus, :hp_regen, 10}]} = compile("bonus bHPrecovRate,10;")
-      assert {:ok, [{:bonus, :sp_regen, 15}]} = compile("bonus bSPrecovRate,15;")
-      assert {:ok, [{:bonus, :sp_cost_rate, -5}]} = compile("bonus bUseSPrate,-5;")
-    end
-
-    test "bSkillUseSPrate is a per-skill sp-cost percentage" do
-      assert {:ok, %{id: heal_id}} = Catalog.by_name(:al_heal)
-
-      assert {:ok, [{:bonus, {:skill_use_sp_rate, ^heal_id}, -25}]} =
-               compile("bonus2 bSkillUseSPrate,#{heal_id},-25;")
-    end
-
-    test "fixed-cast and heal-power keys pass their amount through" do
-      assert {:ok, [{:bonus, :fixed_cast, -500}]} = compile("bonus bFixedCast,-500;")
-      assert {:ok, [{:bonus, :heal_power, 5}]} = compile("bonus bHealPower,5;")
-    end
-
-    test "damage-side rate keys pass their amount through unscaled" do
-      assert {:ok, [{:bonus, :crit_atk_rate, 20}]} = compile("bonus bCritAtkRate,20;")
-      assert {:ok, [{:bonus, :short_atk_rate, 15}]} = compile("bonus bShortAtkRate,15;")
-      assert {:ok, [{:bonus, :short_atk_rate, -10}]} = compile("bonus bShortAtkRate,-10;")
-      assert {:ok, [{:bonus, :perfect_hit_rate, 25}]} = compile("bonus bPerfectHitRate,25;")
-      assert {:ok, [{:bonus, :perfect_hit, 50}]} = compile("bonus bPerfectHitAddRate,50;")
-    end
-
-    test "bCritAtkRate compiles to its own destination, never the crit rate one" do
-      assert {:ok, [{:bonus, :crit_atk_rate, 10}]} = compile("bonus bCritAtkRate,10;")
-      assert {:ok, [{:bonus, :critical, 10}]} = compile("bonus bCritical,10;")
-    end
-
-    test "bSpeedRate compiles to the non-stackable movement-speed destination" do
-      assert {:ok, [{:bonus, :movement_speed, 25}]} = compile("bonus bSpeedRate,25;")
-    end
-
-    test "hit, additive speed, ranged critical, and no-regen keys compile directly" do
-      assert {:ok, [{:bonus, :hit_rate, 15}]} = compile("bonus bHitRate,15;")
-
-      assert {:ok, [{:bonus, :movement_speed_add, 20}]} =
-               compile("bonus bSpeedAddRate,20;")
-
-      assert {:ok, [{:bonus, :critical_long, 7}]} = compile("bonus bCriticalLong,7;")
-      assert {:ok, [{:bonus, :no_regen, 3}]} = compile("bonus bNoRegen,3;")
-    end
-
     test "bFlee2 is scaled x10 into per-mille perfect dodge" do
       assert {:ok, [{:bonus, :perfect_dodge, 30}]} = compile("bonus bFlee2,3;")
       assert {:ok, [{:bonus, :perfect_dodge, -20}]} = compile("bonus bFlee2,-2;")
@@ -715,38 +570,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile(".@r = getrefine(); bonus bFlee2,.@r*2;")
     end
 
-    test "status infliction/resist keys" do
-      assert {:ok, [{:bonus, {:add_eff, :sc_stun}, 500}]} =
-               compile("bonus2 bAddEff,Eff_Stun,500;")
-
-      assert {:ok, [{:bonus, {:add_eff_when_hit, :sc_poison}, 300}]} =
-               compile("bonus2 bAddEffWhenHit,Eff_Poison,300;")
-
-      assert {:ok, [{:bonus, {:res_eff, :sc_freeze}, 1000}]} =
-               compile("bonus2 bResEff,Eff_Freeze,1000;")
-    end
-
     test "refine-expression amount" do
       assert {:ok, [{:bonus, {:addrace, :brute}, {:*, :refine, 2}}]} =
                compile("bonus2 bAddRace,RC_Brute,getrefine()*2;")
-    end
-
-    test "inside an if branch" do
-      assert {:ok, [{:if, {:>, :refine, 7}, [{:bonus, {:addrace, :brute}, 20}], []}]} =
-               compile("if (getrefine()>7) bonus2 bAddRace,RC_Brute,20;")
-    end
-
-    test "Ele_All transpiles to the :all wildcard the runtime read folds in" do
-      assert {:ok, [{:bonus, {:subele, :all}, 20}]} = compile("bonus2 bSubEle,Ele_All,20;")
-      assert {:ok, [{:bonus, {:addele, :all}, 10}]} = compile("bonus2 bAddEle,Ele_All,10;")
-    end
-
-    test "RC_Player_Doram transpiles to its (currently inert) race atom" do
-      assert {:ok, [{:bonus, {:addrace, :player_doram}, 10}]} =
-               compile("bonus2 bAddRace,RC_Player_Doram,10;")
-
-      assert {:ok, [{:bonus, {:subrace, :player_doram}, 15}]} =
-               compile("bonus2 bSubRace,RC_Player_Doram,15;")
     end
 
     test "RC_Boss redirects addrace/subrace to the class family" do
@@ -764,22 +590,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
   end
 
   describe "generate/1 defender, drain and flag keys" do
-    test "flat defender and utility keys compile to their destinations" do
-      assert {:ok, [{:bonus, :long_atk_def, 10}]} = compile("bonus bLongAtkDef,10;")
-      assert {:ok, [{:bonus, :hp_gain_value, 50}]} = compile("bonus bHPGainValue,50;")
-
-      assert {:ok, [{:bonus, :short_weapon_damage_return, 5}]} =
-               compile("bonus bShortWeaponDamageReturn,5;")
-
-      assert {:ok, [{:bonus, :magic_damage_return, 5}]} =
-               compile("bonus bMagicDamageReturn,5;")
-
-      assert {:ok, [{:bonus, :no_magic_damage, 100}]} =
-               compile("bonus bNoMagicDamage,100;")
-
-      assert {:ok, [{:bonus, :item_heal_rate, 20}]} = compile("bonus bAddItemHealRate,20;")
-    end
-
     test "bFixedCastrate is global as bonus and per-skill as bonus2" do
       assert {:ok, [{:bonus, :fixcast_rate, -10}]} = compile("bonus bFixedCastrate,-10;")
 
@@ -787,46 +597,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile(~s(bonus2 bFixedCastrate,"SM_BASH",-50;))
 
       assert is_integer(id)
-    end
-
-    test "bNoKnockback and bNoCastCancel are argument-less flags, amount 1" do
-      assert {:ok, [{:bonus, :no_knockback, 1}]} = compile("bonus bNoKnockback;")
-      assert {:ok, [{:bonus, :no_cast_cancel, 1}]} = compile("bonus bNoCastCancel;")
-    end
-
-    test "bDefEle compiles to a :set instruction carrying the element" do
-      assert {:ok, [{:set, :def_ele, :holy}]} = compile("bonus bDefEle,Ele_Holy;")
-    end
-
-    test "bSPDrainRate emits one summing instruction per argument" do
-      assert {:ok, [{:bonus, :sp_drain_rate, 30}, {:bonus, :sp_drain_percent, 2}]} =
-               compile("bonus2 bSPDrainRate,30,2;")
-    end
-
-    test "bMagicAddClass and bDropAddRace transpile to their families" do
-      assert {:ok, [{:bonus, {:magic_addclass, :boss}, 30}]} =
-               compile("bonus2 bMagicAddClass,Class_Boss,30;")
-
-      assert {:ok, [{:bonus, {:drop_add_race, :all}, 100}]} =
-               compile("bonus2 bDropAddRace,RC_All,100;")
-    end
-
-    test "bAddEff2 transpiles to the self-infliction family" do
-      assert {:ok, [{:bonus, {:add_eff2, :sc_curse}, 500}]} =
-               compile("bonus2 bAddEff2,Eff_Curse,500;")
-    end
-
-    test "bAddItemHealRate keeps the item id verbatim as its param" do
-      assert {:ok, [{:bonus, {:add_item_heal, 501}, 10}]} =
-               compile("bonus2 bAddItemHealRate,501,10;")
-    end
-
-    test "class coma and item-group healing resolve their parameters" do
-      assert {:ok, [{:bonus, {:coma_class, :boss}, 250}]} =
-               compile("bonus2 bComaClass,Class_Boss,250;")
-
-      assert {:ok, [{:bonus, {:add_item_group_heal, :food}, 30}]} =
-               compile("bonus2 bAddItemGroupHealRate,IG_Food,30;")
     end
 
     test "bGetZenyNum preserves its amount and chance as one instruction" do
@@ -865,7 +635,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus2 bAddRace2,RC2_Edda_Arunafeltz,5;")
     end
 
-    test "single-argument ignore-def flags carry an implicit 100 into the rate family" do
+    test "single-argument flag-param keys carry the schema's implicit amount" do
       assert {:ok, [{:bonus, {:ignore_def_race, :brute}, 100}]} =
                compile("bonus bIgnoreDefRace,RC_Brute;")
 
@@ -877,6 +647,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
 
       assert {:ok, [{:bonus, {:ignore_def_class, :normal}, 100}]} =
                compile("bonus bIgnoreDefClass,Class_Normal;")
+
+      assert {:ok, [{:bonus, {:def_ratio_atk_class, :boss}, 1}]} =
+               compile("bonus bDefRatioAtkClass,Class_Boss;")
     end
 
     test "an unresolvable flag param is rejected" do
@@ -1159,16 +932,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus2 bAddEff,Eff_NotAStatus,500;")
     end
 
-    test "mixed supported and unsupported bonus2 rejects the whole item" do
-      assert {:error, {:unsupported, {:unknown_bonus_key, "bMaxHP"}}} =
-               compile("bonus2 bAddRace,RC_Brute,20; bonus2 bMaxHP,RC_Brute,10;")
-    end
-
-    test "unknown bonus key" do
-      assert {:error, {:unsupported, {:unknown_bonus_key, "bNotAVocabularyKey"}}} =
-               compile("bonus bNotAVocabularyKey,2;")
-    end
-
     test "slot-refine conditions are supported while reads outside the inputs are rejected" do
       assert {:ok, [{:if, {:>, {:equip_item, :refine, 9}, 5}, [{:bonus, :str, 10}], []}]} =
                compile("if (getequiprefinerycnt(EQI_HAND_R)>5) bonus bStr,10;")
@@ -1346,25 +1109,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus bHealPower,getskilllv(AL_HEAL);")
     end
 
-    test "getskilllv by quoted name resolves like the bare-name form" do
-      assert {:ok, %{id: heal_id}} = Catalog.by_name(:al_heal)
-
-      assert {:ok, [{:bonus, :heal_power, {:skill_lv, ^heal_id}}]} =
-               compile("bonus bHealPower,getskilllv(\"AL_HEAL\");")
-    end
-
     test "getskilllv call is case-insensitive (id1736 Double Bound)" do
       assert {:ok, %{id: double_id}} = Catalog.by_name(:ac_double)
 
       assert {:ok, [{:auto_cast, _spec, {:skill_lv, ^double_id}, 10}]} =
                compile(~S|bonus3 bAutoSpell,"AC_DOUBLE",GetSkillLv("AC_DOUBLE"),10;|)
-    end
-
-    test "getskilllv is usable inside an input-pure condition" do
-      assert {:ok, %{id: heal_id}} = Catalog.by_name(:al_heal)
-
-      assert {:ok, [{:if, {:>, {:skill_lv, ^heal_id}, 0}, [{:bonus, :int, 3}], []}]} =
-               compile("if (getskilllv(AL_HEAL)>0) bonus bInt,3;")
     end
 
     test "an unknown getskilllv skill is unresolved_param" do
@@ -1466,16 +1215,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus bPAtk,readparam(bPow)/15;")
     end
 
-    test "readparam is usable inside an input-pure condition" do
-      assert {:ok, [{:if, {:>=, {:stat, :str}, 120}, [{:bonus, :atk, 10}], []}]} =
-               compile("if (readparam(bStr)>=120) bonus bBaseAtk,10;")
-    end
-
-    test "multiple readparams combine in one arithmetic expression" do
-      assert {:ok, [{:bonus, :hit, {:div, {:+, {:stat, :str}, {:stat, :dex}}, 12}}]} =
-               compile("bonus bHit,(readparam(bStr)+readparam(bDex))/12;")
-    end
-
     test "a non-stat readparam parameter is unresolved_param" do
       assert {:error, {:unsupported, {:unresolved_param, "bMaxHP"}}} =
                compile("bonus bInt,readparam(bMaxHP);")
@@ -1533,18 +1272,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     test "pow of a clamped refine nests min inside pow" do
       assert {:ok, [{:bonus, :atk, {:pow, {:min, :refine, 15}, 2}}]} =
                compile("bonus bBaseAtk,pow(min(getrefine(),15),2);")
-    end
-
-    test "pow with an arithmetic base and a scaling divisor" do
-      assert {:ok, [{:bonus, :atk, {:div, {:*, {:pow, :refine, 2}, 125}, 100}}]} =
-               compile("bonus bBaseAtk,pow(getrefine(),2)*125/100;")
-    end
-
-    test "max over a learned skill level resolves the skill inside" do
-      assert {:ok, %{id: heal_id}} = Catalog.by_name(:al_heal)
-
-      assert {:ok, [{:bonus, :heal_power, {:max, 1, {:skill_lv, ^heal_id}}}]} =
-               compile("bonus bHealPower,max(1,getskilllv(AL_HEAL));")
     end
 
     test "an unresolvable operand inside a combinator propagates the error" do

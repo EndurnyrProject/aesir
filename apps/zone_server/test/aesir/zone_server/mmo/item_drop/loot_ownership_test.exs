@@ -1,8 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.ItemDrop.LootOwnershipTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
-  alias Aesir.ZoneServer.Unit.Mob.MobState
 
   describe "determine/2" do
     test "first eligible attacker keeps rank at the bonus boundary and loses above it" do
@@ -69,7 +70,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LootOwnershipTest do
   describe "can_claim?/5" do
     setup do
       %{
-        item: %{owners: {10, 20, 30}, unlock_at: {1_000, 2_000, 3_000}},
+        item: build(:ground_item, owners: {10, 20, 30}, unlock_at: {1_000, 2_000, 3_000}),
         no_party: %{party_id: 0, pickup_share: false},
         resolver: fn
           10 -> 7
@@ -80,7 +81,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LootOwnershipTest do
     end
 
     test "allows public items immediately", %{no_party: party_ctx, resolver: resolver} do
-      item = %{owners: nil, unlock_at: nil}
+      item = build(:ground_item, owners: nil, unlock_at: nil)
       assert :ok = LootOwnership.can_claim?(item, 99, party_ctx, 0, resolver)
     end
 
@@ -216,7 +217,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LootOwnershipTest do
     end
 
     test "party clause skips a nil middle slot but honours the third owner's phase" do
-      item = %{owners: {10, nil, 30}, unlock_at: {1_000, 2_000, 3_000}}
+      item = build(:ground_item, owners: {10, nil, 30}, unlock_at: {1_000, 2_000, 3_000})
       party_ctx = %{party_id: 9, pickup_share: true}
 
       resolver = fn
@@ -231,20 +232,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LootOwnershipTest do
     end
 
     test "absent later owners do not shorten public protection", %{no_party: party_ctx} do
-      item = %{owners: {10, nil, nil}, unlock_at: {1_000, 2_000, 3_000}}
+      item = build(:ground_item, owners: {10, nil, nil}, unlock_at: {1_000, 2_000, 3_000})
       resolver = fn _owner_id -> 0 end
 
-      assert {:error, :protected} =
-               LootOwnership.can_claim?(item, 99, party_ctx, 2_999, resolver)
-
-      assert :ok = LootOwnership.can_claim?(item, 99, party_ctx, 3_000, resolver)
-    end
-
-    test "becomes public exactly at the third deadline", %{
-      item: item,
-      no_party: party_ctx,
-      resolver: resolver
-    } do
       assert {:error, :protected} =
                LootOwnership.can_claim?(item, 99, party_ctx, 2_999, resolver)
 
@@ -253,20 +243,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LootOwnershipTest do
   end
 
   defp mob_state(damage_log) do
-    %MobState{
-      instance_id: 1,
-      mob_id: 1,
-      mob_data: nil,
-      spawn_ref: nil,
-      x: 0,
-      y: 0,
+    build(:mob_state,
       map_name: "prontera",
-      hp: 1,
-      sp: 0,
-      spawned_at: 0,
       aggro_list: Map.new(damage_log),
       aggro_order: damage_log |> Enum.map(&elem(&1, 0)) |> Enum.reverse()
-    }
-    |> Aesir.TestMob.publish(max_hp: 1, max_sp: 0)
+    )
   end
 end

@@ -14,6 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
   remain unmodelled.
   """
 
+  use TypedStruct
+
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.JobManagement.ItemEligibility
   alias Aesir.ZoneServer.Mmo.WeaponTypes
@@ -51,84 +53,46 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
   @typedoc "An item container a stack limit can apply to."
   @type container :: :inventory | :cart | :storage | :guild_storage
 
-  @enforce_keys [:id, :aegis_name, :name]
-  defstruct id: nil,
-            aegis_name: nil,
-            name: nil,
-            type: :etc,
-            subtype: nil,
-            weight: 0,
-            buy: 0,
-            sell: 0,
-            attack: 0,
-            magic_attack: 0,
-            defense: 0,
-            range: 0,
-            slots: 0,
-            view: 0,
-            jobs: :all,
-            classes: @renewal_classes,
-            gender: :both,
-            locations: [],
-            weapon_level: nil,
-            armor_level: nil,
-            equip_level_min: 0,
-            equip_level_max: 0,
-            refineable: false,
-            bind_on_equip: false,
-            no_consume: false,
-            no_use_sitting: false,
-            use_override: 100,
-            no_trade: false,
-            trade_override: 100,
-            no_cart: false,
-            no_storage: false,
-            no_guild_storage: false,
-            stack_limit: %{},
-            on_use: nil,
-            on_equip: nil,
-            on_unequip: nil,
-            attack_element: nil
-
-  @type t() :: %__MODULE__{
-          id: integer(),
-          aegis_name: String.t(),
-          name: String.t(),
-          type: item_type(),
-          subtype: atom(),
-          weight: integer(),
-          buy: integer(),
-          sell: integer(),
-          attack: integer(),
-          magic_attack: integer(),
-          defense: integer(),
-          range: integer(),
-          slots: integer(),
-          view: integer(),
-          jobs: :all | [ItemEligibility.family()],
-          classes: [ItemEligibility.category()],
-          gender: :both | :male | :female,
-          locations: [atom()],
-          weapon_level: integer(),
-          armor_level: integer(),
-          equip_level_min: integer(),
-          equip_level_max: integer(),
-          refineable: boolean(),
-          bind_on_equip: boolean(),
-          no_consume: boolean(),
-          no_use_sitting: boolean(),
-          use_override: non_neg_integer(),
-          no_trade: boolean(),
-          trade_override: non_neg_integer(),
-          no_cart: boolean(),
-          no_storage: boolean(),
-          no_guild_storage: boolean(),
-          stack_limit: %{optional(container()) => non_neg_integer()},
-          on_use: String.t() | nil,
-          on_equip: EquipScript.compiled() | nil,
-          on_unequip: EquipScript.compiled() | nil,
-          attack_element: atom()
-        }
+  @typedoc "A static item definition."
+  typedstruct enforce: true do
+    field :id, integer()
+    field :aegis_name, String.t()
+    field :name, String.t()
+    field :type, item_type(), default: :etc
+    field :subtype, atom(), default: nil
+    field :weight, integer(), default: 0
+    field :buy, integer(), default: 0
+    field :sell, integer(), default: 0
+    field :attack, integer(), default: 0
+    field :magic_attack, integer(), default: 0
+    field :defense, integer(), default: 0
+    field :range, integer(), default: 0
+    field :slots, integer(), default: 0
+    field :view, integer(), default: 0
+    field :jobs, :all | [ItemEligibility.family()], default: :all
+    field :classes, [ItemEligibility.category()], default: @renewal_classes
+    field :gender, :both | :male | :female, default: :both
+    field :locations, [atom()], default: []
+    field :weapon_level, integer() | nil, default: nil
+    field :armor_level, integer() | nil, default: nil
+    field :equip_level_min, integer(), default: 0
+    field :equip_level_max, integer(), default: 0
+    field :refineable, boolean(), default: false
+    field :bind_on_equip, boolean(), default: false
+    field :no_consume, boolean(), default: false
+    field :no_use_sitting, boolean(), default: false
+    field :use_override, non_neg_integer(), default: 100
+    field :no_trade, boolean(), default: false
+    field :trade_override, non_neg_integer(), default: 100
+    field :no_cart, boolean(), default: false
+    field :no_storage, boolean(), default: false
+    field :no_guild_storage, boolean(), default: false
+    field :stack_limit, %{optional(container()) => non_neg_integer()}, default: %{}
+    field :on_use, String.t() | nil, default: nil
+    field :on_equip, EquipScript.compiled() | nil, default: nil
+    field :on_unequip, EquipScript.compiled() | nil, default: nil
+    field :attack_element, atom(), default: nil
+  end
 
   @doc """
   Returns the script-visible view of an item.

@@ -1,17 +1,15 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsIntegrationTest do
   use Aesir.DataCase, async: false
 
+  import Aesir.Factory
   import Aesir.TestEtsSetup
 
   @moduletag integration_re: true, integration_pre_re: true
 
   alias Aesir.Commons.GameMode
-  alias Aesir.Commons.Models.Account
-  alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
-  alias Aesir.Repo
   alias Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.LazyYoungMan
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.ItemGroupPool
@@ -79,7 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsIntegrationTest do
   test "a real box grants all entries and one weighted pool entry before being consumed", %{
     character: character
   } do
-    box = insert_item(character.id, @box_id)
+    box = insert_item(character, @box_id)
     state = session_state(character, %{0 => box})
     {:ok, group} = ItemGroups.fetch(@box_group)
 
@@ -103,7 +101,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsIntegrationTest do
   test "the transpiled Lazy Young Man grants GiftBox contents through an NPC interaction", %{
     character: character
   } do
-    palm_juice = insert_item(character.id, @palm_juice_id)
+    palm_juice = insert_item(character, @palm_juice_id)
     state = session_state(character, %{0 => palm_juice})
     state = put_in(state.game_state.vars["MaxWeight"], 100_000)
     {:ok, session} = Session.start_link(state)
@@ -128,7 +126,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsIntegrationTest do
 
   @tag game_mode: :renewal, integration_re: true, integration_pre_re: false
   test "a full inventory still spends the box and its shared-pool draw", %{character: character} do
-    box = insert_item(character.id, @box_id)
+    box = insert_item(character, @box_id)
 
     inventory =
       Map.put(
@@ -168,45 +166,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsIntegrationTest do
   end
 
   defp create_character do
-    suffix = System.unique_integer([:positive])
-
-    account =
-      %Account{}
-      |> Account.changeset(%{
-        username: "igroup#{suffix}",
-        userid: "ig#{suffix}",
-        user_pass: "password",
-        email: "ig#{suffix}@test.local"
-      })
-      |> Repo.insert!()
-
-    %Character{}
-    |> Character.changeset(%{
-      account_id: account.id,
-      char_num: 0,
-      name: "ItemGroup#{suffix}",
-      class: 0,
-      base_level: 99,
-      str: 99,
-      agi: 10,
-      vit: 10,
-      int: 10,
-      dex: 10,
-      luk: 10,
-      last_map: "prontera",
-      last_x: 10,
-      last_y: 10,
-      save_map: "prontera",
-      save_x: 10,
-      save_y: 10
-    })
-    |> Repo.insert!()
+    insert(:character, base_level: 99, str: 99, last_map: "prontera", last_x: 10, last_y: 10)
   end
 
-  defp insert_item(char_id, item_id) do
-    {:ok, item} = Persistence.insert_item(char_id, %{nameid: item_id, amount: 1, identify: 1})
-    item
-  end
+  defp insert_item(character, item_id),
+    do: insert(:inventory_item, character: character, nameid: item_id)
 
   defp session_state(character, inventory) do
     game_state = %{PlayerState.new(character) | inventory: inventory}

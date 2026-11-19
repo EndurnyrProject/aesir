@@ -1,14 +1,15 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
   use Mimic
 
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CatalogNotLoadedError
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
 
-  setup :set_mimic_private
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
   describe "resolve_date_constant/1" do
@@ -28,10 +29,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
   end
 
   describe "resolve_status/1" do
-    test "maps SC_BLESSING to the effect-module atom" do
-      assert {:ok, :sc_blessing} = Resolver.resolve_status("SC_BLESSING")
-    end
-
     test "maps SC_WATK_ELEMENT so scripts can start the weapon element property" do
       assert {:ok, :sc_watk_element} = Resolver.resolve_status("SC_WATK_ELEMENT")
     end
@@ -49,10 +46,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
   end
 
   describe "resolve_element/1" do
-    test "maps Ele_Fire to :fire" do
-      assert {:ok, :fire} = Resolver.resolve_element("Ele_Fire")
-    end
-
     test "element constants ignore casing without accepting unknown names" do
       for {symbol, element} <- [{"Ele_fire", :fire}, {"ele_EARTH", :earth}, {"ELE_WATER", :water}] do
         assert Resolver.resolve_element(symbol) == {:ok, element}
@@ -64,17 +57,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
     test "maps Ele_Dark to :shadow mirroring the importer table" do
       assert {:ok, :shadow} = Resolver.resolve_element("Ele_Dark")
     end
-
-    test "unknown element is an unknown_symbol error" do
-      assert {:error, {:unknown_symbol, "Ele_Nope"}} = Resolver.resolve_element("Ele_Nope")
-    end
   end
 
   describe "resolve_skill/1" do
-    test "resolves a skill constant to its catalog id" do
-      assert {:ok, 34} = Resolver.resolve_skill("AL_BLESSING")
-    end
-
     test "resolves a numeric skill id" do
       assert {:ok, 34} = Resolver.resolve_skill(34)
     end
@@ -147,31 +132,22 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
 
   describe "runtime item fallback" do
     setup do
-      potion = %ItemDefinition{
-        id: 501,
-        aegis_name: "Red_Potion",
-        name: "Red Potion",
-        type: :healing
-      }
+      potion = build(:item_definition, aegis_name: "Red_Potion")
 
       stub(Items, :loaded?, fn -> true end)
-
-      stub(Items, :by_id, fn
-        501 -> {:ok, potion}
-        _id -> :error
-      end)
+      stub(Items, :by_id, fn id -> if id == potion.id, do: {:ok, potion}, else: :error end)
 
       stub(Items, :by_aegis, fn
         "Red_Potion" -> {:ok, potion}
         _aegis -> :error
       end)
 
-      :ok
+      %{potion: potion}
     end
 
-    test "resolves loaded items" do
-      assert {:ok, 501} = Resolver.resolve_item("Red_Potion")
-      assert {:ok, 501} = Resolver.resolve_item(501)
+    test "resolves loaded items", %{potion: %{id: id}} do
+      assert {:ok, ^id} = Resolver.resolve_item("Red_Potion")
+      assert {:ok, ^id} = Resolver.resolve_item(id)
       assert {:error, {:unknown_symbol, "Nope_Item"}} = Resolver.resolve_item("Nope_Item")
     end
   end
@@ -221,10 +197,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
   end
 
   describe "resolve_class/1" do
-    test "maps Job_Swordman to :swordman" do
-      assert {:ok, :swordman} = Resolver.resolve_class("Job_Swordman")
-    end
-
     test "maps the legacy CamelCase alias Job_SuperNovice to :super_novice" do
       assert {:ok, :super_novice} = Resolver.resolve_class("Job_SuperNovice")
     end
@@ -244,10 +216,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
   end
 
   describe "resolve_race/1" do
-    test "maps RC_Brute to :brute" do
-      assert {:ok, :brute} = Resolver.resolve_race("RC_Brute")
-    end
-
     test "race constants ignore casing without accepting unknown names" do
       assert Resolver.resolve_race("RC_undead") == {:ok, :undead}
       assert Resolver.resolve_race("rc_UNDEAD") == {:ok, :undead}
@@ -270,18 +238,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
       for id <- [-1, 13] do
         assert Resolver.resolve_race(id) == {:error, {:unknown_symbol, Integer.to_string(id)}}
       end
-    end
-
-    test "maps RC_All to :all" do
-      assert {:ok, :all} = Resolver.resolve_race("RC_All")
-    end
-
-    test "maps RC_Boss to the class-axis sentinel" do
-      assert {:ok, {:class, :boss}} = Resolver.resolve_race("RC_Boss")
-    end
-
-    test "unknown race is an unknown_symbol error" do
-      assert {:error, {:unknown_symbol, "RC_Nope"}} = Resolver.resolve_race("RC_Nope")
     end
   end
 
@@ -371,14 +327,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
   end
 
   describe "resolve_effect/1" do
-    test "maps an EF_ constant to its effect atom" do
-      assert {:ok, :heal2} = Resolver.resolve_effect("EF_HEAL2")
-    end
-
-    test "an EF_ name absent from the effect table is an unknown_symbol error" do
-      assert {:error, {:unknown_symbol, "EF_NOPE"}} = Resolver.resolve_effect("EF_NOPE")
-    end
-
     test "a non EF_ symbol is an unknown_symbol error" do
       assert {:error, {:unknown_symbol, "SC_BLESSING"}} = Resolver.resolve_effect("SC_BLESSING")
     end

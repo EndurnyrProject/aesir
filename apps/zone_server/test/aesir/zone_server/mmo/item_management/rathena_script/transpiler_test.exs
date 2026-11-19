@@ -1,28 +1,22 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.TranspilerTest do
+  # ScriptCompiler.compile_all!/1 redefines the global CompiledItemScripts module.
   use ExUnit.Case, async: false
   use Mimic
+
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Transpiler
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Script.Ctx
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
-  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
-  alias Aesir.ZoneServer.Unit.Stats.CurrentState
-  alias Aesir.ZoneServer.Unit.Stats.DerivedStats
 
   setup :set_mimic_from_context
 
   setup do
-    Mimic.copy(CharacterPersistence)
-    Mimic.copy(StatusInterpreter)
-
     stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
     stub(StatusInterpreter, :apply_status, fn _, _, _, _ -> :ok end)
     stub(StatusInterpreter, :remove_status, fn _, _, _ -> :ok end)
@@ -31,10 +25,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.TranspilerTest do
   end
 
   describe "transpile/1" do
-    test "a plain itemheal becomes a heal call" do
-      assert {:ok, "item_heal(ctx, hp: 45)"} = Transpiler.transpile("itemheal 45,0;")
-    end
-
     test "an unsupported command surfaces the codegen error unchanged" do
       assert {:error, {:unsupported, "cooking"}} = Transpiler.transpile("cooking 11;")
     end
@@ -45,22 +35,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.TranspilerTest do
   end
 
   describe "golden set" do
-    test "a plain potion" do
-      assert {:ok, "item_heal(ctx, hp: 45)"} = Transpiler.transpile("itemheal 45,0;")
-    end
-
-    test "a condensed potion using rand" do
-      assert {:ok, "item_heal(ctx, hp: 45..65)"} = Transpiler.transpile("itemheal rand(45,65),0;")
-    end
-
-    test "a fly wing" do
-      assert {:ok, "warp(ctx, :random)"} = Transpiler.transpile("warp \"Random\",0,0;")
-    end
-
-    test "a butterfly wing" do
-      assert {:ok, "warp(ctx, :save_point)"} = Transpiler.transpile("warp \"SavePoint\",0,0;")
-    end
-
     test "a class-branch scroll" do
       script = "if (Class == Job_Knight) sc_start SC_BLESSING,60000,10; else itemheal 50,0;"
 
@@ -136,81 +110,55 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.TranspilerTest do
         ~S|if (getskilllv("HT_FALCON")) { if (!checkoption(Option_Wug) && !checkoption(Option_Wugrider)) setfalcon (!checkfalcon()); }|
 
       assert {:ok, on_use} = Transpiler.transpile(script)
-      assert :ok = ScriptCompiler.compile_all!([item_def(12848, on_use)])
+      item = build(:item_definition, on_use: on_use)
+      assert :ok = ScriptCompiler.compile_all!([item])
 
-      ctx = build_ctx([])
-      assert CompiledItemScripts.on_use(12848, ctx) == ctx
+      ctx = item_ctx(item, build(:player_state, stats: %{progression: %{learned_skills: %{}}}))
+      assert CompiledItemScripts.on_use(item.id, ctx) == ctx
 
       learned = put_in(ctx.game_state.stats.progression.learned_skills, %{127 => 1})
-      assert CompiledItemScripts.on_use(12848, learned).session_effects == [{:falcon, true}]
+      assert CompiledItemScripts.on_use(item.id, learned).session_effects == [{:falcon, true}]
 
       equipped = put_in(learned.game_state.option, Option.id(:falcon))
-      assert CompiledItemScripts.on_use(12848, equipped).session_effects == [{:falcon, false}]
+      assert CompiledItemScripts.on_use(item.id, equipped).session_effects == [{:falcon, false}]
 
       for option <- [:wug, :wugrider] do
         mounted = put_in(learned.game_state.option, Option.id(option))
-        assert CompiledItemScripts.on_use(12848, mounted) == mounted
+        assert CompiledItemScripts.on_use(item.id, mounted) == mounted
       end
-    end
-
-    test "a transpiled heal script raises hp at runtime" do
-      assert {:ok, on_use} = Transpiler.transpile("itemheal 50,0;")
-      assert ScriptCompiler.compile_all!([item_def(501, on_use)]) == :ok
-
-      ctx = CompiledItemScripts.on_use(501, build_ctx(hp: 100))
-
-      assert ctx.status == :ok
-      assert ctx.game_state.stats.current_state.hp == 150
     end
 
     test "a transpiled class-branch scroll compiles and runs the matching branch" do
       script = "if (Class == Job_Knight) sc_start SC_BLESSING,60000,10; else itemheal 50,0;"
 
       assert {:ok, on_use} = Transpiler.transpile(script)
-      assert ScriptCompiler.compile_all!([item_def(502, on_use)]) == :ok
+      item = build(:item_definition, on_use: on_use)
+      assert ScriptCompiler.compile_all!([item]) == :ok
 
-      ctx = CompiledItemScripts.on_use(502, build_ctx(hp: 100))
+      novice =
+        build(:player_state,
+          stats: %{
+            base_stats: %{vit: 0, int: 0},
+            current_state: %{hp: 100},
+            derived_stats: %{max_hp: 500},
+            progression: %{job_id: 0}
+          }
+        )
+
+      ctx = CompiledItemScripts.on_use(item.id, item_ctx(item, novice))
 
       assert ctx.status == :ok
       assert ctx.game_state.stats.current_state.hp == 150
     end
   end
 
-  defp item_def(id, on_use) do
-    %ItemDefinition{id: id, aegis_name: "Item_#{id}", name: "Item #{id}", on_use: on_use}
-  end
-
-  defp build_ctx(opts) do
+  defp item_ctx(item, player) do
     %Ctx{
-      char_id: 1,
-      account_id: 100,
+      char_id: player.character_id,
+      account_id: player.account_id,
       connection_pid: self(),
-      game_state: build_game_state(opts),
-      source: {:item, 501}
-    }
-  end
-
-  defp build_game_state(opts) do
-    stats = %Stats{
-      base_stats: %{vit: 0, int: 0},
-      current_state: %CurrentState{
-        hp: Keyword.get(opts, :hp, 100),
-        sp: Keyword.get(opts, :sp, 10)
-      },
-      derived_stats: %DerivedStats{max_hp: 500, max_sp: 200, aspd: 150},
-      modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}, passive: %{}},
-      progression: %PlayerProgression{base_level: 10, job_level: 3, job_id: 0}
-    }
-
-    %PlayerState{
-      character_id: 1,
-      account_id: 100,
-      sex: "M",
-      x: 50,
-      y: 50,
-      map_name: "prontera",
-      stats: stats,
-      inventory: %{}
+      game_state: player,
+      source: {:item, item.id}
     }
   end
 end

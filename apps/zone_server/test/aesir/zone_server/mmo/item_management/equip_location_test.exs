@@ -29,10 +29,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipLocationTest do
   end
 
   describe "bitmask_to_location_atoms/1" do
-    test "decodes a single bit" do
-      assert EquipLocation.bitmask_to_location_atoms(16) == [:armor]
-    end
-
     test "decodes multiple bits into the canonical single-location atoms" do
       assert EquipLocation.bitmask_to_location_atoms(34) == [:right_hand, :left_hand]
       assert EquipLocation.bitmask_to_location_atoms(136) == [:right_accessory, :left_accessory]

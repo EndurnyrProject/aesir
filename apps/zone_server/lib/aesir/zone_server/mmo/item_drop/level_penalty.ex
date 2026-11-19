@@ -81,7 +81,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty do
     :ok
   end
 
-  @spec table(term(), String.t()) :: %{integer() => integer()}
+  @spec table(module() | {module(), atom()}, String.t()) :: %{integer() => integer()}
   defp table(pt_key, file) do
     case :persistent_term.get(pt_key, nil) do
       nil ->

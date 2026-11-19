@@ -14,26 +14,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItem do
   kept from its drop to whoever picks it up.
   """
 
-  alias Aesir.Commons.Models.ItemOptions
+  use TypedStruct
 
-  @enforce_keys [:id, :nameid, :amount, :x, :y, :sub_x, :sub_y, :identified, :dropped_at]
-  defstruct [
-    :id,
-    :nameid,
-    :amount,
-    :x,
-    :y,
-    :sub_x,
-    :sub_y,
-    :identified,
-    :dropped_at,
-    owners: nil,
-    unlock_at: nil,
-    refine: 0,
-    attribute: 0,
-    cards: [0, 0, 0, 0],
-    random_options: []
-  ]
+  alias Aesir.Commons.Models.ItemOptions
 
   @typedoc """
   The first, second, and third loot-owner character IDs, or `nil` for a public item.
@@ -46,23 +29,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItem do
   """
   @type unlock_at() :: {integer(), integer(), integer()} | nil
 
-  @type t() :: %__MODULE__{
-          id: pos_integer(),
-          nameid: non_neg_integer(),
-          amount: pos_integer(),
-          x: non_neg_integer(),
-          y: non_neg_integer(),
-          sub_x: non_neg_integer(),
-          sub_y: non_neg_integer(),
-          identified: boolean(),
-          dropped_at: integer(),
-          owners: owners(),
-          unlock_at: unlock_at(),
-          refine: non_neg_integer(),
-          attribute: non_neg_integer(),
-          cards: [integer()],
-          random_options: ItemOptions.t()
-        }
+  @typedoc "An item lying on a map cell."
+  typedstruct enforce: true do
+    field :id, pos_integer()
+    field :nameid, non_neg_integer()
+    field :amount, pos_integer()
+    field :x, non_neg_integer()
+    field :y, non_neg_integer()
+    field :sub_x, non_neg_integer()
+    field :sub_y, non_neg_integer()
+    field :identified, boolean()
+    field :dropped_at, integer()
+    field :owners, owners(), default: nil
+    field :unlock_at, unlock_at(), default: nil
+    field :refine, non_neg_integer(), default: 0
+    field :attribute, non_neg_integer(), default: 0
+    field :cards, [integer()], default: [0, 0, 0, 0]
+    field :random_options, ItemOptions.t(), default: []
+  end
 
   @typedoc """
   The attributes a ground item carries beyond its id and identify flag, when
@@ -82,6 +66,21 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItem do
   @type drop_entry ::
           {non_neg_integer(), pos_integer(), integer(), integer(), boolean()}
           | {non_neg_integer(), pos_integer(), integer(), integer(), boolean(), extras()}
+
+  @typedoc """
+  The inventory grant attributes of a picked-up item that has non-default
+  attributes: its identify flag, its four cards and its other non-default extras.
+  """
+  @type grant_attrs :: %{
+          optional(:refine) => non_neg_integer(),
+          optional(:attribute) => non_neg_integer(),
+          optional(:random_options) => ItemOptions.t(),
+          identify: 0 | 1,
+          card0: integer(),
+          card1: integer(),
+          card2: integer(),
+          card3: integer()
+        }
 
   @doc """
   Builds a `GroundItem`, generating a fresh unique `id`, a random sub-cell
@@ -149,7 +148,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItem do
   Returns the inventory grant attributes of picking `item` up: its identify
   flag, with its other attributes when it has any.
   """
-  @spec grant_attrs(t()) :: boolean() | map()
+  @spec grant_attrs(t()) :: boolean() | grant_attrs()
   def grant_attrs(%__MODULE__{} = item) do
     case extras(item) do
       empty when empty == %{} ->

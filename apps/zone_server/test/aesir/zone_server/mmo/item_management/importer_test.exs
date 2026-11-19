@@ -1,5 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
+
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.Importer
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
@@ -195,10 +197,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
         "Trade" => %{"NoTrade" => true, "Override" => 55}
       }
 
-      assert {:ok, definition = %ItemDefinition{no_trade: true}} =
+      assert {:ok, definition = %ItemDefinition{no_trade: true, trade_override: 55}} =
                Importer.to_definition(entry, :renewal)
-
-      assert Map.get(definition, :trade_override) == 55
 
       assert %{"no_trade" => true, "trade_override" => 55} =
                Importer.to_yaml_map(definition, :renewal)
@@ -358,21 +358,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       end
     end
 
-    test "attack_element is nil when no Script field" do
-      entry = %{"Id" => 1750, "AegisName" => "Arrow", "Name" => "Arrow"}
+    test "attack_element is nil without a Script or a bAtkEle bonus" do
+      plain = %{"Id" => 1750, "AegisName" => "Arrow", "Name" => "Arrow"}
+      stun = Map.put(plain, "Script", "bonus2 bAddEff,Eff_Stun,2000;")
 
-      assert {:ok, %ItemDefinition{attack_element: nil}} = Importer.to_definition(entry, :renewal)
-    end
-
-    test "attack_element is nil when Script has no bAtkEle bonus" do
-      entry = %{
-        "Id" => 1758,
-        "AegisName" => "Stun_Arrow",
-        "Name" => "Stun Arrow",
-        "Script" => "bonus2 bAddEff,Eff_Stun,2000;"
-      }
-
-      assert {:ok, %ItemDefinition{attack_element: nil}} = Importer.to_definition(entry, :renewal)
+      assert {:ok, %ItemDefinition{attack_element: nil}} = Importer.to_definition(plain, :renewal)
+      assert {:ok, %ItemDefinition{attack_element: nil}} = Importer.to_definition(stun, :renewal)
     end
   end
 
@@ -493,32 +484,27 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
 
   describe "to_yaml_map/2" do
     test "encodes attack_element as a string and omits nil" do
-      elemental = %ItemDefinition{
-        id: 1752,
-        aegis_name: "Fire_Arrow",
-        name: "Fire Arrow",
-        attack_element: :fire
-      }
-
-      plain = %ItemDefinition{id: 1750, aegis_name: "Arrow", name: "Arrow"}
+      elemental = build(:item_definition, attack_element: :fire)
+      plain = build(:item_definition)
 
       assert %{"attack_element" => "fire"} = Importer.to_yaml_map(elemental, :renewal)
       refute Map.has_key?(Importer.to_yaml_map(plain, :renewal), "attack_element")
     end
 
     test "stringifies keys/atoms and omits default-valued fields" do
-      definition = %ItemDefinition{
-        id: 1201,
-        aegis_name: "Knife",
-        name: "Knife",
-        type: :weapon,
-        subtype: :dagger,
-        weight: 400,
-        attack: 17,
-        jobs: [:bard_dancer, :swordman],
-        locations: [:right_hand],
-        refineable: true
-      }
+      definition =
+        build(:item_definition,
+          id: 1201,
+          aegis_name: "Knife",
+          name: "Knife",
+          type: :weapon,
+          subtype: :dagger,
+          weight: 400,
+          attack: 17,
+          jobs: [:bard_dancer, :swordman],
+          locations: [:right_hand],
+          refineable: true
+        )
 
       map = Importer.to_yaml_map(definition, :renewal)
 
@@ -540,73 +526,45 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       refute Map.has_key?(map, "armor_level")
     end
 
-    test "emits bind_on_equip only when true" do
-      binding = %ItemDefinition{id: 1201, aegis_name: "Knife", name: "Knife", bind_on_equip: true}
-      plain = %ItemDefinition{id: 1750, aegis_name: "Arrow", name: "Arrow"}
+    test "encodes on_equip and on_unequip as DSL source and omits them when nil" do
+      with_programs =
+        build(:item_definition,
+          on_equip: [{:bonus, :smatk, 3}],
+          on_unequip: [{:status_end, :sc_summer}]
+        )
 
-      assert %{"bind_on_equip" => true} = Importer.to_yaml_map(binding, :renewal)
-      refute Map.has_key?(Importer.to_yaml_map(plain, :renewal), "bind_on_equip")
-    end
+      without_programs = Importer.to_yaml_map(build(:item_definition), :renewal)
 
-    test "encodes on_equip as DSL source via EquipScript.to_source/1 and omits it when nil" do
-      program = [{:bonus, :smatk, 3}]
+      assert %{
+               "on_equip" => "bonus(ctx, :smatk, 3)",
+               "on_unequip" => "status_end(ctx, :sc_summer)"
+             } = Importer.to_yaml_map(with_programs, :renewal)
 
-      with_program = %ItemDefinition{id: 490_160, aegis_name: "X", name: "X", on_equip: program}
-      without_program = %ItemDefinition{id: 1750, aegis_name: "Arrow", name: "Arrow"}
-
-      assert %{"on_equip" => source} = Importer.to_yaml_map(with_program, :renewal)
-      assert source == "bonus(ctx, :smatk, 3)"
-      refute Map.has_key?(Importer.to_yaml_map(without_program, :renewal), "on_equip")
-    end
-
-    test "encodes on_unequip as DSL source via EquipScript.to_source/1 and omits it when nil" do
-      program = [{:status_end, :sc_summer}]
-
-      with_program = %ItemDefinition{id: 2776, aegis_name: "X", name: "X", on_unequip: program}
-      without_program = %ItemDefinition{id: 1750, aegis_name: "Arrow", name: "Arrow"}
-
-      assert %{"on_unequip" => source} = Importer.to_yaml_map(with_program, :renewal)
-      assert source == "status_end(ctx, :sc_summer)"
-      refute Map.has_key?(Importer.to_yaml_map(without_program, :renewal), "on_unequip")
-    end
-
-    @tag :tmp_dir
-    test "round-trips paired equipment programs back through the Loader", %{tmp_dir: dir} do
-      mode = ItemEligibility.mode()
-
-      definition = %ItemDefinition{
-        id: 2776,
-        aegis_name: "Cool_Towel",
-        name: "Adventurer's Trusty Towel",
-        type: :armor,
-        classes: ItemDefinition.default_classes(mode),
-        on_equip: [{:status_start, :sc_summer, :infinite, 0}],
-        on_unequip: [{:status_end, :sc_summer}]
-      }
-
-      yaml = Ymlr.document!([Importer.to_yaml_map(definition, mode)])
-      File.write!(Path.join(dir, "items.yml"), yaml)
-
-      assert %{by_id: %{2776 => ^definition}} = Loader.load()
+      refute Map.has_key?(without_programs, "on_equip")
+      refute Map.has_key?(without_programs, "on_unequip")
     end
 
     @tag :tmp_dir
     test "round-trips a definition back through the Loader", %{tmp_dir: dir} do
       mode = ItemEligibility.mode()
 
-      definition = %ItemDefinition{
-        id: 1201,
-        aegis_name: "Angel's_Knife",
-        name: "Angel's Knife: the \"best\"",
-        type: :weapon,
-        subtype: :dagger,
-        weight: 400,
-        attack: 17,
-        jobs: [:bard_dancer, :swordman],
-        classes: ItemDefinition.default_classes(mode),
-        locations: [:right_hand],
-        refineable: true
-      }
+      definition =
+        build(:item_definition,
+          id: 1201,
+          aegis_name: "Angel's_Knife",
+          name: "Angel's Knife: the \"best\"",
+          type: :weapon,
+          subtype: :dagger,
+          weight: 400,
+          attack: 17,
+          jobs: [:bard_dancer, :swordman],
+          classes: ItemDefinition.default_classes(mode),
+          locations: [:right_hand],
+          refineable: true,
+          attack_element: :fire,
+          on_equip: [{:status_start, :sc_summer, :infinite, 0}],
+          on_unequip: [{:status_end, :sc_summer}]
+        )
 
       yaml = Ymlr.document!([Importer.to_yaml_map(definition, mode)])
       File.write!(Path.join(dir, "items.yml"), yaml)
@@ -615,41 +573,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
     end
 
     test "uses mode-specific class defaults while rendering" do
-      pre_default = %ItemDefinition{
-        id: 1,
-        aegis_name: "Pre_Default",
-        name: "Pre Default",
-        classes: ItemDefinition.default_classes(:pre_renewal)
-      }
-
-      seven_classes = %{pre_default | id: 2, classes: ItemDefinition.default_classes(:renewal)}
+      pre_default = build(:item_definition, classes: ItemDefinition.default_classes(:pre_renewal))
+      seven_classes = build(:item_definition, classes: ItemDefinition.default_classes(:renewal))
 
       refute Map.has_key?(Importer.to_yaml_map(pre_default, :pre_renewal), "classes")
 
       assert %{"classes" => classes} = Importer.to_yaml_map(seven_classes, :pre_renewal)
       assert length(classes) == 7
-    end
-
-    @tag :tmp_dir
-    test "round-trips attack_element through the Loader", %{tmp_dir: dir} do
-      mode = ItemEligibility.mode()
-
-      definition = %ItemDefinition{
-        id: 1752,
-        aegis_name: "Fire_Arrow",
-        name: "Fire Arrow",
-        type: :ammo,
-        subtype: :arrow,
-        attack: 30,
-        classes: ItemDefinition.default_classes(mode),
-        locations: [:ammo],
-        attack_element: :fire
-      }
-
-      yaml = Ymlr.document!([Importer.to_yaml_map(definition, mode)])
-      File.write!(Path.join(dir, "items.yml"), yaml)
-
-      assert %{by_id: %{1752 => ^definition}} = Loader.load()
     end
   end
 end

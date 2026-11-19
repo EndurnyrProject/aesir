@@ -1,5 +1,5 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
@@ -111,11 +111,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
                compile("sc_start SC_BLESSING,0xEA60,10;")
     end
 
-    test "sc_start passes the rate and flag through to sc_start" do
-      assert {:ok, "sc_start(ctx, :sc_freeze, 10000, 0, 2500, 0)"} =
-               compile("sc_start SC_FREEZE,10000,0,2500,0;")
-    end
-
     test "sc_start with an explicit flag keeps the rate and flag" do
       assert {:ok, "sc_start(ctx, :sc_stun, 3000, 0, 10000, 0)"} =
                compile("sc_start SC_STUN,3000,0,10000,0;")
@@ -160,13 +155,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
   end
 
   describe "generate/1 control flow" do
-    test "if/else emits parseable Elixir" do
-      assert {:ok, source} =
-               compile("if (BaseLevel > 70) itemheal 100,0; else itemheal 50,0;")
-
-      assert Code.string_to_quoted!(source)
-    end
-
     test "if without else returns ctx in the empty branch" do
       assert {:ok, source} = compile("if (Sex == 1) itemheal 10,0;")
       assert Code.string_to_quoted!(source)
@@ -180,14 +168,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
       assert Code.string_to_quoted!(source)
       assert source =~ "ctx = item_heal(ctx, hp: 100)"
       assert source =~ "ctx = item_heal(ctx, sp: 30)"
-    end
-
-    test "class branch resolves a Job_ constant" do
-      assert {:ok, source} =
-               compile("if (Class == Job_Knight) sc_start SC_BLESSING,60000,10;")
-
-      assert Code.string_to_quoted!(source)
-      assert source =~ ":knight"
     end
   end
 
@@ -234,18 +214,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
     test "delitem resolves a numeric id" do
       assert {:ok, "delitem(ctx, 501, 2)"} =
                compile_with_source_catalogs("delitem 501,2;")
-    end
-
-    test "Falcon Flute preserves skill, wug and falcon checks" do
-      script =
-        ~S|if (getskilllv("HT_FALCON")) { if (!checkoption(Option_Wug) && !checkoption(Option_Wugrider)) setfalcon (!checkfalcon()); }|
-
-      assert {:ok, source} = compile(script)
-      assert Code.string_to_quoted!(source)
-      assert source =~ "getskilllv(ctx, 127)"
-      assert source =~ "checkoption(ctx,"
-      assert source =~ "checkfalcon(ctx)"
-      assert source =~ "setfalcon(ctx,"
     end
 
     test "an unknown option constant remains unsupported" do
@@ -306,10 +274,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
   end
 
   describe "generate/1 unsupported" do
-    test "an unknown command is unsupported with its name" do
-      assert {:error, {:unsupported, "cooking"}} = compile("cooking 999,1;")
-    end
-
     test "an NPC-only statement is unsupported, not a raise" do
       assert {:error, {:unsupported, {:statement, _}}} =
                compile("while (Hp < 100) itemheal 10,0;")

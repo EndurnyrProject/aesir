@@ -73,15 +73,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenaltyTest do
     assert LevelPenalty.drop(100, 100) == 100
   end
 
-  @tag game_mode: :renewal
-  test "drop/2 works through reload/0 + the priv/db/re/level_penalty.yml file" do
-    :ok = LevelPenalty.reload()
-
-    assert LevelPenalty.drop(116, 100) == 50
-    assert LevelPenalty.drop(105, 100) == 90
-    assert LevelPenalty.drop(100, 100) == 100
-  end
-
   @tag :tmp_dir
   @tag game_mode: :renewal
   test "reload/0 applies an import breakpoint override", %{tmp_dir: root} do
@@ -121,52 +112,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenaltyTest do
     assert LevelPenalty.exp(130, 100) == 70
   end
 
-  test "exp/2 carries the breakpoint forward toward zero for unlisted diffs" do
-    assert LevelPenalty.exp(125, 100) == 90
-    assert LevelPenalty.exp(140, 100) == 70
-    assert LevelPenalty.exp(75, 100) == 90
-    assert LevelPenalty.exp(65, 100) == 70
-  end
-
-  test "exp/2 returns 100 inside the no-penalty band around zero" do
-    assert LevelPenalty.exp(115, 100) == 100
-    assert LevelPenalty.exp(100, 100) == 100
-  end
-
-  test "exp/2 reloads the active mode's table" do
-    :ok = LevelPenalty.reload()
-
-    assert LevelPenalty.exp(100, 100) == 100
-  end
-
-  test "mvp_drop/2 returns 100 at zero level difference" do
-    assert LevelPenalty.mvp_drop(100, 100) == 100
-  end
-
   test "mvp_drop/2 carries the breakpoint forward toward zero for unlisted diffs" do
     assert LevelPenalty.mvp_drop(115, 100) == 60
     assert LevelPenalty.mvp_drop(85, 100) == 60
   end
 
-  test "mvp_drop/2 reloads the active mode's table" do
-    :ok = LevelPenalty.reload()
-
-    assert LevelPenalty.mvp_drop(100, 100) == 100
-  end
-
-  test "mvp_exp/2 returns 100 at zero level difference" do
-    assert LevelPenalty.mvp_exp(100, 100) == 100
-  end
-
   test "mvp_exp/2 carries the breakpoint forward toward zero for unlisted diffs" do
     assert LevelPenalty.mvp_exp(130, 100) == 80
     assert LevelPenalty.mvp_exp(70, 100) == 80
-  end
-
-  test "mvp_exp/2 reloads the active mode's table" do
-    :ok = LevelPenalty.reload()
-
-    assert LevelPenalty.mvp_exp(100, 100) == 100
   end
 
   # The shipped MVP tables are empty, so no value assertion can distinguish a

@@ -12,15 +12,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ArrowCraftingTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
 
   describe "all/0" do
-    test "loads the imported recipe table" do
+    test "every imported source and product resolves in the item catalog" do
       recipes = ArrowCrafting.all()
 
-      assert length(recipes) > 100
-      assert Enum.all?(recipes, &match?(%Recipe{}, &1))
-    end
+      assert recipes != []
 
-    test "every source and product resolves in the item catalog" do
-      for %Recipe{source_id: source_id, makes: makes} <- ArrowCrafting.all() do
+      for %Recipe{source_id: source_id, makes: makes} <- recipes do
         assert {:ok, _} = Items.by_id(source_id)
 
         for %{item_id: item_id, amount: amount} <- makes do

@@ -363,7 +363,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   The source is read with `Code.string_to_quoted!/1` and walked against a
   closed vocabulary; flat bonus destinations are validated through
   `BonusKeys.destinations/0`, and `{family, param}` tuple destinations through
-  `BonusKeys.families/0` and `BonusKeys.family_param/1` (atom params against
+  `BonusKeys.family_param/1` (atom params against
   the family's domain, skill params as positive integers). Equipped-set item
   ids must be a non-empty list of positive integers. Any unknown call,
   operator, destination, or malformed shape raises `ArgumentError` — corrupt

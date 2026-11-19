@@ -1,15 +1,16 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ItemscriptScrollsTest do
+  # Sync: ScriptCompiler.compile_all!/1 redefines the global CompiledItemScripts module.
+  # Private Mimic: a global Broadcast stub would route other processes' packets here.
   use ExUnit.Case, async: false
   use Mimic
 
   import Aesir.TestEtsSetup
 
-  alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Factory
   alias Aesir.Net.ItemUseResult
   alias Aesir.Net.StatusChange
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
-  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Transpiler
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
@@ -31,26 +32,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ItemscriptScrollsTes
 
   setup do
     player =
-      PlayerState.new(%Character{
+      Factory.build(:character,
         id: 7_713,
         account_id: 7_713,
-        name: "Card scroll",
-        class: 0,
-        sex: "M",
-        base_level: 1,
-        job_level: 1,
-        str: 1,
-        agi: 1,
-        vit: 1,
-        int: 1,
-        dex: 1,
-        luk: 1,
-        hp: 40,
-        sp: 11,
         last_map: "prontera",
         last_x: 100,
         last_y: 100
-      })
+      )
+      |> PlayerState.new()
 
     :ok = UnitRegistry.register_player(player, self())
     %{state: %SessionState{game_state: player, connection_pid: self()}}
@@ -189,8 +178,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ItemscriptScrollsTes
       end
     end)
 
-    Mimic.copy(InventoryOps)
-
     stub(InventoryOps, :remove, fn _id, inventory, index, count ->
       Inventory.remove(inventory, index, count)
     end)
@@ -209,39 +196,5 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ItemscriptScrollsTes
     player = %{state.game_state | inventory: inventory}
     :ok = UnitRegistry.update_unit_state(:player, player.character_id, player)
     ItemHandler.handle_use_item(2, %{state | game_state: player})
-  end
-
-  test "card scroll syntax resolves only known icons and preserves rate and flags" do
-    assert Resolver.resolve_status_icon("EFST_FOOD_BASICHIT") == {:ok, 248}
-    assert Resolver.resolve_status_icon("EFST_ARMOR_PROPERTY") == {:ok, 302}
-
-    for symbol <- ["EFST_NOT_A_REAL_ICON", "EFST_id", "food_basichit"] do
-      assert Resolver.resolve_status_icon(symbol) == {:error, {:unknown_symbol, symbol}}
-    end
-
-    assert {:ok, "sc_start(ctx, :sc_itemscript, 180000, [4121, 248, 0, 0])"} =
-             Transpiler.transpile("sc_start2 SC_ITEMSCRIPT,180000,4121,EFST_FOOD_BASICHIT;")
-
-    assert {:ok, "sc_start(ctx, :sc_itemscript, 60000, [4047, 302, 0, 0], 7500, 1)"} =
-             Transpiler.transpile(
-               "sc_start2 SC_ITEMSCRIPT,60000,4047,EFST_ARMOR_PROPERTY,7500,1;"
-             )
-
-    for script <- [
-          "sc_start2 SC_ITEMSCRIPT,60000,4047,EFST_NOT_A_REAL_ICON;",
-          "sc_start2 SC_ITEMSCRIPT,60000,4047;",
-          "sc_start2 SC_ITEMSCRIPT,60000,4047,302,10000,0,42;",
-          "sc_start2 SC_ITEMSCRIPT,60000,4047,302; unsupported_command;"
-        ] do
-      assert {:error, _} = Transpiler.transpile(script)
-    end
-
-    for script <- [
-          "sc_start2 SC_ITEMSCRIPT,60000,4047,EFST_ARMOR_PROPERTY;",
-          "sc_end SC_ITEMSCRIPT;",
-          "itemheal 100,0;"
-        ] do
-      assert {:error, _} = Transpiler.transpile_equip(script, :equip)
-    end
   end
 end

@@ -5,7 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverCompleteness
   with `{:error, :unknown_status}`. Every value in the resolver's `@statuses`
   map must have a registered `StatusEffect.Registry` definition.
   """
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry

@@ -2,21 +2,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeFameTest do
   use Aesir.DataCase, async: true
   use Mimic
 
-  import Aesir.Factory
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Factory
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge
-  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes.Recipe
   alias Aesir.ZoneServer.Mmo.Skills.Alchemist.TwilightAlchemy
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
 
+  @materials [%{item_id: 1002, amount: 1}]
+
   setup :set_mimic_from_context
 
   setup do
-    character = insert(:character, name: "FameMaker", class: 4019, job_level: 70)
+    character = Factory.insert(:character, class: 4019, job_level: 70)
 
     stats = Stats.from_character(character)
     stats = put_in(stats.progression.learned_skills, %{228 => 1, 99 => 3})
@@ -85,7 +87,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeFameTest do
 
     assert failed.potion_success_counter == 0
 
-    for recipe <- [%{recipe(1126) | skill_id: 99, item_level: 3}, %{recipe(998) | skill_id: 94}] do
+    for recipe <- [
+          build(:production_recipe,
+            product_id: 1126,
+            skill_id: 99,
+            item_level: 3,
+            materials: @materials
+          ),
+          build(:production_recipe, product_id: 998, skill_id: 94, materials: @materials)
+        ] do
       rolls([10_000])
       assert {:ok, failed} = Forge.run(%{caster | inventory: inventory([{1002, 1}])}, recipe, [])
       assert failed.potion_success_counter == 7
@@ -94,7 +104,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeFameTest do
 
     rolls([10_000])
     caster = put_in(caster.stats.derived_stats.max_hp, 1_000)
-    poison = %{recipe(678) | skill_id: 407}
+    poison = build(:production_recipe, product_id: 678, skill_id: 407, materials: @materials)
 
     assert {:ok, failed} =
              Forge.run_skill(%{caster | inventory: inventory([{1002, 1}])}, poison, 407)
@@ -106,7 +116,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeFameTest do
   test "qualifying forging earns fame even when delivery is refused", %{caster: caster} do
     rolls([1])
     caster = put_in(caster.stats.progression.job_id, 10)
-    recipe = %{recipe(1126) | skill_id: 99, item_level: 3}
+
+    recipe =
+      build(:production_recipe,
+        product_id: 1126,
+        skill_id: 99,
+        item_level: 3,
+        materials: @materials
+      )
 
     stub(InventoryOps, :add, fn _id, _inventory, _stats, _definition, _amount, _opts ->
       {:error, :inventory_full}
@@ -153,16 +170,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeFameTest do
     end)
   end
 
-  defp recipe(product) do
-    %Recipe{
-      id: 1,
-      product_id: product,
-      item_level: 22,
-      skill_id: 228,
-      skill_level: 1,
-      materials: [%{item_id: 1002, amount: 1}]
-    }
-  end
+  defp recipe(product_id),
+    do: build(:production_recipe, product_id: product_id, skill_id: 228, materials: @materials)
 
   defp inventory(entries) do
     entries

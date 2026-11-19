@@ -3,6 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft do
   Models the identity metadata for signed and forged items.
   """
 
+  use TypedStruct
+
   import Bitwise
 
   alias Aesir.ZoneServer.Mmo.Element
@@ -10,17 +12,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft do
   @card0_forge 0x00FF
   @card0_create 0x00FE
 
-  @enforce_keys [:kind, :creator_char_id]
-  defstruct [:kind, :creator_char_id, element: :neutral, star_crumbs: 0]
-
   @type kind :: :signed | :forged
   @type element :: :neutral | :water | :earth | :fire | :wind
-  @type t :: %__MODULE__{
-          kind: kind(),
-          creator_char_id: non_neg_integer(),
-          element: element(),
-          star_crumbs: 0..3
-        }
+
+  @typedoc "The creator and forge attributes of a signed or forged item."
+  typedstruct enforce: true do
+    field :kind, kind()
+    field :creator_char_id, non_neg_integer()
+    field :element, element(), default: :neutral
+    field :star_crumbs, 0..3, default: 0
+  end
 
   @doc "Builds metadata for a signed item."
   @spec signed(non_neg_integer()) :: t()
@@ -64,7 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft do
   defp char_words(id), do: [band(id, 0xFFFF), band(id >>> 16, 0xFFFF)]
 
   @doc "Serializes item craft metadata for storage."
-  @spec to_map(t()) :: map()
+  @spec to_map(t()) :: %{String.t() => String.t() | non_neg_integer()}
   def to_map(%__MODULE__{} = craft) do
     %{
       "kind" => Atom.to_string(craft.kind),

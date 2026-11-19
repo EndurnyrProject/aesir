@@ -1,13 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
-  use Aesir.DataCase, async: false
+  use Aesir.DataCase, async: true
   use Mimic
 
-  alias Aesir.Commons.Models.Account
-  alias Aesir.Commons.Models.Character
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Factory
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge
-  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes.Recipe
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -15,41 +15,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
 
   @cdp_materials [937, 952, 939, 7033, 972, 657, 713]
 
+  setup :set_mimic_from_context
+  setup :verify_on_exit!
+
   setup do
-    previous_rng = Application.get_env(:zone_server, :forge_rng)
-
-    on_exit(fn ->
-      if previous_rng,
-        do: Application.put_env(:zone_server, :forge_rng, previous_rng),
-        else: Application.delete_env(:zone_server, :forge_rng)
-    end)
-
-    suffix = System.unique_integer([:positive])
-
-    account =
-      %Account{}
-      |> Account.changeset(%{
-        username: "forge#{suffix}",
-        userid: "forge#{suffix}",
-        user_pass: "password",
-        email: "forge#{suffix}@test.com"
-      })
-      |> Repo.insert!()
-
     character =
-      %Character{}
-      |> Character.changeset(%{
-        account_id: account.id,
-        char_num: 0,
-        name: "Forge#{suffix}",
+      Factory.insert(:character,
         class: 10,
         base_level: 99,
         job_level: 70,
         str: 99,
         dex: 99,
         luk: 99
-      })
-      |> Repo.insert!()
+      )
 
     stats = Stats.from_character(character)
     learned = %{97 => 5, 99 => 3, 107 => 10}
@@ -87,7 +65,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
 
     low = put_in(low.stats.progression.learned_skills, %{})
     low = %{low | inventory: inventory([{999, 1}, {1000, 3}, {994, 1}])}
-    recipe = %{weapon_recipe() | item_level: 3, materials: [%{item_id: 999, amount: 1}]}
+
+    recipe =
+      build(:production_recipe,
+        product_id: 1101,
+        skill_id: 99,
+        item_level: 3,
+        materials: [%{item_id: 999, amount: 1}]
+      )
 
     assert {:ok, failed} = Forge.run(low, recipe, [1000, 1000, 1000])
     assert ItemContainer.held_amount(failed.inventory, 999) == 0
@@ -98,7 +83,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
   end
 
   test "pharmacy ignores forge catalysts and signs its product", %{caster: caster} do
-    Application.put_env(:zone_server, :forge_rng, fn _upper -> 1 end)
+    forge_rng(fn _upper -> 1 end)
 
     caster =
       caster
@@ -120,7 +105,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
 
   test "pharmacy consumes signed materials across makers and keeps product identities separate",
        %{caster: caster} do
-    Application.put_env(:zone_server, :forge_rng, fn _upper -> 1 end)
+    forge_rng(fn _upper -> 1 end)
     own = ItemCraft.signed(caster.character_id) |> ItemCraft.to_map()
     other = ItemCraft.signed(caster.character_id + 1) |> ItemCraft.to_map()
 
@@ -133,7 +118,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
         2 => item(501, 4)
       })
 
-    recipe = %{pharmacy_recipe() | materials: [%{item_id: 501, amount: 2}]}
+    recipe =
+      build(:production_recipe,
+        product_id: 501,
+        skill_id: 228,
+        materials: [%{item_id: 501, amount: 2}]
+      )
 
     assert {:ok, brewed} = Forge.run(caster, recipe, [])
     assert ItemContainer.held_amount(brewed.inventory, 501) == 6
@@ -161,7 +151,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
     defp batch_rolls(unit_rolls) do
       {:ok, agent} = Agent.start_link(fn -> {unit_rolls, 0} end)
 
-      Application.put_env(:zone_server, :forge_rng, fn
+      forge_rng(fn
         10_000 ->
           Agent.get_and_update(agent, fn {[roll | rest], terms} -> {roll, {rest, terms}} end)
 
@@ -229,7 +219,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
   end
 
   test "failed pharmacy attempt burns its recipe materials", %{caster: caster} do
-    Application.put_env(:zone_server, :forge_rng, fn
+    forge_rng(fn
       991 -> 1
       10_000 -> 10_000
     end)
@@ -251,7 +241,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
 
   describe "result effect" do
     test "a pharmacy brew shows its outcome on the caster", %{caster: caster} do
-      Application.put_env(:zone_server, :forge_rng, fn _upper -> 1 end)
+      forge_rng(fn _upper -> 1 end)
       char_id = caster.character_id
       expect(SpecialEffect, :play, fn {:player, ^char_id}, :pharmacy_ok, :self -> :ok end)
 
@@ -260,7 +250,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
     end
 
     test "a failed Create Deadly Poison shows the pharmacy failure", %{caster: caster} do
-      Application.put_env(:zone_server, :forge_rng, fn _upper -> 10_000 end)
+      forge_rng(fn _upper -> 10_000 end)
       char_id = caster.character_id
       expect(SpecialEffect, :play, fn {:player, ^char_id}, :pharmacy_fail, :self -> :ok end)
 
@@ -269,7 +259,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
     end
 
     test "a batch that makes nothing shows success then failure", %{caster: caster} do
-      Application.put_env(:zone_server, :forge_rng, fn
+      forge_rng(fn
         10_000 -> 10_000
         _upper -> 1
       end)
@@ -292,7 +282,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
   end
 
   test "a full inventory spends the materials and reports the refused add", %{caster: caster} do
-    Application.put_env(:zone_server, :forge_rng, fn _upper -> 1 end)
+    forge_rng(fn _upper -> 1 end)
     material = item(998, 3)
 
     full =
@@ -314,10 +304,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
   } do
     :rand.seed(:exsss, {1, 1, 1})
 
-    recipe = %{
-      weapon_recipe()
-      | materials: [%{item_id: 998, amount: 2}, %{item_id: 986, amount: 0}]
-    }
+    recipe =
+      build(:production_recipe,
+        product_id: 1101,
+        skill_id: 99,
+        item_level: 1,
+        materials: [%{item_id: 998, amount: 2}, %{item_id: 986, amount: 0}]
+      )
 
     assert {:ok, forged} =
              Forge.run(%{caster | inventory: inventory([{998, 2}, {986, 1}])}, recipe, [])
@@ -337,7 +330,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
   end
 
   test "a selected catalyst the player does not hold is skipped", %{caster: caster} do
-    Application.put_env(:zone_server, :forge_rng, fn _upper -> 1 end)
+    forge_rng(fn _upper -> 1 end)
     caster = %{caster | inventory: inventory([{998, 2}, {1000, 1}])}
 
     assert {:ok, forged} = Forge.run(caster, weapon_recipe(), [1000, 1000, 994])
@@ -378,9 +371,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
       caster = put_in(caster.stats.progression.learned_skills, %{94 => 5})
       caster = %{caster | inventory: inventory([{1002, 1}])}
 
+      iron_recipe =
+        build(:production_recipe,
+          product_id: 998,
+          skill_id: 94,
+          materials: [%{item_id: 1002, amount: 1}]
+        )
+
       # 20*70 + 10*30 + 10*10 + 10*1 + 4000 + 500*5 = 8310
-      assert pinned_success?(caster, iron_recipe(), 8310)
-      refute pinned_success?(caster, iron_recipe(), 8311)
+      assert pinned_success?(caster, iron_recipe, 8310)
+      refute pinned_success?(caster, iron_recipe, 8311)
     end
 
     test "a baby class forges at 70 percent of the chance", %{caster: caster} do
@@ -416,7 +416,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
       caster = controlled(caster, %{dex: 1, luk: 1}, %{})
       caster = put_in(caster.stats.derived_stats.max_hp, 100_050)
       caster = %{caster | inventory: inventory(Enum.map(@cdp_materials, &{&1, 1}))}
-      Application.put_env(:zone_server, :forge_rng, fn 10_000 -> 10_000 end)
+      forge_rng(fn 10_000 -> 10_000 end)
 
       assert {:ok, failed} = Forge.run_skill(caster, cdp_recipe(), 407)
       # div(100_050, 100) * 25, not div(100_050 * 25, 100) = 25_012
@@ -425,20 +425,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
   end
 
   defp pinned_skill_success?(caster, roll) do
-    Application.put_env(:zone_server, :forge_rng, fn 10_000 -> roll end)
+    forge_rng(fn 10_000 -> roll end)
     {:ok, attempted} = Forge.run_skill(caster, cdp_recipe(), 407)
     attempted.pending_production_result.success
   end
 
   defp cdp_recipe do
-    %Recipe{
-      id: 127,
+    build(:production_recipe,
       product_id: 678,
-      item_level: 22,
       skill_id: 407,
-      skill_level: 1,
       materials: Enum.map(@cdp_materials, &%{item_id: &1, amount: 1})
-    }
+    )
   end
 
   # Allocated stats `base`, no job bonus, and `equipment` as the only bonus.
@@ -457,7 +454,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
 
   # The formula's random terms take their lowest value and the success roll is `roll`.
   defp pinned_success?(caster, recipe, roll) do
-    Application.put_env(:zone_server, :forge_rng, fn
+    forge_rng(fn
       10_000 -> roll
       _upper -> 1
     end)
@@ -466,26 +463,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
     attempted.pending_production_result.success
   end
 
-  defp iron_recipe do
-    %Recipe{
-      id: 0,
-      product_id: 998,
-      item_level: 26,
-      skill_id: 94,
-      skill_level: 1,
-      materials: [%{item_id: 1002, amount: 1}]
-    }
-  end
-
   defp pharmacy_recipe do
-    %Recipe{
-      id: 119,
+    build(:production_recipe,
       product_id: 501,
-      item_level: 22,
       skill_id: 228,
-      skill_level: 1,
       materials: [%{item_id: 1002, amount: 1}]
-    }
+    )
   end
 
   defp pharmacy_caster(caster, pharmacy_level) do
@@ -500,14 +483,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
   end
 
   defp weapon_recipe do
-    %Recipe{
-      id: 0,
+    build(:production_recipe,
       product_id: 1101,
-      item_level: 1,
       skill_id: 99,
-      skill_level: 1,
+      item_level: 1,
       materials: [%{item_id: 998, amount: 2}]
-    }
+    )
+  end
+
+  defp forge_rng(rng) do
+    stub(Application, :get_env, fn
+      :zone_server, :forge_rng, _default -> rng
+      app, key, default -> Mimic.call_original(Application, :get_env, [app, key, default])
+    end)
   end
 
   defp inventory(entries) do

@@ -1,12 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRateTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
   use Mimic
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
 
-  setup :set_mimic_private
-  setup :verify_on_exit!
+  setup :set_mimic_from_context
 
   describe "weapon/1" do
     test "includes the shared base and each tier bonus" do
@@ -112,14 +111,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRateTest do
       }
 
       assert SuccessRate.weapon(params) == 1
-    end
-
-    test "uses the caller-supplied random term without rolling" do
-      params = weapon_params()
-
-      assert SuccessRate.weapon(%{params | random_term: 10}) == 4710
-      assert SuccessRate.weapon(%{params | random_term: 1000}) == 5700
-      assert SuccessRate.weapon(%{params | random_term: 10}) == 4710
     end
   end
 

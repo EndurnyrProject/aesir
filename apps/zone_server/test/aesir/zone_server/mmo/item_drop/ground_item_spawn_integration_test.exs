@@ -14,17 +14,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItemSpawnIntegrationTest do
   cache warmed by `TestEtsSetup`.
   """
 
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
   use Mimic
 
   @moduletag integration_re: true, integration_pre_re: true
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
-  alias Aesir.Commons.Models.Character
   alias Aesir.Net.ItemOnGround
   alias Aesir.Net.ItemVanished
-  alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
@@ -33,7 +32,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItemSpawnIntegrationTest do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @map "prontera"
-  @char_id 4001
 
   setup :set_mimic_from_context
   setup :setup_ets_tables
@@ -48,11 +46,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItemSpawnIntegrationTest do
 
   describe "ground item walk-up discovery" do
     test "a player near a ground item receives an ItemOnGround (not falling)" do
-      item = ground_item(150, 150)
+      item = build(:ground_item, nameid: 501, amount: 1, x: 150, y: 150)
       GroundItemStore.put(@map, item)
       ground_id = item.id
 
-      game_state = %{PlayerState.new(character()) | x: 150, y: 150}
+      game_state = build(:player_state, map_name: @map, x: 150, y: 150)
       register_player(game_state)
 
       new_state = MovementHandler.handle_visibility_update(game_state)
@@ -72,10 +70,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItemSpawnIntegrationTest do
     end
 
     test "a ground item outside view range is not sent" do
-      item = ground_item(150, 150)
+      item = build(:ground_item, x: 150, y: 150)
       GroundItemStore.put(@map, item)
 
-      game_state = %{PlayerState.new(character()) | x: 10, y: 10}
+      game_state = build(:player_state, map_name: @map, x: 10, y: 10)
       register_player(game_state)
 
       new_state = MovementHandler.handle_visibility_update(game_state)
@@ -85,12 +83,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItemSpawnIntegrationTest do
     end
 
     test "leaving range sends an ItemVanished and drops the id" do
-      item = ground_item(150, 150)
+      item = build(:ground_item, x: 150, y: 150)
       GroundItemStore.put(@map, item)
       ground_id = item.id
 
       game_state =
-        %{PlayerState.new(character()) | x: 10, y: 10, visible_items: MapSet.new([ground_id])}
+        build(:player_state, map_name: @map, x: 10, y: 10, visible_items: MapSet.new([ground_id]))
 
       register_player(game_state)
 
@@ -101,12 +99,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItemSpawnIntegrationTest do
     end
 
     test "staying in range does not re-spawn an already-visible item" do
-      item = ground_item(150, 150)
+      item = build(:ground_item, x: 150, y: 150)
       GroundItemStore.put(@map, item)
       ground_id = item.id
 
       game_state =
-        %{PlayerState.new(character()) | x: 150, y: 150, visible_items: MapSet.new([ground_id])}
+        build(:player_state,
+          map_name: @map,
+          x: 150,
+          y: 150,
+          visible_items: MapSet.new([ground_id])
+        )
 
       register_player(game_state)
 
@@ -117,36 +120,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItemSpawnIntegrationTest do
     end
   end
 
-  defp ground_item(x, y), do: GroundItem.new(501, 1, x, y, true)
-
-  defp character do
-    %Character{
-      id: @char_id,
-      account_id: 400,
-      name: "Looter",
-      last_map: @map,
-      last_x: 150,
-      last_y: 150,
-      sex: "M",
-      hair: 1,
-      hair_color: 0,
-      clothes_color: 0,
-      head_mid: 0,
-      head_bottom: 0,
-      robe: 0,
-      str: 1,
-      agi: 1,
-      vit: 1,
-      int: 1,
-      dex: 1,
-      luk: 1,
-      base_level: 1,
-      job_level: 1,
-      class: 0
-    }
-  end
-
   defp register_player(game_state) do
-    UnitRegistry.register_unit(:player, @char_id, PlayerState, game_state, self())
+    UnitRegistry.register_unit(:player, game_state.character_id, PlayerState, game_state, self())
   end
 end

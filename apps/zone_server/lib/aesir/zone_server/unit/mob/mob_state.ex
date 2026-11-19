@@ -203,6 +203,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     owner_event: nil
   ]
 
+  @typedoc "One typed contributor's cumulative damage and its hit-time reward owner."
+  @type typed_contribution() :: %{
+          contributor: Ref.t(),
+          source_type: atom(),
+          reward_owner_id: integer() | nil,
+          damage: non_neg_integer(),
+          first_hit_order: non_neg_integer()
+        }
+
   @type t() :: %__MODULE__{
           instance_id: integer(),
           mob_id: integer(),
@@ -261,15 +270,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           last_ai_tick: integer() | nil,
           aggro_list: map(),
           aggro_order: [integer()],
-          typed_aggro_list: %{
-            optional(Ref.t()) => %{
-              contributor: Ref.t(),
-              source_type: atom(),
-              reward_owner_id: integer() | nil,
-              damage: non_neg_integer(),
-              first_hit_order: non_neg_integer()
-            }
-          },
+          typed_aggro_list: %{optional(Ref.t()) => typed_contribution()},
           typed_aggro_order: [Ref.t()],
           last_action_time: integer() | nil,
           act_delay_until: integer() | nil,
@@ -947,7 +948,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   end
 
   @doc "Returns typed cumulative contributors in stable first-hit order."
-  @spec typed_damage_log(t()) :: [map()]
+  @spec typed_damage_log(t()) :: [typed_contribution()]
   def typed_damage_log(%__MODULE__{typed_aggro_list: aggro, typed_aggro_order: order}) do
     Enum.map(Enum.reverse(order), &Map.fetch!(aggro, &1))
   end

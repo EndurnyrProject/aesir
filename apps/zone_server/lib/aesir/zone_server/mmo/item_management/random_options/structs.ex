@@ -7,16 +7,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Option do
   bonus.
   """
 
+  use TypedStruct
+
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
 
-  @enforce_keys [:id, :name, :program]
-  defstruct [:id, :name, :program]
-
-  @type t() :: %__MODULE__{
-          id: pos_integer(),
-          name: String.t(),
-          program: EquipScript.compiled() | nil
-        }
+  @typedoc "A random option and its bonus program."
+  typedstruct enforce: true do
+    field :id, pos_integer()
+    field :name, String.t()
+    field :program, EquipScript.compiled() | nil
+  end
 end
 
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Entry do
@@ -26,16 +26,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Entry do
   10,000 that a pick applies it.
   """
 
-  @enforce_keys [:option_id, :min, :max, :param, :chance]
-  defstruct [:option_id, :min, :max, :param, :chance]
+  use TypedStruct
 
-  @type t() :: %__MODULE__{
-          option_id: pos_integer(),
-          min: integer(),
-          max: integer(),
-          param: integer(),
-          chance: 0..10_000
-        }
+  @typedoc "A rollable option of a random option group."
+  typedstruct enforce: true do
+    field :option_id, pos_integer()
+    field :min, integer()
+    field :max, integer()
+    field :param, integer()
+    field :chance, 0..10_000
+  end
 end
 
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Group do
@@ -44,16 +44,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Group do
   order, and up to `max_random` further chance-gated picks from `random`.
   """
 
+  use TypedStruct
+
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Entry
 
-  @enforce_keys [:id, :name, :slots, :max_random, :random]
-  defstruct [:id, :name, :slots, :max_random, :random]
-
-  @type t() :: %__MODULE__{
-          id: pos_integer(),
-          name: String.t(),
-          slots: [[Entry.t(), ...]],
-          max_random: 0..5,
-          random: [Entry.t()]
-        }
+  @typedoc "A random option group's fixed slots and random picks."
+  typedstruct enforce: true do
+    field :id, pos_integer()
+    field :name, String.t()
+    field :slots, [[Entry.t(), ...]]
+    field :max_random, 0..5
+    field :random, [Entry.t()]
+  end
 end

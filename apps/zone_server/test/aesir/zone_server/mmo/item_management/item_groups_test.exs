@@ -117,35 +117,5 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsTest do
     assert entry.duration_min == 0
   end
 
-  @tag :tmp_dir
-  test "loader reuses a fresh ETF cache", %{tmp_dir: dir} do
-    yaml = write_yaml(dir, @group_yaml)
-    assert %{test_group: %Group{}} = Loader.load()
-
-    cache = Path.join([dir, ".cache", "item_groups_v2.etf"])
-    File.write!(yaml, String.replace(@group_yaml, "test_group", "changed_group"))
-    File.touch!(yaml, 1_000_000)
-    File.touch!(cache, 2_000_000)
-
-    assert %{test_group: %Group{}} = Loader.load()
-  end
-
-  @tag :tmp_dir
-  test "loader rebuilds when YAML is newer than the ETF cache", %{tmp_dir: dir} do
-    yaml = write_yaml(dir, @group_yaml)
-    assert %{test_group: %Group{}} = Loader.load()
-
-    cache = Path.join([dir, ".cache", "item_groups_v2.etf"])
-    File.write!(yaml, String.replace(@group_yaml, "test_group", "changed_group"))
-    File.touch!(cache, 1_000_000)
-    File.touch!(yaml, 2_000_000)
-
-    assert %{changed_group: %Group{}} = Loader.load()
-  end
-
-  defp write_yaml(dir, contents) do
-    path = Path.join(dir, "item_groups.yml")
-    File.write!(path, contents)
-    path
-  end
+  defp write_yaml(dir, contents), do: File.write!(Path.join(dir, "item_groups.yml"), contents)
 end

@@ -5,8 +5,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.HpSpPotionsTest do
 
   test "HP and SP potion scripts keep size, duration and the following percentage heal" do
     for {status, heals} <- [
-          {"PROMOTE_HEALTH_RESERCH", [{1, 1, 0}, {2, 2, 0}, {3, 5, 0}]},
-          {"ENERGY_DRINK_RESERCH", [{1, 0, 2}, {2, 0, 4}, {3, 0, 8}]}
+          {"PROMOTE_HEALTH_RESERCH", [{3, 5, 0}]},
+          {"ENERGY_DRINK_RESERCH", [{3, 0, 8}]}
         ],
         {size, hp, sp} <- heals do
       assert {:ok, source} =

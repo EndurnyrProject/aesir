@@ -109,7 +109,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate do
   Calculates a pharmacy chance and clamps it to `1..10_000`. A baby class
   (`baby?: true`, default `false`) keeps 70 percent of the chance before the clamp.
   """
-  @spec pharmacy(integer(), pharmacy_params() | map()) :: pos_integer()
+  @spec pharmacy(integer(), pharmacy_params()) :: pos_integer()
   def pharmacy(
         product_id,
         %{
@@ -155,7 +155,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate do
 
   Star Crumb refining is guaranteed and ignores the supplied formula inputs.
   """
-  @spec mineral(mineral_kind(), mineral_params() | map()) :: integer()
+  @spec mineral(mineral_kind(), mineral_params()) :: integer()
   def mineral(:star_crumb, _params), do: @maximum_rate
 
   def mineral(kind, %{

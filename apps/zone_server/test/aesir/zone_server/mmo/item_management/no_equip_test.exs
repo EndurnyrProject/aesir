@@ -5,7 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.NoEquipTest do
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.ItemManagement.NoEquip
 
-  setup :set_mimic_private
+  setup :set_mimic_from_context
 
   defp on_map(flags, zone \\ 0) do
     stub(MapFlags, :get, fn "m", flag -> flag in flags end)

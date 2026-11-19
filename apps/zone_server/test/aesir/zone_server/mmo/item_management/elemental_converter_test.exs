@@ -23,8 +23,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ElementalConverterTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @char_id 1002
@@ -42,11 +40,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ElementalConverterTest do
   setup :set_mimic_from_context
   setup :verify_on_exit!
 
+  setup_all do
+    # A sibling async: false test may have swapped the boot-compiled catalog for
+    # a single-item set; recompile the real one so the converters' on_use is the
+    # source shipped in usable.yml.
+    ScriptCompiler.compile_all!()
+  end
+
   setup do
     Aesir.TestEtsSetup.setup_ets_tables(%{})
-
-    Mimic.copy(ElementModifiers)
-    Mimic.copy(UnitRegistry)
 
     CombatTestHelper.stub_element_coefficient(fn attack_element,
                                                  defense_element,
@@ -70,11 +72,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ElementalConverterTest do
       {:ok, ctx().game_state}
     end)
 
-    # A sibling async: false test may have swapped the boot-compiled catalog for
-    # a single-item set; recompile the real one so the converters' on_use is the
-    # source shipped in usable.yml.
-    ScriptCompiler.compile_all!()
-
     on_exit(fn -> StatusStorage.remove_status(:player, @char_id, :sc_enchantarms) end)
 
     :ok
@@ -85,14 +82,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ElementalConverterTest do
       char_id: @char_id,
       account_id: 100,
       connection_pid: self(),
-      game_state: %PlayerState{
-        character_id: @char_id,
-        stats: %Stats{
-          base_stats: %{dex: 5, int: 5},
-          current_state: %{hp: 100, sp: 100},
-          progression: %Stats.PlayerProgression{base_level: 1, job_level: 1, job_id: 0}
-        }
-      },
+      game_state:
+        build(:player_state,
+          character_id: @char_id,
+          stats: %{
+            base_stats: %{dex: 5, int: 5},
+            current_state: %{hp: 100, sp: 100},
+            progression: %{base_level: 1, job_level: 1, job_id: 0}
+          }
+        ),
       session_pid: self(),
       source: {:item, 0}
     }
@@ -118,15 +116,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ElementalConverterTest do
       attack_undead()
       assert_received {:attack_element, unquote(element)}
     end
+  end
 
-    test "converter #{item_id} endows for ITEM_ENCHANTARMS's Duration1 of 20 minutes" do
-      cast_converter(unquote(item_id))
+  test "a converter endows for ITEM_ENCHANTARMS's flat Duration1 of 20 minutes" do
+    before = System.monotonic_time(:millisecond)
+    cast_converter(12_114)
+    after_cast = System.monotonic_time(:millisecond)
 
-      instance = StatusStorage.get_status(:player, @char_id, :sc_enchantarms)
+    instance = StatusStorage.get_status(:player, @char_id, :sc_enchantarms)
 
-      remaining = instance.expires_at - System.monotonic_time(:millisecond)
-
-      assert_in_delta remaining, 1_200_000, 100
-    end
+    assert instance.expires_at in (before + 1_200_000)..(after_cast + 1_200_000)
   end
 end

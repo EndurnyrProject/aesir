@@ -149,8 +149,9 @@ only if it is not obvious from the setup.
 - **Global teardown**: `ClusterTestHelper.clear_all/0` kills every cluster entry, including
   other tests'. Prefer per-test unique keys (`System.unique_integer([:positive])`) and let
   anchors or `on_exit` drop only what the test made.
-- **Global state**: `:persistent_term` reloads (`Data.reload/0`, `DbTestSetup.configure_root/2`),
-  `Application.put_env`, writes to boot-global ETS or named processes.
+- **Global state**: `:persistent_term` writes and reloads (`Data.reload/0`, a catalog
+  `reload/0`), `Application.put_env`, writes to boot-global ETS or named processes.
+  `DbTestSetup.configure_root/2` alone is a private stub and does not need a sync file.
 - **DDL**: `ALTER TABLE`/`ALTER SEQUENCE` inside a sandbox takes an exclusive lock that stalls
   every concurrent sandbox touching that table (`fame/store_errors_test.exs`).
 - **Global Mimic mode**: a stub that must reach a process started outside the test's tree.

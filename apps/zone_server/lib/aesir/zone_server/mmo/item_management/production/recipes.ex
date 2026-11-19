@@ -13,21 +13,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes do
     A production recipe and its material requirements.
     """
 
-    @enforce_keys [:id, :product_id, :item_level, :skill_id, :skill_level, :materials]
-    defstruct [:id, :product_id, :item_level, :skill_id, :skill_level, :materials]
+    use TypedStruct
 
     @typedoc "A material requirement, including possession-only requirements with an amount of zero."
     @type material() :: %{item_id: integer(), amount: non_neg_integer()}
 
     @typedoc "A production recipe."
-    @type t() :: %__MODULE__{
-            id: integer(),
-            product_id: integer(),
-            item_level: integer(),
-            skill_id: integer(),
-            skill_level: integer(),
-            materials: [material()]
-          }
+    typedstruct enforce: true do
+      field :id, integer()
+      field :product_id, integer()
+      field :item_level, integer()
+      field :skill_id, integer()
+      field :skill_level, integer()
+      field :materials, [material()]
+    end
   end
 
   @doc "Returns every production recipe."

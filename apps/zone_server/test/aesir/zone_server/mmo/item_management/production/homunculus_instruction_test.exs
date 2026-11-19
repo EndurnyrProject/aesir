@@ -1,52 +1,25 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.HomunculusInstructionTest do
-  use Aesir.DataCase, async: false
+  use Aesir.DataCase, async: true
   import Mimic
   import Aesir.ZoneServer.Factory
 
-  alias Aesir.Commons.Models.Account
-  alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Factory
   alias Aesir.Net.SkillMenuReply
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats, as: HomunculusStats
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge
-  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes.Recipe
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.Stats
 
-  setup :verify_on_exit!
+  setup :set_mimic_from_context
 
   setup do
-    previous_rng = Application.get_env(:zone_server, :forge_rng)
-
-    on_exit(fn ->
-      if previous_rng,
-        do: Application.put_env(:zone_server, :forge_rng, previous_rng),
-        else: Application.delete_env(:zone_server, :forge_rng)
-    end)
-
-    suffix = System.unique_integer([:positive])
-
-    account =
-      %Account{}
-      |> Account.changeset(%{
-        username: "instruction#{suffix}",
-        userid: "instruction#{suffix}",
-        user_pass: "password",
-        email: "instruction#{suffix}@test.com"
-      })
-      |> Repo.insert!()
-
     character =
-      %Character{}
-      |> Character.changeset(%{
-        account_id: account.id,
-        char_num: 0,
-        name: "Instruction#{suffix}",
+      Factory.insert(:character,
         class: 18,
         base_level: 99,
         job_level: 1,
@@ -54,8 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.HomunculusInstructionTe
         int: 1,
         dex: 1,
         luk: 1
-      })
-      |> Repo.insert!()
+      )
 
     stats =
       character
@@ -97,10 +69,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.HomunculusInstructionTe
 
   test "seeded Forge rank changes only the pharmacy result threshold", %{caster: caster} do
     seed_boundary_rng()
-    caster = %{caster | inventory: %{0 => material()}}
+    caster = %{caster | inventory: %{0 => %InventoryItem{nameid: 1002, amount: 1, identify: 1}}}
 
-    assert {:ok, failed} = Forge.run(caster, pharmacy_recipe(), [], 0)
-    assert {:ok, brewed} = Forge.run(caster, pharmacy_recipe(), [], 1)
+    recipe =
+      build(:production_recipe,
+        product_id: 501,
+        skill_id: 228,
+        materials: [%{item_id: 1002, amount: 1}]
+      )
+
+    assert {:ok, failed} = Forge.run(caster, recipe, [], 0)
+    assert {:ok, brewed} = Forge.run(caster, recipe, [], 1)
 
     assert ItemContainer.held_amount(failed.inventory, 1002) == 0
     assert ItemContainer.held_amount(brewed.inventory, 1002) == 0
@@ -127,44 +106,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.HomunculusInstructionTe
     assert menu_result(caster, character, homunculus(6_001, %{8_015 => 5})) == :failure
   end
 
-  test "a representative three-arity menu skill still routes unchanged" do
-    expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_autospell, _params -> :ok end)
-
-    state = %SessionState{
-      game_state: %PlayerState{
-        character_id: 1,
-        map_name: "prontera",
-        stats: %{progression: %{learned_skills: %{14 => 10}}}
-      },
-      connection_pid: self(),
-      pending_skill_menu: %{skill_id: 279, kind: :SKILLS, entry_ids: [14], level: 3}
-    }
-
-    assert {:noreply, routed} =
-             SkillMenuHandler.handle_reply(
-               %SkillMenuReply{src_skill_id: 279, selected_id: 14},
-               state
-             )
-
-    assert routed.pending_skill_menu == nil
-  end
-
   defp menu_result(caster, character, homunculus) do
     inventory =
       [7144, 507, 1093]
       |> Enum.with_index()
       |> Map.new(fn {item_id, index} ->
-        row =
-          %InventoryItem{}
-          |> InventoryItem.changeset(%{
-            char_id: character.id,
-            nameid: item_id,
-            amount: 1,
-            identify: 1
-          })
-          |> Repo.insert!()
-
-        {index, row}
+        {index,
+         Factory.insert(:inventory_item,
+           character: character,
+           nameid: item_id,
+           amount: 1,
+           identify: 1
+         )}
       end)
 
     state = %SessionState{
@@ -193,9 +146,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.HomunculusInstructionTe
   end
 
   defp seed_boundary_rng do
-    Application.put_env(:zone_server, :forge_rng, fn
+    rng = fn
       991 -> 1
       10_000 -> 2_350
+    end
+
+    stub(Application, :get_env, fn
+      :zone_server, :forge_rng, _default -> rng
+      app, key, default -> Mimic.call_original(Application, :get_env, [app, key, default])
     end)
   end
 
@@ -214,26 +172,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.HomunculusInstructionTe
 
   defp homunculus(class_id, learned_skills) do
     build(:homunculus_state,
-      id: 1,
-      owner_character_id: 1,
       class_id: class_id,
-      name: "Homunculus",
       lifecycle: :active,
       hp: 1,
       learned_skills: learned_skills
     )
   end
-
-  defp pharmacy_recipe do
-    %Recipe{
-      id: 119,
-      product_id: 501,
-      item_level: 22,
-      skill_id: 228,
-      skill_level: 1,
-      materials: [%{item_id: 1002, amount: 1}]
-    }
-  end
-
-  defp material, do: %InventoryItem{nameid: 1002, amount: 1, identify: 1}
 end

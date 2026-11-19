@@ -2,10 +2,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.CardCompoundingTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.CardCompounding
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
 
   @card_id 90_001
   @target_id 90_002
@@ -35,7 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.CardCompoundingTest do
     assert compounded[3].card3 == 0
   end
 
-  test "rejects invalid card sources with typed reasons and no mutation" do
+  test "rejects invalid card sources with typed reasons" do
     target = item(@target_id)
 
     cases = [
@@ -56,15 +57,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.CardCompoundingTest do
 
     for {inventory, card_index, definitions, reason} <- cases do
       stub_catalog(Map.put(definitions, @target_id, definition(@target_id, :armor, [:armor], 1)))
-      original = inventory
 
       assert CardCompounding.eligible_targets(inventory, card_index) == {:error, reason}
       assert CardCompounding.compound(inventory, card_index, 3) == {:error, reason}
-      assert inventory == original
     end
   end
 
-  test "rejects invalid equipment targets with typed reasons and no mutation" do
+  test "rejects invalid equipment targets with typed reasons" do
     card_definition = definition(@card_id, :card, [:armor])
 
     cases = [
@@ -93,10 +92,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.CardCompoundingTest do
 
     for {inventory, equipment_index, definitions, reason} <- cases do
       stub_catalog(Map.put(definitions, @card_id, card_definition))
-      original = inventory
 
       assert CardCompounding.compound(inventory, 7, equipment_index) == {:error, reason}
-      assert inventory == original
     end
   end
 
@@ -110,8 +107,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.CardCompoundingTest do
 
     assert CardCompounding.eligible_targets(inventory, 7) == {:ok, []}
     assert CardCompounding.compound(inventory, 7, 3) == {:error, :location_mismatch}
-    assert inventory[7].amount == 1
-    assert inventory[3].card0 == 0
   end
 
   test "allows shield cards only on armor targets, not left-hand weapons" do
@@ -214,11 +209,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.CardCompoundingTest do
       })
 
       inventory = %{7 => item(@card_id), 3 => item(@target_id, cards)}
-      original = inventory
 
       assert CardCompounding.eligible_targets(inventory, 7) == {:ok, []}
       assert CardCompounding.compound(inventory, 7, 3) == {:error, :no_free_socket}
-      assert inventory == original
     end
   end
 
@@ -287,7 +280,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.CardCompoundingTest do
 
     assert {:ok, targets} = CardCompounding.eligible_targets(inventory, 7)
     assert targets == [1, 5, 9]
-    assert targets == targets |> Enum.uniq() |> Enum.sort()
 
     for equipment_index <- Map.keys(inventory) do
       case CardCompounding.compound(inventory, 7, equipment_index) do
@@ -325,8 +317,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.CardCompoundingTest do
     stale_inventory = put_in(inventory[3].card0, 44_001)
 
     assert CardCompounding.compound(stale_inventory, 7, 3) == {:error, :no_free_socket}
-    assert stale_inventory[7].amount == 1
-    assert stale_inventory[3].card0 == 44_001
   end
 
   defp stub_catalog(definitions) do
@@ -338,36 +328,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.CardCompoundingTest do
     end)
   end
 
-  defp definition(id, type, locations, slots \\ 0) do
-    %ItemDefinition{
-      id: id,
-      aegis_name: "item_#{id}",
-      name: "Item #{id}",
-      type: type,
-      locations: locations,
-      slots: slots
-    }
-  end
+  defp definition(id, type, locations, slots \\ 0),
+    do: build(:item_definition, id: id, type: type, locations: locations, slots: slots)
 
-  defp item(nameid, attrs \\ []) do
-    struct(
-      InventoryItem,
-      Keyword.merge(
-        [
-          id: System.unique_integer([:positive]),
-          char_id: 1,
-          nameid: nameid,
-          amount: 1,
-          equip: 0,
-          identify: 1,
-          card0: 0,
-          card1: 0,
-          card2: 0,
-          card3: 0,
-          random_options: []
-        ],
-        attrs
-      )
-    )
-  end
+  defp item(nameid, attrs \\ []),
+    do: struct!(InventoryItem, Keyword.merge([nameid: nameid, amount: 1, identify: 1], attrs))
 end

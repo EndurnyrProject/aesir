@@ -4,25 +4,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemCraftTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
 
   describe "star_damage/1" do
-    test "maps forged star crumbs to their combat damage" do
-      craft = ItemCraft.forged(:fire, 3, 42)
+    test "maps forged star crumb counts to their combat damage" do
+      for {star_crumbs, damage} <- [{0, 0}, {1, 5}, {2, 10}, {3, 40}] do
+        craft = ItemCraft.forged(:fire, star_crumbs, 42)
 
-      damage = ItemCraft.star_damage(craft)
-
-      assert damage == 40
-    end
-
-    test "maps lower forged star crumb counts to their combat damage" do
-      crafts = [
-        {ItemCraft.forged(:fire, 0, 42), 0},
-        {ItemCraft.forged(:fire, 1, 42), 5},
-        {ItemCraft.forged(:fire, 2, 42), 10}
-      ]
-
-      damages =
-        Enum.map(crafts, fn {craft, expected} -> {ItemCraft.star_damage(craft), expected} end)
-
-      assert damages == [{0, 0}, {5, 5}, {10, 10}]
+        assert ItemCraft.star_damage(craft) == damage
+      end
     end
 
     test "returns no star damage for signed items" do
