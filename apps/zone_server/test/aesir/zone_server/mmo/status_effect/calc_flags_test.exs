@@ -4,6 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.CalcFlagsTest do
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.StatusEffect.CalcFlags
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Blessing
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.MatkFood
+  alias Aesir.ZoneServer.Mmo.StatusEffect.StartChecks
 
   test "an empty source selection is valid but a missing supported identity is not" do
     rows = [%{"id" => "sc_example", "flags" => [], "scripted" => false, "available" => true}]
@@ -45,6 +48,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.CalcFlagsTest do
       CalcFlags.validate_aliases!(Map.keys(selections))
       assert map_size(selections) > length(definitions)
     end
+  end
+
+  test "a scripted status starts on players only" do
+    scripted = MatkFood.metadata()
+    assert CalcFlags.scripted?(scripted.id)
+
+    assert StartChecks.ensure_eligible_target(:player, scripted) == :ok
+
+    for unit_type <- [:homunculus, :mob] do
+      assert StartChecks.ensure_eligible_target(unit_type, scripted) ==
+               {:error, :ineligible_target}
+    end
+
+    assert StartChecks.ensure_eligible_target(:homunculus, Blessing.metadata()) == :ok
   end
 
   test "explicit source events retain their canonical selections" do

@@ -43,8 +43,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StartChecks do
 
   @doc """
   Whether the definition admits `unit_type` as a target. A monster also needs
-  the status to be monster-eligible by its calc flags, and a homunculus never
-  takes a weapon-bound status.
+  the status to be monster-eligible by its calc flags. A homunculus never takes
+  a weapon-bound status, nor a scripted one, which only a player holds.
   """
   @spec ensure_eligible_target(unit_type(), map()) :: :ok | {:error, :ineligible_target}
   def ensure_eligible_target(:mob, %{id: status_id, target_types: target_types}) do
@@ -53,8 +53,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StartChecks do
       else: {:error, :ineligible_target}
   end
 
-  def ensure_eligible_target(:homunculus, %{require_weapon: [_ | _]}),
-    do: {:error, :ineligible_target}
+  def ensure_eligible_target(:homunculus, %{
+        id: status_id,
+        require_weapon: require_weapon,
+        target_types: target_types
+      }) do
+    if require_weapon == [] and :homunculus in target_types and
+         not CalcFlags.scripted?(status_id),
+       do: :ok,
+       else: {:error, :ineligible_target}
+  end
 
   def ensure_eligible_target(unit_type, %{target_types: target_types}) do
     if unit_type in target_types, do: :ok, else: {:error, :ineligible_target}

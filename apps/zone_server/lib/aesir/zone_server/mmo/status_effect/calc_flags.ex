@@ -62,6 +62,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.CalcFlags do
     end
   end
 
+  @doc "Whether the active catalog marks a source status as scripted, which only a player holds."
+  @spec scripted?(atom()) :: boolean()
+  def scripted?(id) do
+    case Map.get(index(), Atom.to_string(id)) do
+      nil -> false
+      row -> row["scripted"]
+    end
+  end
+
   @doc "Reloads and validates the active mode's calculation catalog."
   @spec reload() :: :ok
   def reload do
