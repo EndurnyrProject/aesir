@@ -506,13 +506,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
       perfect_dodge: PlayerCombatCalc.calculate_perfect_dodge(stats),
       atk:
         base_atk + Stats.get_status_modifier(stats, :atk) +
-          Stats.get_equipment_modifier(stats, :atk) +
+          Stats.get_equipment_modifier(stats, :atk) + weapon_bonus_atk(stats) +
           skill_passive_atk,
       physical_attack: %{
         status_atk: status_atk,
         flat_atk:
           Stats.get_status_modifier(stats, :atk) + Stats.get_equipment_modifier(stats, :atk) -
             hand_attack(stats.right_hand) - hand_attack(stats.left_hand),
+        bare_right_atk: bare_hand_atk(stats.right_hand, stats, :weapon_atk),
+        bare_left_atk: bare_hand_atk(stats.left_hand, stats, :left_weapon_atk),
         mastery_atk: passive_atk,
         weapon_mastery_atk: Passives.weapon_mastery_atk(stats),
         left_weapon_mastery_atk: Passives.weapon_mastery_atk(stats, left_weapon_type(stats)),
@@ -588,8 +590,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
 
   defp override(value, stats, key), do: Map.get(stats.modifiers.status_effects, key, value)
 
+  # The item part of a hand's ATK, which the equipment `:atk` total also holds.
   defp hand_attack(nil), do: 0
-  defp hand_attack(hand), do: hand.base_atk + hand.refine_atk
+  defp hand_attack(hand), do: hand.base_atk - hand.bonus_atk + hand.refine_atk
+
+  # bAtk on a hand with no weapon still raises that hand's weapon ATK.
+  defp bare_hand_atk(nil, stats, key),
+    do: WeaponHand.weapon_atk(0, Stats.get_equipment_modifier(stats, key))
+
+  defp bare_hand_atk(%WeaponHand{}, _stats, _key), do: 0
+
+  defp weapon_bonus_atk(stats) do
+    hand_bonus(stats.right_hand) + hand_bonus(stats.left_hand) +
+      bare_hand_atk(stats.right_hand, stats, :weapon_atk) +
+      bare_hand_atk(stats.left_hand, stats, :left_weapon_atk)
+  end
+
+  defp hand_bonus(nil), do: 0
+  defp hand_bonus(hand), do: hand.bonus_atk
 
   defp calculate_critical(
          %{strategy: :exact_tenths, base_rate: base_rate},

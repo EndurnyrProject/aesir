@@ -468,28 +468,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   end
 
   defp put_weapon_hands(stats, worn_items) do
+    equipment = stats.modifiers.equipment
+
     %{
       stats
-      | right_hand: weapon_hand(worn_items, :right_hand),
-        left_hand: weapon_hand(worn_items, :left_hand)
+      | right_hand: weapon_hand(worn_items, :right_hand, Map.get(equipment, :weapon_atk, 0)),
+        left_hand: weapon_hand(worn_items, :left_hand, Map.get(equipment, :left_weapon_atk, 0))
     }
   end
 
-  defp weapon_hand(worn_items, slot) do
+  defp weapon_hand(worn_items, slot, bonus) do
     case Enum.find(worn_items, &worn_in_slot?(&1, slot)) do
       nil -> nil
-      item -> weapon_hand(item, slot, ItemManagement.get_item_by_id(item.nameid))
+      item -> weapon_hand(item, slot, bonus, ItemManagement.get_item_by_id(item.nameid))
     end
   end
 
-  defp weapon_hand(item, slot, {:ok, %ItemDefinition{type: :weapon} = item_def}) do
+  defp weapon_hand(item, slot, bonus, {:ok, %ItemDefinition{type: :weapon} = item_def}) do
     {refine_atk, overrefine_band} = weapon_refine(item_def, item.refine)
+    base_atk = WeaponHand.weapon_atk(item_def.attack, bonus)
 
     %WeaponHand{
       item_id: item.nameid,
       subtype: item_def.subtype,
       element: weapon_element(item_def, item),
-      base_atk: item_def.attack,
+      base_atk: base_atk,
+      bonus_atk: base_atk - item_def.attack,
       weapon_level: item_def.weapon_level,
       refine_atk: refine_atk,
       overrefine_band: overrefine_band,
@@ -497,7 +501,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
     }
   end
 
-  defp weapon_hand(_item, _slot, _item_result), do: nil
+  defp weapon_hand(_item, _slot, _bonus, _item_result), do: nil
 
   defp worn_in_slot?(item, slot) do
     locations = EquipLocation.bitmask_to_location_atoms(item.equip)

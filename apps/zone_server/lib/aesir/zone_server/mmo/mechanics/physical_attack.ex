@@ -16,7 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
   `weapon_mastery_atk` is only the weapon masteries' part of it (for the
   left hand's weapon in `left_weapon_mastery_atk`), `star_atk` and
   `left_star_atk` each hand's Star Crumb bonus, and `weapon_research_atk` and
-  `hilt_binding_atk` those two passives' ATK.
+  `hilt_binding_atk` those two passives' ATK. `bare_right_atk` and
+  `bare_left_atk` are the bAtk weapon ATK of a hand that holds no weapon.
   """
   @type snapshot :: %{
           optional(:weapon_mastery_atk) => integer(),
@@ -25,6 +26,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
           optional(:left_star_atk) => integer(),
           optional(:weapon_research_atk) => integer(),
           optional(:hilt_binding_atk) => integer(),
+          optional(:bare_right_atk) => non_neg_integer(),
+          optional(:bare_left_atk) => non_neg_integer(),
           status_atk: integer(),
           flat_atk: integer(),
           mastery_atk: integer(),

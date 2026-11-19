@@ -928,7 +928,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   defp katar?(_attacker), do: false
 
   defp empty_left_hand(%{right_hand: %WeaponHand{} = katar}) do
-    %{katar | element: :neutral, base_atk: 0, refine_atk: 0, overrefine_band: 0, slot: :left_hand}
+    %{
+      katar
+      | element: :neutral,
+        base_atk: 0,
+        bonus_atk: 0,
+        refine_atk: 0,
+        overrefine_band: 0,
+        slot: :left_hand
+    }
   end
 
   # The left hand's damage where classic Magnum Break checks it: on a normal

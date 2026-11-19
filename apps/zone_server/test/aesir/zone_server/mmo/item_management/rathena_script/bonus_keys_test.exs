@@ -4,9 +4,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
 
   describe "destination/1" do
-    test "bBaseAtk and bAtk both map to :atk" do
+    test "bBaseAtk is equipment ATK and bAtk the running slot's hand weapon ATK" do
       assert BonusKeys.destination("bBaseAtk") == {:ok, :atk}
-      assert BonusKeys.destination("bAtk") == {:ok, :atk}
+      assert BonusKeys.destination("bAtk") == {:ok, :weapon_atk}
+
+      assert BonusKeys.slot_destination(:weapon_atk, nil) == :weapon_atk
+      assert BonusKeys.slot_destination(:weapon_atk, :weapon) == :left_weapon_atk
+      assert BonusKeys.slot_destination(:weapon_atk, :shield) == nil
+      assert BonusKeys.slot_destination(:weapon_atk, :arrow) == nil
+
+      assert BonusKeys.slot_destination(:atk, :shield) == :atk
+      assert BonusKeys.slot_destination(:atk, :arrow) == nil
     end
 
     test "per-skill SP rates accumulate under the source cap" do

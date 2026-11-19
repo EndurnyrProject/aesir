@@ -49,7 +49,7 @@
   script: bonus(ctx, :aspd_rate, random_option(ctx, :value))
 - id: 17
   name: VAR_ATTPOWER
-  script: bonus(ctx, :atk, random_option(ctx, :value))
+  script: bonus(ctx, :weapon_atk, random_option(ctx, :value))
 - id: 18
   name: VAR_HITSUCCESSVALUE
   script: bonus(ctx, :hit, random_option(ctx, :value))

@@ -119,8 +119,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusSync do
     wmatk_max = Map.get(equipment, :wmatk_max, 0)
     {hard_def, soft_def} = DamageInputs.status_window_defense(stats)
     {hard_mdef, soft_mdef} = DamageInputs.status_window_magic_defense(stats)
-    right = hand(stats.right_hand)
-    left = hand(stats.left_hand)
+    right = hand(stats.right_hand, Map.get(attack, :bare_right_atk, 0))
+    left = hand(stats.left_hand, Map.get(attack, :bare_left_atk, 0))
 
     %{
       status_atk: attack.status_atk,
@@ -153,8 +153,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusSync do
     |> Map.new(fn {param, value} -> {param, max(value, 0)} end)
   end
 
-  defp hand(nil), do: %{atk: 0, refine_atk: 0, level: 0}
+  defp hand(nil, bare_atk), do: %{atk: bare_atk, refine_atk: 0, level: 0}
 
-  defp hand(hand),
+  defp hand(hand, _bare_atk),
     do: %{atk: hand.base_atk, refine_atk: hand.refine_atk, level: hand.weapon_level}
 end

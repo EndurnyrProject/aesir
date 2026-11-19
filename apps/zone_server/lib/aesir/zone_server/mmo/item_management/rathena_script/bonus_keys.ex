@@ -97,7 +97,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bcon" => :con,
     "bcrt" => :crt,
     "bbaseatk" => :atk,
-    "batk" => :atk,
+    "batk" => :weapon_atk,
     "bmatk" => :matk,
     "bdef" => :def,
     "bdefrate" => :def_rate,
@@ -188,6 +188,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   @capped_rate_families MapSet.new([:skill_use_sp_rate])
   @rate_cap 10_000
   @ammunition_excluded_destinations MapSet.new([
+                                      :atk,
                                       :add_steal_rate,
                                       :class_change,
                                       :crit_def_rate,
@@ -502,10 +503,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   channels nor the non-critical rate, and its critical bonuses feed only
   arrow attacks. Its bAddEff and bAddEff2 chances count only for a ranged
   attack (`arrow_add_eff`, `arrow_add_eff2`); it arms no bAddEffWhenHit or
-  bAddEffOnSkill.
+  bAddEffOnSkill, and adds no equipment ATK (bBaseAtk).
+
+  Weapon ATK (bAtk, `:weapon_atk`) is the reference's per-hand `SP_ATK1`: an
+  ordinary item adds it to the right hand, a left-hand weapon to the left hand
+  (`:left_weapon_atk`), and a shield's own script and the ammunition add none.
   """
   @spec slot_destination(destination() | tuple(), lr_flag()) :: destination() | tuple() | nil
   def slot_destination(dest, nil), do: dest
+
+  def slot_destination(:weapon_atk, :weapon), do: :left_weapon_atk
+  def slot_destination(:weapon_atk, _shield_or_arrow), do: nil
 
   def slot_destination({family, param}, lr_flag) when is_map_key(@hand_families, family) do
     case {lr_flag, Map.fetch!(@hand_families, family)} do

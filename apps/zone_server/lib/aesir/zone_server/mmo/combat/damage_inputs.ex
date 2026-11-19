@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
+  alias Aesir.ZoneServer.Unit.Player.WeaponHand
   alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -92,8 +93,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
     end
   end
 
-  # A classic bare hand still rolls its status weapon ATK as its maximum, from
-  # an unscaled DEX minimum; a renewal empty hand reads zero.
+  # A classic bare hand still rolls its weapon ATK (its bAtk plus status weapon
+  # ATK) as its maximum, from an unscaled DEX minimum. A renewal bare hand
+  # reads its weapon ATK unrolled, and zero when it has no bAtk.
   defp roll_player_weapon(parts, snapshot, nil, attacker, opts, critical?) do
     inputs = %{
       arrow?:
@@ -103,9 +105,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
 
     parts = %{parts | ammo_atk: ammo_attack(attacker, inputs)}
 
-    case bare_hand_watk(attacker) do
-      0 -> parts
-      maximum -> %{parts | weapon_atk: bare_hand_roll(maximum, snapshot.dex, attacker, critical?)}
+    case {GameMode.mode(), bare_hand_watk(attacker, snapshot)} do
+      {_mode, 0} ->
+        parts
+
+      {:renewal, watk} ->
+        %{parts | weapon_atk: watk}
+
+      {:pre_renewal, maximum} ->
+        %{parts | weapon_atk: bare_hand_roll(maximum, snapshot.dex, attacker, critical?)}
     end
   end
 
@@ -163,11 +171,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
     end
   end
 
-  defp bare_hand_watk(attacker) do
-    if GameMode.mode() == :pre_renewal,
-      do:
-        :player |> ModifierCalculator.get_battle_modifiers(attacker.unit_id) |> Map.get(:watk, 0),
-      else: 0
+  # The bare right hand's weapon ATK: its bAtk plus status weapon ATK, held in
+  # `0..65_535`. Renewal applies no status weapon ATK to a hand with none.
+  defp bare_hand_watk(attacker, snapshot) do
+    bare = Map.get(snapshot, :bare_right_atk, 0)
+
+    if GameMode.mode() == :renewal and bare == 0 do
+      0
+    else
+      status =
+        :player |> ModifierCalculator.get_battle_modifiers(attacker.unit_id) |> Map.get(:watk, 0)
+
+      WeaponHand.weapon_atk(bare, status)
+    end
   end
 
   defp bare_hand_roll(maximum, dex, attacker, critical?) do
@@ -181,8 +197,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
 
   # The status weapon ATK a hand's roll takes. Classic: the right hand always,
   # the left hand only when its weapon has ATK, plus the level-4 key for a
-  # level-4 weapon. Renewal: the right hand when it holds a weapon, else the
-  # left; a second weapon never.
+  # level-4 weapon. Renewal: the right hand when it has weapon ATK (a weapon's,
+  # or a bare hand's bAtk), else the left; a second weapon never.
   defp status_watk(attacker, hand) do
     modifiers = ModifierCalculator.get_battle_modifiers(:player, attacker.unit_id)
 
@@ -200,7 +216,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
   end
 
   defp renewal_status_watk(attacker, hand, modifiers) do
-    right_weapon? = weapon_atk?(Map.get(attacker, :right_hand))
+    right_weapon? =
+      weapon_atk?(Map.get(attacker, :right_hand)) or
+        Map.get(attacker.combat_stats.physical_attack, :bare_right_atk, 0) > 0
 
     if (hand.slot == :right_hand and right_weapon?) or
          (hand.slot == :left_hand and not right_weapon?),

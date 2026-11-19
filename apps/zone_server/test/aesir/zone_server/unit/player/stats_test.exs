@@ -1754,6 +1754,81 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
              }
     end
 
+    test "bAtk raises its hand's weapon ATK, never the equipment ATK" do
+      right = %ItemDefinition{
+        id: 90_311,
+        aegis_name: "right_dagger",
+        name: "Right Dagger",
+        type: :weapon,
+        subtype: :dagger,
+        weapon_level: 4,
+        attack: 40
+      }
+
+      left = %ItemDefinition{
+        id: 90_312,
+        aegis_name: "left_dagger",
+        name: "Left Dagger",
+        type: :weapon,
+        subtype: :dagger,
+        weapon_level: 3,
+        attack: 17,
+        on_equip: [{:bonus, :weapon_atk, 5}]
+      }
+
+      armor =
+        scripted_item(90_313, on_equip: [{:bonus, :weapon_atk, 10}, {:bonus, :atk, 3}])
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_311 -> {:ok, right}
+        90_312 -> {:ok, left}
+        90_313 -> {:ok, armor}
+      end)
+
+      armed =
+        with_equipped_items([
+          equipped(90_311, @right_hand),
+          equipped(90_312, @left_hand),
+          equipped(90_313, @armor_pos)
+        ])
+
+      assert %WeaponHand{base_atk: 50, bonus_atk: 10} = armed.right_hand
+      assert %WeaponHand{base_atk: 22, bonus_atk: 5} = armed.left_hand
+      assert armed.combat_stats.physical_attack.flat_atk == 3
+      assert armed.combat_stats.atk == 40 + 17 + 3 + 15
+    end
+
+    test "bAtk on bare hands is the right hand's weapon ATK; a shield's own bAtk adds none" do
+      armor = scripted_item(90_314, on_equip: [{:bonus, :weapon_atk, 10}])
+      shield = scripted_item(90_315, type: :armor, on_equip: [{:bonus, :weapon_atk, 7}])
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_314 -> {:ok, armor}
+        90_315 -> {:ok, shield}
+      end)
+
+      bare = with_equipped_items([equipped(90_314, @armor_pos), equipped(90_315, @left_hand)])
+
+      assert bare.right_hand == nil
+      assert bare.combat_stats.physical_attack.bare_right_atk == 10
+      assert bare.combat_stats.physical_attack.bare_left_atk == 0
+      assert bare.combat_stats.physical_attack.flat_atk == 0
+    end
+
+    test "a negative bAtk floors the hand's weapon ATK at zero" do
+      armor = scripted_item(90_316, on_equip: [{:bonus, :weapon_atk, -50}])
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_316 -> {:ok, armor}
+        id -> call_original(ItemManagement, :get_item_by_id, [id])
+      end)
+
+      armed = with_equipped_items([equipped(@sword, @right_hand), equipped(90_316, @armor_pos)])
+
+      assert %WeaponHand{base_atk: 0, bonus_atk: -25} = armed.right_hand
+      assert armed.combat_stats.physical_attack.flat_atk == 0
+    end
+
     test "removing the weapon reverts the atk bonus and weapon type" do
       sword = equipped(@sword, @right_hand)
 

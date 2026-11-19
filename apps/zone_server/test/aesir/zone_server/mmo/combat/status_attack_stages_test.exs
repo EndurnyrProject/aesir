@@ -65,6 +65,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.StatusAttackStagesTest do
       low_dex = put_in(unpinned.combat_stats.physical_attack.dex, 10)
       assert weapon_atk(low_dex, :primary) in 10..24
     end
+
+    test "a bare hand's bAtk joins the status weapon ATK as its maximum" do
+      stub_modifiers(%{watk: 25})
+
+      assert weapon_atk(bare_atk(attacker(nil), 10), :primary) == 35
+    end
   end
 
   describe "a renewal player's weapon roll" do
@@ -103,6 +109,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.StatusAttackStagesTest do
       # 110 + 25 + 100 * 55 / 200 + 5 * 100 * 4 / 100, never the level-4 key.
       assert weapon_atk(attacker(weapon(:right_hand, 100, 4)), :primary) == 182
       assert weapon_atk(attacker(nil), :primary) == 0
+    end
+
+    test "a bare hand's bAtk is its weapon ATK, unrolled, with the status weapon ATK" do
+      stub_modifiers(%{watk: 25})
+      bare = bare_atk(attacker(nil), 10)
+      unpinned = %{bare | combat_stats: %{bare.combat_stats | max_weapon_damage: false}}
+
+      assert weapon_atk(bare, :primary) == 35
+      assert weapon_atk(unpinned, :primary) == 35
+    end
+
+    test "a bare right hand's bAtk keeps the status weapon ATK off a lone left weapon" do
+      stub_modifiers(%{watk: 20})
+
+      assert weapon_atk(bare_atk(attacker(nil, weapon(:left_hand, 100, 3)), 10), :primary) ==
+               152
     end
   end
 
@@ -205,6 +227,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.StatusAttackStagesTest do
         combat_stats: Map.put(attacker.combat_stats, :max_weapon_damage, true)
     }
   end
+
+  defp bare_atk(attacker, atk),
+    do: put_in(attacker.combat_stats.physical_attack[:bare_right_atk], atk)
 
   defp weapon(slot, base_atk, weapon_level) do
     build(:weapon_hand,
