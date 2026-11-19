@@ -46613,6 +46613,14 @@
   locations:
     - both_hand
   name: Gold Lux
+  on_equip: |-
+    ctx = bonus(ctx, :hit, -10)
+    ctx = if (skill_lv(ctx, 500) > 0) do
+      auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 500}, skill_lv(ctx, 500), 100)
+    else
+      ctx
+    end
+    ctx
   range: 7
   refineable: true
   subtype: revolver
@@ -46699,6 +46707,29 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 55)
+    ctx = bonus(ctx, {:addrace, :player_human}, 55)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, pow((refine(ctx) - 4), 2))
+      ctx = bonus(ctx, {:addrace, :player_human}, pow((refine(ctx) - 4), 2))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      ctx = auto_cast(ctx, %{force: 1, flag: 0, trigger: :on_skill, skill_id: 500, trigger_skill: 515}, 1, 1000)
+      ctx = bonus(ctx, {:skill_atk, 515}, (refine(ctx) * 2))
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 7
   refineable: true
   subtype: revolver
@@ -46866,6 +46897,10 @@
   locations:
     - both_hand
   name: Gate Keeper
+  on_equip: |-
+    ctx = bonus(ctx, :splash_range, 1)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 520}, 6, 50)
+    ctx
   range: 9
   refineable: true
   subtype: shotgun
@@ -46992,6 +47027,12 @@
   locations:
     - both_hand
   name: Long Barrel
+  on_equip: |-
+    ctx = bonus(ctx, :hit, 10)
+    ctx = bonus(ctx, :critical, 20)
+    ctx = bonus(ctx, :aspd_rate, -3)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 512}, 5, 20)
+    ctx
   range: 9
   refineable: true
   subtype: rifle
@@ -47008,6 +47049,12 @@
   locations:
     - both_hand
   name: Long Barrel
+  on_equip: |-
+    ctx = bonus(ctx, :hit, 10)
+    ctx = bonus(ctx, :critical, 20)
+    ctx = bonus(ctx, :aspd_rate, -3)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 512}, 5, 20)
+    ctx
   range: 9
   refineable: true
   slots: 1
@@ -47070,6 +47117,12 @@
   locations:
     - both_hand
   name: Gate Keeper-DD
+  on_equip: |-
+    ctx = bonus(ctx, :splash_range, 1)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 520}, 6, 50)
+    ctx = bonus(ctx, :def, refine(ctx))
+    ctx = bonus(ctx, :dex, 1)
+    ctx
   range: 9
   refineable: true
   subtype: shotgun
@@ -47154,6 +47207,17 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, :hit, 10)
+    ctx = bonus(ctx, :critical, 10)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 75)
+    ctx = bonus(ctx, {:addrace, :player_human}, 75)
+    ctx = bonus(ctx, {:skill_varcast_rate, 512}, -25)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 9
   refineable: true
   subtype: rifle
@@ -47273,6 +47337,30 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 75)
+    ctx = bonus(ctx, {:addrace, :player_human}, 75)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = bonus(ctx, {:skill_atk, 502}, 30)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, ((refine(ctx) - 4) * (refine(ctx) - 4)))
+      ctx = bonus(ctx, {:addrace, :player_human}, ((refine(ctx) - 4) * (refine(ctx) - 4)))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, {:skill_varcast_rate, 512}, 25)
+      ctx = bonus(ctx, {:skill_atk, 512}, (refine(ctx) * 3))
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 9
   refineable: true
   subtype: rifle
@@ -47291,6 +47379,28 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 35)
+    ctx = bonus(ctx, {:addrace, :player_human}, 35)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = bonus(ctx, {:skill_atk, 502}, 30)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, ((refine(ctx) - 4) * (refine(ctx) - 4)))
+      ctx = bonus(ctx, {:addrace, :player_human}, ((refine(ctx) - 4) * (refine(ctx) - 4)))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      bonus(ctx, {:addclass, :all}, refine(ctx))
+    else
+      ctx
+    end
+    ctx
   range: 9
   refineable: true
   subtype: gatling
@@ -47309,6 +47419,31 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 55)
+    ctx = bonus(ctx, {:addrace, :player_human}, 55)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = bonus(ctx, :splash_range, 1)
+    ctx = bonus(ctx, {:skill_atk, 502}, 30)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, ((refine(ctx) - 4) * (refine(ctx) - 4)))
+      ctx = bonus(ctx, {:addrace, :player_human}, ((refine(ctx) - 4) * (refine(ctx) - 4)))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, {:skill_atk, 520}, (refine(ctx) * 2))
+      ctx = bonus(ctx, {:add_eff_on_skill, 520, :sc_stun}, 2000)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 9
   refineable: true
   subtype: shotgun
@@ -47327,6 +47462,31 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 35)
+    ctx = bonus(ctx, {:addrace, :player_human}, 35)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = bonus(ctx, {:skill_atk, 502}, 30)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, ((refine(ctx) - 4) * (refine(ctx) - 4)))
+      ctx = bonus(ctx, {:addrace, :player_human}, ((refine(ctx) - 4) * (refine(ctx) - 4)))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, {:skill_atk, 521}, (refine(ctx) * 2))
+      ctx = bonus(ctx, {:add_eff_on_skill, 520, :sc_stun}, 2000)
+      ctx = autobonus(ctx, %{primary: [{:bonus, :aspd_rate, 20}], trigger: :attack, secondary: [], battle_flag: 849}, 200, 20000)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 9
   refineable: true
   subtype: grenade

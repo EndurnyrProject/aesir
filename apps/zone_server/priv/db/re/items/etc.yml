@@ -31555,6 +31555,7 @@
   locations:
     - right_hand
   name: Elite Shotgun Buffalo Bandit Card
+  on_equip: 'bonus(ctx, {:skill_atk, 520}, if((refine(ctx) >= 14), do: (if((refine(ctx) >= 10), do: (10 + 20), else: 10) + 20), else: if((refine(ctx) >= 10), do: (10 + 20), else: 10)))'
   type: card
   weight: 10
 - aegis_name: E_Cowraiders2_Card
@@ -31563,6 +31564,7 @@
   locations:
     - right_hand
   name: Elite Revolver Buffalo Bandit Card
+  on_equip: 'bonus(ctx, {:skill_atk, 515}, if((refine(ctx) >= 14), do: (if((refine(ctx) >= 10), do: (10 + 20), else: 10) + 20), else: if((refine(ctx) >= 10), do: (10 + 20), else: 10)))'
   type: card
   weight: 10
 - aegis_name: E_Cowraiders3_Card
@@ -37789,16 +37791,19 @@
 - aegis_name: Gunslinger_Top
   id: 29664
   name: Gunslinger Stone (Upper)
+  on_equip: bonus(ctx, :atk, (2 * skill_lv(ctx, 510)))
   subtype: enchant
   type: card
 - aegis_name: Gunslinger_Middle
   id: 29665
   name: Gunslinger Stone (Middle)
+  on_equip: bonus(ctx, {:skill_atk, 516}, 20)
   subtype: enchant
   type: card
 - aegis_name: Gunslinger_Bottom
   id: 29666
   name: Gunslinger Stone (Bottom)
+  on_equip: bonus(ctx, :long_atk_rate, div(skill_lv(ctx, 511), 2))
   subtype: enchant
   type: card
 - aegis_name: Rebellion_Robe
@@ -39013,6 +39018,14 @@
   locations:
     - shoes
   name: Papila Card
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, :max_hp_rate, 10)
+    ctx = bonus(ctx, :max_sp_rate, 10)
+    ctx = bonus(ctx, {:skill_atk, 520}, 10)
+    ctx = bonus(ctx, {:skill_atk, 516}, 10)
+    ctx = bonus(ctx, {:skill_atk, 519}, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Papila_H_Card
