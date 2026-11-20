@@ -43,6 +43,8 @@ defmodule Aesir.ZoneServer.Factory do
   alias Aesir.ZoneServer.Mmo.Refine.Chance
   alias Aesir.ZoneServer.Mmo.Refine.LevelInfo
   alias Aesir.ZoneServer.Mmo.Skill.Definition, as: SkillDefinition
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell, as: SkillUnitCell
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group, as: SkillUnitGroup
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
@@ -295,6 +297,21 @@ defmodule Aesir.ZoneServer.Factory do
   @spec skill_definition_factory() :: SkillDefinition.t()
   def skill_definition_factory do
     %SkillDefinition{id: 1, name: :test_skill, display_name: "Test Skill", max_level: 10}
+  end
+
+  @doc "A ground group with a sequenced ID and synthetic skill name; all other fields use struct defaults."
+  @spec skill_unit_group_factory() :: SkillUnitGroup.t()
+  def skill_unit_group_factory do
+    %SkillUnitGroup{
+      group_id: sequence(:skill_unit_group_id, & &1, start_at: 1),
+      skill_name: :test_skill
+    }
+  end
+
+  @doc "An unplaced cell with a sequenced ID; tests supply the owning group and coordinates."
+  @spec skill_unit_cell_factory() :: SkillUnitCell.t()
+  def skill_unit_cell_factory do
+    %SkillUnitCell{cell_id: sequence(:skill_unit_cell_id, & &1, start_at: 1), group_id: 0}
   end
 
   @doc "A level 1 neutral dagger in the right hand: item 1, 100 base ATK, no refine."

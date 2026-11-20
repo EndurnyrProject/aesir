@@ -29,6 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
   `Skill.Catalog.ground_module_for/1`.
   """
 
+  use TypedStruct
+
   alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Unit
@@ -42,60 +44,33 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
   @typedoc "Controls whether a group is materialized and which observers receive it."
   @type visibility :: :public | :party_only | :none
 
-  @enforce_keys [:group_id, :skill_name]
-  defstruct group_id: nil,
-            skill_id: nil,
-            skill_name: nil,
-            level: nil,
-            caster_id: nil,
-            caster_type: nil,
-            party_id: nil,
-            target_id: nil,
-            target_type: nil,
-            map_name: nil,
-            center: nil,
-            origin: nil,
-            cells: [],
-            created_at: nil,
-            next_tick_at: nil,
-            expires_at: nil,
-            interval: nil,
-            unit_range: nil,
-            no_overlap: false,
-            path_check: false,
-            lifecycle_policy: %LifecyclePolicy{},
-            visibility: :public,
-            state: %{},
-            cell_entries: %{},
-            handler: nil
-
-  @type t() :: %__MODULE__{
-          group_id: non_neg_integer(),
-          skill_id: non_neg_integer() | nil,
-          skill_name: atom(),
-          level: non_neg_integer() | nil,
-          caster_id: integer() | nil,
-          caster_type: Unit.unit_type() | nil,
-          party_id: integer() | nil,
-          target_id: integer() | nil,
-          target_type: Unit.unit_type() | nil,
-          map_name: String.t() | nil,
-          center: cell() | nil,
-          origin: cell() | nil,
-          cells: [cell()],
-          created_at: integer() | nil,
-          next_tick_at: integer() | nil,
-          expires_at: integer() | nil,
-          interval: pos_integer() | nil,
-          unit_range: non_neg_integer() | nil,
-          no_overlap: boolean(),
-          path_check: boolean(),
-          lifecycle_policy: LifecyclePolicy.t(),
-          visibility: visibility(),
-          state: skill_state(),
-          cell_entries: %{optional(cell()) => integer()},
-          handler: module() | nil
-        }
+  typedstruct do
+    field :group_id, non_neg_integer(), enforce: true
+    field :skill_id, non_neg_integer() | nil, default: nil
+    field :skill_name, atom(), enforce: true
+    field :level, non_neg_integer() | nil, default: nil
+    field :caster_id, integer() | nil, default: nil
+    field :caster_type, Unit.unit_type() | nil, default: nil
+    field :party_id, integer() | nil, default: nil
+    field :target_id, integer() | nil, default: nil
+    field :target_type, Unit.unit_type() | nil, default: nil
+    field :map_name, String.t() | nil, default: nil
+    field :center, cell() | nil, default: nil
+    field :origin, cell() | nil, default: nil
+    field :cells, [cell()], default: []
+    field :created_at, integer() | nil, default: nil
+    field :next_tick_at, integer() | nil, default: nil
+    field :expires_at, integer() | nil, default: nil
+    field :interval, pos_integer() | nil, default: nil
+    field :unit_range, non_neg_integer() | nil, default: nil
+    field :no_overlap, boolean(), default: false
+    field :path_check, boolean(), default: false
+    field :lifecycle_policy, LifecyclePolicy.t(), default: %LifecyclePolicy{}
+    field :visibility, visibility(), default: :public
+    field :state, skill_state(), default: %{}
+    field :cell_entries, %{optional(cell()) => integer()}, default: %{}
+    field :handler, module() | nil, default: nil
+  end
 
   @doc "Whether this group owns real cells and appears in the map index."
   @spec materialized?(t()) :: boolean()

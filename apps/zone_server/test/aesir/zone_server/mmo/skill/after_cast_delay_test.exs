@@ -2,12 +2,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.AfterCastDelayTest do
   use ExUnit.Case, async: true
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.Skill.AfterCastDelay
-  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   setup :setup_ets_tables
 
@@ -52,12 +50,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.AfterCastDelayTest do
   end
 
   defp caster(equipment) do
-    stats = %PlayerStats{
-      base_stats: %{str: 1, agi: 40, vit: 1, int: 1, dex: 40, luk: 1},
-      modifiers: %{equipment: equipment, status_effects: %{}, job_bonuses: %{}}
-    }
-
-    %PlayerState{character_id: System.unique_integer([:positive]), stats: stats}
+    build(:player_state,
+      stats: %{base_stats: %{agi: 40, dex: 40}, modifiers: %{equipment: equipment}}
+    )
   end
 
   defp bragi(caster, percent) do
@@ -67,14 +62,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.AfterCastDelayTest do
       )
   end
 
-  defp definition(id, after_cast_delay) do
-    %Definition{
-      id: id,
-      name: :test_skill,
-      display_name: "Test Skill",
-      max_level: 1,
-      target_type: :self,
-      after_cast_delay: after_cast_delay
-    }
-  end
+  defp definition(id, after_cast_delay),
+    do: build(:skill_definition, id: id, max_level: 1, after_cast_delay: after_cast_delay)
 end

@@ -12,7 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @type kind :: :player | :homunculus | :mob | :npc
-  @type state :: any()
+  @typedoc "Runtime snapshots recognized by caster dispatch (shallow to keep caller contracts small)."
+  @type state :: %PlayerState{} | %HomunculusState{} | %MobState{} | %SkillCaster{}
 
   @callback kind() :: kind()
   @callback provides() :: [Aesir.ZoneServer.Mmo.Skill.Requirement.t()]

@@ -2,17 +2,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.StorageTest do
   use ExUnit.Case, async: true
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
 
   setup :setup_ets_tables
 
   defp group(group_id, attrs \\ []) do
-    base = %Group{
+    build(:skill_unit_group,
       group_id: group_id,
       skill_id: 89,
       skill_name: :wz_stormgust,
@@ -26,31 +26,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.StorageTest do
       expires_at: 0,
       interval: 450,
       state: %{}
-    }
-
-    struct(base, attrs)
-  end
-
-  test "a group carries bounded caster and target lifecycle actions" do
-    policy = %LifecyclePolicy{
-      on_caster_loss: :skip_action,
-      on_target_loss: :expire
-    }
-
-    assert %Group{
-             lifecycle_policy: ^policy,
-             target_type: :mob,
-             target_id: 3000,
-             visibility: :public,
-             created_at: 100
-           } =
-             group(1,
-               lifecycle_policy: policy,
-               target_type: :mob,
-               target_id: 3000,
-               visibility: :public,
-               created_at: 100
-             )
+    )
+    |> struct!(attrs)
   end
 
   describe "insert/1 and get/1" do
@@ -348,14 +325,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.StorageTest do
   end
 
   test "indexes cells by id and group" do
-    cell = %Cell{
-      cell_id: 5,
-      group_id: 1,
-      map_name: "prontera",
-      x: 100,
-      y: 101,
-      flags: Cell.visible()
-    }
+    cell =
+      build(:skill_unit_cell,
+        cell_id: 5,
+        group_id: 1,
+        map_name: "prontera",
+        x: 100,
+        y: 101,
+        flags: Cell.visible()
+      )
 
     :ok = Storage.insert_cell(cell)
 
@@ -368,14 +346,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.StorageTest do
   end
 
   test "moves group membership only when a stored cell changes owner" do
-    cell = %Cell{
-      cell_id: 5,
-      group_id: 1,
-      map_name: "prontera",
-      x: 100,
-      y: 101,
-      flags: Cell.visible()
-    }
+    cell =
+      build(:skill_unit_cell,
+        cell_id: 5,
+        group_id: 1,
+        map_name: "prontera",
+        x: 100,
+        y: 101,
+        flags: Cell.visible()
+      )
 
     :ok = Storage.insert_cell(cell)
     :ok = Storage.update_cell(%{cell | group_id: 2})

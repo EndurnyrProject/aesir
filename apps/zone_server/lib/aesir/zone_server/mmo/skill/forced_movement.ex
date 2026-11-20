@@ -3,21 +3,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.ForcedMovement do
   A destination validated before a skill commits its resources.
   """
 
+  use TypedStruct
+
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Cell
 
-  @enforce_keys [:map_name, :x, :y]
-  defstruct [:map_name, :x, :y]
-
-  @type t() :: %__MODULE__{
-          map_name: String.t(),
-          x: integer(),
-          y: integer()
-        }
+  typedstruct enforce: true do
+    field :map_name, String.t()
+    field :x, integer()
+    field :y, integer()
+  end
 
   @type validation_error :: :out_of_range | :invalid_destination
 
-  @spec validate(map(), integer(), integer(), non_neg_integer()) ::
+  @typedoc "The origin of a forced move, shared by the caster variants."
+  @type origin :: %{map_name: String.t(), x: integer(), y: integer()}
+
+  @spec validate(origin(), integer(), integer(), non_neg_integer()) ::
           {:ok, t()} | {:error, validation_error()}
   def validate(%{map_name: map_name, x: from_x, y: from_y}, x, y, range)
       when is_integer(range) and range >= 0 do

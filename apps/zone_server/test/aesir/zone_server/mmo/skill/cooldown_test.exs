@@ -1,18 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.CooldownTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Mmo.Skill.Cooldown
-  alias Aesir.ZoneServer.Mmo.Skill.Definition
+  import Aesir.ZoneServer.Factory
 
-  defp definition(cooldown) do
-    %Definition{
-      id: 29,
-      name: :test_skill,
-      display_name: "Test Skill",
-      max_level: 10,
-      cooldown: cooldown
-    }
-  end
+  alias Aesir.ZoneServer.Mmo.Skill.Cooldown
+
+  defp definition(cooldown), do: build(:skill_definition, id: 29, cooldown: cooldown)
 
   describe "ready?/3" do
     test "true when no entry exists" do

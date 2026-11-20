@@ -2,9 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CostTest do
   use ExUnit.Case, async: true
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.Skill.Cost
-  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -23,14 +23,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CostTest do
     end
 
     defp sp_state(equipment \\ %{}, passive \\ %{}) do
-      %{
+      build(:player_state,
         character_id: @char,
-        stats: %{
-          current_state: %{hp: 100, sp: 100},
-          derived_stats: %{max_hp: 100},
-          modifiers: %{equipment: equipment, passive: passive}
-        }
-      }
+        stats: %{modifiers: %{equipment: equipment, passive: passive}}
+      )
     end
 
     # 319 (Whistle) is a performance, so a song; 318 (Frost Joker) is not.
@@ -223,7 +219,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CostTest do
       assert %Cost.Commitment{hp: 10, sp: 4, write_spheres?: true} = commitment
 
       applied = Cost.apply_commitment(game_state, commitment)
-      assert applied.stats.current_state == %{hp: 0, sp: 0}
+      assert %{hp: 0, sp: 0} = applied.stats.current_state
       assert SpiritSpheres.count(applied.spirit_spheres) == 0
     end
 
@@ -234,10 +230,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CostTest do
       commitment = Cost.prepare_clamped(game_state, cost)
       assert %Cost.Commitment{hp: 5, sp: 12, write_spheres?: false} = commitment
 
-      assert Cost.apply_commitment(game_state, commitment).stats.current_state == %{
-               hp: 45,
-               sp: 28
-             }
+      assert %{hp: 45, sp: 28} = Cost.apply_commitment(game_state, commitment).stats.current_state
     end
   end
 
@@ -267,24 +260,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CostTest do
     assert %Cost{spheres: 0} = Cost.from_definition(empty, definition(sphere_cost: [:all]), 1)
   end
 
-  defp definition(overrides) do
-    struct!(
-      Definition,
-      Map.merge(
-        %{
-          id: 1,
-          name: :test_skill,
-          display_name: "Test Skill",
-          max_level: 1,
-          hp_cost: [],
-          hp_cost_rate: [],
-          sp_cost: [],
-          sphere_cost: []
-        },
-        Map.new(overrides)
-      )
-    )
-  end
+  defp definition(overrides),
+    do: build(:skill_definition, Keyword.merge([max_level: 1], overrides))
 
   defp game_state(hp, sp, spheres, max_hp \\ 0) do
     entries =
@@ -293,9 +270,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CostTest do
         next
       end)
 
-    %{
+    build(:player_state,
       stats: %{current_state: %{hp: hp, sp: sp}, derived_stats: %{max_hp: max_hp}},
       spirit_spheres: entries
-    }
+    )
   end
 end

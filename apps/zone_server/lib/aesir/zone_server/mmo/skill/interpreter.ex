@@ -58,17 +58,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     alias Aesir.ZoneServer.Mmo.Skill.Active
     alias Aesir.ZoneServer.Mmo.Skill.Cost
 
-    @enforce_keys [:effect, :cost, :zeny, :skill_id, :level, :target]
-    defstruct [:effect, :cost, :zeny, :skill_id, :level, :target]
+    use TypedStruct
 
-    @type t() :: %__MODULE__{
-            effect: term(),
-            cost: Cost.t(),
-            zeny: non_neg_integer(),
-            skill_id: integer(),
-            level: pos_integer(),
-            target: Active.target()
-          }
+    typedstruct enforce: true do
+      field :effect, term()
+      field :cost, Cost.t()
+      field :zeny, non_neg_integer()
+      field :skill_id, integer()
+      field :level, pos_integer()
+      field :target, Active.target()
+    end
   end
 
   @typedoc """

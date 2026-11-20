@@ -120,6 +120,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   Use `build!/2` to construct a validated definition from `use` options.
   """
 
+  use TypedStruct
+
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.DefinitionValidation
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
@@ -179,149 +181,76 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   """
   @type hit_count :: integer() | [integer()]
 
-  @enforce_keys [:id, :name, :display_name, :max_level]
-  defstruct id: nil,
-            name: nil,
-            display_name: nil,
-            max_level: nil,
-            target_type: :self,
-            damage_type: :no_damage,
-            range: 0,
-            element: :neutral,
-            knockback: 0,
-            hit_count: 1,
-            splash_radius: 0,
-            hit_interval: 0,
-            unit_duration: [],
-            hp_cost: [],
-            hp_cost_rate: [],
-            sp_cost: [],
-            sphere_cost: [],
-            zeny_cost: [],
-            duration: [],
-            cast_time: [],
-            fixed_cast_time: [],
-            ignore_dex: false,
-            ignore_status_cast: false,
-            ignore_item_cast: false,
-            ignore_status_delay: false,
-            ignore_item_delay: false,
-            ignore_noncrit_atk_bonus: false,
-            ignore_atk_card: false,
-            ignore_auto_guard: false,
-            ignore_cicada: false,
-            ignore_def_card: false,
-            ignore_element: false,
-            ignore_flee: false,
-            critical: false,
-            cast_cancel: true,
-            target_hidden: false,
-            is_npc: false,
-            ignore_hovering: false,
-            damage_splash: false,
-            allow_when_hidden: false,
-            active_instance: 0,
-            no_reiteration: false,
-            no_footset: false,
-            unit_layout: 0,
-            unit_range: 0,
-            is_trap: false,
-            ranged_single_unit: false,
-            defer_ammo: false,
-            equip_lock_after_cast: nil,
-            after_cast_delay: [],
-            cooldown: [],
-            damage_kind: :weapon,
-            damage_base: :weapon,
-            item_cost: [],
-            # Caster facilities this skill requires (see `Skill.Requirement`). Silence means
-            # PLAYER-ONLY: an un-annotated skill defaults to `[:player_state]`, which no mob
-            # can provide, so a mob never casts it. Caster-generic skills MUST opt in with an
-            # explicit `requires: []` (or a narrower set). This default makes the
-            # crash-a-MobSession class structurally impossible.
-            requires: [:player_state],
-            require_ammo: [],
-            ammo_qty: [],
-            require_weapon: [],
-            require_recovered_weight: false,
-            vulture_range: false,
-            snake_eye_range: false,
-            status: nil,
-            toggleable: false,
-            no_target_self: false,
-            support: false,
-            quest_skill: false,
-            quest_owner_job: nil
-
-  @type t() :: %__MODULE__{
-          id: integer(),
-          name: atom(),
-          display_name: String.t(),
-          max_level: pos_integer(),
-          target_type: target_type(),
-          damage_type: damage_type(),
-          range: range(),
-          element: element(),
-          knockback: non_neg_integer() | [non_neg_integer()],
-          hit_count: hit_count(),
-          splash_radius: non_neg_integer() | [non_neg_integer()],
-          hit_interval: non_neg_integer(),
-          unit_duration: [non_neg_integer()],
-          hp_cost: [non_neg_integer()],
-          hp_cost_rate: [non_neg_integer()],
-          sp_cost: [non_neg_integer() | :all],
-          sphere_cost: [non_neg_integer() | :all],
-          zeny_cost: [non_neg_integer()],
-          duration: [non_neg_integer()],
-          cast_time: [non_neg_integer()],
-          fixed_cast_time: [integer()],
-          ignore_dex: boolean(),
-          ignore_status_cast: boolean(),
-          ignore_item_cast: boolean(),
-          ignore_status_delay: boolean(),
-          ignore_item_delay: boolean(),
-          ignore_noncrit_atk_bonus: boolean(),
-          ignore_atk_card: boolean(),
-          ignore_auto_guard: boolean(),
-          ignore_cicada: boolean(),
-          ignore_def_card: boolean(),
-          ignore_element: boolean(),
-          ignore_flee: boolean(),
-          critical: boolean(),
-          cast_cancel: boolean(),
-          target_hidden: boolean(),
-          is_npc: boolean(),
-          ignore_hovering: boolean(),
-          damage_splash: boolean(),
-          allow_when_hidden: boolean(),
-          active_instance: non_neg_integer(),
-          no_reiteration: boolean(),
-          no_footset: boolean(),
-          unit_layout: non_neg_integer(),
-          unit_range: non_neg_integer(),
-          is_trap: boolean(),
-          ranged_single_unit: boolean(),
-          defer_ammo: boolean(),
-          equip_lock_after_cast: :duration1 | nil,
-          after_cast_delay: [non_neg_integer()],
-          cooldown: [non_neg_integer()],
-          damage_kind: damage_kind(),
-          damage_base: damage_base(),
-          item_cost: [item_cost_entry()],
-          requires: [Requirement.t()],
-          require_ammo: [atom()],
-          ammo_qty: [non_neg_integer()],
-          require_weapon: [atom()],
-          require_recovered_weight: boolean(),
-          vulture_range: boolean(),
-          snake_eye_range: boolean(),
-          status: atom() | nil,
-          toggleable: boolean(),
-          no_target_self: boolean(),
-          support: boolean(),
-          quest_skill: boolean(),
-          quest_owner_job: atom() | nil
-        }
+  typedstruct do
+    field :id, integer(), enforce: true
+    field :name, atom(), enforce: true
+    field :display_name, String.t(), enforce: true
+    field :max_level, pos_integer(), enforce: true
+    field :target_type, target_type(), default: :self
+    field :damage_type, damage_type(), default: :no_damage
+    field :range, range(), default: 0
+    field :element, element(), default: :neutral
+    field :knockback, non_neg_integer() | [non_neg_integer()], default: 0
+    field :hit_count, hit_count(), default: 1
+    field :splash_radius, non_neg_integer() | [non_neg_integer()], default: 0
+    field :hit_interval, non_neg_integer(), default: 0
+    field :unit_duration, [non_neg_integer()], default: []
+    field :hp_cost, [non_neg_integer()], default: []
+    field :hp_cost_rate, [non_neg_integer()], default: []
+    field :sp_cost, [non_neg_integer() | :all], default: []
+    field :sphere_cost, [non_neg_integer() | :all], default: []
+    field :zeny_cost, [non_neg_integer()], default: []
+    field :duration, [non_neg_integer()], default: []
+    field :cast_time, [non_neg_integer()], default: []
+    field :fixed_cast_time, [integer()], default: []
+    field :ignore_dex, boolean(), default: false
+    field :ignore_status_cast, boolean(), default: false
+    field :ignore_item_cast, boolean(), default: false
+    field :ignore_status_delay, boolean(), default: false
+    field :ignore_item_delay, boolean(), default: false
+    field :ignore_noncrit_atk_bonus, boolean(), default: false
+    field :ignore_atk_card, boolean(), default: false
+    field :ignore_auto_guard, boolean(), default: false
+    field :ignore_cicada, boolean(), default: false
+    field :ignore_def_card, boolean(), default: false
+    field :ignore_element, boolean(), default: false
+    field :ignore_flee, boolean(), default: false
+    field :critical, boolean(), default: false
+    field :cast_cancel, boolean(), default: true
+    field :target_hidden, boolean(), default: false
+    field :is_npc, boolean(), default: false
+    field :ignore_hovering, boolean(), default: false
+    field :damage_splash, boolean(), default: false
+    field :allow_when_hidden, boolean(), default: false
+    field :active_instance, non_neg_integer(), default: 0
+    field :no_reiteration, boolean(), default: false
+    field :no_footset, boolean(), default: false
+    field :unit_layout, non_neg_integer(), default: 0
+    field :unit_range, non_neg_integer(), default: 0
+    field :is_trap, boolean(), default: false
+    field :ranged_single_unit, boolean(), default: false
+    field :defer_ammo, boolean(), default: false
+    field :equip_lock_after_cast, :duration1 | nil, default: nil
+    field :after_cast_delay, [non_neg_integer()], default: []
+    field :cooldown, [non_neg_integer()], default: []
+    field :damage_kind, damage_kind(), default: :weapon
+    field :damage_base, damage_base(), default: :weapon
+    field :item_cost, [item_cost_entry()], default: []
+    # Unannotated skills are player-only; caster-generic skills opt in.
+    field :requires, [Requirement.t()], default: [:player_state]
+    field :require_ammo, [atom()], default: []
+    field :ammo_qty, [non_neg_integer()], default: []
+    field :require_weapon, [atom()], default: []
+    field :require_recovered_weight, boolean(), default: false
+    field :vulture_range, boolean(), default: false
+    field :snake_eye_range, boolean(), default: false
+    field :status, atom() | nil, default: nil
+    field :toggleable, boolean(), default: false
+    field :no_target_self, boolean(), default: false
+    field :support, boolean(), default: false
+    field :quest_skill, boolean(), default: false
+    field :quest_owner_job, atom() | nil, default: nil
+  end
 
   @metadata_schema %{
     id: {:required, :integer},
@@ -405,72 +334,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     quest_owner_job: :atom
   }
 
-  @defaults %{
-    target_type: :self,
-    damage_type: :no_damage,
-    range: 0,
-    element: :neutral,
-    knockback: 0,
-    hit_count: 1,
-    splash_radius: 0,
-    hit_interval: 0,
-    unit_duration: [],
-    hp_cost: [],
-    hp_cost_rate: [],
-    sp_cost: [],
-    sphere_cost: [],
-    zeny_cost: [],
-    duration: [],
-    cast_time: [],
-    fixed_cast_time: [],
-    ignore_dex: false,
-    ignore_status_cast: false,
-    ignore_item_cast: false,
-    ignore_status_delay: false,
-    ignore_item_delay: false,
-    ignore_noncrit_atk_bonus: false,
-    ignore_atk_card: false,
-    ignore_auto_guard: false,
-    ignore_cicada: false,
-    ignore_def_card: false,
-    ignore_element: false,
-    ignore_flee: false,
-    critical: false,
-    cast_cancel: true,
-    target_hidden: false,
-    is_npc: false,
-    ignore_hovering: false,
-    damage_splash: false,
-    allow_when_hidden: false,
-    active_instance: 0,
-    no_reiteration: false,
-    no_footset: false,
-    unit_layout: 0,
-    unit_range: 0,
-    is_trap: false,
-    ranged_single_unit: false,
-    defer_ammo: false,
-    equip_lock_after_cast: nil,
-    after_cast_delay: [],
-    cooldown: [],
-    damage_kind: :weapon,
-    damage_base: :weapon,
-    item_cost: [],
-    requires: [:player_state],
-    require_ammo: [],
-    ammo_qty: [],
-    require_weapon: [],
-    require_recovered_weight: false,
-    vulture_range: false,
-    snake_eye_range: false,
-    status: nil,
-    toggleable: false,
-    no_target_self: false,
-    support: false,
-    quest_skill: false,
-    quest_owner_job: nil
-  }
-
   @mode_keyable [
     :target_type,
     :range,
@@ -533,9 +396,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   """
   @spec build!(keyword(), module()) :: t()
   def build!(opts, module) do
-    metadata = DefinitionValidation.validate!(@metadata_schema, opts, module, @defaults)
-    validate_quest_owner!(metadata, module)
-    struct!(__MODULE__, metadata)
+    metadata = DefinitionValidation.validate!(@metadata_schema, opts, module)
+    definition = struct!(__MODULE__, metadata)
+    validate_quest_owner!(definition, module)
+    definition
   end
 
   @doc """

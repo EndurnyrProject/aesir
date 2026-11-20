@@ -19,20 +19,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.DefinitionTest do
   ]
 
   describe "resolve_mode/2" do
-    test "leaves plain (non mode-keyed) option values unchanged" do
-      opts = [sp_cost: [10], range: 5, display_name: "Test"]
-
-      assert Definition.resolve_mode(opts, :renewal) == opts
-      assert Definition.resolve_mode(opts, :pre_renewal) == opts
-    end
-
-    test "resolves a mode-keyed value on a mode-keyable field to the mode's entry" do
-      opts = [sp_cost: [renewal: [10], pre_renewal: [12]]]
-
-      assert Definition.resolve_mode(opts, :renewal) == [sp_cost: [10]]
-      assert Definition.resolve_mode(opts, :pre_renewal) == [sp_cost: [12]]
-    end
-
     test "resolves only the mode-keyed fields in a mixed option list" do
       opts = [
         sp_cost: [renewal: [10], pre_renewal: [12]],

@@ -1,19 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.CastTimeTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Mmo.Skill.CastTime
-  alias Aesir.ZoneServer.Mmo.Skill.Definition
+  import Aesir.ZoneServer.Factory
 
-  defp definition(cast_time, fixed_cast_time \\ [-1]) do
-    %Definition{
-      id: 83,
-      name: :test_skill,
-      display_name: "Test Skill",
-      max_level: 10,
-      cast_time: cast_time,
-      fixed_cast_time: fixed_cast_time
-    }
-  end
+  alias Aesir.ZoneServer.Mmo.Skill.CastTime
+
+  defp definition(cast_time, fixed_cast_time \\ [-1]),
+    do: build(:skill_definition, id: 83, cast_time: cast_time, fixed_cast_time: fixed_cast_time)
 
   describe "compute/3 shared behavior" do
     test "instant when the base cast time is 0" do

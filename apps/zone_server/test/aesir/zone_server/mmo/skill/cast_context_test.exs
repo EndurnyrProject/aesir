@@ -1,5 +1,5 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.CastContextTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   import Aesir.TestEtsSetup
   import Aesir.ZoneServer.Factory
@@ -9,14 +9,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastContextTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlIncagi
   alias Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifHeal
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
-  alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
 
   setup :setup_ets_tables
 
   test "builds a begin context from a real player state" do
-    caster = player()
+    caster =
+      build(:player_state,
+        character_id: 101,
+        x: 10,
+        y: 20,
+        stats: %{base_stats: %{dex: 20, int: 30}}
+      )
+
     {:ok, definition} = Catalog.by_id(29)
 
     context = CastContext.build(caster, definition, 2, {:unit, 202}, :begin)
@@ -66,19 +70,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastContextTest do
              completion_context.stats
 
     assert Map.delete(begin_context, :phase) == Map.delete(completion_context, :phase)
-  end
-
-  defp player do
-    %PlayerState{
-      character_id: 101,
-      map_name: "prontera",
-      x: 10,
-      y: 20,
-      stats: %PlayerStats{
-        base_stats: %{str: 1, agi: 1, vit: 1, int: 30, dex: 20, luk: 1},
-        modifiers: %Modifiers{equipment: %{}}
-      }
-    }
   end
 
   defp homunculus do

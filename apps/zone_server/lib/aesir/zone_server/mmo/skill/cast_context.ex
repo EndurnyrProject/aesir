@@ -7,41 +7,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastContext do
   arguments rather than this struct.
   """
 
+  use TypedStruct
+
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.Skill.Caster.Lifecycle
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
 
-  @enforce_keys [
-    :caster,
-    :kind,
-    :adapter,
-    :id,
-    :position,
-    :definition,
-    :module,
-    :level,
-    :target,
-    :phase,
-    :stats
-  ]
-  defstruct @enforce_keys ++ [cost: nil]
-
-  @type t() :: %__MODULE__{
-          caster: Caster.state(),
-          kind: Caster.kind(),
-          adapter: module(),
-          id: integer(),
-          position: {String.t(), integer(), integer()},
-          definition: Definition.t(),
-          module: module(),
-          level: pos_integer(),
-          target: Active.target(),
-          phase: Lifecycle.phase(),
-          cost: Lifecycle.prepared() | nil,
-          stats: Lifecycle.cast_stats()
-        }
+  typedstruct do
+    field :caster, Lifecycle.state(), enforce: true
+    field :kind, Caster.kind(), enforce: true
+    field :adapter, module(), enforce: true
+    field :id, integer(), enforce: true
+    field :position, {String.t(), integer(), integer()}, enforce: true
+    field :definition, Definition.t(), enforce: true
+    field :module, module(), enforce: true
+    field :level, pos_integer(), enforce: true
+    field :target, Active.target(), enforce: true
+    field :phase, Lifecycle.phase(), enforce: true
+    field :cost, Lifecycle.prepared() | nil, default: nil
+    field :stats, Lifecycle.cast_stats(), enforce: true
+  end
 
   @doc """
   Builds a context from the caster's current state for one cast phase.
@@ -49,7 +36,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastContext do
   Resource cost preparation happens later in the validation pipeline, so
   `cost` is initially `nil`.
   """
-  @spec build(Caster.state(), Definition.t(), pos_integer(), Active.target(), Lifecycle.phase()) ::
+  @spec build(
+          Lifecycle.state(),
+          Definition.t(),
+          pos_integer(),
+          Active.target(),
+          Lifecycle.phase()
+        ) ::
           t()
   def build(caster, definition, level, target, phase) do
     adapter = Caster.for(caster)

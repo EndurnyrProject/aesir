@@ -1,31 +1,40 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ViewTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Net.SkillUnitCellState
   alias Aesir.Net.SkillUnitGroupState
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skill.Unit.View
 
   test "maps complete group state and orders cells by id" do
-    group = %Group{
-      group_id: 9,
-      skill_id: 89,
-      skill_name: :wz_stormgust,
-      level: 10,
-      caster_id: 42,
-      caster_type: :player,
-      map_name: "prontera",
-      center: {100, 101},
-      created_at: 1_000,
-      expires_at: 5_000,
-      interval: 450
-    }
+    group =
+      build(:skill_unit_group,
+        group_id: 9,
+        skill_id: 89,
+        skill_name: :wz_stormgust,
+        level: 10,
+        caster_id: 42,
+        caster_type: :player,
+        map_name: "prontera",
+        center: {100, 101},
+        created_at: 1_000,
+        expires_at: 5_000,
+        interval: 450
+      )
 
     cells = [
-      %Cell{cell_id: 8, group_id: 9, map_name: "prontera", x: 101, y: 101, hp: 0, max_hp: 0},
-      %Cell{
+      build(:skill_unit_cell,
+        cell_id: 8,
+        group_id: 9,
+        map_name: "prontera",
+        x: 101,
+        y: 101,
+        hp: 0,
+        max_hp: 0
+      ),
+      build(:skill_unit_cell,
         cell_id: 3,
         group_id: 9,
         map_name: "prontera",
@@ -34,7 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ViewTest do
         hp: 60,
         max_hp: 100,
         flags: 17
-      }
+      )
     ]
 
     assert %SkillUnitGroupState{
@@ -55,13 +64,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ViewTest do
   end
 
   test "includes Scribble text in spawn state and snapshots without exposing trap messages" do
-    group = %Group{
-      group_id: 1,
-      skill_id: 220,
-      skill_name: :rg_graffiti,
-      center: {100, 100},
-      state: %{message: "Hello Prontera"}
-    }
+    group =
+      build(:skill_unit_group,
+        group_id: 1,
+        skill_id: 220,
+        skill_name: :rg_graffiti,
+        center: {100, 100},
+        state: %{message: "Hello Prontera"}
+      )
 
     assert %{message: "Hello Prontera"} = View.group(group, [])
     assert %{groups: [%{message: "Hello Prontera"}]} = View.snapshot([{group, []}], 123)
@@ -71,16 +81,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ViewTest do
   end
 
   test "maps typed trap phases to wire phases" do
-    group = %Group{
-      group_id: 9,
-      skill_id: 116,
-      skill_name: :ht_landmine,
-      level: 1,
-      caster_id: 42,
-      caster_type: :player,
-      map_name: "prontera",
-      center: {100, 101}
-    }
+    group =
+      build(:skill_unit_group,
+        group_id: 9,
+        skill_id: 116,
+        skill_name: :ht_landmine,
+        level: 1,
+        caster_id: 42,
+        caster_type: :player,
+        map_name: "prontera",
+        center: {100, 101}
+      )
 
     for {phase, wire_phase} <- [
           armed: :SKILL_UNIT_PHASE_ACTIVE,
@@ -94,16 +105,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ViewTest do
   end
 
   test "builds snapshots in group ID order" do
-    first = %Group{
-      group_id: 1,
-      skill_id: 89,
-      skill_name: :wz_stormgust,
-      level: 10,
-      caster_id: 42,
-      caster_type: :player,
-      map_name: "prontera",
-      center: {100, 100}
-    }
+    first =
+      build(:skill_unit_group,
+        group_id: 1,
+        skill_id: 89,
+        skill_name: :wz_stormgust,
+        level: 10,
+        caster_id: 42,
+        caster_type: :player,
+        map_name: "prontera",
+        center: {100, 100}
+      )
 
     later = %{first | group_id: 3}
 

@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   use ExUnit.Case, async: false
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
   import ExUnit.CaptureLog
   import Mimic
   import Aesir.TestWait, only: [assert_eventually: 1]
@@ -359,7 +360,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   end
 
   defp group(group_id, attrs) do
-    base = %Group{
+    build(:skill_unit_group,
       group_id: group_id,
       skill_id: 0,
       skill_name: :fake_unit,
@@ -374,9 +375,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       expires_at: 1_000_000,
       interval: 450,
       state: %{}
-    }
-
-    struct(base, attrs)
+    )
+    |> struct!(attrs)
   end
 
   defp trap_group(group_id, attrs \\ []) do

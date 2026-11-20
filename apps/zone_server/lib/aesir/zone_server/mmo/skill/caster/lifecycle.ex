@@ -8,11 +8,40 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Lifecycle do
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.CastTime
+  alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
-  @type state :: any()
+  @typedoc "Owner-local caster snapshots allowed at cast begin and completion."
+  @type state :: %PlayerState{} | %HomunculusState{}
   @type phase :: :begin | :completion
-  @type prepared :: map()
+
+  @typedoc "Player resources and consumables prepared for settlement."
+  @type player_cost :: %{
+          definition: Definition.t(),
+          module: module(),
+          cost: Cost.t(),
+          commitment: Cost.Commitment.t(),
+          zeny: non_neg_integer(),
+          consume_catalysts?: boolean(),
+          ammo_qty: non_neg_integer(),
+          consume_ammo?: boolean()
+        }
+
+  @typedoc "The adapter's prepared resource charge and settlement flags."
+  @type prepared ::
+          player_cost()
+          | %{
+              optional(:consume_ammo?) => boolean(),
+              optional(:consume_catalysts?) => boolean(),
+              definition: Definition.t(),
+              module: module(),
+              sp_cost: non_neg_integer(),
+              deferred_error: :unsupported_homunculus_deferred,
+              instant_effects: []
+            }
+
   @type cast_stats :: CastTime.inputs()
 
   @callback knows?(state(), Definition.t(), pos_integer(), phase()) ::

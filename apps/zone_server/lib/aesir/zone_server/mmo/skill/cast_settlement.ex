@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastSettlement do
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.CastConditions
+  alias Aesir.ZoneServer.Mmo.Skill.Caster.Lifecycle
   alias Aesir.ZoneServer.Mmo.Skill.CastExecution
   alias Aesir.ZoneServer.Mmo.Skill.CastPacing
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -24,7 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastSettlement do
   @type opts :: %{
           optional(:origin) => atom(),
           adapter: module(),
-          prepared_cost: map(),
+          prepared_cost: Lifecycle.prepared(),
           skill_id: integer(),
           level: pos_integer(),
           apply_act_delay: boolean(),

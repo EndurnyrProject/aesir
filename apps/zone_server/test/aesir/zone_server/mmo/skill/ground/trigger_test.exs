@@ -46,11 +46,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest.MalformedFieldSupport do
 end
 
 defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   import Mimic
   import ExUnit.CaptureLog
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
@@ -66,6 +67,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
   alias __MODULE__.TouchPersist
 
   setup :setup_ets_tables
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
   setup do
@@ -74,7 +76,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
 
     Process.put({Manager, :server}, manager)
     allow(Catalog, self(), manager)
-    Mimic.copy(Interpreter)
     allow(Interpreter, self(), manager)
     :ok
   end
@@ -82,7 +83,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
   @mover {:player, 1000}
 
   defp group(group_id, attrs \\ []) do
-    base = %Group{
+    build(:skill_unit_group,
       group_id: group_id,
       skill_id: 999,
       skill_name: :test_trap,
@@ -96,9 +97,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
       expires_at: 0,
       interval: 1_000,
       state: %{test_pid: self()}
-    }
-
-    struct(base, attrs)
+    )
+    |> struct!(attrs)
   end
 
   describe "on_step/7 onto a cell" do

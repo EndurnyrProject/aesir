@@ -11,46 +11,47 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
   Nibelungen's SP outcome cuts the rest by 30%.
   """
 
+  use TypedStruct
+
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Nibelungen
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
-
-  defstruct hp: 0, sp_requirement: nil, sp: 0, spheres: 0, spheres_old: nil
 
   @typedoc """
   A resolved cost. `spheres_old` is the sphere count a skill's cast-begin
   requirement check records for its own damage (`nil` records nothing).
   """
-  @type t() :: %__MODULE__{
-          hp: non_neg_integer(),
-          sp_requirement: non_neg_integer() | nil,
-          sp: non_neg_integer(),
-          spheres: non_neg_integer(),
-          spheres_old: non_neg_integer() | nil
-        }
+  typedstruct do
+    field :hp, non_neg_integer(), default: 0
+    field :sp_requirement, non_neg_integer() | nil, default: nil
+    field :sp, non_neg_integer(), default: 0
+    field :spheres, non_neg_integer(), default: 0
+    field :spheres_old, non_neg_integer() | nil, default: nil
+  end
 
   defmodule Commitment do
     @moduledoc false
 
-    @enforce_keys [:hp, :sp, :spheres, :write_spheres?]
-    defstruct [:hp, :sp, :spheres, :write_spheres?]
+    use TypedStruct
 
-    @type t() :: %__MODULE__{
-            hp: non_neg_integer(),
-            sp: non_neg_integer(),
-            spheres: SpiritSpheres.t(),
-            write_spheres?: boolean()
-          }
+    typedstruct enforce: true do
+      field :hp, non_neg_integer()
+      field :sp, non_neg_integer()
+      field :spheres, SpiritSpheres.t()
+      field :write_spheres?, boolean()
+    end
   end
 
   @type resource_error ::
           :insufficient_hp | :insufficient_sp | :insufficient_spirit_spheres | :invalid_cost
 
-  @spec from_definition(map(), Definition.t(), pos_integer(), keyword()) :: t()
+  @spec from_definition(PlayerState.t(), Definition.t(), pos_integer(), sp: non_neg_integer()) ::
+          t()
   def from_definition(game_state, definition, level, opts \\ []) do
     sp =
       Keyword.get(
@@ -68,12 +69,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
   end
 
   @doc "Resolves ordinary SP modifiers from the definition's raw base cost."
-  @spec resolve_sp(map(), Definition.t(), pos_integer()) :: non_neg_integer()
+  @spec resolve_sp(PlayerState.t(), Definition.t(), pos_integer()) :: non_neg_integer()
   def resolve_sp(game_state, definition, level),
     do: resolve_sp(game_state, definition, level, nil)
 
   @doc "Resolves ordinary SP modifiers from an optional replacement raw base cost."
-  @spec resolve_sp(map(), Definition.t(), pos_integer(), non_neg_integer() | nil) ::
+  @spec resolve_sp(PlayerState.t(), Definition.t(), pos_integer(), non_neg_integer() | nil) ::
           non_neg_integer()
   def resolve_sp(game_state, definition, level, nil) do
     case Enum.at(definition.sp_cost, level - 1, 0) do
@@ -99,7 +100,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
 
   def validate_resolved(_cost), do: {:error, :invalid_cost}
 
-  @spec validate(map(), t()) :: :ok | {:error, resource_error()}
+  @spec validate(PlayerState.t(), t()) :: :ok | {:error, resource_error()}
   def validate(game_state, %__MODULE__{} = cost) do
     with {:ok, cost} <- validate_resolved(cost) do
       validate_resources(game_state, cost)
@@ -114,7 +115,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
   end
 
   @doc "Fails a resolved cost whose HP charge would leave the caster at or below zero."
-  @spec check_hp(map(), t()) :: :ok | {:error, :insufficient_hp}
+  @spec check_hp(PlayerState.t(), t()) :: :ok | {:error, :insufficient_hp}
   def check_hp(game_state, %__MODULE__{hp: hp}) do
     if hp > 0 and Map.get(game_state.stats.current_state, :hp, 0) <= hp,
       do: {:error, :insufficient_hp},
@@ -122,7 +123,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
   end
 
   @doc "Fails a resolved cost whose SP requirement or charge exceeds the caster's SP."
-  @spec check_sp(map(), t()) :: :ok | {:error, :insufficient_sp}
+  @spec check_sp(PlayerState.t(), t()) :: :ok | {:error, :insufficient_sp}
   def check_sp(game_state, %__MODULE__{sp_requirement: requirement, sp: sp}) do
     if Map.get(game_state.stats.current_state, :sp, 0) < max(requirement, sp),
       do: {:error, :insufficient_sp},
@@ -130,14 +131,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
   end
 
   @doc "Fails a resolved cost needing more spirit spheres than the caster holds."
-  @spec check_spheres(map(), t()) :: :ok | {:error, :insufficient_spirit_spheres}
+  @spec check_spheres(PlayerState.t(), t()) :: :ok | {:error, :insufficient_spirit_spheres}
   def check_spheres(game_state, %__MODULE__{spheres: spheres}) do
     if available_spheres(game_state) < spheres,
       do: {:error, :insufficient_spirit_spheres},
       else: :ok
   end
 
-  @spec prepare(map(), t()) :: {:ok, Commitment.t()} | {:error, resource_error()}
+  @spec prepare(PlayerState.t(), t()) :: {:ok, Commitment.t()} | {:error, resource_error()}
   def prepare(game_state, cost) do
     with {:ok, cost} <- validate_resolved(cost),
          :ok <- validate(game_state, cost),
@@ -159,7 +160,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
   equipment proc) use it; an HP charge reaching current HP is lethal and left
   to the owner.
   """
-  @spec prepare_clamped(map(), t()) :: Commitment.t()
+  @spec prepare_clamped(PlayerState.t(), t()) :: Commitment.t()
   def prepare_clamped(game_state, %__MODULE__{} = cost) do
     current = game_state.stats.current_state
     held = spheres(game_state)
@@ -174,7 +175,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
     }
   end
 
-  @spec apply_commitment(map(), Commitment.t()) :: map()
+  @spec apply_commitment(PlayerState.t(), Commitment.t()) :: PlayerState.t()
   def apply_commitment(game_state, %Commitment{} = commitment) do
     current_state =
       game_state.stats.current_state
