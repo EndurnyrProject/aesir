@@ -1,41 +1,45 @@
 defmodule Aesir.ZoneServer.Navigation.ViewTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
-  import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
+  import Mimic
 
   alias Aesir.Net.NavigateTo
   alias Aesir.Net.NavigationCell
   alias Aesir.Net.NavigationCoordinate
   alias Aesir.Net.NavigationLeg
-  alias Aesir.ZoneServer.EtsTable
-  alias Aesir.ZoneServer.Map.MapData
-  alias Aesir.ZoneServer.Navigation.Route
-  alias Aesir.ZoneServer.Navigation.Route.Leg
-  alias Aesir.ZoneServer.Navigation.Session
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Navigation.View
 
-  setup :setup_ets_tables
+  setup :set_mimic_from_context
 
   setup do
-    :ets.insert(EtsTable.table_for(:map_cache), {"geffen", MapData.new("geffen", 20, 30)})
+    stub(Cell, :traversable?, fn _map, _x, _y -> true end)
     :ok
   end
 
   test "builds ordered topology legs and simplifies only the current leg" do
-    route = %Route{
-      legs: [
-        leg(0, "prontera", [{1, 1}], "prt_to_gef", "geffen", nil),
-        leg(1, "geffen", [{10, 20}, {11, 20}, {12, 20}, {13, 20}], "gef_to_moc", "morocc", nil),
-        leg(2, "morocc", [{20, 20}], nil, nil, {25, 30})
-      ]
-    }
+    route =
+      build(:navigation_route,
+        legs: [
+          build(:navigation_leg,
+            map: "prontera",
+            cells: [{1, 1}],
+            exit_portal: "prt_to_gef",
+            next_map: "geffen"
+          ),
+          build(:navigation_leg,
+            index: 1,
+            map: "geffen",
+            cells: [{10, 20}, {11, 20}, {12, 20}, {13, 20}],
+            exit_portal: "gef_to_moc",
+            next_map: "morocc"
+          ),
+          build(:navigation_leg, index: 2, map: "morocc", cells: [{20, 20}], arrive: {25, 30})
+        ]
+      )
 
-    session = %Session{
-      ref: make_ref(),
-      target: {:monster, 9_876},
-      flag: 73,
-      hide_window: true
-    }
+    session = build(:navigation_session, target: {:monster, 9_876}, flag: 73, hide_window: true)
 
     assert %NavigateTo{
              map: "morocc",
@@ -75,21 +79,20 @@ defmodule Aesir.ZoneServer.Navigation.ViewTest do
   end
 
   test "details the first leg at index zero" do
-    route = %Route{
-      legs: [
-        leg(
-          0,
-          "geffen",
-          [{10, 20}, {11, 20}, {12, 20}, {13, 20}],
-          "gef_to_moc",
-          "morocc",
-          nil
-        ),
-        leg(1, "morocc", nil, nil, nil, {25, 30})
-      ]
-    }
+    route =
+      build(:navigation_route,
+        legs: [
+          build(:navigation_leg,
+            map: "geffen",
+            cells: [{10, 20}, {11, 20}, {12, 20}, {13, 20}],
+            exit_portal: "gef_to_moc",
+            next_map: "morocc"
+          ),
+          build(:navigation_leg, index: 1, map: "morocc", arrive: {25, 30})
+        ]
+      )
 
-    session = %Session{ref: make_ref(), target: {:coord, "morocc", 25, 30}}
+    session = build(:navigation_session, target: {:coord, "morocc", 25, 30})
 
     assert %NavigateTo{
              legs: [
@@ -103,8 +106,10 @@ defmodule Aesir.ZoneServer.Navigation.ViewTest do
   end
 
   test "builds a cell-less message for a single topology-only leg" do
-    route = %Route{legs: [leg(0, "geffen", nil, nil, nil, {5, 6})]}
-    session = %Session{ref: make_ref(), target: {:map, "geffen"}}
+    route =
+      build(:navigation_route, legs: [build(:navigation_leg, map: "geffen", arrive: {5, 6})])
+
+    session = build(:navigation_session, target: {:map, "geffen"})
 
     assert %NavigateTo{
              map: "geffen",
@@ -134,16 +139,5 @@ defmodule Aesir.ZoneServer.Navigation.ViewTest do
   test "encodes each navigation end reason distinctly" do
     assert %{reason: :NAVIGATION_END_REASON_ARRIVED} = View.ended(:arrived)
     assert %{reason: :NAVIGATION_END_REASON_CANCELLED} = View.ended(:cancelled)
-  end
-
-  defp leg(index, map, cells, exit_portal, next_map, arrive) do
-    %Leg{
-      index: index,
-      map: map,
-      cells: cells,
-      exit_portal: exit_portal,
-      next_map: next_map,
-      arrive: arrive
-    }
   end
 end

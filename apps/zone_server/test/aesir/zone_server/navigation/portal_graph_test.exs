@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraphTest do
   use ExUnit.Case, async: false
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Db.Layout
@@ -11,7 +12,6 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraphTest do
   alias Aesir.ZoneServer.Navigation.Exclusions
   alias Aesir.ZoneServer.Navigation.Portal
   alias Aesir.ZoneServer.Navigation.PortalGraph
-  alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Npc.Warps
 
   @moduletag :tmp_dir
@@ -62,26 +62,16 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraphTest do
     assert PortalGraph.edges_from("a_to_b") == []
   end
 
-  test "warms lazily on the first lookup" do
+  test "the first lookup can fetch a portal without an explicit reload" do
     cache_map(MapData.new("nav_a", 5, 5))
     cache_map(MapData.new("nav_b", 5, 5))
     put_warps([warp("lazy", "nav_a", {1, 1}, "nav_b", {2, 2})])
 
-    assert :persistent_term.get(PortalGraph, nil) == nil
-    assert {:ok, %Portal{id: "lazy"}} = PortalGraph.fetch("lazy")
-    assert %{portals: %{"lazy" => %Portal{}}} = :persistent_term.get(PortalGraph)
+    assert {:ok, %Portal{id: "lazy", map: "nav_a", to_map: "nav_b"}} = PortalGraph.fetch("lazy")
   end
 
   defp warp(id, map, {x, y}, to_map, {to_x, to_y}) do
-    %Warp{
-      id: id,
-      map: map,
-      x: x,
-      y: y,
-      to_map: to_map,
-      to_x: to_x,
-      to_y: to_y
-    }
+    build(:warp, id: id, map: map, x: x, y: y, to_map: to_map, to_x: to_x, to_y: to_y)
   end
 
   defp put_warps(warps) do

@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Navigation.RouteTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Navigation.Route
   alias Aesir.ZoneServer.Navigation.Route.Leg
   alias Aesir.ZoneServer.Navigation.Session
@@ -43,7 +45,7 @@ defmodule Aesir.ZoneServer.Navigation.RouteTest do
     assert_raise ArgumentError, fn -> struct!(Session, %{target: {:map, "geffen"}}) end
     assert_raise ArgumentError, fn -> struct!(Session, %{ref: make_ref()}) end
 
-    session = %Session{ref: make_ref(), target: {:map, "geffen"}}
+    session = build(:navigation_session)
 
     assert session.route == nil
     assert session.leg == 0
@@ -54,16 +56,15 @@ defmodule Aesir.ZoneServer.Navigation.RouteTest do
       maps
       |> Enum.with_index()
       |> Enum.map(fn {map, index} ->
-        %Leg{
+        build(:navigation_leg,
           index: index,
           map: map,
-          cells: nil,
-          exit_portal: if(index == length(maps) - 1, do: nil, else: "portal-#{index}"),
+          exit_portal: if(index < length(maps) - 1, do: "portal-#{index}"),
           next_map: Enum.at(maps, index + 1),
-          arrive: if(index == length(maps) - 1, do: {1, 1}, else: nil)
-        }
+          arrive: if(index == length(maps) - 1, do: {1, 1})
+        )
       end)
 
-    %Route{legs: legs}
+    build(:navigation_route, legs: legs)
   end
 end

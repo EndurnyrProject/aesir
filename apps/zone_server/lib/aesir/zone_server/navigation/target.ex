@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Navigation.Target do
 
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Navigation.Exclusions
+  alias Aesir.ZoneServer.Navigation.Route.Leg
   alias Aesir.ZoneServer.Navigation.SpawnIndex
   alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry
@@ -21,7 +22,7 @@ defmodule Aesir.ZoneServer.Navigation.Target do
           | {:monster, non_neg_integer()}
 
   @typedoc "A candidate destination cell, or anywhere on its map."
-  @type candidate :: {String.t(), {non_neg_integer(), non_neg_integer()} | :any}
+  @type candidate :: {String.t(), Leg.cell() | :any}
 
   @typedoc "A target-resolution failure."
   @type error :: :unresolved | :already_there | :excluded

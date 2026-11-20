@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandlerTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.StatusParams
@@ -25,8 +26,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandlerTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
   alias Aesir.ZoneServer.Mmo.Woe.CastleStore
-  alias Aesir.ZoneServer.Navigation.Route
-  alias Aesir.ZoneServer.Navigation.Route.Leg
   alias Aesir.ZoneServer.Navigation.Session
   alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Npc.Warps
@@ -276,30 +275,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandlerTest do
   end
 
   test "the warp load branch advances an active navigation" do
-    route = %Route{
-      legs: [
-        %Leg{
-          index: 0,
-          map: "prontera",
-          cells: [{150, 150}],
-          exit_portal: "prt_to_gef",
-          next_map: "geffen",
-          arrive: nil
-        },
-        %Leg{
-          index: 1,
-          map: "geffen",
-          cells: nil,
-          exit_portal: nil,
-          next_map: nil,
-          arrive: {10, 10}
-        }
-      ]
-    }
+    route =
+      build(:navigation_route,
+        legs: [
+          build(:navigation_leg,
+            index: 0,
+            map: "prontera",
+            cells: [{150, 150}],
+            exit_portal: "prt_to_gef",
+            next_map: "geffen"
+          ),
+          build(:navigation_leg,
+            index: 1,
+            map: "geffen",
+            arrive: {10, 10}
+          )
+        ]
+      )
 
     state = struct!(SessionState, session_state())
     game_state = %{state.game_state | map_name: "geffen", x: 10, y: 10, pending_map_load: :warp}
-    navigation = %Session{ref: make_ref(), target: {:map, "geffen"}, route: route}
+    navigation = build(:navigation_session, target: {:map, "geffen"}, route: route)
     state = %{state | game_state: game_state, navigation: navigation}
 
     assert {:noreply, updated} = MapLoadHandler.handle_map_loaded(state)
@@ -310,23 +306,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandlerTest do
   end
 
   test "a same-map teleport reaches the navigation hook" do
-    route = %Route{
-      legs: [
-        %Leg{
-          index: 0,
-          map: "prontera",
-          cells: [{150, 150}],
-          exit_portal: nil,
-          next_map: nil,
-          arrive: {151, 150}
-        }
-      ]
-    }
+    route =
+      build(:navigation_route,
+        legs: [
+          build(:navigation_leg,
+            index: 0,
+            map: "prontera",
+            cells: [{150, 150}],
+            arrive: {151, 150}
+          )
+        ]
+      )
 
     state = struct!(SessionState, session_state())
     game_state = %{state.game_state | x: 151, pending_map_load: :warp}
     old_ref = make_ref()
-    navigation = %Session{ref: old_ref, target: {:map, "prontera"}, route: route}
+
+    navigation =
+      build(:navigation_session, ref: old_ref, target: {:map, "prontera"}, route: route)
+
     state = %{state | game_state: game_state, navigation: navigation}
 
     assert {:noreply, updated} = MapLoadHandler.handle_map_loaded(state)

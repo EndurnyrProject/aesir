@@ -2,12 +2,12 @@ defmodule Aesir.ZoneServer.Navigation.TargetTest do
   use ExUnit.Case, async: false
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Navigation.Exclusions
   alias Aesir.ZoneServer.Navigation.SpawnIndex
   alias Aesir.ZoneServer.Navigation.Target
   alias Aesir.ZoneServer.Npc.Registry
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   defmodule WaypointNpc do
     use Aesir.ZoneServer.Npc,
@@ -93,5 +93,5 @@ defmodule Aesir.ZoneServer.Navigation.TargetTest do
     assert Target.resolve({:map, "aldeg_cas01"}, player("morocc")) == {:error, :excluded}
   end
 
-  defp player(map_name), do: %PlayerState{map_name: map_name}
+  defp player(map_name), do: build(:player_state, map_name: map_name)
 end

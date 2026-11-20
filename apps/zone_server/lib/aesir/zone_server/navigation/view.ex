@@ -9,7 +9,9 @@ defmodule Aesir.ZoneServer.Navigation.View do
   alias Aesir.Net.NavigationLeg
   alias Aesir.ZoneServer.Navigation.Route
   alias Aesir.ZoneServer.Navigation.Route.Leg
+  alias Aesir.ZoneServer.Navigation.Router
   alias Aesir.ZoneServer.Navigation.Session
+  alias Aesir.ZoneServer.Navigation.Target
   alias Aesir.ZoneServer.Pathfinding
 
   @doc "Builds a navigation update whose supplied route position carries detailed cells."
@@ -34,7 +36,7 @@ defmodule Aesir.ZoneServer.Navigation.View do
   end
 
   @doc "Builds a navigation failure message for a route-resolution outcome."
-  @spec failed(:unresolved | :unreachable | :already_there | :excluded) :: NavigationFailed.t()
+  @spec failed(Target.error() | Router.error()) :: NavigationFailed.t()
   def failed(:unresolved), do: %NavigationFailed{reason: :NAVIGATION_FAILURE_REASON_UNRESOLVED}
   def failed(:unreachable), do: %NavigationFailed{reason: :NAVIGATION_FAILURE_REASON_UNREACHABLE}
 

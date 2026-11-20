@@ -1,10 +1,9 @@
 defmodule Aesir.ZoneServer.Navigation.Route.Leg do
   @moduledoc "A positional segment of a navigation route."
 
-  alias Aesir.ZoneServer.Navigation.PortalGraph
+  use TypedStruct
 
-  @enforce_keys [:index, :map, :cells, :exit_portal, :next_map, :arrive]
-  defstruct index: nil, map: nil, cells: nil, exit_portal: nil, next_map: nil, arrive: nil
+  alias Aesir.ZoneServer.Navigation.PortalGraph
 
   @typedoc """
   One leg of a route.
@@ -14,29 +13,33 @@ defmodule Aesir.ZoneServer.Navigation.Route.Leg do
   the leg is walked. `exit_portal` and `next_map` are `nil` on the final leg, which
   instead carries `arrive`.
   """
-  @type t() :: %__MODULE__{
-          index: non_neg_integer(),
-          map: String.t(),
-          cells: [{non_neg_integer(), non_neg_integer()}] | nil,
-          exit_portal: PortalGraph.portal_id() | nil,
-          next_map: String.t() | nil,
-          arrive: {non_neg_integer(), non_neg_integer()} | nil
-        }
+  typedstruct enforce: true do
+    field :index, non_neg_integer()
+    field :map, String.t()
+    field :cells, [cell()] | nil
+    field :exit_portal, PortalGraph.portal_id() | nil
+    field :next_map, String.t() | nil
+    field :arrive, cell() | nil
+  end
+
+  @typedoc "A cell coordinate within a route's map."
+  @type cell :: {non_neg_integer(), non_neg_integer()}
 end
 
 defmodule Aesir.ZoneServer.Navigation.Route do
   @moduledoc "A positional chain of navigation legs."
 
-  alias Aesir.ZoneServer.Navigation.Route.Leg
+  use TypedStruct
 
-  @enforce_keys [:legs]
-  defstruct legs: []
+  alias Aesir.ZoneServer.Navigation.Route.Leg
 
   @typedoc "A single leg of this route."
   @type leg :: Leg.t()
 
   @typedoc "An ordered chain of legs, addressed positionally rather than by map name."
-  @type t() :: %__MODULE__{legs: [leg()]}
+  typedstruct do
+    field :legs, [leg()], default: [], enforce: true
+  end
 
   @doc "Returns the leg at a route position."
   @spec leg_at(t(), non_neg_integer()) :: {:ok, leg()} | :error

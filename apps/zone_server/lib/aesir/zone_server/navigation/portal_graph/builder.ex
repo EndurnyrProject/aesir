@@ -21,15 +21,19 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.Builder do
   alias Aesir.ZoneServer.Navigation.Exclusions
   alias Aesir.ZoneServer.Navigation.Flood
   alias Aesir.ZoneServer.Navigation.Portal
+  alias Aesir.ZoneServer.Navigation.PortalGraph
   alias Aesir.ZoneServer.Navigation.PortalGraph.Edge
   alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Npc.Warps
+
+  @typep portals_by_map :: %{optional(String.t()) => [Portal.t()]}
+  @typep cache_entry :: %{fingerprint: [binary()], graph: PortalGraph.t()}
 
   @cache_file "portal_graph.etf"
   @fallback_radius 5
 
   @doc "Loads a fresh cached graph or rebuilds it from the current world data."
-  @spec load(keyword()) :: Aesir.ZoneServer.Navigation.PortalGraph.t()
+  @spec load(force: boolean(), map_cache_path: Path.t()) :: PortalGraph.t()
   # Map cache path comes from `:code.priv_dir/1` or an explicit opt.
   # sobelow_skip ["Traversal.FileModule"]
   def load(opts \\ []) do
@@ -51,14 +55,14 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.Builder do
     end
   end
 
-  @spec rebuild(Path.t(), [binary()]) :: Aesir.ZoneServer.Navigation.PortalGraph.t()
+  @spec rebuild(Path.t(), [binary()]) :: PortalGraph.t()
   defp rebuild(cache, fingerprint) do
     graph = build()
     write_cache!(cache, %{fingerprint: fingerprint, graph: graph})
     graph
   end
 
-  @spec build() :: Aesir.ZoneServer.Navigation.PortalGraph.t()
+  @spec build() :: PortalGraph.t()
   defp build do
     portals =
       Warps.all()
@@ -83,8 +87,8 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.Builder do
     }
   end
 
-  @spec build_walk_edges(%{String.t() => [Portal.t()]}, %{String.t() => [Portal.t()]}) ::
-          %{String.t() => [Edge.t()]}
+  @spec build_walk_edges(portals_by_map(), portals_by_map()) ::
+          %{optional(PortalGraph.portal_id()) => [Edge.t()]}
   defp build_walk_edges(landings_by_map, exits_by_map) do
     landings_by_map
     |> Enum.filter(fn {map_name, _landings} -> Map.has_key?(exits_by_map, map_name) end)
@@ -104,7 +108,7 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.Builder do
   end
 
   @spec walk_edges(String.t(), [Portal.t()], [Portal.t()]) ::
-          [{String.t(), [Edge.t()]}]
+          [{PortalGraph.portal_id(), [Edge.t()]}]
   defp walk_edges(map_name, landings, exits) do
     map_data = MapCache.get!(map_name)
     targets = MapSet.new(exits, &{&1.x, &1.y})
@@ -119,7 +123,7 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.Builder do
     end)
   end
 
-  @spec walk_edge(Portal.t(), %{Flood.cell() => Flood.cost()}) :: [Edge.t()]
+  @spec walk_edge(Portal.t(), %{optional(Flood.cell()) => Flood.cost()}) :: [Edge.t()]
   defp walk_edge(portal, costs) do
     case Map.fetch(costs, {portal.x, portal.y}) do
       {:ok, cost} -> [%Edge{kind: :walk, to: portal.id, cost: cost}]
@@ -188,7 +192,7 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.Builder do
     ArgumentError -> :error
   end
 
-  @spec write_cache!(Path.t(), term()) :: :ok
+  @spec write_cache!(Path.t(), cache_entry()) :: :ok
   # Cache path is derived from the app's priv dir.
   # sobelow_skip ["Traversal.FileModule"]
   defp write_cache!(cache, blob) do

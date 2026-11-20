@@ -48,6 +48,11 @@ defmodule Aesir.ZoneServer.Factory do
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb.Castle
+  alias Aesir.ZoneServer.Navigation.Portal
+  alias Aesir.ZoneServer.Navigation.Route
+  alias Aesir.ZoneServer.Navigation.Route.Leg
+  alias Aesir.ZoneServer.Navigation.Session
+  alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -144,6 +149,48 @@ defmodule Aesir.ZoneServer.Factory do
       guardians: for(i <- 0..7, do: %{type: :soldier, cell: {30 + i, 30}})
     }
   end
+
+  @doc "A portal from `nav_a` to `nav_b`, at {0, 0} on both maps, with a sequenced id."
+  @spec navigation_portal_factory() :: Portal.t()
+  def navigation_portal_factory do
+    %Portal{
+      id: sequence(:navigation_portal_id, &"portal-#{&1}"),
+      map: "nav_a",
+      x: 0,
+      y: 0,
+      to_map: "nav_b",
+      to_x: 0,
+      to_y: 0
+    }
+  end
+
+  @doc "A warp from `nav_a` to `nav_b`, at {0, 0} on both maps, with a sequenced id."
+  @spec warp_factory() :: Warp.t()
+  def warp_factory do
+    %Warp{
+      id: sequence(:warp_id, &"warp-#{&1}"),
+      map: "nav_a",
+      x: 0,
+      y: 0,
+      to_map: "nav_b",
+      to_x: 0,
+      to_y: 0
+    }
+  end
+
+  @doc "An empty navigation route; pass `legs:` to describe a route through maps."
+  @spec navigation_route_factory() :: Route.t()
+  def navigation_route_factory, do: %Route{legs: []}
+
+  @doc "Leg zero on `nav_a`, with neither a materialized path nor an exit/arrival."
+  @spec navigation_leg_factory() :: Leg.t()
+  def navigation_leg_factory do
+    %Leg{index: 0, map: "nav_a", cells: nil, exit_portal: nil, next_map: nil, arrive: nil}
+  end
+
+  @doc "A pending navigation to `nav_a`, with a fresh epoch reference."
+  @spec navigation_session_factory() :: Session.t()
+  def navigation_session_factory, do: %Session{ref: make_ref(), target: {:map, "nav_a"}}
 
   @doc "A level 1 monster with 100 HP and one-cell melee range."
   @spec mob_definition_factory() :: MobDefinition.t()

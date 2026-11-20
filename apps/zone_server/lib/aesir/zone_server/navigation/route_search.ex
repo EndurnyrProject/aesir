@@ -13,13 +13,16 @@ defmodule Aesir.ZoneServer.Navigation.RouteSearch do
   @typedoc "A cell coordinate."
   @type cell :: {integer(), integer()}
 
+  @typedoc "An invalid endpoint or a path blocked by terrain."
+  @type error :: :invalid_start | :invalid_goal | :goal_not_walkable | :no_path
+
   @doc """
   Finds the shortest walkable path from `start` to `goal`. Returns
   `{:ok, cells}`, the cells stepped onto in order (empty when `start` is
   `goal`), or an error when an endpoint is outside the map, the goal is not
   walkable, or no path exists.
   """
-  @spec find_path(MapData.t(), cell(), cell()) :: {:ok, [cell()]} | {:error, atom()}
+  @spec find_path(MapData.t(), cell(), cell()) :: {:ok, [cell()]} | {:error, error()}
   def find_path(map_data, {start_x, start_y} = start, {goal_x, goal_y} = goal) do
     cond do
       not valid_position?(map_data, start_x, start_y) ->

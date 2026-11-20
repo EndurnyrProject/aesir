@@ -21,9 +21,12 @@ defmodule Aesir.ZoneServer.Navigation.Router do
   @typedoc "A map name and cell coordinate."
   @type origin :: {String.t(), non_neg_integer(), non_neg_integer()}
 
+  @typedoc "A failure to find a route after resolving the target."
+  @type error :: :unreachable
+
   @doc "Returns the lowest estimated-travel-time route to any reachable candidate."
-  @spec route(origin(), [Target.candidate(), ...], keyword()) ::
-          {:ok, Route.t()} | {:error, :unreachable}
+  @spec route(origin(), [Target.candidate(), ...], walk_speed: number()) ::
+          {:ok, Route.t()} | {:error, error()}
   def route({origin_map, x, y}, candidates, opts) do
     walk_speed = walk_speed!(opts)
     excluded = Exclusions.runtime_excluded()

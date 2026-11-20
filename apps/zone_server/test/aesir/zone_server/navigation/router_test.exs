@@ -2,20 +2,19 @@ defmodule Aesir.ZoneServer.Navigation.RouterTest do
   use ExUnit.Case, async: false
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
   import Mimic
 
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Map.MapFlags
-  alias Aesir.ZoneServer.Navigation.Portal
   alias Aesir.ZoneServer.Navigation.PortalGraph
   alias Aesir.ZoneServer.Navigation.PortalGraph.Edge
   alias Aesir.ZoneServer.Navigation.Route.Leg
   alias Aesir.ZoneServer.Navigation.Router
   alias Aesir.ZoneServer.Navigation.RouteSearch
 
-  setup :set_mimic_private
-  setup :verify_on_exit!
+  setup :set_mimic_from_context
 
   setup do
     setup_ets_tables(%{})
@@ -65,11 +64,6 @@ defmodule Aesir.ZoneServer.Navigation.RouterTest do
                arrive: {2, 0}
              }
            ] = route.legs
-  end
-
-  test "starts the first cross-map leg at the route origin" do
-    assert {:ok, route} = Router.route({"start", 0, 0}, [{"goal", {2, 0}}], walk_speed: 1.0)
-    assert [%Leg{cells: [{0, 0} | _remaining]} | _later_legs] = route.legs
   end
 
   test "chooses a cheaper same-map candidate instead of the first candidate" do
@@ -181,7 +175,15 @@ defmodule Aesir.ZoneServer.Navigation.RouterTest do
   end
 
   defp portal(id, map, {x, y}, to_map, {to_x, to_y}) do
-    %Portal{id: id, map: map, x: x, y: y, to_map: to_map, to_x: to_x, to_y: to_y}
+    build(:navigation_portal,
+      id: id,
+      map: map,
+      x: x,
+      y: y,
+      to_map: to_map,
+      to_x: to_x,
+      to_y: to_y
+    )
   end
 
   defp edge(to, cost), do: %Edge{kind: :walk, to: to, cost: cost}

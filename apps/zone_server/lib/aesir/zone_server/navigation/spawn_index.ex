@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Navigation.SpawnIndex do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.Spawns
 
+  @typep spawn_index :: %{optional(non_neg_integer()) => [String.t()]}
+
   @pt_key __MODULE__
 
   @doc """
@@ -31,6 +33,7 @@ defmodule Aesir.ZoneServer.Navigation.SpawnIndex do
     :ok
   end
 
+  @spec index() :: spawn_index()
   defp index do
     case :persistent_term.get(@pt_key, nil) do
       nil ->
@@ -43,6 +46,7 @@ defmodule Aesir.ZoneServer.Navigation.SpawnIndex do
     end
   end
 
+  @spec build_index() :: spawn_index()
   defp build_index do
     Spawns.all()
     |> Enum.reduce(%{}, fn {map_name, spawns}, index ->

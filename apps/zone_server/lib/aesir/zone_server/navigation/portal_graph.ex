@@ -1,14 +1,17 @@
 defmodule Aesir.ZoneServer.Navigation.PortalGraph.Edge do
   @moduledoc "A directed navigation graph edge with a non-negative pathfinder cost."
 
-  @enforce_keys [:kind, :to, :cost]
-  defstruct kind: nil, to: nil, cost: nil
+  use TypedStruct
 
-  @type t() :: %__MODULE__{
-          kind: :warp | :walk,
-          to: String.t(),
-          cost: float()
-        }
+  alias Aesir.ZoneServer.Navigation.Flood
+  alias Aesir.ZoneServer.Navigation.PortalGraph
+
+  @typedoc "A walk from one portal's landing to the next portal's trigger."
+  typedstruct enforce: true do
+    field :kind, :walk
+    field :to, PortalGraph.portal_id()
+    field :cost, Flood.cost()
+  end
 end
 
 defmodule Aesir.ZoneServer.Navigation.PortalGraph do

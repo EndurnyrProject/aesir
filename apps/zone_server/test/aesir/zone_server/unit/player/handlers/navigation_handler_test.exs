@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandlerTest do
   use ExUnit.Case, async: false
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.NavigateTo
@@ -12,7 +13,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandlerTest do
   alias Aesir.Net.NavigationRequest
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.MapData
-  alias Aesir.ZoneServer.Navigation.Portal
   alias Aesir.ZoneServer.Navigation.PortalGraph
   alias Aesir.ZoneServer.Navigation.Route
   alias Aesir.ZoneServer.Navigation.Route.Leg
@@ -390,15 +390,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandlerTest do
   end
 
   defp test_graph do
-    portal = %Portal{
-      id: "gef_to_moc",
-      map: "geffen",
-      x: 4,
-      y: 1,
-      to_map: "morocc",
-      to_x: 1,
-      to_y: 1
-    }
+    portal =
+      build(:navigation_portal,
+        id: "gef_to_moc",
+        map: "geffen",
+        x: 4,
+        y: 1,
+        to_map: "morocc",
+        to_x: 1,
+        to_y: 1
+      )
 
     %{
       portals: %{portal.id => portal},
@@ -409,48 +410,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandlerTest do
   end
 
   defp streaming_route do
-    %Route{
+    build(:navigation_route,
       legs: [
-        %Leg{
+        build(:navigation_leg,
           index: 0,
           map: "prontera",
           cells: [{1, 1}, {2, 1}],
           exit_portal: "prt_to_gef",
-          next_map: "geffen",
-          arrive: nil
-        },
-        %Leg{
+          next_map: "geffen"
+        ),
+        build(:navigation_leg,
           index: 1,
           map: "geffen",
-          cells: nil,
           exit_portal: "gef_to_moc",
-          next_map: "morocc",
-          arrive: nil
-        },
-        %Leg{
-          index: 2,
-          map: "morocc",
-          cells: nil,
-          exit_portal: nil,
-          next_map: nil,
-          arrive: {5, 5}
-        }
+          next_map: "morocc"
+        ),
+        build(:navigation_leg, index: 2, map: "morocc", arrive: {5, 5})
       ]
-    }
+    )
   end
 
   defp route do
-    %Route{
+    build(:navigation_route,
       legs: [
-        %Leg{
+        build(:navigation_leg,
           index: 0,
           map: "prontera",
           cells: [{1, 1}, {2, 1}, {3, 1}, {4, 1}],
-          exit_portal: nil,
-          next_map: nil,
           arrive: {4, 1}
-        }
+        )
       ]
-    }
+    )
   end
 end

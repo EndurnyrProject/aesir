@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.BuilderTest do
   use ExUnit.Case, async: false
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Db.Layout
@@ -15,7 +16,6 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.BuilderTest do
   alias Aesir.ZoneServer.Navigation.PortalGraph
   alias Aesir.ZoneServer.Navigation.PortalGraph.Builder
   alias Aesir.ZoneServer.Navigation.PortalGraph.Edge
-  alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Npc.Warps
 
   @moduletag :tmp_dir
@@ -270,15 +270,7 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.BuilderTest do
   end
 
   defp warp(id, map, {x, y}, to_map, {to_x, to_y}) do
-    %Warp{
-      id: id,
-      map: map,
-      x: x,
-      y: y,
-      to_map: to_map,
-      to_x: to_x,
-      to_y: to_y
-    }
+    build(:warp, id: id, map: map, x: x, y: y, to_map: to_map, to_x: to_x, to_y: to_y)
   end
 
   defp put_warps(warps) do

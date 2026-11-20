@@ -25,9 +25,7 @@ defmodule Aesir.ZoneServer.Navigation.Flood do
   @typep queue :: :gb_sets.set({cost(), cell()})
 
   @doc "Returns the cost to each reachable target cell in one weighted flood."
-  @spec costs(MapData.t(), cell(), MapSet.t(cell()), terrain: terrain()) :: %{
-          optional(cell()) => cost()
-        }
+  @spec costs(MapData.t(), cell(), MapSet.t(cell()), terrain: terrain()) :: cost_map()
   def costs(%MapData{} = map_data, start, targets, opts \\ []) do
     terrain = Keyword.get(opts, :terrain, :runtime)
 

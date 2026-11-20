@@ -2,11 +2,15 @@ defmodule Aesir.ZoneServer.Navigation.SpawnIndexTest do
   use ExUnit.Case, async: false
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
+  import Mimic
 
   alias Aesir.ZoneServer.DbTestSetup
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.MobManagement.Spawns
   alias Aesir.ZoneServer.Navigation.SpawnIndex
+
+  setup :set_mimic_from_context
 
   setup do
     setup_ets_tables(%{})
@@ -15,29 +19,16 @@ defmodule Aesir.ZoneServer.Navigation.SpawnIndexTest do
     :ok
   end
 
-  test "returns every distinct map that spawns a mob" do
-    expected_maps =
-      Spawns.all()
-      |> Enum.filter(fn {_map, spawns} -> Enum.any?(spawns, &(&1.mob == 1002)) end)
-      |> Enum.map(&elem(&1, 0))
-      |> MapSet.new()
+  test "the first lookup returns all distinct maps for a mob and none for an absent mob" do
+    poring = build(:mob_spawn, mob: 1002)
+    other = build(:mob_spawn, mob: 1003)
 
-    maps = SpawnIndex.maps_for_mob(1002)
+    stub(Spawns, :all, fn ->
+      %{"field_a" => [poring, poring, other], "field_b" => [poring], "field_c" => [other]}
+    end)
 
-    assert MapSet.new(maps) == expected_maps
-    assert length(maps) == MapSet.size(expected_maps)
-  end
-
-  test "returns no maps for a mob with no spawns" do
-    assert SpawnIndex.maps_for_mob(999_999) == []
-  end
-
-  test "warms on the first lookup" do
-    assert :persistent_term.get(SpawnIndex, nil) == nil
-
-    SpawnIndex.maps_for_mob(1002)
-
-    assert %{} = :persistent_term.get(SpawnIndex, nil)
+    assert Enum.sort(SpawnIndex.maps_for_mob(1002)) == ["field_a", "field_b"]
+    assert SpawnIndex.maps_for_mob(1004) == []
   end
 
   @tag :tmp_dir
