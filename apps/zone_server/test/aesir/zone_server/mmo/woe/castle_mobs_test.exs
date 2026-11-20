@@ -1,16 +1,18 @@
 defmodule Aesir.ZoneServer.Mmo.Woe.CastleMobsTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
   use Mimic
+
+  import Aesir.ZoneServer.Factory
 
   @moduletag :capture_log
 
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
-  alias Aesir.ZoneServer.Mmo.Woe.CastleDb.Castle
   alias Aesir.ZoneServer.Mmo.Woe.CastleMobs
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
 
-  setup :set_mimic_private
+  setup :set_mimic_from_context
+  setup :verify_on_exit!
 
   defp totals({:ok, %{roaming: roaming, room: room}}) do
     {Enum.sum_by(roaming, &elem(&1, 1)), Enum.sum_by(room, &elem(&1, 1))}
@@ -161,16 +163,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleMobsTest do
     end
 
     test "does nothing for a map with no region set" do
-      castle = %Castle{
-        id: 999,
-        map: "prontera",
-        name: "Not A Castle",
-        client_id: 0,
-        emperium: {5, 5},
-        respawn: {5, 5},
-        treasure: %{box_id: 1, cells: []},
-        guardians: []
-      }
+      castle = build(:castle, map: "prontera")
 
       reject(&MobSupervisor.kill_all/1)
       reject(&Coordinator.summon_mob/5)
@@ -181,16 +174,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleMobsTest do
 
   describe "wipe/1" do
     test "kills all mobs on the castle map" do
-      castle = %Castle{
-        id: 1,
-        map: "aldeg_cas01",
-        name: "Neuschwanstein",
-        client_id: 0,
-        emperium: {5, 5},
-        respawn: {5, 5},
-        treasure: %{box_id: 1, cells: []},
-        guardians: []
-      }
+      castle = build(:castle)
 
       expect(MobSupervisor, :kill_all, fn "aldeg_cas01" -> :ok end)
 

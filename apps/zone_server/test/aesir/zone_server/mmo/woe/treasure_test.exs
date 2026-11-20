@@ -1,35 +1,23 @@
 defmodule Aesir.ZoneServer.Mmo.Woe.TreasureTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
   use Mimic
+
+  import Aesir.ZoneServer.Factory
 
   @moduletag :capture_log
 
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
-  alias Aesir.ZoneServer.Mmo.Woe.CastleDb.Castle
   alias Aesir.ZoneServer.Mmo.Woe.CastleStore
   alias Aesir.ZoneServer.Mmo.Woe.Treasure
 
-  setup :set_mimic_private
+  setup :set_mimic_from_context
 
   setup do
     Aesir.TestEtsSetup.setup_ets_tables(%{})
     :ok = CastleStore.init()
     :ok
-  end
-
-  defp fixture_castle(id, map, box_id) do
-    %Castle{
-      id: id,
-      map: map,
-      name: "Test Castle",
-      client_id: 1,
-      emperium: {50, 50},
-      respawn: {50, 55},
-      treasure: %{box_id: box_id, cells: for(i <- 0..23, do: {100 + i, 200 + i})},
-      guardians: [%{type: :soldier, cell: {60, 60}}]
-    }
   end
 
   defp row(guild_id, overrides \\ %{}) do
@@ -40,20 +28,16 @@ defmodule Aesir.ZoneServer.Mmo.Woe.TreasureTest do
   end
 
   describe "plan/3" do
-    test "plans 4 boxes at economy 0" do
-      assert length(Treasure.plan(fixture_castle(1, "test_map", 7_000), 0, [])) == 4
-    end
-
     test "plans 24 boxes at economy 100" do
-      assert length(Treasure.plan(fixture_castle(1, "test_map", 7_000), 100, [])) == 24
+      assert length(Treasure.plan(build(:castle), 100, [])) == 24
     end
 
     test "plans 9 boxes at economy 27" do
-      assert length(Treasure.plan(fixture_castle(1, "test_map", 7_000), 27, [])) == 9
+      assert length(Treasure.plan(build(:castle), 27, [])) == 9
     end
 
     test "alternates box ids across the castle's cells" do
-      castle = fixture_castle(1, "test_map", 7_000)
+      castle = build(:castle)
 
       assert Treasure.plan(castle, 0, []) == [
                {0, 7_000, 100, 200},
@@ -64,7 +48,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.TreasureTest do
     end
 
     test "omits slots already live" do
-      castle = fixture_castle(1, "test_map", 7_000)
+      castle = build(:castle)
 
       assert Enum.map(Treasure.plan(castle, 0, [0, 2]), fn {slot, _, _, _} -> slot end) == [1, 3]
     end
@@ -72,14 +56,14 @@ defmodule Aesir.ZoneServer.Mmo.Woe.TreasureTest do
 
   describe "spawn_daily/1" do
     test "logs and returns :ok without inserting when no coordinator runs the map" do
-      castle = fixture_castle(9_001, "no_such_map", 7_000)
+      castle = build(:castle, map: "no_such_map")
 
       assert :ok = Treasure.spawn_daily(castle)
       assert Treasure.live_slots(castle.id) == []
     end
 
     test "records a live unit id per summoned slot" do
-      castle = fixture_castle(9_002, "test_map", 7_000)
+      castle = build(:castle, map: "test_map")
 
       stub(Coordinator, :summon_mob, fn _map, mob_id, x, y, _opts ->
         {:ok, mob_id * 1_000 + x + y}
@@ -90,7 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.TreasureTest do
     end
 
     test "does not resummon slots already live" do
-      castle = fixture_castle(9_003, "test_map", 7_000)
+      castle = build(:castle, map: "test_map")
 
       stub(Coordinator, :summon_mob, fn _map, mob_id, x, y, _opts ->
         {:ok, mob_id * 1_000 + x + y}

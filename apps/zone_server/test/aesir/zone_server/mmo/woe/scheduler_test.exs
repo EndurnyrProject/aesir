@@ -1,5 +1,5 @@
 defmodule Aesir.ZoneServer.Mmo.Woe.SchedulerTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
   use Mimic
 
   alias Aesir.ZoneServer.Config
@@ -16,11 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.SchedulerTest do
   @tue_2300 ~N[2026-07-07 23:00:00]
   @wed_2100 ~N[2026-07-08 21:00:00]
 
-  @day_0000 ~N[2026-07-07 00:00:00]
-  @day_0001 ~N[2026-07-07 00:01:00]
-  @day_0930 ~N[2026-07-07 09:30:00]
-  @yesterday ~D[2026-07-06]
-  @today ~D[2026-07-07]
+  setup :set_mimic_from_context
 
   describe "Config.woe_schedule/0" do
     test "defaults to Tue/Thu 21:00-23:00 and Sat 16:00-18:00" do
@@ -58,108 +54,80 @@ defmodule Aesir.ZoneServer.Mmo.Woe.SchedulerTest do
     end
   end
 
-  describe "daily_actions/2" do
-    test "no maturation and no spawn at 00:00 with nothing matured yet" do
-      state = %Scheduler{now_fun: fn -> @day_0000 end, last_matured_on: nil}
-      assert Scheduler.daily_actions(state, @day_0000) == {false, false}
-    end
+  test "matures once per date from 00:01 and spawns treasure only at 00:01" do
+    owner = self()
+    stub(Config, :woe_schedule, fn -> [] end)
+    stub(Server, :active?, fn -> false end)
+    stub(Economy, :mature_all, fn -> send(owner, {:daily, :mature}) end)
+    stub(Treasure, :spawn_all, fn -> send(owner, {:daily, :treasure}) end)
 
-    test "matures and spawns at 00:01 with nothing matured yet" do
-      state = %Scheduler{now_fun: fn -> @day_0001 end, last_matured_on: nil}
-      assert Scheduler.daily_actions(state, @day_0001) == {true, true}
-    end
+    {scheduler, clock} =
+      start_with_clock(~N[2026-07-07 00:00:00], [Config, Server, Economy, Treasure])
 
-    test "matures without spawning at 09:30 when not yet matured today" do
-      for last_matured_on <- [nil, @yesterday] do
-        state = %Scheduler{now_fun: fn -> @day_0930 end, last_matured_on: last_matured_on}
-        assert Scheduler.daily_actions(state, @day_0930) == {true, false}
-      end
-    end
+    for {now, expected} <- [
+          {~N[2026-07-07 00:00:00], []},
+          {~N[2026-07-07 00:01:00], [:mature, :treasure]},
+          {~N[2026-07-07 00:02:00], []},
+          {~N[2026-07-08 09:30:00], [:mature]},
+          {~N[2026-07-09 00:01:00], [:mature, :treasure]}
+        ] do
+      tick(scheduler, clock, now)
 
-    test "neither matures nor spawns at 09:30 when already matured today" do
-      state = %Scheduler{now_fun: fn -> @day_0930 end, last_matured_on: @today}
-      assert Scheduler.daily_actions(state, @day_0930) == {false, false}
-    end
-
-    test "catches up at 00:01 when the stored date is yesterday" do
-      state = %Scheduler{now_fun: fn -> @day_0001 end, last_matured_on: @yesterday}
-      assert Scheduler.daily_actions(state, @day_0001) == {true, true}
+      for action <- expected, do: assert_received({:daily, ^action})
+      refute_received {:daily, _}
     end
   end
 
-  describe "daily tick" do
-    test "matures and spawns treasure once at 00:01, then neither at 00:02" do
-      Mimic.copy(Server)
-      stub(Server, :active?, fn -> false end)
+  test "starts and stops only on siege transitions" do
+    owner = self()
+    stub(Config, :woe_schedule, fn -> @tue_window end)
+    stub(Economy, :mature_all, fn -> :ok end)
 
-      expect(Economy, :mature_all, fn -> :ok end)
-      expect(Treasure, :spawn_all, fn -> :ok end)
+    active = start_supervised!({Agent, fn -> false end}, id: :siege_active)
+    stub(Server, :active?, fn -> Agent.get(active, & &1) end)
 
-      {:ok, clock} = Agent.start_link(fn -> @day_0001 end)
-      now_fun = fn -> Agent.get(clock, & &1) end
+    stub(Server, :start, fn ->
+      Agent.update(active, fn _ -> true end)
+      send(owner, :started)
+    end)
 
-      pid = start_supervised!({Scheduler, now_fun: now_fun})
-      Mimic.allow(Server, self(), pid)
-      Mimic.allow(Economy, self(), pid)
-      Mimic.allow(Treasure, self(), pid)
+    stub(Server, :stop, fn ->
+      Agent.update(active, fn _ -> false end)
+      send(owner, :stopped)
+    end)
 
-      send(pid, :tick)
-      :sys.get_state(pid)
+    {scheduler, clock} = start_with_clock(@tue_2059, [Config, Server, Economy])
 
-      Agent.update(clock, fn _ -> ~N[2026-07-07 00:02:00] end)
-      send(pid, :tick)
-      :sys.get_state(pid)
-    end
+    tick(scheduler, clock, @tue_2059)
+    refute_received :started
+
+    tick(scheduler, clock, @tue_2100)
+    assert_received :started
+
+    tick(scheduler, clock, @tue_2259)
+    refute_received :started
+
+    tick(scheduler, clock, @tue_2300)
+    assert_received :stopped
+
+    tick(scheduler, clock, @wed_2100)
+    refute_received :stopped
   end
 
-  describe "tick" do
-    test "calls start/0 and stop/0 only on transitions, never while steady" do
-      test_pid = self()
+  defp start_with_clock(now, modules) do
+    owner = self()
+    clock = start_supervised!({Agent, fn -> now end})
 
-      Application.put_env(:zone_server, :woe_schedule, @tue_window)
-      on_exit(fn -> Application.delete_env(:zone_server, :woe_schedule) end)
+    scheduler =
+      start_supervised!({Scheduler, name: __MODULE__, now_fun: fn -> Agent.get(clock, & &1) end})
 
-      {:ok, clock} = Agent.start_link(fn -> @tue_2059 end)
-      {:ok, active} = Agent.start_link(fn -> false end)
-      now_fun = fn -> Agent.get(clock, & &1) end
+    for module <- modules, do: Mimic.allow(module, owner, scheduler)
+    {scheduler, clock}
+  end
 
-      Mimic.copy(Server)
-      stub(Server, :active?, fn -> Agent.get(active, & &1) end)
-
-      stub(Server, :start, fn ->
-        Agent.update(active, fn _ -> true end)
-        send(test_pid, :started)
-      end)
-
-      stub(Server, :stop, fn ->
-        Agent.update(active, fn _ -> false end)
-        send(test_pid, :stopped)
-      end)
-
-      pid = start_supervised!({Scheduler, now_fun: now_fun})
-      Mimic.allow(Server, self(), pid)
-
-      # Steady :inactive -> no call.
-      send(pid, :tick)
-      refute_receive :started, 100
-
-      # inactive -> active: exactly one start.
-      Agent.update(clock, fn _ -> @tue_2100 end)
-      send(pid, :tick)
-      assert_receive :started, 100
-
-      # Steady :active -> no further call.
-      send(pid, :tick)
-      refute_receive :started, 100
-
-      # active -> inactive: exactly one stop.
-      Agent.update(clock, fn _ -> @tue_2300 end)
-      send(pid, :tick)
-      assert_receive :stopped, 100
-
-      # Steady :inactive again -> no call.
-      send(pid, :tick)
-      refute_receive :stopped, 100
-    end
+  defp tick(scheduler, clock, now) do
+    Agent.update(clock, fn _ -> now end)
+    send(scheduler, :tick)
+    :sys.get_state(scheduler)
   end
 end

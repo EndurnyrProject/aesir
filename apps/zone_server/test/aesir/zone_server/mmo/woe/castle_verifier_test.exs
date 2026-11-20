@@ -1,17 +1,18 @@
 defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifierTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
   use Mimic
 
-  setup :verify_on_exit!
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
-  alias Aesir.ZoneServer.Mmo.Woe.CastleDb.Castle
   alias Aesir.ZoneServer.Mmo.Woe.CastleVerifier
+
+  setup :set_mimic_from_context
 
   describe "verify!/0" do
     test "passes when every emperium and respawn cell is walkable" do
-      stub(CastleDb, :all, fn -> [castle(emperium: {5, 5}, respawn: {10, 10})] end)
+      stub(CastleDb, :all, fn -> [build(:castle, name: "Neuschwanstein")] end)
       stub(MapCache, :walkable?, fn _, _, _ -> true end)
       stub(MapCache, :get!, fn _ -> %{xs: 400, ys: 400} end)
 
@@ -19,7 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifierTest do
     end
 
     test "raises naming the map, kind, and coordinate of a non-walkable cell" do
-      stub(CastleDb, :all, fn -> [castle(emperium: {5, 5}, respawn: {10, 10})] end)
+      stub(CastleDb, :all, fn -> [build(:castle, name: "Neuschwanstein")] end)
       stub(MapCache, :get!, fn _ -> %{xs: 400, ys: 400} end)
 
       stub(MapCache, :walkable?, fn
@@ -33,7 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifierTest do
     end
 
     test "raises when a castle map is not in the cache" do
-      stub(CastleDb, :all, fn -> [castle(emperium: {5, 5}, respawn: {10, 10})] end)
+      stub(CastleDb, :all, fn -> [build(:castle, name: "Neuschwanstein")] end)
       stub(MapCache, :walkable?, fn _, _, _ -> false end)
       stub(MapCache, :get!, fn _ -> %{xs: 400, ys: 400} end)
 
@@ -44,7 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifierTest do
 
     test "raises naming a non-walkable treasure cell as :treasure" do
       stub(CastleDb, :all, fn ->
-        [castle(emperium: {5, 5}, respawn: {10, 10}, treasure_cells: [{20, 20}, {21, 21}])]
+        [build(:castle, treasure: %{box_id: 1_324, cells: [{20, 20}, {21, 21}]})]
       end)
 
       stub(MapCache, :get!, fn _ -> %{xs: 400, ys: 400} end)
@@ -62,9 +63,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifierTest do
     test "raises naming an out-of-bounds guardian cell as :guardian" do
       stub(CastleDb, :all, fn ->
         [
-          castle(
-            emperium: {5, 5},
-            respawn: {10, 10},
+          build(:castle,
             guardians: [
               %{type: :soldier, cell: {30, 30}},
               %{type: :archer, cell: {401, 31}}
@@ -83,7 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifierTest do
 
     test "raises naming a castle map with no mob region set" do
       stub(CastleDb, :all, fn ->
-        [castle(map: "custom_cas01", emperium: {5, 5}, respawn: {10, 10})]
+        [build(:castle, map: "custom_cas01")]
       end)
 
       stub(MapCache, :walkable?, fn _, _, _ -> true end)
@@ -97,9 +96,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifierTest do
     test "passes with an in-bounds guardian cell that is not walkable" do
       stub(CastleDb, :all, fn ->
         [
-          castle(
-            emperium: {5, 5},
-            respawn: {10, 10},
+          build(:castle,
+            treasure: %{box_id: 1_324, cells: [{100, 200}]},
             guardians: [%{type: :soldier, cell: {399, 399}}]
           )
         ]
@@ -108,7 +106,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifierTest do
       stub(MapCache, :walkable?, fn
         "aldeg_cas01", 5, 5 -> true
         "aldeg_cas01", 10, 10 -> true
-        "aldeg_cas01", 1, 1 -> true
+        "aldeg_cas01", 100, 200 -> true
         _, _, _ -> false
       end)
 
@@ -116,18 +114,5 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifierTest do
 
       assert :ok = CastleVerifier.verify!()
     end
-  end
-
-  defp castle(opts) do
-    %Castle{
-      id: 1,
-      map: Keyword.get(opts, :map, "aldeg_cas01"),
-      name: "Neuschwanstein",
-      client_id: 0,
-      emperium: Keyword.fetch!(opts, :emperium),
-      respawn: Keyword.fetch!(opts, :respawn),
-      treasure: %{box_id: 1324, cells: Keyword.get(opts, :treasure_cells, [{1, 1}])},
-      guardians: Keyword.get(opts, :guardians, [%{type: :soldier, cell: {1, 1}}])
-    }
   end
 end

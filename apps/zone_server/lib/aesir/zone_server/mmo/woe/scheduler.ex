@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Scheduler do
   """
 
   use GenServer
+  use TypedStruct
 
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Woe.Economy
@@ -27,20 +28,20 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Scheduler do
   alias Aesir.ZoneServer.Mmo.Woe.Treasure
   alias Aesir.ZoneServer.Npc.ClockScheduler
 
+  @typedoc "A weekly siege window with an ISO weekday, start time, and stop time."
   @type window :: {1..7, {0..23, 0..59}, {0..23, 0..59}}
 
   @day_minutes 1440
   @week_minutes 10_080
 
-  @enforce_keys [:now_fun]
-  defstruct now_fun: nil, last_matured_on: nil
+  typedstruct do
+    field :now_fun, (-> NaiveDateTime.t()), enforce: true
+    field :last_matured_on, Date.t()
+  end
 
-  @type t() :: %__MODULE__{
-          now_fun: (-> NaiveDateTime.t()),
-          last_matured_on: Date.t() | nil
-        }
-
-  @spec start_link(keyword()) :: GenServer.on_start()
+  @doc "Starts the scheduler with an optional registered name and local clock."
+  @spec start_link(name: GenServer.name(), now_fun: (-> NaiveDateTime.t())) ::
+          GenServer.on_start()
   def start_link(opts \\ []) do
     {name, opts} = Keyword.pop(opts, :name, __MODULE__)
     GenServer.start_link(__MODULE__, opts, name: name)
@@ -57,23 +58,6 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Scheduler do
   @spec desired_state([window()], NaiveDateTime.t()) :: :active | :inactive
   def desired_state(windows, %NaiveDateTime{} = datetime) do
     if Enum.any?(windows, &in_window?(&1, datetime)), do: :active, else: :inactive
-  end
-
-  @doc """
-  Whether `state` should run daily maturation and/or spawn treasure at `now`.
-
-  Maturation runs on the first tick at or after 00:01 whose date differs
-  from `state.last_matured_on` (catch-up safe if a tick was missed);
-  treasure spawns only on the tick landing exactly at 00:01.
-  """
-  @spec daily_actions(t(), NaiveDateTime.t()) ::
-          {mature? :: boolean(), spawn_treasure? :: boolean()}
-  def daily_actions(%__MODULE__{last_matured_on: last_matured_on}, %NaiveDateTime{} = now) do
-    past_0001? = now.hour > 0 or now.minute >= 1
-    mature? = past_0001? and NaiveDateTime.to_date(now) != last_matured_on
-    spawn? = now.hour == 0 and now.minute == 1
-
-    {mature?, spawn?}
   end
 
   @impl true
@@ -108,6 +92,16 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Scheduler do
 
     arm_next_tick(state)
     {:noreply, state}
+  end
+
+  @spec daily_actions(t(), NaiveDateTime.t()) ::
+          {mature? :: boolean(), spawn_treasure? :: boolean()}
+  defp daily_actions(%__MODULE__{last_matured_on: last_matured_on}, %NaiveDateTime{} = now) do
+    past_0001? = now.hour > 0 or now.minute >= 1
+    mature? = past_0001? and NaiveDateTime.to_date(now) != last_matured_on
+    spawn? = now.hour == 0 and now.minute == 1
+
+    {mature?, spawn?}
   end
 
   @spec arm_next_tick(t()) :: reference()

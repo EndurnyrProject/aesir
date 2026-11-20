@@ -6,7 +6,6 @@ defmodule Aesir.ZoneServer.Mmo.Woe.RulesTest do
 
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.Relations
-  alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
   alias Aesir.ZoneServer.Mmo.Woe.CastleStore
@@ -191,12 +190,5 @@ defmodule Aesir.ZoneServer.Mmo.Woe.RulesTest do
     %{guild_id: guild_id, economy: 0, defense: 0, invested_economy: 0, invested_defense: 0}
   end
 
-  defp guild_state(guild_id) do
-    %GuildState{
-      guild_id: guild_id,
-      name: "Guild #{guild_id}",
-      master_char_id: guild_id,
-      learned_skills: %{10_000 => 1}
-    }
-  end
+  defp guild_state(id), do: build(:guild_state, guild_id: id, learned_skills: %{10_000 => 1})
 end

@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Factory do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group, as: SkillUnitGroup
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.WeaponTypes
+  alias Aesir.ZoneServer.Mmo.Woe.CastleDb.Castle
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -128,6 +129,21 @@ defmodule Aesir.ZoneServer.Factory do
   @doc "An unstored status entry with empty custom state. Set the type and any values the test uses."
   @spec status_entry_factory() :: StatusEntry.t()
   def status_entry_factory, do: %StatusEntry{state: %{}}
+
+  @doc "A synthetic castle on `aldeg_cas01` with 24 treasure cells and eight soldier slots."
+  @spec castle_factory() :: Castle.t()
+  def castle_factory do
+    %Castle{
+      id: sequence(:castle_id, & &1, start_at: 10_000),
+      map: "aldeg_cas01",
+      name: "Test Castle",
+      client_id: 0,
+      emperium: {5, 5},
+      respawn: {10, 10},
+      treasure: %{box_id: 7_000, cells: for(i <- 0..23, do: {100 + i, 200 + i})},
+      guardians: for(i <- 0..7, do: %{type: :soldier, cell: {30 + i, 30}})
+    }
+  end
 
   @doc "A level 1 monster with 100 HP and one-cell melee range."
   @spec mob_definition_factory() :: MobDefinition.t()

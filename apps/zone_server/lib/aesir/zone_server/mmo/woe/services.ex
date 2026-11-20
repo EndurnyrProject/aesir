@@ -76,7 +76,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Services do
   Hires the Kafra at `castle_id` for `guild_id`: on success, marks it hired
   (stored, persisted) and enables its placement.
   """
-  @spec hire_kafra(non_neg_integer(), non_neg_integer() | nil) :: :ok | {:error, atom()}
+  @spec hire_kafra(non_neg_integer(), non_neg_integer() | nil) ::
+          :ok | {:error, :not_owner | :contract_required | :already_hired}
   def hire_kafra(castle_id, guild_id) do
     case hire_check(castle_id, guild_id) do
       :ok ->

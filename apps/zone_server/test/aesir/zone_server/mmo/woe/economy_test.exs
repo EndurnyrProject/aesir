@@ -1,5 +1,5 @@
 defmodule Aesir.ZoneServer.Mmo.Woe.EconomyTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
   use Mimic
 
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
@@ -9,7 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EconomyTest do
   alias Aesir.ZoneServer.Mmo.Woe.Economy
   alias Aesir.ZoneServer.Mmo.Woe.Persistence
 
-  setup :set_mimic_private
+  setup :set_mimic_from_context
 
   setup do
     Aesir.TestEtsSetup.setup_ets_tables(%{})

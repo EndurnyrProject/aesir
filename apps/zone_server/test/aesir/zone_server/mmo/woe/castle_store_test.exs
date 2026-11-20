@@ -1,5 +1,5 @@
 defmodule Aesir.ZoneServer.Mmo.Woe.CastleStoreTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb

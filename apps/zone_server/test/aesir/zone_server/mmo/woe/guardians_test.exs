@@ -1,12 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.Woe.GuardiansTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
   use Mimic
+
+  import Aesir.ZoneServer.Factory
 
   @moduletag :capture_log
 
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
-  alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
@@ -18,7 +19,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.GuardiansTest do
 
   @mob_ids %{archer: 1285, knight: 1286, soldier: 1287}
 
-  setup :set_mimic_private
+  setup :set_mimic_from_context
+  setup :verify_on_exit!
 
   setup do
     Aesir.TestEtsSetup.setup_ets_tables(%{})
@@ -33,11 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.GuardiansTest do
     )
   end
 
-  defp fixture_guild(id, skills \\ %{}) do
-    %GuildState{guild_id: id, name: "Test Guild", master_char_id: 1, learned_skills: skills}
-  end
-
-  defp researched_guild(id), do: fixture_guild(id, %{10_002 => 1})
+  defp researched_guild(id), do: build(:guild_state, guild_id: id, learned_skills: %{10_002 => 1})
 
   describe "hire_cost/0" do
     test "is 10_000" do
@@ -62,7 +60,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.GuardiansTest do
     end
 
     test "research_required when the guild's skill level is below 1", %{castle: castle} do
-      stub(GuildManager, :get, fn 1 -> {:ok, fixture_guild(1)} end)
+      stub(GuildManager, :get, fn 1 -> {:ok, build(:guild_state, guild_id: 1)} end)
       assert Guardians.hire_check(castle.id, 0, 1) == {:error, :research_required}
     end
 

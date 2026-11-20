@@ -2,13 +2,14 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServicesTest do
   use Aesir.DataCase, async: false
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   @moduletag :capture_log
 
   alias Aesir.ZoneServer.Content.Npc.Woe.InsideFlag
   alias Aesir.ZoneServer.Content.Npc.Woe.Kafra
   alias Aesir.ZoneServer.Content.Npc.Woe.OutsideFlag
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
-  alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
   alias Aesir.ZoneServer.Mmo.Woe.CastleStore
   alias Aesir.ZoneServer.Mmo.Woe.Persistence
@@ -44,11 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServicesTest do
     )
   end
 
-  defp fixture_guild(id, skills \\ %{}) do
-    %GuildState{guild_id: id, name: "Test Guild", master_char_id: 1, learned_skills: skills}
-  end
-
-  defp contracted_guild(id), do: fixture_guild(id, %{10_001 => 1})
+  defp contracted_guild(id), do: build(:guild_state, guild_id: id, learned_skills: %{10_001 => 1})
 
   defp kafra_gid(castle) do
     [{_module, placement}] = NpcRegistry.by_name("Kafra Employee#" <> castle.map)
@@ -88,7 +85,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServicesTest do
     end
 
     test "contract_required when the guild's skill level is below 1", %{castle: castle} do
-      stub(GuildManager, :get, fn 1 -> {:ok, fixture_guild(1)} end)
+      stub(GuildManager, :get, fn 1 -> {:ok, build(:guild_state, guild_id: 1)} end)
       assert Services.hire_check(castle.id, 1) == {:error, :contract_required}
     end
 

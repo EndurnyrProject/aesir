@@ -31,8 +31,21 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Rules do
   @spec active?(String.t()) :: boolean()
   def active?(map_name), do: MapFlags.gvg?(map_name)
 
-  @doc "Validates whether an attack may target the live Emperium."
-  @spec validate_target(Combatant.t(), Combatant.t(), map()) :: :ok | {:error, atom()}
+  @typedoc "Hit metadata; a hit without a skill id uses the normal-attack rate."
+  @type hit_info :: %{optional(:skill_id) => non_neg_integer() | nil, optional(atom()) => term()}
+
+  @typedoc "Why siege rules disallow a hit on an Emperium or guild-owned unit."
+  @type rejection ::
+          :siege_inactive
+          | :stale_emperium
+          | :guild_required
+          | :approval_required
+          | :owner_guild
+          | :skill_not_allowed
+
+  @doc "Validates a siege hit. An unresolved attacker at damage settlement is represented by an empty map."
+  @spec validate_target(Combatant.t() | %{}, Combatant.t(), hit_info()) ::
+          :ok | {:error, rejection()}
   def validate_target(
         attacker,
         %{unit_type: :mob, monster_id: @emperium_mob_id} = target,
@@ -69,7 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Rules do
       do: :ok
 
   @doc "Returns the siege-ground damage percentage for hit metadata."
-  @spec damage_rate(map()) :: pos_integer()
+  @spec damage_rate(hit_info()) :: 60 | 80
   def damage_rate(%{skill_id: skill_id}) when is_integer(skill_id), do: 60
   def damage_rate(_hit_info), do: 80
 

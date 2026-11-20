@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   """
 
   use GenServer
+  use TypedStruct
 
   require Logger
 
@@ -57,13 +58,12 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   @emperium_mob_id 1288
   @guild_approval_skill_id 10_000
 
-  @type t :: %__MODULE__{
-          active?: boolean(),
-          respawn_timers: %{non_neg_integer() => {reference(), reference()}}
-        }
+  typedstruct do
+    field :active?, boolean(), default: false
+    field :respawn_timers, %{non_neg_integer() => {reference(), reference()}}, default: %{}
+  end
 
-  defstruct active?: false, respawn_timers: %{}
-
+  @doc "Starts the siege lifecycle server."
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, :ok, Keyword.merge(opts, name: via_name()))
