@@ -17,7 +17,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.ForcedMovement do
   @type validation_error :: :out_of_range | :invalid_destination
 
   @typedoc "The origin of a forced move, shared by the caster variants."
-  @type origin :: %{map_name: String.t(), x: integer(), y: integer()}
+  @type origin :: %{
+          required(:map_name) => String.t(),
+          required(:x) => integer(),
+          required(:y) => integer(),
+          optional(any()) => any()
+        }
 
   @spec validate(origin(), integer(), integer(), non_neg_integer()) ::
           {:ok, t()} | {:error, validation_error()}

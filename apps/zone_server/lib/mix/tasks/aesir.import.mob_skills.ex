@@ -23,6 +23,7 @@ defmodule Mix.Tasks.Aesir.Import.MobSkills do
 
   alias Mix.Tasks.Aesir.Import
 
+  alias Aesir.ZoneServer.Mmo.MobSkill.Db
   alias Aesir.ZoneServer.Mmo.MobSkill.Importer
 
   @top_unresolved 20
@@ -57,7 +58,7 @@ defmodule Mix.Tasks.Aesir.Import.MobSkills do
     end)
   end
 
-  @spec report(%{String.t() => [Importer.row()]}) :: :ok
+  @spec report(%{String.t() => [Db.row()]}) :: :ok
   defp report(grouped) do
     rows = grouped |> Map.values() |> List.flatten()
     total = length(rows)
