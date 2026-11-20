@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WeaponSkillRefineOpsTest do
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Factory
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
@@ -53,11 +54,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WeaponSkillRefineOpsTest do
     stub(RefineDatabase, :level_info, fn :weapon, level, next ->
       {:ok, ore} = WeaponSkill.material(level)
 
-      %{
-        bonus: 200 * next,
-        randombonus_max: 0,
-        chances: %{normal: %{rate: 5_000, material_nameid: ore}}
-      }
+      chance = Factory.build(:refine_chance, rate: 5000, material_nameid: ore)
+      Factory.build(:refine_level, bonus: 200 * next, chances: %{normal: chance})
     end)
 
     %{player: PlayerState.new(character)}

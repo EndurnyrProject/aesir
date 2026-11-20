@@ -14,20 +14,31 @@ defmodule Aesir.ZoneServer.Mmo.Refine.WeaponSkill do
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.Refine.LevelInfo
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
+  alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+
+  defmodule Context do
+    @moduledoc "Current authoritative rows and the normal rate for the next refine step."
+
+    use TypedStruct
+
+    @typedoc "A revalidated weapon selection, ready for an attempt."
+    typedstruct enforce: true do
+      field :item, InventoryItem.t()
+      field :definition, ItemDefinition.t()
+      field :ore_index, non_neg_integer()
+      field :normal_rate, non_neg_integer()
+    end
+  end
 
   @typedoc "A rejected selection before any ore or weapon mutation."
   @type reason :: :no_item | :not_refinable | :max_refine | :no_ore
 
   @typedoc "Current authoritative rows and the normal rate for the next refine step."
-  @type context :: %{
-          item: InventoryItem.t(),
-          definition: ItemDefinition.t(),
-          ore_index: non_neg_integer(),
-          normal_rate: non_neg_integer()
-        }
+  @type context :: Context.t()
 
   @doc "Offers inventory indices mapped to persisted weapon row ids using the captured learned rank."
   @spec offer(PlayerState.t(), non_neg_integer()) :: %{non_neg_integer() => integer()}
@@ -69,7 +80,7 @@ defmodule Aesir.ZoneServer.Mmo.Refine.WeaponSkill do
          {:ok, ore} <- material(definition.weapon_level),
          ore_index when is_integer(ore_index) <- ItemContainer.stackable_index(inventory, ore),
          {:ok, rate} <- normal_rate(definition.weapon_level, item.refine, ore) do
-      {:ok, %{item: item, definition: definition, ore_index: ore_index, normal_rate: rate}}
+      {:ok, %Context{item: item, definition: definition, ore_index: ore_index, normal_rate: rate}}
     else
       {:error, _reason} = error -> error
       false -> {:error, :max_refine}
@@ -88,6 +99,8 @@ defmodule Aesir.ZoneServer.Mmo.Refine.WeaponSkill do
     if chance > roll, do: {:success, current_refine + 1}, else: {:break}
   end
 
+  @spec selected_item(Inventory.t(), non_neg_integer(), integer()) ::
+          {:ok, InventoryItem.t()} | {:error, :no_item}
   defp selected_item(inventory, index, expected_item_id) do
     case Map.get(inventory, index) do
       %InventoryItem{id: ^expected_item_id, nameid: nameid} = item when nameid > 0 -> {:ok, item}
@@ -95,8 +108,10 @@ defmodule Aesir.ZoneServer.Mmo.Refine.WeaponSkill do
     end
   end
 
-  defp refinable_weapon(item) do
-    case Items.by_id(item.nameid) do
+  @spec refinable_weapon(InventoryItem.t()) ::
+          {:ok, ItemDefinition.t()} | {:error, :not_refinable}
+  defp refinable_weapon(%InventoryItem{nameid: nameid}) do
+    case Items.by_id(nameid) do
       {:ok, %ItemDefinition{type: :weapon, refineable: true, weapon_level: level} = definition}
       when level in 1..4 ->
         {:ok, definition}
@@ -106,9 +121,11 @@ defmodule Aesir.ZoneServer.Mmo.Refine.WeaponSkill do
     end
   end
 
+  @spec normal_rate(integer(), non_neg_integer(), pos_integer()) ::
+          {:ok, non_neg_integer()} | {:error, :not_refinable}
   defp normal_rate(level, refine, ore) do
     case RefineDatabase.level_info(:weapon, level, refine + 1) do
-      %{chances: %{normal: %{rate: rate, material_nameid: ^ore}}} -> {:ok, rate}
+      %LevelInfo{chances: %{normal: %{rate: rate, material_nameid: ^ore}}} -> {:ok, rate}
       _missing_or_mismatched -> {:error, :not_refinable}
     end
   end

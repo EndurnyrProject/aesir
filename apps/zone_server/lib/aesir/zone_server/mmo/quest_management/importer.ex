@@ -25,15 +25,10 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.Importer do
     row lacks `Item` or `Rate`. `Count` defaults to 1 and is capped to 1 for an
     item that does not stack.
 
-  Names resolve through the `resolvers()` passed in. `to_definition/1` uses the
-  loaded mob and item catalogs and accepts every `Location`, since the map
-  index is a reference source file that only the import task reads. Every
-  skipped quest, row and name is reported back as a `dropped()` entry.
+  Names resolve through the `resolvers()` passed in. Every skipped quest,
+  row and name is reported back as a `dropped()` entry.
   """
 
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
-  alias Aesir.ZoneServer.Mmo.ItemManagement.Items
-  alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition
 
   @typedoc """
@@ -61,6 +56,19 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.Importer do
           map?: (String.t() -> boolean())
         }
 
+  @typedoc "An unvalidated, string-keyed quest or child row from YAML."
+  @type yaml_row :: %{String.t() => term()}
+
+  @typep target_key :: {:mob, integer()} | {:id, 1..65_535}
+  @typep pending_target :: %{
+           required(:min_level) => non_neg_integer(),
+           required(:max_level) => non_neg_integer(),
+           optional(:mob_id) => integer(),
+           optional(:count) => non_neg_integer(),
+           optional(:race | :size | :element | :map) => String.t(),
+           optional(:mobs_allowed) => [integer()]
+         }
+
   @max_objectives 3
   @max_level 275
   @uint16 0..65_535
@@ -73,17 +81,10 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.Importer do
   @defaults Map.from_struct(struct(QuestDefinition, %{}))
 
   @doc """
-  Converts a raw rAthena quest_db entry against the loaded mob and item
-  catalogs. See `to_definition/2`.
-  """
-  @spec to_definition(map()) :: {QuestDefinition.t() | nil, [dropped()]}
-  def to_definition(entry), do: to_definition(entry, catalog_resolvers())
-
-  @doc """
   Converts a raw rAthena quest_db entry into a `QuestDefinition`, along with
   every refused reference. The definition is `nil` when the quest is skipped.
   """
-  @spec to_definition(map(), resolvers()) :: {QuestDefinition.t() | nil, [dropped()]}
+  @spec to_definition(yaml_row(), resolvers()) :: {QuestDefinition.t() | nil, [dropped()]}
   def to_definition(entry, resolvers) do
     id = Map.fetch!(entry, "Id")
 
@@ -109,7 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.Importer do
   Converts a `QuestDefinition` into a plain map ready for `Ymlr.document!/1`,
   omitting fields still at their default value.
   """
-  @spec to_yaml_map(QuestDefinition.t()) :: map()
+  @spec to_yaml_map(QuestDefinition.t()) :: yaml_row()
   def to_yaml_map(%QuestDefinition{} = definition) do
     definition
     |> Map.from_struct()
@@ -126,31 +127,12 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.Importer do
 
   defp encode_value(_field, value), do: value
 
-  @spec stringify_keys(map()) :: map()
+  @spec stringify_keys(%{atom() => term()}) :: yaml_row()
   defp stringify_keys(map), do: Map.new(map, fn {k, v} -> {Atom.to_string(k), v} end)
-
-  @spec catalog_resolvers() :: resolvers()
-  defp catalog_resolvers do
-    %{
-      mob: fn name ->
-        case Mobs.by_name(name) do
-          {:ok, %{id: id}} -> {:ok, id}
-          :error -> :error
-        end
-      end,
-      item: fn name ->
-        case Items.by_aegis(name) do
-          {:ok, item} -> {:ok, %{id: item.id, stackable?: ItemDefinition.stackable?(item)}}
-          :error -> :error
-        end
-      end,
-      map?: fn _name -> true end
-    }
-  end
 
   # Targets: each row updates or creates the target its key names, then lists
   # that key again; the final list reads every key's merged target.
-  @spec targets(integer(), [map()], resolvers()) ::
+  @spec targets(integer(), [yaml_row()], resolvers()) ::
           {:ok, [QuestDefinition.target()], [dropped()]} | {:skip, [dropped()]}
   defp targets(quest_id, rows, resolvers) do
     rows
@@ -172,8 +154,14 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.Importer do
     end
   end
 
-  @spec target_row(integer(), map(), [term()], map(), resolvers()) ::
-          {:ok, term(), map(), [dropped()]} | {:skip, dropped()}
+  @spec target_row(
+          integer(),
+          yaml_row(),
+          [target_key()],
+          %{target_key() => pending_target()},
+          resolvers()
+        ) ::
+          {:ok, target_key(), pending_target(), [dropped()]} | {:skip, dropped()}
   defp target_row(quest_id, row, keys, by_key, resolvers) do
     with :ok <- check(length(keys) < @max_objectives, quest_id, "more than 3 targets"),
          {:ok, key} <- target_key(quest_id, row, resolvers),
@@ -184,7 +172,7 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.Importer do
     end
   end
 
-  @spec target_key(integer(), map(), resolvers()) :: {:ok, term()} | {:skip, dropped()}
+  @spec target_key(integer(), yaml_row(), resolvers()) :: {:ok, target_key()} | {:skip, dropped()}
   defp target_key(quest_id, %{"Mob" => value}, resolvers) do
     with {:ok, name} <- scalar(quest_id, "target Mob", value) do
       case resolvers.mob.(name) do
@@ -204,8 +192,10 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.Importer do
 
   defp target_key(quest_id, _row, _resolvers), do: invalid(quest_id, "target without Mob or Id")
 
-  @spec existing_or_new_target(integer(), map(), term(), map()) ::
-          {:ok, map()} | {:skip, dropped()}
+  @spec existing_or_new_target(integer(), yaml_row(), target_key(), %{
+          target_key() => pending_target()
+        }) ::
+          {:ok, pending_target()} | {:skip, dropped()}
   defp existing_or_new_target(quest_id, row, key, by_key) do
     case Map.fetch(by_key, key) do
       {:ok, target} ->
@@ -219,7 +209,7 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.Importer do
     end
   end
 
-  @spec new_target(term()) :: map()
+  @spec new_target(target_key()) :: pending_target()
   defp new_target({:mob, mob_id}), do: %{mob_id: mob_id, min_level: 0, max_level: 0}
   defp new_target({:id, _index}), do: %{min_level: 0, max_level: 0}
 
@@ -340,7 +330,7 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.Importer do
 
   defp target_count(_quest_id, _row, target), do: {:ok, target}
 
-  @spec emit_target(map()) :: QuestDefinition.target()
+  @spec emit_target(pending_target()) :: QuestDefinition.target()
   defp emit_target(target) do
     target
     |> Enum.reject(fn {key, value} -> key in [:min_level, :max_level] and value == 0 end)
@@ -349,7 +339,7 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.Importer do
 
   # Drops: each row updates or creates the drop its monster names, then lists
   # that monster again; the final list reads every monster's merged drop.
-  @spec drops(integer(), [map()], resolvers(), [dropped()]) ::
+  @spec drops(integer(), [yaml_row()], resolvers(), [dropped()]) ::
           {:ok, [QuestDefinition.drop()], [dropped()]} | {:skip, [dropped()]}
   defp drops(quest_id, rows, resolvers, dropped) do
     rows

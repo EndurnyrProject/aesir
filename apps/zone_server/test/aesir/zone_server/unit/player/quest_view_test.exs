@@ -1,29 +1,35 @@
 defmodule Aesir.ZoneServer.Unit.Player.QuestViewTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
+  use Mimic
+
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Net.Envelope
   alias Aesir.Net.QuestEntry
   alias Aesir.Net.QuestHuntProgress
   alias Aesir.Net.QuestList
   alias Aesir.Net.QuestObjective
-  alias Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition
   alias Aesir.ZoneServer.Mmo.QuestManagement.Quests
   alias Aesir.ZoneServer.Unit.Player.QuestLog.Entry
   alias Aesir.ZoneServer.Unit.Player.QuestView
 
-  @targetless %QuestDefinition{id: 1000, title: "Transcend", targets: []}
-
-  @hunt %QuestDefinition{
-    id: 7393,
-    title: "Shiny Silver Blade",
-    targets: [%{mob_id: 2314, count: 10}, %{mob_id: 2311, count: 10}]
-  }
+  setup :set_mimic_from_context
 
   setup do
-    defs = [@targetless, @hunt]
-    index = %{all: defs, by_id: Map.new(defs, &{&1.id, &1})}
-    :persistent_term.put(Quests, index)
-    on_exit(fn -> :persistent_term.erase(Quests) end)
+    targetless = build(:quest_definition, id: 1000)
+
+    hunt =
+      build(:quest_definition,
+        id: 7393,
+        targets: [%{mob_id: 2314, count: 10}, %{mob_id: 2311, count: 10}]
+      )
+
+    stub(Quests, :by_id, fn
+      1000 -> {:ok, targetless}
+      7393 -> {:ok, hunt}
+      _id -> :error
+    end)
+
     :ok
   end
 

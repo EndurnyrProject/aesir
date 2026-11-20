@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Whitesmith.WeaponRefineMenuTest do
   alias Aesir.Net.SkillMenuReply
   alias Aesir.Net.SpecialEffect
   alias Aesir.TestMob
+  alias Aesir.ZoneServer.Factory
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
@@ -128,7 +129,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Whitesmith.WeaponRefineMenuTest do
   test "committed_outcome_drains_existing_feedback", %{caster: caster} do
     for {rate, success?, effect} <- [{10_000, true, 154}, {0, false, 155}] do
       stub(RefineDatabase, :level_info, fn :weapon, 1, 4 ->
-        %{chances: %{normal: %{rate: rate, material_nameid: 1_010}}}
+        chance = Factory.build(:refine_chance, rate: rate, material_nameid: 1010)
+        Factory.build(:refine_level, chances: %{normal: chance})
       end)
 
       item =

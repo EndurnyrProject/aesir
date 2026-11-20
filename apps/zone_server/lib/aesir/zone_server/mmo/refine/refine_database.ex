@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabase do
   @moduledoc """
-  Renewal refine tables, loaded as data from `priv/db/re/refine/refine.yml`.
+  Refine tables loaded from the active mode's `refine/refine.yml`.
 
   Indexes each `(group, item_level, refine_level)` triple to its bonus/rate
   data and resolves ore material aegis names to nameids against
@@ -21,6 +21,8 @@ defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabase do
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.Refine.Chance
+  alias Aesir.ZoneServer.Mmo.Refine.LevelInfo
 
   @pt_key __MODULE__
 
@@ -35,23 +37,14 @@ defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabase do
   @type cost_type :: :normal | :hd | :enriched
 
   @typedoc "One cost-type entry, with its material resolved to a nameid."
-  @type chance :: %{
-          rate: non_neg_integer(),
-          price: non_neg_integer(),
-          material_nameid: integer() | nil,
-          breaking_rate: non_neg_integer(),
-          downgrade: non_neg_integer()
-        }
+  @type chance :: Chance.t()
 
   @typedoc "Bonus/rate data for one `(group, item_level, refine_level)` triple."
-  @type level_info :: %{
-          bonus: integer(),
-          randombonus_max: integer(),
-          blessing_amount: non_neg_integer(),
-          broadcast_success: boolean(),
-          broadcast_failure: boolean(),
-          chances: %{cost_type() => chance()}
-        }
+  @type level_info :: LevelInfo.t()
+
+  @typep index :: %{{group(), integer(), integer()} => level_info()}
+  @typep yaml_row :: %{String.t() => term()}
+  @typep materials :: %{String.t() => integer() | nil}
 
   @doc """
   Returns the bonus/rate data for `(group, item_level, yml_level)`, or `nil`
@@ -76,7 +69,7 @@ defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabase do
   level field. Shared by every caller that needs to key `level_info/3`
   (`RefineOps`, the DSL read ops).
   """
-  @spec group_and_level(ItemDefinition.t()) :: {:ok, group(), integer()} | :error
+  @spec group_and_level(ItemDefinition.t()) :: {:ok, :weapon | :armor, integer()} | :error
   def group_and_level(%ItemDefinition{type: :weapon, weapon_level: level})
       when is_integer(level) do
     {:ok, :weapon, level}
@@ -98,7 +91,7 @@ defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabase do
     :ok
   end
 
-  @spec index() :: %{{group(), integer(), integer()} => level_info()}
+  @spec index() :: index()
   defp index do
     case :persistent_term.get(@pt_key, nil) do
       nil ->
@@ -111,7 +104,7 @@ defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabase do
     end
   end
 
-  @spec build() :: %{{group(), integer(), integer()} => level_info()}
+  @spec build() :: index()
   defp build do
     raw =
       "refine/refine.yml"
@@ -126,7 +119,7 @@ defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabase do
     |> Map.new()
   end
 
-  @spec collect_materials([map()]) :: [String.t()]
+  @spec collect_materials([yaml_row()]) :: [String.t()]
   defp collect_materials(raw) do
     for %{"levels" => levels} <- raw,
         %{"refine_levels" => refine_levels} <- levels,
@@ -137,7 +130,7 @@ defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabase do
     |> Enum.uniq()
   end
 
-  @spec resolve_materials([String.t()]) :: %{String.t() => integer() | nil}
+  @spec resolve_materials([String.t()]) :: materials()
   defp resolve_materials(names), do: Map.new(names, &{&1, resolve_material(&1)})
 
   @spec resolve_material(String.t()) :: integer() | nil
@@ -152,7 +145,7 @@ defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabase do
     end
   end
 
-  @spec group_entries(map(), %{String.t() => integer() | nil}) ::
+  @spec group_entries(yaml_row(), materials()) ::
           [{{group(), integer(), integer()}, level_info()}]
   defp group_entries(%{"group" => group_name, "levels" => levels}, materials) do
     group = to_group(group_name)
@@ -169,7 +162,7 @@ defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabase do
   defp to_group("shadow_armor"), do: :shadow_armor
   defp to_group("shadow_weapon"), do: :shadow_weapon
 
-  @spec to_level_info(map(), %{String.t() => integer() | nil}) :: level_info()
+  @spec to_level_info(yaml_row(), materials()) :: level_info()
   defp to_level_info(
          %{
            "bonus" => bonus,
@@ -181,7 +174,7 @@ defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabase do
          },
          materials
        ) do
-    %{
+    %LevelInfo{
       bonus: bonus,
       randombonus_max: random_bonus,
       blessing_amount: blessing_amount,
@@ -191,7 +184,7 @@ defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabase do
     }
   end
 
-  @spec to_chance(map(), %{String.t() => integer() | nil}) :: {cost_type(), chance()}
+  @spec to_chance(yaml_row(), materials()) :: {cost_type(), chance()}
   defp to_chance(
          %{
            "type" => type,
@@ -204,7 +197,7 @@ defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabase do
          materials
        ) do
     {to_cost_type(type),
-     %{
+     %Chance{
        rate: rate,
        price: price,
        material_nameid: Map.fetch!(materials, material),

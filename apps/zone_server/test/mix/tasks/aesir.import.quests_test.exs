@@ -9,6 +9,12 @@ defmodule Mix.Tasks.Aesir.Import.QuestsTest do
   alias Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition
   alias Mix.Tasks.Aesir.Import.Quests, as: Task
 
+  @resolvers %{
+    mob: &__MODULE__.mob/1,
+    item: &__MODULE__.item/1,
+    map?: &__MODULE__.map?/1
+  }
+
   @fixture [
     %{"Id" => 100, "Title" => "Timed Quest", "TimeLimit" => "4h"},
     %{
@@ -29,16 +35,16 @@ defmodule Mix.Tasks.Aesir.Import.QuestsTest do
     }
   ]
 
-  describe "to_definition/1" do
+  describe "to_definition/2" do
     test "carries the raw TimeLimit string through unchanged" do
-      {definition, dropped} = Importer.to_definition(Enum.at(@fixture, 0))
+      {definition, dropped} = Importer.to_definition(Enum.at(@fixture, 0), @resolvers)
 
       assert %QuestDefinition{id: 100, title: "Timed Quest", time_limit: "4h"} = definition
       assert dropped == []
     end
 
     test "skips the whole quest when a Target Mob does not resolve" do
-      {definition, dropped} = Importer.to_definition(Enum.at(@fixture, 1))
+      {definition, dropped} = Importer.to_definition(Enum.at(@fixture, 1), @resolvers)
 
       assert definition == nil
       assert dropped == [{200, :target_mob, "DOES_NOT_EXIST_MOB"}]
@@ -46,7 +52,7 @@ defmodule Mix.Tasks.Aesir.Import.QuestsTest do
 
     test "resolves a named Target mob and keeps a filter-only target's fields" do
       entry = %{Enum.at(@fixture, 1) | "Targets" => Enum.take(Enum.at(@fixture, 1)["Targets"], 2)}
-      {definition, dropped} = Importer.to_definition(entry)
+      {definition, dropped} = Importer.to_definition(entry, @resolvers)
 
       assert %QuestDefinition{id: 200, targets: targets} = definition
 
@@ -59,7 +65,7 @@ defmodule Mix.Tasks.Aesir.Import.QuestsTest do
     end
 
     test "resolves Drop mob and item aegis names to ids" do
-      {definition, dropped} = Importer.to_definition(Enum.at(@fixture, 2))
+      {definition, dropped} = Importer.to_definition(Enum.at(@fixture, 2), @resolvers)
 
       assert %QuestDefinition{id: 300, drops: drops} = definition
       assert drops == [%{mob_id: 1001, item_id: 990, count: 1, rate: 5000}]
@@ -74,7 +80,7 @@ defmodule Mix.Tasks.Aesir.Import.QuestsTest do
     } do
       {definitions, _dropped} =
         Enum.map_reduce(@fixture, [], fn entry, acc ->
-          {definition, dropped} = Importer.to_definition(entry)
+          {definition, dropped} = Importer.to_definition(entry, @resolvers)
           {definition, acc ++ dropped}
         end)
 
@@ -116,7 +122,7 @@ defmodule Mix.Tasks.Aesir.Import.QuestsTest do
         ]
       }
 
-      {definition, dropped} = Importer.to_definition(entry)
+      {definition, dropped} = Importer.to_definition(entry, @resolvers)
 
       assert %QuestDefinition{
                targets: [%{count: 100, map: "pay_d03_i", mobs_allowed: [1001]}]
@@ -132,7 +138,7 @@ defmodule Mix.Tasks.Aesir.Import.QuestsTest do
         "Targets" => [%{"Mob" => "SCORPION", "Count" => 0}]
       }
 
-      {definition, dropped} = Importer.to_definition(entry)
+      {definition, dropped} = Importer.to_definition(entry, @resolvers)
 
       assert definition.targets == [%{mob_id: 1001, count: 0}]
       assert dropped == []
@@ -145,7 +151,7 @@ defmodule Mix.Tasks.Aesir.Import.QuestsTest do
         "Drops" => [%{"Mob" => "NOT_A_MOB", "Item" => "Boody_Red", "Rate" => 5000}]
       }
 
-      {definition, dropped} = Importer.to_definition(entry)
+      {definition, dropped} = Importer.to_definition(entry, @resolvers)
 
       assert definition.drops == []
       assert dropped == [{600, :drop_mob, "NOT_A_MOB"}]
@@ -158,7 +164,7 @@ defmodule Mix.Tasks.Aesir.Import.QuestsTest do
         "Drops" => [%{"Mob" => "SCORPION", "Item" => "NOT_AN_ITEM", "Rate" => 5000}]
       }
 
-      {definition, dropped} = Importer.to_definition(entry)
+      {definition, dropped} = Importer.to_definition(entry, @resolvers)
 
       assert definition.drops == []
       assert dropped == [{700, :drop_item, "NOT_AN_ITEM"}]
@@ -166,22 +172,18 @@ defmodule Mix.Tasks.Aesir.Import.QuestsTest do
   end
 
   describe "rows read in the reference's parse order" do
-    @resolvers %{
-      mob: &__MODULE__.mob/1,
-      item: &__MODULE__.item/1,
-      map?: &__MODULE__.map?/1
-    }
-
+    def mob("SCORPION"), do: {:ok, 1001}
     def mob("PORING"), do: {:ok, 1002}
     def mob("poring"), do: {:ok, 1002}
     def mob("LUNATIC"), do: {:ok, 1063}
     def mob(_name), do: :error
 
+    def item("Boody_Red"), do: {:ok, %{id: 990, stackable?: true}}
     def item("Jellopy"), do: {:ok, %{id: 909, stackable?: true}}
     def item("Knife"), do: {:ok, %{id: 1201, stackable?: false}}
     def item(_name), do: :error
 
-    def map?(name), do: name == "prontera"
+    def map?(name), do: name in ["prontera", "pay_d03_i"]
 
     defp quest(fields), do: Map.merge(%{"Id" => 900, "Title" => "Parse"}, fields)
 

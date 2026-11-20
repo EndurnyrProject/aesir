@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.QuestManagement.Quests do
   @moduledoc """
-  Registry of quest definitions, loaded as data from `priv/db/re/quests/*.yml`.
+  Registry of quest definitions loaded from the active mode's quest sources.
 
   The id index is built once via `Loader` and cached in `:persistent_term`;
   `reload/0` rebuilds it after the data files change in a long-running session.

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Factory
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
@@ -1717,8 +1718,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       end)
 
       stub(RefineDatabase, :level_info, fn
-        :weapon, 4, 7 -> %{bonus: 500, randombonus_max: 200}
-        :weapon, 3, 8 -> %{bonus: 900, randombonus_max: 400}
+        :weapon, 4, 7 -> Factory.build(:refine_level, bonus: 500, randombonus_max: 200)
+        :weapon, 3, 8 -> Factory.build(:refine_level, bonus: 900, randombonus_max: 400)
       end)
 
       armed =
@@ -2239,7 +2240,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       stub(ItemManagement, :get_item_by_id, fn 90_101 -> {:ok, weapon} end)
 
       stub(RefineDatabase, :level_info, fn :weapon, 4, 7 ->
-        %{bonus: 700, randombonus_max: 300}
+        Factory.build(:refine_level, bonus: 700, randombonus_max: 300)
       end)
 
       item = refined(90_101, @right_hand, 7)
@@ -2265,7 +2266,10 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       }
 
       stub(ItemManagement, :get_item_by_id, fn 90_102 -> {:ok, bow} end)
-      stub(RefineDatabase, :level_info, fn :weapon, 4, 5 -> %{bonus: 500, randombonus_max: 0} end)
+
+      stub(RefineDatabase, :level_info, fn :weapon, 4, 5 ->
+        Factory.build(:refine_level, bonus: 500)
+      end)
 
       item = refined(90_102, @both_hand, 5)
       result = with_equipped(item)
@@ -2286,7 +2290,10 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       }
 
       stub(ItemManagement, :get_item_by_id, fn 90_103 -> {:ok, armor} end)
-      stub(RefineDatabase, :level_info, fn :armor, 4, 3 -> %{bonus: 250} end)
+
+      stub(RefineDatabase, :level_info, fn :armor, 4, 3 ->
+        Factory.build(:refine_level, bonus: 250)
+      end)
 
       item = refined(90_103, @armor_pos, 3)
       result = with_equipped(item)
@@ -2315,7 +2322,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       }
 
       stub(ItemManagement, :get_item_by_id, fn 90_104 -> {:ok, wlv5} end)
-      stub(RefineDatabase, :level_info, fn :weapon, 5, 10 -> %{bonus: 0, randombonus_max: 0} end)
+      stub(RefineDatabase, :level_info, fn :weapon, 5, 10 -> Factory.build(:refine_level) end)
 
       item = refined(90_104, @right_hand, 10)
       result = with_equipped(item)
@@ -2335,7 +2342,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       }
 
       stub(ItemManagement, :get_item_by_id, fn 90_108 -> {:ok, wlv4} end)
-      stub(RefineDatabase, :level_info, fn :weapon, 4, 10 -> %{bonus: 0, randombonus_max: 0} end)
+      stub(RefineDatabase, :level_info, fn :weapon, 4, 10 -> Factory.build(:refine_level) end)
 
       item = refined(90_108, @right_hand, 10)
       result = with_equipped(item)
@@ -2355,7 +2362,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       }
 
       stub(ItemManagement, :get_item_by_id, fn 90_105 -> {:ok, armor2} end)
-      stub(RefineDatabase, :level_info, fn :armor, 2, 10 -> %{bonus: 0} end)
+      stub(RefineDatabase, :level_info, fn :armor, 2, 10 -> Factory.build(:refine_level) end)
 
       item = refined(90_105, @armor_pos, 10)
       result = with_equipped(item)
@@ -2549,7 +2556,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       end)
 
       stub(RefineDatabase, :level_info, fn :weapon, 4, 7 ->
-        %{bonus: 700, randombonus_max: 300}
+        Factory.build(:refine_level, bonus: 700, randombonus_max: 300)
       end)
 
       row = %{equipped_row(40, 90_180, @right_hand, 7) | card0: 90_181}

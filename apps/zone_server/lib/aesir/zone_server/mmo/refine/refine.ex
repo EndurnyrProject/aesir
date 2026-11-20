@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Mmo.Refine.Refine do
   deterministic and side-effect-free.
   """
 
+  alias Aesir.ZoneServer.Mmo.Refine.Chance
+  alias Aesir.ZoneServer.Mmo.Refine.LevelInfo
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
 
   @typedoc "The result of a single refine attempt."
@@ -20,7 +22,8 @@ defmodule Aesir.ZoneServer.Mmo.Refine.Refine do
           | {:fail}
           | {:error, :not_refinable}
 
-  @max_refine 20
+  @typedoc "A single refine-table roll, on the 10,000-point scale."
+  @type roll :: 0..9999
 
   @doc """
   Resolves a single refine attempt.
@@ -34,8 +37,8 @@ defmodule Aesir.ZoneServer.Mmo.Refine.Refine do
           RefineDatabase.level_info() | nil,
           RefineDatabase.cost_type(),
           boolean(),
-          0..9999,
-          0..9999
+          roll(),
+          roll()
         ) :: result()
   def outcome(refine, level_info, cost_type, use_blessing?, success_roll, break_roll)
 
@@ -43,19 +46,26 @@ defmodule Aesir.ZoneServer.Mmo.Refine.Refine do
     {:error, :not_refinable}
   end
 
-  def outcome(refine, %{chances: chances}, cost_type, use_blessing?, success_roll, break_roll) do
+  def outcome(
+        refine,
+        %LevelInfo{chances: chances},
+        cost_type,
+        use_blessing?,
+        success_roll,
+        break_roll
+      ) do
     case Map.fetch(chances, cost_type) do
       {:ok, chance} -> resolve(refine, chance, use_blessing?, success_roll, break_roll)
       :error -> {:error, :not_refinable}
     end
   end
 
-  @spec resolve(non_neg_integer(), RefineDatabase.chance(), boolean(), 0..9999, 0..9999) ::
+  @spec resolve(non_neg_integer(), Chance.t(), boolean(), roll(), roll()) ::
           result()
-  defp resolve(refine, chance, use_blessing?, success_roll, break_roll) do
+  defp resolve(refine, %Chance{} = chance, use_blessing?, success_roll, break_roll) do
     cond do
       success_roll < chance.rate ->
-        {:success, min(refine + 1, @max_refine)}
+        {:success, min(refine + 1, RefineDatabase.max_refine())}
 
       use_blessing? ->
         {:fail}

@@ -10,10 +10,10 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.Loader do
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition
 
-  @type index :: %{
-          all: [QuestDefinition.t()],
-          by_id: %{integer() => QuestDefinition.t()}
-        }
+  @typedoc "The ordered quest definitions and their lookup index."
+  @type index :: %{all: [QuestDefinition.t()], by_id: %{integer() => QuestDefinition.t()}}
+
+  @typep yaml_row :: %{String.t() => term()}
 
   @cache_file "quests.etf"
 
@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.Loader do
                |> Map.keys()
                |> Map.new(&{Atom.to_string(&1), &1})
 
+  @doc "Loads the active quest sources and indexes their definitions by id."
   @spec load() :: index()
   def load, do: "quests" |> DataLoader.load(@cache_file, &build/1) |> index()
 
@@ -36,13 +37,10 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.Loader do
 
   @spec index([QuestDefinition.t()]) :: index()
   defp index(defs) do
-    %{
-      all: defs,
-      by_id: Map.new(defs, &{&1.id, &1})
-    }
+    %{all: defs, by_id: Map.new(defs, &{&1.id, &1})}
   end
 
-  @spec to_struct!(map()) :: QuestDefinition.t()
+  @spec to_struct!(yaml_row()) :: QuestDefinition.t()
   defp to_struct!(yaml_map) do
     attrs =
       Map.new(yaml_map, fn {k, v} ->
@@ -58,6 +56,6 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.Loader do
   defp convert(:drops, v), do: Enum.map(v, &atomize_keys/1)
   defp convert(_key, v), do: v
 
-  @spec atomize_keys(map()) :: map()
+  @spec atomize_keys(yaml_row()) :: %{atom() => term()}
   defp atomize_keys(map), do: Map.new(map, fn {k, v} -> {String.to_atom(k), v} end)
 end

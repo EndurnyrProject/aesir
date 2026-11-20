@@ -2,117 +2,125 @@ defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabaseTest do
   use ExUnit.Case, async: false
   use Mimic
 
+  import Aesir.ZoneServer.Factory
   import ExUnit.CaptureLog
 
+  alias Aesir.ZoneServer.DbTestSetup
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.Refine.Chance
+  alias Aesir.ZoneServer.Mmo.Refine.LevelInfo
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
 
-  setup :verify_on_exit!
+  @moduletag :tmp_dir
 
-  setup do
-    :ok = RefineDatabase.reload()
+  @table """
+  - group: weapon
+    levels:
+      - level: 2
+        refine_levels:
+          - level: 3
+            bonus: 200
+            random_bonus: 80
+            blacksmith_blessing_amount: 2
+            broadcast_success: true
+            broadcast_failure: true
+            chances: &ore_options
+              - type: normal
+                rate: 7531
+                price: 4200
+                material: Test_Ore
+                breaking_rate: 1500
+                downgrade_amount: 2
+      - level: 3
+        refine_levels:
+          - level: 3
+            bonus: 300
+            random_bonus: 0
+            blacksmith_blessing_amount: 0
+            broadcast_success: false
+            broadcast_failure: false
+            chances: *ore_options
+  - group: armor
+    levels:
+      - level: 2
+        refine_levels:
+          - level: 3
+            bonus: 500
+            random_bonus: 0
+            blacksmith_blessing_amount: 0
+            broadcast_success: false
+            broadcast_failure: false
+            chances: []
+  """
+
+  setup :set_mimic_from_context
+
+  setup context do
+    on_exit(&RefineDatabase.reload/0)
+    {:ok, tmp_dir: base} = DbTestSetup.configure_root(context, "refine")
+    File.write!(Path.join(base, "refine.yml"), @table)
+    ore = build(:item_definition, id: 1010, aegis_name: "Test_Ore")
+    stub(Items, :by_aegis, fn "Test_Ore" -> {:ok, ore} end)
+    :ok
   end
 
-  test "level_info/3 resolves a weapon yml level 1 entry with a resolved material nameid" do
-    info = RefineDatabase.level_info(:weapon, 1, 1)
+  test "indexes literal levels and resolves the ore name to its item id" do
+    assert :ok = RefineDatabase.reload()
 
-    assert %{bonus: 200, chances: %{normal: %{rate: 10000}}} = info
-    assert is_integer(info.chances.normal.material_nameid)
+    assert %LevelInfo{
+             bonus: 200,
+             randombonus_max: 80,
+             blessing_amount: 2,
+             broadcast_success: true,
+             broadcast_failure: true,
+             chances: %{
+               normal: %Chance{
+                 rate: 7531,
+                 price: 4200,
+                 material_nameid: 1010,
+                 breaking_rate: 1500,
+                 downgrade: 2
+               }
+             }
+           } = RefineDatabase.level_info(:weapon, 2, 3)
+
+    assert %LevelInfo{bonus: 300} = RefineDatabase.level_info(:weapon, 3, 3)
+    assert %LevelInfo{bonus: 500} = RefineDatabase.level_info(:armor, 2, 3)
+    assert RefineDatabase.level_info(:weapon, 2, 2) == nil
   end
 
-  test "level_info/3 exposes the first risky armor step (+4 -> +5)" do
-    assert %{chances: %{normal: %{breaking_rate: 10000}}} =
-             RefineDatabase.level_info(:armor, 1, 5)
+  test "leaves unresolved ore ids unset and warns about the missing reference" do
+    stub(Items, :by_aegis, fn "Test_Ore" -> :error end)
 
-    assert %{chances: %{normal: %{rate: 10000, breaking_rate: 0}}} =
-             RefineDatabase.level_info(:armor, 1, 4)
+    log = capture_log(fn -> assert :ok = RefineDatabase.reload() end)
+    assert [_warning] = Regex.scan(~r/unresolved material aegis "Test_Ore"/, log)
+
+    assert %LevelInfo{chances: %{normal: %Chance{material_nameid: nil}}} =
+             RefineDatabase.level_info(:weapon, 2, 3)
   end
 
-  test "level_info/3 returns nil for an absent triple" do
-    assert RefineDatabase.level_info(:weapon, 1, 21) == nil
-    assert RefineDatabase.level_info(:weapon, 999, 1) == nil
-  end
+  test "reload replaces an imported refine group without changing other groups", %{tmp_dir: root} do
+    assert :ok = RefineDatabase.reload()
 
-  test "reload/0 leaves material_nameid nil and logs a single warning for an unresolved aegis" do
-    # This test deliberately reloads with a stubbed-out Items lookup, which writes the
-    # corrupted (nil-material) table into the shared :persistent_term. Restore the real
-    # table on exit (the stub is gone by then) so the corruption can't leak to other modules.
-    on_exit(fn -> RefineDatabase.reload() end)
+    import = Path.join([root, "import", "refine", "refine.yml"])
+    File.mkdir_p!(Path.dirname(import))
 
-    stub(Items, :by_aegis, fn
-      "Phracon" -> :error
-      aegis -> call_original(Items, :by_aegis, [aegis])
-    end)
+    File.write!(import, """
+    - group: armor
+      levels:
+        - level: 2
+          refine_levels:
+            - level: 3
+              bonus: 999
+              random_bonus: 0
+              blacksmith_blessing_amount: 0
+              broadcast_success: false
+              broadcast_failure: false
+              chances: []
+    """)
 
-    log =
-      capture_log(fn ->
-        assert :ok = RefineDatabase.reload()
-      end)
-
-    assert RefineDatabase.level_info(:weapon, 1, 1).chances.normal.material_nameid == nil
-    assert [_] = Regex.scan(~r/unresolved material aegis "Phracon"/, log)
-  end
-
-  test "reload/0 is idempotent" do
-    :ok = RefineDatabase.reload()
-    :ok = RefineDatabase.reload()
-
-    assert RefineDatabase.level_info(:weapon, 1, 1).bonus == 200
-  end
-
-  describe "import overlay" do
-    setup context do
-      on_exit(&RefineDatabase.reload/0)
-      Aesir.ZoneServer.DbTestSetup.configure_root(context, "refine")
-    end
-
-    @tag :tmp_dir
-    test "reload replaces an imported refine group without changing other groups", %{tmp_dir: dir} do
-      File.write!(Path.join(dir, "refine.yml"), """
-      - group: armor
-        levels:
-          - level: 1
-            refine_levels:
-              - level: 1
-                bonus: 100
-                random_bonus: 0
-                blacksmith_blessing_amount: 0
-                broadcast_success: false
-                broadcast_failure: false
-                chances: []
-      - group: weapon
-        levels:
-          - level: 1
-            refine_levels:
-              - level: 1
-                bonus: 200
-                random_bonus: 0
-                blacksmith_blessing_amount: 0
-                broadcast_success: false
-                broadcast_failure: false
-                chances: []
-      """)
-
-      import = Path.join([dir, "..", "..", "import", "refine", "refine.yml"])
-      File.mkdir_p!(Path.dirname(import))
-
-      File.write!(import, """
-      - group: armor
-        levels:
-          - level: 1
-            refine_levels:
-              - level: 1
-                bonus: 999
-                random_bonus: 0
-                blacksmith_blessing_amount: 0
-                broadcast_success: false
-                broadcast_failure: false
-                chances: []
-      """)
-
-      assert :ok = RefineDatabase.reload()
-      assert %{bonus: 999} = RefineDatabase.level_info(:armor, 1, 1)
-      assert %{bonus: 200} = RefineDatabase.level_info(:weapon, 1, 1)
-    end
+    assert :ok = RefineDatabase.reload()
+    assert %LevelInfo{bonus: 999} = RefineDatabase.level_info(:armor, 2, 3)
+    assert %LevelInfo{bonus: 200} = RefineDatabase.level_info(:weapon, 2, 3)
   end
 end

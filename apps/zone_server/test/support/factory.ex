@@ -39,6 +39,9 @@ defmodule Aesir.ZoneServer.Factory do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobSkill.Db, as: MobSkillDb
   alias Aesir.ZoneServer.Mmo.PetManagement.PetDefinition
+  alias Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition
+  alias Aesir.ZoneServer.Mmo.Refine.Chance
+  alias Aesir.ZoneServer.Mmo.Refine.LevelInfo
   alias Aesir.ZoneServer.Mmo.Skill.Definition, as: SkillDefinition
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.PlayerStateFixture
@@ -140,6 +143,21 @@ defmodule Aesir.ZoneServer.Factory do
       damage_motion: 400
     }
   end
+
+  @doc "A quest with a sequenced id and no time limit, objectives or drops."
+  @spec quest_definition_factory() :: QuestDefinition.t()
+  def quest_definition_factory do
+    id = sequence(:quest_definition_id, & &1, start_at: 1)
+    %QuestDefinition{id: id, title: "Quest #{id}"}
+  end
+
+  @doc "A refine level with no bonus or cost options."
+  @spec refine_level_factory() :: LevelInfo.t()
+  def refine_level_factory, do: %LevelInfo{}
+
+  @doc "A refine cost option with no effect or material by default."
+  @spec refine_chance_factory() :: Chance.t()
+  def refine_chance_factory, do: %Chance{}
 
   @doc "An inert Poring species with its egg, no other items, bonuses or evolutions."
   @spec pet_definition_factory() :: PetDefinition.t()

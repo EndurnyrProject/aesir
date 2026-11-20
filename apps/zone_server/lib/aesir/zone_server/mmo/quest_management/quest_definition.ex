@@ -8,6 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition do
   (`Unit.Player.QuestLog`).
   """
 
+  use TypedStruct
+
   @typedoc """
   A single hunt objective. With `mob_id` it counts kills of that monster only.
   Without it, a kill counts when it passes every present filter
@@ -37,14 +39,12 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition do
           rate: integer()
         }
 
-  @enforce_keys [:id, :title]
-  defstruct id: nil, title: nil, time_limit: nil, targets: [], drops: []
-
-  @type t() :: %__MODULE__{
-          id: integer(),
-          title: String.t(),
-          time_limit: String.t() | nil,
-          targets: [target()],
-          drops: [drop()]
-        }
+  @typedoc "A quest and its ordered hunt objectives and drops."
+  typedstruct do
+    field :id, integer(), enforce: true
+    field :title, String.t(), enforce: true
+    field :time_limit, String.t()
+    field :targets, [target()], default: []
+    field :drops, [drop()], default: []
+  end
 end
