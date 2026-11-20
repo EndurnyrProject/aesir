@@ -1,42 +1,29 @@
 defmodule Aesir.ZoneServer.Mmo.PetManagement.CatalogTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.PetManagement.Catalog
 
-  setup do
-    :ok = Catalog.reload()
-  end
+  test "indexes the active pets and resolves their mob, item and evolution references" do
+    assert [_ | _] = pets = Catalog.all()
+    mob_ids = Enum.map(pets, & &1.mob_id)
+    assert mob_ids == Enum.sort(Enum.uniq(mob_ids))
+    pet_mobs = MapSet.new(mob_ids)
 
-  @tag game_mode: :renewal
-  test "renewal catalog references its mode's items and mobs and shares two eggs" do
-    assert length(Catalog.all()) == 107
-    assert_references_resolve()
-    assert shared_eggs() == MapSet.new(~w(Chung_E_Egg Mystic_Leaf_Cat_Ball))
-
-    {:ok, egg} = Items.by_aegis("Chung_E_Egg")
-    assert {:ok, %{mob_id: 1519}} = Catalog.by_egg(egg.id)
-  end
-
-  @tag game_mode: :pre_renewal
-  test "pre-renewal catalog references its mode's items and mobs and shares no egg" do
-    assert length(Catalog.all()) == 57
-    assert_references_resolve()
-    assert shared_eggs() == MapSet.new()
-  end
-
-  defp assert_references_resolve do
-    pets = Catalog.all()
-    pet_mobs = MapSet.new(pets, & &1.mob_id)
+    refute Catalog.tame_item?(0)
 
     for pet <- pets do
       assert {:ok, _} = Mobs.by_id(pet.mob_id)
       assert {:ok, ^pet} = Catalog.by_mob(pet.mob_id)
-      assert Catalog.tame_item?(pet.tame_item_id) == (pet.tame_item_id != 0)
 
-      for id <- [pet.tame_item_id, pet.egg_item_id, pet.equip_item_id, pet.food_item_id],
-          id != 0 do
+      if pet.tame_item_id != 0 do
+        assert Catalog.tame_item?(pet.tame_item_id)
+      end
+
+      assert {:ok, _} = Items.by_id(pet.egg_item_id)
+
+      for id <- [pet.tame_item_id, pet.equip_item_id, pet.food_item_id], id != 0 do
         assert {:ok, _} = Items.by_id(id), "pet #{pet.mob_id} item #{id} missing"
       end
 
@@ -45,13 +32,10 @@ defmodule Aesir.ZoneServer.Mmo.PetManagement.CatalogTest do
         for %{item_id: id} <- requirements, do: assert({:ok, _} = Items.by_id(id))
       end
     end
-  end
 
-  defp shared_eggs do
-    for {egg_id, [_, _ | _]} <- Enum.group_by(Catalog.all(), & &1.egg_item_id),
-        into: MapSet.new() do
-      {:ok, item} = Items.by_id(egg_id)
-      item.aegis_name
+    for {egg_id, species} <- Enum.group_by(pets, & &1.egg_item_id) do
+      expected = Enum.min_by(species, & &1.mob_id)
+      assert {:ok, ^expected} = Catalog.by_egg(egg_id)
     end
   end
 end

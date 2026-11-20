@@ -15,6 +15,13 @@ defmodule Aesir.ZoneServer.Mmo.PetManagement.Catalog do
 
   @pt_key __MODULE__
 
+  @typep index :: %{
+           all: [PetDefinition.t()],
+           by_mob: %{pos_integer() => PetDefinition.t()},
+           by_egg: %{pos_integer() => PetDefinition.t()},
+           tame_items: MapSet.t(pos_integer())
+         }
+
   @doc "Returns every pet ordered by mob id."
   @spec all() :: [PetDefinition.t()]
   def all, do: index().all
@@ -28,7 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.PetManagement.Catalog do
   def by_egg(item_id), do: Map.fetch(index().by_egg, item_id)
 
   @doc "Whether an item is some pet's taming item."
-  @spec tame_item?(pos_integer()) :: boolean()
+  @spec tame_item?(non_neg_integer()) :: boolean()
   def tame_item?(item_id), do: MapSet.member?(index().tame_items, item_id)
 
   @doc "Reloads the catalog from the active mode's data files."
@@ -38,6 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.PetManagement.Catalog do
     :ok
   end
 
+  @spec index() :: index()
   defp index do
     case :persistent_term.get(@pt_key, nil) do
       nil ->
@@ -49,6 +57,7 @@ defmodule Aesir.ZoneServer.Mmo.PetManagement.Catalog do
     end
   end
 
+  @spec load() :: index()
   defp load do
     pets =
       "pets.yml"

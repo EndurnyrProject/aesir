@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.Persistence do
   alias Aesir.Commons.Models.Pet
   alias Aesir.Repo
   alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.PetManagement.Egg
   alias Aesir.ZoneServer.Mmo.PetManagement.PetDefinition
   alias Aesir.ZoneServer.Unit.Inventory
@@ -25,10 +26,10 @@ defmodule Aesir.ZoneServer.Unit.Pet.Persistence do
           pos_integer(),
           pos_integer(),
           PetDefinition.t(),
-          map(),
+          MobDefinition.t(),
           Inventory.t(),
           integer() | :infinity
-        ) :: result()
+        ) :: {:ok, Inventory.t(), Pet.t()} | {:error, atom() | Ecto.Changeset.t()}
   def create_with_egg(_account_id, character_id, definition, mob, inventory, weight_room) do
     attrs = %{
       class: definition.mob_id,

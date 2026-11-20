@@ -15,7 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.PetManagement.EggGrant do
 
   @doc "Grants one fresh pet egg, or reports why it could not be created."
   @spec grant(pos_integer(), pos_integer(), pos_integer(), Inventory.t(), integer() | :infinity) ::
-          {:ok, Inventory.t()} | {:error, :not_egg | :no_slot | term()}
+          {:ok, Inventory.t()} | {:error, atom() | Ecto.Changeset.t()}
   def grant(item_id, account_id, character_id, inventory, weight_room) do
     with {:ok, definition} <- Catalog.by_egg(item_id),
          {:ok, mob} <- Mobs.by_id(definition.mob_id),

@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Factory do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobSkill.Db, as: MobSkillDb
+  alias Aesir.ZoneServer.Mmo.PetManagement.PetDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Definition, as: SkillDefinition
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.PlayerStateFixture
@@ -137,6 +138,35 @@ defmodule Aesir.ZoneServer.Factory do
       attack_motion: 500,
       client_attack_motion: 500,
       damage_motion: 400
+    }
+  end
+
+  @doc "An inert Poring species with its egg, no other items, bonuses or evolutions."
+  @spec pet_definition_factory() :: PetDefinition.t()
+  def pet_definition_factory do
+    %PetDefinition{
+      mob_id: 1002,
+      tame_item_id: 0,
+      egg_item_id: 9001,
+      equip_item_id: 0,
+      food_item_id: 0,
+      fullness: 0,
+      hungry_delay_ms: 0,
+      hunger_increase: 0,
+      intimacy_start: 0,
+      intimacy_fed: 0,
+      intimacy_overfed: 0,
+      intimacy_hungry: 0,
+      intimacy_owner_die: 0,
+      capture_rate: 0,
+      special_performance: false,
+      attack_rate: 0,
+      retaliate_rate: 0,
+      change_target_rate: 0,
+      allow_auto_feed: false,
+      bonus_program: [],
+      support_ops: [],
+      evolution: []
     }
   end
 

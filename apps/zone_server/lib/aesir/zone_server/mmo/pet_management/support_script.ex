@@ -16,14 +16,16 @@ defmodule Aesir.ZoneServer.Mmo.PetManagement.SupportScript do
 
   @max_loot 30
 
+  @typep uint16 :: 0..65_535
+
   @typedoc "One pet support behaviour, in script order."
   @type support_op ::
-          {:petskillbonus, atom(), integer(), integer(), integer()}
-          | {:petrecovery, atom(), integer()}
+          {:petskillbonus, BonusKeys.destination(), uint16(), uint16(), uint16()}
+          | {:petrecovery, atom(), uint16()}
           | {:petloot, 1..30}
-          | {:petskillattack, pos_integer(), non_neg_integer(), integer(), integer()}
-          | {:petskillattack2, pos_integer(), integer(), integer(), integer(), integer()}
-          | {:petskillsupport, pos_integer(), integer(), integer(), integer(), integer()}
+          | {:petskillattack, pos_integer(), uint16(), uint16(), uint16()}
+          | {:petskillattack2, pos_integer(), uint16(), uint16(), uint16(), uint16()}
+          | {:petskillsupport, pos_integer(), uint16(), uint16(), uint16(), uint16()}
 
   @doc "Transpiles a support script source into its ordered ops; raises on anything else."
   @spec transpile(String.t()) :: [support_op()]

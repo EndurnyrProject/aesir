@@ -1,7 +1,7 @@
 defmodule Aesir.ZoneServer.Unit.Pet.PerformanceTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Mmo.PetManagement.PetDefinition
+  import Aesir.ZoneServer.Factory
   alias Aesir.ZoneServer.Unit.Pet.Handlers.CommandHandler
   alias Aesir.ZoneServer.Unit.Pet.PetState
 
@@ -20,7 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Pet.PerformanceTest do
         hungry: 1
       )
 
-    definition = PetDefinition.__struct__()
+    definition = build(:pet_definition)
 
     for {intimacy, special, expected} <- [
           {950, true, 4},
