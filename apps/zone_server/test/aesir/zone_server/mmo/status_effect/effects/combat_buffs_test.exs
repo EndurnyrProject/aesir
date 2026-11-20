@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CombatBuffsTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Efst
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
@@ -24,7 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CombatBuffsTest do
     {Effects.FullSwingK, "SC_FULL_SWING_K", :sc_full_swing_k, :full_swing_k, [:atk]}
   ]
 
-  defp entry(type, val1), do: %StatusEntry{type: type, state: %{}, val1: val1}
+  defp entry(type, val1), do: build(:status_entry, type: type, val1: val1)
 
   describe "modifiers/2" do
     test "flat atk / matk potions emit their key from val1" do

@@ -1,12 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncHealRateTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Efst
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncHealRate
-  alias Aesir.ZoneServer.Mmo.StatusEntry
 
-  defp entry(val1), do: %StatusEntry{type: :sc_inchealrate, state: %{}, val1: val1}
+  defp entry(val1), do: build(:status_entry, type: :sc_inchealrate, val1: val1)
 
   describe "modifiers/2" do
     test "emits +val1 as received_heal_rate" do

@@ -1,17 +1,19 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnergyCoatTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnergyCoat
   alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
   alias Aesir.ZoneServer.Mmo.StatusEntry
 
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
   @target {:player, 1000}
 
-  defp entry, do: %StatusEntry{type: :sc_energycoat, state: %{}}
+  defp entry, do: build(:status_entry, type: :sc_energycoat)
 
   # per = (100 * sp / max_sp - 1) / 20, truncated toward zero.
   defp context(sp, max_sp), do: %{target: %{sp: sp, max_sp: max_sp}}
@@ -24,8 +26,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnergyCoatTest do
   end
 
   describe "absorb_damage/4 - damage reduction" do
-    test "at full SP (per = 4) reduces a physical hit by 30%" do
-      stub(Helpers, :consume_sp, fn _target, _amount -> :ok end)
+    test "at full SP reduces a physical hit by 30% and spends 6 SP" do
+      expect(Helpers, :consume_sp, fn @target, 6 -> :ok end)
       hit = %{damage: 1_000, is_short: true, dmg_type: :physical, element: :neutral}
 
       assert {:ok, 700, %StatusEntry{}} =
@@ -76,15 +78,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnergyCoatTest do
 
       assert {:ok, 940, %StatusEntry{}} =
                EnergyCoat.absorb_damage(@target, entry(), hit, context(20, 200))
-    end
-  end
-
-  describe "absorb_damage/4 - SP drain" do
-    test "drains (10 + 5*per) * max_sp / 1000 SP per hit" do
-      expect(Helpers, :consume_sp, fn @target, 6 -> :ok end)
-      hit = %{damage: 1_000, is_short: true, dmg_type: :physical, element: :neutral}
-
-      EnergyCoat.absorb_damage(@target, entry(), hit, context(200, 200))
     end
   end
 

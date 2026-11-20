@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DisplayMetadataTest do
   end
 
   describe "Poison apply" do
+    setup :set_mimic_from_context
     setup :setup_ets_tables
 
     test "broadcasts a UnitStateChange with the poison health_state bit and no StatusChange icon" do
@@ -39,9 +40,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DisplayMetadataTest do
 
       setup_unit_mock(target_id)
       Registry.register_module(Effects.Poison)
-
-      Mimic.copy(SpatialIndex)
-      Mimic.copy(Broadcast)
 
       stub(SpatialIndex, :get_unit_position, fn _type, _id ->
         {:ok, {100, 100, "prontera"}}
@@ -72,9 +70,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DisplayMetadataTest do
   end
 
   defp setup_unit_mock(unit_id) do
-    Mimic.copy(Aesir.ZoneServer.Mmo.StatusEffect.Resistance)
-    Mimic.copy(UnitRegistry)
-
     stub(UnitRegistry, :get_unit_info, fn _unit_type, _unit_id ->
       {:ok,
        %{

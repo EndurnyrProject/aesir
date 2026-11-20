@@ -127,8 +127,43 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @typedoc "The unit a status effect is attached to."
   @type target :: {Unit.unit_type(), integer()}
 
-  @typedoc "Execution context with target/caster stats, built by ContextBuilder."
-  @type context :: map()
+  @typedoc "Inputs supplied to a hook; the available keys depend on the event."
+  @type context :: %{
+          optional(:unit_type) => Unit.unit_type(),
+          optional(:target_id) => integer(),
+          optional(:caster_id) => integer() | nil,
+          optional(:target) => map(),
+          optional(:caster) => map(),
+          optional(:state) => map(),
+          optional(:val1) => integer(),
+          optional(:val2) => integer(),
+          optional(:val3) => integer(),
+          optional(:val4) => integer(),
+          optional(:duration) => integer() | nil,
+          optional(:loaded) => boolean(),
+          optional(atom()) => term()
+        }
+
+  @typedoc "Validated status options for one game mode, with the module added by the registry."
+  @type metadata :: %{
+          required(:id) => atom(),
+          required(:properties) => [atom()],
+          required(:flags) => [atom()],
+          required(:target_types) => [Unit.unit_type()],
+          required(:prevented_by) => [atom()],
+          required(:conflicts_with) => [atom()],
+          required(:end_on_start) => [atom()],
+          required(:end_on_end) => [atom()],
+          required(:end_return) => [atom()],
+          required(:immunity) => [atom()],
+          required(:duration) => pos_integer() | nil,
+          required(:tick_interval) => pos_integer() | nil,
+          required(:no_dispel) => boolean(),
+          required(:no_clear_buff) => boolean(),
+          required(:overlap_ignore_level) => boolean(),
+          optional(:module) => module(),
+          optional(atom()) => term()
+        }
 
   @typedoc """
   A skill the status asks the engine to cast on its holder's behalf, naming the
@@ -180,7 +215,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @callback id() :: atom()
 
   @doc "Returns the validated static metadata for this status."
-  @callback metadata() :: map()
+  @callback metadata() :: metadata()
 
   @doc "Returns the stat modifiers granted by this status for the given instance."
   @callback modifiers(StatusEntry.t(), context()) :: map()
@@ -633,7 +668,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   The reference overlap rule: a held instance with a greater `val1` stays,
   unless the status ignores levels.
   """
-  @spec level_overlap(map(), StatusEntry.t(), StatusEntry.t()) :: overlap()
+  @spec level_overlap(metadata(), StatusEntry.t(), StatusEntry.t()) :: overlap()
   def level_overlap(%{overlap_ignore_level: true}, _held, _incoming), do: :replace
 
   def level_overlap(_metadata, %StatusEntry{val1: held}, %StatusEntry{val1: incoming})
@@ -867,7 +902,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   Raises `ArgumentError` at compile time when the metadata is invalid, naming
   the offending module and fields.
   """
-  @spec validate_metadata!(keyword(), module()) :: map()
+  @spec validate_metadata!(keyword(), module()) :: metadata()
   def validate_metadata!(opts, module) do
     validate_blocked_skill_ids!(opts, module)
     opts = Keyword.put_new(opts, :remove_on_death, not Keyword.get(opts, :permanent, false))

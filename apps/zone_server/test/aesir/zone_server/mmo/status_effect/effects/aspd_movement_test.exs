@@ -1,9 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AspdMovementTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Efst
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
-  alias Aesir.ZoneServer.Mmo.StatusEntry
 
   # {module, status id, expected modifier map for val1: 10, icon atom | nil}
   @aspd [
@@ -30,7 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AspdMovementTest do
 
   @aspd_potion_ids [:sc_aspdpotion0, :sc_aspdpotion1, :sc_aspdpotion2, :sc_aspdpotion3]
 
-  defp entry(type, val1), do: %StatusEntry{type: type, state: %{}, val1: val1}
+  defp entry(type, val1), do: build(:status_entry, type: type, val1: val1)
 
   describe "modifiers/2" do
     for {module, type, map, _icon} <- @all do

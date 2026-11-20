@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StartChecks do
   alias Aesir.ZoneServer.Mmo.Skill.Definition, as: SkillDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.StatusEffect.CalcFlags
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
@@ -46,7 +47,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StartChecks do
   the status to be monster-eligible by its calc flags. A homunculus never takes
   a weapon-bound status, nor a scripted one, which only a player holds.
   """
-  @spec ensure_eligible_target(unit_type(), map()) :: :ok | {:error, :ineligible_target}
+  @spec ensure_eligible_target(unit_type(), Definition.metadata()) ::
+          :ok | {:error, :ineligible_target}
   def ensure_eligible_target(:mob, %{id: status_id, target_types: target_types}) do
     if :mob in target_types and CalcFlags.monster_eligible?(status_id),
       do: :ok,
@@ -104,7 +106,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StartChecks do
   Refuses an unavoidable start of a `:failed_mado` status while the target
   carries the Madogear option.
   """
-  @spec check_failed_mado(unit_type(), integer(), map(), StatusEntry.status_params()) ::
+  @spec check_failed_mado(
+          unit_type(),
+          integer(),
+          Definition.metadata(),
+          StatusEntry.status_params()
+        ) ::
           :ok | {:error, :madogear}
   def check_failed_mado(unit_type, unit_id, definition, params) do
     with true <- :failed_mado in definition.flags and Keyword.get(params, :no_avoid, false),
@@ -118,7 +125,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StartChecks do
   end
 
   @doc "The boss immunity gate (BossResist), skipped by `no_avoid`."
-  @spec check_resisted(map(), StatusEntry.status_params(), map()) :: :ok | {:error, :immune}
+  @spec check_resisted(map(), StatusEntry.status_params(), Definition.metadata()) ::
+          :ok | {:error, :immune}
   def check_resisted(entity_info, status_params, definition) do
     if Keyword.get(status_params, :no_avoid, false) do
       :ok
@@ -128,7 +136,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StartChecks do
   end
 
   @doc "Every immunity gate but the boss one (race, element, custom), skipped by `no_avoid`."
-  @spec check_avoidable(map(), StatusEntry.status_params(), map()) :: :ok | {:error, :immune}
+  @spec check_avoidable(map(), StatusEntry.status_params(), Definition.metadata()) ::
+          :ok | {:error, :immune}
   def check_avoidable(entity_info, status_params, definition) do
     if Keyword.get(status_params, :no_avoid, false),
       do: :ok,
@@ -161,7 +170,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StartChecks do
   end
 
   @doc "The `prevented_by` half of the Fail list."
-  @spec check_prevented(unit_type(), integer(), map()) :: :ok | {:error, :prevented}
+  @spec check_prevented(unit_type(), integer(), Definition.metadata()) ::
+          :ok | {:error, :prevented}
   def check_prevented(unit_type, unit_id, definition) do
     if fails_on?(unit_type, unit_id, definition.prevented_by) do
       {:error, :prevented}
@@ -171,7 +181,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StartChecks do
   end
 
   @doc "The `conflicts_with` half of the Fail list."
-  @spec check_conflicts(unit_type(), integer(), map()) :: :ok | {:error, :conflict}
+  @spec check_conflicts(unit_type(), integer(), Definition.metadata()) ::
+          :ok | {:error, :conflict}
   def check_conflicts(unit_type, unit_id, definition) do
     if fails_on?(unit_type, unit_id, definition.conflicts_with) do
       {:error, :conflict}
@@ -217,7 +228,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StartChecks do
           unit_type(),
           integer(),
           atom(),
-          map(),
+          Definition.metadata(),
           map(),
           integer() | :infinite | nil,
           StatusEntry.status_params()

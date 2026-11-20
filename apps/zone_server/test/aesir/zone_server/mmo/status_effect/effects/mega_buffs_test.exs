@@ -1,9 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MegaBuffsTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Efst
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
-  alias Aesir.ZoneServer.Mmo.StatusEntry
 
   @all_stats [:str, :agi, :vit, :int, :dex, :luk]
 
@@ -24,7 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MegaBuffsTest do
     {Effects.InfinityDrink, :sc_infinity_drink, :infinity_drink, [:max_hp_rate, :max_sp_rate], []}
   ]
 
-  defp entry(type, val1), do: %StatusEntry{type: type, state: %{}, val1: val1}
+  defp entry(type, val1), do: build(:status_entry, type: type, val1: val1)
 
   describe "modifiers/2" do
     test "IncAllStatus grants +val1 to every base stat" do

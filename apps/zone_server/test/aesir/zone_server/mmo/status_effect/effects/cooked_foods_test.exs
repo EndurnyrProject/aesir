@@ -1,12 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CookedFoodsTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Efst
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
   alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
-  alias Aesir.ZoneServer.Mmo.StatusEntry
 
   setup :verify_on_exit!
 
@@ -46,7 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CookedFoodsTest do
     {Effects.CombatPill2, :sc_combat_pill2, %{max_hp_rate: -5, max_sp_rate: -5}, :gm_battle2}
   ]
 
-  defp entry(type, val1), do: %StatusEntry{type: type, state: %{}, val1: val1}
+  defp entry(type, val1), do: build(:status_entry, type: type, val1: val1)
 
   describe "val1-driven single-key foods" do
     for {module, type, key, _icon} <- @single_v1 do

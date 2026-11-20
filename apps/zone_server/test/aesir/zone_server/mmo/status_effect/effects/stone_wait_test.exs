@@ -1,10 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StoneWaitTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.StoneWait
   alias Aesir.ZoneServer.Mmo.StatusEntry
 
-  defp entry(state), do: %StatusEntry{type: :sc_stonewait, state: state}
+  defp entry(state), do: build(:status_entry, type: :sc_stonewait, state: state)
 
   describe "resolve_duration/2" do
     test "waits the given delay and keeps the rest of the duration for the petrification" do

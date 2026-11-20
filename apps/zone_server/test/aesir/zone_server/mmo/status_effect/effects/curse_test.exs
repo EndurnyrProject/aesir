@@ -1,10 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CurseTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Curse
-  alias Aesir.ZoneServer.Mmo.StatusEntry
+  import Aesir.ZoneServer.Factory
 
-  defp entry(overrides), do: struct(%StatusEntry{type: :sc_curse, state: %{}}, overrides)
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Curse
+
+  defp entry(overrides), do: build(:status_entry, Keyword.put(overrides, :type, :sc_curse))
 
   describe "modifiers/2 movement_speed (rAthena status_calc_speed: max(val, 300))" do
     test "applies a flat +300 speed-rate slowdown" do

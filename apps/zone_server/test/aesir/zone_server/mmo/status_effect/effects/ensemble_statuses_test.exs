@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnsembleStatusesTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Skills.Ensemble.BdSiegfried
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.DrumBattle
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.EternalChaos
@@ -9,7 +11,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnsembleStatusesTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.RichmanKim
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.RokisWeil
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Siegfried
-  alias Aesir.ZoneServer.Mmo.StatusEntry
 
   @ensembles [RichmanKim, EternalChaos, DrumBattle, Nibelungen, RokisWeil, IntoAbyss, Siegfried]
   @ensemble_ids [
@@ -22,7 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnsembleStatusesTest do
     :sc_siegfried
   ]
 
-  defp entry(type, vals), do: struct(StatusEntry, [type: type, state: %{}] ++ vals)
+  defp entry(type, vals), do: build(:status_entry, Keyword.put(vals, :type, type))
 
   @tag game_mode: :renewal
   test "renewal ensemble statuses end every ensemble status" do

@@ -11,6 +11,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
   - phase: Current phase of multi-phase status effects
   """
 
+  use TypedStruct
+
+  alias Aesir.ZoneServer.Unit
+
+  @typedoc "How a status change requests reconciliation of the holder's stats."
+  @type owner_refresh :: :auto | :notify | :defer
+
   @typedoc """
   Parameters for applying a status effect.
 
@@ -42,8 +49,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
     recalculation to the owning session, and `:auto` notifies only when called outside
     that session. Applications default to `:auto`
   """
-  @type owner_refresh :: :auto | :notify | :defer
-
   @type status_params :: [
           val1: integer(),
           val2: integer(),
@@ -54,7 +59,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
           caster_id: integer() | nil,
           duration: integer() | :infinite | nil,
           source_id: integer() | nil,
-          source_type: atom(),
+          source_type: Unit.unit_type() | nil,
           state: map(),
           phase: atom() | nil,
           loaded: boolean(),
@@ -63,63 +68,30 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
           resistance_roll: (integer() -> boolean()),
           no_rate_def: boolean(),
           no_tick_def: boolean(),
+          no_avoid: boolean(),
+          start_delay: non_neg_integer(),
           bypass_resistance: boolean(),
           owner_refresh: owner_refresh()
         ]
 
-  @type t :: %__MODULE__{
-          type: atom(),
-          val1: integer(),
-          val2: integer(),
-          val3: integer(),
-          val4: integer(),
-          tick: integer(),
-          flag: integer(),
-          source_id: integer(),
-          source_type: atom() | nil,
-          state: map(),
-          phase: atom() | nil,
-          started_at: integer(),
-          expires_at: integer() | nil,
-          next_tick_at: integer() | nil,
-          tick_count: non_neg_integer(),
-          generation: pos_integer() | nil
-        }
-
-  defstruct [
-    # The status effect type (e.g. :poison, :blessing)
-    :type,
-    # Value 1 (usage depends on status type)
-    :val1,
-    # Value 2 (usage depends on status type)
-    :val2,
-    # Value 3 (usage depends on status type)
-    :val3,
-    # Value 4 (usage depends on status type)
-    :val4,
-    # Tick interval in milliseconds
-    :tick,
-    # Status flags for special behaviors
-    :flag,
-    # ID of the entity that applied the status
-    :source_id,
-    # Unit type of the entity that applied the status (nil = same as target)
-    :source_type,
-    # Custom state map for complex statuses
-    :state,
-    # Current phase for multi-phase statuses
-    :phase,
-    # System time when status was applied
-    :started_at,
-    # When the status expires (or nil if permanent)
-    :expires_at,
-    # When the next tick should process (or nil for tickless statuses)
-    :next_tick_at,
-    # Number of ticks processed so far
-    :tick_count,
-    # Monotonically increasing identity for exact-entry comparison
-    :generation
-  ]
+  typedstruct do
+    field :type, atom()
+    field :val1, integer()
+    field :val2, integer()
+    field :val3, integer()
+    field :val4, integer()
+    field :tick, integer()
+    field :flag, integer()
+    field :source_id, integer()
+    field :source_type, Unit.unit_type()
+    field :state, map()
+    field :phase, atom()
+    field :started_at, integer()
+    field :expires_at, integer()
+    field :next_tick_at, integer()
+    field :tick_count, non_neg_integer()
+    field :generation, pos_integer()
+  end
 
   @doc """
   Creates a new status entry with the given parameters.
@@ -179,14 +151,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
   end
 
   @doc """
-  Creates a new status entry from a map.
-  """
-  @spec from_map(map()) :: t()
-  def from_map(map) do
-    struct(__MODULE__, map)
-  end
-
-  @doc """
   The first tick deadline of a status applied at `now_ms` with interval `tick`:
   `first_tick` milliseconds later when the params give it, one interval later
   otherwise, and `nil` for a tickless status.
@@ -242,7 +206,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
           tick :: integer(),
           flag :: integer(),
           caster_id :: integer() | nil,
-          duration :: integer() | nil,
+          duration :: integer() | :infinite | nil,
           state :: map(),
           phase :: atom() | nil
         }
@@ -287,7 +251,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
   type; a cross-unit caster defaults to `:player`, since players are the only
   casters that do not pass `:source_type` explicitly (mob skills do).
   """
-  @spec resolve_source_type(atom(), integer(), integer() | nil, status_params()) :: atom()
+  @spec resolve_source_type(Unit.unit_type(), integer(), integer() | nil, status_params()) ::
+          Unit.unit_type()
   def resolve_source_type(unit_type, unit_id, caster_id, status_params) do
     case Keyword.get(status_params, :source_type) do
       nil when caster_id in [nil, unit_id] -> unit_type

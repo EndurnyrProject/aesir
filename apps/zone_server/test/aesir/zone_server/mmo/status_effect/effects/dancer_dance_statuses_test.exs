@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancerDanceStatusesTest do
   use ExUnit.Case, async: false
 
+  import Aesir.ZoneServer.Factory
+
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character
@@ -187,7 +189,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancerDanceStatusesTest do
     refute StatusStorage.has_status?(:player, @player_id, :sc_dontforgetme)
   end
 
-  defp entry(type, level), do: %StatusEntry{type: type, val1: level, state: %{}}
+  defp entry(type, level), do: build(:status_entry, type: type, val1: level)
 
   defp apply_status(status_id) do
     Interpreter.apply_status(:player, @player_id, status_id,

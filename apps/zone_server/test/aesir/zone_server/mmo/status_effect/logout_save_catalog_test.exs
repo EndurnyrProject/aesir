@@ -1,5 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.LogoutSaveCatalogTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
+
+  import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
 
@@ -36,10 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.LogoutSaveCatalogTest do
     :sc_push_cart
   ]
 
-  setup_all do
-    Registry.load_definitions()
-    :ok
-  end
+  setup :setup_ets_tables
 
   defp saved_at_logout?(status_id) do
     definition = Registry.get_definition(status_id)

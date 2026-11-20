@@ -1,10 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ProvidenceTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Providence
-  alias Aesir.ZoneServer.Mmo.StatusEntry
+  import Aesir.ZoneServer.Factory
 
-  defp entry(overrides), do: struct(%StatusEntry{type: :sc_providence, state: %{}}, overrides)
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Providence
+
+  defp entry(overrides), do: build(:status_entry, Keyword.put(overrides, :type, :sc_providence))
 
   describe "modifiers/2" do
     test "grants 5% holy-element and demon-race resistance per skill level" do

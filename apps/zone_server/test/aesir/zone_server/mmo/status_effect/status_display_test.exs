@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplayTest do
   alias Aesir.ZoneServer.Unit.SpecialEffect
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
   defp player(equipment) do
@@ -117,6 +118,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplayTest do
 
       assert total_ms > 0
       assert remain_ms > 0
+      refute_received {:broadcast, %UnitStateChange{}}
     end
 
     test "permanent (expires_at nil) status sends total_ms and remain_ms of 0" do
@@ -135,18 +137,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplayTest do
       StatusDisplay.on_applied(:player, 2_000, :sc_provoke, instance)
 
       assert_received {:broadcast, %StatusChange{on: true, total_ms: 0, remain_ms: 0}}
-    end
-
-    test "an icon-only buff emits no UnitStateChange" do
-      stub_position()
-
-      instance = timed_instance(:sc_provoke)
-
-      stub(Registry, :get_definition, fn :sc_provoke -> definition(icon: :provoke) end)
-
-      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, %StatusChange{}, _opts -> :ok end)
-
-      StatusDisplay.on_applied(:player, 2_000, :sc_provoke, instance)
     end
 
     test "a nil-resolving icon atom broadcasts no StatusChange and logs a warning" do

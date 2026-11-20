@@ -13,7 +13,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder do
   - Values from the status effect (val1-val4)
   - Additional context data for specific events (damage, healing, etc.)
   """
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
   alias Aesir.ZoneServer.Mmo.StatusEntry
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
@@ -31,13 +33,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder do
   ## Returns
     - A map containing all the context needed for formula evaluation
   """
-  @spec build_context(atom(), integer(), integer() | nil, StatusEntry.t()) :: map()
+  @spec build_context(Unit.unit_type(), integer(), integer() | nil, StatusEntry.t()) ::
+          Definition.context()
   def build_context(unit_type, unit_id, caster_id, %StatusEntry{} = instance) do
     build_context(unit_type, unit_id, caster_id, instance, get_unit_stats(unit_type, unit_id))
   end
 
   @doc false
-  @spec build_context(atom(), integer(), integer() | nil, StatusEntry.t(), map()) :: map()
+  @spec build_context(Unit.unit_type(), integer(), integer() | nil, StatusEntry.t(), map()) ::
+          Definition.context()
   def build_context(unit_type, unit_id, caster_id, %StatusEntry{} = instance, target_stats) do
     # The caster is looked up with its own unit type (a player can curse a mob
     # and vice versa) and tolerantly: a caster may legitimately despawn while
@@ -79,7 +83,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder do
   ## Raises
     - RuntimeError if unit not found or stats can't be retrieved
   """
-  @spec get_unit_stats(atom(), integer()) :: map()
+  @spec get_unit_stats(Unit.unit_type(), integer()) :: map()
   def get_unit_stats(unit_type, unit_id) do
     case UnitRegistry.get_unit_info(unit_type, unit_id) do
       {:ok, entity_info} ->
@@ -93,7 +97,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder do
     end
   end
 
-  @spec get_caster_stats(atom(), integer()) :: map()
+  @spec get_caster_stats(Unit.unit_type(), integer()) :: map()
   defp get_caster_stats(caster_type, caster_id) do
     case UnitRegistry.get_unit_info(caster_type, caster_id) do
       {:ok, entity_info} -> entity_info[:stats] || %{}

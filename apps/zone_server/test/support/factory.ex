@@ -45,6 +45,7 @@ defmodule Aesir.ZoneServer.Factory do
   alias Aesir.ZoneServer.Mmo.Skill.Definition, as: SkillDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell, as: SkillUnitCell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group, as: SkillUnitGroup
+  alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
@@ -123,6 +124,10 @@ defmodule Aesir.ZoneServer.Factory do
   def coordinator_state_factory do
     %Coordinator{map_name: "prontera"}
   end
+
+  @doc "An unstored status entry with empty custom state. Set the type and any values the test uses."
+  @spec status_entry_factory() :: StatusEntry.t()
+  def status_entry_factory, do: %StatusEntry{state: %{}}
 
   @doc "A level 1 monster with 100 HP and one-cell melee range."
   @spec mob_definition_factory() :: MobDefinition.t()

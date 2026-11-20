@@ -1,8 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BlessingTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Blessing
-  alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
@@ -12,7 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BlessingTest do
   alias Aesir.ZoneServer.Unit.Stats.DerivedStats
 
   defp entry(val1, val2),
-    do: %StatusEntry{type: :sc_blessing, val1: val1, val2: val2, state: %{}}
+    do: build(:status_entry, type: :sc_blessing, val1: val1, val2: val2)
 
   # STR 60, INT 40 and DEX 50 each split across the allocated points and the job
   # and equipment bonuses, so a formula reading only the allocated points would

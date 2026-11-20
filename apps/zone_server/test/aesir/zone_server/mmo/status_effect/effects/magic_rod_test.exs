@@ -3,11 +3,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MagicRodTest do
 
   import Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.MagicRod
   alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
-  alias Aesir.ZoneServer.Mmo.StatusEntry
 
   setup :set_mimic_private
   setup :verify_on_exit!
@@ -15,7 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MagicRodTest do
   @target {:player, 1000}
 
   defp entry(level),
-    do: %StatusEntry{type: :sc_magicrod, state: %{}, val1: level, val2: 20 * level}
+    do: build(:status_entry, type: :sc_magicrod, val1: level, val2: 20 * level)
 
   defp magic_hit(opts \\ []) do
     %{

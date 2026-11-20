@@ -1,10 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DecreaseAgiTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.DecreaseAgi
-  alias Aesir.ZoneServer.Mmo.StatusEntry
+  import Aesir.ZoneServer.Factory
 
-  defp entry(overrides), do: struct(%StatusEntry{type: :sc_decreaseagi, state: %{}}, overrides)
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.DecreaseAgi
+
+  defp entry(overrides), do: build(:status_entry, Keyword.put(overrides, :type, :sc_decreaseagi))
 
   describe "modifiers/2 movement_speed (rAthena status_calc_speed: max(val, 25))" do
     test "applies a flat +25 slowdown regardless of skill level" do

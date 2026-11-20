@@ -29,7 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FlingTest do
              Fling.on_apply({:player, 1}, stored, %{loaded: true, unit_type: :player})
   end
 
-  defp entry(coins), do: %{val1: coins, val2: 0, val3: 0, val4: 0}
+  defp entry(coins),
+    do: build(:status_entry, type: :sc_fling, val1: coins, val2: 0, val3: 0, val4: 0)
 
   # A 101/101 DEF holder, run through the same defense reader the damage
   # calculator uses, so the assertion is the DEF the game applies.

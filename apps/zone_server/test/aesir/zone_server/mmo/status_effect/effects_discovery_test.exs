@@ -201,13 +201,5 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.EffectsDiscoveryTest do
       refute DiscoveryTestStub in Effects.all()
       refute :sc_test_discovery_stub in Enum.map(Effects.all(), & &1.id())
     end
-
-    test "stub ids defined by other test files do not register" do
-      ids = Enum.map(Effects.all(), & &1.id())
-
-      for stub_id <- [:sc_test_tick_expiring, :sc_test_permanent, :sc_registry_test, :sc_bad] do
-        refute stub_id in ids
-      end
-    end
   end
 end

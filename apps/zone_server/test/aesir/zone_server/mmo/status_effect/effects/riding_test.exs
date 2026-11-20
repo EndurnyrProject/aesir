@@ -1,10 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.RidingTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Riding
-  alias Aesir.ZoneServer.Mmo.StatusEntry
+  import Aesir.ZoneServer.Factory
 
-  defp entry(overrides), do: struct(%StatusEntry{type: :sc_riding, state: %{}}, overrides)
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Riding
+
+  defp entry(overrides), do: build(:status_entry, Keyword.put(overrides, :type, :sc_riding))
 
   describe "metadata" do
     test "is a permanent, no_save, opt-bearing status carrying the riding option" do

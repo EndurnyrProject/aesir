@@ -15,9 +15,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AutoberserkTest do
   setup :setup_ets_tables
 
   setup do
-    Mimic.copy(UnitRegistry)
-    Mimic.copy(Aesir.ZoneServer.Mmo.StatusEffect.Resistance)
-
     stub(UnitRegistry, :get_unit_info, fn _unit_type, unit_id ->
       {:ok,
        %{
@@ -49,12 +46,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AutoberserkTest do
     stub(Aesir.ZoneServer.Mmo.StatusEffect.Resistance, :roll_success, fn _ -> true end)
 
     :ok
-  end
-
-  describe "id/0" do
-    test "returns :sc_autoberserk" do
-      assert Autoberserk.id() == :sc_autoberserk
-    end
   end
 
   describe "permanent: true" do

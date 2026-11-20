@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SightTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sight
@@ -28,7 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SightTest do
 
   @caster {:player, 1000}
 
-  defp entry, do: %StatusEntry{type: :sc_sight, state: %{}}
+  defp entry, do: build(:status_entry, type: :sc_sight)
 
   describe "metadata" do
     test "is a 10-second buff carrying the sight option" do

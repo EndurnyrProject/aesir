@@ -1,11 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncreaseAgiTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncreaseAgi
-  alias Aesir.ZoneServer.Mmo.StatusEntry
 
-  defp entry(overrides), do: struct(%StatusEntry{type: :sc_increaseagi, state: %{}}, overrides)
+  defp entry(overrides), do: build(:status_entry, Keyword.put(overrides, :type, :sc_increaseagi))
 
   describe "modifiers/2 flat movement haste" do
     test "applies a flat -25 haste regardless of skill level" do

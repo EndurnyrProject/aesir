@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DeathRulesCatalogTest do
   reference status database's NoRemoveOnDead flags, from the checked-in extract
   `test/support/fixtures/status_death_rules.tsv`.
   """
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   import Aesir.TestEtsSetup
 

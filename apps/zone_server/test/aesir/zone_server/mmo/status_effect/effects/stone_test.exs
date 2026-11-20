@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StoneTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Stone
   alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
   alias Aesir.ZoneServer.Mmo.StatusEntry
@@ -87,7 +89,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StoneTest do
     end
   end
 
-  defp entry(overrides), do: struct(%StatusEntry{type: :sc_stone, state: %{}}, overrides)
+  defp entry(overrides), do: build(:status_entry, Keyword.put(overrides, :type, :sc_stone))
 
   describe "speed handling (rAthena: SC_STONE is absent from status_calc_speed)" do
     test "does not declare a :speed calc flag" do

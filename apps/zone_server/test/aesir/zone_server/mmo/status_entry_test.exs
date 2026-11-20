@@ -59,45 +59,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntryTest do
     end
   end
 
-  describe "from_map/1" do
-    test "converts a map to a StatusEntry struct" do
-      map = %{
-        type: :poison,
-        val1: 10,
-        val2: 20,
-        val3: 30,
-        val4: 40,
-        tick: 1000,
-        flag: 1,
-        source_id: 123,
-        state: %{counter: 5},
-        phase: :active,
-        started_at: 100_000,
-        expires_at: 200_000,
-        next_tick_at: 101_000,
-        tick_count: 5
-      }
-
-      entry = StatusEntry.from_map(map)
-
-      assert %StatusEntry{} = entry
-      assert entry.type == :poison
-      assert entry.val1 == 10
-      assert entry.val2 == 20
-      assert entry.val3 == 30
-      assert entry.val4 == 40
-      assert entry.tick == 1000
-      assert entry.flag == 1
-      assert entry.source_id == 123
-      assert entry.state == %{counter: 5}
-      assert entry.phase == :active
-      assert entry.started_at == 100_000
-      assert entry.expires_at == 200_000
-      assert entry.next_tick_at == 101_000
-      assert entry.tick_count == 5
-    end
-  end
-
   describe "expired?/2" do
     test "returns true when status has expired" do
       now = System.monotonic_time(:millisecond)

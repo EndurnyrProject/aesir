@@ -1,9 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ExpBoostsTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Efst
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
-  alias Aesir.ZoneServer.Mmo.StatusEntry
 
   # {module, status id, modifier key, icon atom}
   @modules [
@@ -11,7 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ExpBoostsTest do
     {Effects.JexpBoost, :sc_jexpboost, :job_exp_rate, :cash_plusonlyjobexp}
   ]
 
-  defp entry(type, val1), do: %StatusEntry{type: type, state: %{}, val1: val1}
+  defp entry(type, val1), do: build(:status_entry, type: type, val1: val1)
 
   describe "modifiers/2" do
     for {module, type, key, _icon} <- @modules do

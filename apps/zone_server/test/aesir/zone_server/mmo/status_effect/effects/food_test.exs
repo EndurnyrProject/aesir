@@ -1,8 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FoodTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
-  alias Aesir.ZoneServer.Mmo.StatusEntry
 
   # {module, status id, modifier key} — each food grants a flat val1 bonus to one key.
   @foods [
@@ -20,7 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FoodTest do
     {Effects.WatkFood, :sc_watkfood, :watk}
   ]
 
-  defp entry(type, val1), do: %StatusEntry{type: type, state: %{}, val1: val1}
+  defp entry(type, val1), do: build(:status_entry, type: type, val1: val1)
 
   describe "modifiers/2" do
     for {module, type, key} <- @foods do

@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SpearQuickenTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.SpearQuicken
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
@@ -14,7 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SpearQuickenTest do
   setup :verify_on_exit!
   setup :setup_ets_tables
 
-  defp entry(val1, val2), do: %{val1: val1, val2: val2}
+  defp entry(val1, val2), do: build(:status_entry, type: :sc_spearquicken, val1: val1, val2: val2)
 
   describe "modifiers/2" do
     @tag game_mode: :renewal

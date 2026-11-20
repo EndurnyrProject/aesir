@@ -1,12 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.LifeInsuranceTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Efst
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.LifeInsurance
-  alias Aesir.ZoneServer.Mmo.StatusEntry
 
-  defp entry(val1), do: %StatusEntry{type: :sc_lifeinsurance, state: %{}, val1: val1}
+  defp entry(val1), do: build(:status_entry, type: :sc_lifeinsurance, val1: val1)
 
   describe "modifiers/2" do
     test "emits the fixed no_death_penalty flag regardless of val1" do

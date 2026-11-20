@@ -28,7 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Registry do
 
   Returns the metadata map (including the `:module` key) or nil if not found.
   """
-  @spec get_definition(atom()) :: map() | nil
+  @spec get_definition(atom()) :: Definition.metadata() | nil
   def get_definition(status_id) do
     case :ets.lookup(table_for(:status_effect_definitions), status_id) do
       [{_, definition}] -> definition
@@ -43,7 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Registry do
   an arbitrary string to an atom would be unsafe. Returns the metadata map or
   nil for unknown names.
   """
-  @spec get_definition_by_name(String.t()) :: map() | nil
+  @spec get_definition_by_name(String.t()) :: Definition.metadata() | nil
   def get_definition_by_name(name) do
     table_for(:status_effect_definitions)
     |> :ets.tab2list()

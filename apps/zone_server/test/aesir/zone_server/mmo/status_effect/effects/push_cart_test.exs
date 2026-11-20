@@ -1,10 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PushCartTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.PushCart
-  alias Aesir.ZoneServer.Mmo.StatusEntry
+  import Aesir.ZoneServer.Factory
 
-  defp entry(overrides), do: struct(%StatusEntry{type: :sc_push_cart, state: %{}}, overrides)
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.PushCart
+
+  defp entry(overrides), do: build(:status_entry, Keyword.put(overrides, :type, :sc_push_cart))
 
   describe "metadata" do
     test "declares the EFST icon so mount/unmount broadcasts the status-icon bar entry" do

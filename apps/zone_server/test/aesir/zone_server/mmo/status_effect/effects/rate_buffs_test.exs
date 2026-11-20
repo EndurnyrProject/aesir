@@ -1,11 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.RateBuffsTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Efst
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
-  alias Aesir.ZoneServer.Mmo.StatusEntry
 
-  defp entry(type, val1), do: %StatusEntry{type: type, state: %{}, val1: val1}
+  defp entry(type, val1), do: build(:status_entry, type: type, val1: val1)
 
   describe "SkfCast (val1-driven varcast_rate)" do
     test "passes val1 straight through as varcast_rate (negative = faster)" do

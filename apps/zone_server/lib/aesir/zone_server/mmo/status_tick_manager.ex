@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
@@ -31,10 +32,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
 
   defmodule State do
     @moduledoc false
-    defstruct timers: %{}
+    use TypedStruct
 
-    @type key :: {atom(), integer(), atom()}
-    @type t :: %__MODULE__{timers: %{key() => {reference(), pos_integer(), integer()}}}
+    @type key :: {Unit.unit_type(), integer(), atom()}
+
+    typedstruct do
+      field :timers, %{key() => {reference(), pos_integer(), integer()}}, default: %{}
+    end
   end
 
   @spec start_link(keyword()) :: GenServer.on_start()
@@ -61,7 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   generation is ignored, and an entry without a tick or an expiry disarms any
   pending timer.
   """
-  @spec arm(atom(), integer(), StatusEntry.t()) :: :ok
+  @spec arm(Unit.unit_type(), integer(), StatusEntry.t()) :: :ok
   def arm(unit_type, unit_id, %StatusEntry{} = entry) do
     GenServer.cast(server(), {:arm, unit_type, unit_id, entry})
   end

@@ -73,7 +73,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
 
       setup_unit_mock(target_id)
       Registry.register_module(TickExpiringStatus)
-      Mimic.copy(StatusDisplay)
 
       stub(StatusDisplay, :on_applied, fn unit_type, unit_id, status_id, instance ->
         send(test_pid, {:on_applied, unit_type, unit_id, status_id, instance})
@@ -94,8 +93,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
 
       setup_unit_mock(target_id)
       Registry.register_module(VetoStatus)
-      Mimic.copy(StatusDisplay)
-
       reject(&StatusDisplay.on_applied/4)
 
       assert :ok = Interpreter.apply_status(:player, target_id, :sc_test_veto)
@@ -110,7 +107,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
 
       setup_unit_mock(target_id)
       Registry.register_module(TickExpiringStatus)
-      Mimic.copy(StatusDisplay)
       stub(StatusDisplay, :on_applied, fn _, _, _, _ -> :ok end)
 
       stub(StatusDisplay, :on_removed, fn unit_type, unit_id, status_id, instance ->
@@ -131,7 +127,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
 
       setup_unit_mock(target_id)
       Registry.register_module(TickExpiringStatus)
-      Mimic.copy(StatusDisplay)
       stub(StatusDisplay, :on_applied, fn _, _, _, _ -> :ok end)
 
       stub(StatusDisplay, :on_removed, fn unit_type, unit_id, status_id, _instance ->
@@ -152,7 +147,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
 
       setup_unit_mock(target_id)
       Registry.register_module(DamageExpiringStatus)
-      Mimic.copy(StatusDisplay)
       stub(StatusDisplay, :on_applied, fn _, _, _, _ -> :ok end)
 
       stub(StatusDisplay, :on_removed, fn _, _, status_id, _ ->
@@ -172,7 +166,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
 
       setup_unit_mock(target_id)
       Registry.register_module(AbsorbExpiringStatus)
-      Mimic.copy(StatusDisplay)
       stub(StatusDisplay, :on_applied, fn _, _, _, _ -> :ok end)
 
       stub(StatusDisplay, :on_removed, fn _, _, status_id, _ ->
@@ -194,7 +187,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
 
       setup_unit_mock(mob_id)
       Registry.register_module(TickExpiringStatus)
-      Mimic.copy(StatusDisplay)
 
       stub(StatusDisplay, :on_applied, fn :mob, ^mob_id, status_id, _ ->
         send(test_pid, {:on_applied, status_id})
@@ -221,9 +213,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
 
       setup_unit_mock(target_id)
       Registry.register_module(Defender)
-
-      Mimic.copy(Aesir.ZoneServer.Unit.SpatialIndex)
-      Mimic.copy(Aesir.ZoneServer.Unit.Broadcast)
 
       stub(Aesir.ZoneServer.Unit.SpatialIndex, :get_unit_position, fn _type, _id ->
         {:ok, {100, 100, "prontera"}}
@@ -253,9 +242,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
       setup_unit_mock(target_id)
       Registry.register_module(TickExpiringStatus)
 
-      Mimic.copy(Aesir.ZoneServer.Unit.SpatialIndex)
-      Mimic.copy(Aesir.ZoneServer.Unit.Broadcast)
-
       stub(Aesir.ZoneServer.Unit.SpatialIndex, :get_unit_position, fn _type, _id ->
         {:ok, {100, 100, "prontera"}}
       end)
@@ -279,9 +265,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
   end
 
   defp setup_unit_mock(unit_id) do
-    Mimic.copy(Aesir.ZoneServer.Mmo.StatusEffect.Resistance)
-    Mimic.copy(UnitRegistry)
-
     stub(UnitRegistry, :get_unit_info, fn _unit_type, _unit_id ->
       {:ok,
        %{

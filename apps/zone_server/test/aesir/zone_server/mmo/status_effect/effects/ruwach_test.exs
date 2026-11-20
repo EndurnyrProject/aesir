@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.RuwachTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Combat
@@ -30,7 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.RuwachTest do
   @caster {:player, 1000}
   @caster_pos {:ok, {150, 150, "prontera"}}
 
-  defp entry, do: %StatusEntry{type: :sc_ruwach, val1: 1, state: %{}}
+  defp entry, do: build(:status_entry, type: :sc_ruwach, val1: 1)
 
   describe "metadata" do
     test "is a 10s buff that ticks every 500ms with the ruwach sprite option" do

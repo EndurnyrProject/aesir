@@ -1,9 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StatFoodsTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Efst
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
-  alias Aesir.ZoneServer.Mmo.StatusEntry
 
   # {module, status id, modifier key, icon atom (nil = none), end_on_start list}
   @stat_foods [
@@ -31,7 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StatFoodsTest do
     {Effects.LukFood, :sc_food_luk_cash}
   ]
 
-  defp entry(type, val1), do: %StatusEntry{type: type, state: %{}, val1: val1}
+  defp entry(type, val1), do: build(:status_entry, type: type, val1: val1)
 
   describe "modifiers/2" do
     for {module, type, key, _icon, _eos} <- @stat_foods do

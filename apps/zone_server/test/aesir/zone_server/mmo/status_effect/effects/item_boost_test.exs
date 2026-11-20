@@ -1,12 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ItemBoostTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.Efst
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.ItemBoost
-  alias Aesir.ZoneServer.Mmo.StatusEntry
 
-  defp entry(val1), do: %StatusEntry{type: :sc_itemboost, state: %{}, val1: val1}
+  defp entry(val1), do: build(:status_entry, type: :sc_itemboost, val1: val1)
 
   describe "modifiers/2" do
     test "emits +val1 as drop_rate" do

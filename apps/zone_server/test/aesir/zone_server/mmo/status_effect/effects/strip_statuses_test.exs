@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripStatusesTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripArmor
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripHelm
@@ -85,7 +87,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripStatusesTest do
     end)
   end
 
-  defp entry(type, val2), do: %StatusEntry{type: type, val2: val2, state: %{}}
+  defp entry(type, val2), do: build(:status_entry, type: type, val2: val2)
 
   defp player_state do
     %Character{

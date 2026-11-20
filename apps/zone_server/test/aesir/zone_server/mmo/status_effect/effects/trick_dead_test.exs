@@ -40,12 +40,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.TrickDeadTest do
     assert :regen in TrickDead.metadata().calc_flags
   end
 
-  describe "id/0" do
-    test "returns :sc_trickdead" do
-      assert TrickDead.id() == :sc_trickdead
-    end
-  end
-
   describe "metadata" do
     test "is a persistent action-preventing status" do
       assert %{
