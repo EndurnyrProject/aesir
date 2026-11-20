@@ -6,41 +6,33 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobSpawn do
   `respawn_variance`, and its pending respawn deadline is persisted.
   """
 
+  use TypedStruct
+
   defmodule SpawnArea do
     @moduledoc false
 
-    @enforce_keys [:x, :y]
-    defstruct x: nil, y: nil, xs: 0, ys: 0
+    use TypedStruct
 
-    @typedoc """
-    Spawn area definition.
-    x, y: center coordinates (0,0 means anywhere on map)
-    xs, ys: radius from center (0,0 means exact position)
-    """
-    @type t() :: %__MODULE__{
-            x: integer(),
-            y: integer(),
-            xs: integer(),
-            ys: integer()
-          }
+    typedstruct do
+      @typedoc """
+      `x` and `y` locate the center; `{0, 0}` means anywhere on the map.
+      `xs` and `ys` are the radii; both zero means the exact cell.
+      """
+      field :x, integer(), enforce: true
+      field :y, integer(), enforce: true
+      field :xs, integer(), default: 0
+      field :ys, integer(), default: 0
+    end
   end
 
-  @enforce_keys [:mob, :amount, :respawn_time, :spawn_area]
-  defstruct mob: nil,
-            amount: nil,
-            respawn_time: nil,
-            respawn_variance: 0,
-            boss: false,
-            spawn_area: nil,
-            summoned: false
-
-  @type t() :: %__MODULE__{
-          mob: integer(),
-          amount: integer(),
-          respawn_time: integer(),
-          respawn_variance: integer(),
-          boss: boolean(),
-          spawn_area: SpawnArea.t(),
-          summoned: boolean()
-        }
+  typedstruct do
+    @typedoc "A spawn line for a single monster type."
+    field :mob, integer(), enforce: true
+    field :amount, integer(), enforce: true
+    field :respawn_time, integer(), enforce: true
+    field :respawn_variance, integer(), default: 0
+    field :boss, boolean(), default: false
+    field :spawn_area, SpawnArea.t(), enforce: true
+    field :summoned, boolean(), default: false
+  end
 end

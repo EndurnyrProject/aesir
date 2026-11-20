@@ -1,7 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.MobManagement do
   @moduledoc """
   Public API for mob-related operations.
-  Provides business logic for mob data access and mob-related calculations.
+  Provides access to mob definitions and map spawns.
   """
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
@@ -42,31 +42,5 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement do
   @spec get_spawns_for_map(String.t()) :: {:ok, [MobSpawn.t()]} | {:error, :no_spawns}
   def get_spawns_for_map(map_name) when is_binary(map_name) do
     with :error <- Spawns.for_map(map_name), do: {:error, :no_spawns}
-  end
-
-  @doc """
-  Check if a mob is aggressive based on its AI type.
-  """
-  @spec aggressive?(MobDefinition.t()) :: boolean()
-  def aggressive?(%MobDefinition{ai_type: ai_type}) do
-    # AI types that are aggressive (will attack on sight)
-    # Type 1 and 3 are typically aggressive in rAthena
-    ai_type in [1, 3]
-  end
-
-  @doc """
-  Check if a mob can move.
-  """
-  @spec can_move?(MobDefinition.t()) :: boolean()
-  def can_move?(%MobDefinition{modes: modes}) do
-    :no_move not in modes
-  end
-
-  @doc """
-  Check if a mob can attack.
-  """
-  @spec can_attack?(MobDefinition.t()) :: boolean()
-  def can_attack?(%MobDefinition{modes: modes}) do
-    :no_attack not in modes
   end
 end

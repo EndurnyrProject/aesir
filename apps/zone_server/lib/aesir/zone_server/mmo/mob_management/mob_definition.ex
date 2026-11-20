@@ -5,6 +5,8 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobDefinition do
   A monster always has at least 1 SP; one without an SP value has exactly 1.
   """
 
+  use TypedStruct
+
   alias Aesir.ZoneServer.Mmo.Element
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
   alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
@@ -31,90 +33,43 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobDefinition do
   """
   @type element :: {Element.t(), Element.level()}
 
-  @enforce_keys [
-    :id,
-    :aegis_name,
-    :name,
-    :level,
-    :hp,
-    :stats,
-    :attack_range,
-    :size,
-    :race,
-    :element,
-    :walk_speed,
-    :attack_delay,
-    :attack_motion,
-    :client_attack_motion,
-    :damage_motion
-  ]
-  defstruct id: nil,
-            aegis_name: nil,
-            name: nil,
-            japanese_name: nil,
-            level: nil,
-            hp: nil,
-            sp: 1,
-            base_exp: 0,
-            job_exp: 0,
-            atk: 0,
-            atk2: 0,
-            matk: 0,
-            def: 0,
-            mdef: 0,
-            class: :normal,
-            stats: nil,
-            attack_range: nil,
-            skill_range: 10,
-            chase_range: 12,
-            size: nil,
-            race: nil,
-            race_groups: [],
-            element: nil,
-            walk_speed: nil,
-            attack_delay: nil,
-            attack_motion: nil,
-            client_attack_motion: nil,
-            damage_motion: nil,
-            ai_type: 0,
-            modes: [],
-            drops: [],
-            mvp_exp: 0,
-            mvp_drops: []
+  @typedoc "Primary stats keyed by their database names."
+  @type stats :: %{optional(:str | :agi | :vit | :int | :dex | :luk) => integer()}
 
-  @type t() :: %__MODULE__{
-          id: integer(),
-          aegis_name: String.t(),
-          name: String.t(),
-          japanese_name: String.t() | nil,
-          level: integer(),
-          hp: integer(),
-          sp: integer(),
-          base_exp: integer(),
-          job_exp: integer(),
-          atk: integer(),
-          atk2: integer(),
-          matk: integer(),
-          def: integer(),
-          mdef: integer(),
-          class: MobMode.class(),
-          stats: map(),
-          attack_range: integer(),
-          skill_range: integer(),
-          chase_range: integer(),
-          size: size(),
-          race: race(),
-          race_groups: [race2()],
-          element: element(),
-          walk_speed: integer(),
-          attack_delay: integer(),
-          attack_motion: integer(),
-          client_attack_motion: integer(),
-          damage_motion: integer(),
-          ai_type: integer(),
-          modes: [atom()],
-          drops: [MobDrop.t()],
-          mvp_exp: integer(),
-          mvp_drops: [MobDrop.t()]
-        }
+  typedstruct do
+    @typedoc "A monster's static definition."
+    field :id, integer(), enforce: true
+    field :aegis_name, String.t(), enforce: true
+    field :name, String.t(), enforce: true
+    field :japanese_name, String.t()
+    field :level, integer(), enforce: true
+    field :hp, integer(), enforce: true
+    field :sp, integer(), default: 1
+    field :base_exp, integer(), default: 0
+    field :job_exp, integer(), default: 0
+    field :atk, integer(), default: 0
+    field :atk2, integer(), default: 0
+    field :matk, integer(), default: 0
+    field :def, integer(), default: 0
+    field :mdef, integer(), default: 0
+    field :class, MobMode.class(), default: :normal
+    field :stats, stats(), enforce: true
+    field :attack_range, integer(), enforce: true
+    field :skill_range, integer(), default: 10
+    field :chase_range, integer(), default: 12
+    field :size, size(), enforce: true
+    field :race, race(), enforce: true
+    field :race_groups, [race2()], default: []
+    field :element, element(), enforce: true
+    field :walk_speed, integer(), enforce: true
+    field :attack_delay, integer(), enforce: true
+    field :attack_motion, integer(), enforce: true
+    field :client_attack_motion, integer(), enforce: true
+    field :damage_motion, integer(), enforce: true
+    field :ai_type, integer(), default: 0
+    field :modes, [atom()], default: []
+    field :drops, [MobDrop.t()], default: []
+    field :mvp_exp, integer(), default: 0
+    field :mvp_drops, [MobDrop.t()], default: []
+  end
 end

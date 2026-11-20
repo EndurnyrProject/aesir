@@ -65,7 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
   @always [:id, :aegis_name, :name]
   @defaults Map.from_struct(struct(MobDefinition, %{}))
 
-  @spec to_yaml_map(MobDefinition.t()) :: map()
+  @spec to_yaml_map(MobDefinition.t()) :: %{String.t() => term()}
   def to_yaml_map(%MobDefinition{element: {element, level}} = definition) do
     definition
     |> Map.from_struct()
@@ -103,8 +103,10 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
   `Attack2` is the maximum ATK in pre-renewal (`atk2`) and the MATK in renewal
   (`matk`), as `mob.cpp` loads it.
   """
-  @spec to_definition(map(), :renewal | :pre_renewal) ::
-          {:ok, MobDefinition.t()} | {:error, term()}
+  @spec to_definition(%{String.t() => term()}, :renewal | :pre_renewal) ::
+          {:ok, MobDefinition.t()}
+          | {:error,
+             {:unknown_class | :unknown_size | :unknown_race | :unknown_element, String.t()}}
   def to_definition(entry, mode \\ :renewal) do
     with {:ok, class} <- fetch_enum(@classes, Map.get(entry, "Class", "Normal"), :unknown_class),
          {:ok, size} <- fetch_enum(@sizes, Map.get(entry, "Size", "Small"), :unknown_size),
@@ -177,7 +179,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
 
   defp parse_race_groups(_), do: []
 
-  @spec parse_stats(map()) :: map()
+  @spec parse_stats(%{String.t() => term()}) :: MobDefinition.stats()
   defp parse_stats(entry) do
     Map.new(
       [{"Str", :str}, {"Agi", :agi}, {"Vit", :vit}, {"Int", :int}, {"Dex", :dex}, {"Luk", :luk}],

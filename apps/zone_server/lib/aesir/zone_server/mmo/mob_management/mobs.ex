@@ -86,12 +86,14 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Mobs do
 
   @doc """
   Edits monster `mob_id`'s drop table with `update` (current table in, new
-  table or `:unchanged` out), for scripts that edit monster drops while the
+  table or a no-change reason out), for scripts that edit monster drops while the
   server runs; every monster of that kind drops from the edited table from
   then on. Edits are serialized, each reading the table the previous one
   wrote. Returns `update`'s result.
   """
-  @spec update_drops(integer(), ([MobDrop.t()] -> {:ok, [MobDrop.t()]} | term())) :: term()
+  @typep drop_update :: {:ok, [MobDrop.t()]} | :none | :full
+
+  @spec update_drops(integer(), ([MobDrop.t()] -> drop_update())) :: drop_update() | :aborted
   def update_drops(mob_id, update) do
     :global.trans({__MODULE__, :edit}, fn ->
       index = index()

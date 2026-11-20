@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
+  alias Aesir.ZoneServer.Mmo.MobSkill.Db, as: MobSkillDb
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor, as: MobSkillExecutor
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -27,7 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
   unit target is pinned for the bar, completion and followers; changing the
   mob's AI intent never retargets a cast already begun.
   """
-  @spec begin_cast(MobState.t(), map(), integer()) :: {:ok | :rejected, MobState.t()}
+  @spec begin_cast(MobState.t(), MobSkillDb.row(), integer()) :: {:ok | :rejected, MobState.t()}
   def begin_cast(state, row, now) do
     if can_use_skill?(state, row) do
       case unit_cast_target(state, row) do

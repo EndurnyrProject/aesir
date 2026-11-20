@@ -75,6 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
   mob without one.
   """
 
+  alias Aesir.ZoneServer.Mmo.MobSkill.Db
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor
   alias Aesir.ZoneServer.Mmo.Skill.Castability
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
@@ -82,9 +83,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
   alias Aesir.ZoneServer.Mmo.Skills.Npc.SlaveSummon
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
-
-  @typedoc "A mob skill row as produced by `MobSkill.Db`."
-  @type row :: map()
+  alias Aesir.ZoneServer.Unit.Ref
 
   @typedoc "A landed hit's event: its range kind and the HP damage it took."
   @type attack_event :: {:attacked, :closed | :long | :other, non_neg_integer()}
@@ -99,7 +98,18 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
           | {:skillused, pos_integer()}
           | {:skillused, pos_integer(), non_neg_integer()}
 
-  @spec select(MobState.t(), [row()], keyword()) :: {:cast, row()} | nil
+  @typep environment :: %{
+           event: event(),
+           count_living_slaves: (integer() -> non_neg_integer()),
+           hp_rate_friend: (MobState.t(), integer(), integer() -> Ref.t() | nil),
+           status_friend: (MobState.t(), boolean(), atom() | integer() -> Ref.t() | nil),
+           mob_statuses: (MobState.t() -> [atom()]),
+           targeted_count: (Ref.t() -> non_neg_integer()),
+           living_unit: (Ref.t() -> boolean()),
+           nearby_mobs: (MobState.t() -> non_neg_integer())
+         }
+
+  @spec select(MobState.t(), [Db.row()], keyword()) :: {:cast, Db.row()} | nil
   def select(%MobState{} = mob_state, rows, opts \\ []) when is_list(rows) do
     now = Keyword.get(opts, :now, System.system_time(:millisecond))
     rng = Keyword.get(opts, :rng, &zero_based_roll/1)
@@ -132,7 +142,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
   # Player-owned summons have no combat rotation of their own: their imported
   # rows are their entire behavior, so idle rows stay eligible in every state
   # (a damaged Marine Sphere must still wander and self-destruct while engaged).
-  @spec row_state_eligible?(row(), MobState.t()) :: boolean()
+  @spec row_state_eligible?(Db.row(), MobState.t()) :: boolean()
   defp row_state_eligible?(%{state: :idle}, %MobState{owner_player_id: owner})
        when not is_nil(owner),
        do: true
@@ -152,7 +162,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
   defp state_matches?(row_state, %MobState{skill_state: skill_state}),
     do: Map.get(@row_states, row_state, row_state) == skill_state
 
-  @spec castable?(row()) :: boolean()
+  @spec castable?(Db.row()) :: boolean()
   defp castable?(%{skill_id: skill_id}) do
     with {:ok, definition} <- SkillCatalog.by_id(skill_id),
          {:ok, _module} <- SkillCatalog.active_module_for(definition.name) do
@@ -165,7 +175,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
   # One ordered chain per row, as the source evaluates it: an exact event
   # match, the skill-used match, the ground-attacked match, the damage
   # threshold, and last - only for the periodic check - the state conditions.
-  @spec condition_holds?(row(), MobState.t(), map()) :: boolean()
+  @spec condition_holds?(Db.row(), MobState.t(), environment()) :: boolean()
   defp condition_holds?(%{condition: condition}, mob_state, env) do
     cond do
       condition.type == exact_event_condition(env.event) ->
@@ -197,23 +207,23 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
   defp exact_event_condition(_event), do: nil
 
   # The source skips the damage threshold on a skill-used event.
-  @spec damage_threshold?(map(), map()) :: boolean()
+  @spec damage_threshold?(Db.condition(), environment()) :: boolean()
   defp damage_threshold?(%{value: value}, env) do
     damage = event_damage(env)
     not skill_used_event?(env) and damage > 0 and damage > value
   end
 
-  @spec event_damage(map()) :: integer()
+  @spec event_damage(environment()) :: non_neg_integer()
   defp event_damage(%{event: {:attacked, _kind, damage}}), do: damage
   defp event_damage(%{event: {:skillused, _skill_id, damage}}), do: damage
   defp event_damage(_env), do: 0
 
-  @spec skill_used_event?(map()) :: boolean()
+  @spec skill_used_event?(environment()) :: boolean()
   defp skill_used_event?(%{event: {:skillused, _skill_id}}), do: true
   defp skill_used_event?(%{event: {:skillused, _skill_id, _damage}}), do: true
   defp skill_used_event?(_env), do: false
 
-  @spec skill_used?(map(), map()) :: boolean()
+  @spec skill_used?(Db.condition(), environment()) :: boolean()
   defp skill_used?(%{value: value}, %{event: {:skillused, skill_id}}),
     do: value in [skill_id, 0, nil]
 
@@ -222,7 +232,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
 
   defp skill_used?(_condition, _env), do: false
 
-  @spec ground_skill_used?(map()) :: boolean()
+  @spec ground_skill_used?(environment()) :: boolean()
   defp ground_skill_used?(%{event: {:skillused, skill_id}}), do: ground_skill?(skill_id)
   defp ground_skill_used?(%{event: {:skillused, skill_id, _damage}}), do: ground_skill?(skill_id)
   defp ground_skill_used?(_env), do: false
@@ -231,11 +241,13 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
   # skill's ground target type.
   @spec ground_skill?(integer()) :: boolean()
   defp ground_skill?(skill_id) do
-    with {:ok, definition} <- SkillCatalog.by_id(skill_id),
-         do: Definition.cast_type(definition) == :ground
+    case SkillCatalog.by_id(skill_id) do
+      {:ok, definition} -> Definition.cast_type(definition) == :ground
+      :error -> false
+    end
   end
 
-  @spec evaluate(atom(), map(), MobState.t(), map()) :: boolean()
+  @spec evaluate(atom(), Db.condition(), MobState.t(), environment()) :: boolean()
   defp evaluate(:always, _condition, _mob_state, _env), do: true
 
   defp evaluate(:myhpltmaxrate, %{value: value}, %MobState{hp: hp, calculated: calculated}, _env)

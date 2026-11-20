@@ -33,32 +33,18 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Importer do
   actually casts against.
   """
 
+  alias Aesir.ZoneServer.Mmo.MobSkill.Db
   alias Aesir.ZoneServer.Mmo.Skill.Castability
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Mmo.Skill.Requirement
 
-  @typedoc "A parsed skill row."
-  @type row :: %{
-          skill: String.t(),
-          skill_id: integer(),
-          state: atom(),
-          level: integer(),
-          rate: integer(),
-          cast_time: integer(),
-          delay: integer(),
-          cancelable: boolean(),
-          target: atom(),
-          condition: %{
-            type: atom(),
-            value: integer() | atom(),
-            val1: integer() | nil,
-            val2: integer() | nil,
-            val3: integer() | nil,
-            val4: integer() | nil,
-            val5: integer() | nil
-          },
-          emotion: integer() | nil
-        }
+  @typep grouped_rows :: %{String.t() => [Db.row()]}
+  @typep parse_error ::
+           {:unknown_mob_id
+            | :unknown_state
+            | :unknown_target
+            | :unknown_condition
+            | :unknown_cancelable, String.t() | nil}
 
   @typedoc "Coverage classification for a skill id against the live skill catalog."
   @type classification ::
@@ -85,7 +71,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Importer do
   Takes the **file contents** (not a path). Rows keep file order within each mob
   key. Returns `{:error, reason}` on the first malformed line.
   """
-  @spec to_rows(String.t()) :: {:ok, %{String.t() => [row()]}} | {:error, term()}
+  @spec to_rows(String.t()) :: {:ok, grouped_rows()} | {:error, parse_error()}
   def to_rows(contents) when is_binary(contents) do
     contents
     |> String.split("\n")
@@ -113,7 +99,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Importer do
     end
   end
 
-  @spec parse_lines([String.t()]) :: {:ok, %{String.t() => [row()]}} | {:error, term()}
+  @spec parse_lines([String.t()]) :: {:ok, grouped_rows()} | {:error, parse_error()}
   defp parse_lines(lines) do
     lines
     |> Enum.reduce_while({:ok, []}, fn line, {:ok, acc} ->
@@ -136,7 +122,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Importer do
     end
   end
 
-  @spec parse_line(String.t()) :: {:ok, {String.t(), row()}} | {:error, term()}
+  @spec parse_line(String.t()) :: {:ok, {String.t(), Db.row()}} | {:error, parse_error()}
   defp parse_line(line) do
     fields = String.split(line, ",")
 
@@ -172,7 +158,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Importer do
     end
   end
 
-  @spec parse_mob_key(String.t() | nil) :: {:ok, String.t()} | {:error, term()}
+  @spec parse_mob_key(String.t() | nil) ::
+          {:ok, String.t()} | {:error, {:unknown_mob_id, String.t() | nil}}
   defp parse_mob_key(raw) when is_binary(raw) do
     case Integer.parse(raw) do
       {-1, ""} -> {:ok, "global_boss"}
@@ -191,7 +178,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Importer do
     if token in allowed, do: {:ok, String.to_atom(token)}, else: {:error, {error, token}}
   end
 
-  @spec parse_cancelable(String.t() | nil) :: {:ok, boolean()} | {:error, term()}
+  @spec parse_cancelable(String.t() | nil) ::
+          {:ok, boolean()} | {:error, {:unknown_cancelable, String.t() | nil}}
   defp parse_cancelable("yes"), do: {:ok, true}
   defp parse_cancelable("no"), do: {:ok, false}
   defp parse_cancelable(other), do: {:error, {:unknown_cancelable, other}}

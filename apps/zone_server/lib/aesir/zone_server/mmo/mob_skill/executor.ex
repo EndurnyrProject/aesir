@@ -43,6 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Combat.Relationship
+  alias Aesir.ZoneServer.Mmo.MobSkill.Db
   alias Aesir.ZoneServer.Mmo.MobSkill.Selector
   alias Aesir.ZoneServer.Mmo.Skill.CastEnd
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
@@ -86,7 +87,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   of the first 30 living, visible enemies within the skill's own cast range
   (`skill_cast_range/1`), in the map's block order.
   """
-  @spec resolve_target(MobState.t(), map()) :: {:ok, target()} | {:error, atom()}
+  @spec resolve_target(MobState.t(), Db.row()) ::
+          {:ok, target()}
+          | {:error, :no_target | :no_master | :unknown_skill | {:unsupported_target, atom()}}
   def resolve_target(
         %MobState{casting: %{row: row, unit_target: {:unit, type, id} = target}} = state,
         row
@@ -162,7 +165,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   unresolvable in the catalog is a no-op `:ok`. A `mob_cast/5` that changed
   its caster returns `{:ok, mob_state}`, the mob's new state.
   """
-  @spec execute(MobState.t(), map(), Targeting.skill_use_phase()) ::
+  @spec execute(MobState.t(), Db.row(), Targeting.skill_use_phase()) ::
           :ok | {:ok, MobState.t()} | {:error, term()}
   def execute(%MobState{} = state, row, phase \\ :cast_begin) do
     maybe_emote(state, row)
@@ -178,7 +181,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   (checked without a target), a target that cannot be resolved or a skill
   missing from the catalog passes, since `execute/3` reports those itself.
   """
-  @spec check_target(MobState.t(), map(), Targeting.skill_use_phase()) :: :ok | {:error, term()}
+  @spec check_target(MobState.t(), Db.row(), Targeting.skill_use_phase()) ::
+          :ok | {:error, :caster_restricted | :target_restricted | :target_concealed}
   def check_target(%MobState{} = state, row, phase) do
     with {:ok, target} <- resolve_target(state, row),
          {:ok, definition} <- SkillCatalog.by_id(row.skill_id) do
@@ -195,7 +199,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   client colors the bar by it); the unit-target/x-y convention mirrors the
   player cast bar (`target_id` for unit casts, zeroed coordinates).
   """
-  @spec broadcast_casting(MobState.t(), map()) :: :ok
+  @spec broadcast_casting(MobState.t(), Db.row()) :: :ok
   def broadcast_casting(%MobState{} = state, row) do
     packet = %SkillCasting{
       src_id: state.instance_id,
@@ -480,7 +484,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   14, and 9 for a self-ranged skill. `:error` for a skill missing from the
   catalog.
   """
-  @spec skill_cast_range(map()) :: {:ok, pos_integer()} | :error
+  @spec skill_cast_range(Db.row()) :: {:ok, pos_integer()} | :error
   def skill_cast_range(%{skill_id: skill_id, level: level}) do
     with {:ok, definition} <- SkillCatalog.by_id(skill_id) do
       range = definition |> Definition.range_at_level(level) |> abs() |> min(@max_cast_range)

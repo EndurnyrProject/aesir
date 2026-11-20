@@ -50,7 +50,9 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Loader do
     }
   end
 
-  @spec to_struct!(map()) :: MobDefinition.t()
+  @typep yaml_entry :: %{String.t() => term()}
+
+  @spec to_struct!(yaml_entry()) :: MobDefinition.t()
   defp to_struct!(yaml_map) do
     {element, rest} = pop_element(yaml_map)
 
@@ -67,7 +69,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Loader do
 
   # The split `element`/`element_level` YAML fields collapse into the
   # `{element_atom, level}` tuple the struct and consumers expect.
-  @spec pop_element(map()) :: {{atom(), integer()}, map()}
+  @spec pop_element(yaml_entry()) :: {MobDefinition.element(), yaml_entry()}
   defp pop_element(yaml_map) do
     {element, rest} = Map.pop!(yaml_map, "element")
     {level, rest} = Map.pop(rest, "element_level", 1)
@@ -93,7 +95,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Loader do
   defp convert(:sp, v), do: max(v, 1)
   defp convert(_key, v), do: v
 
-  @spec to_drop!(map()) :: MobDrop.t()
+  @spec to_drop!(yaml_entry()) :: MobDrop.t()
   defp to_drop!(drop) do
     struct!(MobDrop, Map.new(drop, fn {k, v} -> {String.to_atom(k), v} end))
   end

@@ -1,12 +1,14 @@
 defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
   use ExUnit.Case, async: true
-  import Mimic
+  use Mimic
+
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.MobSkill.Selector
   alias Aesir.ZoneServer.Mmo.Skill.Castability
   alias Aesir.ZoneServer.Unit.Mob.MobState
 
-  setup :verify_on_exit!
+  setup :set_mimic_from_context
 
   # Forces every rate roll to succeed (1 <= rate for any rate >= 1).
   defp hit, do: fn _ -> 1 end
@@ -14,49 +16,52 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
   defp miss, do: fn _ -> 10_000 end
 
   defp mob(overrides \\ %{}) do
-    base = %{
-      skill_state: :berserk,
-      hp: 100,
-      max_hp: 100,
-      target_ref: {:player, 1},
-      attacked_count: 0,
-      skill_cooldowns: %{},
-      mob_data: Aesir.TestMob.definition()
-    }
+    {max_hp, overrides} = Map.pop(overrides, :max_hp, 100)
 
-    {max_hp, fields} = base |> Map.merge(Map.new(overrides)) |> Map.pop!(:max_hp)
-    MobState |> struct(fields) |> Aesir.TestMob.publish(max_hp: max_hp)
-  end
-
-  # MG_FIREBOLT: a real player skill (id 19), resolvable in Skill.Catalog with
-  # an active module, so it clears the castable gate by default.
-  defp row(overrides \\ %{}) do
-    base = %{
-      skill: "MG_FIREBOLT",
-      skill_id: 19,
-      state: :attack,
-      rate: 10_000,
-      condition: %{type: :always}
-    }
-
-    Map.merge(base, Map.new(overrides))
+    build(
+      :mob_state,
+      Map.merge(
+        %{
+          skill_state: :berserk,
+          target_ref: {:player, 1},
+          mob_data: build(:mob_definition, hp: max_hp)
+        },
+        overrides
+      )
+    )
   end
 
   defp opts(extra \\ []), do: Keyword.merge([now: 0, rng: hit()], extra)
 
   describe "state filter" do
     test "an :attack-state row fires in the berserk state only" do
-      assert Selector.select(mob(%{skill_state: :berserk}), [row(%{state: :attack})], opts()) ==
-               {:cast, row(%{state: :attack})}
+      assert Selector.select(
+               mob(%{skill_state: :berserk}),
+               [build(:mob_skill_row, %{state: :attack})],
+               opts()
+             ) ==
+               {:cast, build(:mob_skill_row, %{state: :attack})}
 
-      assert Selector.select(mob(%{skill_state: :angry}), [row(%{state: :attack})], opts()) == nil
+      assert Selector.select(
+               mob(%{skill_state: :angry}),
+               [build(:mob_skill_row, %{state: :attack})],
+               opts()
+             ) == nil
     end
 
     test "an :angry-state row fires in the angry state only" do
-      assert Selector.select(mob(%{skill_state: :angry}), [row(%{state: :angry})], opts()) ==
-               {:cast, row(%{state: :angry})}
+      assert Selector.select(
+               mob(%{skill_state: :angry}),
+               [build(:mob_skill_row, %{state: :angry})],
+               opts()
+             ) ==
+               {:cast, build(:mob_skill_row, %{state: :angry})}
 
-      assert Selector.select(mob(%{skill_state: :berserk}), [row(%{state: :angry})], opts()) ==
+      assert Selector.select(
+               mob(%{skill_state: :berserk}),
+               [build(:mob_skill_row, %{state: :angry})],
+               opts()
+             ) ==
                nil
     end
 
@@ -69,16 +74,20 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
             loot: :loot,
             dead: :dead
           ] do
-        r = row(%{state: row_state})
+        r = build(:mob_skill_row, %{state: row_state})
         assert Selector.select(mob(%{skill_state: skill_state}), [r], opts()) == {:cast, r}
       end
 
-      assert Selector.select(mob(%{skill_state: :follow}), [row(%{state: :chase})], opts()) ==
+      assert Selector.select(
+               mob(%{skill_state: :follow}),
+               [build(:mob_skill_row, %{state: :chase})],
+               opts()
+             ) ==
                nil
     end
 
     test "an :any-state row fires in every state but dead" do
-      any_row = row(%{state: :any})
+      any_row = build(:mob_skill_row, %{state: :any})
 
       for skill_state <- [:idle, :walk, :loot, :berserk, :angry, :rush, :follow] do
         assert Selector.select(mob(%{skill_state: skill_state}), [any_row], opts()) ==
@@ -89,7 +98,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
 
     test "an :anytarget row fires with a target in every state but dead and loot" do
-      r = row(%{state: :anytarget})
+      r = build(:mob_skill_row, %{state: :anytarget})
 
       for skill_state <- [:idle, :walk, :berserk, :angry, :rush, :follow] do
         assert Selector.select(mob(%{skill_state: skill_state}), [r], opts()) == {:cast, r}
@@ -103,7 +112,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
 
   describe "castable filter" do
     test "a row whose skill_id has no catalog entry is skipped" do
-      unresolvable = row(%{skill_id: 999_999})
+      unresolvable = build(:mob_skill_row, %{skill_id: 999_999})
 
       assert Selector.select(mob(), [unresolvable], opts()) == nil
     end
@@ -113,25 +122,19 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
         {:error, {:missing, [:player_state]}}
       end)
 
-      assert Selector.select(mob(), [row()], opts()) == nil
-    end
-
-    test "a row whose skill resolves and is castable for a mob fires" do
-      stub(Castability, :check, fn _definition, :mob -> :ok end)
-
-      assert Selector.select(mob(), [row()], opts()) == {:cast, row()}
+      assert Selector.select(mob(), [build(:mob_skill_row)], opts()) == nil
     end
   end
 
   describe "condition filter" do
     test "always fires" do
-      r = row(%{condition: %{type: :always}})
+      r = build(:mob_skill_row, %{condition: %{type: :always}})
 
       assert Selector.select(mob(), [r], opts()) == {:cast, r}
     end
 
     test "myhpltmaxrate fires only when HP% is at or below the threshold" do
-      r = row(%{condition: %{type: :myhpltmaxrate, value: 50}})
+      r = build(:mob_skill_row, %{condition: %{type: :myhpltmaxrate, value: 50}})
 
       assert Selector.select(mob(%{hp: 100, max_hp: 100}), [r], opts()) == nil
       assert Selector.select(mob(%{hp: 50, max_hp: 100}), [r], opts()) == {:cast, r}
@@ -139,13 +142,13 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
 
     test "HP rates are rounded down before the comparison" do
-      r = row(%{condition: %{type: :myhpltmaxrate, value: 33}})
+      r = build(:mob_skill_row, %{condition: %{type: :myhpltmaxrate, value: 33}})
 
       assert Selector.select(mob(%{hp: 1, max_hp: 3}), [r], opts()) == {:cast, r}
     end
 
     test "myhpinrate fires when the HP rate lies in the band" do
-      r = row(%{condition: %{type: :myhpinrate, value: 20, val1: 40}})
+      r = build(:mob_skill_row, %{condition: %{type: :myhpinrate, value: 20, val1: 40}})
 
       assert Selector.select(mob(%{hp: 20, max_hp: 100}), [r], opts()) == {:cast, r}
       assert Selector.select(mob(%{hp: 40, max_hp: 100}), [r], opts()) == {:cast, r}
@@ -154,11 +157,11 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
 
     test "mystatuson/off read the mob's statuses; a mob with none is never off" do
-      on = row(%{condition: %{type: :mystatuson, value: :hiding}})
-      off = row(%{condition: %{type: :mystatusoff, value: :hiding}})
-      anybad_on = row(%{condition: %{type: :mystatuson, value: :anybad}})
-      anybad_off = row(%{condition: %{type: :mystatusoff, value: :anybad}})
-      stone = row(%{condition: %{type: :mystatuson, value: 0}})
+      on = build(:mob_skill_row, %{condition: %{type: :mystatuson, value: :hiding}})
+      off = build(:mob_skill_row, %{condition: %{type: :mystatusoff, value: :hiding}})
+      anybad_on = build(:mob_skill_row, %{condition: %{type: :mystatuson, value: :anybad}})
+      anybad_off = build(:mob_skill_row, %{condition: %{type: :mystatusoff, value: :anybad}})
+      stone = build(:mob_skill_row, %{condition: %{type: :mystatuson, value: 0}})
       with_statuses = fn statuses -> opts(mob_statuses: fn %MobState{} -> statuses end) end
 
       assert Selector.select(mob(), [on], with_statuses.([:sc_hiding])) == {:cast, on}
@@ -178,8 +181,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
 
     test "friendstatuson/off fire when a friend with/without the status is found" do
-      on = row(%{condition: %{type: :friendstatuson, value: :anybad}})
-      off = row(%{condition: %{type: :friendstatusoff, value: :hiding}})
+      on = build(:mob_skill_row, %{condition: %{type: :friendstatuson, value: :anybad}})
+      off = build(:mob_skill_row, %{condition: %{type: :friendstatusoff, value: :hiding}})
       mob = mob(%{instance_id: 9001})
 
       found = fn expected ->
@@ -196,7 +199,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
 
     test "slavelt fires when the living-slave count is below the value" do
-      r = row(%{condition: %{type: :slavelt, value: 3}})
+      r = build(:mob_skill_row, %{condition: %{type: :slavelt, value: 3}})
       mob = mob(%{instance_id: 9001})
 
       counts = fn count -> opts(count_living_slaves: fn 9001 -> count end) end
@@ -206,8 +209,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
 
     test "attackpcgt/ge count the units attacking the mob" do
-      gt = row(%{condition: %{type: :attackpcgt, value: 2}})
-      ge = row(%{condition: %{type: :attackpcge, value: 2}})
+      gt = build(:mob_skill_row, %{condition: %{type: :attackpcgt, value: 2}})
+      ge = build(:mob_skill_row, %{condition: %{type: :attackpcge, value: 2}})
       mob = mob(%{instance_id: 9001})
 
       attacked_by = fn count -> opts(targeted_count: fn {:mob, 9001} -> count end) end
@@ -219,7 +222,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
 
     test "masterattacked fires when someone attacks a living master, never without a master" do
-      r = row(%{condition: %{type: :masterattacked}})
+      r = build(:mob_skill_row, %{condition: %{type: :masterattacked}})
 
       attacked_by = fn count ->
         opts(
@@ -237,7 +240,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
 
     test "mobnearbygt counts the monsters within the visual area, the mob included" do
-      r = row(%{condition: %{type: :mobnearbygt, value: 2}})
+      r = build(:mob_skill_row, %{condition: %{type: :mobnearbygt, value: 2}})
       nearby = fn count -> opts(nearby_mobs: fn %MobState{} -> count end) end
 
       assert Selector.select(mob(), [r], nearby.(3)) == {:cast, r}
@@ -245,7 +248,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
 
     test "afterskill fires when the mob's last skill use is the given skill" do
-      r = row(%{condition: %{type: :afterskill, value: 19}})
+      r = build(:mob_skill_row, %{condition: %{type: :afterskill, value: 19}})
 
       assert Selector.select(mob(%{last_skill_id: 19}), [r], opts()) == {:cast, r}
       assert Selector.select(mob(%{last_skill_id: 20}), [r], opts()) == nil
@@ -253,7 +256,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
 
     test "alchemist fires only for damaged player-owned mobs" do
-      r = row(%{condition: %{type: :alchemist}})
+      r = build(:mob_skill_row, %{condition: %{type: :alchemist}})
 
       assert Selector.select(mob(%{owner_player_id: 42, hp: 99}), [r], opts()) == {:cast, r}
       assert Selector.select(mob(%{owner_player_id: 42, hp: 100}), [r], opts()) == nil
@@ -264,14 +267,14 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
 
     test "trickcasting fires while a trick cast is kept" do
-      r = row(%{condition: %{type: :trickcasting}})
+      r = build(:mob_skill_row, %{condition: %{type: :trickcasting}})
 
       assert Selector.select(mob(%{trickcasting: 1}), [r], opts()) == {:cast, r}
       assert Selector.select(mob(%{trickcasting: nil}), [r], opts()) == nil
     end
 
     test "idle rows stay eligible in combat for player-owned mobs" do
-      r = row(%{state: :idle})
+      r = build(:mob_skill_row, %{state: :idle})
 
       assert Selector.select(mob(%{skill_state: :berserk, owner_player_id: 42}), [r], opts()) ==
                {:cast, r}
@@ -281,15 +284,15 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
 
     test "a periodic rudeattacked row needs at least one counted rude attack" do
-      r = row(%{condition: %{type: :rudeattacked}})
+      r = build(:mob_skill_row, %{condition: %{type: :rudeattacked}})
 
       assert Selector.select(mob(%{attacked_count: 1}), [r], opts()) == {:cast, r}
       assert Selector.select(mob(%{attacked_count: 0}), [r], opts()) == nil
     end
 
     test "the rude-attacked event fires only rudeattacked rows, whatever the count" do
-      rude = row(%{condition: %{type: :rudeattacked}})
-      always = row(%{condition: %{type: :always}})
+      rude = build(:mob_skill_row, %{condition: %{type: :rudeattacked}})
+      always = build(:mob_skill_row, %{condition: %{type: :always}})
       event = Keyword.put(opts(), :event, :rudeattacked)
 
       assert Selector.select(mob(%{attacked_count: 0}), [always, rude], event) == {:cast, rude}
@@ -297,7 +300,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
 
     test "onspawn fires only on the spawn event" do
-      r = row(%{condition: %{type: :onspawn}})
+      r = build(:mob_skill_row, %{condition: %{type: :onspawn}})
 
       assert Selector.select(mob(), [r], opts(event: :spawn)) == {:cast, r}
       assert Selector.select(mob(), [r], opts(event: :tick)) == nil
@@ -305,7 +308,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
 
     test "the spawn event fires only onspawn rows" do
-      assert Selector.select(mob(), [row()], opts(event: :spawn)) == nil
+      assert Selector.select(mob(), [build(:mob_skill_row)], opts(event: :spawn)) == nil
     end
 
     test "event conditions never fire on a periodic check" do
@@ -317,13 +320,13 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
             :groundattacked,
             :damagedgt
           ] do
-        r = row(%{condition: %{type: type, value: 100}})
+        r = build(:mob_skill_row, %{condition: %{type: type, value: 100}})
         assert Selector.select(mob(%{target_ref: {:player, 42}}), [r], opts()) == nil
       end
     end
 
     test "slavele fires when the master's living-slave count is at or below the value" do
-      r = row(%{condition: %{type: :slavele, value: 3}})
+      r = build(:mob_skill_row, %{condition: %{type: :slavele, value: 3}})
       mob = mob(%{instance_id: 9001})
 
       counts = fn count -> opts(count_living_slaves: fn 9001 -> count end) end
@@ -334,8 +337,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
 
     test "friendhpltmaxrate and friendhpinrate fire when a friend in the HP band is found" do
-      lt = row(%{condition: %{type: :friendhpltmaxrate, value: 60}})
-      band = row(%{condition: %{type: :friendhpinrate, value: 20, val1: 40}})
+      lt = build(:mob_skill_row, %{condition: %{type: :friendhpltmaxrate, value: 60}})
+      band = build(:mob_skill_row, %{condition: %{type: :friendhpinrate, value: 20, val1: 40}})
       mob = mob(%{instance_id: 9001})
 
       found = fn expected ->
@@ -352,7 +355,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
 
     test "an unknown condition type never fires" do
-      r = row(%{condition: %{type: :no_such_condition, value: 100}})
+      r = build(:mob_skill_row, %{condition: %{type: :no_such_condition, value: 100}})
 
       assert Selector.select(mob(), [r], opts()) == nil
     end
@@ -362,39 +365,40 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     test "a row still on cooldown is excluded" do
       mob = mob(%{skill_cooldowns: %{19 => 5000}})
 
-      assert Selector.select(mob, [row()], now: 1000, rng: hit()) == nil
+      assert Selector.select(mob, [build(:mob_skill_row)], now: 1000, rng: hit()) == nil
     end
 
     test "a row whose cooldown has elapsed is eligible" do
       mob = mob(%{skill_cooldowns: %{19 => 5000}})
 
-      assert Selector.select(mob, [row()], now: 5000, rng: hit()) == {:cast, row()}
+      assert Selector.select(mob, [build(:mob_skill_row)], now: 5000, rng: hit()) ==
+               {:cast, build(:mob_skill_row)}
     end
   end
 
   describe "rate roll" do
     test "a roll above the row rate does not select it" do
-      r = row(%{rate: 5000})
+      r = build(:mob_skill_row, %{rate: 5000})
 
       assert Selector.select(mob(), [r], opts(rng: fn _ -> 5001 end)) == nil
     end
 
     test "a roll at or below the row rate selects it" do
-      r = row(%{rate: 5000})
+      r = build(:mob_skill_row, %{rate: 5000})
 
       assert Selector.select(mob(), [r], opts(rng: fn _ -> 5000 end)) == {:cast, r}
     end
 
     test "first eligible row that passes its roll wins" do
-      first = row(%{skill: "NPC_FIREATTACK", rate: 10_000})
-      second = row(%{skill: "NPC_WATERATTACK", rate: 10_000})
+      first = build(:mob_skill_row, %{skill: "NPC_FIREATTACK", rate: 10_000})
+      second = build(:mob_skill_row, %{skill: "NPC_WATERATTACK", rate: 10_000})
 
       assert Selector.select(mob(), [first, second], opts()) == {:cast, first}
     end
 
     test "a failing earlier row lets a later row win" do
-      first = row(%{skill: "NPC_FIREATTACK", rate: 0})
-      second = row(%{skill: "NPC_WATERATTACK", rate: 10_000})
+      first = build(:mob_skill_row, %{skill: "NPC_FIREATTACK", rate: 0})
+      second = build(:mob_skill_row, %{skill: "NPC_WATERATTACK", rate: 10_000})
 
       assert Selector.select(mob(), [first, second], opts(rng: fn n -> n end)) ==
                {:cast, second}
@@ -402,20 +406,25 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
 
     test "no surviving row returns nil" do
       assert Selector.select(mob(), [], opts()) == nil
-      assert Selector.select(mob(), [row(%{rate: 0})], opts(rng: miss())) == nil
+      assert Selector.select(mob(), [build(:mob_skill_row, %{rate: 0})], opts(rng: miss())) == nil
     end
   end
 
   describe "source picker order" do
     test "a zero roll fires a rate-0 row" do
-      r = row(%{rate: 0})
+      r = build(:mob_skill_row, %{rate: 0})
 
       assert Selector.select(mob(), [r], opts(rng: fn 10_000 -> 0 end)) == {:cast, r}
     end
 
     test "the roll comes before the condition, so a row whose condition fails still rolls" do
-      failing = row(%{skill: "NPC_FIREATTACK", condition: %{type: :myhpltmaxrate, value: 10}})
-      later = row(%{skill: "NPC_WATERATTACK"})
+      failing =
+        build(:mob_skill_row, %{
+          skill: "NPC_FIREATTACK",
+          condition: %{type: :myhpltmaxrate, value: 10}
+        })
+
+      later = build(:mob_skill_row, %{skill: "NPC_WATERATTACK"})
 
       rng = fn bound ->
         send(self(), {:roll, bound})
@@ -428,18 +437,18 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
 
     test "a monster with the no-cast mode picks nothing" do
-      mob = mob(%{mob_data: Aesir.TestMob.definition(modes: [:no_cast])})
+      mob = mob(%{mob_data: build(:mob_definition, modes: [:no_cast])})
       reject(&Castability.check/2)
 
-      assert Selector.select(mob, [row()], opts()) == nil
+      assert Selector.select(mob, [build(:mob_skill_row)], opts()) == nil
     end
   end
 
   describe "skill-used event" do
     test "fires a skillused row naming the used skill or no skill" do
-      named = row(%{condition: %{type: :skillused, value: 28}})
-      any = row(%{condition: %{type: :skillused, value: 0}})
-      other = row(%{condition: %{type: :skillused, value: 50}})
+      named = build(:mob_skill_row, %{condition: %{type: :skillused, value: 28}})
+      any = build(:mob_skill_row, %{condition: %{type: :skillused, value: 0}})
+      other = build(:mob_skill_row, %{condition: %{type: :skillused, value: 50}})
       event = opts(event: {:skillused, 28})
 
       assert Selector.select(mob(), [named], event) == {:cast, named}
@@ -448,17 +457,17 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
 
     test "runs no periodic condition, and a skillused row never fires on a tick" do
-      skill_used = row(%{condition: %{type: :skillused, value: 0}})
+      skill_used = build(:mob_skill_row, %{condition: %{type: :skillused, value: 0}})
 
-      assert Selector.select(mob(), [row()], opts(event: {:skillused, 28})) == nil
+      assert Selector.select(mob(), [build(:mob_skill_row)], opts(event: {:skillused, 28})) == nil
       assert Selector.select(mob(), [skill_used], opts()) == nil
     end
   end
 
   describe "attack and cast-targeted events" do
     test "the cast-targeted event fires only casttargeted rows" do
-      targeted = row(%{condition: %{type: :casttargeted, value: 0}})
-      always = row(%{condition: %{type: :always}})
+      targeted = build(:mob_skill_row, %{condition: %{type: :casttargeted, value: 0}})
+      always = build(:mob_skill_row, %{condition: %{type: :always}})
       event = opts(event: :casttargeted)
 
       assert Selector.select(mob(), [always, targeted], event) == {:cast, targeted}
@@ -466,9 +475,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
 
     test "a close-attack event fires its rows, and a damage-threshold row under the damage" do
-      closed = row(%{condition: %{type: :closedattacked, value: 0}})
-      low = row(%{condition: %{type: :damagedgt, value: 100}})
-      high = row(%{condition: %{type: :damagedgt, value: 1_000}})
+      closed = build(:mob_skill_row, %{condition: %{type: :closedattacked, value: 0}})
+      low = build(:mob_skill_row, %{condition: %{type: :damagedgt, value: 100}})
+      high = build(:mob_skill_row, %{condition: %{type: :damagedgt, value: 1_000}})
       event = opts(event: {:attacked, :closed, 500})
 
       assert Selector.select(mob(), [closed], event) == {:cast, closed}
@@ -480,10 +489,10 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
 
     test "a long-range event fires its rows and the damage-threshold rows, never an always row" do
-      long = row(%{condition: %{type: :longrangeattacked, value: 0}})
-      closed = row(%{condition: %{type: :closedattacked, value: 0}})
-      always = row(%{condition: %{type: :always}})
-      damaged = row(%{condition: %{type: :damagedgt, value: 100}})
+      long = build(:mob_skill_row, %{condition: %{type: :longrangeattacked, value: 0}})
+      closed = build(:mob_skill_row, %{condition: %{type: :closedattacked, value: 0}})
+      always = build(:mob_skill_row, %{condition: %{type: :always}})
+      damaged = build(:mob_skill_row, %{condition: %{type: :damagedgt, value: 100}})
       event = opts(event: {:attacked, :long, 500})
 
       assert Selector.select(mob(), [long], event) == {:cast, long}
@@ -493,19 +502,19 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
 
     test "the any-damage event fires only the damage-threshold rows it passes" do
-      low = row(%{condition: %{type: :damagedgt, value: 100}})
-      high = row(%{condition: %{type: :damagedgt, value: 1_000}})
+      low = build(:mob_skill_row, %{condition: %{type: :damagedgt, value: 100}})
+      high = build(:mob_skill_row, %{condition: %{type: :damagedgt, value: 1_000}})
       event = opts(event: {:attacked, :other, 500})
 
       assert Selector.select(mob(), [low], event) == {:cast, low}
       assert Selector.select(mob(), [high], event) == nil
-      assert Selector.select(mob(), [row()], event) == nil
+      assert Selector.select(mob(), [build(:mob_skill_row)], event) == nil
       assert Selector.select(mob(), [low], opts(event: {:attacked, :other, 0})) == nil
     end
 
     test "a skill-used event of a ground skill that took HP fires groundattacked rows" do
-      ground = row(%{condition: %{type: :groundattacked, value: 0}})
-      other = row(%{condition: %{type: :longrangeattacked, value: 0}})
+      ground = build(:mob_skill_row, %{condition: %{type: :groundattacked, value: 0}})
+      other = build(:mob_skill_row, %{condition: %{type: :longrangeattacked, value: 0}})
 
       # MG_FIREWALL (18) is a ground skill, MG_FIREBOLT (19) is not.
       event = opts(event: {:skillused, 18, 500})
@@ -516,8 +525,14 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
       assert Selector.select(mob(), [ground], opts(event: {:skillused, 18})) == nil
     end
 
+    test "an unknown skill does not trigger groundattacked rows" do
+      row = build(:mob_skill_row, condition: %{type: :groundattacked})
+
+      assert Selector.select(mob(), [row], opts(event: {:skillused, 65_535, 500})) == nil
+    end
+
     test "a skill-used event never fires the damage-threshold rows" do
-      damaged = row(%{condition: %{type: :damagedgt, value: 100}})
+      damaged = build(:mob_skill_row, %{condition: %{type: :damagedgt, value: 100}})
       event = opts(event: {:skillused, 19, 500})
 
       assert Selector.select(mob(), [damaged], event) == nil

@@ -35,7 +35,9 @@ defmodule Aesir.ZoneServer.Factory do
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Entry, as: RandomOptionEntry
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Group, as: RandomOptionGroup
   alias Aesir.ZoneServer.Mmo.Mechanics
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Mmo.MobSkill.Db, as: MobSkillDb
   alias Aesir.ZoneServer.Mmo.Skill.Definition, as: SkillDefinition
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.PlayerStateFixture
@@ -114,6 +116,54 @@ defmodule Aesir.ZoneServer.Factory do
   @spec coordinator_state_factory() :: Coordinator.t()
   def coordinator_state_factory do
     %Coordinator{map_name: "prontera"}
+  end
+
+  @doc "A level 1 monster with 100 HP and one-cell melee range."
+  @spec mob_definition_factory() :: MobDefinition.t()
+  def mob_definition_factory do
+    %MobDefinition{
+      id: 1002,
+      aegis_name: "TEST_MOB",
+      name: "Test Mob",
+      level: 1,
+      hp: 100,
+      stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
+      attack_range: 1,
+      size: :medium,
+      race: :formless,
+      element: {:neutral, 1},
+      walk_speed: 200,
+      attack_delay: 1_000,
+      attack_motion: 500,
+      client_attack_motion: 500,
+      damage_motion: 400
+    }
+  end
+
+  @doc "A guaranteed, instant Fire Bolt at the current target, in the attack state."
+  @spec mob_skill_row_factory(map()) :: MobSkillDb.row()
+  def mob_skill_row_factory(attrs) do
+    {condition, attrs} = Map.pop(attrs, :condition, %{})
+
+    %{
+      skill: "MG_FIREBOLT",
+      skill_id: 19,
+      state: :attack,
+      level: 1,
+      rate: 10_000,
+      cast_time: 0,
+      delay: 0,
+      cancelable: false,
+      target: :target,
+      condition:
+        Map.merge(
+          %{type: :always, value: 0, val1: nil, val2: nil, val3: nil, val4: nil, val5: nil},
+          condition
+        ),
+      emotion: nil
+    }
+    |> merge_attributes(attrs)
+    |> evaluate_lazy_attributes()
   end
 
   @doc """

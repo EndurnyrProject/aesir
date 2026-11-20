@@ -1,9 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.MobSkill.HomunculusStatusRiderSweepTest do
-  use ExUnit.Case, async: false
-  import Mimic
+  use ExUnit.Case, async: true
+  use Mimic
+
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Mmo.Combat
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlDecagi
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycross
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldcharge
@@ -13,7 +14,6 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.HomunculusStatusRiderSweepTest do
   alias Aesir.ZoneServer.Mmo.Skills.Thief.TfSprinklesand
   alias Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstone
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.HomunculusStatusRiderSweepTest do
   alias Aesir.ZoneServer.Unit.Stats.CurrentState
   alias Aesir.ZoneServer.Unit.Stats.DerivedStats
 
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
   @target {:homunculus, 90_001}
@@ -147,41 +148,23 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.HomunculusStatusRiderSweepTest do
   defp assert_cast_dispatched({:ok, _caster}), do: :ok
 
   defp mob do
-    %MobState{
-      instance_id: 80_001,
-      mob_id: 1002,
-      mob_data: %MobDefinition{
-        id: 1002,
-        aegis_name: "RIDER_SWEEP",
-        name: "Rider Sweep",
+    definition =
+      build(:mob_definition,
         level: 100,
         hp: 1_000,
-        stats: %{str: 10, agi: 10, vit: 10, int: 100, dex: 10, luk: 10},
+        sp: 100,
         atk: 100,
         matk: 100,
-        def: 0,
-        mdef: 0,
-        attack_range: 1,
-        walk_speed: 200,
-        attack_delay: 1_000,
-        attack_motion: 500,
-        client_attack_motion: 500,
-        damage_motion: 500,
-        element: {:neutral, 1},
-        race: :formless,
-        size: :medium,
-        class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class([]),
-        modes: []
-      },
-      spawn_ref: nil,
+        stats: %{str: 10, agi: 10, vit: 10, int: 100, dex: 10, luk: 10}
+      )
+
+    build(:mob_state,
+      instance_id: 80_001,
+      mob_data: definition,
       map_name: "rider_sweep",
       x: 50,
-      y: 50,
-      hp: 1_000,
-      sp: 100,
-      spawned_at: 0
-    }
-    |> Aesir.TestMob.publish(max_hp: 1_000, max_sp: 100)
+      y: 50
+    )
   end
 
   defp player do

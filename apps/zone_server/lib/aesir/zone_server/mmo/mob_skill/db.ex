@@ -22,7 +22,18 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Db do
 
   @global_keys ~w(global_all global_boss global_normal)
 
-  @typedoc "A coerced skill row (atom keys, atom state/target/condition-type)."
+  @typedoc "Condition fields from the importer or runtime database."
+  @type condition :: %{
+          type: atom(),
+          value: integer() | atom(),
+          val1: integer() | nil,
+          val2: integer() | nil,
+          val3: integer() | nil,
+          val4: integer() | nil,
+          val5: integer() | nil
+        }
+
+  @typedoc "A skill row shared by the importer and runtime (atom keys and tokens)."
   @type row :: %{
           skill: String.t(),
           skill_id: integer(),
@@ -33,15 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Db do
           delay: integer(),
           cancelable: boolean(),
           target: atom(),
-          condition: %{
-            type: atom(),
-            value: integer() | atom(),
-            val1: integer() | nil,
-            val2: integer() | nil,
-            val3: integer() | nil,
-            val4: integer() | nil,
-            val5: integer() | nil
-          },
+          condition: condition(),
           emotion: integer() | nil
         }
 
@@ -115,10 +118,13 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Db do
     }
   end
 
-  @spec coerce_rows([map()]) :: [row()]
+  @typep yaml_row :: %{String.t() => String.t() | integer() | boolean() | yaml_condition() | nil}
+  @typep yaml_condition :: %{String.t() => String.t() | integer() | nil}
+
+  @spec coerce_rows([yaml_row()]) :: [row()]
   defp coerce_rows(rows), do: Enum.map(rows, &coerce_row/1)
 
-  @spec coerce_row(map()) :: row()
+  @spec coerce_row(yaml_row()) :: row()
   defp coerce_row(row) do
     %{
       skill: row["skill"],
@@ -135,7 +141,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Db do
     }
   end
 
-  @spec coerce_condition(map()) :: map()
+  @spec coerce_condition(yaml_condition()) :: condition()
   defp coerce_condition(condition) do
     %{
       type: String.to_atom(condition["type"]),

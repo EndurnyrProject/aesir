@@ -1,14 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.MobManagementTest do
-  use ExUnit.Case, async: false
-
-  import Aesir.TestEtsSetup
+  use ExUnit.Case, async: true
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
-
-  setup :setup_ets_tables
 
   describe "mob data loading" do
     test "loads Poring correctly" do
@@ -56,23 +52,6 @@ defmodule Aesir.ZoneServer.Mmo.MobManagementTest do
 
     test "returns error for map with no spawns" do
       assert {:error, :no_spawns} = MobManagement.get_spawns_for_map("non_existent_map")
-    end
-  end
-
-  describe "mob calculations" do
-    setup do
-      {:ok, poring} = MobManagement.get_mob_by_id(1002)
-      {:ok, poring: poring}
-    end
-
-    test "checks if mob is aggressive", %{poring: poring} do
-      # Poring has ai_type: 2, which is not aggressive
-      assert MobManagement.aggressive?(poring) == false
-    end
-
-    test "checks if mob can move", %{poring: poring} do
-      # Poring has no movement restrictions
-      assert MobManagement.can_move?(poring) == true
     end
   end
 

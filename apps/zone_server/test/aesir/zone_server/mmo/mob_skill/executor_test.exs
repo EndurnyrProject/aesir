@@ -14,7 +14,6 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
-  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
@@ -101,93 +100,42 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   end
 
   defp mob(overrides \\ %{}) do
-    base = %{
-      instance_id: 5001,
-      mob_id: 1002,
-      map_name: @map,
-      x: 100,
-      y: 100,
-      target_ref: {:player, 42},
-      hp: 500,
-      max_hp: 500,
-      mob_data: mob_data()
-    }
+    {max_hp, overrides} = overrides |> Map.new() |> Map.pop(:max_hp, 500)
 
-    {publish, fields} = base |> Map.merge(Map.new(overrides)) |> Map.split([:max_hp, :stat_bonus])
-    MobState |> struct(fields) |> Aesir.TestMob.publish(Keyword.new(publish))
-  end
-
-  # A monster `MobState.to_combatant/1` can read, for the relation check.
-  defp fighter(overrides) do
-    mob(
+    build(
+      :mob_state,
       Map.merge(
         %{
-          stat_bonus: %{},
-          mob_data:
-            mob_data(%{
-              aegis_name: "FRIEND",
-              name: "Friend",
-              level: 10,
-              hp: 500,
-              sp: 1,
-              base_exp: 0,
-              job_exp: 0,
-              atk: 10,
-              def: 0,
-              mdef: 0,
-              stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
-              chase_range: 1,
-              element: {:neutral, 1},
-              race: :formless,
-              size: :medium,
-              walk_speed: 200,
-              attack_delay: 1_000,
-              attack_motion: 500,
-              client_attack_motion: 500,
-              damage_motion: 400,
-              ai_type: 0,
-              modes: [],
-              drops: []
-            })
+          instance_id: 5001,
+          target_ref: {:player, 42},
+          hp: 500,
+          mob_data: build(:mob_definition, hp: max_hp, matk: 60)
         },
-        Map.new(overrides)
+        overrides
       )
     )
   end
 
-  defp mob_data(overrides \\ %{}) do
-    [id: 1002, matk: 60, attack_range: 1, skill_range: 10]
-    |> Keyword.merge(Enum.to_list(overrides))
-    |> Aesir.TestMob.definition()
-  end
-
   defp row(overrides \\ %{}) do
-    base = %{
-      skill: "UNRESOLVED_TEST_SKILL",
-      skill_id: 999_999,
-      state: :attack,
-      level: 3,
-      rate: 10_000,
-      cast_time: 800,
-      delay: 5_000,
-      cancelable: false,
-      target: :target,
-      condition: %{type: :always},
-      emotion: nil
-    }
-
-    Map.merge(base, Map.new(overrides))
-  end
-
-  defp definition(overrides) do
-    base = %{id: 9001, name: :fake_skill, display_name: "Fake Skill", max_level: 5}
-    struct(Definition, Map.merge(base, Map.new(overrides)))
+    build(
+      :mob_skill_row,
+      Map.merge(
+        %{
+          skill: "UNRESOLVED_TEST_SKILL",
+          skill_id: 999_999,
+          level: 3,
+          cast_time: 800,
+          delay: 5_000
+        },
+        overrides
+      )
+    )
   end
 
   defp friend_state(instance_id, mob_id, hp, dead? \\ false) do
-    struct(MobState,
+    build(:mob_state,
       instance_id: instance_id,
-      mob_id: mob_id,
+      mob_data: build(:mob_definition, id: mob_id),
       hp: hp,
       is_dead: dead?
     )
@@ -238,7 +186,12 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   end
 
   defp stub_skill(skill_id, name, module, definition_overrides \\ %{}) do
-    defn = definition(Map.merge(%{id: skill_id, name: name}, definition_overrides))
+    defn =
+      build(
+        :skill_definition,
+        Map.merge(%{id: skill_id, name: name, max_level: 5}, definition_overrides)
+      )
+
     stub(SkillCatalog, :by_id, fn ^skill_id -> {:ok, defn} end)
     stub(SkillCatalog, :active_module_for, fn ^name -> {:ok, module} end)
   end
@@ -302,23 +255,23 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
 
       stub(UnitRegistry, :get_unit, fn
         :mob, 5001 ->
-          {:ok, {MobState, fighter(%{hp: 1}), self()}}
+          {:ok, {MobState, mob(%{hp: 1}), self()}}
 
         :mob, 6001 ->
-          {:ok, {MobState, fighter(%{instance_id: 6001, hp: 400}), self()}}
+          {:ok, {MobState, mob(%{instance_id: 6001, hp: 400}), self()}}
 
         :mob, 6002 ->
-          {:ok, {MobState, fighter(%{instance_id: 6002, hp: 0, is_dead: true}), self()}}
+          {:ok, {MobState, mob(%{instance_id: 6002, hp: 0, is_dead: true}), self()}}
 
         :mob, 6003 ->
-          {:ok, {MobState, fighter(%{instance_id: 6003, mob_id: 9999, hp: 250}), self()}}
+          {:ok, {MobState, mob(%{instance_id: 6003, mob_id: 9999, hp: 250}), self()}}
 
         :mob, 6004 ->
-          {:ok, {MobState, fighter(%{instance_id: 6004, hp: 5}), self()}}
+          {:ok, {MobState, mob(%{instance_id: 6004, hp: 5}), self()}}
       end)
 
       friend_row = row(%{target: :friend, condition: %{type: :friendhpltmaxrate, value: 50}})
-      assert Executor.resolve_target(fighter(%{}), friend_row) == {:ok, {:unit, :mob, 6003}}
+      assert Executor.resolve_target(mob(%{}), friend_row) == {:ok, {:unit, :mob, 6003}}
     end
 
     test ":friend under friendstatuson is the last non-enemy living mob in block order with the status" do
@@ -327,15 +280,15 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
       end)
 
       stub(UnitRegistry, :get_unit, fn
-        :mob, 5001 -> {:ok, {MobState, fighter(%{}), self()}}
-        :mob, 6001 -> {:ok, {MobState, fighter(%{instance_id: 6001}), self()}}
-        :mob, 6002 -> {:ok, {MobState, fighter(%{instance_id: 6002}), self()}}
-        :mob, 6003 -> {:ok, {MobState, fighter(%{instance_id: 6003}), self()}}
-        :mob, 6004 -> {:ok, {MobState, fighter(%{instance_id: 6004}), self()}}
+        :mob, 5001 -> {:ok, {MobState, mob(%{}), self()}}
+        :mob, 6001 -> {:ok, {MobState, mob(%{instance_id: 6001}), self()}}
+        :mob, 6002 -> {:ok, {MobState, mob(%{instance_id: 6002}), self()}}
+        :mob, 6003 -> {:ok, {MobState, mob(%{instance_id: 6003}), self()}}
+        :mob, 6004 -> {:ok, {MobState, mob(%{instance_id: 6004}), self()}}
       end)
 
       for id <- [6001, 6002] do
-        :ok = UnitRegistry.register_unit(:mob, id, MobState, fighter(%{instance_id: id}), self())
+        :ok = UnitRegistry.register_unit(:mob, id, MobState, mob(%{instance_id: id}), self())
         :ok = StatusStorage.apply_status(:mob, id, :sc_blind)
       end
 
@@ -344,9 +297,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
       on = row(%{target: :friend, condition: %{type: :friendstatuson, value: :anybad}})
       off = row(%{target: :friend, condition: %{type: :friendstatusoff, value: :anybad}})
 
-      assert Executor.resolve_target(fighter(%{}), on) == {:ok, {:unit, :mob, 6002}}
-      assert Executor.resolve_target(fighter(%{}), off) == {:ok, {:unit, :mob, 6004}}
-      assert Executor.status_friend(fighter(%{}), true, :hiding) == nil
+      assert Executor.resolve_target(mob(%{}), on) == {:ok, {:unit, :mob, 6002}}
+      assert Executor.resolve_target(mob(%{}), off) == {:ok, {:unit, :mob, 6004}}
+      assert Executor.status_friend(mob(%{}), true, :hiding) == nil
     end
 
     test ":friend under friendhpltmaxrate lets a summon pick a dead player at 0%" do
@@ -372,7 +325,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
         :player, 78 -> {:ok, {PlayerState, living, self()}}
       end)
 
-      summon = fighter(%{owner_player_id: 78})
+      summon = mob(%{owner_player_id: 78})
       friend_row = row(%{target: :friend, condition: %{type: :friendhpltmaxrate, value: 50}})
       assert Executor.resolve_target(summon, friend_row) == {:ok, {:unit, :player, 77}}
     end
@@ -384,10 +337,10 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
 
       stub(UnitRegistry, :get_unit, fn
         :mob, 6001 ->
-          {:ok, {MobState, fighter(%{instance_id: 6001, hp: 30, max_hp: 100}), self()}}
+          {:ok, {MobState, mob(%{instance_id: 6001, hp: 30, max_hp: 100}), self()}}
 
         :mob, 6002 ->
-          {:ok, {MobState, fighter(%{instance_id: 6002, hp: 29, max_hp: 100}), self()}}
+          {:ok, {MobState, mob(%{instance_id: 6002, hp: 29, max_hp: 100}), self()}}
       end)
 
       band = fn low, high ->
@@ -397,9 +350,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
         })
       end
 
-      assert Executor.resolve_target(fighter(%{}), band.(28, 28)) == {:ok, {:unit, :mob, 6002}}
-      assert Executor.resolve_target(fighter(%{}), band.(30, 40)) == {:ok, {:unit, :mob, 6001}}
-      assert Executor.resolve_target(fighter(%{}), band.(41, 90)) == {:ok, {:unit, :mob, 5001}}
+      assert Executor.resolve_target(mob(%{}), band.(28, 28)) == {:ok, {:unit, :mob, 6002}}
+      assert Executor.resolve_target(mob(%{}), band.(30, 40)) == {:ok, {:unit, :mob, 6001}}
+      assert Executor.resolve_target(mob(%{}), band.(41, 90)) == {:ok, {:unit, :mob, 5001}}
     end
 
     test ":randomtarget rolls over living enemies in block order, at most the first 30" do
@@ -411,16 +364,16 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
 
       stub(UnitRegistry, :get_unit, fn
         :player, id -> {:ok, {PlayerState, living_player(id), self()}}
-        :mob, 6001 -> {:ok, {MobState, fighter(%{instance_id: 6001}), self()}}
+        :mob, 6001 -> {:ok, {MobState, mob(%{instance_id: 6001}), self()}}
       end)
 
       seed_rolls([{30, 30}])
 
-      assert Executor.resolve_target(fighter(%{}), random_row()) == {:ok, {:unit, :player, 30}}
+      assert Executor.resolve_target(mob(%{}), random_row()) == {:ok, {:unit, :player, 30}}
 
       seed_rolls([{30, 1}])
 
-      assert Executor.resolve_target(fighter(%{}), random_row()) == {:ok, {:unit, :player, 1}}
+      assert Executor.resolve_target(mob(%{}), random_row()) == {:ok, {:unit, :player, 1}}
     end
 
     test ":randomtarget searches the skill's own cast range, not the mob's" do
@@ -430,10 +383,10 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
         {:ok, {PlayerState, living_player(7), self()}}
       end)
 
-      assert Executor.resolve_target(fighter(%{}), random_row()) == {:ok, {:unit, :player, 7}}
+      assert Executor.resolve_target(mob(%{}), random_row()) == {:ok, {:unit, :player, 7}}
       assert Executor.skill_cast_range(random_row()) == {:ok, 9}
 
-      assert Executor.resolve_target(fighter(%{}), row(%{target: :randomtarget})) ==
+      assert Executor.resolve_target(mob(%{}), row(%{target: :randomtarget})) ==
                {:error, :unknown_skill}
     end
 
@@ -444,17 +397,17 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
 
       stub(UnitRegistry, :get_unit, fn
         :player, 7 -> {:ok, {PlayerState, living_player(7), self()}}
-        :mob, 6001 -> {:ok, {MobState, fighter(%{instance_id: 6001}), self()}}
+        :mob, 6001 -> {:ok, {MobState, mob(%{instance_id: 6001}), self()}}
       end)
 
       :ok = StatusStorage.apply_status(:player, 7, :sc_hiding)
       on_exit(fn -> StatusStorage.clear_unit_statuses(:player, 7) end)
 
-      assert Executor.resolve_target(fighter(%{}), random_row()) == {:error, :no_target}
+      assert Executor.resolve_target(mob(%{}), random_row()) == {:error, :no_target}
 
       :ok = StatusStorage.remove_status(:player, 7, :sc_hiding)
 
-      assert Executor.resolve_target(fighter(%{}), random_row()) == {:ok, {:unit, :player, 7}}
+      assert Executor.resolve_target(mob(%{}), random_row()) == {:ok, {:unit, :player, 7}}
     end
 
     test ":randomtarget selects a living Homunculus when it is the only candidate" do
@@ -466,7 +419,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
         {:ok, {HomunculusState, homunculus_state(gid, 100), self()}}
       end)
 
-      assert Executor.resolve_target(fighter(%{}), random_row()) ==
+      assert Executor.resolve_target(mob(%{}), random_row()) ==
                {:ok, {:unit, :homunculus, gid}}
     end
 
@@ -486,7 +439,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
           {:error, :not_found}
       end)
 
-      assert Executor.resolve_target(fighter(%{}), random_row()) == {:error, :no_target}
+      assert Executor.resolve_target(mob(%{}), random_row()) == {:error, :no_target}
     end
 
     test ":randomtarget excludes an indexed corpse in skill range" do
@@ -496,13 +449,13 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
         {:ok, {PlayerState, %{living_player(7) | action_state: :dead}, self()}}
       end)
 
-      assert Executor.resolve_target(fighter(%{}), random_row()) == {:error, :no_target}
+      assert Executor.resolve_target(mob(%{}), random_row()) == {:error, :no_target}
     end
 
     test ":randomtarget errors when no player is in range" do
       stub(SpatialIndex, :units_in_area, fn @map, 91, 91, 109, 109 -> [] end)
 
-      assert Executor.resolve_target(fighter(%{}), random_row()) == {:error, :no_target}
+      assert Executor.resolve_target(mob(%{}), random_row()) == {:error, :no_target}
     end
 
     test ":around resolves to a ground cell at the caster" do
@@ -546,7 +499,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
         :mob,
         5001,
         MobState,
-        fighter(%{instance_id: 5001, attack_target: nil})
+        mob(%{instance_id: 5001, attack_target: nil})
       )
 
       attacking = %{
@@ -563,14 +516,14 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
         :mob,
         6001,
         MobState,
-        fighter(%{instance_id: 6001, attack_target: {:mob, 5001}})
+        mob(%{instance_id: 6001, attack_target: {:mob, 5001}})
       )
 
       UnitRegistry.register_unit(
         :mob,
         6002,
         MobState,
-        fighter(%{instance_id: 6002, attack_target: {:player, 1}})
+        mob(%{instance_id: 6002, attack_target: {:player, 1}})
       )
 
       homunculus = %{
@@ -590,7 +543,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
         :mob,
         5001,
         MobState,
-        fighter(%{instance_id: 5001, attack_target: nil})
+        mob(%{instance_id: 5001, attack_target: nil})
       )
 
       chasing = %{
@@ -611,7 +564,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
         :mob,
         6001,
         MobState,
-        fighter(%{instance_id: 6001, target_ref: {:mob, 5001}, attack_target: nil})
+        mob(%{instance_id: 6001, target_ref: {:mob, 5001}, attack_target: nil})
       )
 
       for {gid, action} <- [{1_500_007, :moving}, {1_500_008, :idle}] do
@@ -625,7 +578,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
     test "counts the monsters within 14 cells, the mob included" do
       stub(SpatialIndex, :get_units_in_area, fn :mob, @map, 86, 86, 114, 114 -> [5001, 6001] end)
 
-      assert Executor.count_nearby_mobs(fighter(%{})) == 2
+      assert Executor.count_nearby_mobs(mob(%{})) == 2
     end
   end
 
@@ -670,7 +623,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
       assert Executor.execute(mob(), row, :cast_end) == {:error, :target_concealed}
       refute_received {:cast, _, _, _, _}
 
-      detector = mob(mob_data: mob_data(modes: [:detector]))
+      detector = mob(mob_data: build(:mob_definition, hp: 500, matk: 60, modes: [:detector]))
       assert Executor.execute(detector, row, :cast_end) == :ok
       assert_received {:cast, 5001, {:unit, 42}, 3, 9001}
     end
@@ -944,7 +897,10 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
     end
 
     test "is a no-op when the skill has no active module" do
-      stub(SkillCatalog, :by_id, fn 9006 -> {:ok, definition(%{id: 9006, name: :no_active})} end)
+      stub(SkillCatalog, :by_id, fn 9006 ->
+        {:ok, build(:skill_definition, id: 9006, name: :no_active)}
+      end)
+
       stub(SkillCatalog, :active_module_for, fn :no_active -> :error end)
 
       assert Executor.execute(mob(), row(%{skill_id: 9006, target: :self})) == :ok
