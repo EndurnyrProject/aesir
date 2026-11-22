@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Unit.Pet.PetState do
   support features.
   """
 
+  use TypedStruct
+
   alias Aesir.Commons.Models.Pet
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
@@ -26,71 +28,34 @@ defmodule Aesir.ZoneServer.Unit.Pet.PetState do
   @type movement_state :: :standing | :moving
   @type action_state :: :idle | :moving | :attacking | :casting
 
-  @enforce_keys [
-    :pet_id,
-    :owner_char_id,
-    :owner_account_id,
-    :class_id,
-    :mob_db_id,
-    :name,
-    :level,
-    :egg_id,
-    :intimate,
-    :hungry
-  ]
-  defstruct world_gid: nil,
-            pet_id: nil,
-            owner_char_id: nil,
-            owner_account_id: nil,
-            class_id: nil,
-            mob_db_id: nil,
-            name: nil,
-            level: nil,
-            egg_id: nil,
-            equip: 0,
-            intimate: nil,
-            hungry: nil,
-            rename_flag: 0,
-            autofeed: false,
-            map_name: nil,
-            x: nil,
-            y: nil,
-            dir: 0,
-            walk_speed: @default_walk_speed,
-            movement_state: :standing,
-            action_state: :idle,
-            target: nil,
-            combat_stats: nil,
-            rate_fix: nil,
-            loot: nil
-
-  @type t() :: %__MODULE__{
-          world_gid: pos_integer() | nil,
-          pet_id: pos_integer(),
-          owner_char_id: pos_integer(),
-          owner_account_id: pos_integer(),
-          class_id: pos_integer(),
-          mob_db_id: pos_integer(),
-          name: String.t(),
-          level: pos_integer(),
-          egg_id: pos_integer(),
-          equip: non_neg_integer(),
-          intimate: non_neg_integer(),
-          hungry: non_neg_integer(),
-          rename_flag: 0 | 1,
-          autofeed: boolean(),
-          map_name: String.t() | nil,
-          x: integer() | nil,
-          y: integer() | nil,
-          dir: 0..7,
-          walk_speed: pos_integer(),
-          movement_state: movement_state(),
-          action_state: action_state(),
-          target: Ref.t() | nil,
-          combat_stats: map() | nil,
-          rate_fix: integer() | nil,
-          loot: map() | nil
-        }
+  @typedoc "A hatched pet's gameplay state and world snapshot."
+  typedstruct enforce: true do
+    field :world_gid, pos_integer() | nil, default: nil
+    field :pet_id, pos_integer()
+    field :owner_char_id, pos_integer()
+    field :owner_account_id, pos_integer()
+    field :class_id, pos_integer()
+    field :mob_db_id, pos_integer()
+    field :name, String.t()
+    field :level, pos_integer()
+    field :egg_id, pos_integer()
+    field :equip, non_neg_integer(), default: 0
+    field :intimate, non_neg_integer()
+    field :hungry, non_neg_integer()
+    field :rename_flag, 0 | 1, default: 0
+    field :autofeed, boolean(), default: false
+    field :map_name, String.t() | nil, default: nil
+    field :x, integer() | nil, default: nil
+    field :y, integer() | nil, default: nil
+    field :dir, 0..7, default: 0
+    field :walk_speed, pos_integer(), default: @default_walk_speed
+    field :movement_state, movement_state(), default: :standing
+    field :action_state, action_state(), default: :idle
+    field :target, Ref.t() | nil, default: nil
+    field :combat_stats, map() | nil, default: nil
+    field :rate_fix, integer() | nil, default: nil
+    field :loot, map() | nil, default: nil
+  end
 
   @doc """
   Builds the pet from its persisted row, placed on its owner's cell and facing.

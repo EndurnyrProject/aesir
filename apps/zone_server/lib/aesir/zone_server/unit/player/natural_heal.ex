@@ -60,86 +60,51 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
     alias Aesir.ZoneServer.Mmo.Skill.Passives
     alias Aesir.ZoneServer.Unit.Player.Stats
 
-    @enforce_keys [
-      :stats,
-      :modifiers,
-      :passive_regen,
-      :sitting_regen,
-      :no_regen_mask,
-      :sitting?,
-      :walking?,
-      :overweight?,
-      :castle_bonus?,
-      :blocked?,
-      :tension_relax?
-    ]
-    defstruct @enforce_keys
+    use TypedStruct
 
-    @type t :: %__MODULE__{
-            stats: Stats.t(),
-            modifiers: map(),
-            passive_regen: Passives.regen(),
-            sitting_regen: Passives.sitting_regen(),
-            no_regen_mask: 0..3,
-            sitting?: boolean(),
-            walking?: boolean(),
-            overweight?: boolean(),
-            castle_bonus?: boolean(),
-            blocked?: boolean(),
-            tension_relax?: boolean()
-          }
+    typedstruct do
+      field :stats, Stats.t(), enforce: true
+      field :modifiers, map(), enforce: true
+      field :passive_regen, Passives.regen(), enforce: true
+      field :sitting_regen, Passives.sitting_regen(), enforce: true
+      field :no_regen_mask, 0..3, enforce: true
+      field :sitting?, boolean(), enforce: true
+      field :walking?, boolean(), enforce: true
+      field :overweight?, boolean(), enforce: true
+      field :castle_bonus?, boolean(), enforce: true
+      field :blocked?, boolean(), enforce: true
+      field :tension_relax?, boolean(), enforce: true
+    end
   end
 
   defmodule Plan do
     @moduledoc """
     One tick's amounts, interval rates (percent, 100 is base) and channel flags.
     """
-    @enforce_keys [
-      :hp,
-      :sp,
-      :skill_hp,
-      :skill_sp,
-      :sitting_hp,
-      :sitting_sp,
-      :hp_rate,
-      :sp_rate,
-      :skill_hp_rate,
-      :sp_interval_multiplier,
-      :natural_hp?,
-      :natural_sp?,
-      :skill_hp?,
-      :skill_sp?,
-      :sitting?,
-      :walking?,
-      :walk_regen?,
-      :overweight?,
-      :castle_bonus?,
-      :blocked?
-    ]
-    defstruct @enforce_keys
+    use TypedStruct
 
-    @type t :: %__MODULE__{
-            hp: non_neg_integer(),
-            sp: non_neg_integer(),
-            skill_hp: non_neg_integer(),
-            skill_sp: non_neg_integer(),
-            sitting_hp: non_neg_integer(),
-            sitting_sp: non_neg_integer(),
-            hp_rate: pos_integer(),
-            sp_rate: pos_integer(),
-            skill_hp_rate: pos_integer(),
-            sp_interval_multiplier: pos_integer(),
-            natural_hp?: boolean(),
-            natural_sp?: boolean(),
-            skill_hp?: boolean(),
-            skill_sp?: boolean(),
-            sitting?: boolean(),
-            walking?: boolean(),
-            walk_regen?: boolean(),
-            overweight?: boolean(),
-            castle_bonus?: boolean(),
-            blocked?: boolean()
-          }
+    typedstruct do
+      field :hp, non_neg_integer(), enforce: true
+      field :sp, non_neg_integer(), enforce: true
+      field :skill_hp, non_neg_integer(), enforce: true
+      field :skill_sp, non_neg_integer(), enforce: true
+      field :sitting_hp, non_neg_integer(), enforce: true
+      field :sitting_sp, non_neg_integer(), enforce: true
+      field :hp_rate, pos_integer(), enforce: true
+      field :sp_rate, pos_integer(), enforce: true
+      field :skill_hp_rate, pos_integer(), enforce: true
+      field :sp_interval_multiplier, pos_integer(), enforce: true
+      field :natural_hp?, boolean(), enforce: true
+      field :natural_sp?, boolean(), enforce: true
+      field :skill_hp?, boolean(), enforce: true
+      field :skill_sp?, boolean(), enforce: true
+      field :sitting?, boolean(), enforce: true
+      field :walking?, boolean(), enforce: true
+      field :walk_regen?, boolean(), enforce: true
+      field :overweight?, boolean(), enforce: true
+      field :castle_bonus?, boolean(), enforce: true
+      field :blocked?, boolean(), enforce: true
+    end
   end
 
   defmodule Timing do
@@ -148,23 +113,17 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
     natural HP and SP heal (`nil` before the first, which makes it due), and the
     millisecond accumulators of the skill and sitting skill channels.
     """
-    defstruct clock_ms: 0,
-              hp_last_ms: nil,
-              sp_last_ms: nil,
-              skill_hp_acc: 0,
-              skill_sp_acc: 0,
-              sitting_hp_acc: 0,
-              sitting_sp_acc: 0
+    use TypedStruct
 
-    @type t :: %__MODULE__{
-            clock_ms: non_neg_integer(),
-            hp_last_ms: non_neg_integer() | nil,
-            sp_last_ms: non_neg_integer() | nil,
-            skill_hp_acc: non_neg_integer(),
-            skill_sp_acc: non_neg_integer(),
-            sitting_hp_acc: non_neg_integer(),
-            sitting_sp_acc: non_neg_integer()
-          }
+    typedstruct do
+      field :clock_ms, non_neg_integer(), default: 0
+      field :hp_last_ms, non_neg_integer() | nil
+      field :sp_last_ms, non_neg_integer() | nil
+      field :skill_hp_acc, non_neg_integer(), default: 0
+      field :skill_sp_acc, non_neg_integer(), default: 0
+      field :sitting_hp_acc, non_neg_integer(), default: 0
+      field :sitting_sp_acc, non_neg_integer(), default: 0
+    end
 
     @doc "Timing at session start and after death: every natural heal due, no progress."
     @spec initial() :: t()

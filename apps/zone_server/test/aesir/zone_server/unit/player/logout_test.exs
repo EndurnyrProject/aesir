@@ -1,9 +1,10 @@
 defmodule Aesir.ZoneServer.Unit.Player.LogoutTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Logout
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
 
   @window 10_000
@@ -63,8 +64,5 @@ defmodule Aesir.ZoneServer.Unit.Player.LogoutTest do
   end
 
   defp session(character_id),
-    do: %SessionState{
-      game_state: %PlayerState{character_id: character_id},
-      connection_pid: self()
-    }
+    do: build(:session_state, game_state: build(:player_state, character_id: character_id))
 end

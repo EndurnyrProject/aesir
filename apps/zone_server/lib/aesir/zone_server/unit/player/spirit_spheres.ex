@@ -6,21 +6,20 @@ defmodule Aesir.ZoneServer.Unit.Player.SpiritSpheres do
   defmodule Entry do
     @moduledoc false
 
-    @enforce_keys [:id, :expires_at]
-    defstruct [:id, :expires_at]
+    use TypedStruct
 
-    @type t() :: %__MODULE__{
-            id: pos_integer(),
-            expires_at: integer()
-          }
+    typedstruct do
+      field :id, pos_integer(), enforce: true
+      field :expires_at, integer(), enforce: true
+    end
   end
 
-  defstruct entries: [], next_id: 1
+  use TypedStruct
 
-  @type t() :: %__MODULE__{
-          entries: [Entry.t()],
-          next_id: pos_integer()
-        }
+  typedstruct do
+    field :entries, [Entry.t()], default: []
+    field :next_id, pos_integer(), default: 1
+  end
 
   @spec new() :: t()
   def new, do: %__MODULE__{}

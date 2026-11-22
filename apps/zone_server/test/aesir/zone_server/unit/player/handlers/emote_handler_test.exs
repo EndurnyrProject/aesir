@@ -1,32 +1,29 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.EmoteHandlerTest do
   use ExUnit.Case, async: true
+  import Aesir.ZoneServer.Factory
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Emotion
   alias Aesir.ZoneServer.Unit.Emote
   alias Aesir.ZoneServer.Unit.Player.Handlers.EmoteHandler
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
 
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
   @char_id 42
   @nv_basic_id 1
 
-  defp state(overrides \\ %{}) do
-    game_state = Map.merge(%{character_id: @char_id, last_emote_at: nil}, overrides)
-    %{game_state: game_state, connection_pid: self()}
-  end
+  defp state(attrs \\ [], basic_level \\ 2) do
+    player =
+      build(
+        :player_state,
+        [
+          character_id: @char_id,
+          stats: %{progression: %{learned_skills: %{@nv_basic_id => basic_level}}}
+        ] ++ attrs
+      )
 
-  defp state_with_nv_basic(level) do
-    %{
-      game_state: %PlayerState{
-        character_id: @char_id,
-        last_emote_at: nil,
-        stats: %Stats{progression: %{learned_skills: %{@nv_basic_id => level}}}
-      },
-      connection_pid: self()
-    }
+    build(:session_state, game_state: player)
   end
 
   describe "handle_emote/2" do
@@ -48,7 +45,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EmoteHandlerTest do
       reject(&Emote.show/2)
 
       now = System.monotonic_time(:millisecond)
-      st = state(%{last_emote_at: now})
+      st = state(last_emote_at: now)
 
       assert {:noreply, ^st} = EmoteHandler.handle_emote(Emotion.id(:surprise), st)
     end
@@ -57,7 +54,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EmoteHandlerTest do
       expect(Emote, :show, fn {:player, @char_id}, _type -> :ok end)
 
       past = System.monotonic_time(:millisecond) - 2000
-      st = state(%{last_emote_at: past})
+      st = state(last_emote_at: past)
 
       {:noreply, new_state} = EmoteHandler.handle_emote(Emotion.id(:surprise), st)
       assert new_state.game_state.last_emote_at > past
@@ -80,14 +77,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EmoteHandlerTest do
     test "an emote is refused when NV_BASIC is below level 2" do
       reject(&Emote.show/2)
 
-      st = state_with_nv_basic(1)
+      st = state([], 1)
       assert {:noreply, ^st} = EmoteHandler.handle_emote(Emotion.id(:surprise), st)
     end
 
     test "an emote passes when NV_BASIC is at level 2" do
       expect(Emote, :show, fn {:player, @char_id}, _type -> :ok end)
 
-      st = state_with_nv_basic(2)
+      st = state([], 2)
       {:noreply, new_state} = EmoteHandler.handle_emote(Emotion.id(:surprise), st)
       assert is_integer(new_state.game_state.last_emote_at)
     end

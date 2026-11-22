@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Unit.BroadcastTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Unit.Broadcast
 
   describe "delivery privacy" do
@@ -15,7 +17,7 @@ defmodule Aesir.ZoneServer.Unit.BroadcastTest do
             quote(
               do:
                 Broadcast.to_visible_players(
-                  %{visible_players: MapSet.new()},
+                  build(:player_state),
                   unquote(Macro.escape(packet))
                 )
             )

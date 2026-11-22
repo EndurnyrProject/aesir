@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.DieCounter do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
 
@@ -22,12 +23,12 @@ defmodule Aesir.ZoneServer.Unit.Player.DieCounter do
   def var, do: @var
 
   @doc "The player's death count; `0` when unknown."
-  @spec count(map() | nil) :: non_neg_integer()
+  @spec count(map() | nil) :: integer()
   def count(%{vars: %{@var => count}}) when is_integer(count), do: count
   def count(_player), do: 0
 
   @doc "Adds one death to the counter."
-  @spec increment(map()) :: map()
+  @spec increment(SessionState.t()) :: SessionState.t()
   def increment(%{game_state: game_state} = state), do: put(state, count(game_state) + 1)
 
   @doc """
@@ -35,7 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Player.DieCounter do
   one changes nothing. Setting a Super Novice-classed player's counter to 1
   recalculates their stats in full.
   """
-  @spec put(map(), integer()) :: map()
+  @spec put(SessionState.t(), integer()) :: SessionState.t()
   def put(%{game_state: game_state} = state, value) do
     if value < 0 or value == count(game_state) do
       state

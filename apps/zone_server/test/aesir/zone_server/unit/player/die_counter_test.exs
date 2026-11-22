@@ -2,37 +2,36 @@ defmodule Aesir.ZoneServer.Unit.Player.DieCounterTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Unit.Player.DieCounter
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.SessionState
-  alias Aesir.ZoneServer.Unit.Player.Stats
-  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @super_novice 23
   @novice 0
 
-  setup :set_mimic_private
+  setup :set_mimic_from_context
+  setup :verify_on_exit!
 
   setup do
-    Mimic.copy(StatusManager)
     stub(UnitRegistry, :update_unit_state, fn _, _, _ -> :ok end)
     stub(CharacterPersistence, :update_character, fn _, _, _ -> {:ok, %Character{}} end)
     :ok
   end
 
   defp session(job_id, deaths) do
-    game_state = %PlayerState{
-      character_id: 5,
-      account_id: 6,
-      vars: %{DieCounter.var() => deaths},
-      stats: %Stats{progression: %PlayerProgression{job_id: job_id}, generation: 3}
-    }
+    player =
+      build(:player_state,
+        character_id: 5,
+        account_id: 6,
+        vars: %{DieCounter.var() => deaths},
+        stats: %{progression: %{job_id: job_id}, generation: 3}
+      )
 
-    %SessionState{game_state: game_state, connection_pid: self()}
+    build(:session_state, game_state: player)
   end
 
   test "a Super Novice's first death persists the counter and recalculates in full" do

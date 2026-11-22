@@ -9,89 +9,50 @@ defmodule Aesir.ZoneServer.Unit.Mob.Calculated do
   Mode is a nonnegative signed 32-bit mask decoded by `MobMode`.
   """
 
+  use TypedStruct
+
   alias Aesir.ZoneServer.Mmo.Element
   alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
   alias Aesir.ZoneServer.Mmo.Race
   alias Aesir.ZoneServer.Mmo.Size
 
-  @fields [
-    :str,
-    :agi,
-    :vit,
-    :int,
-    :dex,
-    :luk,
-    :batk,
-    :watk_min,
-    :watk_max,
-    :watk,
-    :watk2,
-    :matk_min,
-    :matk_max,
-    :hit,
-    :flee,
-    :cri,
-    :flee2,
-    :def,
-    :def2,
-    :mdef,
-    :mdef2,
-    :def_ele,
-    :ele_lv,
-    :attack_element,
-    :speed,
-    :amotion,
-    :client_amotion,
-    :adelay,
-    :dmotion,
-    :aspd_rate,
-    :max_hp,
-    :max_sp,
-    :mode,
-    :class,
-    :race,
-    :size
-  ]
-  @enforce_keys @fields
-  defstruct @fields
-
   @typedoc "Complete immutable status data; current HP/SP and action deadlines are session state."
-  @type t :: %__MODULE__{
-          str: -32_768..32_767,
-          agi: -32_768..32_767,
-          vit: -32_768..32_767,
-          int: -32_768..32_767,
-          dex: -32_768..32_767,
-          luk: -32_768..32_767,
-          batk: -2_147_483_648..2_147_483_647,
-          watk_min: 0..65_535,
-          watk_max: 0..65_535,
-          watk: 0..65_535,
-          watk2: 0..65_535,
-          matk_min: 0..65_535,
-          matk_max: 0..65_535,
-          hit: -32_768..32_767,
-          flee: -32_768..32_767,
-          cri: -32_768..32_767,
-          flee2: -32_768..32_767,
-          def: -32_768..32_767,
-          def2: -32_768..32_767,
-          mdef: -32_768..32_767,
-          mdef2: -32_768..32_767,
-          def_ele: Element.t(),
-          ele_lv: non_neg_integer(),
-          attack_element: Element.t(),
-          speed: 0..65_535,
-          amotion: 0..65_535,
-          client_amotion: 0..65_535,
-          adelay: 0..65_535,
-          dmotion: 0..65_535,
-          aspd_rate: -32_768..32_767,
-          max_hp: 0..4_294_967_295,
-          max_sp: 0..4_294_967_295,
-          mode: 0..2_147_483_647,
-          class: MobMode.class(),
-          race: Race.t(),
-          size: Size.t()
-        }
+  typedstruct enforce: true do
+    field :str, -32_768..32_767
+    field :agi, -32_768..32_767
+    field :vit, -32_768..32_767
+    field :int, -32_768..32_767
+    field :dex, -32_768..32_767
+    field :luk, -32_768..32_767
+    field :batk, -2_147_483_648..2_147_483_647
+    field :watk_min, 0..65_535
+    field :watk_max, 0..65_535
+    field :watk, 0..65_535
+    field :watk2, 0..65_535
+    field :matk_min, 0..65_535
+    field :matk_max, 0..65_535
+    field :hit, -32_768..32_767
+    field :flee, -32_768..32_767
+    field :cri, -32_768..32_767
+    field :flee2, -32_768..32_767
+    field :def, -32_768..32_767
+    field :def2, -32_768..32_767
+    field :mdef, -32_768..32_767
+    field :mdef2, -32_768..32_767
+    field :def_ele, Element.t()
+    field :ele_lv, non_neg_integer()
+    field :attack_element, Element.t()
+    field :speed, 0..65_535
+    field :amotion, 0..65_535
+    field :client_amotion, 0..65_535
+    field :adelay, 0..65_535
+    field :dmotion, 0..65_535
+    field :aspd_rate, -32_768..32_767
+    field :max_hp, 0..4_294_967_295
+    field :max_sp, 0..4_294_967_295
+    field :mode, 0..2_147_483_647
+    field :class, MobMode.class()
+    field :race, Race.t()
+    field :size, Size.t()
+  end
 end

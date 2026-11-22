@@ -16,25 +16,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler do
   defmodule TimerPlan do
     @moduledoc false
 
-    @enforce_keys [:generation, :expires_at]
-    defstruct [:generation, :expires_at]
+    use TypedStruct
 
-    @type t() :: %__MODULE__{
-            generation: non_neg_integer(),
-            expires_at: integer()
-          }
+    typedstruct do
+      field :generation, non_neg_integer(), enforce: true
+      field :expires_at, integer(), enforce: true
+    end
   end
 
   defmodule SkillCostPlan do
     @moduledoc false
 
-    @enforce_keys [:previous_timer, :timer_plan]
-    defstruct [:previous_timer, :timer_plan]
+    use TypedStruct
 
-    @type t() :: %__MODULE__{
-            previous_timer: reference() | nil,
-            timer_plan: TimerPlan.t() | nil
-          }
+    typedstruct do
+      field :previous_timer, reference() | nil, enforce: true
+      field :timer_plan, TimerPlan.t() | nil, enforce: true
+    end
   end
 
   @spec summon(session_state(), pos_integer(), pos_integer()) :: {:noreply, session_state()}

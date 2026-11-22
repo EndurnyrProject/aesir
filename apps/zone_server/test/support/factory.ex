@@ -62,6 +62,8 @@ defmodule Aesir.ZoneServer.Factory do
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.QuestLog.Entry, as: QuestEntry
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
@@ -390,6 +392,20 @@ defmodule Aesir.ZoneServer.Factory do
     }
     |> Map.merge(attrs)
     |> PlayerStateFixture.build()
+  end
+
+  @doc "An active quest before its objectives have been initialized."
+  @spec quest_entry_factory() :: QuestEntry.t()
+  def quest_entry_factory, do: %QuestEntry{state: :active}
+
+  @doc "A player session with a factory player snapshot and the test process as its connection."
+  @spec session_state_factory(map()) :: SessionState.t()
+  def session_state_factory(attrs) do
+    {game_state, attrs} = Map.pop_lazy(attrs, :game_state, fn -> build(:player_state) end)
+
+    %SessionState{game_state: game_state, connection_pid: self()}
+    |> merge_attributes(attrs)
+    |> evaluate_lazy_attributes()
   end
 
   @doc """

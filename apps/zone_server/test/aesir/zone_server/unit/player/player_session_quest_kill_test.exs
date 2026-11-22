@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionQuestKillTest do
   use Mimic
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.ItemAddFailed
@@ -26,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionQuestKillTest do
   alias Aesir.ZoneServer.Unit.Player.QuestLog.Entry
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
 
+  setup :set_mimic_from_context
   setup :verify_on_exit!
   setup :setup_ets_tables
 
@@ -64,7 +66,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionQuestKillTest do
 
   defp state(quest_log) do
     game_state = %{PlayerState.new(character()) | quest_log: quest_log}
-    %{game_state: game_state, connection_pid: self()}
+    build(:session_state, game_state: game_state)
   end
 
   test "ticks the matching objective, persists the moved quest, and pushes progress" do
@@ -85,7 +87,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionQuestKillTest do
   test "clamps at the objective count so a re-kill after completion is a no-op" do
     reject(&QuestPersistence.upsert/2)
 
-    log = %{7393 => %Entry{state: :active, counts: [2], deadline: nil}}
+    log = %{7393 => build(:quest_entry, counts: [2])}
 
     {:noreply, new_state} =
       PlayerSession.handle_info({:loot, {:quest_kill, kill(2314)}}, state(log))
@@ -193,7 +195,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionQuestKillTest do
       record_gives()
 
       log = %{
-        8001 => %Entry{state: :active, counts: [0], position: 1},
+        8001 => build(:quest_entry, counts: [0], position: 1),
         7393 => %Entry{state: :active, counts: [0], position: 0}
       }
 
@@ -216,7 +218,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionQuestKillTest do
 
       log = %{
         8001 => %Entry{state: :complete, counts: [5]},
-        7393 => %Entry{state: :active, counts: [2]}
+        7393 => build(:quest_entry, counts: [2])
       }
 
       :persistent_term.put(Quests, %{all: [@drops], by_id: %{8001 => @drops, 7393 => @drops}})

@@ -19,6 +19,20 @@ defmodule Aesir.ZoneServer.Unit do
   @type entity_size :: Size.t()
   @type unit_type :: :player | :mob | :npc | :pet | :homunculus | :mercenary | :skill_unit
 
+  @typedoc "A unit's common identity, combat properties, and optional process information."
+  @type entity_info :: %{
+          required(:unit_id) => integer(),
+          required(:unit_type) => atom(),
+          required(:race) => entity_race(),
+          required(:element) => entity_element(),
+          required(:element_level) => integer(),
+          required(:boss_flag) => boolean(),
+          required(:size) => entity_size(),
+          required(:stats) => map(),
+          optional(:process_pid) => pid() | nil,
+          optional(:custom_immunities) => [atom()]
+        }
+
   @doc """
   Returns the entity's race type.
   Used for immunity and resistance calculations.
@@ -135,7 +149,7 @@ defmodule Aesir.ZoneServer.Unit do
   @doc """
   Helper function to build standard entity info map from an entity module.
   """
-  @spec build_entity_info(module(), any()) :: map()
+  @spec build_entity_info(module(), term()) :: entity_info()
   def build_entity_info(entity_module, entity_state) when is_atom(entity_module) do
     {element, element_level} = entity_module.get_element(entity_state)
 

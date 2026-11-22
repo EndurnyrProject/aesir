@@ -10,15 +10,14 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestInfoViewTest do
 
   @moduletag :capture_log
 
+  import Aesir.ZoneServer.Factory
   import Aesir.ZoneServer.Script.Dsl, only: [get_char_var: 3]
 
   alias Aesir.Net.QuestInfoIcon
   alias Aesir.ZoneServer.Npc.QuestInfo
   alias Aesir.ZoneServer.Npc.Registry
   alias Aesir.ZoneServer.Script.Ctx
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.QuestInfoView
-  alias Aesir.ZoneServer.Unit.Player.SessionState
 
   defmodule QiNpc do
     use Aesir.ZoneServer.Npc,
@@ -40,19 +39,11 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestInfoViewTest do
   end
 
   defp game_state(vars, map \\ "prontera") do
-    %PlayerState{
-      character_id: 1,
-      account_id: 100,
-      map_name: map,
-      vars: vars,
-      temp_vars: %{},
-      inventory: %{},
-      quest_log: %{}
-    }
+    build(:player_state, character_id: 1, account_id: 100, map_name: map, vars: vars)
   end
 
   defp session(vars, map \\ "prontera") do
-    %SessionState{game_state: game_state(vars, map), connection_pid: self()}
+    build(:session_state, game_state: game_state(vars, map))
   end
 
   test "the questinfo DSL op in OnInit registers the icon on the NPC's map" do

@@ -13,17 +13,16 @@ defmodule Aesir.ZoneServer.Unit.Lifecycle.Event do
           guild_id: pos_integer() | nil
         }
 
-  @enforce_keys [:unit_type, :unit_id, :reason]
-  defstruct [:unit_type, :unit_id, :reason, :old_map, :new_map, :kill_credit]
+  use TypedStruct
 
-  @type t() :: %__MODULE__{
-          unit_type: Unit.unit_type(),
-          unit_id: integer(),
-          reason: reason(),
-          old_map: String.t() | nil,
-          new_map: String.t() | nil,
-          kill_credit: kill_credit() | nil
-        }
+  typedstruct do
+    field :unit_type, Unit.unit_type(), enforce: true
+    field :unit_id, integer(), enforce: true
+    field :reason, reason(), enforce: true
+    field :old_map, String.t() | nil
+    field :new_map, String.t() | nil
+    field :kill_credit, kill_credit() | nil
+  end
 end
 
 defmodule Aesir.ZoneServer.Unit.Lifecycle do

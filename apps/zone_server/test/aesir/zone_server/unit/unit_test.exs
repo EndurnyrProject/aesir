@@ -6,10 +6,9 @@ defmodule Aesir.ZoneServer.UnitTest do
 
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Unit
-  alias Aesir.ZoneServer.Unit.Mob.MobState
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @living_actions [
     :idle,
@@ -51,10 +50,7 @@ defmodule Aesir.ZoneServer.UnitTest do
       refute Unit.living?(player_state(-1, :idle))
       refute Unit.living?(player_state(100, :dead))
 
-      refute Unit.living?(%PlayerState{
-               action_state: :unknown,
-               stats: %{current_state: %{hp: 100}}
-             })
+      refute Unit.living?(player_state(100, :unknown))
 
       refute Unit.corpse?(player_state(-1, :dead))
       refute Unit.corpse?(player_state(0, :idle))
@@ -72,7 +68,7 @@ defmodule Aesir.ZoneServer.UnitTest do
     end
 
     test "skill-unit cells are neither living nor corpses" do
-      cell = struct(Cell, %{cell_id: 1, group_id: 1, map_name: "prontera", x: 1, y: 1})
+      cell = build(:skill_unit_cell)
 
       refute Unit.living?(cell)
       refute Unit.corpse?(cell)
@@ -80,10 +76,10 @@ defmodule Aesir.ZoneServer.UnitTest do
   end
 
   defp mob_state(hp, is_dead) do
-    struct(MobState, %{hp: hp, is_dead: is_dead})
+    build(:mob_state, hp: hp, is_dead: is_dead)
   end
 
   defp player_state(hp, action_state) do
-    %PlayerState{stats: %{current_state: %{hp: hp}}, action_state: action_state}
+    build(:player_state, stats: %{current_state: %{hp: hp}}, action_state: action_state)
   end
 end

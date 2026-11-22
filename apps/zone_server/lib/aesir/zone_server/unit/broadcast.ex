@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Broadcast do
 
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
@@ -40,7 +41,7 @@ defmodule Aesir.ZoneServer.Unit.Broadcast do
   ## Options
     - `exclude_id`: A character id to skip (e.g. the sender).
   """
-  @spec to_players(Enumerable.t(), struct(), keyword()) :: :ok
+  @spec to_players(Enumerable.t(), struct(), exclude_id: integer()) :: :ok
   def to_players(char_ids, packet, opts \\ []) do
     ensure_area_delivery!(packet)
     send_to_players(char_ids, packet, opts)
@@ -51,7 +52,8 @@ defmodule Aesir.ZoneServer.Unit.Broadcast do
 
   Accepts the same `:exclude_id` option as `to_players/3`.
   """
-  @spec to_in_range(String.t(), integer(), integer(), integer(), struct(), keyword()) :: :ok
+  @spec to_in_range(String.t(), integer(), integer(), integer(), struct(), exclude_id: integer()) ::
+          :ok
   def to_in_range(map_name, x, y, range, packet, opts \\ []) do
     ensure_area_delivery!(packet)
 
@@ -65,7 +67,7 @@ defmodule Aesir.ZoneServer.Unit.Broadcast do
 
   Accepts the same `:exclude_id` option as `to_players/3`.
   """
-  @spec to_visible_players(map(), struct(), keyword()) :: :ok
+  @spec to_visible_players(PlayerState.t(), struct(), exclude_id: integer()) :: :ok
   def to_visible_players(game_state, packet, opts \\ []) do
     ensure_area_delivery!(packet)
     send_to_players(game_state.visible_players, packet, opts)
@@ -110,13 +112,14 @@ defmodule Aesir.ZoneServer.Unit.Broadcast do
   @doc """
   Publishes a mob despawn so players on that map can react (e.g. clear combat).
   """
-  @spec publish_mob_despawn(String.t(), integer()) :: :ok
+  @spec publish_mob_despawn(String.t(), integer()) :: :ok | {:error, term()}
   def publish_mob_despawn(map_name, mob_id) do
     PubSub.broadcast(Aesir.PubSub, mob_despawn_topic(map_name), {:mob_despawned, mob_id})
   end
 
   # Normalized so the topic matches whether or not the caller's map name still
   # carries the ".gat" suffix (mobs keep it, players don't).
+  @spec mob_despawn_topic(String.t()) :: String.t()
   defp mob_despawn_topic(map_name) do
     "zone:#{String.replace_suffix(map_name, ".gat", "")}:mob_despawns"
   end

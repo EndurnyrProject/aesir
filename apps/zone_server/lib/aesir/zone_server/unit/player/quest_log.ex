@@ -10,15 +10,14 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestLog.Entry do
   @typedoc "Quest progression state (`Q_INACTIVE`/`Q_ACTIVE`/`Q_COMPLETE`)."
   @type state :: :active | :inactive | :complete
 
-  @enforce_keys [:state]
-  defstruct state: nil, counts: [], deadline: nil, position: nil
+  use TypedStruct
 
-  @type t() :: %__MODULE__{
-          state: state(),
-          counts: [non_neg_integer()],
-          deadline: nil,
-          position: non_neg_integer() | nil
-        }
+  typedstruct do
+    field :state, state(), enforce: true
+    field :counts, [non_neg_integer()], default: []
+    field :deadline, nil
+    field :position, non_neg_integer() | nil
+  end
 end
 
 defmodule Aesir.ZoneServer.Unit.Player.QuestLog do

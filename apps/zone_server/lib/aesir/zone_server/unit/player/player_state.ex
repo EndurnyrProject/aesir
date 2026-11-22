@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
   @behaviour Aesir.ZoneServer.Unit
 
+  use TypedStruct
+
   @doc "Returns the unmodified player cell delay before equipment and status effects."
   @spec base_walk_speed() :: pos_integer()
   def base_walk_speed, do: 150
@@ -53,6 +55,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   @typedoc "A staged production outcome the session reports to the client."
   @type production_result :: %{success: boolean(), item_id: non_neg_integer()}
 
+  @typedoc "A staged container write-through: `{old_items, new_items, change}`."
+  @type container_persist ::
+          {%{non_neg_integer() => InventoryItem.t()}, %{non_neg_integer() => InventoryItem.t()},
+           term()}
+
   @typedoc """
   The owner's homunculus as the skill checks of a player's cast read it: its
   lifecycle, HP and Instruction Change rank (0 unless it lives), stamped by the
@@ -65,356 +72,246 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           instruction_change_rank: non_neg_integer()
         }
 
-  @type t :: %__MODULE__{
-          character_id: integer(),
-          character_name: String.t(),
-          account_id: integer(),
-          process_pid: pid() | nil,
-          party_id: non_neg_integer(),
-          battleground_team_id: non_neg_integer(),
-          guild_id: non_neg_integer(),
-          pvp_point: integer(),
-          pvp_won: non_neg_integer(),
-          pvp_lost: non_neg_integer(),
-          guild_tax: non_neg_integer(),
-          waiting_room: non_neg_integer() | nil,
-          sex: String.t(),
-          hair: integer(),
-          hair_color: integer(),
-          clothes_color: integer(),
-          head_mid: integer(),
-          head_bottom: integer(),
-          robe: integer(),
-          x: integer(),
-          y: integer(),
-          map_name: String.t(),
-          pending_map_load: :login | :warp | nil,
-          memo_points: [map()],
-          save_map: String.t(),
-          save_x: integer(),
-          save_y: integer(),
-          dir: direction(),
-          action_state: action_state(),
-          state_context: map(),
-          casting: map() | nil,
-          movement_state: movement_state(),
-          walk_path: list({integer(), integer()}),
-          walk_speed: integer(),
-          pending_step: HitStop.step(),
-          walk_target: {integer(), integer()} | nil,
-          movement_intent: :none | :normal | :combat | :skill | :pickup,
-          view_range: integer(),
-          visible_players: MapSet.t(),
-          visible_mobs: MapSet.t(),
-          visible_homunculi: MapSet.t(),
-          visible_pets: MapSet.t(),
-          homunculus_summary: homunculus_summary() | nil,
-          visible_warps: MapSet.t(),
-          visible_npcs: MapSet.t(),
-          visible_shops: MapSet.t(),
-          visible_items: MapSet.t(),
-          visible_skill_units: MapSet.t(),
-          last_visibility_cell: {integer(), integer()} | nil,
-          inside_npc_areas: MapSet.t(),
-          target_id: integer() | nil,
-          combat_target_id: integer() | nil,
-          combat_action_type: integer() | nil,
-          combo: Combo.t(),
-          last_target_position: {integer(), integer()} | nil,
-          pickup_target_id: integer() | nil,
-          last_attack_timestamp: integer(),
-          act_delay_until: integer(),
-          attack_lock_until: integer(),
-          last_warp_at: integer() | nil,
-          last_emote_at: integer() | nil,
-          deferred_epoch: non_neg_integer(),
-          skill_message: binary(),
-          last_song: %{skill_id: integer(), level: pos_integer()} | nil,
-          ensemble_partner: integer() | nil,
-          plagiarized: %{skill_id: integer(), level: pos_integer()} | nil,
-          continuous_attack_timer: reference() | nil,
-          pending_forced_movement: ForcedMovement.t() | nil,
-          spirit_spheres: SpiritSpheres.t(),
-          spirit_spheres_old: non_neg_integer(),
-          spirit_sphere_timer: reference() | nil,
-          spirit_sphere_timer_plan: %{generation: non_neg_integer(), expires_at: integer()} | nil,
-          spirit_sphere_timer_generation: non_neg_integer(),
-          spirit_sphere_revision: non_neg_integer(),
-          invincible_timer: reference() | nil,
-          invincible_generation: non_neg_integer(),
-          skill_cooldowns: %{integer() => integer()},
-          equip_regen_accumulators: %{{atom(), pos_integer()} => non_neg_integer()},
-          stats: PlayerStats.t(),
-          vars: %{String.t() => term()},
-          temp_vars: %{String.t() => term()},
-          zeny: integer(),
-          fame: non_neg_integer(),
-          potion_success_counter: non_neg_integer(),
-          pending_fame_awards: [Fame.award_event()],
-          quest_log: %{non_neg_integer() => QuestLog.Entry.t()},
-          show_delay: boolean(),
-          inventory: %{non_neg_integer() => InventoryItem.t()},
-          pending_inventory_persist: [
-            {%{non_neg_integer() => InventoryItem.t()}, %{non_neg_integer() => InventoryItem.t()},
-             term()}
-          ],
-          pending_inventory_notify: [tuple()],
-          pending_item_add_failures: [atom()],
-          cart: %{non_neg_integer() => InventoryItem.t()},
-          pending_cart_persist: [
-            {%{non_neg_integer() => InventoryItem.t()}, %{non_neg_integer() => InventoryItem.t()},
-             term()}
-          ],
-          pending_cart_notify: [tuple()],
-          cart_type: non_neg_integer(),
-          storage: nil | %{non_neg_integer() => InventoryItem.t()},
-          guild_storage: nil | %{non_neg_integer() => InventoryItem.t()},
-          pending_warp: {String.t(), non_neg_integer(), non_neg_integer()} | nil,
-          pending_interaction: module() | nil,
-          pending_menu_offer: map() | nil,
-          pending_vending_setup:
-            %{required(:level) => pos_integer(), optional(:sp_spent) => non_neg_integer()} | nil,
-          vending_shop: map() | nil,
-          pending_production_result: production_result() | [production_result()] | nil,
-          open_menu_skill_id: non_neg_integer(),
-          pending_hp_loss: pos_integer() | nil
-        }
-
   @client_index_offset 2
 
   @warp_cooldown_ms 500
 
-  defstruct [
+  @typedoc "A player's game state, owned by its `PlayerSession`."
+  typedstruct do
     # Character identification
-    :character_id,
-    :character_name,
-    :account_id,
-    :process_pid,
+    field :character_id, integer()
+    field :character_name, String.t()
+    field :account_id, integer()
+    field :process_pid, pid()
 
     # Appearance (load-once, cosmetic; sourced from the Character at spawn)
-    :sex,
-    :hair,
-    :hair_color,
-    :clothes_color,
-    :head_mid,
-    :head_bottom,
-    :robe,
+    field :sex, String.t()
+    field :hair, integer()
+    field :hair_color, integer()
+    field :clothes_color, integer()
+    field :head_mid, integer()
+    field :head_bottom, integer()
+    field :robe, integer()
 
     # Position & Movement
-    :x,
-    :y,
-    :map_name,
+    field :x, integer()
+    field :y, integer()
+    field :map_name, String.t()
     # :login until the client's first MapLoaded ack puts the player on its map,
     # :warp while a cross-map warp waits for the ack, nil while on a map. Picks
     # the map-load branch; an ack while nil is ignored.
-    :pending_map_load,
+    field :pending_map_load, :login | :warp
 
     # Save point — the return-on-death destination (rAthena save_point).
-    :save_map,
-    :save_x,
-    :save_y,
-    :dir,
+    field :save_map, String.t()
+    field :save_x, integer()
+    field :save_y, integer()
+    field :dir, direction()
 
     # Action state machine
     # Represents the primary action state of the player
-    :action_state,
+    field :action_state, action_state()
 
     # State context for current action
     # Stores state-specific data like combat intent
-    :state_context,
+    field :state_context, map()
 
     # Movement state machine
     # :standing | :moving (kept separate for movement mechanics)
-    :movement_state,
+    field :movement_state, movement_state()
 
     # Movement state
-    :walk_path,
-    :walk_speed,
-    :walk_delay_until,
+    field :walk_path, list({integer(), integer()})
+    field :walk_speed, integer()
+    field :walk_delay_until, integer()
     # The step the walk scheduled last, read by the hit stop (`HitStop`).
-    :pending_step,
+    field :pending_step, HitStop.step()
     # Where a move request made while walking redirects the walk once the
     # pending step lands.
-    :walk_target,
+    field :walk_target, {integer(), integer()}
 
     # Movement intent - why are we moving?
     # :none | :normal | :combat | :skill | :pickup
-    :movement_intent,
+    field :movement_intent, :none | :normal | :combat | :skill | :pickup
 
     # Visibility
-    :view_range,
+    field :view_range, integer()
     # MapSet of char_ids currently visible
-    :visible_players,
+    field :visible_players, MapSet.t()
     # MapSet of mob_ids currently visible
-    :visible_mobs,
+    field :visible_mobs, MapSet.t()
     # MapSet of warp entity_ids currently visible (ephemeral, not persisted)
-    :visible_warps,
+    field :visible_warps, MapSet.t()
     # MapSet of static NPC entity_ids currently visible (ephemeral, not persisted)
-    :visible_npcs,
+    field :visible_npcs, MapSet.t()
     # MapSet of static shop entity_ids currently visible (ephemeral, not persisted)
-    :visible_shops,
+    field :visible_shops, MapSet.t()
     # MapSet of ground-item ids currently visible (ephemeral, not persisted)
-    :visible_items,
+    field :visible_items, MapSet.t()
     # MapSet of visible skill-unit group ids (ephemeral, not persisted)
-    :visible_skill_units,
+    field :visible_skill_units, MapSet.t()
     # Last grid cell for visibility check
-    :last_visibility_cell,
+    field :last_visibility_cell, {integer(), integer()}
 
     # Combat state
-    :target_id,
-    :combat_target_id,
-    :combat_action_type,
-    :last_target_position,
-    :continuous_attack_timer,
-    :pending_forced_movement,
+    field :target_id, integer()
+    field :combat_target_id, integer()
+    field :combat_action_type, integer()
+    field :last_target_position, {integer(), integer()}
+    field :continuous_attack_timer, reference()
+    field :pending_forced_movement, ForcedMovement.t()
 
     # Move-to-pickup state — the ground item we are walking toward to pick up.
-    :pickup_target_id,
+    field :pickup_target_id, integer()
 
     # Character Stats
-    :stats,
+    field :stats, PlayerStats.t()
 
     # Persistent char variables (jsonb-backed, sourced from Character.vars)
     # and session-life-only temp char vars (never persisted).
-    :zeny,
+    field :zeny, integer()
     # Session-owned ordinary Monk combo window.
-    visible_homunculi: MapSet.new(),
-    visible_pets: MapSet.new(),
-    homunculus_summary: nil,
-    combo: Combo.new(),
-    spirit_spheres: SpiritSpheres.new(),
+    field :visible_homunculi, MapSet.t(), default: MapSet.new()
+    field :visible_pets, MapSet.t(), default: MapSet.new()
+    field :homunculus_summary, homunculus_summary()
+    field :combo, Combo.t(), default: Combo.new()
+    field :spirit_spheres, SpiritSpheres.t(), default: SpiritSpheres.new()
     # The sphere count a skill's cast-begin requirement check recorded for its
     # own damage (Finger Offensive, Asura Strike); kept until the next one.
-    spirit_spheres_old: 0,
-    spirit_sphere_timer: nil,
-    spirit_sphere_timer_plan: nil,
-    spirit_sphere_timer_generation: 0,
-    spirit_sphere_revision: 0,
+    field :spirit_spheres_old, non_neg_integer(), default: 0
+    field :spirit_sphere_timer, reference()
+    field :spirit_sphere_timer_plan, %{generation: non_neg_integer(), expires_at: integer()}
+    field :spirit_sphere_timer_generation, non_neg_integer(), default: 0
+    field :spirit_sphere_revision, non_neg_integer(), default: 0
     # Post-map-load and revive invincibility (`Unit.Player.Invincibility`).
-    invincible_timer: nil,
-    invincible_generation: 0,
-    fame: 0,
-    potion_success_counter: 0,
-    pending_fame_awards: [],
-    skill_message: "",
-    memo_points: [],
-    vars: %{},
-    temp_vars: %{},
+    field :invincible_timer, reference()
+    field :invincible_generation, non_neg_integer(), default: 0
+    field :fame, non_neg_integer(), default: 0
+    field :potion_success_counter, non_neg_integer(), default: 0
+    field :pending_fame_awards, [Fame.award_event()], default: []
+    field :skill_message, binary(), default: ""
+    field :memo_points, [map()], default: []
+    field :vars, %{String.t() => term()}, default: %{}
+    field :temp_vars, %{String.t() => term()}, default: %{}
     # Quest log keyed by quest id, restored from character_quests on spawn
     # (QuestPersistence.load_on_spawn/1) and never nil.
-    quest_log: %{},
+    field :quest_log, %{non_neg_integer() => QuestLog.Entry.t()}, default: %{}
 
     # NPC touch-area (OnTouch) leave/re-enter hysteresis: MapSet of gids whose
     # touch rect currently contains the player's cell. Populated on every cell
     # change (never on standing still); cleared on warp/map change.
-    inside_npc_areas: MapSet.new(),
+    field :inside_npc_areas, MapSet.t(), default: MapSet.new()
 
     # Whether act delay and cooldown refusals are reported to the player
     # (`@showdelay`); off by default, ephemeral.
-    show_delay: false,
+    field :show_delay, boolean(), default: false
 
     # Inventory keyed by stable session index
-    inventory: %{},
+    field :inventory, %{non_neg_integer() => InventoryItem.t()}, default: %{}
     # Catalyst-consumption deltas staged by a skill cast for the handler to
     # write through, then cleared. Each entry is `{old_inventory, new_inventory,
     # change}` as produced by `Inventory.remove/3`.
-    pending_inventory_persist: [],
+    field :pending_inventory_persist, [container_persist()], default: []
     # Inventory-add change descriptors staged by a skill cast so the session
     # handler can emit an ItemAdded for each new/affected slot, then clear them.
-    pending_inventory_notify: [],
+    field :pending_inventory_notify, [tuple()], default: []
     # Inventory-add refusals staged by a skill or script cast so the session
     # handler can emit one ItemAddFailed per refusal, then clear them.
-    pending_item_add_failures: [],
+    field :pending_item_add_failures, [atom()], default: []
     # Cart keyed by stable session index, mirroring inventory
-    cart: %{},
-    pending_cart_persist: [],
-    pending_cart_notify: [],
+    field :cart, %{non_neg_integer() => InventoryItem.t()}, default: %{}
+    field :pending_cart_persist, [container_persist()], default: []
+    field :pending_cart_notify, [tuple()], default: []
     # In-memory copy of character.cart (0 = no cart, 1/2/3 = sprite tier)
-    cart_type: 0,
+    field :cart_type, non_neg_integer(), default: 0
     # In-memory copy of character.option (e_option sprite-state bitmask). The
     # single writer's authoritative value; persisted bits (e.g. :riding) are
     # read-modify-written against it so unrelated bits are never clobbered.
-    option: 0,
+    field :option, non_neg_integer(), default: 0
     # Account storage keyed by stable session index, mirroring inventory/cart;
     # nil means the storage window is closed (nothing loaded for this session).
-    storage: nil,
+    field :storage, %{non_neg_integer() => InventoryItem.t()}
     # Guild storage follows the same window-state convention as account storage.
-    guild_storage: nil,
+    field :guild_storage, %{non_neg_integer() => InventoryItem.t()}
     # Warp directive staged by a skill cast. When non-nil the handler calls
     # WarpHandler.warp/4 after committing SP/cooldowns, then clears this field.
-    pending_warp: nil,
+    field :pending_warp, {String.t(), non_neg_integer(), non_neg_integer()}
     # Dialog directive staged by a skill cast: a module implementing
     # `on_talk/1` (e.g. AC_MAKINGARROW's crafting menu). The handler starts a
     # Script.Interaction for it after the cast commits, then clears this field.
-    pending_interaction: nil,
+    field :pending_interaction, module()
     # SkillMenu offer staged by a skill cast (SA_AUTOSPELL's bolt list). The
     # pending menu itself lives on the session, which owns the connection, so a
     # cast - which only ever sees this state - stages the offer here and the
     # handler opens it after the cast commits, then clears this field.
-    pending_menu_offer: nil,
+    field :pending_menu_offer, map()
     # Preparation staged by the paid skill; connection-bound grants live on the session.
-    pending_vending_setup: nil,
+    field :pending_vending_setup, %{
+      required(:level) => pos_integer(),
+      optional(:sp_spent) => non_neg_integer()
+    }
+
     # The open vending shop (`VendingHandler.shop()`), independent of the action
     # state: the shop stays open through death, respawn and permitted warps and
     # is closed only by the vending lifecycle.
-    vending_shop: nil,
+    field :vending_shop, map()
     # Production outcome staged by a menu skill for SkillMenuHandler to send.
-    pending_production_result: nil,
+    field :pending_production_result, production_result() | [production_result()]
     # Read-only snapshot of the open skill menu's source skill (0 for none),
     # stamped by SkillHandler before a cast; the session's menu is the authority.
-    open_menu_skill_id: 0,
+    field :open_menu_skill_id, non_neg_integer(), default: 0
     # Passive HP loss a cast staged (a failed Create Deadly Poison), applied by
     # SkillHandler after the cast commits.
-    pending_hp_loss: nil,
+    field :pending_hp_loss, pos_integer()
     # In-flight timed-cast descriptor (mirrors MobState.casting). Written by
     # transition_to/3 on entering :casting and cleared on leaving it; nil when
     # no cast is in flight. Cast handlers key off this field, not state_context.
-    casting: nil,
-    skill_cooldowns: %{},
-    last_attack_timestamp: 0,
-    act_delay_until: 0,
+    field :casting, map()
+    field :skill_cooldowns, %{integer() => integer()}, default: %{}
+    field :last_attack_timestamp, integer(), default: 0
+    field :act_delay_until, integer(), default: 0
     # A combo window's hold on attacks (monotonic ms, 0 when none).
-    attack_lock_until: 0,
-    last_warp_at: nil,
+    field :attack_lock_until, integer(), default: 0
+    field :last_warp_at, integer()
     # Flood-control timestamp for emotes (monotonic ms); nil until the first emote.
-    last_emote_at: nil,
-    deferred_epoch: 0,
-    last_song: nil,
+    field :last_emote_at, integer()
+    field :deferred_epoch, non_neg_integer(), default: 0
+    field :last_song, %{skill_id: integer(), level: pos_integer()}
     # Character id of the partner found by the last ensemble cast begin; the
     # attempt's completion locks or fatigues that partner without searching again.
-    ensemble_partner: nil,
-    plagiarized: nil,
+    field :ensemble_partner, integer()
+    field :plagiarized, %{skill_id: integer(), level: pos_integer()}
     # Per-interval elapsed-time accumulators for periodic equipment HP
     # regen/loss (`bHPRegenRate`/`bHPLossRate`), keyed by `{family, interval_ms}`.
-    equip_regen_accumulators: %{},
+    field :equip_regen_accumulators, %{{atom(), pos_integer()} => non_neg_integer()}, default: %{}
     # Party membership (0 = none), sourced from the Character at spawn and
     # kept current by Party.Manager pushes (`characters.party_id` is the
     # source of truth; this mirrors it for the session's lifetime).
-    party_id: 0,
+    field :party_id, non_neg_integer(), default: 0
     # Runtime team identity; zero means no battleground team.
-    battleground_team_id: 0,
+    field :battleground_team_id, non_neg_integer(), default: 0
 
     # Guild membership (0 = none), sourced from the Character at spawn and
     # kept current by Guild.Manager pushes (`characters.guild_id` is the
     # source of truth; this mirrors it for the session's lifetime).
-    guild_id: 0,
-    pvp_point: 0,
-    pvp_won: 0,
-    pvp_lost: 0,
+    field :guild_id, non_neg_integer(), default: 0
+    field :pvp_point, integer(), default: 0
+    field :pvp_won, non_neg_integer(), default: 0
+    field :pvp_lost, non_neg_integer(), default: 0
     # Cached guild-position EXP tax %% (0 = untaxed); refreshed by the social
     # handler on guild attach and on guild broadcasts.
-    guild_tax: 0,
+    field :guild_tax, non_neg_integer(), default: 0
 
     # Chat room the player is currently in (its room id: the NPC gid for NPC
     # rooms, an allocated id for player rooms), or nil.
     # Single-writer field: only WaitingRoomHandler mutates it.
-    waiting_room: nil,
+    field :waiting_room, non_neg_integer()
 
     # Marriage partner char id (0 = unmarried), sourced from the Character at
     # spawn. Read-only for now (no marriage system); backs the `getpartnerid`
     # script read.
-    partner_id: 0
-  ]
+    field :partner_id, non_neg_integer(), default: 0
+  end
 
   @doc """
   Creates a new PlayerState from a Character's last known position.
@@ -1255,7 +1152,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     Map.get(stats.modifiers.equipment, :arrow_ele) || item_element(stats.equipment.ammo)
   end
 
-  @spec forged_weapon_element([map()]) :: atom() | nil
+  @spec forged_weapon_element([PlayerStats.worn_item()]) :: atom() | nil
   defp forged_weapon_element(worn_items) do
     Enum.find_value(worn_items, fn item ->
       with true <- :right_hand in EquipLocation.bitmask_to_location_atoms(item.equip),

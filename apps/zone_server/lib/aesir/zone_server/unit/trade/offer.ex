@@ -13,12 +13,12 @@ defmodule Aesir.ZoneServer.Unit.Trade.Offer do
           snapshot: InventoryItem.t()
         }
 
-  @type t() :: %__MODULE__{
-          entries: [entry()],
-          zeny: non_neg_integer()
-        }
+  use TypedStruct
 
-  defstruct entries: [], zeny: 0
+  typedstruct do
+    field :entries, [entry()], default: []
+    field :zeny, non_neg_integer(), default: 0
+  end
 
   @spec new() :: t()
   def new, do: %__MODULE__{}

@@ -7,19 +7,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Modifiers do
   field default within the module that defines it.
   """
 
-  defstruct equipment: %{},
-            status_effects: %{},
-            job_bonuses: %{},
-            passive: %{},
-            statuses_active?: false
+  use TypedStruct
 
-  @type t() :: %__MODULE__{
-          equipment: map(),
-          status_effects: map(),
-          job_bonuses: map(),
-          passive: map(),
-          statuses_active?: boolean()
-        }
+  typedstruct do
+    field :equipment, map(), default: %{}
+    field :status_effects, map(), default: %{}
+    field :job_bonuses, map(), default: %{}
+    field :passive, map(), default: %{}
+    field :statuses_active?, boolean(), default: false
+  end
 end
 
 defmodule Aesir.ZoneServer.Unit.Player.Stats do
@@ -35,6 +31,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   The recompute pipeline lives in `Stats.Calculator`; the equipment fold that
   feeds it lives in `Stats.EquipmentFold`; sprite views live in `Appearance`.
   """
+
+  use TypedStruct
 
   import Bitwise
 
@@ -61,45 +59,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   defmodule PlayerProgression do
     @moduledoc false
 
-    defstruct base_level: nil,
-              job_level: nil,
-              base_exp: nil,
-              job_exp: nil,
-              job_id: nil,
-              skill_point: nil,
-              status_point: nil,
-              trait_point: 0,
-              learned_skills: %{}
+    use TypedStruct
 
-    @type t() :: %__MODULE__{
-            base_level: non_neg_integer() | nil,
-            job_level: non_neg_integer() | nil,
-            base_exp: non_neg_integer() | nil,
-            job_exp: non_neg_integer() | nil,
-            job_id: non_neg_integer() | nil,
-            skill_point: non_neg_integer() | nil,
-            status_point: non_neg_integer() | nil,
-            trait_point: non_neg_integer(),
-            learned_skills: %{integer() => non_neg_integer()}
-          }
+    typedstruct do
+      field :base_level, non_neg_integer()
+      field :job_level, non_neg_integer()
+      field :base_exp, non_neg_integer()
+      field :job_exp, non_neg_integer()
+      field :job_id, non_neg_integer()
+      field :skill_point, non_neg_integer()
+      field :status_point, non_neg_integer()
+      field :trait_point, non_neg_integer(), default: 0
+      field :learned_skills, %{integer() => non_neg_integer()}, default: %{}
+    end
   end
 
   defmodule Equipment do
     @moduledoc false
 
-    defstruct [
-      :head_top,
-      :head_mid,
-      :head_low,
-      :armor,
-      :right_hand,
-      :left_hand,
-      :garment,
-      :shoes,
-      :right_accessory,
-      :left_accessory,
-      :ammo
-    ]
+    use TypedStruct
 
     @typedoc """
     Worn equipment derived from the equipped inventory items, keyed by equip
@@ -111,19 +89,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     resolution only. Per-item metadata (refine, cards, forged data) deliberately
     lives on `worn_items` instead, which is the stat and bonus reduction.
     """
-    @type t() :: %__MODULE__{
-            head_top: non_neg_integer() | nil,
-            head_mid: non_neg_integer() | nil,
-            head_low: non_neg_integer() | nil,
-            armor: non_neg_integer() | nil,
-            right_hand: non_neg_integer() | nil,
-            left_hand: non_neg_integer() | nil,
-            garment: non_neg_integer() | nil,
-            shoes: non_neg_integer() | nil,
-            right_accessory: non_neg_integer() | nil,
-            left_accessory: non_neg_integer() | nil,
-            ammo: non_neg_integer() | nil
-          }
+    typedstruct do
+      field :head_top, non_neg_integer()
+      field :head_mid, non_neg_integer()
+      field :head_low, non_neg_integer()
+      field :armor, non_neg_integer()
+      field :right_hand, non_neg_integer()
+      field :left_hand, non_neg_integer()
+      field :garment, non_neg_integer()
+      field :shoes, non_neg_integer()
+      field :right_accessory, non_neg_integer()
+      field :left_accessory, non_neg_integer()
+      field :ammo, non_neg_integer()
+    end
   end
 
   @typedoc """
@@ -203,64 +181,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           equipped_on: String.t() | nil
         }
 
-  defstruct base_stats: nil,
-            # Common stats from Unit.Stats
-            derived_stats: nil,
-            combat_stats: nil,
-            current_state: nil,
-
-            # Player-specific fields
-            progression: nil,
-            equipment: nil,
-            modifiers: %Modifiers{},
-
-            # Minimal identity of worn inventory rows (id, nameid, refine, cards, craft), cached by
-            # `apply_equipment_modifiers/2` so a recompute without an equipped-items
-            # list can still re-evaluate the on_equip programs - their level inputs
-            # (BaseLevel/JobLevel) change without any equipment change.
-            worn_items: [],
-
-            # Derived proc registrations, live generations, direct status
-            # requirements, and card cleanup sources. Rebuilt or pruned by the
-            # deterministic equipment fold.
-            equip_autobonuses: %{},
-            active_autobonuses: %{},
-            # The side effects of the active autobonus programs, appended by each
-            # equipment fold that ran them and performed once by the commit that
-            # publishes the stats (`Player.StateCommit`).
-            autobonus_restores: [],
-            equip_statuses: %{},
-            card_unequip_effects: %{},
-            right_hand: nil,
-            left_hand: nil,
-
-            # Skills granted by worn equipment (`skill <id>,<lv>` in an `on_equip`
-            # script), as `%{skill_id => level}`. Rebuilt alongside `modifiers.equipment`
-            # on every recompute; read by the skill-list view and player cast authority
-            # so an equip-granted skill is castable while worn.
-            granted_skills: %{},
-
-            # Denormalized copy of the `:riding` bit of `PlayerState.option`, the
-            # single writer's authoritative in-memory value. `MountHandler` keeps this
-            # field in sync with the option bit before triggering the status-driven
-            # recalc that mount/dismount goes through, so `calculate_combat_stats/1`
-            # (which only ever sees a `Stats` struct, never `PlayerState`) can gate
-            # mounted passive bonuses (e.g. `KnSpearmastery`) without threading the
-            # option bit through every `calculate_stats/3` call site.
-            riding: false,
-
-            # The owner's pet bonus program with the pet's live `:pet` input, kept
-            # current by `Pet.StateCommit`; `nil` while no pet object exists.
-            pet_bonus: nil,
-
-            # Bumped by a recalculation whose full-recalculation inputs changed
-            # (`recalculation_basis`, a hash of them): allocated stats, job and
-            # levels, learned passive skills, worn items, riding, the map, and the
-            # held statuses that force a full recalculation; and by
-            # `force_full_recalculation/1` for events that are one regardless.
-            generation: 0,
-            recalculation_basis: nil
-
   @typedoc """
   Player-specific stats structure extending the base unit stats.
 
@@ -269,28 +189,65 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   - Experience and job progression
   - Multiple modifier sources
   """
-  @type t() :: %__MODULE__{
-          base_stats: Stats.BaseStats.t() | nil,
-          derived_stats: Stats.DerivedStats.t() | nil,
-          combat_stats: Stats.CombatStats.t() | nil,
-          current_state: Stats.CurrentState.t() | nil,
-          progression: PlayerProgression.t() | nil,
-          equipment: Equipment.t() | nil,
-          modifiers: Modifiers.t(),
-          worn_items: [worn_item()],
-          equip_autobonuses: %{autobonus_key() => autobonus_registration()},
-          active_autobonuses: %{autobonus_key() => pos_integer()},
-          autobonus_restores: [EquipScript.effect()],
-          equip_statuses: %{atom() => equip_status()},
-          card_unequip_effects: %{card_source_key() => card_cleanup()},
-          right_hand: WeaponHand.t() | nil,
-          left_hand: WeaponHand.t() | nil,
-          granted_skills: %{integer() => non_neg_integer()},
-          riding: boolean(),
-          pet_bonus: pet_bonus() | nil,
-          generation: non_neg_integer(),
-          recalculation_basis: non_neg_integer() | nil
-        }
+  typedstruct do
+    field :base_stats, Stats.BaseStats.t()
+    # Common stats from Unit.Stats
+    field :derived_stats, Stats.DerivedStats.t()
+    field :combat_stats, Stats.CombatStats.t()
+    field :current_state, Stats.CurrentState.t()
+
+    # Player-specific fields
+    field :progression, PlayerProgression.t()
+    field :equipment, Equipment.t()
+    field :modifiers, Modifiers.t(), default: %Modifiers{}
+
+    # Minimal identity of worn inventory rows (id, nameid, refine, cards, craft), cached by
+    # `apply_equipment_modifiers/2` so a recompute without an equipped-items
+    # list can still re-evaluate the on_equip programs - their level inputs
+    # (BaseLevel/JobLevel) change without any equipment change.
+    field :worn_items, [worn_item()], default: []
+
+    # Derived proc registrations, live generations, direct status
+    # requirements, and card cleanup sources. Rebuilt or pruned by the
+    # deterministic equipment fold.
+    field :equip_autobonuses, %{autobonus_key() => autobonus_registration()}, default: %{}
+    field :active_autobonuses, %{autobonus_key() => pos_integer()}, default: %{}
+    # The side effects of the active autobonus programs, appended by each
+    # equipment fold that ran them and performed once by the commit that
+    # publishes the stats (`Player.StateCommit`).
+    field :autobonus_restores, [EquipScript.effect()], default: []
+    field :equip_statuses, %{atom() => equip_status()}, default: %{}
+    field :card_unequip_effects, %{card_source_key() => card_cleanup()}, default: %{}
+    field :right_hand, WeaponHand.t()
+    field :left_hand, WeaponHand.t()
+
+    # Skills granted by worn equipment (`skill <id>,<lv>` in an `on_equip`
+    # script), as `%{skill_id => level}`. Rebuilt alongside `modifiers.equipment`
+    # on every recompute; read by the skill-list view and player cast authority
+    # so an equip-granted skill is castable while worn.
+    field :granted_skills, %{integer() => non_neg_integer()}, default: %{}
+
+    # Denormalized copy of the `:riding` bit of `PlayerState.option`, the
+    # single writer's authoritative in-memory value. `MountHandler` keeps this
+    # field in sync with the option bit before triggering the status-driven
+    # recalc that mount/dismount goes through, so `calculate_combat_stats/1`
+    # (which only ever sees a `Stats` struct, never `PlayerState`) can gate
+    # mounted passive bonuses (e.g. `KnSpearmastery`) without threading the
+    # option bit through every `calculate_stats/3` call site.
+    field :riding, boolean(), default: false
+
+    # The owner's pet bonus program with the pet's live `:pet` input, kept
+    # current by `Pet.StateCommit`; `nil` while no pet object exists.
+    field :pet_bonus, pet_bonus()
+
+    # Bumped by a recalculation whose full-recalculation inputs changed
+    # (`recalculation_basis`, a hash of them): allocated stats, job and
+    # levels, learned passive skills, worn items, riding, the map, and the
+    # held statuses that force a full recalculation; and by
+    # `force_full_recalculation/1` for events that are one regardless.
+    field :generation, non_neg_integer(), default: 0
+    field :recalculation_basis, non_neg_integer()
+  end
 
   @doc """
   Creates a Stats struct from a Character model.

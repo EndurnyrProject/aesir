@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EmoteHandler do
   alias Aesir.ZoneServer.Mmo.Skills.Novice.NvBasic
   alias Aesir.ZoneServer.Unit.Emote
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.Stats
 
   @flood_window_ms 1000
@@ -28,7 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EmoteHandler do
   @doc """
   Processes an emote request, returning the (possibly updated) session state.
   """
-  @spec handle_emote(integer(), map()) :: {:noreply, map()}
+  @spec handle_emote(integer(), SessionState.t()) :: {:noreply, SessionState.t()}
   def handle_emote(type, %{game_state: game_state} = state) do
     now = System.monotonic_time(:millisecond)
 

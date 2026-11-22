@@ -5,6 +5,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   Similar to PlayerState but for monsters with AI and combat capabilities.
   """
 
+  use TypedStruct
+
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.Mechanics
@@ -29,180 +31,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @type skill_state :: :idle | :walk | :loot | :dead | :berserk | :angry | :rush | :follow
   @type movement_state :: :standing | :moving | :returning
 
-  @enforce_keys [
-    :instance_id,
-    :mob_id,
-    :mob_data,
-    :spawn_ref,
-    :x,
-    :y,
-    :map_name,
-    :hp,
-    :sp,
-    :spawned_at
-  ]
-  defstruct [
-    # Core identification
-    instance_id: nil,
-    mob_id: nil,
-    level: nil,
-    mob_data: nil,
-    base: nil,
-    calculated: nil,
-    spawn_ref: nil,
-    process_pid: nil,
-
-    # Position & Movement
-    x: nil,
-    y: nil,
-    map_name: nil,
-    dir: 0,
-
-    # Movement state machine
-    movement_state: :standing,
-    walk_path: [],
-    walk_delay_until: 0,
-    # Where a move request made while walking redirects the walk once the
-    # pending step lands.
-    walk_target: nil,
-    # The step the walk scheduled last, read by the hit stop (`HitStop`).
-    pending_step: nil,
-    # An escape walk that damage cannot stop; it ends when the walk does.
-    can_escape: false,
-    # Whether the walk paths in a straight line (diagonal first) instead of
-    # around obstacles, for its start and every re-path.
-    walk_easy: false,
-    # Consecutive walk steps an icewall cell held the mob on; any step taken
-    # resets it. Read only by the walk for now.
-    walk_fail_count: 0,
-    # A chase walk (the source's attack_continue): entering its path puts the
-    # mob in its rush state before the first cell's skill check.
-    chase_walk: false,
-    # The end (ms) of the fake cast bar a monster shows while it moves, kept
-    # until Speed Up ends it.
-    trickcasting: nil,
-
-    # AI state
-    skill_state: :idle,
-    # Whether the mob is in its aggressive (angry) mode: set from the angry
-    # mode on every entry into a non-attack, non-chase state, cleared by an
-    # attacked event, a provoke and a search that finds a target in attack
-    # range. Picks `:angry`/`:follow` over `:berserk`/`:rush` in `set_state/2`.
-    aggressive: false,
-    # The target of the mob's standing attack order and the time (ms) its
-    # attack timer fires; set when the AI orders an attack, cleared when it
-    # stops attacking (target unlock, chase start, a refused order).
-    attack_target: nil,
-    attack_timer_at: nil,
-    # The unit or floor item the mob is walking to, and the monotonic time (ms)
-    # a chase walk held by the walk delay resumes at.
-    chase_target: nil,
-    chase_resume_at: nil,
-    # The unit whose provoke last locked the mob's target; a lock onto any
-    # other unit clears it.
-    provoke_flag: nil,
-    # The skill of the mob's last cast, until its next swing (the `afterskill`
-    # condition).
-    last_skill_id: nil,
-    # The AI does not start a random walk before this time (ms).
-    next_walktime: nil,
-    # The last think (ms) at which the mob could move; an immobile mob unlocks
-    # its target 2 s after it.
-    last_canmove: nil,
-    # The last think (ms) that ran the periodic skill check in a non-attack state.
-    last_skillcheck: nil,
-    # The players that have had the mob in their active range since it was
-    # placed on its map; a mob no player has spotted neither wanders nor uses
-    # idle skills under the lazy AI.
-    spotted_by: MapSet.new(),
-    ai_awake: true,
-    ai_timer_ref: nil,
-    # The cell the mob actually spawned on.
-    spawn_point: nil,
-    target_ref: nil,
-    loot_target_id: nil,
-    looted_items: [],
-    # The pending attacked event: the retaliation target of the last landed hit
-    # (and of the last "norm" hit, a normal attack on the mob in its attack
-    # state from within its attack range + 1), consumed by the next AI think.
-    attacked_ref: nil,
-    norm_attacked_ref: nil,
-    # Rude attacks counted by the AI's target-change step; the `rudeattacked`
-    # skill condition reads it.
-    attacked_count: 0,
-    # Per-skill cooldown gate: `skill_id => expires_at` in the same
-    # millisecond timestamp domain as the melee `last_attack_time` delay. The
-    # `casting` map (`%{row: row, complete_at: ms, timer_ref: ref}`) marks an
-    # in-progress cast; `timer_ref` is the pending `{:casting, :complete}` timer
-    # so an interruption can cancel it. `master_id` links a summoned slave back
-    # to its summoner's instance id.
-    skill_cooldowns: %{},
-    casting: nil,
-    master_id: nil,
-    last_linktime: 0,
-    can_summon: false,
-    owner_player_id: nil,
-    # The summon class a player-owned monster belongs to (`:sphere`, `:flora`).
-    # It selects which spawn-time stat adjustments apply and whether the summon
-    # lends its master's equipment procs to its attacks.
-    summon_kind: nil,
-    guild_id: 0,
-    no_exp: false,
-    no_drops: false,
-    # True until the first AI tick after spawn has run skill selection; that
-    # tick selects with the `:spawn` event so `onspawn` rows can fire.
-    spawn_tick_pending?: true,
-    last_ai_tick: nil,
-    aggro_list: %{},
-    aggro_order: [],
-    typed_aggro_list: %{},
-    typed_aggro_order: [],
-    last_action_time: nil,
-    act_delay_until: nil,
-    last_attack_time: nil,
-    # The (absolute) time (ms) an established attack delay ends. A delay is
-    # stamped when it starts, so a later attack-speed change cannot move it.
-    attack_delay_until: nil,
-    # The AI does not think before this time (ms): after an attack or a cast's
-    # end it rests for its attack motion.
-    next_think_at: nil,
-
-    # Combat state
-    hp: nil,
-    sp: nil,
-    is_dead: false,
-
-    # Spatial awareness
-    view_range: 12,
-    visible_entities: %MapSet{},
-
-    # Lifecycle
-    spawned_at: nil,
-    last_damage_time: nil,
-    respawn_delay: 0,
-    deferred_epoch: 0,
-
-    # Status effects
-    status_effects: %{},
-
-    # Skill interaction flags
-    stolen_from: false,
-    coin_stolen: false,
-
-    # Attack-type of recent damaging hits, keyed by the typed attacker ref
-    # (e.g. `{:player, id}` / the raw attacker id form the combat path uses).
-    # Written just before each hit is applied so the death path can read the
-    # killing blow's classification (`:melee | :ranged | :magic`) to grant the
-    # attacker's on-kill HP/SP gain equipment bonuses. Keyed by attacker so
-    # simultaneous attackers never read each other's classification.
-    last_hit_types: %{},
-
-    # OnMyMobDead owner event (rAthena): a raw "Name::OnLabel" ref threaded
-    # through from the summoning op's `event:` opt, resolved only at death
-    # time. `nil` for every ordinary spawn -- exactly today's behavior.
-    owner_event: nil
-  ]
-
   @typedoc "One typed contributor's cumulative damage and its hit-time reward owner."
   @type typed_contribution() :: %{
           contributor: Ref.t(),
@@ -212,86 +40,171 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           first_hit_order: non_neg_integer()
         }
 
-  @type t() :: %__MODULE__{
-          instance_id: integer(),
-          mob_id: integer(),
-          level: non_neg_integer() | nil,
-          base: Calculated.t() | nil,
-          calculated: Calculated.t() | nil,
-          loot_target_id: pos_integer() | nil,
-          looted_items: [GroundItem.t()],
-          mob_data: MobDefinition.t(),
-          spawn_ref: MobSpawn.t(),
-          process_pid: pid() | nil,
-          x: integer(),
-          y: integer(),
-          map_name: String.t(),
-          dir: integer(),
-          movement_state: movement_state(),
-          walk_path: list(),
-          walk_delay_until: integer(),
-          walk_target: {integer(), integer()} | nil,
-          pending_step: HitStop.step(),
-          can_escape: boolean(),
-          walk_easy: boolean(),
-          walk_fail_count: non_neg_integer(),
-          chase_walk: boolean(),
-          trickcasting: integer() | nil,
-          skill_state: skill_state(),
-          aggressive: boolean(),
-          attack_target: Ref.t() | nil,
-          attack_timer_at: integer() | nil,
-          chase_target: Ref.t() | {:item, pos_integer()} | nil,
-          chase_resume_at: integer() | nil,
-          provoke_flag: Ref.t() | nil,
-          last_skill_id: integer() | nil,
-          next_walktime: integer() | nil,
-          last_canmove: integer() | nil,
-          last_skillcheck: integer() | nil,
-          spotted_by: MapSet.t(integer()),
-          ai_awake: boolean(),
-          ai_timer_ref: reference() | nil,
-          spawn_point: {integer(), integer()} | nil,
-          target_ref: Ref.t() | nil,
-          attacked_ref: Ref.t() | nil,
-          norm_attacked_ref: Ref.t() | nil,
-          attacked_count: non_neg_integer(),
-          skill_cooldowns: %{optional(integer()) => integer()},
-          casting: map() | nil,
-          master_id: integer() | nil,
-          last_linktime: integer(),
-          can_summon: boolean(),
-          owner_player_id: integer() | nil,
-          summon_kind: atom() | nil,
-          guild_id: non_neg_integer(),
-          no_exp: boolean(),
-          no_drops: boolean(),
-          spawn_tick_pending?: boolean(),
-          last_ai_tick: integer() | nil,
-          aggro_list: map(),
-          aggro_order: [integer()],
-          typed_aggro_list: %{optional(Ref.t()) => typed_contribution()},
-          typed_aggro_order: [Ref.t()],
-          last_action_time: integer() | nil,
-          act_delay_until: integer() | nil,
-          last_attack_time: integer() | nil,
-          attack_delay_until: integer() | nil,
-          next_think_at: integer() | nil,
-          hp: integer(),
-          sp: integer(),
-          is_dead: boolean(),
-          view_range: integer(),
-          visible_entities: MapSet.t(),
-          spawned_at: integer(),
-          last_damage_time: integer() | nil,
-          respawn_delay: integer(),
-          deferred_epoch: non_neg_integer(),
-          status_effects: map(),
-          stolen_from: boolean(),
-          coin_stolen: boolean(),
-          last_hit_types: %{optional(term()) => {:melee | :ranged | :magic, integer() | nil}},
-          owner_event: String.t() | nil
-        }
+  @typedoc "The attack type and skill of an attacker's last damaging hit."
+  @type hit_record() :: {:melee | :ranged | :magic, integer() | nil}
+
+  @typedoc "A live monster instance: identity, movement, AI, combat and lifecycle state."
+  typedstruct enforce: true do
+    # Core identification
+    field :instance_id, integer()
+    field :mob_id, integer()
+    field :level, non_neg_integer() | nil, default: nil
+    field :mob_data, MobDefinition.t()
+    field :base, Calculated.t() | nil, default: nil
+    field :calculated, Calculated.t() | nil, default: nil
+    field :spawn_ref, MobSpawn.t()
+    field :process_pid, pid() | nil, default: nil
+
+    # Position & Movement
+    field :x, integer()
+    field :y, integer()
+    field :map_name, String.t()
+    field :dir, integer(), default: 0
+
+    # Movement state machine
+    field :movement_state, movement_state(), default: :standing
+    field :walk_path, list(), default: []
+    field :walk_delay_until, integer(), default: 0
+    # Where a move request made while walking redirects the walk once the
+    # pending step lands.
+    field :walk_target, {integer(), integer()} | nil, default: nil
+    # The step the walk scheduled last, read by the hit stop (`HitStop`).
+    field :pending_step, HitStop.step(), default: nil
+    # An escape walk that damage cannot stop; it ends when the walk does.
+    field :can_escape, boolean(), default: false
+    # Whether the walk paths in a straight line (diagonal first) instead of
+    # around obstacles, for its start and every re-path.
+    field :walk_easy, boolean(), default: false
+    # Consecutive walk steps an icewall cell held the mob on; any step taken
+    # resets it. Read only by the walk for now.
+    field :walk_fail_count, non_neg_integer(), default: 0
+    # A chase walk (the source's attack_continue): entering its path puts the
+    # mob in its rush state before the first cell's skill check.
+    field :chase_walk, boolean(), default: false
+    # The end (ms) of the fake cast bar a monster shows while it moves, kept
+    # until Speed Up ends it.
+    field :trickcasting, integer() | nil, default: nil
+
+    # AI state
+    field :skill_state, skill_state(), default: :idle
+    # Whether the mob is in its aggressive (angry) mode: set from the angry
+    # mode on every entry into a non-attack, non-chase state, cleared by an
+    # attacked event, a provoke and a search that finds a target in attack
+    # range. Picks `:angry`/`:follow` over `:berserk`/`:rush` in `set_state/2`.
+    field :aggressive, boolean(), default: false
+    # The target of the mob's standing attack order and the time (ms) its
+    # attack timer fires; set when the AI orders an attack, cleared when it
+    # stops attacking (target unlock, chase start, a refused order).
+    field :attack_target, Ref.t() | nil, default: nil
+    field :attack_timer_at, integer() | nil, default: nil
+    # The unit or floor item the mob is walking to, and the monotonic time (ms)
+    # a chase walk held by the walk delay resumes at.
+    field :chase_target, Ref.t() | {:item, pos_integer()} | nil, default: nil
+    field :chase_resume_at, integer() | nil, default: nil
+    # The unit whose provoke last locked the mob's target; a lock onto any
+    # other unit clears it.
+    field :provoke_flag, Ref.t() | nil, default: nil
+    # The skill of the mob's last cast, until its next swing (the `afterskill`
+    # condition).
+    field :last_skill_id, integer() | nil, default: nil
+    # The AI does not start a random walk before this time (ms).
+    field :next_walktime, integer() | nil, default: nil
+    # The last think (ms) at which the mob could move; an immobile mob unlocks
+    # its target 2 s after it.
+    field :last_canmove, integer() | nil, default: nil
+    # The last think (ms) that ran the periodic skill check in a non-attack state.
+    field :last_skillcheck, integer() | nil, default: nil
+    # The players that have had the mob in their active range since it was
+    # placed on its map; a mob no player has spotted neither wanders nor uses
+    # idle skills under the lazy AI.
+    field :spotted_by, MapSet.t(integer()), default: MapSet.new()
+    field :ai_awake, boolean(), default: true
+    field :ai_timer_ref, reference() | nil, default: nil
+    # The cell the mob actually spawned on.
+    field :spawn_point, {integer(), integer()} | nil, default: nil
+    field :target_ref, Ref.t() | nil, default: nil
+    field :loot_target_id, pos_integer() | nil, default: nil
+    field :looted_items, [GroundItem.t()], default: []
+    # The pending attacked event: the retaliation target of the last landed hit
+    # (and of the last "norm" hit, a normal attack on the mob in its attack
+    # state from within its attack range + 1), consumed by the next AI think.
+    field :attacked_ref, Ref.t() | nil, default: nil
+    field :norm_attacked_ref, Ref.t() | nil, default: nil
+    # Rude attacks counted by the AI's target-change step; the `rudeattacked`
+    # skill condition reads it.
+    field :attacked_count, non_neg_integer(), default: 0
+    # Per-skill cooldown gate: `skill_id => expires_at` in the same
+    # millisecond timestamp domain as the melee `last_attack_time` delay. The
+    # `casting` map (`%{row: row, complete_at: ms, timer_ref: ref}`) marks an
+    # in-progress cast; `timer_ref` is the pending `{:casting, :complete}` timer
+    # so an interruption can cancel it. `master_id` links a summoned slave back
+    # to its summoner's instance id.
+    field :skill_cooldowns, %{optional(integer()) => integer()}, default: %{}
+    field :casting, map() | nil, default: nil
+    field :master_id, integer() | nil, default: nil
+    field :last_linktime, integer(), default: 0
+    field :can_summon, boolean(), default: false
+    field :owner_player_id, integer() | nil, default: nil
+    # The summon class a player-owned monster belongs to (`:sphere`, `:flora`).
+    # It selects which spawn-time stat adjustments apply and whether the summon
+    # lends its master's equipment procs to its attacks.
+    field :summon_kind, atom() | nil, default: nil
+    field :guild_id, non_neg_integer(), default: 0
+    field :no_exp, boolean(), default: false
+    field :no_drops, boolean(), default: false
+    # True until the first AI tick after spawn has run skill selection; that
+    # tick selects with the `:spawn` event so `onspawn` rows can fire.
+    field :spawn_tick_pending?, boolean(), default: true
+    field :last_ai_tick, integer() | nil, default: nil
+    field :aggro_list, map(), default: %{}
+    field :aggro_order, [integer()], default: []
+    field :typed_aggro_list, %{optional(Ref.t()) => typed_contribution()}, default: %{}
+    field :typed_aggro_order, [Ref.t()], default: []
+    field :last_action_time, integer() | nil, default: nil
+    field :act_delay_until, integer() | nil, default: nil
+    field :last_attack_time, integer() | nil, default: nil
+    # The (absolute) time (ms) an established attack delay ends. A delay is
+    # stamped when it starts, so a later attack-speed change cannot move it.
+    field :attack_delay_until, integer() | nil, default: nil
+    # The AI does not think before this time (ms): after an attack or a cast's
+    # end it rests for its attack motion.
+    field :next_think_at, integer() | nil, default: nil
+
+    # Combat state
+    field :hp, integer()
+    field :sp, integer()
+    field :is_dead, boolean(), default: false
+
+    # Spatial awareness
+    field :view_range, integer(), default: 12
+    field :visible_entities, MapSet.t(), default: %MapSet{}
+
+    # Lifecycle
+    field :spawned_at, integer()
+    field :last_damage_time, integer() | nil, default: nil
+    field :respawn_delay, integer(), default: 0
+    field :deferred_epoch, non_neg_integer(), default: 0
+
+    # Status effects
+    field :status_effects, map(), default: %{}
+
+    # Skill interaction flags
+    field :stolen_from, boolean(), default: false
+    field :coin_stolen, boolean(), default: false
+
+    # Attack-type of recent damaging hits, keyed by the typed attacker ref
+    # (e.g. `{:player, id}` / the raw attacker id form the combat path uses).
+    # Written just before each hit is applied so the death path can read the
+    # killing blow's classification (`:melee | :ranged | :magic`) to grant the
+    # attacker's on-kill HP/SP gain equipment bonuses. Keyed by attacker so
+    # simultaneous attackers never read each other's classification.
+    field :last_hit_types, %{optional(term()) => hit_record()}, default: %{}
+
+    # OnMyMobDead owner event (rAthena): a raw "Name::OnLabel" ref threaded
+    # through from the summoning op's `event:` opt, resolved only at death
+    # time. `nil` for every ordinary spawn -- exactly today's behavior.
+    field :owner_event, String.t() | nil, default: nil
+  end
 
   @doc """
   Creates a new mob state instance.

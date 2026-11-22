@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Unit.Player.QuestLogTest do
   use ExUnit.Case, async: false
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition
   alias Aesir.ZoneServer.Mmo.QuestManagement.Quests
   alias Aesir.ZoneServer.Unit.Player.QuestLog
@@ -61,10 +63,10 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestLogTest do
     :ok
   end
 
-  defp entry(state, counts), do: %Entry{state: state, counts: counts, deadline: nil}
+  defp entry(state, counts), do: build(:quest_entry, state: state, counts: counts)
 
   defp entry(state, counts, position),
-    do: %Entry{state: state, counts: counts, deadline: nil, position: position}
+    do: build(:quest_entry, state: state, counts: counts, position: position)
 
   defp kill(mob_id, overrides \\ []) do
     Map.merge(

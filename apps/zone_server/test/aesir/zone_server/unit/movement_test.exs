@@ -53,11 +53,10 @@ defmodule Aesir.ZoneServer.Unit.MovementTest do
   alias __MODULE__.TouchSpy
 
   setup :setup_ets_tables
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
   setup do
-    Mimic.copy(StatusInterpreter)
-
     manager =
       start_supervised!({Manager, name: nil, schedule_tick: fn _pid, _interval -> :ok end})
 

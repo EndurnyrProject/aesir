@@ -5,51 +5,33 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Runtime do
   This state is not persisted or published as a world snapshot.
   """
 
+  use TypedStruct
+
   @typedoc "A scheduled OTP timer reference."
   @type timer_ref :: reference() | nil
 
-  @enforce_keys [:private_dirty]
-  defstruct active_expiry_timer_ref: nil,
-            active_deadline_ms: nil,
-            clocks_online: false,
-            hunger_timer_ref: nil,
-            ai_timer_ref: nil,
-            cast_timer_ref: nil,
-            bio_explosion_timer_ref: nil,
-            bio_explosion_descriptor: nil,
-            movement_timer_ref: nil,
-            checkpoint_timer_ref: nil,
-            separation_timer_ref: nil,
-            cooldown_timer_ref: nil,
-            movement_path: [],
-            movement_step: nil,
-            movement_redirect: nil,
-            last_basic_attack_at_ms: nil,
-            hp_regen_deadline_ms: nil,
-            sp_regen_deadline_ms: nil,
-            private_dirty: false
-
-  @type t() :: %__MODULE__{
-          active_expiry_timer_ref: timer_ref(),
-          active_deadline_ms: integer() | nil,
-          clocks_online: boolean(),
-          hunger_timer_ref: timer_ref(),
-          ai_timer_ref: timer_ref(),
-          cast_timer_ref: timer_ref(),
-          bio_explosion_timer_ref: timer_ref(),
-          bio_explosion_descriptor: map() | nil,
-          movement_timer_ref: timer_ref(),
-          checkpoint_timer_ref: timer_ref(),
-          separation_timer_ref: timer_ref(),
-          cooldown_timer_ref: timer_ref(),
-          movement_path: [{integer(), integer()}],
-          movement_step: {integer(), non_neg_integer()} | nil,
-          movement_redirect: {integer(), integer()} | nil,
-          last_basic_attack_at_ms: integer() | nil,
-          hp_regen_deadline_ms: integer() | nil,
-          sp_regen_deadline_ms: integer() | nil,
-          private_dirty: boolean()
-        }
+  @typedoc "Timer, movement and regeneration bookkeeping for one homunculus."
+  typedstruct do
+    field :active_expiry_timer_ref, timer_ref(), default: nil
+    field :active_deadline_ms, integer() | nil, default: nil
+    field :clocks_online, boolean(), default: false
+    field :hunger_timer_ref, timer_ref(), default: nil
+    field :ai_timer_ref, timer_ref(), default: nil
+    field :cast_timer_ref, timer_ref(), default: nil
+    field :bio_explosion_timer_ref, timer_ref(), default: nil
+    field :bio_explosion_descriptor, map() | nil, default: nil
+    field :movement_timer_ref, timer_ref(), default: nil
+    field :checkpoint_timer_ref, timer_ref(), default: nil
+    field :separation_timer_ref, timer_ref(), default: nil
+    field :cooldown_timer_ref, timer_ref(), default: nil
+    field :movement_path, [{integer(), integer()}], default: []
+    field :movement_step, {integer(), non_neg_integer()} | nil, default: nil
+    field :movement_redirect, {integer(), integer()} | nil, default: nil
+    field :last_basic_attack_at_ms, integer() | nil, default: nil
+    field :hp_regen_deadline_ms, integer() | nil, default: nil
+    field :sp_regen_deadline_ms, integer() | nil, default: nil
+    field :private_dirty, boolean(), default: false, enforce: true
+  end
 
   @doc "Returns every timer-reference field of this struct."
   @spec timer_fields() :: [atom()]

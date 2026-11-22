@@ -13,50 +13,33 @@ defmodule Aesir.ZoneServer.Unit.Pet.Runtime do
   bumped whenever the pet leaves the world so stale timer events are dropped.
   """
 
+  use TypedStruct
+
   @typedoc "A scheduled OTP timer reference."
   @type timer_ref :: reference() | nil
 
   @typedoc "An in-progress capture: the lure used and its catch flag."
   @type catch_process :: %{lure_id: pos_integer(), flag: integer()}
 
-  @enforce_keys []
-  defstruct generation: 0,
-            hunger_timer_ref: nil,
-            ai_timer_ref: nil,
-            movement_timer_ref: nil,
-            movement_path: [],
-            path_pos: 0,
-            walk_target: nil,
-            chase_owner: false,
-            teleport_timer_ref: nil,
-            next_walk_at_ms: nil,
-            move_fail_count: 0,
-            can_move_at_ms: nil,
-            can_act_at_ms: nil,
-            catch_process: nil,
-            autobonus_timers: %{},
-            skill_bonus_timer_ref: nil,
-            recovery_timer_ref: nil,
-            support_skill_timer_ref: nil
-
-  @type t() :: %__MODULE__{
-          generation: non_neg_integer(),
-          hunger_timer_ref: timer_ref(),
-          ai_timer_ref: timer_ref(),
-          movement_timer_ref: timer_ref(),
-          movement_path: [{integer(), integer()}],
-          path_pos: non_neg_integer(),
-          walk_target: {integer(), integer()} | nil,
-          chase_owner: boolean(),
-          teleport_timer_ref: timer_ref(),
-          next_walk_at_ms: integer() | nil,
-          move_fail_count: non_neg_integer(),
-          can_move_at_ms: integer() | nil,
-          can_act_at_ms: integer() | nil,
-          catch_process: catch_process() | nil,
-          autobonus_timers: %{optional(term()) => reference()},
-          skill_bonus_timer_ref: timer_ref(),
-          recovery_timer_ref: timer_ref(),
-          support_skill_timer_ref: timer_ref()
-        }
+  @typedoc "Timer, movement and capture bookkeeping for one pet."
+  typedstruct do
+    field :generation, non_neg_integer(), default: 0
+    field :hunger_timer_ref, timer_ref(), default: nil
+    field :ai_timer_ref, timer_ref(), default: nil
+    field :movement_timer_ref, timer_ref(), default: nil
+    field :movement_path, [{integer(), integer()}], default: []
+    field :path_pos, non_neg_integer(), default: 0
+    field :walk_target, {integer(), integer()} | nil, default: nil
+    field :chase_owner, boolean(), default: false
+    field :teleport_timer_ref, timer_ref(), default: nil
+    field :next_walk_at_ms, integer() | nil, default: nil
+    field :move_fail_count, non_neg_integer(), default: 0
+    field :can_move_at_ms, integer() | nil, default: nil
+    field :can_act_at_ms, integer() | nil, default: nil
+    field :catch_process, catch_process() | nil, default: nil
+    field :autobonus_timers, %{optional(term()) => reference()}, default: %{}
+    field :skill_bonus_timer_ref, timer_ref(), default: nil
+    field :recovery_timer_ref, timer_ref(), default: nil
+    field :support_skill_timer_ref, timer_ref(), default: nil
+  end
 end

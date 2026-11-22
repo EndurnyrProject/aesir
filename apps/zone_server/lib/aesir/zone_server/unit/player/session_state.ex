@@ -1,18 +1,17 @@
 defmodule Aesir.ZoneServer.Unit.Player.SessionState.PendingSkillTextInput do
   @moduledoc false
 
+  use TypedStruct
+
   alias Aesir.ZoneServer.Mmo.Skill.Active
 
-  @enforce_keys [:request_id, :skill_id, :level, :target, :timer_ref]
-  defstruct [:request_id, :skill_id, :level, :target, :timer_ref]
-
-  @type t() :: %__MODULE__{
-          request_id: non_neg_integer(),
-          skill_id: non_neg_integer(),
-          level: pos_integer(),
-          target: Active.target(),
-          timer_ref: reference()
-        }
+  typedstruct enforce: true do
+    field :request_id, non_neg_integer()
+    field :skill_id, non_neg_integer()
+    field :level, pos_integer()
+    field :target, Active.target()
+    field :timer_ref, reference()
+  end
 end
 
 defmodule Aesir.ZoneServer.Unit.Player.SessionState do
@@ -39,6 +38,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   intervals were last advanced under.
   """
 
+  use TypedStruct
+
   alias Aesir.Commons.GameMode
   alias Aesir.Net.VendingBuy
   alias Aesir.Net.VendingPurchaseResult
@@ -62,110 +63,82 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   # client only echoes it back on NpcInteract.
   @system_dialog_gid 0x6000_0000
 
-  @enforce_keys [:game_state, :connection_pid]
-  defstruct game_state: nil,
-            connection_pid: nil,
-            connection_monitor_ref: nil,
-            applied_equip_statuses: %{},
-            applied_card_unequip_effects: %{},
-            interaction_lock: nil,
-            npc_item_flag: nil,
-            work_in_progress: false,
-            progress_bar: nil,
-            npc_shop: nil,
-            vending_setup: nil,
-            vending_purchase: nil,
-            pending_skill_text_input: nil,
-            pending_skill_menu: nil,
-            pending_item_skill: nil,
-            deferred_skill_result: nil,
-            step_action: nil,
-            equip_lock_until: nil,
-            pending_party_invite: nil,
-            pending_trade_invite: nil,
-            trade: nil,
-            pending_guild_invite: nil,
-            pending_alliance_request: nil,
-            guild_storage_ctx: nil,
-            quest_info_display: %{map: nil, shown: %{}},
-            homunculus: nil,
-            homunculus_runtime: %Runtime{private_dirty: false},
-            pet: nil,
-            pet_runtime: %PetRuntime{},
-            navigation: nil,
-            canlog_at: nil,
-            lingering: nil,
-            npc_event_queue: [],
-            regen_timing: %Timing{},
-            castle_regen_map: nil,
-            equip_regen_generation: nil
+  @typedoc "The `PlayerSession` GenServer state."
+  typedstruct do
+    field :game_state, PlayerState.t(), enforce: true
+    field :connection_pid, pid(), enforce: true
+    field :connection_monitor_ref, reference()
+    field :applied_equip_statuses, %{atom() => Stats.equip_status()}, default: %{}
 
-  @type t() :: %__MODULE__{
-          game_state: PlayerState.t(),
-          connection_pid: pid(),
-          connection_monitor_ref: reference() | nil,
-          applied_equip_statuses: %{atom() => Stats.equip_status()},
-          applied_card_unequip_effects: %{Stats.card_source_key() => Stats.card_cleanup()},
-          interaction_lock: interaction_lock() | nil,
-          npc_item_flag: boolean() | nil,
-          work_in_progress: boolean(),
-          progress_bar: progress_bar() | nil,
-          npc_shop: non_neg_integer() | nil,
-          vending_setup:
-            %{setup_id: String.t(), level: pos_integer(), sp_spent: non_neg_integer()} | nil,
-          vending_purchase: vending_purchase() | nil,
-          pending_skill_text_input: PendingSkillTextInput.t() | nil,
-          pending_skill_menu: map() | nil,
-          pending_item_skill:
-            %{
-              required(:skill_id) => integer(),
-              required(:level) => pos_integer(),
-              required(:keep_requirement?) => boolean(),
-              optional(:item_index) => non_neg_integer(),
-              optional(:item_nameid) => pos_integer()
-            }
-            | nil,
-          deferred_skill_result: map() | nil,
-          step_action: step_action() | nil,
-          equip_lock_until: integer() | nil,
-          pending_party_invite: map() | nil,
-          pending_trade_invite:
-            %{
-              requester_char_id: integer(),
-              requester_pid: pid(),
-              requester_name: String.t(),
-              expires_at: integer()
-            }
-            | nil,
-          trade:
-            %{pid: pid(), monitor: reference(), partner_char_id: integer()}
-            | nil,
-          pending_guild_invite: map() | nil,
-          pending_alliance_request: map() | nil,
-          guild_storage_ctx:
-            %{
-              guild_id: non_neg_integer(),
-              char_id: non_neg_integer(),
-              session_pid: pid(),
-              capacity: pos_integer()
-            }
-            | nil,
-          quest_info_display: %{
+    field :applied_card_unequip_effects, %{Stats.card_source_key() => Stats.card_cleanup()},
+      default: %{}
+
+    field :interaction_lock, interaction_lock()
+    field :npc_item_flag, boolean()
+    field :work_in_progress, boolean(), default: false
+    field :progress_bar, progress_bar()
+    field :npc_shop, non_neg_integer()
+
+    field :vending_setup, %{
+      setup_id: String.t(),
+      level: pos_integer(),
+      sp_spent: non_neg_integer()
+    }
+
+    field :vending_purchase, vending_purchase()
+    field :pending_skill_text_input, PendingSkillTextInput.t()
+    field :pending_skill_menu, map()
+
+    field :pending_item_skill, %{
+      required(:skill_id) => integer(),
+      required(:level) => pos_integer(),
+      required(:keep_requirement?) => boolean(),
+      optional(:item_index) => non_neg_integer(),
+      optional(:item_nameid) => pos_integer()
+    }
+
+    field :deferred_skill_result, map()
+    field :step_action, step_action()
+    field :equip_lock_until, integer()
+    field :pending_party_invite, map()
+
+    field :pending_trade_invite, %{
+      requester_char_id: integer(),
+      requester_pid: pid(),
+      requester_name: String.t(),
+      expires_at: integer()
+    }
+
+    field :trade, %{pid: pid(), monitor: reference(), partner_char_id: integer()}
+    field :pending_guild_invite, map()
+    field :pending_alliance_request, map()
+
+    field :guild_storage_ctx, %{
+      guild_id: non_neg_integer(),
+      char_id: non_neg_integer(),
+      session_pid: pid(),
+      capacity: pos_integer()
+    }
+
+    field :quest_info_display,
+          %{
             map: String.t() | nil,
             shown: %{non_neg_integer() => {non_neg_integer(), non_neg_integer()}}
           },
-          homunculus: HomunculusState.t() | nil,
-          homunculus_runtime: Runtime.t(),
-          pet: PetState.t() | nil,
-          pet_runtime: PetRuntime.t(),
-          navigation: NavigationSession.t() | nil,
-          canlog_at: integer() | nil,
-          lingering: reference() | nil,
-          npc_event_queue: [{non_neg_integer(), String.t()}],
-          regen_timing: Timing.t(),
-          castle_regen_map: String.t() | nil,
-          equip_regen_generation: non_neg_integer() | nil
-        }
+          default: %{map: nil, shown: %{}}
+
+    field :homunculus, HomunculusState.t()
+    field :homunculus_runtime, Runtime.t(), default: %Runtime{private_dirty: false}
+    field :pet, PetState.t()
+    field :pet_runtime, PetRuntime.t(), default: %PetRuntime{}
+    field :navigation, NavigationSession.t()
+    field :canlog_at, integer()
+    field :lingering, reference()
+    field :npc_event_queue, [{non_neg_integer(), String.t()}], default: []
+    field :regen_timing, Timing.t(), default: %Timing{}
+    field :castle_regen_map, String.t()
+    field :equip_regen_generation, non_neg_integer()
+  end
 
   @typedoc """
   The buyer's latest vending checkout: its request ID and canonical payload
@@ -196,6 +169,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   @typedoc "A script's progress bar over the player: its NPC and when it fills (monotonic ms)."
   @type progress_bar :: %{npc_gid: non_neg_integer(), deadline: integer()}
 
+  @doc "Whether a script dialog or a pending skill text input holds the player."
   @spec interaction_blocked?(map()) :: boolean()
   def interaction_blocked?(state) do
     in_script?(state) or not is_nil(Map.get(state, :pending_skill_text_input))

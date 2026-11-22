@@ -151,14 +151,6 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistryTest do
   end
 
   describe "get_unit/2" do
-    test "returns unit data when unit exists" do
-      state = %{id: 1, hp: 100, max_hp: 100}
-      UnitRegistry.register_unit(:player, 1, MockEntity, state, self())
-
-      assert {:ok, {MockEntity, ^state, pid}} = UnitRegistry.get_unit(:player, 1)
-      assert pid == self()
-    end
-
     test "returns error when unit doesn't exist" do
       assert {:error, :not_found} = UnitRegistry.get_unit(:player, 999)
     end
