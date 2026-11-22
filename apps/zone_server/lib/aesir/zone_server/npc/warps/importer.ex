@@ -18,7 +18,9 @@ defmodule Aesir.ZoneServer.Npc.Warps.Importer do
 
   @warp_sprite 45
 
-  @type warp_map :: %{String.t() => String.t() | non_neg_integer() | map()}
+  @typedoc "A YAML warp row, including its landing map and optional concealment flag."
+  @type warp_map :: %{String.t() => String.t() | integer() | boolean() | landing()}
+  @typep landing :: %{String.t() => String.t() | integer()}
 
   @doc """
   Parses one line of a rAthena warp script.

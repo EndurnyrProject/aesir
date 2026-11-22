@@ -26,14 +26,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.RentalBuildinsTest do
     end
   end
 
-  setup :set_mimic_private
+  setup :set_mimic_from_context
   setup :verify_on_exit!
-
-  setup do
-    Mimic.copy(Items)
-    Mimic.copy(InventoryOps)
-    :ok
-  end
 
   defp gen!(body, opts \\ []) do
     opts = Map.new(opts)

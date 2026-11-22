@@ -62,6 +62,7 @@ defmodule Aesir.ZoneServer.Npc.Session do
   """
 
   use GenServer
+  use TypedStruct
 
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Npc.Events
@@ -87,19 +88,6 @@ defmodule Aesir.ZoneServer.Npc.Session do
   @typedoc "The timer's run state: idle before/after its schedule, running mid-schedule, or stopped."
   @type status :: :stopped | :running | :idle
 
-  @enforce_keys [:gid, :on_fire]
-  defstruct gid: nil,
-            schedule: [],
-            pending: [],
-            status: :stopped,
-            start_mono: nil,
-            frozen_elapsed: 0,
-            timer_ref: nil,
-            on_fire: nil,
-            enabled?: true,
-            hidden?: false,
-            display: %{sprite: nil, name: nil, size: 0}
-
   @typedoc "A per-NPC display override: `sprite`/`name` are `nil` when not overridden."
   @type display_override() :: %{
           sprite: non_neg_integer() | nil,
@@ -107,19 +95,30 @@ defmodule Aesir.ZoneServer.Npc.Session do
           size: non_neg_integer()
         }
 
-  @type t() :: %__MODULE__{
-          gid: non_neg_integer(),
-          schedule: [timer_entry()],
-          pending: [timer_entry()],
-          status: status(),
-          start_mono: integer() | nil,
-          frozen_elapsed: non_neg_integer(),
-          timer_ref: reference() | nil,
-          on_fire: (non_neg_integer(), String.t() -> any()),
-          enabled?: boolean(),
-          hidden?: boolean(),
-          display: display_override()
+  @typedoc "Display fields to replace. A missing field keeps its current value."
+  @type display_update :: %{
+          optional(:sprite) => non_neg_integer() | nil,
+          optional(:name) => String.t() | nil,
+          optional(:size) => non_neg_integer()
         }
+
+  @typep timer_callback :: (non_neg_integer(), String.t() -> term())
+  @typep start_options :: [gid: non_neg_integer(), on_fire: timer_callback()]
+
+  @typedoc "Per-NPC timer, visibility, and appearance state."
+  typedstruct enforce: true do
+    field :gid, non_neg_integer()
+    field :schedule, [timer_entry()], default: []
+    field :pending, [timer_entry()], default: []
+    field :status, status(), default: :stopped
+    field :start_mono, integer() | nil, default: nil
+    field :frozen_elapsed, non_neg_integer(), default: 0
+    field :timer_ref, reference() | nil, default: nil
+    field :on_fire, timer_callback()
+    field :enabled?, boolean(), default: true
+    field :hidden?, boolean(), default: false
+    field :display, display_override(), default: %{sprite: nil, name: nil, size: 0}
+  end
 
   # Public API
 
@@ -234,7 +233,7 @@ defmodule Aesir.ZoneServer.Npc.Session do
   NPC's spawn packet to players in range when it is currently visible, so a
   standing player sees the change immediately.
   """
-  @spec set_display(non_neg_integer(), map()) :: :ok
+  @spec set_display(non_neg_integer(), display_update()) :: :ok
   def set_display(gid, overrides) do
     gid |> ensure_started() |> GenServer.call({:set_display, overrides})
   end
@@ -264,14 +263,14 @@ defmodule Aesir.ZoneServer.Npc.Session do
   `ensure_started/1`; exposed directly for tests that need to inject a
   callback.
   """
-  @spec start_link(keyword()) :: GenServer.on_start()
+  @spec start_link(start_options()) :: GenServer.on_start()
   def start_link(opts) do
     gid = Keyword.fetch!(opts, :gid)
     GenServer.start_link(__MODULE__, opts, name: via(gid))
   end
 
   @doc false
-  @spec child_spec(keyword()) :: Supervisor.child_spec()
+  @spec child_spec(start_options()) :: Supervisor.child_spec()
   def child_spec(opts) do
     # :transient, not the GenServer default :permanent: a crash restarts the
     # session blank (see the moduledoc), but a normal stop (terminate_child,
@@ -426,7 +425,7 @@ defmodule Aesir.ZoneServer.Npc.Session do
   @spec now_ms() :: integer()
   defp now_ms, do: System.monotonic_time(:millisecond)
 
-  @spec dispatch(non_neg_integer(), String.t(), (non_neg_integer(), String.t() -> any())) :: :ok
+  @spec dispatch(non_neg_integer(), String.t(), timer_callback()) :: :ok
   defp dispatch(gid, label, on_fire) do
     _ =
       Task.Supervisor.start_child(interaction_supervisor(), fn -> on_fire.(gid, label) end)
@@ -468,7 +467,7 @@ defmodule Aesir.ZoneServer.Npc.Session do
   @spec clear_flags(non_neg_integer()) :: true
   defp clear_flags(gid), do: :ets.delete(@flags_table, gid)
 
-  @spec merge_display(display_override(), map()) :: display_override()
+  @spec merge_display(display_override(), display_update()) :: display_override()
   defp merge_display(current, overrides) do
     %{
       sprite: Map.get(overrides, :sprite, current.sprite),

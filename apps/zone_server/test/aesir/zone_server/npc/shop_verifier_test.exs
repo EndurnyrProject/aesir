@@ -1,5 +1,7 @@
 defmodule Aesir.ZoneServer.Npc.ShopVerifierTest do
   use ExUnit.Case, async: true
+
+  import Aesir.ZoneServer.Factory
   import Mimic
   import ExUnit.CaptureLog
 
@@ -8,40 +10,23 @@ defmodule Aesir.ZoneServer.Npc.ShopVerifierTest do
   alias Aesir.ZoneServer.Npc.Shops
   alias Aesir.ZoneServer.Npc.ShopVerifier
 
-  setup :verify_on_exit!
-
-  defp shop(overrides) do
-    struct!(
-      Shop,
-      Keyword.merge(
-        [
-          id: "s",
-          map: "prontera",
-          x: 150,
-          y: 60,
-          dir: 4,
-          sprite: 85,
-          name: "T",
-          items: [%{nameid: 501, price: 50}]
-        ],
-        overrides
-      )
-    )
-  end
+  setup :set_mimic_from_context
 
   describe "verify/1" do
     test "returns :ok for a shop on a walkable cell with known items" do
       stub(MapCache, :exists?, fn _ -> true end)
       stub(MapCache, :walkable?, fn _, _, _ -> true end)
 
-      assert :ok = ShopVerifier.verify([shop([])])
+      assert :ok = ShopVerifier.verify([build(:npc_shop, items: [%{nameid: 501, price: 50}])])
     end
 
     test "flags a shop on an unknown map" do
       stub(MapCache, :exists?, fn _ -> false end)
       stub(MapCache, :walkable?, fn _, _, _ -> false end)
 
-      assert {:error, errors} = ShopVerifier.verify([shop([])])
+      assert {:error, errors} =
+               ShopVerifier.verify([build(:npc_shop, items: [%{nameid: 501, price: 50}])])
+
       assert Enum.any?(errors, &match?({:unknown_map, %Shop{}}, &1))
     end
   end
@@ -58,14 +43,18 @@ defmodule Aesir.ZoneServer.Npc.ShopVerifierTest do
       stub(MapCache, :exists?, fn _ -> false end)
       stub(MapCache, :walkable?, fn _, _, _ -> false end)
 
-      assert_raise ArgumentError, fn -> ShopVerifier.verify!([shop([])]) end
+      assert_raise ArgumentError, fn ->
+        ShopVerifier.verify!([build(:npc_shop, items: [%{nameid: 501, price: 50}])])
+      end
     end
 
     test "raises when a shop cell is not walkable" do
       stub(MapCache, :exists?, fn _ -> true end)
       stub(MapCache, :walkable?, fn _, _, _ -> false end)
 
-      assert_raise ArgumentError, fn -> ShopVerifier.verify!([shop([])]) end
+      assert_raise ArgumentError, fn ->
+        ShopVerifier.verify!([build(:npc_shop, items: [%{nameid: 501, price: 50}])])
+      end
     end
 
     test "raises when a shop sells an item that does not resolve" do
@@ -73,7 +62,7 @@ defmodule Aesir.ZoneServer.Npc.ShopVerifierTest do
       stub(MapCache, :walkable?, fn _, _, _ -> true end)
 
       assert_raise ArgumentError, fn ->
-        ShopVerifier.verify!([shop(items: [%{nameid: 99_999_999, price: nil}])])
+        ShopVerifier.verify!([build(:npc_shop, items: [%{nameid: 99_999_999, price: nil}])])
       end
     end
 
@@ -81,7 +70,10 @@ defmodule Aesir.ZoneServer.Npc.ShopVerifierTest do
       stub(MapCache, :exists?, fn _ -> true end)
       stub(MapCache, :walkable?, fn _, _, _ -> true end)
 
-      shops = [shop(id: "Tool Dealer#yuno"), shop(id: "Tool Dealer#Extended_Yuno")]
+      shops = [
+        build(:npc_shop, items: [%{nameid: 501, price: 50}], id: "Tool Dealer#yuno"),
+        build(:npc_shop, items: [%{nameid: 501, price: 50}], id: "Tool Dealer#Extended_Yuno")
+      ]
 
       log = capture_log(fn -> assert :ok = ShopVerifier.verify!(shops) end)
 
@@ -92,7 +84,10 @@ defmodule Aesir.ZoneServer.Npc.ShopVerifierTest do
       stub(MapCache, :exists?, fn _ -> true end)
       stub(MapCache, :walkable?, fn _, _, _ -> true end)
 
-      shops = [shop(id: "dup"), shop(id: "dup")]
+      shops = [
+        build(:npc_shop, items: [%{nameid: 501, price: 50}], id: "dup"),
+        build(:npc_shop, items: [%{nameid: 501, price: 50}], id: "dup")
+      ]
 
       log = capture_log(fn -> assert :ok = ShopVerifier.verify!(shops) end)
 

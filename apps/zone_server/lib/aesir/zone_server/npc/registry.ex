@@ -55,13 +55,13 @@ defmodule Aesir.ZoneServer.Npc.Registry do
   @type entry :: {module(), Placement.t()}
 
   @typedoc "Maps a spawn cell to the NPC module that owns it and its placement."
-  @type index :: %{{String.t(), non_neg_integer(), non_neg_integer()} => entry()}
+  @type index :: %{optional({String.t(), non_neg_integer(), non_neg_integer()}) => entry()}
 
   @typedoc "Maps a placement's synthetic unit id to the NPC module that owns it."
-  @type by_unit :: %{non_neg_integer() => entry()}
+  @type by_unit :: %{optional(non_neg_integer()) => entry()}
 
   @typedoc "Maps a unique name to every placement registered under it."
-  @type by_name :: %{String.t() => [entry()]}
+  @type by_name :: %{optional(String.t()) => [entry()]}
 
   @typedoc """
   Maps an event label to every `{module, gid}` whose module declares it in
@@ -70,13 +70,13 @@ defmodule Aesir.ZoneServer.Npc.Registry do
   colliding cells (last placement at a `{map, x, y}` wins) and would otherwise
   route a label to the wrong module.
   """
-  @type by_label :: %{String.t() => [{module(), non_neg_integer()}]}
+  @type by_label :: %{optional(String.t()) => [{module(), non_neg_integer()}]}
 
   @typedoc "A touch-area rect: the owning gid plus its x and y ranges."
   @type touch_rect :: {non_neg_integer(), Range.t(), Range.t()}
 
   @typedoc "Maps a map name to its touch rects."
-  @type touch_rects :: %{String.t() => [touch_rect()]}
+  @type touch_rects :: %{optional(String.t()) => [touch_rect()]}
 
   @typedoc """
   The stored registry: the raw entries plus the cell, unit, name, label, and

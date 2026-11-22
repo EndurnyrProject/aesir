@@ -15,30 +15,25 @@ defmodule Aesir.ZoneServer.Npc.Placement do
   mode in which the placement participates.
   """
 
+  use TypedStruct
+
   alias Aesir.ZoneServer.Npc.ContentScope
 
-  @enforce_keys [:map, :x, :y, :sprite]
-  defstruct map: nil,
-            x: nil,
-            y: nil,
-            dir: 0,
-            sprite: nil,
-            name: "",
-            unique_name: "",
-            trigger: nil,
-            scope: :shared
+  @typedoc "The horizontal and vertical half-extents of a touch area, in cells."
+  @type trigger :: {non_neg_integer(), non_neg_integer()}
 
-  @type t() :: %__MODULE__{
-          map: String.t(),
-          x: non_neg_integer(),
-          y: non_neg_integer(),
-          dir: non_neg_integer(),
-          sprite: integer(),
-          name: String.t(),
-          unique_name: String.t(),
-          trigger: {non_neg_integer(), non_neg_integer()} | nil,
-          scope: ContentScope.t()
-        }
+  @typedoc "A normalized script placement, including its display and touch area."
+  typedstruct enforce: true do
+    field :map, String.t()
+    field :x, non_neg_integer()
+    field :y, non_neg_integer()
+    field :dir, non_neg_integer(), default: 0
+    field :sprite, integer()
+    field :name, String.t(), default: ""
+    field :unique_name, String.t(), default: ""
+    field :trigger, trigger() | nil, default: nil
+    field :scope, ContentScope.t(), default: :shared
+  end
 
   @doc """
   Whether this placement has no client view, i.e. a negative `sprite`.

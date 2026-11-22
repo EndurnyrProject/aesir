@@ -11,34 +11,23 @@ defmodule Aesir.ZoneServer.Npc.Warp do
   `trigger_on_hidden` is set (a `warp2` portal).
   """
 
-  @enforce_keys [:id, :map, :to_map, :x, :y, :to_x, :to_y]
-  defstruct id: nil,
-            map: nil,
-            to_map: nil,
-            x: nil,
-            y: nil,
-            xs: 0,
-            ys: 0,
-            to_x: nil,
-            to_y: nil,
-            sprite: 0,
-            name: "",
-            trigger_on_hidden: false
+  use TypedStruct
 
-  @type t() :: %__MODULE__{
-          id: String.t(),
-          map: String.t(),
-          to_map: String.t(),
-          x: non_neg_integer(),
-          y: non_neg_integer(),
-          xs: non_neg_integer(),
-          ys: non_neg_integer(),
-          to_x: non_neg_integer(),
-          to_y: non_neg_integer(),
-          sprite: non_neg_integer(),
-          name: String.t(),
-          trigger_on_hidden: boolean()
-        }
+  @typedoc "A warp's trigger area, landing cell, display, and concealment policy."
+  typedstruct enforce: true do
+    field :id, String.t()
+    field :map, String.t()
+    field :to_map, String.t()
+    field :x, non_neg_integer()
+    field :y, non_neg_integer()
+    field :xs, non_neg_integer(), default: 0
+    field :ys, non_neg_integer(), default: 0
+    field :to_x, non_neg_integer()
+    field :to_y, non_neg_integer()
+    field :sprite, non_neg_integer(), default: 0
+    field :name, String.t(), default: ""
+    field :trigger_on_hidden, boolean(), default: false
+  end
 end
 
 defmodule Aesir.ZoneServer.Npc.Warp.Registry do

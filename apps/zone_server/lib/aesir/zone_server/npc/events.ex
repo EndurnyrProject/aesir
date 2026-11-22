@@ -122,7 +122,7 @@ defmodule Aesir.ZoneServer.Npc.Events do
   timeout is logged as a straggler and killed. Always returns `:ok` so the
   boot sequence proceeds regardless of outcome.
   """
-  @spec run_on_init(keyword()) :: :ok
+  @spec run_on_init(timeout: timeout()) :: :ok
   def run_on_init(opts \\ []) do
     timeout = Keyword.get(opts, :timeout, @on_init_timeout)
 

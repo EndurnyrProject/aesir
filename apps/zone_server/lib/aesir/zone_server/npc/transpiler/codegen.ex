@@ -39,6 +39,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   alias Aesir.ZoneServer.Announcement.Flags
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CatalogNotLoadedError
+  alias Aesir.ZoneServer.Npc.ContentScope
+  alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Transpiler.Analyzer
   alias Aesir.ZoneServer.Npc.Transpiler.CommandMap
   alias Aesir.ZoneServer.Npc.Transpiler.FunctionIndex
@@ -118,14 +120,36 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   @pipe_bind ~r/^(\{ctx, [A-Za-z0-9_]+\}) = ([A-Za-z_][A-Za-z0-9_.]*[!?]?)\(ctx(?:, (.+))?\)$/
   @ctx_word ~r/\bctx\b/
 
+  @typedoc "A resolved placement ready for emission in a generated NPC module."
+  @type spawn :: %{
+          required(:map) => String.t(),
+          required(:x) => non_neg_integer(),
+          required(:y) => non_neg_integer(),
+          required(:dir) => non_neg_integer(),
+          required(:sprite) => integer(),
+          required(:name) => String.t(),
+          optional(:scope) => ContentScope.t(),
+          optional(:unique_name) => String.t(),
+          optional(:trigger) => Placement.trigger()
+        }
+
   @typedoc """
   Options: `:module` (full module name string), `:spawns` (resolved placement
   maps for the `use` line; `[]` for floating/functions), `:kind`
   (`:script | :floating | :function`), `:scope` (body content scope, defaults
   to `:shared`), `:functions` (scoped global helper index), `:source`
-  (file:line provenance for the moduledoc and helper-link failures).
+  (file:line provenance for the moduledoc and helper-link failures), and
+  `:sprites` (the sprite constant lookup table).
   """
-  @type opts :: map()
+  @type opts :: %{
+          required(:module) => String.t(),
+          required(:kind) => :script | :floating | :function,
+          required(:source) => String.t(),
+          required(:spawns) => [spawn()],
+          optional(:scope) => ContentScope.t(),
+          optional(:functions) => FunctionIndex.t(),
+          optional(:sprites) => %{optional(String.t()) => integer()}
+        }
 
   @spec generate(String.t(), opts()) :: {:ok, String.t()} | {:error, term()}
   def generate(body, opts) do

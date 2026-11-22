@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Npc.WarpIntegrationTest do
   @moduletag integration_re: true, integration_pre_re: true
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.MapLoaded
@@ -51,7 +52,6 @@ defmodule Aesir.ZoneServer.Npc.WarpIntegrationTest do
   setup :setup_ets_tables
 
   setup do
-    Mimic.copy(Warps)
     # Default: no warps anywhere; each test opts in per map.
     stub(Warps, :for_map, fn _ -> :error end)
 
@@ -196,8 +196,8 @@ defmodule Aesir.ZoneServer.Npc.WarpIntegrationTest do
   end
 
   defp warp_at(x, y, opts) do
-    struct!(
-      Warp,
+    build(
+      :warp,
       Keyword.merge(
         [
           id: "test_warp_#{x}_#{y}",

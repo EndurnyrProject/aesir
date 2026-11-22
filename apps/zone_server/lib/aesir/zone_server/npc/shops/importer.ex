@@ -39,7 +39,9 @@ defmodule Aesir.ZoneServer.Npc.Shops.Importer do
   # an unresolved string constant; sprite-name -> id resolution is a follow-on.
   @default_sprite 83
 
-  @type shop_map :: %{String.t() => String.t() | non_neg_integer() | [map()]}
+  @typedoc "A YAML vendor row with the discount flag and item list."
+  @type shop_map :: %{String.t() => String.t() | integer() | boolean() | [item_row()]}
+  @typep item_row :: %{String.t() => integer() | nil}
 
   @doc """
   Parses one shop script line.
@@ -145,7 +147,7 @@ defmodule Aesir.ZoneServer.Npc.Shops.Importer do
   end
 
   @spec parse_position(String.t()) ::
-          {:ok, {String.t(), non_neg_integer(), non_neg_integer(), non_neg_integer()}}
+          {:ok, {String.t(), integer(), integer(), integer()}}
           | :skip
           | :error
   defp parse_position(position) do
@@ -160,7 +162,7 @@ defmodule Aesir.ZoneServer.Npc.Shops.Importer do
     end
   end
 
-  @spec parse_items([String.t()]) :: {:ok, boolean(), [map()]} | :error
+  @spec parse_items([String.t()]) :: {:ok, boolean(), [item_row()]} | :error
   defp parse_items(tokens) do
     {discount, tokens} = parse_discount(tokens)
 
@@ -182,7 +184,7 @@ defmodule Aesir.ZoneServer.Npc.Shops.Importer do
   defp parse_discount(["no" | rest]), do: {false, rest}
   defp parse_discount(tokens), do: {true, tokens}
 
-  @spec parse_item(String.t()) :: {:ok, map()} | :error
+  @spec parse_item(String.t()) :: {:ok, item_row()} | :error
   defp parse_item(token) do
     with [id, price] <- String.split(token, ":"),
          {:ok, nameid} <- to_int(id),
@@ -193,7 +195,7 @@ defmodule Aesir.ZoneServer.Npc.Shops.Importer do
     end
   end
 
-  @spec parse_price(String.t()) :: {:ok, non_neg_integer() | nil} | :error
+  @spec parse_price(String.t()) :: {:ok, integer() | nil} | :error
   defp parse_price("-1"), do: {:ok, nil}
   defp parse_price(price), do: to_int(price)
 

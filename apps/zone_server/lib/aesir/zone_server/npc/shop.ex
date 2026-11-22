@@ -11,31 +11,23 @@ defmodule Aesir.ZoneServer.Npc.Shop do
   `discount` controls whether skill-based discounts apply to purchases.
   """
 
+  use TypedStruct
+
   @typedoc "A buy-list entry: an item id with an optional buy-price override."
   @type item :: %{nameid: pos_integer(), price: non_neg_integer() | nil}
 
-  @enforce_keys [:id, :map, :x, :y, :dir, :sprite]
-  defstruct id: nil,
-            map: nil,
-            x: nil,
-            y: nil,
-            dir: nil,
-            sprite: nil,
-            name: "",
-            items: [],
-            discount: true
-
-  @type t() :: %__MODULE__{
-          id: String.t(),
-          map: String.t(),
-          x: non_neg_integer(),
-          y: non_neg_integer(),
-          dir: non_neg_integer(),
-          sprite: non_neg_integer(),
-          name: String.t(),
-          items: [item()],
-          discount: boolean()
-        }
+  @typedoc "A vendor placement and its buy list and discount policy."
+  typedstruct enforce: true do
+    field :id, String.t()
+    field :map, String.t()
+    field :x, non_neg_integer()
+    field :y, non_neg_integer()
+    field :dir, non_neg_integer()
+    field :sprite, non_neg_integer()
+    field :name, String.t(), default: ""
+    field :items, [item()], default: []
+    field :discount, boolean(), default: true
+  end
 end
 
 defmodule Aesir.ZoneServer.Npc.Shop.Registry do

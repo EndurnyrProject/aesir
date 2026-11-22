@@ -44,7 +44,7 @@ defmodule Aesir.ZoneServer.Npc.Packets do
   Returns `:invisible` for a placement with no client view, so callers never
   send a spawn for an event NPC that the client must not see.
   """
-  @spec spawn_packet({module(), Placement.t()}) :: UnitSpawn.t() | :invisible
+  @spec spawn_packet(NpcRegistry.entry()) :: UnitSpawn.t() | :invisible
   def spawn_packet({module, %Placement{} = placement}) do
     entity_id = NpcRegistry.entity_id(placement)
     {sprite, name, size} = display(placement)
@@ -113,7 +113,8 @@ defmodule Aesir.ZoneServer.Npc.Packets do
 
   # The runtime keeps the display size as rAthena's integer (0/1/2); it is
   # converted to the wire enum at the packet boundary.
-  @spec display_size(non_neg_integer()) :: atom()
+  @spec display_size(non_neg_integer()) ::
+          :DISPLAY_SIZE_NORMAL | :DISPLAY_SIZE_SMALL | :DISPLAY_SIZE_BIG
   defp display_size(0), do: :DISPLAY_SIZE_NORMAL
   defp display_size(1), do: :DISPLAY_SIZE_SMALL
   defp display_size(2), do: :DISPLAY_SIZE_BIG

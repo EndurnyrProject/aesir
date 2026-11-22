@@ -15,7 +15,16 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.FunctionIndex do
           | {:runtime, %{GameMode.t() => module_name()}}
           | :missing
 
-  @spec build([map()]) :: {:ok, t()} | {:error, [term()]}
+  @typedoc "A generated helper and the scope in which it is defined."
+  @type helper :: %{name: String.t(), scope: ContentScope.t(), module: module_name()}
+
+  @typedoc "A duplicate or ambiguous definition of a global helper."
+  @type error ::
+          {:duplicate_helper, String.t(), ContentScope.t()}
+          | {:ambiguous_helper, String.t(), :shared, GameMode.t()}
+
+  @doc "Indexes helpers by name and scope, rejecting conflicting definitions."
+  @spec build([helper()]) :: {:ok, t()} | {:error, [error()]}
   def build(functions) do
     {index, errors} =
       Enum.reduce(functions, {%{}, []}, fn function, {index, errors} ->

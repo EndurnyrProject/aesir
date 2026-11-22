@@ -52,6 +52,8 @@ defmodule Aesir.ZoneServer.Factory do
   alias Aesir.ZoneServer.Navigation.Route
   alias Aesir.ZoneServer.Navigation.Route.Leg
   alias Aesir.ZoneServer.Navigation.Session
+  alias Aesir.ZoneServer.Npc.Placement
+  alias Aesir.ZoneServer.Npc.Shop
   alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
@@ -161,6 +163,23 @@ defmodule Aesir.ZoneServer.Factory do
       to_map: "nav_b",
       to_x: 0,
       to_y: 0
+    }
+  end
+
+  @doc "An NPC with view class 58 at {0, 0} on `prontera`."
+  @spec npc_placement_factory() :: Placement.t()
+  def npc_placement_factory, do: %Placement{map: "prontera", x: 0, y: 0, sprite: 58}
+
+  @doc "An empty vendor with view class 85 at {0, 0} on `prontera`, with a sequenced id."
+  @spec npc_shop_factory() :: Shop.t()
+  def npc_shop_factory do
+    %Shop{
+      id: sequence(:npc_shop_id, &"shop-#{&1}"),
+      map: "prontera",
+      x: 0,
+      y: 0,
+      dir: 0,
+      sprite: 85
     }
   end
 

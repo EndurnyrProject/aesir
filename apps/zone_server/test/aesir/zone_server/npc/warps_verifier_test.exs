@@ -1,5 +1,7 @@
 defmodule Aesir.ZoneServer.Npc.WarpsVerifierTest do
   use ExUnit.Case, async: true
+
+  import Aesir.ZoneServer.Factory
   import Mimic
 
   @moduletag :capture_log
@@ -11,17 +13,7 @@ defmodule Aesir.ZoneServer.Npc.WarpsVerifierTest do
   alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Npc.Warps
 
-  setup :verify_on_exit!
-
-  defp warp(overrides) do
-    struct!(
-      Warp,
-      Keyword.merge(
-        [id: "w", map: "prontera", to_map: "izlude", x: 1, y: 1, to_x: 1, to_y: 1],
-        overrides
-      )
-    )
-  end
+  setup :set_mimic_from_context
 
   defp index(warps_by_map), do: %{by_map: warps_by_map}
 
@@ -32,7 +24,20 @@ defmodule Aesir.ZoneServer.Npc.WarpsVerifierTest do
       logs =
         capture_log(fn ->
           assert %{by_map: by_map} =
-                   Warps.sanitize(index(%{"prontera" => [warp(map: "prontera")]}))
+                   Warps.sanitize(
+                     index(%{
+                       "prontera" => [
+                         build(:warp,
+                           map: "prontera",
+                           to_map: "izlude",
+                           x: 1,
+                           y: 1,
+                           to_x: 1,
+                           to_y: 1
+                         )
+                       ]
+                     })
+                   )
 
           refute Map.has_key?(by_map, "prontera")
         end)
@@ -50,7 +55,13 @@ defmodule Aesir.ZoneServer.Npc.WarpsVerifierTest do
       logs =
         capture_log(fn ->
           assert %{by_map: by_map} =
-                   Warps.sanitize(index(%{"prontera" => [warp(to_map: "nowhere")]}))
+                   Warps.sanitize(
+                     index(%{
+                       "prontera" => [
+                         build(:warp, map: "prontera", to_map: "nowhere", x: 1, y: 1)
+                       ]
+                     })
+                   )
 
           refute Map.has_key?(by_map, "prontera")
         end)
@@ -65,7 +76,13 @@ defmodule Aesir.ZoneServer.Npc.WarpsVerifierTest do
 
       logs =
         capture_log(fn ->
-          assert %{by_map: by_map} = Warps.sanitize(index(%{"prontera" => [warp(x: 5, y: 5)]}))
+          assert %{by_map: by_map} =
+                   Warps.sanitize(
+                     index(%{
+                       "prontera" => [build(:warp, map: "prontera", to_map: "izlude", x: 5, y: 5)]
+                     })
+                   )
+
           refute Map.has_key?(by_map, "prontera")
         end)
 
@@ -77,8 +94,8 @@ defmodule Aesir.ZoneServer.Npc.WarpsVerifierTest do
       stub(MapCache, :get, fn _ -> {:ok, MapData.new("prontera", 1, 1)} end)
       stub(MapData, :walkable?, fn %MapData{}, x, _ -> x != 9 end)
 
-      kept = warp(id: "ok", x: 5, y: 5)
-      dropped = warp(id: "bad", x: 9, y: 9)
+      kept = build(:warp, map: "prontera", to_map: "izlude", id: "ok", x: 5, y: 5)
+      dropped = build(:warp, map: "prontera", to_map: "izlude", id: "bad", x: 9, y: 9)
 
       assert %{by_map: %{"prontera" => [%Warp{id: "ok"}]}} =
                Warps.sanitize(index(%{"prontera" => [kept, dropped]}))
@@ -96,7 +113,20 @@ defmodule Aesir.ZoneServer.Npc.WarpsVerifierTest do
 
       capture_log(fn ->
         assert %{by_map: %{"prontera" => [%Warp{}]}} =
-                 Warps.sanitize(index(%{"prontera" => [warp(to_x: 9, to_y: 9)]}))
+                 Warps.sanitize(
+                   index(%{
+                     "prontera" => [
+                       build(:warp,
+                         map: "prontera",
+                         to_map: "izlude",
+                         x: 1,
+                         y: 1,
+                         to_x: 9,
+                         to_y: 9
+                       )
+                     ]
+                   })
+                 )
       end)
     end
 
@@ -104,8 +134,8 @@ defmodule Aesir.ZoneServer.Npc.WarpsVerifierTest do
       stub(MapCache, :get, fn _ -> {:ok, MapData.new("prontera", 1, 1)} end)
       stub(MapData, :walkable?, fn _, _, _ -> true end)
 
-      a = warp(id: "a", x: 150, y: 20, xs: 1, ys: 1)
-      b = warp(id: "b", x: 151, y: 20, xs: 1, ys: 1)
+      a = build(:warp, map: "prontera", to_map: "izlude", id: "a", x: 150, y: 20, xs: 1, ys: 1)
+      b = build(:warp, map: "prontera", to_map: "izlude", id: "b", x: 151, y: 20, xs: 1, ys: 1)
 
       capture_log(fn ->
         assert %{by_map: %{"prontera" => [_ | _]}} =
@@ -117,8 +147,8 @@ defmodule Aesir.ZoneServer.Npc.WarpsVerifierTest do
       stub(MapCache, :get, fn _ -> {:ok, MapData.new("prontera", 1, 1)} end)
       stub(MapData, :walkable?, fn _, _, _ -> true end)
 
-      a = warp(id: "a", x: 10, y: 10, xs: 0, ys: 0)
-      b = warp(id: "b", x: 20, y: 20, xs: 0, ys: 0)
+      a = build(:warp, map: "prontera", to_map: "izlude", id: "a", x: 10, y: 10, xs: 0, ys: 0)
+      b = build(:warp, map: "prontera", to_map: "izlude", id: "b", x: 20, y: 20, xs: 0, ys: 0)
 
       capture_log(fn ->
         assert %{by_map: %{"prontera" => [_, _]}} =

@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Npc.ShopSpawnIntegrationTest do
   @moduletag integration_re: true, integration_pre_re: true
 
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.Factory
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.UnitDespawn
@@ -41,7 +42,6 @@ defmodule Aesir.ZoneServer.Npc.ShopSpawnIntegrationTest do
   setup :setup_ets_tables
 
   setup do
-    Mimic.copy(Shops)
     stub(Shops, :for_map, fn _ -> :error end)
 
     stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
@@ -121,7 +121,7 @@ defmodule Aesir.ZoneServer.Npc.ShopSpawnIntegrationTest do
   end
 
   defp shop do
-    %Shop{
+    build(:npc_shop,
       id: "prontera_tool_dealer",
       map: @map,
       x: 152,
@@ -130,7 +130,7 @@ defmodule Aesir.ZoneServer.Npc.ShopSpawnIntegrationTest do
       sprite: 85,
       name: "Tool Dealer",
       items: [%{nameid: 501, price: 50}]
-    }
+    )
   end
 
   defp character do

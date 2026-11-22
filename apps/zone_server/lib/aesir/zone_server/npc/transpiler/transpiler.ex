@@ -23,7 +23,22 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
   @generic_sprite 46
   @manifest_rel "priv/npc_transpile/manifest.json"
 
-  @type result :: map()
+  @typedoc "The generated outputs, skipped entries, and diagnostics for a transpile run."
+  @type result :: %{
+          written: [Path.t()],
+          skipped: non_neg_integer(),
+          conflicts: [{Path.t(), Path.t()}],
+          failures: [tuple()],
+          stubs: %{optional(String.t()) => pos_integer()},
+          unresolved_sprites: [String.t()],
+          skipped_types: %{optional(String.t()) => pos_integer()},
+          orphan_duplicates: [String.t()],
+          totals: %{
+            scripts: non_neg_integer(),
+            functions: non_neg_integer(),
+            duplicates: non_neg_integer()
+          }
+        }
 
   @doc """
   Runs the transpile.
@@ -37,7 +52,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
   - `:out_root` — zone_server app root the output paths hang off
     (default `apps/zone_server`)
   """
-  @spec run(Path.t(), keyword()) :: result()
+  @spec run(Path.t(), only: String.t() | nil, force: boolean(), out_root: Path.t()) :: result()
   def run(rathena_root, opts \\ []) do
     out_root = Keyword.get(opts, :out_root, Path.join("apps", "zone_server"))
     only = Keyword.get(opts, :only)

@@ -525,7 +525,6 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
     end
 
     test "the map-load ack scans the spawn cell when no warp is underfoot" do
-      Mimic.copy(SkillUnitManager)
       stub(SkillUnitManager, :snapshot_for, fn _id, _map, _x, _y, _range -> MapSet.new() end)
       gid = gid_for(TouchNpc)
 

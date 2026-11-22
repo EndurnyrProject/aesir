@@ -181,7 +181,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Manifest do
   Regen decision for one entry given its manifest record (or `nil` for a new
   entry), the current source hash, and the state of the output file on disk.
   """
-  @spec decide(entry_record() | nil, String.t(), output_state()) :: decision()
+  @spec decide(
+          %{source_hash: String.t() | :forced, output_hash: String.t()} | nil,
+          String.t(),
+          output_state()
+        ) :: decision()
   def decide(nil, _source_hash, :missing), do: :write
   def decide(nil, _source_hash, {:present, _}), do: :conflict
 

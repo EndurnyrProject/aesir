@@ -129,7 +129,19 @@ defmodule Aesir.ZoneServer.Npc do
     end
   end
 
-  @spec to_placement!(map(), ContentScope.t()) :: Placement.t()
+  @typep spawn_attrs :: %{
+           required(:map) => String.t(),
+           required(:x) => non_neg_integer(),
+           required(:y) => non_neg_integer(),
+           required(:sprite) => integer(),
+           optional(:dir) => non_neg_integer(),
+           optional(:name) => String.t(),
+           optional(:unique_name) => String.t(),
+           optional(:scope) => ContentScope.t(),
+           optional(:trigger) => Placement.trigger() | nil
+         }
+
+  @spec to_placement!(spawn_attrs(), ContentScope.t()) :: Placement.t()
   defp to_placement!(entry, body_scope) do
     name = Map.get(entry, :name, "")
 
@@ -155,7 +167,7 @@ defmodule Aesir.ZoneServer.Npc do
           "npc #{kind} content scope must be :shared, :renewal, or :pre_renewal, got: #{inspect(scope)}"
   end
 
-  @spec validate_trigger!(term()) :: {non_neg_integer(), non_neg_integer()} | nil
+  @spec validate_trigger!(term()) :: Placement.trigger() | nil
   defp validate_trigger!(nil), do: nil
 
   defp validate_trigger!({xs, ys})

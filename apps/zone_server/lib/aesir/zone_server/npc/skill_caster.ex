@@ -3,22 +3,22 @@ defmodule Aesir.ZoneServer.Npc.SkillCaster do
   Synthetic NPC caster used for scripted skill effects.
   """
 
+  use TypedStruct
+
   @behaviour Aesir.ZoneServer.Mmo.Skill.Caster
 
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
   alias Aesir.ZoneServer.Unit.Stats.CombatStats
 
-  @enforce_keys [:npc_gid, :stat_point, :base_level, :position, :map_name]
-  defstruct [:npc_gid, :stat_point, :base_level, :position, :map_name]
-
-  @type t() :: %__MODULE__{
-          npc_gid: pos_integer(),
-          stat_point: integer(),
-          base_level: pos_integer(),
-          position: {integer(), integer()},
-          map_name: String.t()
-        }
+  @typedoc "The NPC's identity, position, and inputs to scripted skill calculations."
+  typedstruct enforce: true do
+    field :npc_gid, pos_integer()
+    field :stat_point, integer()
+    field :base_level, pos_integer()
+    field :position, {integer(), integer()}
+    field :map_name, String.t()
+  end
 
   @doc "Creates a synthetic NPC skill caster."
   @spec new(pos_integer(), integer(), pos_integer(), {integer(), integer()}, String.t()) :: t()

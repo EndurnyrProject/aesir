@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Npc.ClockScheduler do
   """
 
   use GenServer
+  use TypedStruct
 
   alias Aesir.ZoneServer.Npc.Events
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
@@ -40,15 +41,16 @@ defmodule Aesir.ZoneServer.Npc.ClockScheduler do
   @minute_pattern ~r/^OnMinute(\d{2})$/
   @weekday_pattern ~r/^On(Sun|Mon|Tue|Wed|Thu|Fri|Sat)(\d{2})(\d{2})$/
 
-  @enforce_keys [:now_fun]
-  defstruct now_fun: nil, last_fired_minute: nil
+  @typep clock :: (-> NaiveDateTime.t())
 
-  @type t() :: %__MODULE__{
-          now_fun: (-> NaiveDateTime.t()),
-          last_fired_minute: NaiveDateTime.t() | nil
-        }
+  @typedoc "The scheduler's wall clock and the last minute it processed."
+  typedstruct enforce: true do
+    field :now_fun, clock()
+    field :last_fired_minute, NaiveDateTime.t() | nil, default: nil
+  end
 
-  @spec start_link(keyword()) :: GenServer.on_start()
+  @doc "Starts the clock scheduler with an optional name and wall-clock function."
+  @spec start_link(name: GenServer.name(), now_fun: clock()) :: GenServer.on_start()
   def start_link(opts \\ []) do
     {name, opts} = Keyword.pop(opts, :name, __MODULE__)
     GenServer.start_link(__MODULE__, opts, name: name)

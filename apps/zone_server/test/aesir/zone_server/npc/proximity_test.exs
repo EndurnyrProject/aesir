@@ -1,16 +1,16 @@
 defmodule Aesir.ZoneServer.Npc.ProximityTest do
-  use ExUnit.Case, async: true
+  # The visibility case writes to the global NPC session flags table.
+  use ExUnit.Case, async: false
+
+  import Aesir.ZoneServer.Factory
   import Mimic
 
-  alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Proximity
   alias Aesir.ZoneServer.Npc.Registry
-  alias Aesir.ZoneServer.Npc.Shop
   alias Aesir.ZoneServer.Npc.Shops
-  alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Npc.Warps
 
-  setup :set_mimic_private
+  setup :set_mimic_from_context
 
   test "touch rectangles are found at their edge, but not one cell beyond range" do
     stub(Registry, :touch_rects, fn "test" -> [{1, 12..16, 8..12}] end)
@@ -23,17 +23,7 @@ defmodule Aesir.ZoneServer.Npc.ProximityTest do
   test "a single-cell warp on the box edge is found" do
     stub(Registry, :touch_rects, fn "test" -> [] end)
 
-    warp = %Warp{
-      id: "edge",
-      map: "test",
-      x: 11,
-      y: 11,
-      to_map: "test",
-      to_x: 20,
-      to_y: 20,
-      xs: 0,
-      ys: 0
-    }
+    warp = build(:warp, map: "test", x: 11, y: 11)
 
     stub(Warps, :for_map, fn "test" -> {:ok, [warp]} end)
     assert Proximity.touch_area_within?("test", 10, 10, 1)
@@ -43,17 +33,7 @@ defmodule Aesir.ZoneServer.Npc.ProximityTest do
   test "warp trigger edges, rather than just centers, are checked" do
     stub(Registry, :touch_rects, fn "test" -> [] end)
 
-    warp = %Warp{
-      id: "wide",
-      map: "test",
-      x: 15,
-      y: 15,
-      to_map: "test",
-      to_x: 20,
-      to_y: 20,
-      xs: 3,
-      ys: 3
-    }
+    warp = build(:warp, map: "test", x: 15, y: 15, xs: 3, ys: 3)
 
     stub(Warps, :for_map, fn "test" -> {:ok, [warp]} end)
     assert Proximity.touch_area_within?("test", 10, 10, 2)
@@ -93,8 +73,8 @@ defmodule Aesir.ZoneServer.Npc.ProximityTest do
 
     test "a warp portal or a shop counts as an NPC" do
       stub_placements([])
-      warp = %Warp{id: "w", map: "prox_map", x: 7, y: 10, to_map: "x", to_x: 1, to_y: 1}
-      shop = %Shop{id: "s", map: "prox_map", x: 20, y: 20, dir: 0, sprite: 1}
+      warp = build(:warp, map: "prox_map", x: 7, y: 10)
+      shop = build(:npc_shop, map: "prox_map", x: 20, y: 20)
       stub(Warps, :for_map, fn "prox_map" -> {:ok, [warp]} end)
       stub(Shops, :for_map, fn "prox_map" -> {:ok, [shop]} end)
 
@@ -105,7 +85,7 @@ defmodule Aesir.ZoneServer.Npc.ProximityTest do
   end
 
   defp placement(x, y, name),
-    do: %Placement{map: "prox_map", x: x, y: y, sprite: 1, name: name, unique_name: name}
+    do: build(:npc_placement, map: "prox_map", x: x, y: y, unique_name: name)
 
   defp stub_placements(placements),
     do: stub(Registry, :entries, fn -> Enum.map(placements, &{__MODULE__, &1}) end)
