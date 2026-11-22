@@ -3065,6 +3065,8 @@ message HomunculusPrivateState {
   repeated HomunculusSkillMetadata skills = 25;
   repeated HomunculusCooldown cooldowns = 26;
   HomunculusAiConfig ai_config = 27;
+  // Permanent owner-side loss. Only durable_id is set beside this flag.
+  bool removed = 28;
 }
 
 // Server -> owner, correlated outcome and immediate authoritative post-state.

@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   require Logger
 
   alias Aesir.Commons.Models.Homunculus
+  alias Aesir.Net.HomunculusPrivateState
   alias Aesir.Net.HomunculusRequest
   alias Aesir.Net.SpecialEffect
   alias Aesir.ZoneServer.Config
@@ -783,6 +784,22 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
            inventory,
            ref
          ) do
+      {:ok, nil, runtime, ^inventory} ->
+        id = session.homunculus.id
+
+        updated =
+          session
+          |> Map.put(:homunculus_runtime, runtime)
+          |> StateCommit.commit(nil)
+          |> clear_companion_runtime()
+
+        MessageRouter.send_to(updated.connection_pid, %HomunculusPrivateState{
+          durable_id: id,
+          removed: true
+        })
+
+        {:noreply, updated}
+
       {:ok, homunculus, runtime, ^inventory} ->
         session =
           session

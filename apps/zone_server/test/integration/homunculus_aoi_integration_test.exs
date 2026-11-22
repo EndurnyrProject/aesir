@@ -197,6 +197,29 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAoiIntegrationTest do
     end
   end
 
+  test "starvation publishes one owner-only removal after persistence" do
+    owner = owner_session(hunger: 0, intimacy_hundredths: 100)
+    state = PlayerSession.get_state(owner.pid)
+    %{id: durable_id, world_gid: gid, x: x, y: y} = state.homunculus
+    observer_session(:starvation, {x + 1, y})
+    assert_receive {:observer_packet, :starvation, %UnitSpawn{gid: ^gid}, _}, 1_000
+
+    ref = state.homunculus_runtime.hunger_timer_ref
+    assert is_reference(ref)
+    Process.cancel_timer(ref)
+    send(owner.pid, {:timeout, ref, {:homunculus, :hunger_tick}})
+
+    assert_receive {:packet_sent,
+                    %HomunculusPrivateState{durable_id: ^durable_id, world_gid: 0, removed: true},
+                    :bulk},
+                   1_000
+
+    refute Repo.get(Homunculus, durable_id)
+    assert_receive {:observer_packet, :starvation, %UnitDespawn{gid: ^gid}, _}, 1_000
+    refute_observer_private(:starvation)
+    refute_receive {:packet_sent, %HomunculusPrivateState{durable_id: ^durable_id}, :bulk}, 100
+  end
+
   test "rename, evolution, Rest, warp, and reconnect use ordered despawn and refreshed spawn" do
     owner = owner_session(stone?: true, intimacy_hundredths: 91_100)
     hom = PlayerSession.get_state(owner.pid).homunculus
@@ -523,6 +546,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAoiIntegrationTest do
       max_hp: 1_000,
       sp: 300,
       max_sp: 300,
+      hunger: Keyword.get(opts, :hunger, 32),
       intimacy_hundredths: Keyword.get(opts, :intimacy_hundredths, 75_100),
       active_remaining_ms: 1_800_000,
       learned_skills: %{"8001" => 3, "8002" => 1}
