@@ -1,70 +1,51 @@
 defmodule Aesir.ZoneServer.Party.StateTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Config
-  alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Party.State
-
-  defp member(char_id, base_level, online, opts \\ []) do
-    Member.new(
-      char_id,
-      Keyword.get(opts, :name, "member-#{char_id}"),
-      base_level,
-      online,
-      Keyword.get(opts, :map_name, "prontera")
-    )
-  end
-
-  defp state(members) do
-    %State{
-      party_id: 1,
-      name: "Test Party",
-      leader_char_id: 1,
-      exp_share: false,
-      item_pickup_share: false,
-      members: Map.new(members, &{&1.char_id, &1})
-    }
-  end
 
   describe "level_spread/1" do
     test "returns 0 when no members are online" do
-      party = state([member(1, 50, false)])
+      party = build(:party_state, members: [build(:party_member, base_level: 50, online: false)])
 
       assert State.level_spread(party) == 0
     end
 
     test "returns 0 when only one member is online" do
-      party = state([member(1, 50, true), member(2, 80, false)])
+      members = [
+        build(:party_member, base_level: 50),
+        build(:party_member, base_level: 80, online: false)
+      ]
 
-      assert State.level_spread(party) == 0
+      assert State.level_spread(build(:party_state, members: members)) == 0
     end
 
     test "returns the max minus min base level over online members" do
-      party = state([member(1, 50, true), member(2, 80, true), member(3, 30, false)])
+      members = [
+        build(:party_member, base_level: 50),
+        build(:party_member, base_level: 80),
+        build(:party_member, base_level: 30, online: false)
+      ]
 
-      assert State.level_spread(party) == 30
+      assert State.level_spread(build(:party_state, members: members)) == 30
     end
   end
 
   describe "full?/1" do
-    test "is full at exactly max_party members" do
-      members = for id <- 1..Config.max_party(), do: member(id, 50, true)
+    test "is full at exactly max_party members, including an offline member" do
+      members = [
+        build(:party_member, online: false) | build_list(Config.max_party() - 1, :party_member)
+      ]
 
-      assert State.full?(state(members))
+      assert State.full?(build(:party_state, members: members))
     end
 
     test "is not full at max_party - 1 members" do
-      members = for id <- 1..(Config.max_party() - 1), do: member(id, 50, true)
+      members = build_list(Config.max_party() - 1, :party_member)
 
-      refute State.full?(state(members))
-    end
-  end
-
-  describe "member_count/1" do
-    test "counts online and offline members" do
-      party = state([member(1, 50, true), member(2, 60, false)])
-
-      assert State.member_count(party) == 2
+      refute State.full?(build(:party_state, members: members))
     end
   end
 

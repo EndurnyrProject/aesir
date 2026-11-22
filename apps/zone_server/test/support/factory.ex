@@ -55,6 +55,8 @@ defmodule Aesir.ZoneServer.Factory do
   alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Shop
   alias Aesir.ZoneServer.Npc.Warp
+  alias Aesir.ZoneServer.Party.Member, as: PartyMember
+  alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -107,6 +109,34 @@ defmodule Aesir.ZoneServer.Factory do
       guild_id: sequence(:guild_state_id, & &1, start_at: 1),
       name: sequence(:guild_state_name, &"Guild #{&1}"),
       master_char_id: 0,
+      members: Map.new(members, &{&1.char_id, &1})
+    }
+    |> merge_attributes(attrs)
+    |> evaluate_lazy_attributes()
+  end
+
+  @doc "An online level 1 party member with a sequenced character id and name."
+  @spec party_member_factory() :: PartyMember.t()
+  def party_member_factory do
+    %PartyMember{
+      char_id: sequence(:party_member_char_id, & &1, start_at: 1),
+      name: sequence(:party_member_name, &"Member #{&1}"),
+      base_level: 1,
+      online: true
+    }
+  end
+
+  @doc "An empty party with sharing off and no leader. `members:` takes a list keyed by `char_id`."
+  @spec party_state_factory(map()) :: PartyState.t()
+  def party_state_factory(attrs) do
+    {members, attrs} = Map.pop(attrs, :members, [])
+
+    %PartyState{
+      party_id: sequence(:party_state_id, & &1, start_at: 1),
+      name: sequence(:party_state_name, &"Party #{&1}"),
+      leader_char_id: 0,
+      exp_share: false,
+      item_pickup_share: false,
       members: Map.new(members, &{&1.char_id, &1})
     }
     |> merge_attributes(attrs)

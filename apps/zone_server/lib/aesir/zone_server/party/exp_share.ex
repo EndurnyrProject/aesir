@@ -16,6 +16,9 @@ defmodule Aesir.ZoneServer.Party.ExpShare do
   alias Aesir.ZoneServer.Party.State
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  @typedoc "Base and job EXP rewards keyed by eligible character id."
+  @type shares :: %{optional(non_neg_integer()) => {non_neg_integer(), non_neg_integer()}}
+
   @doc """
   Splits `base_exp`/`job_exp` across `eligible_members`, scaled by
   `even_share_bonus` and each member's renewal level-gap penalty for
@@ -25,7 +28,7 @@ defmodule Aesir.ZoneServer.Party.ExpShare do
   path's floor-at-1 rule. Empty input yields an empty map.
   """
   @spec split(non_neg_integer(), non_neg_integer(), [Member.t()], non_neg_integer(), integer()) ::
-          %{non_neg_integer() => {non_neg_integer(), non_neg_integer()}}
+          shares()
   def split(_base_exp, _job_exp, [], _even_share_bonus, _mob_level), do: %{}
 
   def split(base_exp, job_exp, eligible_members, even_share_bonus, mob_level) do
@@ -54,6 +57,7 @@ defmodule Aesir.ZoneServer.Party.ExpShare do
     |> Enum.filter(&eligible?(&1, mob_map))
   end
 
+  @spec eligible?(Member.t(), String.t()) :: boolean()
   defp eligible?(%Member{char_id: char_id}, mob_map) do
     case UnitRegistry.get_unit(:player, char_id) do
       {:ok, {_module, player_state, _pid}} ->
@@ -64,10 +68,12 @@ defmodule Aesir.ZoneServer.Party.ExpShare do
     end
   end
 
+  @spec pooled_share(non_neg_integer(), pos_integer(), pos_integer()) :: non_neg_integer()
   defp pooled_share(amount, count, bonus) do
     div(div(amount, count) * bonus, 100)
   end
 
+  @spec member_slice(non_neg_integer(), non_neg_integer()) :: non_neg_integer()
   defp member_slice(pooled_amount, rate) do
     case div(pooled_amount * rate, 100) do
       0 when pooled_amount > 0 -> 1

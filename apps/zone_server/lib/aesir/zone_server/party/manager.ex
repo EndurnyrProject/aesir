@@ -20,14 +20,26 @@ defmodule Aesir.ZoneServer.Party.Manager do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Party.State
+  alias Ecto.Changeset
+
+  @typep persist_error :: :not_found | Changeset.t()
+  @typep party_changes :: %{
+           optional(:leader_char_id) => non_neg_integer(),
+           optional(:exp_share) => boolean(),
+           optional(:item_pickup_share) => boolean()
+         }
+  @typep party_key :: {:party, non_neg_integer()}
+  @typep event ::
+           {:party_updated, State.t()}
+           | {:party_member_updated, non_neg_integer(), Member.t()}
+           | {:party_disbanded, non_neg_integer(), String.t()}
 
   @doc """
   Creates a party led by `leader_character`, persists it (party row + the
   leader's `characters.party_id`) inside one transaction, and starts its
   runtime entry with the leader marked online.
   """
-  @spec create(String.t(), Character.t()) ::
-          {:ok, State.t()} | {:error, :name_taken | :invalid_name | term()}
+  @spec create(String.t(), Character.t()) :: {:ok, State.t()} | {:error, term()}
   def create(name, %Character{} = leader_character) do
     multi =
       Ecto.Multi.new()
@@ -53,6 +65,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
     end
   end
 
+  @spec finish_create(Party.t(), [Member.t()]) :: {:ok, State.t()} | {:error, term()}
   defp finish_create(party, members) do
     state = build_state(party, members)
 
@@ -68,7 +81,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
   until each member's session pushes presence) when none is running.
   Idempotent -- a no-op returning the existing state if one already is.
   """
-  @spec ensure_started(non_neg_integer()) :: {:ok, State.t()} | {:error, :not_found | term()}
+  @spec ensure_started(non_neg_integer()) :: {:ok, State.t()} | {:error, term()}
   def ensure_started(party_id) do
     case get(party_id) do
       {:ok, state} -> {:ok, state}
@@ -116,7 +129,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
   `{:social, {:party_disbanded, party_id, reason}}` on `"party:\#{party_id}"`,
   and stops the entry.
   """
-  @spec disband(non_neg_integer(), String.t()) :: :ok | {:error, term()}
+  @spec disband(non_neg_integer(), String.t()) :: :ok | {:error, persist_error()}
   def disband(party_id, reason) do
     case lookup_pid({:party, party_id}) do
       {:ok, pid} ->
@@ -146,6 +159,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
     end
   end
 
+  @spec delete_party_and_reset_members(non_neg_integer()) :: :ok | {:error, persist_error()}
   defp delete_party_and_reset_members(party_id) do
     multi =
       Ecto.Multi.new()
@@ -171,7 +185,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
   success; leaves the state and the character's row untouched on failure.
   """
   @spec add_member(non_neg_integer(), Character.t()) ::
-          {:ok, State.t()} | {:error, :party_full | :same_account | :not_found | term()}
+          {:ok, State.t()} | {:error, :party_full | :same_account | persist_error()}
   def add_member(party_id, %Character{} = character) do
     mutate(party_id, &add_member_reply(character, &1))
   end
@@ -205,6 +219,8 @@ defmodule Aesir.ZoneServer.Party.Manager do
     State.same_account?(member_account_ids, account_id)
   end
 
+  @spec account_ids_by_char_id([non_neg_integer()]) ::
+          %{optional(non_neg_integer()) => non_neg_integer()}
   defp account_ids_by_char_id(char_ids) do
     Character
     |> where([c], c.id in ^char_ids)
@@ -213,6 +229,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
     |> Map.new()
   end
 
+  @spec persist_add_member(non_neg_integer(), Character.t()) :: :ok | {:error, Changeset.t()}
   defp persist_add_member(party_id, character) do
     case Repo.update(Character.changeset(character, %{party_id: party_id})) do
       {:ok, _character} -> :ok
@@ -234,7 +251,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
   cannot be fooled by a stale read racing a concurrent leadership transfer.
   """
   @spec remove_member(non_neg_integer(), non_neg_integer()) ::
-          :ok | {:ok, State.t()} | {:error, :not_member | :not_found | term()}
+          :ok | {:ok, State.t()} | {:error, :not_member | persist_error()}
   def remove_member(party_id, char_id) do
     case mutate(party_id, &remove_member_reply(char_id, &1)) do
       {:disband, reason} -> disband(party_id, reason)
@@ -262,6 +279,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
     end
   end
 
+  @spec persist_remove_member(non_neg_integer()) :: :ok | {:error, Changeset.t()}
   defp persist_remove_member(char_id) do
     case Repo.get(Character, char_id) do
       nil ->
@@ -282,7 +300,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
   are made against live entry state.
   """
   @spec kick(non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
-          :ok | {:ok, State.t()} | {:error, :not_leader | :not_member | :not_found | term()}
+          :ok | {:ok, State.t()} | {:error, :not_leader | :not_member | persist_error()}
   def kick(party_id, requester_char_id, target_char_id) do
     case mutate(party_id, &kick_reply(requester_char_id, target_char_id, &1)) do
       {:disband, reason} -> disband(party_id, reason)
@@ -305,7 +323,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
   """
   @spec transfer_leader(non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
           {:ok, State.t()}
-          | {:error, :not_leader | :not_member | :not_same_map | :not_found | term()}
+          | {:error, :not_leader | :not_member | :not_same_map | persist_error()}
   def transfer_leader(party_id, requester_char_id, target_char_id) do
     mutate(party_id, &transfer_leader_reply(requester_char_id, target_char_id, &1))
   end
@@ -347,7 +365,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
   sharing has no level-spread gate (design "Options").
   """
   @spec set_options(non_neg_integer(), non_neg_integer(), boolean(), boolean()) ::
-          {:ok, State.t()} | {:error, :not_leader | :level_range | :not_found | term()}
+          {:ok, State.t()} | {:error, :not_leader | :level_range | persist_error()}
   def set_options(party_id, requester_char_id, exp_share, item_pickup_share) do
     mutate(party_id, &set_options_reply(requester_char_id, exp_share, item_pickup_share, &1))
   end
@@ -386,7 +404,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
   "Level/presence tracking").
   """
   @spec push_map_change(non_neg_integer(), non_neg_integer(), String.t()) ::
-          {:ok, State.t()} | {:error, :not_member | :not_found | term()}
+          {:ok, State.t()} | {:error, :not_member | :not_found}
   def push_map_change(party_id, char_id, map_name) do
     mutate(party_id, fn state ->
       update_member(
@@ -400,13 +418,12 @@ defmodule Aesir.ZoneServer.Party.Manager do
 
   @doc """
   Pushes `char_id`'s `online` flag into the entry. Recomputes the online
-  level spread and auto-disables `exp_share` per the same rule as
-  `push_base_level/3` -- both login and logout cross this path (design
-  "Level/presence tracking"). Never re-enables `exp_share`; re-enabling is a
-  manual leader action via `set_options/4`.
+  level spread and auto-disables `exp_share` if the spread exceeds
+  `Config.party_share_level/0`. Never re-enables `exp_share`; re-enabling is
+  a manual leader action via `set_options/4`.
   """
   @spec set_online(non_neg_integer(), non_neg_integer(), boolean()) ::
-          {:ok, State.t()} | {:error, :not_member | :not_found | term()}
+          {:ok, State.t()} | {:error, :not_member | persist_error()}
   def set_online(party_id, char_id, online?) do
     mutate(party_id, fn state ->
       update_member(
@@ -427,7 +444,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
   existing `{:social, {:party_updated, state}}` event as well.
   """
   @spec sync_member(non_neg_integer(), non_neg_integer(), Member.t()) ::
-          {:ok, State.t()} | {:error, :not_member | :not_found | term()}
+          {:ok, State.t()} | {:error, :not_member | persist_error()}
   def sync_member(party_id, char_id, %Member{} = member) do
     case lookup_pid({:party, party_id}) do
       {:ok, pid} ->
@@ -532,6 +549,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
     end
   end
 
+  @spec persist_party(non_neg_integer(), party_changes()) :: :ok | {:error, persist_error()}
   defp persist_party(party_id, changes) do
     case Repo.get(Party, party_id) do
       nil ->
@@ -569,10 +587,12 @@ defmodule Aesir.ZoneServer.Party.Manager do
     end
   end
 
+  @spec characters_query(non_neg_integer()) :: Ecto.Query.t()
   defp characters_query(party_id) do
     from c in Character, where: c.party_id == ^party_id
   end
 
+  @spec build_state(Party.t(), [Member.t()]) :: State.t()
   defp build_state(%Party{} = party, members) do
     %State{
       party_id: party.id,
@@ -584,6 +604,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
     }
   end
 
+  @spec map_party_error(Changeset.t()) :: {:error, :name_taken | :invalid_name | Changeset.t()}
   defp map_party_error(changeset) do
     case changeset.errors[:name] do
       {_msg, opts} ->
@@ -629,6 +650,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
     end
   end
 
+  @spec lookup_pid(party_key()) :: {:ok, pid()} | :error
   defp lookup_pid(key) do
     case Horde.Registry.lookup(Cluster.registry(), key) do
       [{pid, _value}] -> {:ok, pid}
@@ -636,6 +658,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
     end
   end
 
+  @spec broadcast(non_neg_integer(), event()) :: :ok | {:error, term()}
   defp broadcast(party_id, message) do
     Phoenix.PubSub.broadcast(Aesir.PubSub, "party:#{party_id}", {:social, message})
   end

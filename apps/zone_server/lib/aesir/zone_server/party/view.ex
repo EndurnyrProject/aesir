@@ -9,9 +9,8 @@ defmodule Aesir.ZoneServer.Party.View do
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Party.State
 
-  @doc "Converts one complete party member snapshot to its Protobuf message."
   @spec member(Member.t()) :: PartyMember.t()
-  def member(%Member{} = member) do
+  defp member(%Member{} = member) do
     %PartyMember{
       char_id: member.char_id,
       name: member.name,

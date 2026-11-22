@@ -5,25 +5,20 @@ defmodule Aesir.ZoneServer.Party.State do
   ownership and mutation live in `Aesir.ZoneServer.Party.Manager`.
   """
 
+  use TypedStruct
+
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Party.Member
 
-  @enforce_keys [:party_id, :name, :leader_char_id, :exp_share, :item_pickup_share]
-  defstruct party_id: nil,
-            name: nil,
-            leader_char_id: nil,
-            exp_share: nil,
-            item_pickup_share: nil,
-            members: %{}
-
-  @type t() :: %__MODULE__{
-          party_id: non_neg_integer(),
-          name: String.t(),
-          leader_char_id: non_neg_integer(),
-          exp_share: boolean(),
-          item_pickup_share: boolean(),
-          members: %{non_neg_integer() => Member.t()}
-        }
+  @typedoc "Party settings and roster, keyed by character id."
+  typedstruct enforce: true do
+    field :party_id, non_neg_integer()
+    field :name, String.t()
+    field :leader_char_id, non_neg_integer()
+    field :exp_share, boolean()
+    field :item_pickup_share, boolean()
+    field :members, %{optional(non_neg_integer()) => Member.t()}, default: %{}
+  end
 
   @doc "Members currently online."
   @spec online_members(t()) :: [Member.t()]
@@ -50,14 +45,10 @@ defmodule Aesir.ZoneServer.Party.State do
     end
   end
 
-  @doc "Total number of members, online or offline."
-  @spec member_count(t()) :: non_neg_integer()
-  def member_count(%__MODULE__{members: members}), do: map_size(members)
-
-  @doc "Whether the party is at `Aesir.ZoneServer.Config.max_party/0` capacity."
+  @doc "Whether the roster is at `Config.max_party/0` capacity, including offline members."
   @spec full?(t()) :: boolean()
-  def full?(%__MODULE__{} = state) do
-    member_count(state) >= Config.max_party()
+  def full?(%__MODULE__{members: members}) do
+    map_size(members) >= Config.max_party()
   end
 
   @doc """
@@ -66,7 +57,8 @@ defmodule Aesir.ZoneServer.Party.State do
   `Character`, not `Party.Member`, so callers (party-mutation code with DB/
   registry access) must supply this mapping; this module stays pure.
   """
-  @spec same_account?(%{non_neg_integer() => non_neg_integer()}, non_neg_integer()) :: boolean()
+  @spec same_account?(%{optional(non_neg_integer()) => non_neg_integer()}, non_neg_integer()) ::
+          boolean()
   def same_account?(member_account_ids, account_id) do
     account_id in Map.values(member_account_ids)
   end

@@ -7,36 +7,25 @@ defmodule Aesir.ZoneServer.Party.Member do
   `PlayerSession`.
   """
 
+  use TypedStruct
+
   alias Aesir.Commons.Models.Character
 
-  @enforce_keys [:char_id, :name, :base_level, :online]
-  defstruct char_id: nil,
-            name: nil,
-            job_id: 0,
-            base_level: nil,
-            hp: 0,
-            max_hp: 0,
-            sp: 0,
-            max_sp: 0,
-            ap: 0,
-            max_ap: 0,
-            online: nil,
-            map_name: nil
-
-  @type t() :: %__MODULE__{
-          char_id: non_neg_integer(),
-          name: String.t(),
-          job_id: non_neg_integer(),
-          base_level: non_neg_integer(),
-          hp: non_neg_integer(),
-          max_hp: non_neg_integer(),
-          sp: non_neg_integer(),
-          max_sp: non_neg_integer(),
-          ap: non_neg_integer(),
-          max_ap: non_neg_integer(),
-          online: boolean(),
-          map_name: String.t() | nil
-        }
+  @typedoc "A member's identity, job, current resources, and presence."
+  typedstruct enforce: true do
+    field :char_id, non_neg_integer()
+    field :name, String.t()
+    field :job_id, non_neg_integer(), default: 0
+    field :base_level, non_neg_integer()
+    field :hp, non_neg_integer(), default: 0
+    field :max_hp, non_neg_integer(), default: 0
+    field :sp, non_neg_integer(), default: 0
+    field :max_sp, non_neg_integer(), default: 0
+    field :ap, non_neg_integer(), default: 0
+    field :max_ap, non_neg_integer(), default: 0
+    field :online, boolean()
+    field :map_name, String.t() | nil, default: nil
+  end
 
   @doc """
   Builds a member snapshot from its minimal runtime identity and presence.
