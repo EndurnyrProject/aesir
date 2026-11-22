@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAoiIntegrationTest do
   alias Aesir.Net.SkillDamage
   alias Aesir.Net.SkillEffect
   alias Aesir.Net.Snapshot, as: NetSnapshot
+  alias Aesir.Net.SnapshotEntity
   alias Aesir.Net.SpecialEffect
   alias Aesir.Net.SpiritSphereUpdate
   alias Aesir.Net.SpriteChange
@@ -106,6 +107,33 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAoiIntegrationTest do
     simulate_incoming_message(observer.pid, %MoveRequest{dest_x: moved.x + 21, dest_y: moved.y})
     assert_receive {:observer_packet, :moving, %UnitDespawn{gid: ^gid}, _}, 2_000
     refute_observer_private(:moving)
+  end
+
+  test "a Homunculus faces its last walking step in the standing snapshot" do
+    owner = owner_session()
+
+    %{world_gid: gid, x: x, y: y, dir: initial_dir} =
+      PlayerSession.get_state(owner.pid).homunculus
+
+    dest_x = x + 1
+    refute initial_dir == 6
+    _observer = observer_session(:facing, {x, y - 2})
+    assert_receive {:observer_packet, :facing, %UnitSpawn{gid: ^gid}, _}, 1_000
+
+    request(owner.pid, 1, {:move, %HomunculusMoveCommand{x: dest_x, y: y}})
+    assert_receive {:packet_sent, %HomunculusResult{request_id: 1, success: true}, _}, 1_000
+
+    packets =
+      collect_observer_packets_until(:facing, fn
+        %NetSnapshot{entities: entities} ->
+          Enum.any?(entities, &match?(%SnapshotEntity{id: ^gid, x: ^dest_x}, &1))
+
+        _other ->
+          false
+      end)
+
+    assert %NetSnapshot{entities: entities} = List.last(packets)
+    assert %SnapshotEntity{dir: 6, move_state: 0} = Enum.find(entities, &(&1.id == gid))
   end
 
   test "a stationary observer crossed by the Homunculus sees spawn before movement and combat" do

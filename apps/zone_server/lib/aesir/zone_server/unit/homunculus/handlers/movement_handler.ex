@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
 
   alias Aesir.Net.Knockback
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats
@@ -283,17 +284,18 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
     do: stop(session, false)
 
   defp take_step(%SessionState{} = session) do
-    [next | rest] = session.homunculus_runtime.movement_path
+    [{next_x, next_y} | rest] = session.homunculus_runtime.movement_path
     homunculus = session.homunculus
 
-    if Cell.traversable?(homunculus.map_name, elem(next, 0), elem(next, 1)) do
+    if Cell.traversable?(homunculus.map_name, next_x, next_y) do
       runtime = %{session.homunculus_runtime | movement_path: rest}
       moving? = rest != []
 
       updated = %{
         homunculus
-        | x: elem(next, 0),
-          y: elem(next, 1),
+        | x: next_x,
+          y: next_y,
+          dir: Geometry.calculate_direction(homunculus.x, homunculus.y, next_x, next_y),
           action_state: if(moving?, do: :moving, else: :idle),
           movement_state: if(moving?, do: :moving, else: :standing)
       }
