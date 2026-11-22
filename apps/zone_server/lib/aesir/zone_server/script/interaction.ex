@@ -33,8 +33,11 @@ defmodule Aesir.ZoneServer.Script.Interaction do
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
 
+  @typep entry_fn :: (Ctx.t() -> term())
+
   @supervisor Aesir.ZoneServer.Npc.InteractionSupervisor
 
+  @spec supervisor() :: Supervisor.supervisor()
   defp supervisor do
     ProcessTree.get({Aesir.ZoneServer.Npc.InteractionSupervisor, :server}) || @supervisor
   end
@@ -55,7 +58,7 @@ defmodule Aesir.ZoneServer.Script.Interaction do
     start(session_pid, module, base_ctx, &module.on_talk/1)
   end
 
-  @spec start(pid(), module(), Ctx.t(), (Ctx.t() -> any())) :: {:ok, pid()} | {:error, term()}
+  @spec start(pid(), module(), Ctx.t(), entry_fn()) :: {:ok, pid()} | {:error, term()}
   def start(session_pid, module, %Ctx{} = base_ctx, entry_fn) when is_function(entry_fn, 1) do
     Task.Supervisor.start_child(supervisor(), fn ->
       run(base_ctx, module, session_pid, entry_fn)
@@ -72,7 +75,7 @@ defmodule Aesir.ZoneServer.Script.Interaction do
     run(base_ctx, module, session_pid, &module.on_talk/1)
   end
 
-  @spec run(Ctx.t(), module(), pid(), (Ctx.t() -> any())) :: no_return()
+  @spec run(Ctx.t(), module(), pid(), entry_fn()) :: no_return()
   def run(%Ctx{} = base_ctx, _module, session_pid, entry_fn) when is_function(entry_fn, 1) do
     session_ref = Process.monitor(session_pid)
 
@@ -95,6 +98,7 @@ defmodule Aesir.ZoneServer.Script.Interaction do
   # calling a transpiled global function (`Functions.*.call/2`) lets it unwind
   # to here. Catching it makes that a clean end instead of a {:nocatch, _}
   # crash, and hands auto_close the ctx the script terminated with.
+  @spec run_entry(Ctx.t(), entry_fn()) :: term()
   defp run_entry(ctx, entry_fn) do
     entry_fn.(ctx)
   catch
@@ -105,7 +109,7 @@ defmodule Aesir.ZoneServer.Script.Interaction do
   # if on_talk returns a ctx (or {ctx, _}) still carrying buffered page text, a
   # CLOSE frame is emitted so the client window always terminates. A ctx whose
   # page is already empty (the common `close/1` path) sends nothing more.
-  @spec auto_close(any()) :: :ok
+  @spec auto_close(term()) :: :ok | Ctx.t()
   defp auto_close(%Ctx{page: []}), do: :ok
 
   defp auto_close(%Ctx{} = ctx), do: _ = Dsl.close(ctx)

@@ -1,5 +1,7 @@
 defmodule Aesir.ZoneServer.Script.DslTest do
   use ExUnit.Case, async: true
+
+  import Aesir.ZoneServer.Factory
   import Mimic
   use Mimic
 
@@ -15,13 +17,11 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Map.ScriptCells
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
@@ -59,28 +59,9 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   end
 
   setup :set_mimic_from_context
+  setup :verify_on_exit!
 
   setup do
-    Mimic.copy(CharacterPersistence)
-    Mimic.copy(Catalog)
-    Mimic.copy(Learned)
-    Mimic.copy(StatusInterpreter)
-    Mimic.copy(WarpHandler)
-    Mimic.copy(SkillInterpreter)
-    Mimic.copy(Coordinator)
-    Mimic.copy(Cell)
-    Mimic.copy(MapCache)
-    Mimic.copy(MapData)
-    Mimic.copy(ScriptCells)
-    Mimic.copy(SpecialEffect)
-    Mimic.copy(Emote)
-    Mimic.copy(ModifierCalculator)
-    Mimic.copy(Weight)
-    Mimic.copy(Inventory)
-    Mimic.copy(ItemManagement)
-    Mimic.copy(Broadcast)
-    Mimic.copy(MobSupervisor)
-
     stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
     stub(StatusInterpreter, :apply_status_with_events, fn _, _, _, _ -> {:ok, []} end)
     stub(StatusInterpreter, :remove_status_with_events, fn _, _, _, _ -> {:ok, []} end)
@@ -518,11 +499,6 @@ defmodule Aesir.ZoneServer.Script.DslTest do
 
       log = capture_log(fn -> assert Dsl.sleep2(ctx, 0) == ctx end)
       assert log =~ "sleep2: non-positive duration"
-    end
-
-    test "short-circuits on an already-halted ctx" do
-      ctx = %{build_ctx() | status: {:error, :boom}}
-      assert Dsl.sleep2(ctx, 10) == ctx
     end
   end
 
@@ -1850,7 +1826,6 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
 
     test "fails the command and goes on when the catalog is empty" do
-      Mimic.copy(MobManagement)
       stub(MobManagement, :get_all_mobs, fn -> [] end)
 
       stub(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, _opts ->
@@ -2030,13 +2005,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   defp setup_ets_tables(context), do: Aesir.TestEtsSetup.setup_ets_tables(context)
 
   defp build_ctx(opts \\ []) do
-    %Ctx{
-      char_id: 1,
-      account_id: 100,
-      connection_pid: self(),
-      game_state: build_game_state(opts),
-      source: {:item, 501}
-    }
+    build(:script_ctx, game_state: build_game_state(opts), source: {:item, 501})
   end
 
   # An item script runs inline on its session, which the warp moves.

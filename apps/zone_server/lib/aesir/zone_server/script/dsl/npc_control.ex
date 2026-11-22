@@ -404,7 +404,10 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   that does not resolve to a registered placement, logs a warning and
   no-ops. Always returns `ctx`.
   """
-  @spec npctalk(Ctx.t(), String.t(), keyword()) :: Ctx.t()
+  @spec npctalk(Ctx.t(), String.t(),
+          npc: String.t() | nil,
+          target: :area | :map | :all | :self | integer()
+        ) :: Ctx.t()
   def npctalk(ctx, text, opts \\ [])
   def npctalk(%Ctx{status: {:error, _}} = ctx, _text, _opts), do: ctx
 
@@ -499,7 +502,12 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   current value. Valid on an attached or detached ctx; an unresolved name logs
   a warning and no-ops.
   """
-  @spec set_npc_display(Ctx.t(), keyword()) :: Ctx.t()
+  @spec set_npc_display(Ctx.t(),
+          npc: String.t(),
+          sprite: non_neg_integer() | nil,
+          display_name: String.t() | nil,
+          size: non_neg_integer()
+        ) :: Ctx.t()
   def set_npc_display(%Ctx{status: {:error, _}} = ctx, _opts), do: ctx
 
   def set_npc_display(%Ctx{} = ctx, opts) do

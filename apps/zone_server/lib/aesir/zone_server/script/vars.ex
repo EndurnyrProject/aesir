@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Script.Vars do
   alias Aesir.Commons.Models.ServerVariable
   alias Aesir.Repo
   alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Script.Ctx
 
   @doc "Reads the `$` server permanent variable `name`, or `default` if unset."
   @spec get_server(String.t(), term()) :: term()
@@ -82,7 +83,7 @@ defmodule Aesir.ZoneServer.Script.Vars do
   end
 
   @doc "Reads the `.` NPC variable `name` for `source`, or `default` if unset."
-  @spec get_npc(term(), String.t(), term()) :: term()
+  @spec get_npc(Ctx.source(), String.t(), term()) :: term()
   def get_npc(source, name, default) do
     case :ets.lookup(EtsTable.table_for(:npc_vars), {source, name}) do
       [{_key, value}] -> value
@@ -91,7 +92,7 @@ defmodule Aesir.ZoneServer.Script.Vars do
   end
 
   @doc "Sets the `.` NPC variable `name` for `source` to `value`."
-  @spec put_npc(term(), String.t(), term()) :: :ok
+  @spec put_npc(Ctx.source(), String.t(), term()) :: :ok
   def put_npc(source, name, value) do
     :ets.insert(EtsTable.table_for(:npc_vars), {{source, name}, value})
     :ok
@@ -127,6 +128,7 @@ defmodule Aesir.ZoneServer.Script.Vars do
     {scope_key(base), scope_name(base), index}
   end
 
+  @spec split_index(String.t()) :: {String.t(), integer() | nil}
   defp split_index(name) do
     case String.split(name, "[", parts: 2) do
       [base, index] -> {base, parse_index(index)}

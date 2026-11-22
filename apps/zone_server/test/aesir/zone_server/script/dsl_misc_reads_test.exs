@@ -7,13 +7,14 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
   """
 
   use ExUnit.Case, async: true
+
+  import Aesir.ZoneServer.Factory
   use Mimic
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.Member
   alias Aesir.ZoneServer.Guild.State, as: GuildState
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -40,14 +41,7 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
   end
 
   defp ctx(opts \\ []) do
-    %Ctx{
-      char_id: 1,
-      account_id: 100,
-      connection_pid: self(),
-      session_pid: self(),
-      game_state: game_state(opts),
-      source: {:npc, :test_npc}
-    }
+    build(:script_ctx, game_state: game_state(opts), session_pid: self())
   end
 
   describe "checkcart/1" do

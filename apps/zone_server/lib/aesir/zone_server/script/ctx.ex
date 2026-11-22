@@ -35,6 +35,8 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   apart.
   """
 
+  use TypedStruct
+
   require Logger
 
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -82,40 +84,24 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   """
   @type inline_session :: %SessionState{}
 
-  @enforce_keys [:char_id, :account_id, :connection_pid, :game_state, :source]
-  defstruct char_id: nil,
-            account_id: nil,
-            connection_pid: nil,
-            game_state: nil,
-            source: nil,
-            status: :ok,
-            interaction_pid: nil,
-            session_pid: nil,
-            session_state: nil,
-            npc_gid: nil,
-            page: [],
-            session_ref: nil,
-            vars: %{},
-            session_effects: [],
-            failures: []
-
-  @type t() :: %__MODULE__{
-          char_id: integer() | nil,
-          account_id: integer() | nil,
-          connection_pid: pid() | nil,
-          game_state: PlayerState.t() | nil,
-          source: source(),
-          status: status(),
-          interaction_pid: pid() | nil,
-          session_pid: pid() | nil,
-          session_state: inline_session() | nil,
-          npc_gid: non_neg_integer() | nil,
-          page: [String.t()],
-          session_ref: reference() | nil,
-          vars: map(),
-          session_effects: [session_effect()],
-          failures: [failure()]
-        }
+  @typedoc "The state carried through a running script, with or without an attached player."
+  typedstruct enforce: true do
+    field :char_id, integer() | nil
+    field :account_id, integer() | nil
+    field :connection_pid, pid() | nil
+    field :game_state, PlayerState.t() | nil
+    field :source, source()
+    field :status, status(), default: :ok
+    field :interaction_pid, pid() | nil, default: nil
+    field :session_pid, pid() | nil, default: nil
+    field :session_state, inline_session() | nil, default: nil
+    field :npc_gid, non_neg_integer() | nil, default: nil
+    field :page, [String.t()], default: []
+    field :session_ref, reference() | nil, default: nil
+    field :vars, %{optional(atom()) => term()}, default: %{}
+    field :session_effects, [session_effect()], default: []
+    field :failures, [failure()], default: []
+  end
 
   @doc """
   Builds a `Ctx` from a session-state map and a source tag.
@@ -125,7 +111,11 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   - `:connection_pid` — the connection process for this session
   """
   @spec from_session(
-          %{:game_state => PlayerState.t(), :connection_pid => pid(), optional(any()) => any()},
+          %{
+            required(:game_state) => PlayerState.t(),
+            required(:connection_pid) => pid(),
+            optional(atom()) => term()
+          },
           source()
         ) :: t()
   def from_session(%{game_state: %PlayerState{} = ps, connection_pid: pid} = state, source) do
@@ -171,7 +161,7 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   end
 
   @doc """
-  Reports that script command `buildin` failed and returns `ctx` untouched so
+  Reports that script command `buildin` failed without changing its status, so
   the script keeps running, as `run_func` does when a buildin returns failure
   without ending the script.
 

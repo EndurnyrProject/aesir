@@ -1,9 +1,10 @@
 defmodule Aesir.ZoneServer.Script.DslHomunculusTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   test "homevolution stages evolution without changing player state" do
     ctx = ctx()
@@ -40,12 +41,9 @@ defmodule Aesir.ZoneServer.Script.DslHomunculusTest do
   end
 
   defp ctx do
-    %Ctx{
-      char_id: 1,
-      account_id: 2,
-      connection_pid: self(),
-      game_state: %PlayerState{character_id: 1, account_id: 2},
+    build(:script_ctx,
+      game_state: build(:player_state, character_id: 1, account_id: 2),
       source: {:item, 12_040}
-    }
+    )
   end
 end

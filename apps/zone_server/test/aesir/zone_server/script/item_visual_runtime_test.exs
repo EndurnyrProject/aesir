@@ -25,7 +25,7 @@ defmodule Aesir.ZoneServer.Script.ItemVisualRuntimeTest do
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
-  setup :set_mimic_private
+  setup :set_mimic_from_context
 
   setup context do
     Aesir.TestEtsSetup.setup_ets_tables(context)
@@ -90,7 +90,6 @@ defmodule Aesir.ZoneServer.Script.ItemVisualRuntimeTest do
   test "inline deletion observes earlier script state and never calls the session", %{
     state: state
   } do
-    Mimic.copy(InventoryOps)
     water = %InventoryItem{id: 7, nameid: 523, identify: 1, amount: 2}
     state = %{state | game_state: %{state.game_state | inventory: %{0 => water}}}
 
@@ -110,8 +109,6 @@ defmodule Aesir.ZoneServer.Script.ItemVisualRuntimeTest do
   test "sitting restrictions reject before effects or consumption, with group override", %{
     state: state
   } do
-    Mimic.copy(InventoryOps)
-
     item = %ItemDefinition{
       id: 12215,
       aegis_name: "Scroll",

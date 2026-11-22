@@ -1,12 +1,13 @@
 defmodule Aesir.ZoneServer.Script.DialogTest do
   use ExUnit.Case, async: true
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Net.Cutin
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @gid 0x5000_0001
 
@@ -171,15 +172,6 @@ defmodule Aesir.ZoneServer.Script.DialogTest do
   end
 
   defp build_ctx do
-    %Ctx{
-      char_id: 1,
-      account_id: 100,
-      connection_pid: self(),
-      session_pid: self(),
-      game_state: %PlayerState{character_id: 1, account_id: 100},
-      source: {:npc, :test_npc},
-      npc_gid: @gid,
-      interaction_pid: self()
-    }
+    build(:script_ctx, npc_gid: @gid, session_pid: self(), interaction_pid: self())
   end
 end

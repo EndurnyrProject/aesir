@@ -7,6 +7,8 @@ defmodule Aesir.ZoneServer.Script.DslNpcBuildinsTest do
 
   use ExUnit.Case, async: false
 
+  import Aesir.ZoneServer.Factory
+
   @moduletag :capture_log
 
   import Aesir.TestEtsSetup
@@ -52,14 +54,11 @@ defmodule Aesir.ZoneServer.Script.DslNpcBuildinsTest do
   end
 
   defp ctx do
-    %Ctx{
-      char_id: 1,
-      account_id: 100,
-      connection_pid: self(),
+    build(:script_ctx,
+      game_state: build(:player_state, character_id: 1, account_id: 100),
       session_pid: self(),
-      game_state: %PlayerState{character_id: 1, account_id: 100},
       source: {:npc, :caller_npc}
-    }
+    )
   end
 
   describe "getvariableofnpc" do

@@ -1,14 +1,14 @@
 defmodule Aesir.ZoneServer.Script.InteractionTest do
   use ExUnit.Case, async: false
 
+  import Aesir.ZoneServer.Factory
+
   @moduletag :capture_log
 
   alias Aesir.Net.Cutin
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
-  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Interaction
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @gid 0x5000_0042
   @supervisor Aesir.ZoneServer.Npc.InteractionSupervisor
@@ -202,14 +202,7 @@ defmodule Aesir.ZoneServer.Script.InteractionTest do
   defp start_interaction(module), do: Interaction.start(self(), module, base_ctx())
 
   defp base_ctx(conn \\ self()) do
-    %Ctx{
-      char_id: 1,
-      account_id: 100,
-      connection_pid: conn,
-      game_state: %PlayerState{character_id: 1, account_id: 100},
-      source: {:npc, :test_npc},
-      npc_gid: @gid
-    }
+    build(:script_ctx, connection_pid: conn, npc_gid: @gid)
   end
 
   defp restore_idle_timeout(nil), do: Application.delete_env(:zone_server, :dialog_idle_timeout)

@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Internal do
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @doc """
@@ -29,7 +30,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Internal do
   detached ctx has no session to call, so it halts `:no_player` (the script
   ends) instead.
   """
-  @spec apply_op(Ctx.t(), tuple(), :fail | :halt) :: Ctx.t()
+  @spec apply_op(Ctx.t(), ScriptEffectHandler.op(), :fail | :halt) :: Ctx.t()
   def apply_op(ctx, op, on_error \\ :fail)
 
   def apply_op(%Ctx{source: {:item, _}, session_state: state} = ctx, op, on_error)
@@ -85,7 +86,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Internal do
   The player's current level (learned or granted) of `skill` (id or catalog
   name atom); `0` for an unknown skill or name (the `getskilllv` core).
   """
-  @spec skill_level(struct(), integer() | atom()) :: non_neg_integer()
+  @spec skill_level(PlayerState.t(), integer() | atom()) :: non_neg_integer()
   def skill_level(gs, skill) do
     case resolve_skill_id(skill) do
       {:ok, skill_id} -> PlayerStats.skill_level(gs.stats, skill_id)

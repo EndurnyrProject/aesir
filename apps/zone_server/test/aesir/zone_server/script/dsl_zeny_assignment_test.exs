@@ -11,12 +11,10 @@ defmodule Aesir.ZoneServer.Script.DslZenyAssignmentTest do
   alias Aesir.ZoneServer.Script.Dsl
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
-  setup :set_mimic_private
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
   setup do
-    Mimic.copy(CharacterPersistence)
-
     stub(CharacterPersistence, :update_character, fn 7, fields, [async: true] ->
       send(self(), {:persisted, fields})
       {:ok, %Character{}}

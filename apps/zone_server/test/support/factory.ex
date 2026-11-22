@@ -58,6 +58,7 @@ defmodule Aesir.ZoneServer.Factory do
   alias Aesir.ZoneServer.Party.Member, as: PartyMember
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.PlayerStateFixture
+  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -194,6 +195,23 @@ defmodule Aesir.ZoneServer.Factory do
       to_x: 0,
       to_y: 0
     }
+  end
+
+  @doc "An attached NPC script with a player snapshot and the test process as its connection."
+  @spec script_ctx_factory(map()) :: Ctx.t()
+  def script_ctx_factory(attrs) do
+    {player, attrs} =
+      Map.pop_lazy(attrs, :game_state, fn -> build(:player_state, account_id: 100) end)
+
+    %Ctx{
+      char_id: player.character_id,
+      account_id: player.account_id,
+      connection_pid: self(),
+      game_state: player,
+      source: {:npc, :test_npc}
+    }
+    |> merge_attributes(attrs)
+    |> evaluate_lazy_attributes()
   end
 
   @doc "An NPC with view class 58 at {0, 0} on `prontera`."

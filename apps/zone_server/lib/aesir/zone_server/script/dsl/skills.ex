@@ -219,7 +219,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Skills do
   `:level` defaults to 1. An unknown skill fails the command and the script goes
   on; a detached ctx halts `:no_player`.
   """
-  @spec itemskill(Ctx.t(), integer() | atom(), keyword()) :: Ctx.t()
+  @spec itemskill(Ctx.t(), integer() | atom(), level: pos_integer(), keep_requirement: boolean()) ::
+          Ctx.t()
   def itemskill(%Ctx{status: {:error, _}} = ctx, _skill, _opts), do: ctx
   def itemskill(%Ctx{game_state: nil} = ctx, _skill, _opts), do: Ctx.halt(ctx, :no_player)
 
@@ -263,7 +264,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Skills do
   `:level` defaults to 1. An unknown skill, or a detached ctx with no unit to cast
   from, fails the command and the script goes on.
   """
-  @spec unitskilluseid(Ctx.t(), integer() | atom(), keyword()) :: Ctx.t()
+  @spec unitskilluseid(Ctx.t(), integer() | atom(), level: pos_integer()) :: Ctx.t()
   def unitskilluseid(%Ctx{status: {:error, _}} = ctx, _skill, _opts), do: ctx
 
   def unitskilluseid(%Ctx{game_state: nil} = ctx, _skill, _opts),

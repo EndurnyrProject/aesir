@@ -104,7 +104,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   `opts` accepts `:hp` and `:sp`, each an integer or a `lo..hi` range rolled
   once. See `percent_heal/2` for how the heal reaches the player.
   """
-  @spec heal(Ctx.t(), keyword()) :: Ctx.t()
+  @spec heal(Ctx.t(), hp: integer() | Range.t(), sp: integer() | Range.t()) :: Ctx.t()
   def heal(ctx, opts), do: vitals(ctx, fn -> {:heal, amount(opts, :hp), amount(opts, :sp)} end)
 
   @doc """
@@ -116,7 +116,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   stages the rolled amounts as `{:potion_pitch, :flat, hp, sp}` for the thrower.
   Its plain `heal`, unlike these two, is not redirected: it heals the thrower.
   """
-  @spec item_heal(Ctx.t(), keyword()) :: Ctx.t()
+  @spec item_heal(Ctx.t(), hp: integer() | Range.t(), sp: integer() | Range.t()) :: Ctx.t()
   def item_heal(%Ctx{source: {:potion_pitch, _item_id}} = ctx, opts),
     do: pitch(ctx, :flat, opts)
 
@@ -138,7 +138,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   A thrown potion's script stages the percents as `{:potion_pitch, :percent,
   hp, sp}` instead.
   """
-  @spec percent_heal(Ctx.t(), keyword()) :: Ctx.t()
+  @spec percent_heal(Ctx.t(), hp: integer() | Range.t(), sp: integer() | Range.t()) :: Ctx.t()
   def percent_heal(%Ctx{source: {:potion_pitch, _item_id}} = ctx, opts),
     do: pitch(ctx, :percent, opts)
 

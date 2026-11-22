@@ -173,7 +173,7 @@ defmodule Aesir.ZoneServer.Script.Rathena do
   where status is rAthena's `input` return: `0` in range, `1` below min (value
   clamped to min), `2` above max (value clamped to max).
   """
-  @spec input_int(integer() | term(), integer(), integer()) :: {0 | 1 | 2, term()}
+  @spec input_int(term(), integer(), integer()) :: {0 | 1 | 2, term()}
   def input_int(raw, min, _max) when is_integer(raw) and raw < min, do: {1, min}
   def input_int(raw, _min, max) when is_integer(raw) and raw > max, do: {2, max}
   def input_int(raw, _min, _max), do: {0, raw}
@@ -183,7 +183,7 @@ defmodule Aesir.ZoneServer.Script.Rathena do
   `{status, value}` where status is rAthena's `input` return: `0` in range,
   `1` too short, `2` too long. The string itself is returned unchanged.
   """
-  @spec input_str(String.t() | term(), integer(), integer()) :: {0 | 1 | 2, term()}
+  @spec input_str(term(), integer(), integer()) :: {0 | 1 | 2, term()}
   def input_str(raw, min, max) when is_binary(raw) do
     len = String.length(raw)
 

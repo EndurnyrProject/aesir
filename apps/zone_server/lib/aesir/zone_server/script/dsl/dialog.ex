@@ -92,10 +92,11 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
 
   `kind` is `:int` (an `INPUT_INT` frame returning a number) or `:string` (an
   `INPUT_STR` frame returning a string). The page buffer is cleared. On a
-  detached ctx, halts `:no_player` and returns `{ctx, nil}` without flushing or
+  detached ctx, halts `:no_player` without flushing or
   blocking.
   """
-  @spec input(Ctx.t(), :int | :string) :: {Ctx.t(), integer() | String.t() | nil}
+  @spec input(Ctx.t(), :int) :: {Ctx.t(), integer()}
+  @spec input(Ctx.t(), :string) :: {Ctx.t(), String.t()}
   def input(%Ctx{game_state: nil} = ctx, _kind), do: {Ctx.halt(ctx, :no_player), nil}
 
   def input(%Ctx{} = ctx, :int) do
@@ -151,7 +152,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   # `:choice`, not an ESC, so uniform exit-on-cancel does not lose any flow.)
   # Cancel and idle timeout clear any displayed cutin first (rAthena
   # `pc_close_npc`), since the script's own `cutin "", 255` never runs.
-  @spec await(Ctx.t(), atom()) :: term()
+  @spec await(Ctx.t(), :continue | :choice | :number | :input | :progress) ::
+          boolean() | integer() | String.t()
   defp await(%Ctx{npc_gid: gid, session_ref: session_ref} = ctx, expected) do
     receive do
       {:npc_interact, %NpcInteract{npc_id: ^gid, response: {^expected, value}}} ->
@@ -214,7 +216,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   A report before the bar fills, an item use or a walk cancels it and ends the
   script. Halts `:no_player` on a detached ctx.
   """
-  @spec progressbar(Ctx.t(), String.t(), integer()) :: Ctx.t()
+  @spec progressbar(Ctx.t(), String.t() | integer(), integer()) :: Ctx.t()
   def progressbar(%Ctx{status: {:error, _}} = ctx, _color, _seconds), do: ctx
   def progressbar(%Ctx{game_state: nil} = ctx, _color, _seconds), do: Ctx.halt(ctx, :no_player)
 
