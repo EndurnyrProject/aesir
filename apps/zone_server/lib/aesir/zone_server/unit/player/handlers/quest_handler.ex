@@ -4,6 +4,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.QuestHandler do
   `ScriptEffectHandler`; this handles what the player does from the quest window.
   """
 
+  require Logger
+
   alias Aesir.Net.QuestActiveRequest
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.QuestLog
@@ -36,6 +38,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.QuestHandler do
         {:noreply, StateCommit.commit(state, %{gs | quest_log: quest_log})}
 
       {:error, :not_found} ->
+        Logger.debug(
+          "ignored quest active request: quest #{quest_id} (active: #{active?}) not found or complete"
+        )
+
         {:noreply, state}
     end
   end

@@ -3,8 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition do
   Static quest definition (the rAthena `quest_db` record).
 
   Loaded as data from `priv/db/<mode>/quests/*.yml` into `:persistent_term`;
-  never a per-quest module. `time_limit` is carried through unused this
-  iteration. Objectives and drops are read on every monster kill
+  never a per-quest module. `time_limit` sets the quest deadline, applied by
+  `Unit.Player.QuestLog.deadline_for/3` through `TimeLimit`. Objectives and drops are read on every monster kill
   (`Unit.Player.QuestLog`).
   """
 
