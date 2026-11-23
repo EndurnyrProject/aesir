@@ -8,17 +8,21 @@ defmodule Aesir.ZoneServer.Script.Dsl.Quest do
 
   import Aesir.ZoneServer.Script.Dsl.Internal, only: [apply_op: 2, no_player!: 2]
 
+  alias Aesir.ZoneServer.Npc.Placement
+  alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit.Player.QuestLog
+  alias Aesir.ZoneServer.Unit.Player.QuestLog.Giver
 
   @doc """
-  Accepts quest `quest_id` through the session seam (`setquest`, `quest_add`).
-  Halts `:already_started`/`:unknown_quest` when the quest is already held or
-  absent from `quest_db`, leaving the log untouched.
+  Accepts quest `quest_id` through the session seam (`setquest`, `quest_add`),
+  recording the calling NPC as its giver. Halts `:already_started`/`:unknown_quest`
+  when the quest is already held or absent from `quest_db`, leaving the log
+  untouched.
   """
   @spec setquest(Ctx.t(), QuestLog.quest_id()) :: Ctx.t()
   def setquest(%Ctx{status: {:error, _}} = ctx, _quest_id), do: ctx
-  def setquest(%Ctx{} = ctx, quest_id), do: apply_op(ctx, {:setquest, quest_id})
+  def setquest(%Ctx{} = ctx, quest_id), do: apply_op(ctx, {:setquest, quest_id, giver(ctx)})
 
   @doc """
   Removes quest `quest_id` from the log through the session seam (`erasequest`,
@@ -39,14 +43,15 @@ defmodule Aesir.ZoneServer.Script.Dsl.Quest do
 
   @doc """
   Atomically swaps active/inactive quest `old_id` for fresh quest `new_id`
-  through the session seam (`changequest`, `quest_change`). Halts on any of
-  `QuestLog.change/5`'s error reasons, leaving the log untouched.
+  through the session seam (`changequest`, `quest_change`); the new quest's
+  giver is the calling NPC. Halts on any of `QuestLog.change/5`'s error
+  reasons, leaving the log untouched.
   """
   @spec changequest(Ctx.t(), QuestLog.quest_id(), QuestLog.quest_id()) :: Ctx.t()
   def changequest(%Ctx{status: {:error, _}} = ctx, _old_id, _new_id), do: ctx
 
   def changequest(%Ctx{} = ctx, old_id, new_id),
-    do: apply_op(ctx, {:changequest, old_id, new_id})
+    do: apply_op(ctx, {:changequest, old_id, new_id, giver(ctx)})
 
   @doc """
   Checks quest `quest_id`'s state, `mode` defaulting to `:havequest`
@@ -82,4 +87,21 @@ defmodule Aesir.ZoneServer.Script.Dsl.Quest do
     do: no_player!(ctx, "isbegin_quest/2")
 
   def isbegin_quest(%Ctx{game_state: gs}, quest_id), do: QuestLog.is_begin(gs.quest_log, quest_id)
+
+  @spec giver(Ctx.t()) :: Giver.t() | nil
+  defp giver(%Ctx{npc_gid: nil}), do: nil
+
+  defp giver(%Ctx{npc_gid: gid}) do
+    case NpcRegistry.module_for_unit(gid) do
+      {:ok, {_module, %Placement{map: map}}} when map in [nil, "", "-"] -> nil
+      {:ok, {_module, %Placement{} = placement}} -> placement_giver(placement)
+      :error -> nil
+    end
+  end
+
+  @spec placement_giver(Placement.t()) :: Giver.t()
+  defp placement_giver(%Placement{name: name, map: map, x: x, y: y}) do
+    [display_name | _unique] = String.split(name, "#", parts: 2)
+    %Giver{name: display_name, map: map, x: x, y: y}
+  end
 end

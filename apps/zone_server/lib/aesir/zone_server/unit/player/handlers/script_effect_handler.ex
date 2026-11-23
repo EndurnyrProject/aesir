@@ -64,6 +64,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Player.PlayerEvents
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.QuestLog
+  alias Aesir.ZoneServer.Unit.Player.QuestLog.Giver
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.Player.QuestView
   alias Aesir.ZoneServer.Unit.Player.ScriptVitals
@@ -123,10 +124,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:refine, non_neg_integer(), integer(), RefineDatabase.cost_type(), boolean()}
           | {:repair, non_neg_integer()}
           | {:repairall}
-          | {:setquest, QuestLog.quest_id()}
+          | {:setquest, QuestLog.quest_id(), Giver.t() | nil}
           | {:erasequest, QuestLog.quest_id()}
           | {:completequest, QuestLog.quest_id()}
-          | {:changequest, QuestLog.quest_id(), QuestLog.quest_id()}
+          | {:changequest, QuestLog.quest_id(), QuestLog.quest_id(), Giver.t() | nil}
           | {:set_look, 1 | 3 | 5 | 6 | 7 | 12, non_neg_integer()}
           | {:catchpet, pos_integer(), integer()}
           | {:birthpet}
@@ -724,8 +725,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     end
   end
 
-  def apply_op({:setquest, quest_id}, %{game_state: gs} = state) do
-    case QuestLog.add(gs.quest_log, quest_id, quest_deadline(quest_id), nil) do
+  def apply_op({:setquest, quest_id, giver}, %{game_state: gs} = state) do
+    case QuestLog.add(gs.quest_log, quest_id, quest_deadline(quest_id), giver) do
       {:ok, quest_log, entry} ->
         QuestPersistence.upsert(gs.character_id, {quest_id, entry})
         MessageRouter.send_to(state.connection_pid, QuestView.quest_added(quest_id, entry))
@@ -766,8 +767,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     end
   end
 
-  def apply_op({:changequest, old_id, new_id}, %{game_state: gs} = state) do
-    case QuestLog.change(gs.quest_log, old_id, new_id, quest_deadline(new_id), nil) do
+  def apply_op({:changequest, old_id, new_id, giver}, %{game_state: gs} = state) do
+    case QuestLog.change(gs.quest_log, old_id, new_id, quest_deadline(new_id), giver) do
       {:ok, quest_log, entry} ->
         QuestPersistence.delete(gs.character_id, old_id)
         QuestPersistence.upsert(gs.character_id, {new_id, entry})

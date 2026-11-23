@@ -42,6 +42,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.QuestLog.Entry
+  alias Aesir.ZoneServer.Unit.Player.QuestLog.Giver
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
@@ -1044,7 +1045,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     end
   end
 
-  describe "{:setquest, quest_id}" do
+  describe "{:setquest, quest_id, giver}" do
     test "adds the quest active with zeroed counters, upserts, pushes QuestAdded" do
       test_pid = self()
 
@@ -1053,7 +1054,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
         :ok
       end)
 
-      {reply, new_state} = ScriptEffectHandler.apply_op({:setquest, 7393}, base_state())
+      {reply, new_state} = ScriptEffectHandler.apply_op({:setquest, 7393, nil}, base_state())
 
       assert {:ok, game_state} = reply
       assert %Entry{state: :active, counts: [0]} = game_state.quest_log[7393]
@@ -1065,11 +1066,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
       assert_received {:upserted, %Entry{state: :active, counts: [0]}}
     end
 
+    test "stores the giver on the entry and persists it" do
+      test_pid = self()
+      giver = %Giver{name: "Guard Eirik", map: "prontera", x: 124, y: 88}
+
+      expect(QuestPersistence, :upsert, fn 1000, {7393, entry} ->
+        send(test_pid, {:upserted, entry})
+        :ok
+      end)
+
+      {{:ok, game_state}, _new_state} =
+        ScriptEffectHandler.apply_op({:setquest, 7393, giver}, base_state())
+
+      assert game_state.quest_log[7393].giver == giver
+      assert_received {:upserted, %Entry{giver: ^giver}}
+    end
+
     test "rejects :already_started and mutates nothing" do
       reject(&QuestPersistence.upsert/2)
 
       state = base_state(quest_log: %{7393 => %Entry{state: :active, counts: [0]}})
-      {reply, new_state} = ScriptEffectHandler.apply_op({:setquest, 7393}, state)
+      {reply, new_state} = ScriptEffectHandler.apply_op({:setquest, 7393, nil}, state)
 
       assert reply == {:error, :already_started}
       assert new_state == state
@@ -1080,7 +1097,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
       reject(&QuestPersistence.upsert/2)
 
       state = base_state()
-      {reply, new_state} = ScriptEffectHandler.apply_op({:setquest, 99_999}, state)
+      {reply, new_state} = ScriptEffectHandler.apply_op({:setquest, 99_999, nil}, state)
 
       assert reply == {:error, :unknown_quest}
       assert new_state == state
@@ -1152,7 +1169,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     end
   end
 
-  describe "{:changequest, old_id, new_id}" do
+  describe "{:changequest, old_id, new_id, giver}" do
     test "swaps the quest, deletes the old row, upserts the new row, pushes both deltas" do
       test_pid = self()
 
@@ -1167,7 +1184,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
       end)
 
       state = base_state(quest_log: %{7393 => %Entry{state: :active, counts: [4]}})
-      {reply, new_state} = ScriptEffectHandler.apply_op({:changequest, 7393, 8000}, state)
+      {reply, new_state} = ScriptEffectHandler.apply_op({:changequest, 7393, 8000, nil}, state)
 
       assert {:ok, game_state} = reply
       refute Map.has_key?(game_state.quest_log, 7393)
@@ -1183,12 +1200,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
       assert_received {:upserted, %Entry{state: :active, counts: []}}
     end
 
+    test "gives the new entry the op's giver" do
+      giver = %Giver{name: "Guard Eirik", map: "prontera", x: 124, y: 88}
+      stub(QuestPersistence, :delete, fn 1000, 7393 -> :ok end)
+      stub(QuestPersistence, :upsert, fn 1000, {8000, _entry} -> :ok end)
+
+      state = base_state(quest_log: %{7393 => %Entry{state: :active, counts: [4]}})
+
+      {{:ok, game_state}, _new_state} =
+        ScriptEffectHandler.apply_op({:changequest, 7393, 8000, giver}, state)
+
+      assert game_state.quest_log[8000].giver == giver
+    end
+
     test "rejects :not_started for an old quest that isn't held, mutating nothing" do
       reject(&QuestPersistence.delete/2)
       reject(&QuestPersistence.upsert/2)
 
       state = base_state()
-      {reply, new_state} = ScriptEffectHandler.apply_op({:changequest, 7393, 8000}, state)
+      {reply, new_state} = ScriptEffectHandler.apply_op({:changequest, 7393, 8000, nil}, state)
 
       assert reply == {:error, :not_started}
       assert new_state == state

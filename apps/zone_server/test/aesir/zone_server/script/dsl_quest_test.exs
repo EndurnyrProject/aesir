@@ -9,18 +9,28 @@ defmodule Aesir.ZoneServer.Script.DslQuestTest do
 
   use ExUnit.Case, async: true
 
+  import Mimic
+
   alias Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition
   alias Aesir.ZoneServer.Mmo.QuestManagement.Quests
+  alias Aesir.ZoneServer.Npc.Placement
+  alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.QuestLog.Entry
+  alias Aesir.ZoneServer.Unit.Player.QuestLog.Giver
+
+  setup :set_mimic_from_context
 
   @hunt %QuestDefinition{
     id: 7393,
     title: "Shiny Silver Blade",
     targets: [%{mob_id: 2314, count: 10}]
   }
+
+  @npc_gid 0x5000_0001
+  @eirik %Placement{map: "prontera", x: 124, y: 88, sprite: 58, name: "Guard Eirik"}
 
   # A stand-in session that answers {:script_apply, op}. It does not mutate any
   # PlayerState; it just echoes a scripted reply (configured per test) and
@@ -54,7 +64,7 @@ defmodule Aesir.ZoneServer.Script.DslQuestTest do
   end
 
   describe "setquest/2" do
-    test "routes {:setquest, id} and folds the returned game_state" do
+    test "routes {:setquest, id, giver} and folds the returned game_state" do
       gs = %{build_game_state() | quest_log: %{7393 => entry(:active, [0])}}
       ctx = build_ctx(session: ok_session(gs))
 
@@ -62,7 +72,7 @@ defmodule Aesir.ZoneServer.Script.DslQuestTest do
 
       assert result.status == :ok
       assert result.game_state.quest_log[7393].state == :active
-      assert_received {:script_apply, {:setquest, 7393}}
+      assert_received {:script_apply, {:setquest, 7393, nil}}
     end
 
     test "fails the command and goes on when the session rejects (:already_started)" do
@@ -72,7 +82,33 @@ defmodule Aesir.ZoneServer.Script.DslQuestTest do
 
       assert result.status == :ok
       assert [{_op, :already_started}] = result.failures
-      assert_received {:script_apply, {:setquest, 7393}}
+      assert_received {:script_apply, {:setquest, 7393, nil}}
+    end
+
+    test "records the calling NPC as giver, without the #unique suffix" do
+      stub_npc(@npc_gid, %Placement{@eirik | name: "Guard Eirik#bridge"})
+      ctx = %{build_ctx(session: ok_session(build_game_state())) | npc_gid: @npc_gid}
+
+      Dsl.setquest(ctx, 7393)
+
+      assert_received {:script_apply,
+                       {:setquest, 7393,
+                        %Giver{name: "Guard Eirik", map: "prontera", x: 124, y: 88}}}
+    end
+
+    test "records no giver without a resolvable NPC on a real map" do
+      ok = ok_session(build_game_state())
+      stub(NpcRegistry, :module_for_unit, fn _gid -> :error end)
+
+      Dsl.setquest(%{build_ctx(session: ok) | npc_gid: nil}, 7393)
+      assert_received {:script_apply, {:setquest, 7393, nil}}
+
+      Dsl.setquest(%{build_ctx(session: ok) | npc_gid: 0x6000_0000}, 7393)
+      assert_received {:script_apply, {:setquest, 7393, nil}}
+
+      stub_npc(@npc_gid, %Placement{@eirik | map: "-"})
+      Dsl.setquest(%{build_ctx(session: ok) | npc_gid: @npc_gid}, 7393)
+      assert_received {:script_apply, {:setquest, 7393, nil}}
     end
   end
 
@@ -121,7 +157,7 @@ defmodule Aesir.ZoneServer.Script.DslQuestTest do
   end
 
   describe "changequest/3" do
-    test "routes {:changequest, old, new} and folds the returned game_state" do
+    test "routes {:changequest, old, new, giver} and folds the returned game_state" do
       gs = %{build_game_state() | quest_log: %{7394 => entry(:active, [0])}}
       ctx = build_ctx(session: ok_session(gs))
 
@@ -129,7 +165,18 @@ defmodule Aesir.ZoneServer.Script.DslQuestTest do
 
       assert result.status == :ok
       assert result.game_state.quest_log[7394].state == :active
-      assert_received {:script_apply, {:changequest, 7393, 7394}}
+      assert_received {:script_apply, {:changequest, 7393, 7394, nil}}
+    end
+
+    test "gives the new quest the calling NPC as giver" do
+      stub_npc(@npc_gid, @eirik)
+      ctx = %{build_ctx(session: ok_session(build_game_state())) | npc_gid: @npc_gid}
+
+      Dsl.changequest(ctx, 7393, 7394)
+
+      assert_received {:script_apply,
+                       {:changequest, 7393, 7394,
+                        %Giver{name: "Guard Eirik", map: "prontera", x: 124, y: 88}}}
     end
 
     test "fails the command and goes on when the session rejects (:not_started)" do
@@ -244,6 +291,9 @@ defmodule Aesir.ZoneServer.Script.DslQuestTest do
   end
 
   defp entry(state, counts), do: %Entry{state: state, counts: counts, deadline: 0, giver: nil}
+
+  defp stub_npc(gid, placement),
+    do: stub(NpcRegistry, :module_for_unit, fn ^gid -> {:ok, {__MODULE__, placement}} end)
 
   defp ok_session(game_state), do: start_stub(fn _op, _from -> {:ok, game_state} end)
   defp error_session(reason), do: start_stub(fn _op, _from -> {:error, reason} end)

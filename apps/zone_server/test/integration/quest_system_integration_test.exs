@@ -173,7 +173,7 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
       member =
         start_player_session(character: member_char, position: {150, 150}, map_name: "prontera")
 
-      {:ok, _gs} = PlayerSession.script_apply(member.pid, {:setquest, @hunt_quest})
+      {:ok, _gs} = PlayerSession.script_apply(member.pid, {:setquest, @hunt_quest, nil})
 
       killer_id = 990_001
 
@@ -239,7 +239,7 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
     test "a monster death ticks a filtered objective and grants one drop item" do
       char = insert_character("Collector")
       player = start_player_session(character: char, position: {150, 150}, map_name: "prontera")
-      {:ok, _gs} = PlayerSession.script_apply(player.pid, {:setquest, @drop_quest.id})
+      {:ok, _gs} = PlayerSession.script_apply(player.pid, {:setquest, @drop_quest.id, nil})
       mob = start_mob_session(mob_id: 1002, level: 10, max_hp: 10, position: {152, 150})
       flush_packets()
 
