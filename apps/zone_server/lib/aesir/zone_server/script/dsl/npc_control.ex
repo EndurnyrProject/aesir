@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   alias Aesir.Net.WaitingRoomRemoved
   alias Aesir.ZoneServer.Announcement.Flags
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.ScriptCells
@@ -43,15 +44,17 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   AEGIS name, matching `MobManagement.get_mob_by_name/1`; a negative `:mob_id`
   `-1 - type` draws every instance from random group `type`, the `MOBG_*`
   index: `-1` the Dead Branch group), `:at` as a `{x, y}`
-  tuple or `:random` for a random walkable cell (defaults to the player's
-  current position), `:map` to spawn on an explicit map instead of the
+  tuple, `:random` for a random walkable cell, or `:near` for a walkable cell
+  next to the attached player, rolled per instance (rAthena's negative
+  coordinates; a random cell without an attached player). `:at` defaults to the
+  player's current position. `:map` spawns on an explicit map instead of the
   player's (rAthena `monster "map",...`; with `:map`, `:at` defaults to
   `:random` and an unknown map fails the command), `:amount` (spawn
-  count, default 1), `:aggressive` (accepted but deferred in Phase 1, kept
-  for the Dead Branch interface), and `:event` (optional, a `"Name::OnLabel"`
+  count, default 1), and `:event` (optional, a `"Name::OnLabel"`
   ref — rAthena OnMyMobDead — run with the killer attached if the mob is
   later killed by a player; a malformed ref logs a warning and is dropped,
-  the mob still spawns without it). An unknown mob fails the command; a failed
+  the mob still spawns without it). A random-group monster starts aggressive
+  while `Config.dead_branch_active?/0` holds. An unknown mob fails the command; a failed
   spawn or no map to spawn on spawns nothing, and in every case the script goes
   on (a failed instance is skipped and the next one is tried). Returns the
   context unchanged.
@@ -75,7 +78,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   @doc """
   Spawns a random monster from the catalog, like `summon_mob/2` with a rolled id.
 
-  `opts` accepts `:at`, `:map`, `:amount`, `:aggressive`, and `:event` (see
+  `opts` accepts `:at`, `:map`, `:amount`, and `:event` (see
   `summon_mob/2`). Fails the command if the catalog is empty.
   Detached-capable, same reasoning as `summon_mob/2`.
   """
@@ -98,7 +101,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   `{x1, y1, x2, y2}` rectangle (required), `:map` to spawn on an explicit map
   (defaults to the player's map; rAthena `areamonster "map",...` with `"this"`
   meaning the player's map is handled by omitting `:map`), `:amount` (spawn
-  count, default 1), `:aggressive` (accepted but deferred), and `:event`
+  count, default 1), and `:event`
   (optional OnMyMobDead ref, validated like `summon_mob/2`). Each instance
   lands on its own random walkable cell inside the rectangle; an unknown mob
   fails the command; an unknown map or a failed spawn spawns nothing for that
@@ -1101,10 +1104,10 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   end
 
   defp do_summon(ctx, map_name, at, mob_id, opts) do
-    {x, y} = summon_coords(at)
     amount = Keyword.get(opts, :amount, 1)
 
     Enum.reduce(1..amount//1, ctx, fn _n, acc ->
+      {x, y} = summon_coords(at, acc)
       _result = spawn_instance(mob_id, &Coordinator.summon_mob(map_name, &1, x, y, &2), opts)
       acc
     end)
@@ -1142,22 +1145,30 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   end
 
   # A random group draws its monster per instance; an empty draw spawns nothing.
+  # Its monster starts aggressive under `dead_branch_active` (`mob_once_spawn`).
   defp spawn_instance({:random, type}, spawn, opts) do
     case SummonGroups.pick(type) do
       0 -> {:error, :mob_not_found}
-      mob_id -> spawn.(mob_id, summon_opts(opts))
+      mob_id -> spawn.(mob_id, summon_opts(opts, Config.dead_branch_active?()))
     end
   end
 
-  defp spawn_instance(mob_id, spawn, opts), do: spawn.(mob_id, summon_opts(opts))
+  defp spawn_instance(mob_id, spawn, opts), do: spawn.(mob_id, summon_opts(opts, false))
 
   # The coordinator reads a non-positive coordinate as "random walkable cell"
-  # (rAthena mob_once_spawn semantics), so :random encodes as {0, 0}.
-  defp summon_coords(:random), do: {0, 0}
-  defp summon_coords({x, y}), do: {x, y}
+  # (rAthena mob_once_spawn semantics), so :random encodes as {0, 0}. A :near
+  # cell is searched around the attached player (`map_search_freecell`, range
+  # 1), which falls back to the player's own cell.
+  defp summon_coords(:random, _ctx), do: {0, 0}
+  defp summon_coords(:near, %Ctx{game_state: nil}), do: {0, 0}
 
-  defp summon_opts(opts) do
-    [aggressive: aggressive?(opts)]
+  defp summon_coords(:near, %Ctx{game_state: gs}),
+    do: Cell.random_traversable_near(gs.map_name, {gs.x, gs.y}, 1)
+
+  defp summon_coords({x, y}, _ctx), do: {x, y}
+
+  defp summon_opts(opts, aggressive?) do
+    [aggressive: aggressive?]
     |> maybe_put_event(Keyword.get(opts, :event))
   end
 
@@ -1182,6 +1193,4 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
       _malformed -> :error
     end
   end
-
-  defp aggressive?(opts), do: Keyword.get(opts, :aggressive, false)
 end

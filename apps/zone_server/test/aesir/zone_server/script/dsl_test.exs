@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.Net.ParamChange
   alias Aesir.Net.Viewpoint
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.Coordinator
@@ -1548,6 +1549,57 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       end)
 
       assert %{status: :ok} = Dsl.summon_mob(build_ctx(), mob_id: -99)
+    end
+
+    test "a group summon carries the Dead Branch mode while dead_branch_active is on" do
+      test_pid = self()
+
+      stub(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, opts ->
+        send(test_pid, {:aggressive, Keyword.get(opts, :aggressive)})
+        {:ok, 1}
+      end)
+
+      Dsl.summon_mob(build_ctx(), mob_id: -1)
+      assert_received {:aggressive, true}
+
+      Dsl.summon_mob(build_ctx(), mob_id: @poring_id)
+      assert_received {:aggressive, false}
+
+      stub(Config, :dead_branch_active?, fn -> false end)
+      Dsl.summon_mob(build_ctx(), mob_id: -1)
+      assert_received {:aggressive, false}
+    end
+  end
+
+  describe "summon_mob/2 at: :near" do
+    test "rolls a free cell next to the player for every instance" do
+      test_pid = self()
+
+      expect(Cell, :random_traversable_near, 2, fn "prontera", {50, 50}, 1 -> {51, 49} end)
+
+      expect(Coordinator, :summon_mob, 2, fn "prontera", _mob_id, x, y, _opts ->
+        send(test_pid, {:summoned_at, {x, y}})
+        {:ok, 1}
+      end)
+
+      Dsl.summon_mob(build_ctx(), mob_id: @poring_id, at: :near, amount: 2)
+
+      assert_received {:summoned_at, {51, 49}}
+      assert_received {:summoned_at, {51, 49}}
+    end
+
+    test "without an attached player it picks a random cell" do
+      test_pid = self()
+
+      expect(Coordinator, :summon_mob, fn "gef_dun00", _mob_id, x, y, _opts ->
+        send(test_pid, {:summoned_at, {x, y}})
+        {:ok, 1}
+      end)
+
+      ctx = Ctx.detached(DetachedNpc, nil)
+      Dsl.summon_mob(ctx, mob_id: @poring_id, map: "gef_dun00", at: :near)
+
+      assert_received {:summoned_at, {0, 0}}
     end
   end
 

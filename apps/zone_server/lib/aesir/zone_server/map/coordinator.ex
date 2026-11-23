@@ -231,7 +231,9 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   carry a respawn time of 0 and are not re-spawned on death.
 
   A non-positive `x` or `y` picks a random walkable cell, mirroring rAthena's
-  `mob_once_spawn` (script `monster "map",0,0,...`).
+  `mob_once_spawn` (script `monster "map",0,0,...`). `aggressive: true` starts
+  the mob under the Dead Branch mode change
+  (`StatsHandler.apply_dead_branch_mode/1`).
 
   Returns `{:ok, instance_id}`, or `{:error, :map_not_found}` when no
   coordinator runs for `map_name`, or `{:error, reason}` from the spawn.
@@ -833,9 +835,9 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     end
   end
 
-  # NOTE: `:aggressive` is accepted but deferred — forcing aggressive AI means
-  # overriding mob_data.modes, which the AI state machine reads in several places;
-  # left for a follow-up so summons don't ship a half-correct mode override.
+  # `:aggressive` (a random-group summon under `dead_branch_active`) starts the
+  # held mode change after the slave mode, as `mob_once_spawn` does after the
+  # spawn.
   defp place_mob(mob_data, {x, y}, opts, state) do
     opts = Keyword.put(opts, :form_modes, mob_data.modes)
     opts = put_master_speed(opts, mob_data)
@@ -857,6 +859,10 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       {:ok, mob_pid} ->
         UnitRegistry.register_unit(:mob, instance_id, MobState, mob_state, mob_pid)
         :ok = StatsHandler.initialize_slave_mode(mob_state)
+
+        if Keyword.get(opts, :aggressive, false),
+          do: :ok = StatsHandler.apply_dead_branch_mode(mob_state)
+
         Trigger.on_appear({:mob, instance_id}, state.map_name, x, y)
         {{:ok, instance_id}, state}
 

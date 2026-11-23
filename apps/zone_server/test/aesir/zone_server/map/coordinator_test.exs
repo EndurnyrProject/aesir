@@ -104,6 +104,28 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
       assert slave.base.speed == 95
     end
 
+    test "an aggressive summon holds the Dead Branch mode change; a plain summon none" do
+      stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
+      state = build(:coordinator_state)
+
+      {:reply, {:ok, id}, _state} =
+        Coordinator.handle_call(
+          {:summon_mob, @poring_id, 150, 100, [aggressive: true]},
+          {self(), nil},
+          state
+        )
+
+      mask = MobMode.mask([:aggressive, :can_attack, :can_move, :angry])
+
+      assert %StatusEntry{val1: 1, val2: 0, val3: ^mask, val4: 0} =
+               StatusStorage.get_status(:mob, id, :sc_modechange)
+
+      {:reply, {:ok, plain}, _state} =
+        Coordinator.handle_call({:summon_mob, @poring_id, 150, 100, []}, {self(), nil}, state)
+
+      assert StatusStorage.get_status(:mob, plain, :sc_modechange) == nil
+    end
+
     test "a mob spawning on a ground unit's cell is placed by it" do
       stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
       stub(Catalog, :ground_module_for, fn :test_field -> {:ok, __MODULE__.ArrivalSpy} end)

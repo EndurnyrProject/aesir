@@ -138,6 +138,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
     }
 
     with :ok <- usable?(definition),
+         :ok <- branch_allowed?(definition, state.game_state),
          :ok <- Eligibility.check(definition, context),
          :ok <- map_allows?(definition, state.game_state),
          :ok <- pet_capture_allowed?(definition, state),
@@ -462,6 +463,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   @spec usable?(term()) :: :ok | {:error, :not_usable}
   defp usable?(%{on_use: nil}), do: {:error, :not_usable}
   defp usable?(%{on_use: _source}), do: :ok
+
+  # A Dead Branch item is refused, without a message, on a `nobranch` or GvG map
+  # and is not consumed (`pc_isUseitem`).
+  @spec branch_allowed?(map(), PlayerState.t()) :: :ok | {:error, :nobranch}
+  defp branch_allowed?(%{dead_branch: true}, %{map_name: map_name}) do
+    if MapFlags.get(map_name, :nobranch) or MapFlags.gvg2?(map_name),
+      do: {:error, :nobranch},
+      else: :ok
+  end
+
+  defp branch_allowed?(_definition, _game_state), do: :ok
 
   # An item the map restricts is refused before its effect runs and is not
   # consumed, whatever its consumption type.

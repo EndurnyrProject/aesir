@@ -9,6 +9,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.StatsHandler do
   normal recalculation of an explicit selection and publishes nothing itself.
   """
 
+  import Bitwise, only: [bor: 2]
+
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
   alias Aesir.ZoneServer.Mmo.StatusEffect.CalcFlags
@@ -23,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.StatsHandler do
   alias Aesir.ZoneServer.Unit.Movement
 
   @slave_modes [:can_move, :no_random_walk, :can_attack]
+  @dead_branch_modes [:aggressive, :can_attack, :can_move, :angry]
 
   @doc """
   Reconciles the calculated snapshot after one committed status event.
@@ -109,6 +112,24 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.StatsHandler do
   end
 
   def initialize_slave_mode(%MobState{}), do: :ok
+
+  @doc """
+  Applies the aggressive mode a random-group summon starts with (the source's
+  `mob_once_spawn` under `dead_branch_active`): a held `SC_MODECHANGE` adding
+  the aggressive, can-attack, can-move and angry modes. A monster that already
+  has every one of them needs no entry, since the source's start rejects an
+  unchanged mode.
+  """
+  @spec apply_dead_branch_mode(MobState.t()) :: :ok
+  def apply_dead_branch_mode(%MobState{base: %Calculated{mode: mode}} = state) do
+    mask = MobMode.mask(@dead_branch_modes)
+
+    if bor(mode, mask) != mode do
+      _ = Interpreter.apply_status(:mob, state.instance_id, :sc_modechange, val1: 1, val3: mask)
+    end
+
+    :ok
+  end
 
   defp recalculate(%MobState{} = state, flags) do
     expanded = Mechanics.mob_formulas().expand_calc_flags(flags)

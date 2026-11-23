@@ -334,6 +334,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
         refineable: Map.get(entry, "Refineable", false),
         bind_on_equip: get_in(entry, ["Flags", "BindOnEquip"]) || false,
         no_consume: get_in(entry, ["Flags", "NoConsume"]) || false,
+        dead_branch: get_in(entry, ["Flags", "DeadBranch"]) || false,
         no_use_sitting: get_in(entry, ["NoUse", "Sitting"]) || false,
         use_override: use_override,
         no_trade: get_in(entry, ["Trade", "NoTrade"]) || false,

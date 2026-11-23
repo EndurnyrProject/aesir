@@ -1,486 +1,606 @@
 ---
 - flags:
+    - nobranch
     - noteleport
   map: 1@4cdn
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@4drk
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@4igd
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@4inq
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@4mag
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@4mst
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@4sac
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@4tro
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@4win
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@adv
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@advs
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@air1
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@air2
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@bamn
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@bamq
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@begi
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@cash
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@cata
   zone: 512
 - flags:
+    - nobranch
     - noteleport
   map: 1@ch_t
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@ch_u
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@cor
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@crd
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@def01
   zone: 8192
 - flags:
+    - nobranch
     - noteleport
   map: 1@def02
   zone: 8192
 - flags:
+    - nobranch
     - noteleport
   map: 1@def03
   zone: 8192
 - flags:
+    - nobranch
     - noteleport
   map: 1@drdo
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@dth1
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@dth2
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@dth3
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@ecl
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@eom
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@exsh
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@face
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@ge_sn
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@ge_st
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@gef
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@gef_in
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@ghg
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@gl_he
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@gl_he2
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@gl_k
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@gl_k2
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@gl_prq
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@glast
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@gol1
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@gol2
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@halo
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@herbs
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@infi
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@jtb
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@lab
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@lhz
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@lost
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@ma_b
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@ma_c
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@ma_h
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@mcd
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@md_gef
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@md_pay
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@mir
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@mist
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@mjo1
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@mjo2
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@nyd
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@nyr
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@odin
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@orcs
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@os_a
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@os_b
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@oz
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@pump
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@rev
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@rgsr
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@sara
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@slw
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@soul
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@spa
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@spa2
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@sthb
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@sthc
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@sthd
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@swat
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@tcamp
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@thts
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@tnm1
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@tnm2
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@tnm3
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@tower
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@tre
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@uns
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@xm_d
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 1@xm_d2
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 2@cata
   zone: 512
 - flags:
+    - nobranch
     - noteleport
   map: 2@ch_t
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 2@gl_k
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 2@gl_k2
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 2@mir
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 2@nyd
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 2@nyr
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 2@orcs
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 2@pump
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 2@thts
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 2@tower
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 3@ch_t
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 3@thts
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 3@tower
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 4@thts
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 4@tower
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 5@thts
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 5@tower
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 6@thts
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 6@tower
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 7@thts
   zone: 1024
 - flags:
+    - nobranch
     - noteleport
   map: 8@thts
   zone: 1024
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: airplane
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: airport
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: alb_ship
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: alberta
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: alberta_in
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
@@ -489,41 +609,48 @@
   map: alde_tt02
   zone: 32
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: aldeba_in
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: aldebaran
   zone: 2048
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
   map: aldeg_cas01
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
   map: aldeg_cas02
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
   map: aldeg_cas03
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
   map: aldeg_cas04
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
@@ -532,33 +659,39 @@
     - noteleport
   map: ama_dun01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ama_in01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ama_in02
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nowarp
     - nozenypenalty
   map: ama_test
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: amatsu
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: arena_room
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
@@ -566,6 +699,7 @@
   zone: 256
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
@@ -573,6 +707,7 @@
   zone: 256
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
@@ -582,38 +717,46 @@
     - gvg_dungeon
   map: arug_dun01
 - flags:
+    - nobranch
     - noteleport
   map: arug_que01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: auction_01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: auction_02
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ayo_in01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ayo_in02
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: ayothaya
   zone: 2048
 - flags:
+    - nobranch
     - noteleport
   map: ba_in01
 - flags:
     - battleground
+    - nobranch
     - noexppenalty
     - noteleport
     - nowarp
@@ -621,6 +764,7 @@
   map: bat_a01
 - flags:
     - battleground
+    - nobranch
     - noexppenalty
     - noteleport
     - nowarp
@@ -628,124 +772,156 @@
   map: bat_b01
 - flags:
     - battleground
+    - nobranch
     - noexppenalty
     - noteleport
     - nowarp
     - nozenypenalty
   map: bat_c01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: bat_room
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: bra_in01
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: brasilis
   zone: 2048
 - flags:
+    - nobranch
+  map: c_tower2_
+- flags:
+    - nobranch
+  map: c_tower3_
+- flags:
+    - nobranch
     - noteleport
   map: cave
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: cmd_in01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: cmd_in02
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: comodo
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: conch_in
 - flags:
+    - nobranch
     - noteleport
   map: dali
 - flags:
+    - nobranch
     - noteleport
   map: dali02
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: dew_in01
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: dewata
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: dic_in01
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: dicastes01
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: dicastes02
 - flags:
+    - nobranch
     - noteleport
   map: e_tower
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ecl_hub01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ecl_in01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ecl_in02
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ecl_in03
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ecl_in04
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: eclage
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ein_in01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: einbech
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
@@ -763,54 +939,64 @@
     - nozenypenalty
   map: gef_dun03
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: gef_tower
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: geffen
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: geffen_in
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
   map: gefg_cas01
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
   map: gefg_cas02
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
   map: gefg_cas03
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
   map: gefg_cas04
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
   map: gefg_cas05
 - flags:
+    - nobranch
     - noteleport
   map: gl_cas02_
 - flags:
+    - nobranch
     - noteleport
   map: gl_chyard_
 - flags:
@@ -826,17 +1012,20 @@
     - gvg_dungeon
   map: gld2_prt
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: gon_in
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nowarp
     - nozenypenalty
   map: gon_test
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: gonryun
@@ -844,6 +1033,7 @@
 - flags:
     - gvg
     - gvg_noparty
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
@@ -851,6 +1041,7 @@
 - flags:
     - gvg
     - gvg_noparty
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
@@ -858,6 +1049,7 @@
 - flags:
     - gvg
     - gvg_noparty
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
@@ -865,6 +1057,7 @@
 - flags:
     - gvg
     - gvg_noparty
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
@@ -872,208 +1065,268 @@
 - flags:
     - gvg
     - gvg_noparty
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: guild_vs5
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: har_in01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: hu_in01
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: hugel
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: in_hunter
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: in_moc_16
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: in_orcs01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: in_rogue
 - flags:
+    - nobranch
+  map: int_land
+- flags:
+    - nobranch
+  map: int_land01
+- flags:
+    - nobranch
+  map: int_land02
+- flags:
+    - nobranch
+  map: int_land03
+- flags:
+    - nobranch
+  map: int_land04
+- flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: izlude
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: izlude_a
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: izlude_b
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: izlude_c
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: izlude_d
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: izlude_in
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: jawaii
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: jawaii_in
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: job3_arch01
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: job3_arch02
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: job3_gen01
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: job3_guil01
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: job3_guil02
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: job3_guil03
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: job3_rang01
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: job3_rang02
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: job3_rune01
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: job3_rune02
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: job3_sha01
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: job3_war01
 - flags:
+    - nobranch
     - noteleport
   map: job4_bio
 - flags:
+    - nobranch
     - noteleport
   map: job4_mag
 - flags:
+    - nobranch
     - noteleport
   map: job4_tro
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: job_cru
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: job_duncer
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: job_gun
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: job_hunte
 - flags:
+    - nobranch
     - noteleport
   map: job_knt
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: job_ko
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: job_monk
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: job_prist
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: job_sage
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: job_soul
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: job_star
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: job_sword1
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: job_thief1
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
@@ -1097,205 +1350,255 @@
     - noteleport
   map: kh_dun01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: kh_kiehl01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: kh_kiehl02
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: kh_mansion
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: kh_rossi
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: kh_school
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: kh_vila
 - flags:
+    - nobranch
+  map: lasa_dun_q
+- flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: lasa_in01
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: lasagna
   zone: 2048
 - flags:
+    - nobranch
     - noteleport
   map: lhz_cube
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: lhz_d_n2
   zone: 1024
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: lhz_dun_n
   zone: 1024
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: lhz_in01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: lhz_in02
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: lhz_in03
 - flags:
+    - nobranch
     - noteleport
   map: lhz_que01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: lighthalzen
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: lou_in01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: lou_in02
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: louyang
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ma_in01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ma_scene01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ma_zif01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ma_zif02
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ma_zif03
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ma_zif04
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ma_zif05
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ma_zif06
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ma_zif07
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ma_zif08
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ma_zif09
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: mal_in01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: mal_in02
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: malangdo
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: malaya
   zone: 2048
 - flags:
+    - nobranch
+  map: man_fild01
+- flags:
+    - nobranch
+  map: man_fild02
+- flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: man_in01
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: manuk
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: mid_camp
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: mid_campin
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: moc_castle
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: moc_fild22b
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
@@ -1304,34 +1607,41 @@
   map: moc_ruins
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: monk_in
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: monk_test
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: mora
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: morocc
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: morocc_in
-- flags: []
+- flags:
+    - nobranch
   map: moscovia
   zone: 2048
 - flags:
+    - nobranch
     - noteleport
   map: mosk_in
 - flags:
@@ -1342,37 +1652,44 @@
     - nowarp
   map: n_castle
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: new_zone01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: new_zone02
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: new_zone03
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: new_zone04
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: nif_in
-- flags: []
+- flags:
+    - nobranch
   map: niflheim
   zone: 2048
 - flags:
     - noteleport
   map: nyd_dun02
 - flags:
+    - nobranch
     - noexppenalty
     - noskill
     - noteleport
@@ -1380,71 +1697,84 @@
     - nozenypenalty
   map: p_track01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: paramk
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: pay_arche
   zone: 2048
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
   map: payg_cas01
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
   map: payg_cas02
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
   map: payg_cas03
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
   map: payg_cas04
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
   map: payg_cas05
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: payon
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: payon_in01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: payon_in02
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: payon_in03
 - flags:
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
   map: poring_w01
 - flags:
+    - nobranch
     - noexppenalty
     - noicewall
     - noteleport
@@ -1452,16 +1782,19 @@
     - nozenypenalty
   map: poring_w02
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: prontera
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: prt_are01
 - flags:
+    - nobranch
     - noexppenalty
     - noskill
     - noteleport
@@ -1469,79 +1802,94 @@
   map: prt_are_in
   zone: 128
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: prt_cas
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: prt_cas_q
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: prt_castle
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: prt_church
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: prt_in
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: prt_lib
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: prt_lib_q
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: prt_pri00
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
   map: prtg_cas01
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
   map: prtg_cas02
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
   map: prtg_cas03
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
   map: prtg_cas04
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
   map: prtg_cas05
 - flags:
+    - nobranch
     - noteleport
   map: pub_cat
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
@@ -1587,30 +1935,38 @@
     - nozenypenalty
   map: pvp_y_8-2
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: que_avan01
 - flags:
+    - nobranch
     - noteleport
     - nowarp
   map: que_ba
 - flags:
+    - nobranch
     - noskill
     - noteleport
   map: que_bingo
 - flags:
+    - nobranch
     - noteleport
   map: que_dan01
 - flags:
+    - nobranch
     - noteleport
   map: que_dan02
 - flags:
+    - nobranch
     - noteleport
   map: que_god01
 - flags:
+    - nobranch
     - noteleport
   map: que_god02
 - flags:
+    - nobranch
     - noteleport
   map: que_hugel
 - flags:
@@ -1620,92 +1976,112 @@
     - noteleport
   map: que_job02
 - flags:
+    - nobranch
     - noteleport
   map: que_lhz
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: que_ng
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: que_qsch01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: que_rachel
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: que_sign01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: que_swat
 - flags:
+    - nobranch
     - noteleport
   map: que_thor
 - flags:
+    - nobranch
     - noteleport
   map: que_thr
 - flags:
+    - nobranch
     - noskill
   map: quiz_00
 - flags:
+    - nobranch
     - noskill
   map: quiz_01
 - flags:
     - noskill
   map: quiz_02
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ra_in01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ra_temin
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: ra_temple
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ra_temsky
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: rachel
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: rebel_in
 - flags:
+    - nobranch
     - noteleport
   map: rgsr_in
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: rockmi2
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: s_atelier
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
@@ -1713,6 +2089,7 @@
   zone: 256
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
@@ -1720,6 +2097,7 @@
   zone: 256
 - flags:
     - gvg_castle
+    - nobranch
     - noicewall
     - noteleport
     - nowarp
@@ -1729,6 +2107,7 @@
     - gvg_dungeon
   map: schg_dun01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
@@ -1744,67 +2123,86 @@
   map: sec_pri
   zone: 64
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: spl_in01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: spl_in02
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: splendide
   zone: 2048
 - flags:
+    - nobranch
+  map: te_alde_gld
+- flags:
     - gvg_te_castle
+    - nobranch
     - noicewall
     - noteleport
   map: te_aldecas1
 - flags:
     - gvg_te_castle
+    - nobranch
     - noicewall
     - noteleport
   map: te_aldecas2
 - flags:
     - gvg_te_castle
+    - nobranch
     - noicewall
     - noteleport
   map: te_aldecas3
 - flags:
     - gvg_te_castle
+    - nobranch
     - noicewall
     - noteleport
   map: te_aldecas4
 - flags:
     - gvg_te_castle
+    - nobranch
     - noicewall
     - noteleport
   map: te_aldecas5
 - flags:
+    - nobranch
+  map: te_prt_gld
+- flags:
     - gvg_te_castle
+    - nobranch
     - noicewall
     - noteleport
   map: te_prtcas01
 - flags:
     - gvg_te_castle
+    - nobranch
     - noicewall
     - noteleport
   map: te_prtcas02
 - flags:
     - gvg_te_castle
+    - nobranch
     - noicewall
     - noteleport
   map: te_prtcas03
 - flags:
     - gvg_te_castle
+    - nobranch
     - noicewall
     - noteleport
   map: te_prtcas04
 - flags:
     - gvg_te_castle
+    - nobranch
     - noicewall
     - noteleport
   map: te_prtcas05
@@ -1838,21 +2236,37 @@
     - noteleport
   map: thana_step
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: thor_camp
 - flags:
+    - nobranch
+  map: tra_fild
+- flags:
+    - nobranch
+  map: tra_fild01
+- flags:
+    - nobranch
+  map: tra_fild02
+- flags:
+    - nobranch
+  map: tra_fild03
+- flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: turbo_room
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: um_in
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: umbala
@@ -1861,19 +2275,23 @@
     - noteleport
   map: un_bk_q
 - flags:
+    - nobranch
     - noteleport
   map: un_myst
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ve_in
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: ve_in02
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: veins
@@ -1887,47 +2305,56 @@
   map: wolfvill
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - nozenypenalty
   map: xmas
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: xmas_in
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: yuno
   zone: 2048
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: yuno_in01
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: yuno_in02
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: yuno_in03
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: yuno_in04
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty
   map: yuno_in05
 - flags:
+    - nobranch
     - noexppenalty
     - noteleport
     - nozenypenalty

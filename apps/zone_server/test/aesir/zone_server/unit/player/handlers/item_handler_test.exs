@@ -533,6 +533,47 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
                         %ItemUseResult{index: @red_potion_client_index, ok: false, reason: 5}}}
     end
 
+    test "refuses a Dead Branch item on a nobranch or GvG map without running or consuming it" do
+      source = "heal(ctx, hp: 50)"
+      ScriptCompiler.compile_all!([item_def(@red_potion_id, source)])
+      state = state_with_potion()
+      definition = %{usable_definition(@red_potion_id, source) | dead_branch: true}
+      stub(Items, :by_id, fn @red_potion_id -> {:ok, definition} end)
+      reject(&InventoryOps.remove/4)
+
+      for {nobranch?, gvg?} <- [{true, false}, {false, true}] do
+        stub(MapFlags, :get, fn _map, flag -> flag == :nobranch and nobranch? end)
+        stub(MapFlags, :gvg2?, fn _map -> gvg? end)
+
+        assert {:noreply, ^state} = ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+        assert_received {:send, :gameplay,
+                         {:item_use_result,
+                          %ItemUseResult{index: @red_potion_client_index, ok: false, reason: 3}}}
+      end
+    end
+
+    test "uses a Dead Branch item on a map without nobranch or GvG" do
+      source = "heal(ctx, hp: 50)"
+      ScriptCompiler.compile_all!([item_def(@red_potion_id, source)])
+      state = state_with_potion()
+      definition = %{usable_definition(@red_potion_id, source) | dead_branch: true}
+      stub(Items, :by_id, fn @red_potion_id -> {:ok, definition} end)
+      stub(MapFlags, :get, fn _map, _flag -> false end)
+      stub(MapFlags, :gvg2?, fn _map -> false end)
+
+      expect(InventoryOps, :remove, fn 1000, inventory, @red_potion_slot, 1 ->
+        {:ok, %{@red_potion_slot => %{inventory[@red_potion_slot] | amount: 4}},
+         {:reduced, @red_potion_slot, 4}}
+      end)
+
+      ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert_received {:send, :gameplay,
+                       {:item_use_result,
+                        %ItemUseResult{index: @red_potion_client_index, ok: true}}}
+    end
+
     test "rejects class, gender, and level restrictions before scripts run" do
       source = "heal(ctx, hp: 50)"
       ScriptCompiler.compile_all!([item_def(@red_potion_id, source)])

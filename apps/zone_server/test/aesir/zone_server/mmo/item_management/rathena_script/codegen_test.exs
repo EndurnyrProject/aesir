@@ -235,6 +235,43 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
     end
   end
 
+  describe "generate/1 monster" do
+    test "a random group id folds to its negative monster id, near the player" do
+      assert {:ok, "summon_mob(ctx, mob_id: -1, at: :near)"} =
+               compile(~s|monster "this",-1,-1,"--ja--",-1-MOBG_BRANCH_OF_DEAD_TREE,1,"";|)
+
+      assert {:ok, "summon_mob(ctx, mob_id: -4, at: :near)"} =
+               compile(~s|monster "this",-1,-1,"--ja--",-1-MOBG_RED_POUCH_OF_SURPRISE,1,"";|)
+    end
+
+    test "a literal or rolled monster id passes through" do
+      assert {:ok, "summon_mob(ctx, mob_id: 1904, at: :near)"} =
+               compile(~s|monster "this",-1,-1,"--ja--",1904,1,"";|)
+
+      assert {:ok, "summon_mob(ctx, mob_id: Enum.random(1324..1363), at: :near)"} =
+               compile(~s|monster "this",-1,-1,"--ja--",rand(1324,1363),1,"";|)
+    end
+
+    test "zero coordinates pick a random cell; an explicit map, amount and event are kept" do
+      assert {:ok,
+              ~s|summon_mob(ctx, mob_id: 1002, map: "prontera", at: :random, amount: 3, event: "A::OnB")|} =
+               compile(~s|monster "prontera",0,0,"--ja--",1002,3,"A::OnB";|)
+
+      assert {:ok, "summon_mob(ctx, mob_id: 1002, at: {150, 120})"} =
+               compile(~s|monster "this",150,120,"--ja--",1002,1;|)
+    end
+
+    test "an unknown group, a size/ai tail or a computed coordinate is unsupported" do
+      for script <- [
+            ~s|monster "this",-1,-1,"--ja--",-1-MOBG_NOPE,1,"";|,
+            ~s|monster "this",-1,-1,"--ja--",1002,1,"",1;|,
+            ~s|monster "this",BaseLevel,1,"--ja--",1002,1;|
+          ] do
+        assert {:error, {:unsupported, _}} = compile(script)
+      end
+    end
+  end
+
   describe "generate/1 announce broadcasts" do
     test "announce with a single bc_ flag resolves it to its integer value" do
       assert {:ok, "announce(ctx, \"hi\", 3)"} = compile(~s(announce "hi",bc_self;))

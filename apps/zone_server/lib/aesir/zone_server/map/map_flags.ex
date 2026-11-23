@@ -29,7 +29,8 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
   dead monster's ordinary and MVP drop pools; `noskill`, `noteleport`, `nowarp`
   and `noicewall` refuse a player's skill request, `novending` refuses Vending; and any other atom is
   rejected so typos stay inert. `nopetcapture` is for pet capture restrictions;
-  `noexppenalty` and `nozenypenalty` are for death penalties.
+  `noexppenalty` and `nozenypenalty` are for death penalties; `nobranch` refuses
+  Dead Branch items.
   """
 
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
@@ -77,6 +78,7 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
           | :nopetcapture
           | :noexppenalty
           | :nozenypenalty
+          | :nobranch
   @type map_name :: String.t()
 
   @flags [
@@ -104,7 +106,8 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
     :novending,
     :nopetcapture,
     :noexppenalty,
-    :nozenypenalty
+    :nozenypenalty,
+    :nobranch
   ]
   @static_woe_flags [:gvg_castle, :nosave, :noteleport, :nowarp, :noreturn]
 

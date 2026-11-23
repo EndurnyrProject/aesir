@@ -804,8 +804,10 @@
   weight: 200
 - aegis_name: Branch_Of_Dead_Tree
   buy: 50
+  dead_branch: true
   id: 604
   name: Dead Branch
+  on_use: 'summon_mob(ctx, mob_id: -1, at: :near)'
   type: usable
   weight: 50
 - aegis_name: Anodyne
@@ -3260,8 +3262,10 @@
   weight: 200
 - aegis_name: Red_Pouch_Of_Surprise
   buy: 50
+  dead_branch: true
   id: 12024
   name: Red Pouch
+  on_use: 'summon_mob(ctx, mob_id: -4, at: :near)'
   type: usable
   weight: 50
 - aegis_name: Egg_Boy
@@ -4001,8 +4005,10 @@
   weight: 300
 - aegis_name: Bloody_Dead_Branch
   buy: 10000
+  dead_branch: true
   id: 12103
   name: Bloody Branch
+  on_use: 'summon_mob(ctx, mob_id: -3, at: :near)'
   type: usable
   weight: 200
 - aegis_name: Random_Quiver
@@ -4052,8 +4058,10 @@
   weight: 200
 - aegis_name: Poring_Box
   buy: 10000
+  dead_branch: true
   id: 12109
   name: Poring Box
+  on_use: 'summon_mob(ctx, mob_id: -2, at: :near)'
   type: usable
   weight: 200
 - aegis_name: First_Aid_Kit
@@ -10196,6 +10204,7 @@
   no_guild_storage: true
   no_storage: true
   no_trade: true
+  on_use: 'summon_mob(ctx, mob_id: Enum.random(1324..1363), at: :near)'
   type: usable
 - aegis_name: Mysterious_Egg2
   id: 12871

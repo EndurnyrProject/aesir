@@ -67,6 +67,7 @@ defmodule Aesir.ZoneServer.Config do
   @default_boss_respawn_reconcile_on_boot true
   @default_woe_castle_mobs_on_boot true
   @default_monster_class_change_full_recover true
+  @default_dead_branch_active true
   @default_exp_rate 100
   @default_item_rate 100
   @default_drop_min 1
@@ -305,6 +306,17 @@ defmodule Aesir.ZoneServer.Config do
         :monster_class_change_full_recover,
         @default_monster_class_change_full_recover
       )
+
+  @doc """
+  Whether a monster summoned from a random group (Dead Branch, Poring Box, ...)
+  starts aggressive (rAthena `dead_branch_active`).
+
+  Enabled by default. Enabled, the summon holds `SC_MODECHANGE` adding the
+  aggressive, can-move, can-attack and angry modes.
+  """
+  @spec dead_branch_active?() :: boolean()
+  def dead_branch_active?,
+    do: Application.get_env(:zone_server, :dead_branch_active, @default_dead_branch_active)
 
   @doc "Server base-EXP rate multiplier as a percentage (100 = 1x). Scales mob-kill base EXP."
   @spec base_exp_rate() :: non_neg_integer()

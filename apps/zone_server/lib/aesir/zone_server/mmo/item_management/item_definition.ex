@@ -8,7 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
   (`no_trade`, `no_cart`, `no_storage`, `no_guild_storage`) along with the
   trade restriction's group-level override (`trade_override`), the `NoConsume`
   usable flag as `no_consume` (the item is never removed, and its item skill can
-  still cast), and the `Stack` block as `stack_limit`, the per-container stack
+  still cast), the `DeadBranch` flag as `dead_branch` (refused on `nobranch`
+  and GvG maps), and the `Stack` block as `stack_limit`, the per-container stack
   cap. `no_use_sitting` and `use_override` model the seated-use restriction
   and its group-level bypass. Other nested Trade/NoUse/Delay restrictions
   remain unmodelled.
@@ -80,6 +81,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
     field :refineable, boolean(), default: false
     field :bind_on_equip, boolean(), default: false
     field :no_consume, boolean(), default: false
+    field :dead_branch, boolean(), default: false
     field :no_use_sitting, boolean(), default: false
     field :use_override, non_neg_integer(), default: 100
     field :no_trade, boolean(), default: false

@@ -26,6 +26,20 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.SummonGroups do
   @clone_ids 3_999..20_020
 
   @doc """
+  The group index of a `MOBG_*` script constant (`MOBG_BRANCH_OF_DEAD_TREE` is
+  `0`), or `:error` for an unknown name.
+  """
+  @spec type(String.t()) :: {:ok, non_neg_integer()} | :error
+  def type("MOBG_" <> name) do
+    case Enum.find_index(@groups, &(&1 == String.downcase(name))) do
+      nil -> :error
+      index -> {:ok, index}
+    end
+  end
+
+  def type(_name), do: :error
+
+  @doc """
   Picks a monster of group `type` (the `MOBG_*` index: the monster id `-1 - type`
   of a script's monster command), or `0` when the group is unknown or empty.
   """

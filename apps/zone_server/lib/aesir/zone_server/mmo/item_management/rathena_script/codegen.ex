@@ -85,6 +85,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   rAthena name as the atom key — matching the NPC transpiler's char-var
   convention.
 
+  ## `monster`
+
+  `monster "map",x,y,"name",mob,amount{,"event"}` emits `summon_mob/2`. `"this"`
+  is the player's map (no `:map`), the display name is dropped, `-1-MOBG_*`
+  folds to the group's negative monster id, a negative literal coordinate is
+  `at: :near` (next to the player) and a zero one `at: :random`, as in
+  `mob_once_spawn_sub`. The size/ai tail is unsupported.
+
   ## Announce flags
 
   A `bc_*` broadcast-flag argument may be a single constant, an integer literal
@@ -97,6 +105,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDialogs
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
+  alias Aesir.ZoneServer.Mmo.MobManagement.SummonGroups
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Npc.Transpiler.Resolver, as: NpcResolver
 
@@ -269,7 +278,64 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
     end
   end
 
+  defp render_command("monster", [map, x, y, _display, mob, amount | event])
+       when length(event) <= 1 do
+    with {:ok, mob} <- monster_mob(mob),
+         {:ok, map} <- monster_map(map),
+         {:ok, at} <- monster_at(x, y),
+         {:ok, amount} <- monster_amount(amount),
+         {:ok, event} <- monster_event(event) do
+      opts = Enum.reject([mob, map, at, amount, event], &is_nil/1)
+      {:ok, "summon_mob(ctx, #{Enum.join(opts, ", ")})"}
+    end
+  end
+
   defp render_command(name, args), do: render_known_command(name, args)
+
+  defp monster_mob({:bin, :-, {:neg, {:int, 1}}, {:name, group}}) do
+    case SummonGroups.type(group) do
+      {:ok, type} -> {:ok, "mob_id: #{-1 - type}"}
+      :error -> unsupported({:unknown_const, group})
+    end
+  end
+
+  defp monster_mob({:int, id}), do: {:ok, "mob_id: #{id}"}
+  defp monster_mob({:str, aegis}), do: {:ok, "mob_name: #{inspect(aegis)}"}
+
+  defp monster_mob(expr) do
+    with {:ok, source} <- render_expr(expr), do: {:ok, "mob_id: #{source}"}
+  end
+
+  defp monster_map({:str, "this"}), do: {:ok, nil}
+  defp monster_map({:str, map}), do: {:ok, "map: #{inspect(map)}"}
+  defp monster_map(other), do: unsupported({:expected_string, other})
+
+  # The reference places a negative coordinate next to the attached player, then
+  # any coordinate still off the map on a random cell (`mob_once_spawn_sub`).
+  defp monster_at(x, y) do
+    with {:ok, x} <- literal_int(x), {:ok, y} <- literal_int(y) do
+      cond do
+        x < 0 or y < 0 -> {:ok, "at: :near"}
+        x == 0 or y == 0 -> {:ok, "at: :random"}
+        true -> {:ok, "at: {#{x}, #{y}}"}
+      end
+    end
+  end
+
+  defp monster_amount({:int, 1}), do: {:ok, nil}
+
+  defp monster_amount(expr) do
+    with {:ok, source} <- render_expr(expr), do: {:ok, "amount: #{source}"}
+  end
+
+  defp monster_event([]), do: {:ok, nil}
+  defp monster_event([{:str, ""}]), do: {:ok, nil}
+  defp monster_event([{:str, event}]), do: {:ok, "event: #{inspect(event)}"}
+  defp monster_event([other]), do: unsupported({:expected_string, other})
+
+  defp literal_int({:int, n}), do: {:ok, n}
+  defp literal_int({:neg, {:int, n}}), do: {:ok, -n}
+  defp literal_int(other), do: unsupported({:expected_literal_int, other})
 
   defp render_flag([]), do: {:ok, nil}
   defp render_flag([flag]), do: render_arg(:int, flag)
