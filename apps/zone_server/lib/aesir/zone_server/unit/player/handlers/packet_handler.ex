@@ -62,6 +62,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.PartyOptionsRequest
   alias Aesir.Net.PetRequest
   alias Aesir.Net.PickupItemRequest
+  alias Aesir.Net.QuestActiveRequest
   alias Aesir.Net.RankingRequest
   alias Aesir.Net.Respawn
   alias Aesir.Net.SkillCast
@@ -118,6 +119,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.QuestHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SitHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
@@ -217,6 +219,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
   def handle_message(%PetRequest{} = request, state) do
     PetCommandHandler.request(request, state)
+  end
+
+  # QuestActiveRequest - Player shelves or resumes a quest (CZ_ACTIVE_QUEST).
+  def handle_message(%QuestActiveRequest{} = request, state) do
+    QuestHandler.handle_active_request(request, state)
   end
 
   def handle_message(
