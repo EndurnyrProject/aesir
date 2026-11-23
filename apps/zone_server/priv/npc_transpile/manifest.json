@@ -41740,6 +41740,614 @@
       }
     ]
   },
+  "quests/quests_airship.txt|function|F_Cherno|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Functions.FCherno",
+    "output_hash": "8aea707efbd484190787b80e3e05fb7aeb1e8c35eba44c79b43ca3f5b4b39736",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_cherno.ex",
+    "source_hash": "082b6ebdc03ace2b65706471ffe91749293f1da5208dfe372a4885a0af3b85e5",
+    "spawns": []
+  },
+  "quests/quests_airship.txt|script|#door_ein|ein_in01:227:279": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.DoorEin",
+    "output_hash": "2b5d13bb57f350761988aa13f582cc2855332e147afe5aa3ec4a441a8eab1825",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/door_ein.ex",
+    "source_hash": "86835017755387ff0a1e59a82287a555bce143ff894e75b0df0e31c7902328ee",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 227,
+        "y": 279,
+        "map": "ein_in01",
+        "dir": 3,
+        "unique_name": "#door_ein",
+        "sprite": -1,
+        "trigger": [
+          5,
+          5
+        ]
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|#exp_ein|ein_in01:127:94": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.ExpEin",
+    "output_hash": "875de67b9fe59c7e2ea6da18506c625194410edd411fecf06952eafa5398f34b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/exp_ein.ex",
+    "source_hash": "0216e76918c4c63c8638e78a452db6c39633379f5bcb11b53949055c28c34262",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 127,
+        "y": 94,
+        "map": "ein_in01",
+        "dir": 3,
+        "unique_name": "#exp_ein",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|#lab01_heart|ein_in01:279:25": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Lab01Heart",
+    "output_hash": "adbc5dbfde12355e03adc014a05fef257557a6193bbce6077373317c1f129b9d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/lab01_heart.ex",
+    "source_hash": "262e8bb47a5d0390c8ee8031006a9da71d40839164bbf1268f8bd3c308ccdc27",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 279,
+        "y": 25,
+        "map": "ein_in01",
+        "dir": 0,
+        "unique_name": "#lab01_heart",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|#lab02_heart|ein_in01:264:17": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Lab02Heart",
+    "output_hash": "a46f74b937f374074a67807925bc13673712033aa3cae852806d84ce1f4ee587",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/lab02_heart.ex",
+    "source_hash": "73f53efd4cb330e274fe1227188f3596da4a6b9e99c05c9776b94e27352d194b",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 264,
+        "y": 17,
+        "map": "ein_in01",
+        "dir": 0,
+        "unique_name": "#lab02_heart",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|Airship Captain#01|airplane_01:238:154": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.AirshipCaptain238154",
+    "output_hash": "b0359316d570d42efc90e2413547860a21a41d588507861c9d59f51b4b040c9f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/airship_captain_238_154.ex",
+    "source_hash": "f97e0535c0e23e8f1eacd7121065433078b4dbc7dfbbeb3d4b43d4b353505953",
+    "spawns": [
+      {
+        "name": "Airship Captain",
+        "scope": "shared",
+        "x": 238,
+        "y": 154,
+        "map": "airplane_01",
+        "dir": 3,
+        "unique_name": "Airship Captain#01",
+        "sprite": 873
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|Airship Captain#02|airplane_01:246:54": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.AirshipCaptain",
+    "output_hash": "a4ec96476cc381ec18da3ed5046e1129db9992df50088df6e843650de7a31ed1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/airship_captain.ex",
+    "source_hash": "fe3611fa3ed90cf9bff8f8bb75002fbda251f9246c443f8cec1fabb5b362cf38",
+    "spawns": [
+      {
+        "name": "Airship Captain",
+        "scope": "shared",
+        "x": 246,
+        "y": 54,
+        "map": "airplane_01",
+        "dir": 3,
+        "unique_name": "Airship Captain#02",
+        "sprite": 873
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|Airship Captain#03|airplane:236:163": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.AirshipCaptain236163",
+    "output_hash": "49351a50a41f84bc0981fc4bf04f84ccbacb20bf2cfa82391afc50aef529f044",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/airship_captain_236_163.ex",
+    "source_hash": "1dee1338075c6c2c39b3800f403a896a27d9df0b10469913673e8431abe89aa2",
+    "spawns": [
+      {
+        "name": "Airship Captain",
+        "scope": "shared",
+        "x": 236,
+        "y": 163,
+        "map": "airplane",
+        "dir": 5,
+        "unique_name": "Airship Captain#03",
+        "sprite": 873
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|Airship#airplane02|airplane_01:1:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Airship",
+    "output_hash": "c2b7a25a3cf4623050a557a395ccc2f1d78da655431ec21c9a79747398cd420f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/airship.ex",
+    "source_hash": "1b48e4136ea59e7287e4fec24602bc42575c5aed02501340c784b5a458b7d2b3",
+    "spawns": [
+      {
+        "name": "Airship",
+        "scope": "shared",
+        "x": 1,
+        "y": 1,
+        "map": "airplane_01",
+        "dir": 0,
+        "unique_name": "Airship#airplane02",
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|Crewman|airplane:47:61": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Crewman",
+    "output_hash": "7ada0b5a51ca632bed8178cd52857437a35368b7827c39477eddf75a0f36a72d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/crewman.ex",
+    "source_hash": "c06e079f04f140f51287f9b8c9b84cd2e40cdb0e6640b3b91046fc97db933805",
+    "spawns": [
+      {
+        "name": "Crewman",
+        "scope": "shared",
+        "x": 47,
+        "y": 61,
+        "map": "airplane",
+        "dir": 7,
+        "sprite": 833
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|Elle Cherno|ein_in01:261:241": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.ElleCherno",
+    "output_hash": "e8806c3c265b77c471b654a1c4bdc94b988c7cfbac77d8818045b3199d248f0b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/elle_cherno.ex",
+    "source_hash": "335ba56e4bf5e3b4e82b2f91e3a706ef10c51924e93a6ce094aaa21ad5e8259c",
+    "spawns": [
+      {
+        "name": "Elle Cherno",
+        "scope": "shared",
+        "x": 261,
+        "y": 241,
+        "map": "ein_in01",
+        "dir": 3,
+        "sprite": 703,
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|Ferlock#lab|ein_in01:263:35": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Ferlock",
+    "output_hash": "6f6b19877efabef5b190ebf3b45ee1ac7450808ec4293e653a81f8e787f10a03",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/ferlock.ex",
+    "source_hash": "942b7f5ce9b0614bacde1ed5afa96e951bd69d37ba09d641e28c4e91765c3718",
+    "spawns": [
+      {
+        "name": "Ferlock",
+        "scope": "shared",
+        "x": 263,
+        "y": 35,
+        "map": "ein_in01",
+        "dir": 3,
+        "unique_name": "Ferlock#lab",
+        "sprite": 873
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|Hallen|airplane:236:63": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Hallen",
+    "output_hash": "162a14098d7fb9a1ff82e9ae1bfad7ff593560d9cd157080211cace9e4c75956",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/hallen.ex",
+    "source_hash": "278efdc8619bc10b01afaa490f66e40f94c30f35be8ed657000dc6bbb8f04914",
+    "spawns": [
+      {
+        "name": "Hallen",
+        "scope": "shared",
+        "x": 236,
+        "y": 63,
+        "map": "airplane",
+        "dir": 4,
+        "sprite": 706
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|Kaci|airplane:33:69": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Kaci",
+    "output_hash": "ca51838606313495d0345880bfd11524f517cd3a368215b76b568e97854f6a0a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/kaci.ex",
+    "source_hash": "7802bd72c40bc3981fa53f154366f8d41d48ce2415d41ef0bdf2a805c4e6e073",
+    "spawns": [
+      {
+        "name": "Kaci",
+        "scope": "shared",
+        "x": 33,
+        "y": 69,
+        "map": "airplane",
+        "dir": 4,
+        "sprite": 73
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|Mirror#ein|ein_in01:121:99": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Mirror",
+    "output_hash": "1d2904fa41a5685afb54cea0cd1ea42eb9767dbce30a02495fab728f8fc3d0c0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/mirror.ex",
+    "source_hash": "4cbbfbc8e9507a49ee8d82e8ae8886666ed963289de7d6a565b0f1265d79b75e",
+    "spawns": [
+      {
+        "name": "Mirror",
+        "scope": "shared",
+        "x": 121,
+        "y": 99,
+        "map": "ein_in01",
+        "dir": 3,
+        "unique_name": "Mirror#ein",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|Tarsha Cherno|ein_in01:125:99": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.TarshaCherno",
+    "output_hash": "35916d7a1e549f37a5d5e31d39ee93ee02b2ce1c45224e7fbe9107b7f399e3d0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/tarsha_cherno.ex",
+    "source_hash": "532ad3edc407987392c4286b17a4639882e6ae2c5c7a56d5916e513b2d7e001b",
+    "spawns": [
+      {
+        "name": "Tarsha Cherno",
+        "scope": "shared",
+        "x": 125,
+        "y": 99,
+        "map": "ein_in01",
+        "dir": 3,
+        "sprite": 850
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|Theo Cherno|ein_in01:123:94": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.TheoCherno",
+    "output_hash": "50beb862b19d8df461ed6128a726bf6aa0faeba71b7f8d4af3f0dac246a2c47f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/theo_cherno.ex",
+    "source_hash": "6c3223c000906729946895cf22568230e566020ad800279590b3e87909625ff0",
+    "spawns": [
+      {
+        "name": "Theo Cherno",
+        "scope": "shared",
+        "x": 123,
+        "y": 94,
+        "map": "ein_in01",
+        "dir": 1,
+        "sprite": 851
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|Tree#t1-1::Tree|einbech:45:113": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Tree",
+    "output_hash": "2e075b27646c438310d84dd61833c7464ca307bbfb0471ff5e1fe0fab7f48a5e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/tree.ex",
+    "source_hash": "62ef30b60ed67554b534c2d5a244a9d67de3b32100e2265b2b113a7ee16b1f91",
+    "spawns": [
+      {
+        "name": "Tree",
+        "scope": "shared",
+        "x": 45,
+        "y": 113,
+        "map": "einbech",
+        "dir": 5,
+        "sprite": 111
+      },
+      {
+        "name": "Tree",
+        "scope": "shared",
+        "x": 36,
+        "y": 100,
+        "map": "einbech",
+        "dir": 5,
+        "unique_name": "Tree#t1-2",
+        "sprite": 111
+      },
+      {
+        "name": "Tree",
+        "scope": "shared",
+        "x": 44,
+        "y": 90,
+        "map": "einbech",
+        "dir": 5,
+        "unique_name": "Tree#t1-3",
+        "sprite": 111
+      },
+      {
+        "name": "Tree",
+        "scope": "shared",
+        "x": 53,
+        "y": 94,
+        "map": "einbech",
+        "dir": 5,
+        "unique_name": "Tree#t1-4",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|Unidentified Machine#as|ein_in01:117:80": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.UnidentifiedMachine11780",
+    "output_hash": "bcfe1a1ab3f9cbb07dc040c3c67ae15a3ec95176389288298dabdd21a0c9e501",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/unidentified_machine_117_80.ex",
+    "source_hash": "5d6029ca7f4bf69aa8ed971b57a3afb65a605815ca70508cdb55ad578a920163",
+    "spawns": [
+      {
+        "name": "Unidentified Machine",
+        "scope": "shared",
+        "x": 117,
+        "y": 80,
+        "map": "ein_in01",
+        "dir": 5,
+        "unique_name": "Unidentified Machine#as",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|Unidentified Machine#ein|ein_in01:122:103": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.UnidentifiedMachine",
+    "output_hash": "b00d503f606902808178ead4444be3ba2e2bb84d704c75decafa57dfbf0a644d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/unidentified_machine.ex",
+    "source_hash": "084f4be93678e165cca4a8fb390284f7adaf1234ce3b8f1dfae08ae4925bc07e",
+    "spawns": [
+      {
+        "name": "Unidentified Machine",
+        "scope": "shared",
+        "x": 122,
+        "y": 103,
+        "map": "ein_in01",
+        "dir": 5,
+        "unique_name": "Unidentified Machine#ein",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|boom0#airplane|airplane_01:249:50": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Boom0",
+    "output_hash": "3bdfbbe398006a0236258624b0c908ee4582e39247d4be1d8e2c4213dcc5aea0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/boom0.ex",
+    "source_hash": "d534ff42a4e40186ed971aff4d3401bdce274e42eb0b932735cb4a6b3d84354b",
+    "spawns": [
+      {
+        "name": "boom0",
+        "scope": "shared",
+        "x": 249,
+        "y": 50,
+        "map": "airplane_01",
+        "dir": 0,
+        "unique_name": "boom0#airplane",
+        "sprite": 139
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|boom1#airplane|airplane_01:239:62": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Boom1",
+    "output_hash": "0d18a32c122a451471b58f31b9244c1b7ecbea94df09d54c5c7c95518a5ce24d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/boom1.ex",
+    "source_hash": "fcee95b7fdd298c7772439985b64c108acd368e899052b8bc936ea459020dc5e",
+    "spawns": [
+      {
+        "name": "boom1",
+        "scope": "shared",
+        "x": 239,
+        "y": 62,
+        "map": "airplane_01",
+        "dir": 0,
+        "unique_name": "boom1#airplane",
+        "sprite": 139
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|boom10#airplane|airplane_01:227:67": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Boom10",
+    "output_hash": "2a9ea333924821c942621614793d7138d02c2ae9bee08cd81d79acbfd7152e8e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/boom10.ex",
+    "source_hash": "bc6a0178c8f6870edaba0b65f69e1b8624bc1de41ac80bebe44305e2a0b40123",
+    "spawns": [
+      {
+        "name": "boom10",
+        "scope": "shared",
+        "x": 227,
+        "y": 67,
+        "map": "airplane_01",
+        "dir": 0,
+        "unique_name": "boom10#airplane",
+        "sprite": 139
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|boom2#airplane|airplane_01:244:55": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Boom2",
+    "output_hash": "ab5fdb5f896c163eb80e992a994905ddce062fc852d4d932b1a56ad99266b45c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/boom2.ex",
+    "source_hash": "b3e0c5d44e10352bf5a3609072220dc5df1e3f364b72b301dd14087c84f76c73",
+    "spawns": [
+      {
+        "name": "boom2",
+        "scope": "shared",
+        "x": 244,
+        "y": 55,
+        "map": "airplane_01",
+        "dir": 0,
+        "unique_name": "boom2#airplane",
+        "sprite": 139
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|boom3#airplane|airplane_01:239:50": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Boom3",
+    "output_hash": "184881ff68b0c2f46d2c75e226623efe37c70cf1047a47eedc4b6e6ae989bc18",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/boom3.ex",
+    "source_hash": "771d47cb35920a4096023437b201f5953d386a822b1c82a7e2f6dbbcca7f1935",
+    "spawns": [
+      {
+        "name": "boom3",
+        "scope": "shared",
+        "x": 239,
+        "y": 50,
+        "map": "airplane_01",
+        "dir": 0,
+        "unique_name": "boom3#airplane",
+        "sprite": 139
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|boom4#airplane|airplane_01:245:59": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Boom4",
+    "output_hash": "667899d265b43d21b2917d8fc722c97689b3d3e63c32d0c2864a0c4f99f56816",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/boom4.ex",
+    "source_hash": "a065d7f6860eca386aea018509567d82318788861a85f8642a8079ca0b4549c1",
+    "spawns": [
+      {
+        "name": "boom4",
+        "scope": "shared",
+        "x": 245,
+        "y": 59,
+        "map": "airplane_01",
+        "dir": 0,
+        "unique_name": "boom4#airplane",
+        "sprite": 139
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|boom5#airplane|airplane_01:245:48": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Boom5",
+    "output_hash": "d9a362559bc2b1275e456cfd4ab7b4a7ce063dd1f270eec9c06e49eb8648370c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/boom5.ex",
+    "source_hash": "b01120b5a5b7ff97ad2ad9535e08b2f24deb4a3009f7f0ba4c5e9fd1a00e0616",
+    "spawns": [
+      {
+        "name": "boom5",
+        "scope": "shared",
+        "x": 245,
+        "y": 48,
+        "map": "airplane_01",
+        "dir": 0,
+        "unique_name": "boom5#airplane",
+        "sprite": 139
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|boom6#airplane|airplane_01:235:39": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Boom6",
+    "output_hash": "9d749d0595b3d9a79b9676a5e1d15863e8dc791067406783b7ed3a0b39939e06",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/boom6.ex",
+    "source_hash": "7ee89ae42f733883f53485b065958088fa0c048996b9233127a8f57e2b365dd0",
+    "spawns": [
+      {
+        "name": "boom6",
+        "scope": "shared",
+        "x": 235,
+        "y": 39,
+        "map": "airplane_01",
+        "dir": 0,
+        "unique_name": "boom6#airplane",
+        "sprite": 139
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|boom7#airplane|airplane_01:252:41": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Boom7",
+    "output_hash": "53ddefa38b1090e7ea8a3c7bb3663182d32e85704dc561d168baa10a2a05660c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/boom7.ex",
+    "source_hash": "31afe0a03f368e275fc86bca0ec2342127b85fc9027a33d523a74a65e8bee761",
+    "spawns": [
+      {
+        "name": "boom7",
+        "scope": "shared",
+        "x": 252,
+        "y": 41,
+        "map": "airplane_01",
+        "dir": 0,
+        "unique_name": "boom7#airplane",
+        "sprite": 139
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|boom8#airplane|airplane_01:252:63": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Boom8",
+    "output_hash": "d62e2d6aee98a983c2fd9f3fc8d1f6c742104ba1cc55bc0c6463004ecfbed85e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/boom8.ex",
+    "source_hash": "c1305bb76c3d490ad41957b2ce218f59eb6ed0f54a1c66c5a2eeb9ee0c049c63",
+    "spawns": [
+      {
+        "name": "boom8",
+        "scope": "shared",
+        "x": 252,
+        "y": 63,
+        "map": "airplane_01",
+        "dir": 0,
+        "unique_name": "boom8#airplane",
+        "sprite": 139
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|boom9#airplane|airplane_01:234:65": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Boom9",
+    "output_hash": "661ae51f69f17a93ae98d548dfb67313a777f1f674516165698a7e544bf0c3f7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/boom9.ex",
+    "source_hash": "11d4d5ff8f46832a105f13612719880e8f26b27552c10536e2f09e55e050554f",
+    "spawns": [
+      {
+        "name": "boom9",
+        "scope": "shared",
+        "x": 234,
+        "y": 65,
+        "map": "airplane_01",
+        "dir": 0,
+        "unique_name": "boom9#airplane",
+        "sprite": 139
+      }
+    ]
+  },
+  "quests/quests_airship.txt|script|lab03#heart|ein_in01:261:35": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Lab03",
+    "output_hash": "e305a63437ca61c036ab489dd873b5106783f04281d0d2a7411ff79618fd54d3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_airship/lab03.ex",
+    "source_hash": "55ac498b667a487b209daaea8afcdd7e80d6ad138cc86369b4f9356812914808",
+    "spawns": [
+      {
+        "name": "lab03",
+        "scope": "shared",
+        "x": 261,
+        "y": 35,
+        "map": "ein_in01",
+        "dir": 0,
+        "unique_name": "lab03#heart",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
