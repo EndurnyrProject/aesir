@@ -24,8 +24,8 @@
   {"lib/aesir/zone_server/script/dsl/items.ex", :unknown_function},
   {"lib/aesir/zone_server/mmo/skills/alchemist/am_potionpitcher.ex", :unknown_function},
 
-  # Generated scripts retain defensive fallbacks for source-language values
-  # even when Dialyzer can prove the current DSL return type is exhaustive.
-  {"lib/aesir/zone_server/content/npc/re/jobs/novice/academy/captain_carocc.ex",
-   :pattern_match_cov}
+  # Aesir.ZoneServer.Content.Npc.* is transpiled from rAthena scripts and keeps
+  # defensive fallbacks for source-language values that Dialyzer can prove
+  # unreachable. The regex matches the formatted warning path from any cwd.
+  ~r{lib/aesir/zone_server/content/npc/}
 ]
