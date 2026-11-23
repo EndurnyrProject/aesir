@@ -182,6 +182,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.PrivateStateViewTest do
                :skills,
                :cooldowns,
                :ai_config,
+               :removed,
                :__uf__
              ])
 
