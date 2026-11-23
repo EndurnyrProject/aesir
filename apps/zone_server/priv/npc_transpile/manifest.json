@@ -42348,6 +42348,506 @@
       }
     ]
   },
+  "quests/quests_alberta.txt|floating|::Sailor_alberta|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsAlberta.SailorAlberta",
+    "output_hash": "81fcbca7bc2adac7ef2320c35adb82635358e947841fd84b17d319fc4fbca27c",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_alberta/sailor_alberta.ex",
+    "source_hash": "e86e9d774e76c49141e734aa840b3a708d9b5b22fb0bab07f35fc9dde46dd688",
+    "spawns": []
+  },
+  "quests/quests_alberta.txt|floating|::Turtle_Scholar_alberta|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsAlberta.TurtleScholarAlberta",
+    "output_hash": "65a5c0f48d3b9f5a4dcc9f87d76f4bdc3376c9d501fb7b2d8df1df88eec1b86d",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_alberta/turtle_scholar_alberta.ex",
+    "source_hash": "6a3193232fd8f7fff9932117e4a782b23c312cf2f817b522864807d9c0b12950",
+    "spawns": []
+  },
+  "quests/quests_alberta.txt|script|A pile of turtle crystal|tur_dun02:46:125": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.APileOfTurtleCrystal",
+    "output_hash": "23c59c76e528f852fe638af329b2557ecef886a1618b4c6018fc478a6222f261",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/a_pile_of_turtle_crystal.ex",
+    "source_hash": "264733434848e98fd53e5641e315ee2a44d9f749d3fab90555696b157e84761b",
+    "spawns": [
+      {
+        "name": "A pile of turtle crystal",
+        "scope": "shared",
+        "x": 46,
+        "y": 125,
+        "map": "tur_dun02",
+        "dir": 4,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Cherokee|alberta_in:122:53": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.Cherokee",
+    "output_hash": "e93815f86119e386aea50f7e9b52aa7aa75136c13eb71d98f695f98e4f74f4cf",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/cherokee.ex",
+    "source_hash": "6e04eee5f324525aa79a8c89a641d40c22ca88012fb318a6127065b0a115bedd",
+    "spawns": [
+      {
+        "name": "Cherokee",
+        "scope": "shared",
+        "x": 122,
+        "y": 53,
+        "map": "alberta_in",
+        "dir": 4,
+        "sprite": 47
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Elin|alberta:117:135": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.Elin",
+    "output_hash": "b71832731b1f16b769c41f9e6a697984b117be50c1467ee29a81d3639246eaed",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/elin.ex",
+    "source_hash": "b233f46be04488d381ced570de519ae3a07e577f8bf6720316bf4985539c236a",
+    "spawns": [
+      {
+        "name": "Elin",
+        "scope": "shared",
+        "x": 117,
+        "y": 135,
+        "map": "alberta",
+        "dir": 0,
+        "sprite": 96
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Grampa|alberta_in:28:145": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.Grampa",
+    "output_hash": "cd9d3467be509cf308c20185659b47d7bce341327eeeaced4de0d52dc84db725",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/grampa.ex",
+    "source_hash": "fe93526980de5071fbeb450f5876e498aa91863fa7fa64992bdf41f3b9a91ee4",
+    "spawns": [
+      {
+        "name": "Grampa",
+        "scope": "shared",
+        "x": 28,
+        "y": 145,
+        "map": "alberta_in",
+        "dir": 4,
+        "sprite": 120
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Grandpa Turtle#tur|alberta_in:23:104": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.GrandpaTurtle",
+    "output_hash": "90a19b95df3d30eb1d72aa7765e09d5fd76472615bcd201dc806ed783c4f4276",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/grandpa_turtle.ex",
+    "source_hash": "740735d9336b20d8018d39db8a12935aa6fd84cadfeb4d640d812f82341457a4",
+    "spawns": [
+      {
+        "name": "Grandpa Turtle",
+        "scope": "shared",
+        "x": 23,
+        "y": 104,
+        "map": "alberta_in",
+        "dir": 4,
+        "unique_name": "Grandpa Turtle#tur",
+        "sprite": 120
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Hat store girl#new30|alberta:136:79": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.HatStoreGirl",
+    "output_hash": "f7a6932a2b0eb3fe6072cd5b0d3552a0cd750de8c25b757a1a3f7c0eca1e3673",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/hat_store_girl.ex",
+    "source_hash": "e0353fbc832f7d65e3080df77267c2a0f3c1910a49d89a6dfd37282b307de0dd",
+    "spawns": [
+      {
+        "name": "Hat store girl",
+        "scope": "shared",
+        "x": 136,
+        "y": 79,
+        "map": "alberta",
+        "dir": 1,
+        "unique_name": "Hat store girl#new30",
+        "sprite": 71
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Iromo#ep3_2|alberta_in:131:95": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.Iromo",
+    "output_hash": "bb76911f33eca9fa7bacfa7e55000c18c1209f6e852d6c670461c34a99d5e1b8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/iromo.ex",
+    "source_hash": "94129dc251659fb7c50452fd621ed91260d01a52ee922ca27f0dc24dcdba3d24",
+    "spawns": [
+      {
+        "name": "Iromo",
+        "scope": "shared",
+        "x": 131,
+        "y": 95,
+        "map": "alberta_in",
+        "dir": 5,
+        "unique_name": "Iromo#ep3_2",
+        "sprite": 706
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Iromo's Mother#ep3_2|alberta_in:120:93": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.IromoSMother",
+    "output_hash": "108872088ba3d987db363764a91712a979af5e1733c9d02851b35dda84b7fbbf",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/iromo_s_mother.ex",
+    "source_hash": "d90d1e1f0cb425dce8973712afd73bbbbb37fdb24e88db3f7b12f5be29b5b0ad",
+    "spawns": [
+      {
+        "name": "Iromo's Mother",
+        "scope": "shared",
+        "x": 120,
+        "y": 93,
+        "map": "alberta_in",
+        "dir": 3,
+        "unique_name": "Iromo's Mother#ep3_2",
+        "sprite": 53
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Kinsey#tur|alberta:91:70": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.Kinsey",
+    "output_hash": "c4d93b79c5369042c96068114e30de055a23b5118300018387368694746263a2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/kinsey.ex",
+    "source_hash": "f4bb92d4c65ac2c53d32037b1d1f6b1943fd3479416ca6ef927d2a8352651b1b",
+    "spawns": [
+      {
+        "name": "Kinsey",
+        "scope": "shared",
+        "x": 91,
+        "y": 70,
+        "map": "alberta",
+        "dir": 4,
+        "unique_name": "Kinsey#tur",
+        "sprite": 89
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Knight Leader#tur|tur_dun03:105:76": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.KnightLeader",
+    "output_hash": "fcb8689bd10aad36be16b16e4300ef2d426fead9c54b1367370198548d4a0343",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/knight_leader.ex",
+    "source_hash": "39037f3e64ec1f2025d0b3695f66c3b8d380d35a1b9648860cff83a8fcd579d4",
+    "spawns": [
+      {
+        "name": "Knight Leader",
+        "scope": "shared",
+        "x": 105,
+        "y": 76,
+        "map": "tur_dun03",
+        "dir": 4,
+        "unique_name": "Knight Leader#tur",
+        "sprite": 110,
+        "trigger": [
+          5,
+          5
+        ]
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Knight#tur2|tur_dun03:189:126": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.Knight189126",
+    "output_hash": "a0fca603edcc06b3234ad6701e0edd5cbe20b5e9485f77b374d17c12b0e75a3e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/knight_189_126.ex",
+    "source_hash": "69691d16a0ef8b5bcc0f251049cdafd141f945b3bc599c2d2067845826a290a0",
+    "spawns": [
+      {
+        "name": "Knight",
+        "scope": "shared",
+        "x": 189,
+        "y": 126,
+        "map": "tur_dun03",
+        "dir": 4,
+        "unique_name": "Knight#tur2",
+        "sprite": 105
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Knight#tur3|tur_dun03:104:171": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.Knight104171",
+    "output_hash": "f33306cc45b7b06a390612cb14fb6f17d66f9e594dd3ffdee39579985d0bb2a6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/knight_104_171.ex",
+    "source_hash": "f5fb7fb5ec81bd31de327083948a480557661d9fad0c8658104b4911feb9f16d",
+    "spawns": [
+      {
+        "name": "Knight",
+        "scope": "shared",
+        "x": 104,
+        "y": 171,
+        "map": "tur_dun03",
+        "dir": 4,
+        "unique_name": "Knight#tur3",
+        "sprite": 105
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Knight#tur4|tur_dun03:67:130": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.Knight67130",
+    "output_hash": "5136d290779601bae81f1ab4ca65e3c59b49e0b3038de23ddcfe5ffe6ba4dfd8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/knight_67_130.ex",
+    "source_hash": "81b3f66b68a12562a1e4892c19888beb6e4f7ba93e623d9ee008382f5097ad77",
+    "spawns": [
+      {
+        "name": "Knight",
+        "scope": "shared",
+        "x": 67,
+        "y": 130,
+        "map": "tur_dun03",
+        "dir": 4,
+        "unique_name": "Knight#tur4",
+        "sprite": 105
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Knight#tur|tur_dun01:190:115": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.Knight",
+    "output_hash": "48d5fd3bb11b24f3ad0617719f3a4cdf5c8b9889549b00d161dc1f66047975b9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/knight.ex",
+    "source_hash": "2db863a6f1e6126e18746917659296730fead5fb96ab620fa2df086a2f53f784",
+    "spawns": [
+      {
+        "name": "Knight",
+        "scope": "shared",
+        "x": 190,
+        "y": 115,
+        "map": "tur_dun01",
+        "dir": 4,
+        "unique_name": "Knight#tur",
+        "sprite": 105
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Letter#tur|alberta_in:18:102": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.Letter",
+    "output_hash": "2182ab9faa64d65bf26fa36d2e38a8bafb4ae45779c6de6ae5746eae29d44014",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/letter.ex",
+    "source_hash": "3dcbe61e1afaf22a8473c1b02bbc6064a0b425098623bf0a7b63e7140a445d5b",
+    "spawns": [
+      {
+        "name": "Letter",
+        "scope": "shared",
+        "x": 18,
+        "y": 102,
+        "map": "alberta_in",
+        "dir": 4,
+        "unique_name": "Letter#tur",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Little Boy#ep3_2|alberta:45:106": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.LittleBoy",
+    "output_hash": "f11191dc826b99c2f6f8d7dcdf8855d4612fa3505fcf99906ee10e99fe25ecfa",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/little_boy.ex",
+    "source_hash": "03e165e3a4260536666cb474b2047d0e3a6f0f9130f181cb4c4c3be53a90478b",
+    "spawns": [
+      {
+        "name": "Little Boy",
+        "scope": "shared",
+        "x": 45,
+        "y": 106,
+        "map": "alberta",
+        "dir": 5,
+        "unique_name": "Little Boy#ep3_2",
+        "sprite": 706
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Mudasamu#tur|tur_dun03:105:74": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.Mudasamu",
+    "output_hash": "5b554d3bf0dd3fe150e53ee38f75d61d6d8795f173f5cf419fa0d4d9769775bc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/mudasamu.ex",
+    "source_hash": "fe7153fbf2b5167b05976ca99473a2f5fdd4afc5999d47705f3ef0901ef60847",
+    "spawns": [
+      {
+        "name": "Mudasamu",
+        "scope": "shared",
+        "x": 105,
+        "y": 74,
+        "map": "tur_dun03",
+        "dir": 4,
+        "unique_name": "Mudasamu#tur",
+        "sprite": 119
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Sailor#tur2|tur_dun01:165:29": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.Sailor",
+    "output_hash": "6f7a925c01a2dab9d9ec2bf40e1026b63763d33fa436e4507b190c2836e81989",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/sailor.ex",
+    "source_hash": "7a86fb216826bef2a178dbca822be287f22a300036df4c3afa2f66d1fbdc0522",
+    "spawns": [
+      {
+        "name": "Sailor",
+        "scope": "shared",
+        "x": 165,
+        "y": 29,
+        "map": "tur_dun01",
+        "dir": 4,
+        "unique_name": "Sailor#tur2",
+        "sprite": 709
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Skull Stone#tur|tur_dun01:160:81": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.SkullStone",
+    "output_hash": "2bf38e2add65558855ec1499ea15094114b235d73f199e7e78860686ef34113c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/skull_stone.ex",
+    "source_hash": "f6a5edbd8e0f5df52d3539ba20bd19877f3da9acf21975088473c5d46db23793",
+    "spawns": [
+      {
+        "name": "Skull Stone",
+        "scope": "shared",
+        "x": 160,
+        "y": 81,
+        "map": "tur_dun01",
+        "dir": 4,
+        "unique_name": "Skull Stone#tur",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Stylish Merchant#new30|alberta:120:53": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.StylishMerchant",
+    "output_hash": "e42355572c0e172f3c9ae43b2f597d6e596bee3f46bc952adbf938cc8613686b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/stylish_merchant.ex",
+    "source_hash": "8b57ecd7606a6682dd28970ca95884d17d656cebf52fb48c75a0f365831ae7b8",
+    "spawns": [
+      {
+        "name": "Stylish Merchant",
+        "scope": "shared",
+        "x": 120,
+        "y": 53,
+        "map": "alberta",
+        "dir": 1,
+        "unique_name": "Stylish Merchant#new30",
+        "sprite": 51
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Turtle Pillar#tur|tur_dun02:49:158": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.TurtlePillar",
+    "output_hash": "1158ac0f562bcd2c1c295f2ebf3570a37ab1795b28cb4de8744791d17d6a48c4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/turtle_pillar.ex",
+    "source_hash": "d55a4159403d05f468a12c758b24ebfd120b43805d7598c7f158feed85fc3bf7",
+    "spawns": [
+      {
+        "name": "Turtle Pillar",
+        "scope": "shared",
+        "x": 49,
+        "y": 158,
+        "map": "tur_dun02",
+        "dir": 4,
+        "unique_name": "Turtle Pillar#tur",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Turtle Statue#tur|tur_dun04:113:178": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.TurtleStatue",
+    "output_hash": "e89eb557b05e0b995adb6088c8a006289f2d2f54d2da9c04fd8229b0dbd8dc6b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/turtle_statue.ex",
+    "source_hash": "e60576bc51d465c39dbc337173ab675f865765e1ab785bfeb9f3cefff1648d5e",
+    "spawns": [
+      {
+        "name": "Turtle Statue",
+        "scope": "shared",
+        "x": 113,
+        "y": 178,
+        "map": "tur_dun04",
+        "dir": 4,
+        "unique_name": "Turtle Statue#tur",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Turtle Stone#tur3|tur_dun03:118:233": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.TurtleStone118233",
+    "output_hash": "e3e4f74fa527d04a4fb05c225e67820aaa29e222eb9d60ca9f8454096d092e25",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/turtle_stone_118_233.ex",
+    "source_hash": "d2463689e5d3f9d2de373a077dcd07b628de53a23676e6df624824f80d7cfce5",
+    "spawns": [
+      {
+        "name": "Turtle Stone",
+        "scope": "shared",
+        "x": 118,
+        "y": 233,
+        "map": "tur_dun03",
+        "dir": 4,
+        "unique_name": "Turtle Stone#tur3",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Turtle Tree Roots#tur|tur_dun02:132:251": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.TurtleTreeRoots",
+    "output_hash": "ace29189a507ec879c5bb1f24ed679977dcf586e6cfaeae6fc0263ebb841e7cd",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/turtle_tree_roots.ex",
+    "source_hash": "c00129ea2d24229bafcdbc5aedf289368230bc529038e4f165870032f76c625c",
+    "spawns": [
+      {
+        "name": "Turtle Tree Roots",
+        "scope": "shared",
+        "x": 132,
+        "y": 251,
+        "map": "tur_dun02",
+        "dir": 4,
+        "unique_name": "Turtle Tree Roots#tur",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Turtle stone#tur2|tur_dun02:75:249": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.TurtleStone75249",
+    "output_hash": "7f229f259281a261f326240c9e8b69089abbbb35deb438289cb2b7c53dc9556c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/turtle_stone_75_249.ex",
+    "source_hash": "ac94276d4b7108cc88f734030f282208da65a3cced399ee2502b6fb95c5701eb",
+    "spawns": [
+      {
+        "name": "Turtle stone",
+        "scope": "shared",
+        "x": 75,
+        "y": 249,
+        "map": "tur_dun02",
+        "dir": 4,
+        "unique_name": "Turtle stone#tur2",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Turtle stone#tur|tur_dun01:203:155": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.TurtleStone",
+    "output_hash": "58404081b9e0b9a63a0d9a77470c5fe12db7792e64ca130bfe2cb3235fcb771f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/turtle_stone.ex",
+    "source_hash": "3114c5bdaa14bd2fd272f9051d8b866ad2636b29216ff6fcdccc391c5cde4c13",
+    "spawns": [
+      {
+        "name": "Turtle stone",
+        "scope": "shared",
+        "x": 203,
+        "y": 155,
+        "map": "tur_dun01",
+        "dir": 4,
+        "unique_name": "Turtle stone#tur",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_alberta.txt|script|Voyage log#tur|alberta:246:117": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.VoyageLog",
+    "output_hash": "f401cbcc8e0963a06db2ec856700f043bd390de8d1f0f00e190c6b17cfa0904a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_alberta/voyage_log.ex",
+    "source_hash": "95b847abeaaf185e3418c8cdeb700c9438cbaa52921497f11878228b7a15b15f",
+    "spawns": [
+      {
+        "name": "Voyage log",
+        "scope": "shared",
+        "x": 246,
+        "y": 117,
+        "map": "alberta",
+        "dir": 4,
+        "unique_name": "Voyage log#tur",
+        "sprite": 111
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
