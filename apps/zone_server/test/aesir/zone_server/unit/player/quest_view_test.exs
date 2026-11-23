@@ -33,7 +33,7 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestViewTest do
     :ok
   end
 
-  defp entry(state, counts), do: %Entry{state: state, counts: counts, deadline: nil}
+  defp entry(state, counts), do: %Entry{state: state, counts: counts, deadline: 0, giver: nil}
 
   describe "quest_added/2" do
     test "a hunting quest carries one objective per target with current counts" do

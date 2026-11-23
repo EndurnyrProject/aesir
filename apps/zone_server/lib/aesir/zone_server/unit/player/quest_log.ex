@@ -1,10 +1,26 @@
+defmodule Aesir.ZoneServer.Unit.Player.QuestLog.Giver do
+  @moduledoc """
+  Who handed a quest out: the NPC `name` and the `map` and cell (`x`, `y`) it
+  stands on when the quest was accepted.
+  """
+
+  use TypedStruct
+
+  typedstruct do
+    field :name, String.t(), enforce: true
+    field :map, String.t(), enforce: true
+    field :x, non_neg_integer(), enforce: true
+    field :y, non_neg_integer(), enforce: true
+  end
+end
+
 defmodule Aesir.ZoneServer.Unit.Player.QuestLog.Entry do
   @moduledoc """
   One quest-log row: its `state`, per-objective `counts` (positionally aligned
-  with the definition's `targets`), a reserved `deadline` (always `nil` this
-  iteration - the time-limit mechanic is deferred), and its `position` in the
-  log's walk order (see `QuestLog.available/1`). A `nil` position sorts after
-  every positioned row.
+  with the definition's `targets`), its `deadline` (Unix seconds, `0` for an
+  unlimited quest), the `giver` that handed it out (or `nil`), and its
+  `position` in the log's walk order (see `QuestLog.available/1`). A `nil`
+  position sorts after every positioned row.
   """
 
   @typedoc "Quest progression state (`Q_INACTIVE`/`Q_ACTIVE`/`Q_COMPLETE`)."
@@ -12,10 +28,13 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestLog.Entry do
 
   use TypedStruct
 
+  alias Aesir.ZoneServer.Unit.Player.QuestLog.Giver
+
   typedstruct do
     field :state, state(), enforce: true
     field :counts, [non_neg_integer()], default: []
-    field :deadline, nil
+    field :deadline, non_neg_integer(), default: 0
+    field :giver, Giver.t() | nil
     field :position, non_neg_integer() | nil
   end
 end
@@ -31,19 +50,20 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestLog do
   ## State
 
   Each entry is an `Entry` with `state` (`:active | :inactive | :complete`),
-  `counts` (positionally aligned with the definition's `targets`), and a reserved
-  `deadline` that is always `nil` this iteration. `check/3` therefore behaves as
-  rAthena would with an unexpired timer, which is why the `:playtime`/`:hunting`
-  "timeout reached" codes (2 / 1 respectively) never surface yet.
+  `counts` (positionally aligned with the definition's `targets`), a `deadline`
+  in Unix seconds (`0` for an unlimited quest) and the `giver`.
 
-  ## `check/3` return matrix (verified against `quest_check`, quest.cpp:898)
+  ## `check/4` return matrix (verified against `quest_check`, quest.cpp:899)
 
-  | state \\ mode | `:havequest` | `:playtime` | `:hunting`          |
-  |--------------|--------------|-------------|---------------------|
-  | not started  | -1           | -1          | -1                  |
-  | `:inactive`  | 1            | 0           | 2 if met, else 0    |
-  | `:active`    | 1            | 0           | 2 if met, else 0    |
-  | `:complete`  | 2            | 1           | 0                   |
+  A deadline is expired when it is below `now`; deadline `0` therefore always
+  reads as expired, an rAthena quirk kept for parity.
+
+  | state \\ mode | `:havequest` | `:playtime`                | `:hunting`                       |
+  |--------------|--------------|----------------------------|----------------------------------|
+  | not started  | -1           | -1                         | -1                               |
+  | `:inactive`  | 1            | 2 if expired, else 0       | 2 if met, 1 if expired, else 0   |
+  | `:active`    | 1            | 2 if expired, else 0       | 2 if met, 1 if expired, else 0   |
+  | `:complete`  | 2            | 2 if expired, else 1       | 0                                |
 
   Notes:
 
@@ -69,7 +89,9 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestLog do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition
   alias Aesir.ZoneServer.Mmo.QuestManagement.Quests
+  alias Aesir.ZoneServer.Mmo.QuestManagement.TimeLimit
   alias Aesir.ZoneServer.Unit.Player.QuestLog.Entry
+  alias Aesir.ZoneServer.Unit.Player.QuestLog.Giver
 
   @type quest_id :: non_neg_integer()
 
@@ -138,9 +160,9 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestLog do
   Rejects an unknown quest id and a quest already in the log, matching the
   `quest_search`-then-`HAVEQUEST` guards; the definition is resolved first.
   """
-  @spec add(t(), quest_id()) ::
+  @spec add(t(), quest_id(), non_neg_integer(), Giver.t() | nil) ::
           {:ok, t(), Entry.t()} | {:error, :already_started | :unknown_quest}
-  def add(log, quest_id) do
+  def add(log, quest_id, deadline, giver) do
     case Quests.by_id(quest_id) do
       :error ->
         {:error, :unknown_quest}
@@ -152,7 +174,8 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestLog do
           entry = %Entry{
             state: :active,
             counts: zeroed(targets),
-            deadline: nil,
+            deadline: deadline,
+            giver: giver,
             position: next_position(log)
           }
 
@@ -184,10 +207,10 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestLog do
   must be held, and the old quest must not be complete (rAthena scans only the
   available - non-complete - quests when locating the old one).
   """
-  @spec change(t(), quest_id(), quest_id()) ::
+  @spec change(t(), quest_id(), quest_id(), non_neg_integer(), Giver.t() | nil) ::
           {:ok, t(), Entry.t()}
           | {:error, :already_started | :already_completed | :not_started | :unknown_quest}
-  def change(log, old_id, new_id) do
+  def change(log, old_id, new_id, deadline, giver) do
     case Quests.by_id(new_id) do
       :error ->
         {:error, :unknown_quest}
@@ -207,7 +230,8 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestLog do
             entry = %Entry{
               state: :active,
               counts: zeroed(targets),
-              deadline: nil,
+              deadline: deadline,
+              giver: giver,
               position: Map.fetch!(log, old_id).position
             }
 
@@ -240,6 +264,38 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestLog do
   end
 
   @doc """
+  Flips an active/inactive quest to the given state (`quest_update_status` to
+  `Q_ACTIVE`/`Q_INACTIVE`, quest.cpp:822). Setting the state it already has
+  succeeds. Complete and absent quests return `{:error, :not_found}`.
+  """
+  @spec set_active(t(), quest_id(), boolean()) :: {:ok, t(), Entry.t()} | {:error, :not_found}
+  def set_active(log, quest_id, active?) do
+    case Map.fetch(log, quest_id) do
+      {:ok, %Entry{state: state} = entry} when state in @updatable ->
+        entry = %{entry | state: if(active?, do: :active, else: :inactive)}
+        {:ok, Map.put(log, quest_id, entry), entry}
+
+      _ ->
+        {:error, :not_found}
+    end
+  end
+
+  @doc """
+  The deadline in Unix seconds for a quest accepted now, from its definition's
+  `TimeLimit`. `0` for an unlimited or unknown quest.
+  """
+  @spec deadline_for(quest_id(), integer(), NaiveDateTime.t()) :: non_neg_integer()
+  def deadline_for(quest_id, now_unix, local_now) do
+    case Quests.by_id(quest_id) do
+      {:ok, %QuestDefinition{time_limit: time_limit}} ->
+        time_limit |> TimeLimit.parse!() |> TimeLimit.deadline(now_unix, local_now)
+
+      :error ->
+        0
+    end
+  end
+
+  @doc """
   The not-complete quests in walk order, as `{quest_id, entry}` pairs.
   """
   @spec available(t()) :: [{quest_id(), Entry.t()}]
@@ -250,14 +306,14 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestLog do
   end
 
   @doc """
-  Queries quest state (`quest_check`, quest.cpp:898). See the module return
-  matrix. `:playtime`/`:hunting` treat the (always-`nil`) deadline as unexpired.
+  Queries quest state (`quest_check`, quest.cpp:899) at `now_unix`. See the
+  module return matrix.
   """
-  @spec check(t(), quest_id(), :havequest | :playtime | :hunting) :: -1 | 0 | 1 | 2
-  def check(log, quest_id, mode) do
+  @spec check(t(), quest_id(), :havequest | :playtime | :hunting, integer()) :: -1 | 0 | 1 | 2
+  def check(log, quest_id, mode, now_unix) do
     case Map.fetch(log, quest_id) do
       :error -> -1
-      {:ok, entry} -> check_present(entry, quest_id, mode)
+      {:ok, entry} -> check_present(entry, quest_id, mode, now_unix)
     end
   end
 
@@ -268,7 +324,7 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestLog do
   @spec is_begin(t(), quest_id()) :: 0 | 1 | 2
   # credo:disable-for-next-line Credo.Check.Readability.PredicateFunctionNames
   def is_begin(log, quest_id) do
-    case check(log, quest_id, :havequest) do
+    case check(log, quest_id, :havequest, 0) do
       -1 -> 0
       2 -> 2
       _ -> 1
@@ -330,25 +386,35 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestLog do
     end
   end
 
-  @spec check_present(Entry.t(), quest_id(), :havequest | :playtime | :hunting) :: integer()
-  defp check_present(%Entry{state: :complete}, _quest_id, :havequest), do: 2
-  defp check_present(%Entry{}, _quest_id, :havequest), do: 1
+  @spec check_present(Entry.t(), quest_id(), :havequest | :playtime | :hunting, integer()) ::
+          integer()
+  defp check_present(%Entry{state: :complete}, _quest_id, :havequest, _now), do: 2
+  defp check_present(%Entry{}, _quest_id, :havequest, _now), do: 1
 
-  defp check_present(%Entry{state: :complete}, _quest_id, :playtime), do: 1
-  defp check_present(%Entry{}, _quest_id, :playtime), do: 0
+  defp check_present(%Entry{deadline: deadline, state: state}, _quest_id, :playtime, now) do
+    cond do
+      deadline < now -> 2
+      state == :complete -> 1
+      true -> 0
+    end
+  end
 
-  defp check_present(%Entry{state: state, counts: counts}, quest_id, :hunting)
+  defp check_present(%Entry{state: state} = entry, quest_id, :hunting, now)
        when state in @updatable do
     case Quests.by_id(quest_id) do
       {:ok, %QuestDefinition{targets: targets}} ->
-        if objectives_met?(counts, targets), do: 2, else: 0
+        cond do
+          objectives_met?(entry.counts, targets) -> 2
+          entry.deadline < now -> 1
+          true -> 0
+        end
 
       :error ->
         0
     end
   end
 
-  defp check_present(%Entry{}, _quest_id, :hunting), do: 0
+  defp check_present(%Entry{}, _quest_id, :hunting, _now), do: 0
 
   @spec next_position(t()) :: non_neg_integer()
   defp next_position(log) do

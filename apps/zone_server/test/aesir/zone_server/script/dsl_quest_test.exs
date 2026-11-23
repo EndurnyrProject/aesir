@@ -190,7 +190,7 @@ defmodule Aesir.ZoneServer.Script.DslQuestTest do
     test "checkquest/3 accepts :playtime and :hunting" do
       ctx = build_ctx(quest_log: %{7393 => entry(:active, [10])})
 
-      assert Dsl.checkquest(ctx, 7393, :playtime) == 0
+      assert Dsl.checkquest(ctx, 7393, :playtime) == 2
       assert Dsl.checkquest(ctx, 7393, :hunting) == 2
     end
 
@@ -213,7 +213,7 @@ defmodule Aesir.ZoneServer.Script.DslQuestTest do
     test "questprogress/3 accepts :hunting" do
       ctx = build_ctx(quest_log: %{7393 => entry(:active, [3])})
 
-      assert Dsl.questprogress(ctx, 7393, :hunting) == 0
+      assert Dsl.questprogress(ctx, 7393, :hunting) == 1
     end
 
     test "returns -1 for a never-started quest" do
@@ -243,7 +243,7 @@ defmodule Aesir.ZoneServer.Script.DslQuestTest do
     end
   end
 
-  defp entry(state, counts), do: %Entry{state: state, counts: counts, deadline: nil}
+  defp entry(state, counts), do: %Entry{state: state, counts: counts, deadline: 0, giver: nil}
 
   defp ok_session(game_state), do: start_stub(fn _op, _from -> {:ok, game_state} end)
   defp error_session(reason), do: start_stub(fn _op, _from -> {:error, reason} end)

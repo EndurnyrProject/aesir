@@ -5,8 +5,8 @@ defmodule Aesir.Commons.Models.CharacterQuest do
 
   One row per `(char_id, quest_id)`. `count1..count3` mirror rAthena's fixed
   3-objective record (`MAX_QUEST_OBJECTIVES`); the in-memory quest log's
-  `counts` list maps positionally onto them. `deadline` is reserved for the
-  deferred time-limit iteration and is always `nil` for now.
+  `counts` list maps positionally onto them. `deadline` is `nil` for an
+  unlimited quest. The `giver_*` columns are all `nil` when no giver is known.
   """
 
   use Ecto.Schema
@@ -25,6 +25,10 @@ defmodule Aesir.Commons.Models.CharacterQuest do
           count2: integer() | nil,
           count3: integer() | nil,
           deadline: DateTime.t() | nil,
+          giver_name: String.t() | nil,
+          giver_map: String.t() | nil,
+          giver_x: integer() | nil,
+          giver_y: integer() | nil,
           character: Character.t() | Ecto.Association.NotLoaded.t(),
           inserted_at: NaiveDateTime.t() | nil,
           updated_at: NaiveDateTime.t() | nil
@@ -39,6 +43,10 @@ defmodule Aesir.Commons.Models.CharacterQuest do
     field :count2, :integer, default: 0
     field :count3, :integer, default: 0
     field :deadline, :utc_datetime
+    field :giver_name, :string
+    field :giver_map, :string
+    field :giver_x, :integer
+    field :giver_y, :integer
 
     timestamps()
   end
@@ -56,7 +64,11 @@ defmodule Aesir.Commons.Models.CharacterQuest do
       :count1,
       :count2,
       :count3,
-      :deadline
+      :deadline,
+      :giver_name,
+      :giver_map,
+      :giver_x,
+      :giver_y
     ])
     |> validate_required([:char_id, :quest_id])
     |> validate_inclusion(:state, @valid_states)

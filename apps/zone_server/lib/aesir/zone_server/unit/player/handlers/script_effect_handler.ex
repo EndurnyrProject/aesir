@@ -725,7 +725,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   end
 
   def apply_op({:setquest, quest_id}, %{game_state: gs} = state) do
-    case QuestLog.add(gs.quest_log, quest_id) do
+    case QuestLog.add(gs.quest_log, quest_id, quest_deadline(quest_id), nil) do
       {:ok, quest_log, entry} ->
         QuestPersistence.upsert(gs.character_id, {quest_id, entry})
         MessageRouter.send_to(state.connection_pid, QuestView.quest_added(quest_id, entry))
@@ -767,7 +767,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   end
 
   def apply_op({:changequest, old_id, new_id}, %{game_state: gs} = state) do
-    case QuestLog.change(gs.quest_log, old_id, new_id) do
+    case QuestLog.change(gs.quest_log, old_id, new_id, quest_deadline(new_id), nil) do
       {:ok, quest_log, entry} ->
         QuestPersistence.delete(gs.character_id, old_id)
         QuestPersistence.upsert(gs.character_id, {new_id, entry})
@@ -778,6 +778,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
       {:error, reason} ->
         {{:error, reason}, state}
     end
+  end
+
+  defp quest_deadline(quest_id) do
+    QuestLog.deadline_for(
+      quest_id,
+      System.os_time(:second),
+      NaiveDateTime.from_erl!(:calendar.local_time())
+    )
   end
 
   # `getrandgroupitem` tries `pet_create_egg` per unit of a pet egg entry and

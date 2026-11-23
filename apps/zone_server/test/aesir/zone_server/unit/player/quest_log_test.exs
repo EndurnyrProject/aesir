@@ -7,8 +7,11 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestLogTest do
   alias Aesir.ZoneServer.Mmo.QuestManagement.Quests
   alias Aesir.ZoneServer.Unit.Player.QuestLog
   alias Aesir.ZoneServer.Unit.Player.QuestLog.Entry
+  alias Aesir.ZoneServer.Unit.Player.QuestLog.Giver
 
   import Aesir.TestEtsSetup
+
+  @now 1_000
 
   @targetless %QuestDefinition{id: 1000, title: "Transcend", targets: []}
 
@@ -65,6 +68,9 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestLogTest do
 
   defp entry(state, counts), do: build(:quest_entry, state: state, counts: counts)
 
+  defp timed(state, counts, deadline),
+    do: build(:quest_entry, state: state, counts: counts, deadline: deadline)
+
   defp entry(state, counts, position),
     do: build(:quest_entry, state: state, counts: counts, position: position)
 
@@ -84,24 +90,31 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestLogTest do
 
   defp counts(log, quest_id), do: log |> Map.fetch!(quest_id) |> Map.fetch!(:counts)
 
-  describe "add/2" do
+  describe "add/4" do
     test "adds a quest as active with zeroed counters aligned to its targets" do
-      assert {:ok, log, entry} = QuestLog.add(%{}, 7393)
-      assert %Entry{state: :active, counts: [0, 0], deadline: nil} = entry
+      assert {:ok, log, entry} = QuestLog.add(%{}, 7393, 0, nil)
+      assert %Entry{state: :active, counts: [0, 0], deadline: 0, giver: nil} = entry
       assert log == %{7393 => entry}
     end
 
+    test "stores the deadline and giver it is given" do
+      giver = %Giver{name: "Kafra", map: "prontera", x: 150, y: 180}
+
+      assert {:ok, _log, %Entry{deadline: 5_000, giver: ^giver}} =
+               QuestLog.add(%{}, 7393, 5_000, giver)
+    end
+
     test "a target-less quest gets an empty counts list" do
-      assert {:ok, _log, %Entry{counts: []}} = QuestLog.add(%{}, 1000)
+      assert {:ok, _log, %Entry{counts: []}} = QuestLog.add(%{}, 1000, 0, nil)
     end
 
     test "rejects an unknown quest id" do
-      assert {:error, :unknown_quest} = QuestLog.add(%{}, 999_999)
+      assert {:error, :unknown_quest} = QuestLog.add(%{}, 999_999, 0, nil)
     end
 
     test "rejects a quest already in the log, in any state" do
       log = %{7393 => entry(:complete, [10, 10])}
-      assert {:error, :already_started} = QuestLog.add(log, 7393)
+      assert {:error, :already_started} = QuestLog.add(log, 7393, 0, nil)
     end
   end
 
@@ -120,31 +133,78 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestLogTest do
     end
   end
 
-  describe "change/3" do
+  describe "change/5" do
     test "atomically swaps the old quest for a fresh active new quest" do
       log = %{1000 => entry(:active, [])}
-      assert {:ok, new_log, entry} = QuestLog.change(log, 1000, 7393)
+      assert {:ok, new_log, entry} = QuestLog.change(log, 1000, 7393, 0, nil)
       assert %Entry{state: :active, counts: [0, 0]} = entry
       assert new_log == %{7393 => entry}
     end
 
+    test "stores the deadline and giver it is given" do
+      giver = %Giver{name: "Kafra", map: "prontera", x: 150, y: 180}
+      log = %{1000 => entry(:active, [])}
+
+      assert {:ok, _log, %Entry{deadline: 5_000, giver: ^giver}} =
+               QuestLog.change(log, 1000, 7393, 5_000, giver)
+    end
+
     test "rejects an unknown new quest and leaves the log untouched" do
       log = %{1000 => entry(:active, [])}
-      assert {:error, :unknown_quest} = QuestLog.change(log, 1000, 999_999)
+      assert {:error, :unknown_quest} = QuestLog.change(log, 1000, 999_999, 0, nil)
     end
 
     test "rejects when the new quest is already held" do
       log = %{1000 => entry(:active, []), 7393 => entry(:active, [0, 0])}
-      assert {:error, :already_started} = QuestLog.change(log, 1000, 7393)
+      assert {:error, :already_started} = QuestLog.change(log, 1000, 7393, 0, nil)
     end
 
     test "rejects when the old quest is not held" do
-      assert {:error, :not_started} = QuestLog.change(%{}, 1000, 7393)
+      assert {:error, :not_started} = QuestLog.change(%{}, 1000, 7393, 0, nil)
     end
 
     test "rejects when the old quest is already complete" do
       log = %{1000 => entry(:complete, [])}
-      assert {:error, :already_completed} = QuestLog.change(log, 1000, 7393)
+      assert {:error, :already_completed} = QuestLog.change(log, 1000, 7393, 0, nil)
+    end
+  end
+
+  describe "set_active/3" do
+    test "flips an active quest to inactive and back" do
+      log = %{7393 => entry(:active, [1, 2])}
+
+      assert {:ok, log, %Entry{state: :inactive, counts: [1, 2]}} =
+               QuestLog.set_active(log, 7393, false)
+
+      assert {:ok, %{7393 => %Entry{state: :active}}, %Entry{state: :active}} =
+               QuestLog.set_active(log, 7393, true)
+    end
+
+    test "succeeds when the quest is already in the target state" do
+      log = %{7393 => entry(:inactive, [0, 0])}
+      assert {:ok, ^log, %Entry{state: :inactive}} = QuestLog.set_active(log, 7393, false)
+    end
+
+    test "is not found for a complete or absent quest" do
+      log = %{7393 => entry(:complete, [10, 10])}
+      assert {:error, :not_found} = QuestLog.set_active(log, 7393, true)
+      assert {:error, :not_found} = QuestLog.set_active(%{}, 8000, true)
+    end
+  end
+
+  describe "deadline_for/3" do
+    @local_now ~N[2026-01-01 00:00:00]
+
+    test "is 0 for a quest without a time limit and for an unknown quest" do
+      assert QuestLog.deadline_for(7393, @now, @local_now) == 0
+      assert QuestLog.deadline_for(999_999, @now, @local_now) == 0
+    end
+
+    test "adds a relative time limit to now" do
+      defs = [%QuestDefinition{id: 7500, title: "Timed", targets: [], time_limit: "+1h"}]
+      :persistent_term.put(Quests, %{all: defs, by_id: Map.new(defs, &{&1.id, &1})})
+
+      assert QuestLog.deadline_for(7500, @now, @local_now) == @now + 3_600
     end
   end
 
@@ -171,65 +231,82 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestLogTest do
     end
   end
 
-  describe "check/3 :havequest" do
+  describe "check/4 :havequest" do
     test "not started" do
-      assert QuestLog.check(%{}, 7393, :havequest) == -1
+      assert QuestLog.check(%{}, 7393, :havequest, @now) == -1
     end
 
     test "inactive reports as active (1), following the C source over the docs" do
-      assert QuestLog.check(%{7393 => entry(:inactive, [0, 0])}, 7393, :havequest) == 1
+      assert QuestLog.check(%{7393 => entry(:inactive, [0, 0])}, 7393, :havequest, @now) == 1
     end
 
     test "active" do
-      assert QuestLog.check(%{7393 => entry(:active, [0, 0])}, 7393, :havequest) == 1
+      assert QuestLog.check(%{7393 => entry(:active, [0, 0])}, 7393, :havequest, @now) == 1
     end
 
     test "complete" do
-      assert QuestLog.check(%{7393 => entry(:complete, [10, 10])}, 7393, :havequest) == 2
+      assert QuestLog.check(%{7393 => entry(:complete, [10, 10])}, 7393, :havequest, @now) == 2
     end
   end
 
-  describe "check/3 :playtime" do
+  describe "check/4 :playtime" do
     test "not started" do
-      assert QuestLog.check(%{}, 7393, :playtime) == -1
+      assert QuestLog.check(%{}, 7393, :playtime, @now) == -1
     end
 
-    test "inactive (unexpired) is 0" do
-      assert QuestLog.check(%{7393 => entry(:inactive, [0, 0])}, 7393, :playtime) == 0
+    test "inactive with a past deadline (including 0) is 2" do
+      assert QuestLog.check(%{7393 => entry(:inactive, [0, 0])}, 7393, :playtime, @now) == 2
     end
 
-    test "active (unexpired) is 0" do
-      assert QuestLog.check(%{7393 => entry(:active, [0, 0])}, 7393, :playtime) == 0
+    test "active with a past deadline (including 0) is 2" do
+      assert QuestLog.check(%{7393 => entry(:active, [0, 0])}, 7393, :playtime, @now) == 2
     end
 
-    test "complete is 1" do
-      assert QuestLog.check(%{7393 => entry(:complete, [10, 10])}, 7393, :playtime) == 1
+    test "complete with a past deadline (including 0) is 2" do
+      assert QuestLog.check(%{7393 => entry(:complete, [10, 10])}, 7393, :playtime, @now) == 2
+    end
+
+    test "with a future deadline, active and inactive are 0 and complete is 1" do
+      future = @now + 60
+
+      assert QuestLog.check(%{7393 => timed(:active, [0, 0], future)}, 7393, :playtime, @now) == 0
+
+      assert QuestLog.check(%{7393 => timed(:inactive, [0, 0], future)}, 7393, :playtime, @now) ==
+               0
+
+      assert QuestLog.check(%{7393 => timed(:complete, [10, 10], future)}, 7393, :playtime, @now) ==
+               1
     end
   end
 
-  describe "check/3 :hunting" do
+  describe "check/4 :hunting" do
     test "not started" do
-      assert QuestLog.check(%{}, 7393, :hunting) == -1
+      assert QuestLog.check(%{}, 7393, :hunting, @now) == -1
     end
 
-    test "active with unmet objectives is 0" do
-      assert QuestLog.check(%{7393 => entry(:active, [10, 0])}, 7393, :hunting) == 0
+    test "active with unmet objectives and a past deadline is 1" do
+      assert QuestLog.check(%{7393 => entry(:active, [10, 0])}, 7393, :hunting, @now) == 1
     end
 
-    test "active with all objectives met is 2" do
-      assert QuestLog.check(%{7393 => entry(:active, [10, 10])}, 7393, :hunting) == 2
+    test "active with unmet objectives and a future deadline is 0" do
+      log = %{7393 => timed(:active, [10, 0], @now + 60)}
+      assert QuestLog.check(log, 7393, :hunting, @now) == 0
+    end
+
+    test "active with all objectives met is 2, even when expired" do
+      assert QuestLog.check(%{7393 => entry(:active, [10, 10])}, 7393, :hunting, @now) == 2
     end
 
     test "inactive with all objectives met is 2" do
-      assert QuestLog.check(%{7393 => entry(:inactive, [10, 10])}, 7393, :hunting) == 2
+      assert QuestLog.check(%{7393 => entry(:inactive, [10, 10])}, 7393, :hunting, @now) == 2
     end
 
     test "complete is 0 (falls through the objective scan)" do
-      assert QuestLog.check(%{7393 => entry(:complete, [10, 10])}, 7393, :hunting) == 0
+      assert QuestLog.check(%{7393 => entry(:complete, [10, 10])}, 7393, :hunting, @now) == 0
     end
 
     test "a target-less quest is vacuously met (2)" do
-      assert QuestLog.check(%{1000 => entry(:active, [])}, 1000, :hunting) == 2
+      assert QuestLog.check(%{1000 => entry(:active, [])}, 1000, :hunting, @now) == 2
     end
   end
 
@@ -403,7 +480,7 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestLogTest do
     test "a new quest goes after every not-complete quest" do
       log = %{1000 => entry(:active, [], 4), 8000 => entry(:complete, [2, 3], 0)}
 
-      assert {:ok, log, %Entry{position: 5}} = QuestLog.add(log, 7393)
+      assert {:ok, log, %Entry{position: 5}} = QuestLog.add(log, 7393, 0, nil)
       assert [1000, 7393] = log |> QuestLog.available() |> Enum.map(&elem(&1, 0))
     end
 
@@ -429,7 +506,7 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestLogTest do
     test "a changed quest keeps the replaced quest's slot" do
       log = %{1000 => entry(:active, [], 0), 8000 => entry(:active, [0, 0], 1)}
 
-      assert {:ok, log, %Entry{position: 0}} = QuestLog.change(log, 1000, 7393)
+      assert {:ok, log, %Entry{position: 0}} = QuestLog.change(log, 1000, 7393, 0, nil)
       assert [7393, 8000] = log |> QuestLog.available() |> Enum.map(&elem(&1, 0))
     end
 

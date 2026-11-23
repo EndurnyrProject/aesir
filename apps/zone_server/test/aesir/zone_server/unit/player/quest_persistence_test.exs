@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestPersistenceTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.CharacterQuest
   alias Aesir.ZoneServer.Unit.Player.QuestLog.Entry
+  alias Aesir.ZoneServer.Unit.Player.QuestLog.Giver
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
 
   setup do
@@ -65,7 +66,13 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestPersistenceTest do
       state = %{game_state: %{character_id: character.id, quest_log: %{}}}
 
       assert QuestPersistence.load_on_spawn(state).game_state.quest_log == %{
-               1100 => %Entry{state: :active, counts: [3, 0, 0], deadline: nil, position: 0}
+               1100 => %Entry{
+                 state: :active,
+                 counts: [3, 0, 0],
+                 deadline: 0,
+                 giver: nil,
+                 position: 0
+               }
              }
     end
 
@@ -83,7 +90,7 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestPersistenceTest do
 
   describe "upsert/2" do
     test "round-trips state and counts through load_on_spawn/1", %{character: character} do
-      entry = %Entry{state: :active, counts: [5, 1, 0], deadline: nil}
+      entry = %Entry{state: :active, counts: [5, 1, 0], deadline: 0}
 
       :ok = QuestPersistence.upsert(character.id, {1100, entry})
 
@@ -92,6 +99,35 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestPersistenceTest do
       assert QuestPersistence.load_on_spawn(state).game_state.quest_log == %{
                1100 => %{entry | position: 0}
              }
+    end
+
+    test "round-trips a deadline and a giver, and replaces them on conflict", %{
+      character: character
+    } do
+      giver = %Giver{name: "Kafra", map: "prontera", x: 150, y: 180}
+      entry = %Entry{state: :active, counts: [1, 0, 0], deadline: 1_800_000_000, giver: giver}
+      state = %{game_state: %{character_id: character.id, quest_log: %{}}}
+
+      :ok = QuestPersistence.upsert(character.id, {1100, entry})
+
+      assert %{1100 => %Entry{deadline: 1_800_000_000, giver: ^giver}} =
+               QuestPersistence.load_on_spawn(state).game_state.quest_log
+
+      :ok = QuestPersistence.upsert(character.id, {1100, %{entry | deadline: 0, giver: nil}})
+
+      assert %{1100 => %Entry{deadline: 0, giver: nil}} =
+               QuestPersistence.load_on_spawn(state).game_state.quest_log
+    end
+
+    test "a row with nil giver columns loads giver: nil", %{character: character} do
+      %CharacterQuest{}
+      |> CharacterQuest.changeset(%{char_id: character.id, quest_id: 1100, state: "active"})
+      |> Repo.insert!()
+
+      state = %{game_state: %{character_id: character.id, quest_log: %{}}}
+
+      assert %{1100 => %Entry{giver: nil, deadline: 0}} =
+               QuestPersistence.load_on_spawn(state).game_state.quest_log
     end
 
     test "a second upsert updates the row in place instead of duplicating it", %{

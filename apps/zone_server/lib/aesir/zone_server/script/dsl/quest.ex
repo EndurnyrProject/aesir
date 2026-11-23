@@ -40,7 +40,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Quest do
   @doc """
   Atomically swaps active/inactive quest `old_id` for fresh quest `new_id`
   through the session seam (`changequest`, `quest_change`). Halts on any of
-  `QuestLog.change/3`'s error reasons, leaving the log untouched.
+  `QuestLog.change/5`'s error reasons, leaving the log untouched.
   """
   @spec changequest(Ctx.t(), QuestLog.quest_id(), QuestLog.quest_id()) :: Ctx.t()
   def changequest(%Ctx{status: {:error, _}} = ctx, _old_id, _new_id), do: ctx
@@ -50,7 +50,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Quest do
 
   @doc """
   Checks quest `quest_id`'s state, `mode` defaulting to `:havequest`
-  (`checkquest`, `QuestLog.check/3`). Pure read over the ctx snapshot; a
+  (`checkquest`, `QuestLog.check/4`). Pure read over the ctx snapshot; a
   never-started quest returns `-1` - the normal "not started yet" branch, not
   an error.
   """
@@ -62,10 +62,10 @@ defmodule Aesir.ZoneServer.Script.Dsl.Quest do
     do: no_player!(ctx, "checkquest/3")
 
   def checkquest(%Ctx{game_state: gs}, quest_id, mode),
-    do: QuestLog.check(gs.quest_log, quest_id, mode)
+    do: QuestLog.check(gs.quest_log, quest_id, mode, System.os_time(:second))
 
   @doc """
-  Alias of `checkquest/2,3` over the same `QuestLog.check/3` core (rAthena
+  Alias of `checkquest/2,3` over the same `QuestLog.check/4` core (rAthena
   `questprogress`).
   """
   @spec questprogress(Ctx.t(), QuestLog.quest_id(), :havequest | :playtime | :hunting) ::

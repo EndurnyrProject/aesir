@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestPersistence do
   alias Aesir.Commons.Models.CharacterQuest
   alias Aesir.Repo
   alias Aesir.ZoneServer.Unit.Player.QuestLog.Entry
+  alias Aesir.ZoneServer.Unit.Player.QuestLog.Giver
 
   @task_supervisor Aesir.ZoneServer.TaskSupervisor
 
@@ -66,19 +67,35 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestPersistence do
   defp do_upsert(char_id, quest_id, %Entry{} = entry) do
     [count1, count2, count3] = padded_counts(entry.counts)
 
-    attrs = %{
-      char_id: char_id,
-      quest_id: quest_id,
-      state: Atom.to_string(entry.state),
-      count1: count1,
-      count2: count2,
-      count3: count3
-    }
+    attrs =
+      %{
+        char_id: char_id,
+        quest_id: quest_id,
+        state: Atom.to_string(entry.state),
+        count1: count1,
+        count2: count2,
+        count3: count3,
+        deadline: deadline_to_db(entry.deadline)
+      }
+      |> Map.merge(giver_to_db(entry.giver))
 
     %CharacterQuest{}
     |> CharacterQuest.changeset(attrs)
     |> Repo.insert(
-      on_conflict: {:replace, [:state, :count1, :count2, :count3, :updated_at]},
+      on_conflict:
+        {:replace,
+         [
+           :state,
+           :count1,
+           :count2,
+           :count3,
+           :deadline,
+           :giver_name,
+           :giver_map,
+           :giver_x,
+           :giver_y,
+           :updated_at
+         ]},
       conflict_target: [:char_id, :quest_id]
     )
     |> case do
@@ -96,10 +113,27 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestPersistence do
     %Entry{
       state: String.to_existing_atom(row.state),
       counts: [row.count1, row.count2, row.count3],
-      deadline: nil,
+      deadline: deadline_from_db(row.deadline),
+      giver: giver_from_db(row),
       position: position
     }
   end
+
+  defp deadline_to_db(0), do: nil
+  defp deadline_to_db(unix), do: DateTime.from_unix!(unix)
+
+  defp deadline_from_db(nil), do: 0
+  defp deadline_from_db(%DateTime{} = deadline), do: DateTime.to_unix(deadline)
+
+  defp giver_to_db(nil), do: %{giver_name: nil, giver_map: nil, giver_x: nil, giver_y: nil}
+
+  defp giver_to_db(%Giver{} = giver),
+    do: %{giver_name: giver.name, giver_map: giver.map, giver_x: giver.x, giver_y: giver.y}
+
+  defp giver_from_db(%CharacterQuest{giver_name: nil}), do: nil
+
+  defp giver_from_db(%CharacterQuest{} = row),
+    do: %Giver{name: row.giver_name, map: row.giver_map, x: row.giver_x, y: row.giver_y}
 
   @spec padded_counts([non_neg_integer()]) :: [non_neg_integer()]
   defp padded_counts(counts), do: counts |> Enum.concat([0, 0, 0]) |> Enum.take(3)
