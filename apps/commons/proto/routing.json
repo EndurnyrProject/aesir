@@ -229,6 +229,7 @@
     {"field": 239, "tag": "pet_private_state", "message": "PetPrivateState", "direction": "s2c", "servers": ["zone"], "channel": "bulk"},
     {"field": 240, "tag": "pet_state_change", "message": "PetStateChange", "direction": "s2c", "servers": ["zone"], "channel": "world"},
     {"field": 241, "tag": "pet_emotion", "message": "PetEmotion", "direction": "s2c", "servers": ["zone"], "channel": "world"},
-    {"field": 242, "tag": "pet_food_result", "message": "PetFoodResult", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"}
+    {"field": 242, "tag": "pet_food_result", "message": "PetFoodResult", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
+    {"field": 243, "tag": "quest_active_request", "message": "QuestActiveRequest", "direction": "c2s", "servers": ["zone"]}
   ]
 }

@@ -6,10 +6,12 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestViewTest do
 
   alias Aesir.Net.Envelope
   alias Aesir.Net.QuestEntry
+  alias Aesir.Net.QuestGiver
   alias Aesir.Net.QuestHuntProgress
   alias Aesir.Net.QuestList
   alias Aesir.Net.QuestObjective
   alias Aesir.ZoneServer.Mmo.QuestManagement.Quests
+  alias Aesir.ZoneServer.Unit.Player.QuestLog
   alias Aesir.ZoneServer.Unit.Player.QuestLog.Entry
   alias Aesir.ZoneServer.Unit.Player.QuestView
 
@@ -24,8 +26,29 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestViewTest do
         targets: [%{mob_id: 2314, count: 10}, %{mob_id: 2311, count: 10}]
       )
 
+    labelled =
+      build(:quest_definition,
+        id: 5000,
+        title: "Snake Hunt",
+        targets: [
+          %{mob_id: 1025, count: 5},
+          %{mob_id: 1002, count: 5},
+          %{mob_id: 99_999_999, count: 1},
+          %{
+            min_level: 20,
+            max_level: 40,
+            race: "demihuman",
+            size: "large",
+            element: "fire",
+            map: "prt_fild08",
+            count: 30
+          }
+        ]
+      )
+
     stub(Quests, :by_id, fn
       1000 -> {:ok, targetless}
+      5000 -> {:ok, labelled}
       7393 -> {:ok, hunt}
       _id -> :error
     end)
@@ -59,6 +82,58 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestViewTest do
       assert %Aesir.Net.QuestAdded{
                quest: %QuestEntry{quest_id: 4242, state: 1, objectives: []}
              } = QuestView.quest_added(4242, entry(:active, [0]))
+    end
+  end
+
+  describe "quest_added/2 labels" do
+    test "encodes the deadline, the giver and the definition title" do
+      giver = %QuestLog.Giver{name: "Guard", map: "prontera", x: 150, y: 180}
+      entry = %Entry{state: :active, counts: [], deadline: 1_900_000_000, giver: giver}
+
+      assert %Aesir.Net.QuestAdded{
+               quest: %QuestEntry{
+                 deadline: 1_900_000_000,
+                 giver: %QuestGiver{name: "Guard", map: "prontera", x: 150, y: 180},
+                 title: "Snake Hunt"
+               }
+             } = QuestView.quest_added(5000, entry)
+    end
+
+    test "an unlimited quest with no giver encodes deadline 0 and giver nil" do
+      assert %Aesir.Net.QuestAdded{
+               quest: %QuestEntry{deadline: 0, giver: nil, title: "Snake Hunt"}
+             } =
+               QuestView.quest_added(5000, entry(:active, []))
+    end
+
+    test "a mob target is named by its Japanese name, else its name, else empty" do
+      assert %Aesir.Net.QuestAdded{
+               quest: %QuestEntry{
+                 objectives: [
+                   %QuestObjective{mob_id: 1025, mob_name: "Snake", min_level: 0, race: ""},
+                   %QuestObjective{mob_id: 1002, mob_name: "Poring"},
+                   %QuestObjective{mob_id: 99_999_999, mob_name: ""} | _
+                 ]
+               }
+             } = QuestView.quest_added(5000, entry(:active, [0, 0, 0, 0]))
+    end
+
+    test "a filter target carries its bounds and an empty mob name" do
+      assert %Aesir.Net.QuestAdded{quest: %QuestEntry{objectives: objectives}} =
+               QuestView.quest_added(5000, entry(:active, [0, 0, 0, 7]))
+
+      assert %QuestObjective{
+               mob_id: 0,
+               mob_name: "",
+               needed: 30,
+               current: 7,
+               min_level: 20,
+               max_level: 40,
+               race: "demihuman",
+               size: "large",
+               element: "fire",
+               map: "prt_fild08"
+             } = List.last(objectives)
     end
   end
 
@@ -194,6 +269,43 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestViewTest do
                        ]
                      }
                    }}
+              }} = Envelope.decode(IO.iodata_to_binary(iodata))
+    end
+
+    test "quest_added keeps its deadline, giver and objective labels on the wire" do
+      giver = %QuestLog.Giver{name: "Guard", map: "prontera", x: 150, y: 180}
+      entry = %Entry{state: :active, counts: [0, 0, 0, 7], deadline: 1_900_000_000, giver: giver}
+      env = %Envelope{body: {:quest_added, QuestView.quest_added(5000, entry)}}
+
+      {:ok, iodata, _size} = Envelope.encode(env)
+
+      assert {:ok,
+              %Envelope{
+                body:
+                  {:quest_added,
+                   %Aesir.Net.QuestAdded{
+                     quest: %QuestEntry{
+                       deadline: 1_900_000_000,
+                       giver: %QuestGiver{name: "Guard", map: "prontera", x: 150, y: 180},
+                       title: "Snake Hunt",
+                       objectives: [%QuestObjective{mob_name: "Snake"} | _]
+                     }
+                   }}
+              }} = Envelope.decode(IO.iodata_to_binary(iodata))
+    end
+
+    test "quest_active_request round-trips through the oneof" do
+      env = %Envelope{
+        body: {:quest_active_request, %Aesir.Net.QuestActiveRequest{quest_id: 7393, active: true}}
+      }
+
+      {:ok, iodata, _size} = Envelope.encode(env)
+
+      assert {:ok,
+              %Envelope{
+                body:
+                  {:quest_active_request,
+                   %Aesir.Net.QuestActiveRequest{quest_id: 7393, active: true}}
               }} = Envelope.decode(IO.iodata_to_binary(iodata))
     end
 

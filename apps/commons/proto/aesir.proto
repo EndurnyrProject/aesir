@@ -310,6 +310,7 @@ message Envelope {
     PetStateChange pet_state_change = 240;  // s2c zone world
     PetEmotion pet_emotion = 241;  // s2c zone world
     PetFoodResult pet_food_result = 242;  // s2c zone gameplay
+    QuestActiveRequest quest_active_request = 243;  // c2s zone
   }
 }
 
@@ -2581,11 +2582,34 @@ message Announcement {
 // One hunt objective within a QuestEntry, joining the persisted counter with
 // the quest definition's target so the client needs no quest database of its
 // own. `needed` is copied from the quest definition; `current` is clamped
-// by the server.
+// by the server. `mob_id` is 0 for a filter-only target, which kills any
+// monster passing the filter fields below; a filter field of 0 or "" means
+// that filter is absent.
 message QuestObjective {
   uint32 mob_id = 1;
   uint32 needed = 2;
   uint32 current = 3;
+  // The mob's Japanese name (what rAthena's clif sends), else its name. Empty
+  // when `mob_id` is 0 or unknown.
+  string mob_name = 4;
+  // Lowest and highest monster level that counts. 0 = no bound.
+  uint32 min_level = 5;
+  uint32 max_level = 6;
+  // quest_db spellings ("demihuman", "all", "large", "fire"). Empty = any.
+  string race = 7;
+  string size = 8;
+  string element = 9;
+  // Map the kill must happen on. Empty = any.
+  string map = 10;
+}
+
+// The NPC whose script set a quest, kept so the client can point back to it.
+message QuestGiver {
+  // Display name with rAthena's "#unique" suffix stripped; may be empty.
+  string name = 1;
+  string map = 2;
+  uint32 x = 3;
+  uint32 y = 4;
 }
 
 // One quest-log row within a QuestList/QuestAdded. `state` mirrors rAthena's
@@ -2595,6 +2619,21 @@ message QuestEntry {
   uint32 quest_id = 1;
   uint32 state = 2;
   repeated QuestObjective objectives = 3;
+  // Unix seconds the quest expires (rAthena quest_log.time). 0 = no time limit.
+  int64 deadline = 4;
+  // Unset when the quest was set outside an NPC script.
+  QuestGiver giver = 5;
+  // The quest_db Title, the client's fallback text. Empty when the definition
+  // no longer resolves.
+  string title = 6;
+}
+
+// Client -> server, shelve (active = false) or resume (active = true) a quest
+// (replaces RO CZ_ACTIVE_QUEST 0x02b6). Acked with QuestStateChanged; a quest
+// that is complete or not in the log gets no reply, as in rAthena.
+message QuestActiveRequest {
+  uint32 quest_id = 1;
+  bool active = 2;
 }
 
 // Server -> client, the full quest log dump (sent on map load, mirrors InventoryList).

@@ -4,19 +4,22 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestView do
 
   Mirrors `InventoryView` for the quest domain: every builder joins the
   session's `QuestLog.Entry` counts with the quest's `QuestDefinition` targets
-  so the client receives `mob_id`/`needed`/`current` per objective and never
-  needs a quest database of its own. A quest whose definition no longer
-  resolves is sent with no objectives (persisted rows survive a trimmed
-  quest_db - see `QuestLog`).
+  so the client receives each objective's target, display labels and filters
+  and never needs a quest database of its own. A quest whose definition no
+  longer resolves is sent with no objectives and an empty title (persisted
+  rows survive a trimmed quest_db - see `QuestLog`).
   """
 
   alias Aesir.Net.QuestAdded
   alias Aesir.Net.QuestEntry
+  alias Aesir.Net.QuestGiver
   alias Aesir.Net.QuestHuntProgress
   alias Aesir.Net.QuestList
   alias Aesir.Net.QuestObjective
   alias Aesir.Net.QuestRemoved
   alias Aesir.Net.QuestStateChanged
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition
   alias Aesir.ZoneServer.Mmo.QuestManagement.Quests
   alias Aesir.ZoneServer.Unit.Player.QuestLog
@@ -76,30 +79,62 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestView do
   end
 
   @spec to_quest_entry(QuestLog.quest_id(), QuestLog.Entry.t()) :: QuestEntry.t()
-  defp to_quest_entry(quest_id, %QuestLog.Entry{state: state, counts: counts}) do
+  defp to_quest_entry(quest_id, %QuestLog.Entry{} = entry) do
+    definition = Quests.by_id(quest_id)
+
     %QuestEntry{
       quest_id: quest_id,
-      state: encode_state(state),
-      objectives: objectives(quest_id, counts)
+      state: encode_state(entry.state),
+      objectives: objectives(definition, entry.counts),
+      deadline: entry.deadline,
+      giver: giver(entry.giver),
+      title: title(definition)
     }
   end
 
-  @spec objectives(QuestLog.quest_id(), [non_neg_integer()]) :: [QuestObjective.t()]
-  defp objectives(quest_id, counts) do
-    case Quests.by_id(quest_id) do
-      {:ok, %QuestDefinition{targets: targets}} ->
-        targets
-        |> Enum.with_index()
-        |> Enum.map(fn {target, index} ->
-          %QuestObjective{
-            mob_id: Map.get(target, :mob_id) || 0,
-            needed: target.count,
-            current: Enum.at(counts, index, 0)
-          }
-        end)
+  @spec title({:ok, QuestDefinition.t()} | :error) :: String.t()
+  defp title({:ok, %QuestDefinition{title: title}}), do: title
+  defp title(:error), do: ""
 
-      :error ->
-        []
+  @spec giver(QuestLog.Giver.t() | nil) :: QuestGiver.t() | nil
+  defp giver(nil), do: nil
+
+  defp giver(%QuestLog.Giver{name: name, map: map, x: x, y: y}) do
+    %QuestGiver{name: name, map: map, x: x, y: y}
+  end
+
+  @spec objectives({:ok, QuestDefinition.t()} | :error, [non_neg_integer()]) ::
+          [QuestObjective.t()]
+  defp objectives({:ok, %QuestDefinition{targets: targets}}, counts) do
+    targets
+    |> Enum.with_index()
+    |> Enum.map(fn {target, index} ->
+      mob_id = Map.get(target, :mob_id) || 0
+
+      %QuestObjective{
+        mob_id: mob_id,
+        needed: target.count,
+        current: Enum.at(counts, index, 0),
+        mob_name: mob_name(mob_id),
+        min_level: Map.get(target, :min_level) || 0,
+        max_level: Map.get(target, :max_level) || 0,
+        race: Map.get(target, :race) || "",
+        size: Map.get(target, :size) || "",
+        element: Map.get(target, :element) || "",
+        map: Map.get(target, :map) || ""
+      }
+    end)
+  end
+
+  defp objectives(:error, _counts), do: []
+
+  @spec mob_name(non_neg_integer()) :: String.t()
+  defp mob_name(0), do: ""
+
+  defp mob_name(mob_id) do
+    case Mobs.by_id(mob_id) do
+      {:ok, %MobDefinition{japanese_name: japanese_name, name: name}} -> japanese_name || name
+      :error -> ""
     end
   end
 
