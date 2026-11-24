@@ -49277,6 +49277,1438 @@
     "source_hash": "a095a51a9e2e31865acab56042851f2ab1c4574cc6612d4edbb316f6fb59b0b4",
     "spawns": []
   },
+  "quests/quests_juperos.txt|floating|Monster1#1-1|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.Monster1",
+    "output_hash": "b3db4bbf84a86887e5b9fb1f6ec233c58da45bf749a96122ebcef44cfe543b64",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/monster1.ex",
+    "source_hash": "81f7bbc7e447f5faafeb98c44370737367317883477273ccd5f0df02887ef4d4",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Monster1#1-2|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.Monster10",
+    "output_hash": "b9291ce17dc02a438c540a44acc569a4b4348d9c534444ad2baad1dba9d72433",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/monster1_0.ex",
+    "source_hash": "cf06b4970c8a76188a357dba7b2343912db962e4b9468e6a29aa9673f3057c76",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Monster1#1-3|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.Monster11",
+    "output_hash": "f343c44e0d957832b94e55e8ce7d1eac6d21c4e54ecb182b885bf5883fb36593",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/monster1_1.ex",
+    "source_hash": "c3c9730932acb6583570282652722b0c4fff97060adbc1e3e9fc671d482eed74",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Monster1#1-4|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.Monster12",
+    "output_hash": "2a79df1f916eef8a613c200e26d31ad203eb87bdb521177bf82cc262973999be",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/monster1_2.ex",
+    "source_hash": "94078813f5152643309d5717ded3f3d8fa0bb78e603c6d4de13214bca7c868d5",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Monster1#2-1|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.Monster13",
+    "output_hash": "88a38db058079d9bfdf1f71456b34390b34adbeee2475444f89943cb2db0ccb2",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/monster1_3.ex",
+    "source_hash": "230e2a460dfe453f282b92e3a161951be8f529cbe1c70d9fc62e606867617e2a",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Monster1#2-2|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.Monster14",
+    "output_hash": "89e259751841e2031d526adc28662580a08abcdadb101c9b8098a1a394f64b47",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/monster1_4.ex",
+    "source_hash": "a8b58742c8ad3a62c06821290cc0647c7648b3cc8ee20e8af9a81d4394663b7d",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Monster1#2-3|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.Monster15",
+    "output_hash": "02016f39aa7fe50645787ffd438a829c746a2cd10d8dfbda5c4b87e7e749cf8c",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/monster1_5.ex",
+    "source_hash": "d49ab8eeec7e67f50346929b9bf1f6d5f7dfb4625a2f6d94bcd6d31f27d3a16b",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Monster1#2-4|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.Monster16",
+    "output_hash": "a2d74ff30719b764cd453a359b04fb64f3942d1f41580dbcc03a873dd0f2836d",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/monster1_6.ex",
+    "source_hash": "ea188aeca106686f64cc632872ce6194611b750dfc72dc0e10d1df50461e401e",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Monster2#1-1|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.Monster2",
+    "output_hash": "9a88e69a058c428d0a4319742dc3cf0587ea79764cb6a4bbc8803d59d2c99c0a",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/monster2.ex",
+    "source_hash": "e3229c9623c4ea38987661598ed4a59d61849350b225b7e12b76947c75a2d8b3",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Monster2#1-2|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.Monster20",
+    "output_hash": "71ae5621a061354ac751186ab02e1778b4a9b0d74c93dce05536436e7777a106",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/monster2_0.ex",
+    "source_hash": "cc37ed2b235d85032f185bdf9ea551cfea6623f55c8826b0b31ff6eff92a3d29",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Monster2#1-3|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.Monster21",
+    "output_hash": "08879e9268c0ef32b0085957b9edcb72ab7bb3a924433806e240594fd20e8e3b",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/monster2_1.ex",
+    "source_hash": "9b0caee7fec0d706f8f3e3973537ff2475bf2d220f0ba166d27ae74f9e503efa",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Monster2#1-4|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.Monster22",
+    "output_hash": "386dd275056ffd5c37bbb453dc7fd4a05bd71f935bf3aca23cd67785cf2fde08",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/monster2_2.ex",
+    "source_hash": "cfb821be5c578d03ea95497ecc8efefe6794bfb7f8e2a32f60097b0586700093",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Monster2#2-1|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.Monster23",
+    "output_hash": "72f343527d3a94b35d8930cdfb8fde74c96f567dc20188daa6d06e3cd304c432",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/monster2_3.ex",
+    "source_hash": "d8590299c4acc2ad02a1e96505330c9665f20f4cca3c12386892ca800f088246",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Monster2#2-2|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.Monster24",
+    "output_hash": "8a3caea36ef675d02875c891901acfb36dc49c494a29f968eaf72676c1d7684c",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/monster2_4.ex",
+    "source_hash": "282555a94c94d5893449ef229fbb764e7299d11cf465da673421ecb8907f9642",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Monster2#2-3|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.Monster25",
+    "output_hash": "0561841051d12e062e0bfb43540e9d09961d8390276faa865517db7c763479e0",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/monster2_5.ex",
+    "source_hash": "deb1a2cee077c99a8a83088889646c59c40954d25217b552e042589df7f42541",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Monster2#2-4|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.Monster26",
+    "output_hash": "bf418fb8e8638c18709c36fa1372be3361b1418923c67a92b30dcfb25d0e4312",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/monster2_6.ex",
+    "source_hash": "d0892349274a8d3b6006815a12d17bbc00577eed045bbda4ee1b4759a2871075",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Red Alarm On#1-1|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.RedAlarmOn",
+    "output_hash": "aff0c2fa1aece6ce98fab340d78401334cf57c70842742b251fefc3a0ee725b7",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/red_alarm_on.ex",
+    "source_hash": "51b3a7deb45995d483e3d9770252c519396422cb8bdac1b9c8c133a2390c4a22",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Red Alarm On#1-2|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.RedAlarmOn0",
+    "output_hash": "1c68aca3681235f7f478f220f0f7d65b1efc14cdb696498b1ca403ee5ee31b1f",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/red_alarm_on_0.ex",
+    "source_hash": "f01a5797efbed7e3b9bcc0270fee928b5b6531637d494ec38895491c97c46e1f",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Red Alarm On#1-3|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.RedAlarmOn1",
+    "output_hash": "8618ca0abbbd22ec1bf56768b1319ef7676f6f1a4c34b86341ad15fefd8a11f0",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/red_alarm_on_1.ex",
+    "source_hash": "e2c45c41b2e0782f3556063de59c084e878c4e93611d2ca5c46efa121ac014ba",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Red Alarm On#1-4|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.RedAlarmOn2",
+    "output_hash": "8fb83aefbc373a44c8302aae20bd53d997572599973679ce69db230f7b65b020",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/red_alarm_on_2.ex",
+    "source_hash": "8bb48cffd4c5e3e6189019f0897ac56e0cab2bd1e1a01a77a1d4334f02eec8cb",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Red Alarm On#2-1|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.RedAlarmOn3",
+    "output_hash": "b17bea2b245a992441a18fe2e164c705ef6ed2d59d038d45e56b6d5037274767",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/red_alarm_on_3.ex",
+    "source_hash": "1ac5c8e339c8b2098be9bd8e82ca21ee281547933ec7cbc14c8425db20b3c97c",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Red Alarm On#2-2|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.RedAlarmOn4",
+    "output_hash": "1f5809305a383e7318d948947c69999d6a1542f14891115140094f4ca4d0990d",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/red_alarm_on_4.ex",
+    "source_hash": "b7731c6e1b7f59510b7d24c92215b1a628df109c129f7b9c1723b903c1bb8330",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Red Alarm On#2-3|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.RedAlarmOn5",
+    "output_hash": "e5915774560ebc439e27b0a92d2a18a0549ac8ee195e9f45dac16fdff7228ec5",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/red_alarm_on_5.ex",
+    "source_hash": "ecc6220261d59c6d112bd20c2ade4d0ca196f85f3a55a535a8536a79157b5859",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|floating|Red Alarm On#2-4|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.RedAlarmOn6",
+    "output_hash": "15d11ee4f9211f5412b75f488f5355f5f2355652c31727e83eccc37313cab019",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_juperos/red_alarm_on_6.ex",
+    "source_hash": "491ac75357713c28f5488c0d5777ba897ae514bb10d54e2eaa4342ddfd5b5f5b",
+    "spawns": []
+  },
+  "quests/quests_juperos.txt|script|#hole#1-1|jupe_area1:88:224": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Hole",
+    "output_hash": "92e20518f52942d2c034d60c8cc4706255da27455be981eaa090fee0a88ef4c8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/hole.ex",
+    "source_hash": "740cd6991612c3909e34518672aaef126e09d3109420ddadfe342ec86cc1cc5e",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 88,
+        "y": 224,
+        "map": "jupe_area1",
+        "dir": 0,
+        "unique_name": "#hole#1-1",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|#hole#1-2|jupe_area1:25:238": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Hole25238",
+    "output_hash": "13a5e148bea079fa9b1b396e1526ba0e9e9bf3a0ff97d7d659d595e5a4e25cb1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/hole_25_238.ex",
+    "source_hash": "d5f2fca5ea944a858a9a0764ad3e0421be2afe38b2986717fc06df8655111c22",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 25,
+        "y": 238,
+        "map": "jupe_area1",
+        "dir": 0,
+        "unique_name": "#hole#1-2",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|#hole#1-3|jupe_area1:36:146": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Hole36146",
+    "output_hash": "fb49b37c92891128b72c07e252b7c34486ed92c2be8e2fa6c34738f5fad2a79c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/hole_36_146.ex",
+    "source_hash": "d937c65463e4011713c90b8fec518aedf9aa5813b8a3cbd3dbe5e5b45c61a159",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 36,
+        "y": 146,
+        "map": "jupe_area1",
+        "dir": 0,
+        "unique_name": "#hole#1-3",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|#hole#1-4|jupe_area1:50:49": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Hole5049",
+    "output_hash": "01d85121825c5fff370f11e8373669271a20306ab1321fb4aa8125c66f31630e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/hole_50_49.ex",
+    "source_hash": "211e125e53dd2cc9c15970cd019b031fc63427a84e46c5d36e6e0b8cb5e679e3",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 50,
+        "y": 49,
+        "map": "jupe_area1",
+        "dir": 0,
+        "unique_name": "#hole#1-4",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|#hole#2-1|jupe_area2:74:224": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Hole74224",
+    "output_hash": "688439b065187b25373edbcc99b05f901a22b462732235b3ff776a640280f30f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/hole_74_224.ex",
+    "source_hash": "64b8f9b2a9dfc1d43d46cb4c29c99cdeba73293e848ca5c0c2c350e87d49ab63",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 74,
+        "y": 224,
+        "map": "jupe_area2",
+        "dir": 0,
+        "unique_name": "#hole#2-1",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|#hole#2-2|jupe_area2:138:238": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Hole138238",
+    "output_hash": "a46320e70e374a50b3d6c6c080f685656e04c1319bb63a0e3c39ea7e638fac2b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/hole_138_238.ex",
+    "source_hash": "f8e32bdf833dfd953f88956878ead6b36645796c0475bfc9d5bcc27459910e48",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 138,
+        "y": 238,
+        "map": "jupe_area2",
+        "dir": 0,
+        "unique_name": "#hole#2-2",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|#hole#2-3|jupe_area2:127:146": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Hole127146",
+    "output_hash": "78f70fc9a80695cb43ae9d8882f56b8984fa899f65899c72ca06e16aa0f5962a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/hole_127_146.ex",
+    "source_hash": "2d6c10dd6cb8c85d5ba21d97d08c6801cee0d45039c0ebd641db858ad34042e6",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 127,
+        "y": 146,
+        "map": "jupe_area2",
+        "dir": 0,
+        "unique_name": "#hole#2-3",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|#hole#2-4|jupe_area2:113:49": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Hole11349",
+    "output_hash": "a33cf70716fe0b7bf72985ec60fe37fa5ddf2cb8186c29dd3be93e902fd28bd5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/hole_113_49.ex",
+    "source_hash": "5a55951590a0e58df7010441dc840ef47852a0f8d9bfc97b85346262cd9793c7",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 113,
+        "y": 49,
+        "map": "jupe_area2",
+        "dir": 0,
+        "unique_name": "#hole#2-4",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|3F Gate Switch#jupe|juperos_02:97:70": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.M3fGateSwitch",
+    "output_hash": "dc07fe9d50bd6a1c99dc0ede33f35296d25ee135cf5ad2d89d2bc714bf5a7040",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/3f_gate_switch.ex",
+    "source_hash": "22498832144a678d41ddfeb338a06beeb76cc02d2f47f78fcb414f2d269ac2d0",
+    "spawns": [
+      {
+        "name": "3F Gate Switch",
+        "scope": "shared",
+        "x": 97,
+        "y": 70,
+        "map": "juperos_02",
+        "dir": 0,
+        "unique_name": "3F Gate Switch#jupe",
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|4F Enter#ufe|jupe_ele:41:33": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.M4fEnter",
+    "output_hash": "4d1915f9b962e46afb10c16156276fbcc16845ac10503869877b7214c001b2b2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/4f_enter.ex",
+    "source_hash": "79b98f087c4bcef234de28884c871daef4b0af567a3c006a8d5f61ef20b2579a",
+    "spawns": [
+      {
+        "name": "4F Enter",
+        "scope": "shared",
+        "x": 41,
+        "y": 33,
+        "map": "jupe_ele",
+        "dir": 0,
+        "unique_name": "4F Enter#ufe",
+        "sprite": 45,
+        "trigger": [
+          4,
+          4
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Ambitious Hollgrehenn|yuno_in04:169:109": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.AmbitiousHollgrehenn",
+    "output_hash": "bafaa1bf045c4fc8a678a0f78692ec32c3b5bd2df7f250fc845d6d94bcc320af",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/ambitious_hollgrehenn.ex",
+    "source_hash": "28a210829ad13466eb11cf2fdad81d8b0a9fd7aa7b1ce7031c4546181e4ad365",
+    "spawns": [
+      {
+        "name": "Ambitious Hollgrehenn",
+        "scope": "shared",
+        "x": 169,
+        "y": 109,
+        "map": "yuno_in04",
+        "dir": 1,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Annihilation#ufe|jupe_ele_r:50:89": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Annihilation",
+    "output_hash": "0ef5cefdd0fd6e3ae1adf1ad52a4ca92690a6dbce410fef80f484ca3bf1c16f5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/annihilation.ex",
+    "source_hash": "b95bbd366b947caed61d00080542ad40bc65359f765da20f8206d8ecf30d6e77",
+    "spawns": [
+      {
+        "name": "Annihilation",
+        "scope": "shared",
+        "x": 50,
+        "y": 89,
+        "map": "jupe_ele_r",
+        "dir": 0,
+        "unique_name": "Annihilation#ufe",
+        "sprite": -1,
+        "trigger": [
+          35,
+          50
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Book#juperos|yuno_in04:188:118": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Book",
+    "output_hash": "5b4669c331b3a0c13da25cc313358467f30a501aa8786e18712479ae62675e8f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/book.ex",
+    "source_hash": "1b47395e789bb6185e4ed5e58b310bfbdc700934f6c38d271ad33e3e5f42c9c8",
+    "spawns": [
+      {
+        "name": "Book",
+        "scope": "shared",
+        "x": 188,
+        "y": 118,
+        "map": "yuno_in04",
+        "dir": 4,
+        "unique_name": "Book#juperos",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Bronze Statue#1|juperos_01:99:112": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.BronzeStatue",
+    "output_hash": "b7ac7d988a17969c8b23bde072f6e827e7c93b299a60eb6dab3d048499f317fc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/bronze_statue.ex",
+    "source_hash": "e96f3233221d7bde850d7dd90e24f54d8411677b1d444d31fab5bee76c86a37f",
+    "spawns": [
+      {
+        "name": "Bronze Statue",
+        "scope": "shared",
+        "x": 99,
+        "y": 112,
+        "map": "juperos_01",
+        "dir": 4,
+        "unique_name": "Bronze Statue#1",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Bronze Statue#2|juperos_01:99:71": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.BronzeStatue9971",
+    "output_hash": "e04a80aaaa5859a0afca3804b558876b426d2e2f107858e75a114b0eadfebd65",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/bronze_statue_99_71.ex",
+    "source_hash": "9d7846b62f3972fe476719ddb30a8fe499e5bf86cdeeed6defd09cdbd06e6df8",
+    "spawns": [
+      {
+        "name": "Bronze Statue",
+        "scope": "shared",
+        "x": 99,
+        "y": 71,
+        "map": "juperos_01",
+        "dir": 4,
+        "unique_name": "Bronze Statue#2",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Bundle of Files|yuno_in04:186:125": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.BundleOfFiles",
+    "output_hash": "3aa1bb9d05831b9320d31eb81567e697ab58cf2656637b3558524b629ec0d3b7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/bundle_of_files.ex",
+    "source_hash": "5218b2f4568e3ef035054f1a891154a4eb4d6f7199a2699eb666ad97356b08c9",
+    "spawns": [
+      {
+        "name": "Bundle of Files",
+        "scope": "shared",
+        "x": 186,
+        "y": 125,
+        "map": "yuno_in04",
+        "dir": 4,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Elevator Escape#ufe|jupe_ele_r:50:89": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.ElevatorEscape",
+    "output_hash": "df4a7efba108fe106885fe3a7805202114b6b40a967624e2696fb77660562ec0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/elevator_escape.ex",
+    "source_hash": "101dc7228e4c1a904465e7919b9b0abf235d773f84da6b331ca7efb79896fa4f",
+    "spawns": [
+      {
+        "name": "Elevator Escape",
+        "scope": "shared",
+        "x": 50,
+        "y": 89,
+        "map": "jupe_ele_r",
+        "dir": 0,
+        "unique_name": "Elevator Escape#ufe",
+        "sprite": -1,
+        "trigger": [
+          35,
+          50
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Elevator Guard1#ufe|jupe_ele_r:10:50": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.ElevatorGuard1",
+    "output_hash": "f3a8cb97e4c160a57c6a7ea4ad05b668fbc024deccddfb6853b24d06ccecabab",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/elevator_guard1.ex",
+    "source_hash": "9f14d175e5eab8923880da694c7d718a402482cfaec90ab498174d0d0f52d4fb",
+    "spawns": [
+      {
+        "name": "Elevator Guard1",
+        "scope": "shared",
+        "x": 10,
+        "y": 50,
+        "map": "jupe_ele_r",
+        "dir": 0,
+        "unique_name": "Elevator Guard1#ufe",
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Elevator On#ufe|jupe_ele_r:10:54": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.ElevatorOn",
+    "output_hash": "d16d32ecaadd8f68490575f408b86963f1fa60fd9126477ddd55fc587eae3e24",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/elevator_on.ex",
+    "source_hash": "054d28d21acd279bb8f24b54dc0a0c9302dd4232f9fa8bbd561242f65820c3dc",
+    "spawns": [
+      {
+        "name": "Elevator On",
+        "scope": "shared",
+        "x": 10,
+        "y": 54,
+        "map": "jupe_ele_r",
+        "dir": 0,
+        "unique_name": "Elevator On#ufe",
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Elevator Safety#ufe|jupe_ele_r:10:52": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.ElevatorSafety",
+    "output_hash": "159d1a6820598f7d8f371b3a0ae21c1bbafaa5b57f2ba48710b198b4dd32d516",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/elevator_safety.ex",
+    "source_hash": "28fbe68b19e448a9aaebc4f7cb76afc167b63d3137d8b98cfbe9eb28ad42884f",
+    "spawns": [
+      {
+        "name": "Elevator Safety",
+        "scope": "shared",
+        "x": 10,
+        "y": 52,
+        "map": "jupe_ele_r",
+        "dir": 0,
+        "unique_name": "Elevator Safety#ufe",
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Guard-1#ufe|jupe_ele:15:6": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Guard1",
+    "output_hash": "6950056202354863b1b4fe9a5a437431fd9eb6d69848e989d5f22dbb34822f32",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/guard_1.ex",
+    "source_hash": "5017bfc98af353582cbda498185f7dae22ad769608fa16c817adeb324e9aae3b",
+    "spawns": [
+      {
+        "name": "Guard-1",
+        "scope": "shared",
+        "x": 15,
+        "y": 6,
+        "map": "jupe_ele",
+        "dir": 1,
+        "unique_name": "Guard-1#ufe",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Guard-2#ufe|jupe_ele:16:6": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Guard2",
+    "output_hash": "86e10f691ece9ebbef9df57d84a0cded59f9bf8b0c16668c5eee612b7f114102",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/guard_2.ex",
+    "source_hash": "fa43fa911aef3131872b989d0d8fa1b271e42c8481b68cbeb47cf906db2619cb",
+    "spawns": [
+      {
+        "name": "Guard-2",
+        "scope": "shared",
+        "x": 16,
+        "y": 6,
+        "map": "jupe_ele",
+        "dir": 1,
+        "unique_name": "Guard-2#ufe",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Guard-3#ufe|jupe_ele:17:6": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Guard3",
+    "output_hash": "4b338e5b9107c596de033070e312382e7ef823b8f3627e3dc9ee9e43ebc471ca",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/guard_3.ex",
+    "source_hash": "d061cd4c1a50188fe3c6f5f84a8b6c2a30d568884738c75c79ce84828ca3e991",
+    "spawns": [
+      {
+        "name": "Guard-3",
+        "scope": "shared",
+        "x": 17,
+        "y": 6,
+        "map": "jupe_ele",
+        "dir": 1,
+        "unique_name": "Guard-3#ufe",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Guard-4#ufe|jupe_ele:18:6": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Guard4",
+    "output_hash": "77c330afd8e35119adf140ccda942d7767cb1e2e4f686c7e7f706f40c7fdc867",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/guard_4.ex",
+    "source_hash": "a0918c26fd3813a72e8418348636b7abf20b8307d9b45ea9750827db1bf81c64",
+    "spawns": [
+      {
+        "name": "Guard-4",
+        "scope": "shared",
+        "x": 18,
+        "y": 6,
+        "map": "jupe_ele",
+        "dir": 1,
+        "unique_name": "Guard-4#ufe",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|GuardEnd#ufe|jupe_ele:19:6": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Guardend",
+    "output_hash": "3116678e2de0d1496704c908888d948a227013ec46cf9e601f9601b278b8c2b5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/guardend.ex",
+    "source_hash": "0ed4a698571162c4483ab98c5d98c9cc2fb3f441cd4dd161cd41fac7b167bc2d",
+    "spawns": [
+      {
+        "name": "GuardEnd",
+        "scope": "shared",
+        "x": 19,
+        "y": 6,
+        "map": "jupe_ele",
+        "dir": 1,
+        "unique_name": "GuardEnd#ufe",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Hamerun, Rat Hunter|yuno_in04:111:108": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.HamerunRatHunter",
+    "output_hash": "e4e4e221c9d6ec727af98fbf95dcc8b205ba4a58a57f1c60e870265c77aa49bb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/hamerun_rat_hunter.ex",
+    "source_hash": "27ec7be4848f64a43ebdc64aedd04b438d11a88e378f1284fea1926bfe88fea4",
+    "spawns": [
+      {
+        "name": "Hamerun, Rat Hunter",
+        "scope": "shared",
+        "x": 111,
+        "y": 108,
+        "map": "yuno_in04",
+        "dir": 1,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Juperos Manager|sec_in02:39:167": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.JuperosManager",
+    "output_hash": "ce262222d2ba74674f927854cf8f045667e52e6985c715023cfc546da3e091a4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/juperos_manager.ex",
+    "source_hash": "dfe663a62962ff8289edddaed47f2def1e995f1bc74924089ea438e135c7cef2",
+    "spawns": [
+      {
+        "name": "Juperos Manager",
+        "scope": "shared",
+        "x": 39,
+        "y": 167,
+        "map": "sec_in02",
+        "dir": 0,
+        "sprite": 864
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Lever#ufe2|jupe_area2:51:162": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Lever51162",
+    "output_hash": "f73d9cc6dda757cd109ad02b8f98676eff2e132beac6f6133a34caa5d9b1c885",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/lever_51_162.ex",
+    "source_hash": "648e75409e983ce3a3bafff9103c6c86f5b994a824e931a2cd4d2b4fb8ef4045",
+    "spawns": [
+      {
+        "name": "Lever",
+        "scope": "shared",
+        "x": 51,
+        "y": 162,
+        "map": "jupe_area2",
+        "dir": 0,
+        "unique_name": "Lever#ufe2",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Lever#ufe|jupe_area1:112:162": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Lever",
+    "output_hash": "a886cec879ed77cb68f389f00fc84bc8d3430dd2823989a0547cf6039b27cfd1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/lever.ex",
+    "source_hash": "00eb91463534ffadf8bfc47532282f0d5e65f5f565c3dda6a615030a011a8dd1",
+    "spawns": [
+      {
+        "name": "Lever",
+        "scope": "shared",
+        "x": 112,
+        "y": 162,
+        "map": "jupe_area1",
+        "dir": 0,
+        "unique_name": "Lever#ufe",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|LeverWarp#ufe2|jupe_area2:46:157": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Leverwarp46157",
+    "output_hash": "1c82e5afca16f97f8c4fa66ca6b118be961c223b099e0c5007f41255aefec317",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/leverwarp_46_157.ex",
+    "source_hash": "ebfe71dd1df72d5e2d3ae6c9bac959d3385b0e95e9409e96bc98c876e50ab468",
+    "spawns": [
+      {
+        "name": "LeverWarp",
+        "scope": "shared",
+        "x": 46,
+        "y": 157,
+        "map": "jupe_area2",
+        "dir": 0,
+        "unique_name": "LeverWarp#ufe2",
+        "sprite": 139,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|LeverWarp#ufe|jupe_area1:117:157": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Leverwarp",
+    "output_hash": "3b103d498a515492822e5933f571ba58c4b38e1b88a2151040bfd727102d7d61",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/leverwarp.ex",
+    "source_hash": "5d3b282c802fa7fc77e820b4d138c9e7bbd37c30f55ac3342c3c54b424e1cb4e",
+    "spawns": [
+      {
+        "name": "LeverWarp",
+        "scope": "shared",
+        "x": 117,
+        "y": 157,
+        "map": "jupe_area1",
+        "dir": 0,
+        "unique_name": "LeverWarp#ufe",
+        "sprite": 139,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Machine Statue|juperos_01:215:127": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.MachineStatue",
+    "output_hash": "e43ed2d83249c14e1e01eb1b07592ea741e2817ca79688c58833ceec362f9156",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/machine_statue.ex",
+    "source_hash": "18745ff16fd5e60a951ea2cc6686a7111388e7eb694edc591f0981b97b72e139",
+    "spawns": [
+      {
+        "name": "Machine Statue",
+        "scope": "shared",
+        "x": 215,
+        "y": 127,
+        "map": "juperos_01",
+        "dir": 4,
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Paper|yuno_in04:118:116": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Paper",
+    "output_hash": "b66f7ddcc05d8669824e16691abeca4d3943f27e8ba4babbc31bd26a9b9c9cd0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/paper.ex",
+    "source_hash": "ee40817806d8ff1824eddfe8871b67458d6d31a12091e055eaa60c588ebca269",
+    "spawns": [
+      {
+        "name": "Paper",
+        "scope": "shared",
+        "x": 118,
+        "y": 116,
+        "map": "yuno_in04",
+        "dir": 4,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Penniless Hollgrehenn|yuno_in04:174:111": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.PennilessHollgrehenn",
+    "output_hash": "2b67666dab7f8b238f9de0593eafdbf9cdaf5ec9466ad73d1b3332cc72aa1354",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/penniless_hollgrehenn.ex",
+    "source_hash": "3e1c587e1b225d71ecc045b16593bf5fd4b602bae0589db7e498f0412956d792",
+    "spawns": [
+      {
+        "name": "Penniless Hollgrehenn",
+        "scope": "shared",
+        "x": 174,
+        "y": 111,
+        "map": "yuno_in04",
+        "dir": 1,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Popular Feasts|yuno_in04:102:106": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.PopularFeasts",
+    "output_hash": "06b011b15bc6390b4aa50d1dced6661ae5a925501edb74c34c753fdfec3cdff7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/popular_feasts.ex",
+    "source_hash": "e95f807c7ee82df629bc8820afc508b950c7b580a57fc142bebf7e1e868d34d4",
+    "spawns": [
+      {
+        "name": "Popular Feasts",
+        "scope": "shared",
+        "x": 102,
+        "y": 106,
+        "map": "yuno_in04",
+        "dir": 1,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Red Alarm#1-1|jupe_area1:47:259": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.RedAlarm",
+    "output_hash": "45118ae048a245722da8b1006d93644aef90d373aa4e4249c46d0eaae1cc26f2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/red_alarm.ex",
+    "source_hash": "2f730d08b9f191118cf4ffb86b4c618f2f898583069dfc18fc590c51c9774115",
+    "spawns": [
+      {
+        "name": "Red Alarm",
+        "scope": "shared",
+        "x": 47,
+        "y": 259,
+        "map": "jupe_area1",
+        "dir": 0,
+        "unique_name": "Red Alarm#1-1",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Red Alarm#1-2|jupe_area1:21:191": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.RedAlarm21191",
+    "output_hash": "e29fc41c41b0309d312849575efb43f00d2ebde7e4e9dcc5ebfa5f39da46a257",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/red_alarm_21_191.ex",
+    "source_hash": "5db6882070819392350f058073d7c0e54f7adf5c408289a3b96a12920d1e5be1",
+    "spawns": [
+      {
+        "name": "Red Alarm",
+        "scope": "shared",
+        "x": 21,
+        "y": 191,
+        "map": "jupe_area1",
+        "dir": 0,
+        "unique_name": "Red Alarm#1-2",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Red Alarm#1-3|jupe_area1:33:105": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.RedAlarm33105",
+    "output_hash": "e5e31a11c008fb2c17107dc44a7a3561358d36356566b6f18bd2fe60ec3c7374",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/red_alarm_33_105.ex",
+    "source_hash": "21e1b3a2c53b007b8cea46ebd88520140fc3ac572d32853dd4145768e66d31a6",
+    "spawns": [
+      {
+        "name": "Red Alarm",
+        "scope": "shared",
+        "x": 33,
+        "y": 105,
+        "map": "jupe_area1",
+        "dir": 0,
+        "unique_name": "Red Alarm#1-3",
+        "sprite": -1,
+        "trigger": [
+          0,
+          4
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Red Alarm#1-4|jupe_area1:83:157": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.RedAlarm83157",
+    "output_hash": "68afddd108a4c0ee5c007e34eedd80f72f87cbf762a571c347502fd4e41836bc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/red_alarm_83_157.ex",
+    "source_hash": "2b372bf8ee4472126a0c004eb235b426a04963f949d2124c1e5e144ae6cabd6d",
+    "spawns": [
+      {
+        "name": "Red Alarm",
+        "scope": "shared",
+        "x": 83,
+        "y": 157,
+        "map": "jupe_area1",
+        "dir": 0,
+        "unique_name": "Red Alarm#1-4",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Red Alarm#2-1|jupe_area2:116:259": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.RedAlarm116259",
+    "output_hash": "123f940d24c5395bab56c7f928df367150ff28a536804520c04083f2932cd02f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/red_alarm_116_259.ex",
+    "source_hash": "463a29ff27624a8a5bfe4d8fea34ad88f45426a617e8cb8b473c26fc193bac5f",
+    "spawns": [
+      {
+        "name": "Red Alarm",
+        "scope": "shared",
+        "x": 116,
+        "y": 259,
+        "map": "jupe_area2",
+        "dir": 0,
+        "unique_name": "Red Alarm#2-1",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Red Alarm#2-2|jupe_area2:142:191": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.RedAlarm142191",
+    "output_hash": "3c30215270dd282d41ba7fde7524056f7f3f69a2b205a45b105c44374c563f3d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/red_alarm_142_191.ex",
+    "source_hash": "5d9eb4d8ee3513950cd844c8483df42de5cf2d97af0f4e9ce4b6a40110ac5bce",
+    "spawns": [
+      {
+        "name": "Red Alarm",
+        "scope": "shared",
+        "x": 142,
+        "y": 191,
+        "map": "jupe_area2",
+        "dir": 0,
+        "unique_name": "Red Alarm#2-2",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Red Alarm#2-3|jupe_area2:130:105": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.RedAlarm130105",
+    "output_hash": "b524051596adf60c0bf9003185f385f7ddac97608fa2bb237197be3a085df78a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/red_alarm_130_105.ex",
+    "source_hash": "c4120651b9e0e827926914c54553f18d84d3dc8bb056cdc94b927a8ef0c70323",
+    "spawns": [
+      {
+        "name": "Red Alarm",
+        "scope": "shared",
+        "x": 130,
+        "y": 105,
+        "map": "jupe_area2",
+        "dir": 0,
+        "unique_name": "Red Alarm#2-3",
+        "sprite": -1,
+        "trigger": [
+          0,
+          4
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Red Alarm#2-4|jupe_area2:80:157": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.RedAlarm80157",
+    "output_hash": "8a72f61e813c837efd5050653852a86d8d4adbfa22913d9874c15e1cdd789182",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/red_alarm_80_157.ex",
+    "source_hash": "6dcd9a3b5def9b0312f07e7ce60e9640a8366843821a5083fb42eb5dedc93848",
+    "spawns": [
+      {
+        "name": "Red Alarm",
+        "scope": "shared",
+        "x": 80,
+        "y": 157,
+        "map": "jupe_area2",
+        "dir": 0,
+        "unique_name": "Red Alarm#2-4",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Red Book|yuno_in04:167:127": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.RedBook",
+    "output_hash": "869eb9e1371c4a62b3a0bfd346101e1578322efed70fd1fa7b5f435d9234bab0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/red_book.ex",
+    "source_hash": "9519d43ba474f1609b97463199bf678edf76939ddaf064c976db53ecf5d7c17e",
+    "spawns": [
+      {
+        "name": "Red Book",
+        "scope": "shared",
+        "x": 167,
+        "y": 127,
+        "map": "yuno_in04",
+        "dir": 1,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Restricted Area#jupe|juperos_02:130:149": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.RestrictedArea",
+    "output_hash": "a86588e153662e8e8b49fd243245eca0106518449f2c56f7826795c469ddf1ce",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/restricted_area.ex",
+    "source_hash": "1ae39e86a2835396caf1f96891dbeda3459351f6ec93475f5ce8749636bb46e6",
+    "spawns": [
+      {
+        "name": "Restricted Area",
+        "scope": "shared",
+        "x": 130,
+        "y": 149,
+        "map": "juperos_02",
+        "dir": 0,
+        "unique_name": "Restricted Area#jupe",
+        "sprite": 139,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Scholar|yuno_in04:190:125": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Scholar",
+    "output_hash": "c58f47e99d401fc513713320284fc307aba5990b3b178d79313433a41d66d3cc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/scholar.ex",
+    "source_hash": "869236dec2a17db025695ad935c47959cd57c2ce61de86120c700e530185e976",
+    "spawns": [
+      {
+        "name": "Scholar",
+        "scope": "shared",
+        "x": 190,
+        "y": 125,
+        "map": "yuno_in04",
+        "dir": 4,
+        "sprite": 700
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Scroll|yuno_in04:121:109": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Scroll",
+    "output_hash": "90eb236e31a6b0bdf427861e29ab13146ae1549f287a7214ecd209f147e67e9e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/scroll.ex",
+    "source_hash": "055b09dd10142e4770b4f7fd349eb508256af0f81a9b72b589e86cf24f192abb",
+    "spawns": [
+      {
+        "name": "Scroll",
+        "scope": "shared",
+        "x": 121,
+        "y": 109,
+        "map": "yuno_in04",
+        "dir": 1,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Sculpture|juperos_01:79:92": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Sculpture",
+    "output_hash": "71741ab326e5b597ff3bbcde321811bcc18fd3c14a01a1119d31f97f4e98d021",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/sculpture.ex",
+    "source_hash": "f37aea38ac5f13391be0b9c920a18ecd7d5ec13b61f108a3bd206258062a3eef",
+    "spawns": [
+      {
+        "name": "Sculpture",
+        "scope": "shared",
+        "x": 79,
+        "y": 92,
+        "map": "juperos_01",
+        "dir": 4,
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Stone Statue|juperos_01:123:92": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.StoneStatue",
+    "output_hash": "89809445cea09b2aa4b4072293a87b1736b3269d46f740302f51385ebcde2804",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/stone_statue.ex",
+    "source_hash": "9f00220d2b957e012cfbc472115e448ebdd094c978fbce0d9b97491155e844bd",
+    "spawns": [
+      {
+        "name": "Stone Statue",
+        "scope": "shared",
+        "x": 123,
+        "y": 92,
+        "map": "juperos_01",
+        "dir": 4,
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Switch On#ufe|jupe_ele_r:51:98": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.SwitchOn",
+    "output_hash": "9705feaddd9bd7d06c5803b3abad88e558f3f5d35437981d8bd85dc5267073e1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/switch_on.ex",
+    "source_hash": "e6084cbb8577f6029caf8d0a5c4beec53551b6d3c9e83e32ab1f098b300a00bc",
+    "spawns": [
+      {
+        "name": "Switch On",
+        "scope": "shared",
+        "x": 51,
+        "y": 98,
+        "map": "jupe_ele_r",
+        "dir": 0,
+        "unique_name": "Switch On#ufe",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Switch#ufe|jupe_ele_r:51:98": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Switch",
+    "output_hash": "569850e307b470e2614ce7b396844b3d6ad045f09683dcbd4990a65341fccc4b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/switch.ex",
+    "source_hash": "2a3d18a45c9a99f2056cede7b56d732c88034b04bc2d54b762c9d06f149cc78e",
+    "spawns": [
+      {
+        "name": "Switch",
+        "scope": "shared",
+        "x": 51,
+        "y": 98,
+        "map": "jupe_ele_r",
+        "dir": 0,
+        "unique_name": "Switch#ufe",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|TimeOut#ufe|jupe_ele:14:6": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Timeout",
+    "output_hash": "09583a9f615db23ff8e6b376c2511797bc17c3783e34bc28fafe1d3001f981a5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/timeout.ex",
+    "source_hash": "1b64b9f5aaa6e74cbc35b2aa251d47a6b352b86b80d49ac7eed24ac935aa0991",
+    "spawns": [
+      {
+        "name": "TimeOut",
+        "scope": "shared",
+        "x": 14,
+        "y": 6,
+        "map": "jupe_ele",
+        "dir": 1,
+        "unique_name": "TimeOut#ufe",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Warp#1-1|jupe_area1:83:221": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Warp",
+    "output_hash": "81305fc6656575a98f214be826f9a1b34ae73ec31f58b6647558a58c8ec0dc4f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/warp.ex",
+    "source_hash": "0ca7957f0bdd8eb0ae60989fae007f09cfdbc42d5daca8b129461dbc970bd448",
+    "spawns": [
+      {
+        "name": "Warp",
+        "scope": "shared",
+        "x": 83,
+        "y": 221,
+        "map": "jupe_area1",
+        "dir": 0,
+        "unique_name": "Warp#1-1",
+        "sprite": 139,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Warp#1-2|jupe_area1:21:225": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Warp21225",
+    "output_hash": "8481ed94ba9a8be413cab14c4e97457e34d1111d7df216f33a2cc098641bc9e6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/warp_21_225.ex",
+    "source_hash": "799bc15d11f2fcbac7d816a3e199b646da5b9bdce038caf57157273ae24b3d3d",
+    "spawns": [
+      {
+        "name": "Warp",
+        "scope": "shared",
+        "x": 21,
+        "y": 225,
+        "map": "jupe_area1",
+        "dir": 0,
+        "unique_name": "Warp#1-2",
+        "sprite": 139,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Warp#1-3|jupe_area1:33:137": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Warp33137",
+    "output_hash": "3823af4ac59129c4b0daaae7c97eba2a7afdd68a5cbef56778cf2025071345d1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/warp_33_137.ex",
+    "source_hash": "bca5ca6b79b47831cc5466add57c029e539f5c4d83938e5d69a8cfa574cf17fe",
+    "spawns": [
+      {
+        "name": "Warp",
+        "scope": "shared",
+        "x": 33,
+        "y": 137,
+        "map": "jupe_area1",
+        "dir": 0,
+        "unique_name": "Warp#1-3",
+        "sprite": 139,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Warp#1-4|jupe_area1:57:53": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Warp5753",
+    "output_hash": "34dc69d9136874a3d57bfdf51a9aff3f2de8adc82af0ed7a9cbfd5b65cca5b48",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/warp_57_53.ex",
+    "source_hash": "330cab9f0ff9843ec2727f8b6bae1ddf02002b428c6416f642810cebeaa11872",
+    "spawns": [
+      {
+        "name": "Warp",
+        "scope": "shared",
+        "x": 57,
+        "y": 53,
+        "map": "jupe_area1",
+        "dir": 0,
+        "unique_name": "Warp#1-4",
+        "sprite": 139,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Warp#2-1|jupe_area2:80:221": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Warp80221",
+    "output_hash": "cf3a481020eac021a332da41b0e98aa0577e743e248857dbb3e9bf6992fb79be",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/warp_80_221.ex",
+    "source_hash": "fc657e17490145f966786442741e4adffa72134ad66da275d72a53161952474c",
+    "spawns": [
+      {
+        "name": "Warp",
+        "scope": "shared",
+        "x": 80,
+        "y": 221,
+        "map": "jupe_area2",
+        "dir": 0,
+        "unique_name": "Warp#2-1",
+        "sprite": 139,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Warp#2-2|jupe_area2:142:225": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Warp142225",
+    "output_hash": "53bcaf66b0e5cb2e8fdf8914775f3e5a7733853279178af9790a659a737b21cf",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/warp_142_225.ex",
+    "source_hash": "0c541f87713d3e8a28189de257733ab5fe1217b72840e4f1fa8a1614f9708fb5",
+    "spawns": [
+      {
+        "name": "Warp",
+        "scope": "shared",
+        "x": 142,
+        "y": 225,
+        "map": "jupe_area2",
+        "dir": 0,
+        "unique_name": "Warp#2-2",
+        "sprite": 139,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Warp#2-3|jupe_area2:130:137": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Warp130137",
+    "output_hash": "0f6e698141b5feb84f763e082d8fdc1950a8bc484762f499bfc0f2dd9b67f884",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/warp_130_137.ex",
+    "source_hash": "6369689c4c70edc9115e3b90d803e424d083fbd7f61c6b08f71c69a85191fcae",
+    "spawns": [
+      {
+        "name": "Warp",
+        "scope": "shared",
+        "x": 130,
+        "y": 137,
+        "map": "jupe_area2",
+        "dir": 0,
+        "unique_name": "Warp#2-3",
+        "sprite": 139,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|Warp#2-4|jupe_area2:106:53": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Warp10653",
+    "output_hash": "1145ade369cd9e54fd1d3f5f3cb0ec7879553c386ac2c0bcf78fa6852c9d4948",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/warp_106_53.ex",
+    "source_hash": "c40d20f74ce96dd5e71031bcb2ccb04839f6732a66829f41390716945b0436e3",
+    "spawns": [
+      {
+        "name": "Warp",
+        "scope": "shared",
+        "x": 106,
+        "y": 53,
+        "map": "jupe_area2",
+        "dir": 0,
+        "unique_name": "Warp#2-4",
+        "sprite": 139,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|gate#start#2|jupe_gate:50:171": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Gate50171",
+    "output_hash": "675245f807c2af3a2e72f1b44a0d7ae82e948f94586ef982c502611521773d40",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/gate_50_171.ex",
+    "source_hash": "c7ba6009ece9f107190b89e7d8670ecd332f69dfd76235327ee165bc810f9941",
+    "spawns": [
+      {
+        "name": "gate",
+        "scope": "shared",
+        "x": 50,
+        "y": 171,
+        "map": "jupe_gate",
+        "dir": 0,
+        "unique_name": "gate#start#2",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|gate#start|jupe_gate:50:173": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Gate",
+    "output_hash": "28a6d1c2b5a6ec50047cd283eee96503275772ff425c5aa45ae038155768267e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/gate.ex",
+    "source_hash": "5b0de799b7fa62b6730b804d8f6a905981a84b56267a487f237f8bd66ac61d48",
+    "spawns": [
+      {
+        "name": "gate",
+        "scope": "shared",
+        "x": 50,
+        "y": 173,
+        "map": "jupe_gate",
+        "dir": 0,
+        "unique_name": "gate#start",
+        "sprite": -1,
+        "trigger": [
+          2,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|jupe_goto#1|juperos_01:100:91": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.JupeGoto",
+    "output_hash": "37abc39aeb5d41f52aefb2424cf5e15a987d66924fc8593541e70c3cc8436435",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/jupe_goto.ex",
+    "source_hash": "dc17e86416eef257b9deb3b3807e781a53917017156551de212dd9d9f1ea3f33",
+    "spawns": [
+      {
+        "name": "jupe_goto",
+        "scope": "shared",
+        "x": 100,
+        "y": 91,
+        "map": "juperos_01",
+        "dir": 0,
+        "unique_name": "jupe_goto#1",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|jupe_goto#2|juperos_01:100:91": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.JupeGoto10091",
+    "output_hash": "88e202cf82887d6df3c2ada669350405ed6cab5af026c5d09854b634888a4324",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/jupe_goto_100_91.ex",
+    "source_hash": "2fdc9baf8a77861f6ccab7ce4e7fd1bc5f8a8d4af3730c42703f388002bf2461",
+    "spawns": [
+      {
+        "name": "jupe_goto",
+        "scope": "shared",
+        "x": 100,
+        "y": 91,
+        "map": "juperos_01",
+        "dir": 0,
+        "unique_name": "jupe_goto#2",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_juperos.txt|script|jupe_goto2F|juperos_02:33:59": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.JupeGoto2f",
+    "output_hash": "499b41d01ad1c042ce19b7872f91ae779af8753e0205a9a4822848b45e2bc5de",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_juperos/jupe_goto2f.ex",
+    "source_hash": "118d3ee009f6c7d3052e49459d3dfe0ada64bee254e4f17ffe30ce3fe76987f7",
+    "spawns": [
+      {
+        "name": "jupe_goto2F",
+        "scope": "shared",
+        "x": 33,
+        "y": 59,
+        "map": "juperos_02",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
