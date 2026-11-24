@@ -607,28 +607,41 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
     end
   end
 
+  # A `script(<STATE>)` source spawns like any other and starts in that state;
+  # its duplicates start in the same state.
   defp build_spawns(entry, duplicates, sprites) do
-    placements =
-      if entry[:flag] do
-        # CLOAKED/DISABLED/HIDDEN scripts are invisible until an event
-        # enables them; without event wiring they must not spawn.
-        []
-      else
-        # A floating source is not a recorded spawn: `generate/4` emits it from
-        # the entry itself (`floating_source_spawns/1`).
-        Enum.filter([entry], &placed?/1) ++ duplicates
-      end
+    # A floating source is not a recorded spawn: `generate/4` emits it from
+    # the entry itself (`floating_source_spawns/1`).
+    {spawns, unresolved} =
+      resolve_placements(Enum.filter([entry], &placed?/1) ++ duplicates, sprites)
 
-    resolve_placements(placements, sprites)
+    {put_state(spawns, entry), unresolved}
   end
 
   # Resolves a cross-run source's new `duplicate()` placements alone; the source
   # entry's own placement was already resolved and stored by the earlier run.
   defp resolve_duplicate_spawns(entry, duplicates, sprites) do
-    if entry[:flag] do
-      {[], MapSet.new()}
-    else
-      resolve_placements(duplicates, sprites)
+    {spawns, unresolved} = resolve_placements(duplicates, sprites)
+    {put_state(spawns, entry), unresolved}
+  end
+
+  defp put_state(spawns, entry) do
+    case flag_state(entry[:flag]) do
+      nil -> spawns
+      state -> Enum.map(spawns, &Map.put(&1, :state, state))
+    end
+  end
+
+  # The flag names are matched case-insensitively; an unknown one leaves the
+  # NPC visible, as the reference does.
+  defp flag_state(nil), do: nil
+
+  defp flag_state(flag) do
+    case String.upcase(flag) do
+      "DISABLED" -> :disabled
+      "HIDDEN" -> :hidden
+      "CLOAKED" -> :cloaked
+      _unknown -> nil
     end
   end
 
@@ -674,9 +687,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
 
   # rAthena registers every floating script itself (`map_addiddb` in
   # `npc_parse_script`), not only its duplicates.
-  defp floating_source_spawns(%{kind: :floating, entry: entry}) do
-    if entry[:flag], do: [], else: [floating_spawn(entry)]
-  end
+  defp floating_source_spawns(%{kind: :floating, entry: entry}),
+    do: put_state([floating_spawn(entry)], entry)
 
   defp floating_source_spawns(_unit), do: []
 

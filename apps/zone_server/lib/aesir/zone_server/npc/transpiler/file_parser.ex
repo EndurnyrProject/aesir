@@ -108,7 +108,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.FileParser do
        when flag == "" or binary_part(flag, 0, 1) == "(" do
     case parse_placement(pos) do
       :floating ->
-        with_body(%{kind: :floating, name: name, sprite: sprite_of(line)}, line)
+        with_body(
+          %{kind: :floating, name: name, sprite: sprite_of(line), flag: parse_flag(flag)},
+          line
+        )
 
       {:ok, placement} ->
         %{

@@ -71,6 +71,33 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ManifestTest do
     assert Manifest.load(path) == manifest
   end
 
+  test "round-trips a placement's starting state" do
+    path =
+      Path.join(System.tmp_dir!(), "manifest_test_#{System.unique_integer([:positive])}.json")
+
+    on_exit(fn -> File.rm(path) end)
+
+    spawns =
+      for state <- [:disabled, :hidden, :cloaked] do
+        %{
+          map: "izlude",
+          x: 7,
+          y: 8,
+          dir: 0,
+          sprite: 49,
+          name: "Gate",
+          scope: :shared,
+          state: state
+        }
+      end
+
+    manifest = %{"npc/test.txt|script|Gate|izlude:7:8" => %{@record | spawns: spawns}}
+
+    Manifest.save(manifest, path)
+
+    assert Manifest.load(path) == manifest
+  end
+
   test "legacy spawns inherit body scope from their record key" do
     path =
       Path.join(System.tmp_dir!(), "manifest_test_#{System.unique_integer([:positive])}.json")

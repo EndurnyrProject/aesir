@@ -77,12 +77,13 @@ defmodule Aesir.ZoneServer.Npc.Session do
   `set_enabled/2`, `set_hidden/2` and `set_cloaked/2` write this process's
   state and mirror it to the public `:npc_session_flags` ETS table as
   `{gid, enabled?, hidden?, cloaked?}`, so the reads are lock-free with no
-  GenServer call; a missing row means enabled, not hidden and not cloaked
-  (so visible). The table is owned by
+  GenServer call; a missing row means the placement's starting state
+  (`Placement.state`: none, the usual case, is enabled, not hidden and not
+  cloaked, so visible). The table is owned by
   `Aesir.ZoneServer.Npc.SessionSupervisor`, not by any one session, so it
   survives a session crash. A session clears its own row on init and on
   terminate, so a crashed (and, under the dynamic supervisor, restarted)
-  session resets to defaults.
+  session resets to the starting state.
 
   An NPC is visible iff enabled, not hidden and not cloaked. When a flag
   change flips that effective visibility, this process
@@ -318,43 +319,37 @@ defmodule Aesir.ZoneServer.Npc.Session do
   @doc """
   Reads the NPC's `enabled` flag directly from ETS, no GenServer call.
 
-  A gid with no row (no session, or a session that never toggled it) is
-  enabled by default.
+  A gid with no row (no session, or a session that never toggled it) reads
+  its placement's starting state, enabled unless it starts `:disabled`.
   """
   @spec enabled?(non_neg_integer()) :: boolean()
   def enabled?(gid) do
-    case :ets.lookup(@flags_table, gid) do
-      [{^gid, enabled?, _hidden?, _cloaked?}] -> enabled?
-      [] -> true
-    end
+    {enabled?, _hidden?, _cloaked?} = flags(gid)
+    enabled?
   end
 
   @doc """
   Reads the NPC's `hidden` flag directly from ETS, no GenServer call.
 
-  A gid with no row (no session, or a session that never toggled it) is not
-  hidden by default.
+  A gid with no row reads its placement's starting state, hidden only when
+  it starts `:hidden` or `:disabled`.
   """
   @spec hidden?(non_neg_integer()) :: boolean()
   def hidden?(gid) do
-    case :ets.lookup(@flags_table, gid) do
-      [{^gid, _enabled?, hidden?, _cloaked?}] -> hidden?
-      [] -> false
-    end
+    {_enabled?, hidden?, _cloaked?} = flags(gid)
+    hidden?
   end
 
   @doc """
   Reads the NPC's `cloaked` flag directly from ETS, no GenServer call.
 
-  A gid with no row (no session, or a session that never toggled it) is not
-  cloaked by default.
+  A gid with no row reads its placement's starting state, cloaked only when
+  it starts `:cloaked`.
   """
   @spec cloaked?(non_neg_integer()) :: boolean()
   def cloaked?(gid) do
-    case :ets.lookup(@flags_table, gid) do
-      [{^gid, _enabled?, _hidden?, cloaked?}] -> cloaked?
-      [] -> false
-    end
+    {_enabled?, _hidden?, cloaked?} = flags(gid)
+    cloaked?
   end
 
   @doc """
@@ -366,10 +361,8 @@ defmodule Aesir.ZoneServer.Npc.Session do
   """
   @spec visible?(non_neg_integer()) :: boolean()
   def visible?(gid) do
-    case :ets.lookup(@flags_table, gid) do
-      [{^gid, enabled?, hidden?, cloaked?}] -> enabled? and not hidden? and not cloaked?
-      [] -> true
-    end
+    {enabled?, hidden?, cloaked?} = flags(gid)
+    enabled? and not hidden? and not cloaked?
   end
 
   @doc """
@@ -380,10 +373,8 @@ defmodule Aesir.ZoneServer.Npc.Session do
   """
   @spec touchable?(non_neg_integer()) :: boolean()
   def touchable?(gid) do
-    case :ets.lookup(@flags_table, gid) do
-      [{^gid, enabled?, _hidden?, cloaked?}] -> enabled? and not cloaked?
-      [] -> true
-    end
+    {enabled?, _hidden?, cloaked?} = flags(gid)
+    enabled? and not cloaked?
   end
 
   @doc """
@@ -454,11 +445,15 @@ defmodule Aesir.ZoneServer.Npc.Session do
 
     clear_flags(gid)
     clear_display(gid)
+    {enabled?, hidden?, cloaked?} = initial_flags(gid)
 
     state = %__MODULE__{
       gid: gid,
       schedule: schedule(gid),
-      on_fire: on_fire
+      on_fire: on_fire,
+      enabled?: enabled?,
+      hidden?: hidden?,
+      cloaked?: cloaked?
     }
 
     {:ok, state}
@@ -727,6 +722,28 @@ defmodule Aesir.ZoneServer.Npc.Session do
 
   @spec clear_flags(non_neg_integer()) :: true
   defp clear_flags(gid), do: :ets.delete(@flags_table, gid)
+
+  @typep flags :: {enabled? :: boolean(), hidden? :: boolean(), cloaked? :: boolean()}
+
+  @spec flags(non_neg_integer()) :: flags()
+  defp flags(gid) do
+    case :ets.lookup(@flags_table, gid) do
+      [{^gid, enabled?, hidden?, cloaked?}] -> {enabled?, hidden?, cloaked?}
+      [] -> initial_flags(gid)
+    end
+  end
+
+  # The flags a placement starts with, as the reference applies a script's
+  # `(<STATE>)` flag at load: disabling also hides, as `disablenpc` does.
+  @spec initial_flags(non_neg_integer()) :: flags()
+  defp initial_flags(gid) do
+    case NpcRegistry.module_for_unit(gid) do
+      {:ok, {_module, %Placement{state: :disabled}}} -> {false, true, false}
+      {:ok, {_module, %Placement{state: :hidden}}} -> {true, true, false}
+      {:ok, {_module, %Placement{state: :cloaked}}} -> {true, false, true}
+      _not_flagged -> {true, false, false}
+    end
+  end
 
   @spec merge_display(display_override(), display_update()) :: display_override()
   defp merge_display(current, overrides) do

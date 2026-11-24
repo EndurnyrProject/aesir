@@ -12,7 +12,8 @@ defmodule Aesir.ZoneServer.Npc.Placement do
   `name` when not declared, so this struct carries whatever it is given.
   `trigger` is the touch-area half-extents `{xs, ys}` around the placement's
   cell, or `nil` when the NPC has no touch area. `scope` determines the game
-  mode in which the placement participates.
+  mode in which the placement participates. `state` is the view state the NPC
+  starts in, `nil` for a normal visible NPC (see `t:state/0`).
 
   A placement with `map: nil` is a floating NPC, rAthena's `-` script or
   duplicate (`npc_parse_script`, `npc_parse_duplicate` in `npc.cpp`): it sits on
@@ -27,6 +28,15 @@ defmodule Aesir.ZoneServer.Npc.Placement do
   @typedoc "The horizontal and vertical half-extents of a touch area, in cells."
   @type trigger :: {non_neg_integer(), non_neg_integer()}
 
+  @typedoc """
+  The view state an NPC starts in, the `script(<STATE>)` flag of its script
+  (a duplicate starts in its source's state): `:disabled` starts it disabled
+  (as `disablenpc`, which also hides it), `:hidden` hidden (as `hideonnpc`)
+  and `:cloaked` cloaked (as `cloakonnpc`). Script commands change it from
+  there; `Npc.Session` falls back to it while it holds no flags for the NPC.
+  """
+  @type state :: :disabled | :hidden | :cloaked
+
   @typedoc "A normalized script placement, including its display and touch area."
   typedstruct enforce: true do
     field :map, String.t() | nil
@@ -38,6 +48,7 @@ defmodule Aesir.ZoneServer.Npc.Placement do
     field :unique_name, String.t(), default: ""
     field :trigger, trigger() | nil, default: nil
     field :scope, ContentScope.t(), default: :shared
+    field :state, state() | nil, default: nil
   end
 
   @doc """

@@ -80,9 +80,42 @@ defmodule Aesir.ZoneServer.Npc.SessionTest do
     def on_event("OnTimer30", ctx), do: ctx
   end
 
+  defmodule DisabledNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [%{map: "prontera", x: 905, y: 905, sprite: 58, name: "Disabled", state: :disabled}]
+
+    @impl true
+    def on_talk(ctx), do: ctx
+  end
+
+  defmodule HiddenNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [%{map: "prontera", x: 906, y: 906, sprite: 58, name: "Hidden", state: :hidden}]
+
+    @impl true
+    def on_talk(ctx), do: ctx
+  end
+
+  defmodule CloakedNpc do
+    use Aesir.ZoneServer.Npc, spawn: [%{name: "Cloaked", state: :cloaked}]
+
+    @impl true
+    def on_talk(ctx), do: ctx
+  end
+
   setup do
     on_exit(fn -> :persistent_term.erase(NpcRegistry) end)
-    NpcRegistry.reload([TimerNpc, NoTimerNpc, StaleTimerNpc, ZeroTimerNpc])
+
+    NpcRegistry.reload([
+      TimerNpc,
+      NoTimerNpc,
+      StaleTimerNpc,
+      ZeroTimerNpc,
+      DisabledNpc,
+      HiddenNpc,
+      CloakedNpc
+    ])
+
     :ok
   end
 
@@ -368,6 +401,37 @@ defmodule Aesir.ZoneServer.Npc.SessionTest do
         :ets.insert(@flags_table, row)
         assert Session.touchable?(gid) == expected, "row #{inspect(row)}"
       end
+    end
+  end
+
+  describe "a placement's starting state" do
+    test "is what the flags read with no session: a disable also hides" do
+      for {module, enabled?, hidden?, cloaked?, touchable?} <- [
+            {DisabledNpc, false, true, false, false},
+            {HiddenNpc, true, true, false, true},
+            {CloakedNpc, true, false, true, false}
+          ] do
+        gid = gid_for(module)
+
+        assert {Session.enabled?(gid), Session.hidden?(gid), Session.cloaked?(gid)} ==
+                 {enabled?, hidden?, cloaked?},
+               inspect(module)
+
+        refute Session.visible?(gid)
+        assert Session.touchable?(gid) == touchable?
+      end
+    end
+
+    test "is where a started session begins, so script commands change it from there" do
+      hidden = gid_for(HiddenNpc)
+      start_via_dynamic_supervisor(hidden)
+      :ok = Session.set_cloaked(hidden, false)
+      assert Session.hidden?(hidden)
+
+      disabled = gid_for(DisabledNpc)
+      start_via_dynamic_supervisor(disabled)
+      :ok = Session.set_enabled(disabled, true)
+      assert Session.visible?(disabled)
     end
   end
 

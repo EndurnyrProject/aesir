@@ -144,6 +144,42 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.TranspilerTest do
   end
 
   @tag :tmp_dir
+  test "a script(<STATE>) source spawns in that state and its duplicates inherit it", %{
+    tmp_dir: tmp_dir
+  } do
+    npc_dir = Path.join(tmp_dir, "npc")
+    File.mkdir_p!(npc_dir)
+
+    File.write!(Path.join(npc_dir, "states.txt"), """
+    prontera,150,150,4\tscript(DISABLED)\tGate#1::GateEx\t86,{
+    end;
+    }
+    prontera,160,160,4\tduplicate(GateEx)\tGate#2\t86
+    prontera,170,170,4\tscript(hidden)\tLurker\t86,{
+    end;
+    }
+    -\tscript(CLOAKED)\tGhost\t-1,{
+    end;
+    }
+    prontera,180,180,4\tscript(BOGUS)\tPlain\t86,{
+    end;
+    }
+    """)
+
+    out_root = Path.join(tmp_dir, "out")
+    result = run_enabled(tmp_dir, out_root)
+
+    assert result.failures == []
+
+    sources = Map.new(result.written, &{Path.basename(&1), File.read!(Path.join(out_root, &1))})
+
+    assert [_, _] = Regex.scan(~r/x: 1[56]0,[^}]*state: :disabled/, sources["gate.ex"])
+    assert sources["lurker.ex"] =~ ~r/x: 170,[^}]*state: :hidden/
+    assert sources["ghost.ex"] =~ ~S|%{name: "Ghost", scope: :shared, state: :cloaked}|
+    refute sources["plain.ex"] =~ "state:"
+  end
+
+  @tag :tmp_dir
   test "a placement without touch dims or a :: exname omits both keys", %{tmp_dir: tmp_dir} do
     npc_dir = Path.join(tmp_dir, "npc")
     File.mkdir_p!(npc_dir)

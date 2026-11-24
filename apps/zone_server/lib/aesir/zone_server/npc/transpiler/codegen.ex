@@ -133,7 +133,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
           required(:name) => String.t(),
           optional(:scope) => ContentScope.t(),
           optional(:unique_name) => String.t(),
-          optional(:trigger) => Placement.trigger()
+          optional(:trigger) => Placement.trigger(),
+          optional(:state) => Placement.state()
         }
 
   @typedoc """
@@ -266,7 +267,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp optional_spawn_fields(s) do
     [
       Map.has_key?(s, :unique_name) && "unique_name: #{inspect(s.unique_name)}",
-      Map.has_key?(s, :trigger) && "trigger: {#{elem(s.trigger, 0)}, #{elem(s.trigger, 1)}}"
+      Map.has_key?(s, :trigger) && "trigger: {#{elem(s.trigger, 0)}, #{elem(s.trigger, 1)}}",
+      Map.has_key?(s, :state) && "state: #{inspect(s.state)}"
     ]
     |> Enum.filter(& &1)
   end

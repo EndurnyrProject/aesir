@@ -15,14 +15,16 @@ defmodule Aesir.ZoneServer.Npc do
 
   Each spawn entry may also declare `unique_name` (defaults to `name` when
   omitted; used for `donpcevent`-style targeting) and `trigger: {xs, ys}`
-  (touch-area half-extents around the cell; omit for no touch area). A spawn
+  (touch-area half-extents around the cell; omit for no touch area), and
+  `state` (`:disabled`, `:hidden` or `:cloaked`, the view state the NPC starts
+  in; see `t:Aesir.ZoneServer.Npc.Placement.state/0`). A spawn
   entry with a negative `sprite` declares an invisible event NPC: it is
   registered and its touch area and events work, but no client ever sees it
   and it cannot be clicked.
 
   A spawn entry without `map` declares a floating NPC, rAthena's `-` script or
   duplicate: `%{name: "Red Alarm On#1-2"}`. It accepts only `name`,
-  `unique_name` and `scope`; it sits on no map but is registered by id and
+  `unique_name`, `scope` and `state`; it sits on no map but is registered by id and
   name, so its events, timers and `OnInit` run (see
   `Aesir.ZoneServer.Npc.Placement`).
 
@@ -135,7 +137,7 @@ defmodule Aesir.ZoneServer.Npc do
     end
   end
 
-  @floating_keys [:name, :unique_name, :scope]
+  @floating_keys [:name, :unique_name, :scope, :state]
 
   @typep spawn_attrs :: %{
            required(:map) => String.t(),
@@ -146,13 +148,15 @@ defmodule Aesir.ZoneServer.Npc do
            optional(:name) => String.t(),
            optional(:unique_name) => String.t(),
            optional(:scope) => ContentScope.t(),
-           optional(:trigger) => Placement.trigger() | nil
+           optional(:trigger) => Placement.trigger() | nil,
+           optional(:state) => Placement.state()
          }
 
   @typep floating_attrs :: %{
            optional(:name) => String.t(),
            optional(:unique_name) => String.t(),
-           optional(:scope) => ContentScope.t()
+           optional(:scope) => ContentScope.t(),
+           optional(:state) => Placement.state()
          }
 
   @spec to_placement!(spawn_attrs() | floating_attrs(), ContentScope.t()) :: Placement.t()
@@ -168,7 +172,8 @@ defmodule Aesir.ZoneServer.Npc do
           sprite: -1,
           name: name,
           unique_name: Map.get(entry, :unique_name, name),
-          scope: entry |> Map.get(:scope, body_scope) |> validate_content_scope!(:placement)
+          scope: entry |> Map.get(:scope, body_scope) |> validate_content_scope!(:placement),
+          state: validate_state!(Map.get(entry, :state))
         }
 
       extra ->
@@ -190,7 +195,8 @@ defmodule Aesir.ZoneServer.Npc do
       name: name,
       unique_name: Map.get(entry, :unique_name, name),
       trigger: validate_trigger!(Map.get(entry, :trigger)),
-      scope: entry |> Map.get(:scope, body_scope) |> validate_content_scope!(:placement)
+      scope: entry |> Map.get(:scope, body_scope) |> validate_content_scope!(:placement),
+      state: validate_state!(Map.get(entry, :state))
     }
   end
 
@@ -201,6 +207,14 @@ defmodule Aesir.ZoneServer.Npc do
   defp validate_content_scope!(scope, kind) do
     raise ArgumentError,
           "npc #{kind} content scope must be :shared, :renewal, or :pre_renewal, got: #{inspect(scope)}"
+  end
+
+  @spec validate_state!(term()) :: Placement.state() | nil
+  defp validate_state!(state) when state in [nil, :disabled, :hidden, :cloaked], do: state
+
+  defp validate_state!(other) do
+    raise ArgumentError,
+          "npc state must be :disabled, :hidden or :cloaked, got: #{inspect(other)}"
   end
 
   @spec validate_trigger!(term()) :: Placement.trigger() | nil

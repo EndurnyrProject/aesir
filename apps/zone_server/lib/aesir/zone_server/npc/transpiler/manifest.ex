@@ -134,9 +134,18 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Manifest do
       }
       |> put_present(:unique_name, spawn["unique_name"])
       |> put_present(:trigger, decode_trigger(spawn["trigger"]))
+      |> put_present(:state, decode_state(spawn["state"]))
       |> Map.put(:scope, decode_spawn_scope(spawn, body_scope))
     end)
   end
+
+  defp decode_state(nil), do: nil
+  defp decode_state("disabled"), do: :disabled
+  defp decode_state("hidden"), do: :hidden
+  defp decode_state("cloaked"), do: :cloaked
+
+  defp decode_state(state),
+    do: raise(ArgumentError, "unknown NPC manifest placement state #{inspect(state)}")
 
   defp put_present(map, _key, nil), do: map
   defp put_present(map, key, value), do: Map.put(map, key, value)
