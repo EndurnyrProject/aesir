@@ -415,6 +415,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate sp(ctx), to: Reads
   defdelegate max_hp(ctx), to: Reads
   defdelegate weight(ctx), to: Reads
+  defdelegate max_weight(ctx), to: Reads
   defdelegate position(ctx), to: Reads
   defdelegate is_equipped(ctx, item_id), to: Reads
   defdelegate getequipid(ctx, slot), to: Reads

@@ -354,6 +354,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "Sp" => "sp",
     "MaxSp" => "max_sp",
     "Weight" => "weight",
+    "MaxWeight" => "max_weight",
     "Zeny" => "zeny"
   }
 

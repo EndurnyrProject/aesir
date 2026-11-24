@@ -58,7 +58,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.SushiMaster do
   @impl true
   def on_talk(ctx) do
     cond do
-      get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 5000 -> overweight(ctx)
+      max_weight(ctx) - weight(ctx) < 5000 -> overweight(ctx)
       get_char_var(ctx, :ama_sushi, 0) == 4 -> master_advice(ctx)
       true -> errand(ctx, get_char_var(ctx, :fish_r, 0))
     end

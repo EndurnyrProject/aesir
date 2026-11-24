@@ -253,6 +253,11 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   def weight(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "weight/1")
   def weight(%Ctx{game_state: gs}), do: Weight.current_weight(gs.inventory)
 
+  @doc "The player's maximum carry weight (rAthena `MaxWeight`)."
+  @spec max_weight(Ctx.t()) :: non_neg_integer()
+  def max_weight(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "max_weight/1")
+  def max_weight(%Ctx{game_state: gs}), do: Weight.max_weight(gs.stats)
+
   @doc "The player's position as `{x, y, map_name}`."
   @spec position(Ctx.t()) :: {integer(), integer(), String.t()}
   def position(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "position/1")
