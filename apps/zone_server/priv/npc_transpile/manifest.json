@@ -49270,6 +49270,13 @@
       }
     ]
   },
+  "quests/quests_izlude.txt|floating|::Edgar_izlude|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsIzlude.EdgarIzlude",
+    "output_hash": "348561496b88f6460be224e4ea75b758198a86404884051d57e56986a06ea72e",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_izlude/edgar_izlude.ex",
+    "source_hash": "a095a51a9e2e31865acab56042851f2ab1c4574cc6612d4edbb316f6fb59b0b4",
+    "spawns": []
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
