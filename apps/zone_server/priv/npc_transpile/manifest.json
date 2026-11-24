@@ -45542,6 +45542,630 @@
       }
     ]
   },
+  "quests/quests_ein.txt|script|#kenka|ein_in01:231:170": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.Kenka",
+    "output_hash": "df692351f3283f7716798f858153afb74177c3b44d083d69fceb89b574919d6a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/kenka.ex",
+    "source_hash": "93945504445d41203abe03c5768fba2ebc392137b0e3f8d44360f4cf3c43130e",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 231,
+        "y": 170,
+        "map": "ein_in01",
+        "dir": 0,
+        "unique_name": "#kenka",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|2nd Control Panel#ins|ein_in01:49:232": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.M2ndControlPanel",
+    "output_hash": "6bfdfeb58ff7909b73775d6a97697587a4b7e3ae44636578530711aa070c1c70",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/2nd_control_panel.ex",
+    "source_hash": "9cbebcc057e0550752765017031bb05647daad4b9592909aa76a8729ed8839a6",
+    "spawns": [
+      {
+        "name": "2nd Control Panel",
+        "scope": "shared",
+        "x": 49,
+        "y": 232,
+        "map": "ein_in01",
+        "dir": 3,
+        "unique_name": "2nd Control Panel#ins",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|3rd Pressure Governor#1|ein_in01:108:217": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.M3rdPressureGovernor",
+    "output_hash": "505637adf7b7c3c468c7e9bec3ef6cffb5fcb27a3a002a9b4c7c107aff35350b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/3rd_pressure_governor.ex",
+    "source_hash": "1342b9689b4635a8e0ce3b5fee7d639607da718dfbaea712423aa22fa4f1b042",
+    "spawns": [
+      {
+        "name": "3rd Pressure Governor",
+        "scope": "shared",
+        "x": 108,
+        "y": 217,
+        "map": "ein_in01",
+        "dir": 3,
+        "unique_name": "3rd Pressure Governor#1",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Buender Hikeman#ein|einbech:165:105": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.BuenderHikeman",
+    "output_hash": "63e98916090f5d48e1a8e9984616dcd2e8af6fe3fe4fe164587954c802dbf6f0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/buender_hikeman.ex",
+    "source_hash": "67613a166768c7dcba2b6abcbb081e61527f056fae3b2a21a1403b62dc8253ec",
+    "spawns": [
+      {
+        "name": "Buender Hikeman",
+        "scope": "shared",
+        "x": 165,
+        "y": 105,
+        "map": "einbech",
+        "dir": 7,
+        "unique_name": "Buender Hikeman#ein",
+        "sprite": 847
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Calla#ein|ein_in01:31:138": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.Calla",
+    "output_hash": "1eeb42dfc7236988c8376682b4c0b97469aac45bbc7cfc9657943dcc6934195a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/calla.ex",
+    "source_hash": "ac75c56aa9c5786f11d88464b62e51b3c6866d00f341f1094bc7a41e08788959",
+    "spawns": [
+      {
+        "name": "Calla",
+        "scope": "shared",
+        "x": 31,
+        "y": 138,
+        "map": "ein_in01",
+        "dir": 3,
+        "unique_name": "Calla#ein",
+        "sprite": 90
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Catzllanpu#ein|einbech:216:118": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.Catzllanpu",
+    "output_hash": "87b428d9d88a6f431b5b131c25451c5adecb7ac5d32b9e1817f681dcea00a543",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/catzllanpu.ex",
+    "source_hash": "52c65b1dd60ba4f097adfbf97ca7153097c6b43ef75fff81ca55c3f997f99c18",
+    "spawns": [
+      {
+        "name": "Catzllanpu",
+        "scope": "shared",
+        "x": 216,
+        "y": 118,
+        "map": "einbech",
+        "dir": 3,
+        "unique_name": "Catzllanpu#ein",
+        "sprite": 854
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Cavitar|einbech:97:167": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.Cavitar",
+    "output_hash": "62583f159e4b12a44f14e2cb87dac0ad745aa97f153bfa96acf33df117c7f56b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/cavitar.ex",
+    "source_hash": "da3e04d1e0696f8fdbe87b52690d36380a6f0a480626c362952f5556ffb2f858",
+    "spawns": [
+      {
+        "name": "Cavitar",
+        "scope": "shared",
+        "x": 97,
+        "y": 167,
+        "map": "einbech",
+        "dir": 5,
+        "sprite": 847
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Conveyor#ins2|ein_in01:95:239": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.Conveyor95239",
+    "output_hash": "17635e0fc336b303806f26d270fa02501ae848e8b5f386d11c642b45f1b06639",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/conveyor_95_239.ex",
+    "source_hash": "c005fa644c342296d9e2f919fd32690adca7c293234c031592ff5623f58dbf7b",
+    "spawns": [
+      {
+        "name": "Conveyor",
+        "scope": "shared",
+        "x": 95,
+        "y": 239,
+        "map": "ein_in01",
+        "dir": 3,
+        "unique_name": "Conveyor#ins2",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Conveyor#ins|ein_in01:46:197": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.Conveyor",
+    "output_hash": "87d50458e093d6f285c4162d646c369bde4335f62512cfc9b6959c85d17215cd",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/conveyor.ex",
+    "source_hash": "edf9c1e59cb8527388434e8062692958dc3434e9fce836c06a451afb86a46726",
+    "spawns": [
+      {
+        "name": "Conveyor",
+        "scope": "shared",
+        "x": 46,
+        "y": 197,
+        "map": "ein_in01",
+        "dir": 3,
+        "unique_name": "Conveyor#ins",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Decii#ein|ein_in01:208:86": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.Decii",
+    "output_hash": "046ccff2c63add9e973d4a96a70100155d912bccd9f76e27e851944db59d58a5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/decii.ex",
+    "source_hash": "c7b08c020af31d12ee6717f5e77aaa862333e31f990b664b59aea141491ecac7",
+    "spawns": [
+      {
+        "name": "Decii",
+        "scope": "shared",
+        "x": 208,
+        "y": 86,
+        "map": "ein_in01",
+        "dir": 3,
+        "unique_name": "Decii#ein",
+        "sprite": 855
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Drunken Man#ein|airplane:31:77": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.DrunkenMan",
+    "output_hash": "7f28b2aafc560e7665528b54f76b6c7a167abe7de299e833ef184b98c14d2be8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/drunken_man.ex",
+    "source_hash": "16dab9df75a74c65eca4e1b66319c4f2e2fc682f4c1e5e78979e3d566e671442",
+    "spawns": [
+      {
+        "name": "Drunken Man",
+        "scope": "shared",
+        "x": 31,
+        "y": 77,
+        "map": "airplane",
+        "dir": 5,
+        "unique_name": "Drunken Man#ein",
+        "sprite": 853
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Einbroch Smog Alert|einbroch:1:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.EinbrochSmogAlert",
+    "output_hash": "03c4e0c40fbfd12e17f445182cf5f865736d22d311b49567728601a25796d9c8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/einbroch_smog_alert.ex",
+    "source_hash": "381080900189c1fa62f289ca1cbec1517e963f693da671d9408b5204e6b963dd",
+    "spawns": [
+      {
+        "name": "Einbroch Smog Alert",
+        "scope": "shared",
+        "x": 1,
+        "y": 1,
+        "map": "einbroch",
+        "dir": 0,
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Ellhenje#ein|einbech:176:125": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.Ellhenje",
+    "output_hash": "01f2dfbd45d151f62fc0d9134753c62d841e8e666bc25e5bb3401ba41a2e3e45",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/ellhenje.ex",
+    "source_hash": "632b5e51a524ed2321537ddb421a3fc363e41c28f7823f11401f6c0bb0cfa48b",
+    "spawns": [
+      {
+        "name": "Ellhenje",
+        "scope": "shared",
+        "x": 176,
+        "y": 125,
+        "map": "einbech",
+        "dir": 3,
+        "unique_name": "Ellhenje#ein",
+        "sprite": 850
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Factory Quest Test|sec_in02:127:86": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.FactoryQuestTest",
+    "output_hash": "b27a1fa90adb68740179065ad758aa2e0ad1545c4bcd98af3e9eb26bba3b9027",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/factory_quest_test.ex",
+    "source_hash": "15aac96e0c537b31559550b8a05c163a3dc02df234747bf84db206d430c033ac",
+    "spawns": [
+      {
+        "name": "Factory Quest Test",
+        "scope": "shared",
+        "x": 127,
+        "y": 86,
+        "map": "sec_in02",
+        "dir": 3,
+        "sprite": 851
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Kaijeta#ein|ein_in01:191:102": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.Kaijeta",
+    "output_hash": "9153c3fd5ac26a6c1c417b9f1833c1f9bd4f8ec40f0101b4516164ecae108496",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/kaijeta.ex",
+    "source_hash": "d128decd07c0e263ee647735a09fb7772d519b6f93ead45f8005be0f6aec42a1",
+    "spawns": [
+      {
+        "name": "Kaijeta",
+        "scope": "shared",
+        "x": 191,
+        "y": 102,
+        "map": "ein_in01",
+        "dir": 5,
+        "unique_name": "Kaijeta#ein",
+        "sprite": 846
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Keneshiotz#ein|einbroch:188:72": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.Keneshiotz",
+    "output_hash": "401a3efebb65e18d742551887c841aed35be2b097c3d5fb1b0bee395f8eb1490",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/keneshiotz.ex",
+    "source_hash": "8eb1894845c9569460746269debf1ffa2e6265b55839a2f9204335e12379158a",
+    "spawns": [
+      {
+        "name": "Keneshiotz",
+        "scope": "shared",
+        "x": 188,
+        "y": 72,
+        "map": "einbroch",
+        "dir": 3,
+        "unique_name": "Keneshiotz#ein",
+        "sprite": 855
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Kesunboss#ein|einbroch:208:208": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.Kesunboss",
+    "output_hash": "dcb9cc1f5f83e2063c1f6d3b4f5ed1ed775d5f08b8a3a698af87d94fd91db50a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/kesunboss.ex",
+    "source_hash": "8ff8a2f3308246a9a2c50030cfa1b63fa28b0acc6c1ef3e636343ac44ffabff5",
+    "spawns": [
+      {
+        "name": "Kesunboss",
+        "scope": "shared",
+        "x": 208,
+        "y": 208,
+        "map": "einbroch",
+        "dir": 3,
+        "unique_name": "Kesunboss#ein",
+        "sprite": 850
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Klitzer#ein|ein_in01:200:101": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.Klitzer",
+    "output_hash": "0af1d59c115eefbee952434533d61f2bd4c2e56f5d94dde47f6ff08cb002ca33",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/klitzer.ex",
+    "source_hash": "5d847d286b6e3367b159b9a1213c9f7cd55fdbbfa078df7500391e1a5340bd06",
+    "spawns": [
+      {
+        "name": "Klitzer",
+        "scope": "shared",
+        "x": 200,
+        "y": 101,
+        "map": "ein_in01",
+        "dir": 5,
+        "unique_name": "Klitzer#ein",
+        "sprite": 854
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Laboratory Soldier#ein-1|einbroch:51:46": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.LaboratorySoldier",
+    "output_hash": "4285a34c5619d3607236f39043fe0b17c21cab17364713e4a0c35fdab0a6126d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/laboratory_soldier.ex",
+    "source_hash": "19d3ab8ad7f2055a9ee3eb4a00480aad552aee2b395e387601fed0baa95748e3",
+    "spawns": [
+      {
+        "name": "Laboratory Soldier",
+        "scope": "shared",
+        "x": 51,
+        "y": 46,
+        "map": "einbroch",
+        "dir": 5,
+        "unique_name": "Laboratory Soldier#ein-1",
+        "sprite": 852
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Laboratory Soldier#ein-2|einbroch:51:56": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.LaboratorySoldier5156",
+    "output_hash": "b84a0a42fed4866e71ea8e8bac711224f0750bbc2084facbe8d988409681cdcc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/laboratory_soldier_51_56.ex",
+    "source_hash": "6f8be23689622d289ba0da8b4913d2710dd68cf26e710aed5c88f9e2a2e9cab9",
+    "spawns": [
+      {
+        "name": "Laboratory Soldier",
+        "scope": "shared",
+        "x": 51,
+        "y": 56,
+        "map": "einbroch",
+        "dir": 5,
+        "unique_name": "Laboratory Soldier#ein-2",
+        "sprite": 852
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Liotzburg#ein|einbroch:132:84": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.Liotzburg",
+    "output_hash": "e49205471d64ac7dda5d17e0d3d59d31be00b275a0e3cd3f74675fc8fe97dffa",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/liotzburg.ex",
+    "source_hash": "5a2999febcd4efd9316835f35571bb6c1221f62a7da8114e33a50255082e71e5",
+    "spawns": [
+      {
+        "name": "Liotzburg",
+        "scope": "shared",
+        "x": 132,
+        "y": 84,
+        "map": "einbroch",
+        "dir": 3,
+        "unique_name": "Liotzburg#ein",
+        "sprite": 853,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Maid#ein|ein_in01:32:133": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.Maid",
+    "output_hash": "0b731716b4e68e5cca6a2f3cd3dea09211ba0547713c44b1b739da69e7a89b22",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/maid.ex",
+    "source_hash": "9d808995d67282c7ff620ebf8c348589bb1b731085584cd50a7a77659d6483af",
+    "spawns": [
+      {
+        "name": "Maid",
+        "scope": "shared",
+        "x": 32,
+        "y": 133,
+        "map": "ein_in01",
+        "dir": 7,
+        "unique_name": "Maid#ein",
+        "sprite": 850
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Main Control Panel#ins|ein_in01:62:258": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.MainControlPanel",
+    "output_hash": "a704eceeb311e6c021657b813572bee85d6c822aac63b2181374185f09be65ac",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/main_control_panel.ex",
+    "source_hash": "0fc32e2dee331ec0b14ad144076fc414710a2dd24bda67d8b4a9bda70166cffa",
+    "spawns": [
+      {
+        "name": "Main Control Panel",
+        "scope": "shared",
+        "x": 62,
+        "y": 258,
+        "map": "ein_in01",
+        "dir": 3,
+        "unique_name": "Main Control Panel#ins",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Megass#EIN|ein_in01:21:147": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.Megass",
+    "output_hash": "3b6f5e0309ec3ba62ae9b3e069610424c32f7ab8fc223fa24967b7d2f3af2d41",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/megass.ex",
+    "source_hash": "bb522b9c18c987833f4c30fb5cdc03ae614e87a15014daddab65dc9df43b09d6",
+    "spawns": [
+      {
+        "name": "Megass",
+        "scope": "shared",
+        "x": 21,
+        "y": 147,
+        "map": "ein_in01",
+        "dir": 3,
+        "unique_name": "Megass#EIN",
+        "sprite": 853,
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Pipe#ins|ein_in01:100:266": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.Pipe",
+    "output_hash": "0d1b7ce5d6bece4bafde18593d319d6fd20dcbd6f46ba76d0a00e14871443c5f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/pipe.ex",
+    "source_hash": "ff0ac2c1bd7369ffc767bce6391a101ad1a99f5571d80d88d3c41ef8b1b708bb",
+    "spawns": [
+      {
+        "name": "Pipe",
+        "scope": "shared",
+        "x": 100,
+        "y": 266,
+        "map": "ein_in01",
+        "dir": 3,
+        "unique_name": "Pipe#ins",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Satra#ein|ein_in01:31:151": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.Satra",
+    "output_hash": "9610ed5b9ef67f66e9da6736e841348d97a1f38de8e70310318451c23ed7e3f3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/satra.ex",
+    "source_hash": "9c6c313c714e9f4435ae385a9ea8339cc80d58f819b00cdfd4273449e5ce7d0d",
+    "spawns": [
+      {
+        "name": "Satra",
+        "scope": "shared",
+        "x": 31,
+        "y": 151,
+        "map": "ein_in01",
+        "dir": 3,
+        "unique_name": "Satra#ein",
+        "sprite": 850
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Scientist#ein|ein_in01:254:35": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.Scientist",
+    "output_hash": "c9aebc2f0735e8cdf1d9fe1498664c8ab38fc6784fa52feff5cbbd5c0cbbe6a1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/scientist.ex",
+    "source_hash": "50b7f5a59e66c8d4c4c426c03360f8390d2c0f8c99bda582303a357c81968ee2",
+    "spawns": [
+      {
+        "name": "Scientist",
+        "scope": "shared",
+        "x": 254,
+        "y": 35,
+        "map": "ein_in01",
+        "dir": 1,
+        "unique_name": "Scientist#ein",
+        "sprite": 749
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Security#ein|einbroch:51:52": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.Security",
+    "output_hash": "bb67a53456a2fdb363ba698b04f2784608854cf358be942243a53a8ad1b02e5e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/security.ex",
+    "source_hash": "2b07c0186aade0c31a655c0fd6eabeae89d0e86e05ec99fc1a0af937dc4a8c6d",
+    "spawns": [
+      {
+        "name": "Security",
+        "scope": "shared",
+        "x": 51,
+        "y": 52,
+        "map": "einbroch",
+        "dir": 0,
+        "unique_name": "Security#ein",
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Sick Old Man#ein|ein_in01:231:163": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.SickOldMan",
+    "output_hash": "b7bf23d741255d83f66ee1f62f3f9280a3ef7933ea709354022ad9194e387f35",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/sick_old_man.ex",
+    "source_hash": "aae94a01d3651efb46f51382442592610c8eed3558d8d544ec6a4afddc7d1a25",
+    "spawns": [
+      {
+        "name": "Sick Old Man",
+        "scope": "shared",
+        "x": 231,
+        "y": 163,
+        "map": "ein_in01",
+        "dir": 7,
+        "unique_name": "Sick Old Man#ein",
+        "sprite": 849
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Supineque#ein|ein_in01:192:90": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.Supineque",
+    "output_hash": "88009ace342e4be24e40d3fcff8ca6e4154d5a907fc4797c30f46594c54919a5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/supineque.ex",
+    "source_hash": "d8c63b87c1bc6e38a989878d5831aad020eafe4b027e651ecf2ec2584ecf0b53",
+    "spawns": [
+      {
+        "name": "Supineque",
+        "scope": "shared",
+        "x": 192,
+        "y": 90,
+        "map": "ein_in01",
+        "dir": 3,
+        "unique_name": "Supineque#ein",
+        "sprite": 849
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Unknown Stuff#ein|ein_in01:266:27": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.UnknownStuff",
+    "output_hash": "aa2435c54c9eee4f3267a9732fbbd09a989b666f3f7cca3281048add9b9e1aa6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/unknown_stuff.ex",
+    "source_hash": "42c02626ab69c4add1076464f59e43681bbd4914c3ba757182f785e759878f03",
+    "spawns": [
+      {
+        "name": "Unknown Stuff",
+        "scope": "shared",
+        "x": 266,
+        "y": 27,
+        "map": "ein_in01",
+        "dir": 3,
+        "unique_name": "Unknown Stuff#ein",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Uwe Kleine#ein|einbroch:215:180": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.UweKleine",
+    "output_hash": "4a9137b54dfeda0fadd9db2dbce144040cf958594550be6a7350d9997267cc29",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/uwe_kleine.ex",
+    "source_hash": "f6c943156d57511c96419ba5ff27ea4af5e23ca48b6d1285cb566ade1866e7e4",
+    "spawns": [
+      {
+        "name": "Uwe Kleine",
+        "scope": "shared",
+        "x": 215,
+        "y": 180,
+        "map": "einbroch",
+        "dir": 6,
+        "unique_name": "Uwe Kleine#ein",
+        "sprite": 85
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Young Man#Shinokas_Quest|einbech:57:210": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.YoungMan",
+    "output_hash": "927e29dbc82964e91fab25eb9287534ee24bb69ce3726e60356f6d3137fde4a9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/young_man.ex",
+    "source_hash": "44bf2719bbc40a2f5a36b6bb378cd718cc38c780fc86a8fef8635b625c6b0b47",
+    "spawns": [
+      {
+        "name": "Young Man",
+        "scope": "shared",
+        "x": 57,
+        "y": 210,
+        "map": "einbech",
+        "dir": 3,
+        "unique_name": "Young Man#Shinokas_Quest",
+        "sprite": 855
+      }
+    ]
+  },
+  "quests/quests_ein.txt|script|Zelmeto|ein_in01:67:242": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.Zelmeto",
+    "output_hash": "2a6fb994177684aecc758e96b5ed40afca5bf6a45ba6ec3b0150eafbc71baf18",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ein/zelmeto.ex",
+    "source_hash": "a4d09c1a5ef82fa509919e97da75039799d1a97502357041f0a8cfab85db001b",
+    "spawns": [
+      {
+        "name": "Zelmeto",
+        "scope": "shared",
+        "x": 67,
+        "y": 242,
+        "map": "ein_in01",
+        "dir": 3,
+        "sprite": 851
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
