@@ -292,7 +292,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.ObbQuest.Tourist do
       |> mes("[Tourist]")
       |> mes("Hopefully, it'll be useful.")
 
-    if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 500 do
+    if max_weight(ctx) - weight(ctx) < 500 do
       ctx
       |> mes("Umm...it seems you're carrying too much stuff with you.")
       |> mes("Doncha want me to help you?")

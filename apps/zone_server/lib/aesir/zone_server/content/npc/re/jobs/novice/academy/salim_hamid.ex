@@ -70,7 +70,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SalimHamid do
 
     ctx =
       if not Rathena.truthy?(checkweight(ctx, [{714, 3}])) or
-           get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 10000 do
+           max_weight(ctx) - weight(ctx) < 10000 do
         ctx =
           ctx
           |> mes("- As you are overloaded with so many items, quest can't be proceeded. -")

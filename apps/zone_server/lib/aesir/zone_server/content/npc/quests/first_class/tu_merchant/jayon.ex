@@ -88,7 +88,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMerchant.Jayon do
             |> mes("if you want these potions.")
             |> close()
 
-          get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 71 ->
+          max_weight(ctx) - weight(ctx) < 71 ->
             ctx
             |> next()
             |> mes("[Jayon]")

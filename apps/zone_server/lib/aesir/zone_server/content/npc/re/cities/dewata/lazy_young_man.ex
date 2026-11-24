@@ -34,8 +34,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.LazyYoungMan do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if checkweight(ctx, [{1201, 1}]) == 0 or
-           get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 500 do
+      if checkweight(ctx, [{1201, 1}]) == 0 or max_weight(ctx) - weight(ctx) < 500 do
         ctx =
           ctx
           |> mes("[Lazy Young Man]")

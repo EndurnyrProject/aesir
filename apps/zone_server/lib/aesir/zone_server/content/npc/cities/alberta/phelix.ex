@@ -28,7 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Alberta.Phelix do
     ctx = mes(ctx, "[Phelix]")
 
     cond do
-      get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 10_000 ->
+      max_weight(ctx) - weight(ctx) < 10_000 ->
         reject_overloaded_visitor(ctx)
 
       get_temp_var(ctx, :event_zelopy, 0) == 0 ->

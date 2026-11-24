@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.GroutHeTuccok do
 
   @impl true
   def on_talk(ctx) do
-    if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 2000 or
+    if max_weight(ctx) - weight(ctx) < 2000 or
          checkweight(ctx, [{1201, 1}]) == 0 do
       ctx
       |> mes("^3355FFHold it right there!")
@@ -171,7 +171,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.GroutHeTuccok do
         |> mes("^333333*Sob*^000000")
         |> close()
 
-      get_char_var(ctx, :MaxWeight, 0) - weight(ctx) > 1000 ->
+      max_weight(ctx) - weight(ctx) > 1000 ->
         ctx
         |> mes("[Grout'he]")
         |> mes("There you go!")

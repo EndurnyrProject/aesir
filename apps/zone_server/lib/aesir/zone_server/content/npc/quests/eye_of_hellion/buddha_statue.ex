@@ -57,7 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.BuddhaStatue do
   @impl true
   def on_talk(ctx) do
     cond do
-      get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 2000 or checkweight(ctx, [{1201, 1}]) == 0 ->
+      max_weight(ctx) - weight(ctx) < 2000 or checkweight(ctx, [{1201, 1}]) == 0 ->
         ctx
         |> mes("^3355FFHold it right there!")
         |> mes(

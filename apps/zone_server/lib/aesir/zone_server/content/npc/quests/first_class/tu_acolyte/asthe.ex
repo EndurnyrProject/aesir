@@ -776,7 +776,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.Asthe do
       |> mes("Here you go, the letters and packages...")
 
     ctx =
-      if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 2430 do
+      if max_weight(ctx) - weight(ctx) < 2430 do
         ctx
         |> next()
         |> mes("[Asthe]")

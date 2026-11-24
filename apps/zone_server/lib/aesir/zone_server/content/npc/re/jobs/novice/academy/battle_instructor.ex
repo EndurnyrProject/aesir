@@ -74,7 +74,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
   def on_talk(ctx) do
     ctx =
       if not Rathena.truthy?(checkweight(ctx, [{1201, 1}])) or
-           get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 2000 do
+           max_weight(ctx) - weight(ctx) < 2000 do
         ctx =
           ctx
           |> mes("- You have too many items.")

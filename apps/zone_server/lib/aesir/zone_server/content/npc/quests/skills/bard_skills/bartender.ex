@@ -80,7 +80,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.BardSkills.Bartender do
 
   defp order(ctx, drink) do
     cond do
-      get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 2000 ->
+      max_weight(ctx) - weight(ctx) < 2000 ->
         too_heavy(ctx)
 
       zeny(ctx) < @price ->

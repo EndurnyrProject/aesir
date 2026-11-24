@@ -43,7 +43,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Lvl4WeaponQuest.Reyghema do
   @impl true
   def on_talk(ctx) do
     cond do
-      get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 3000 -> inventory_full(ctx)
+      max_weight(ctx) - weight(ctx) < 3000 -> inventory_full(ctx)
       base_level(ctx) < 80 -> warn_living(ctx)
       true -> quest_stage(ctx, get_char_var(ctx, :lv4_weapon, 0))
     end

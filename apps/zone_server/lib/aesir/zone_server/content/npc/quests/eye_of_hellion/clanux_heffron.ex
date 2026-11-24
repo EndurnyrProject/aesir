@@ -39,7 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.ClanuxHeffron do
 
   @impl true
   def on_talk(ctx) do
-    if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 2000 or
+    if max_weight(ctx) - weight(ctx) < 2000 or
          checkweight(ctx, [{1201, 1}]) == 0 do
       ctx
       |> mes("^3355FFHold it right there!")

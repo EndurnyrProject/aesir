@@ -140,7 +140,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Tadde do
           end
 
         ctx =
-          if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < get_local(ctx, :item_weight, 0) do
+          if max_weight(ctx) - weight(ctx) < get_local(ctx, :item_weight, 0) do
             ctx =
               ctx
               |> mes("[Tadde]")
@@ -189,7 +189,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Tadde do
           end
 
         ctx =
-          if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < get_local(ctx, :item_weight, 0) do
+          if max_weight(ctx) - weight(ctx) < get_local(ctx, :item_weight, 0) do
             ctx =
               ctx
               |> mes("[Tadde]")

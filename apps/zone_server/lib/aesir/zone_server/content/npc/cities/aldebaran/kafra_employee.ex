@@ -65,7 +65,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Aldebaran.KafraEmployee do
       |> next()
       |> mes("[Kafra Employee]")
 
-    if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 11_000 do
+    if max_weight(ctx) - weight(ctx) < 11_000 do
       insufficient_free_weight(ctx)
     else
       choose_reward(ctx)

@@ -95,7 +95,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainerMainz do
       if isbegin_quest(ctx, 15000) == 1 do
         ctx =
           if not Rathena.truthy?(checkweight(ctx, [{1201, 1}])) or
-               get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 40 do
+               max_weight(ctx) - weight(ctx) < 40 do
             ctx =
               ctx
               |> mes("- Here, just moment!! -")

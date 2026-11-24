@@ -113,7 +113,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.SirGray do
 
   defp buy_claymore(ctx) do
     cond do
-      get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 1800 ->
+      max_weight(ctx) - weight(ctx) < 1800 ->
         refuse_overweight(ctx)
 
       zeny(ctx) > 73_999 and count_item(ctx, 999) > 0 and

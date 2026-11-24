@@ -118,7 +118,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.ResearchOfficial do
 
   defp overloaded?(ctx) do
     checkweight(ctx, [{1201, 1}]) == 0 or
-      get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 3500
+      max_weight(ctx) - weight(ctx) < 3500
   end
 
   defp in_chapter?(ctx) do

@@ -61,7 +61,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.CookingQuest.CharlesOrlea
   @impl true
   def on_talk(ctx) do
     cond do
-      get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 2000 ->
+      max_weight(ctx) - weight(ctx) < 2000 ->
         refuse_overburdened_player(ctx)
 
       Rathena.job_id(base_job(ctx)) == Rathena.job_id(:novice) ->

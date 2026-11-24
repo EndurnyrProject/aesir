@@ -50,7 +50,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Marian do
   @impl true
   def on_talk(ctx) do
     cond do
-      checkweight(ctx, [{1201, 1}]) == 0 or get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 1000 ->
+      checkweight(ctx, [{1201, 1}]) == 0 or max_weight(ctx) - weight(ctx) < 1000 ->
         overburdened(ctx)
 
       get_char_var(ctx, :ep13_newbs, 0) < 1 ->

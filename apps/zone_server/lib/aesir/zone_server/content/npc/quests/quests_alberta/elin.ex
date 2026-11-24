@@ -86,7 +86,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsAlberta.Elin do
   end
 
   defp offer_doll(ctx) do
-    if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 1000 do
+    if max_weight(ctx) - weight(ctx) < 1000 do
       ctx = mes(ctx, "[Elin]")
 
       ctx =

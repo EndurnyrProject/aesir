@@ -135,7 +135,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.ChiefResearcher do
   end
 
   defp talk_about_step(ctx, 22) do
-    if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 1370 do
+    if max_weight(ctx) - weight(ctx) < 1370 do
       ctx
       |> mes("[Nicholas Flamel]")
       |> mes("Whoa...")

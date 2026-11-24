@@ -129,7 +129,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.BarMaster do
   end
 
   defp order_vermilion_on_the_beach(ctx) do
-    if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < @weight_reserve do
+    if max_weight(ctx) - weight(ctx) < @weight_reserve do
       too_loaded_for_a_glass(ctx)
     else
       ctx

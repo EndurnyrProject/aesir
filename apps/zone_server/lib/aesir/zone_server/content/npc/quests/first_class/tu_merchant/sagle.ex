@@ -98,7 +98,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMerchant.Sagle do
             |> mes("Zeny, alright?")
             |> close()
 
-          get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 71 ->
+          max_weight(ctx) - weight(ctx) < 71 ->
             ctx
             |> next()
             |> mes("[Sagle]")

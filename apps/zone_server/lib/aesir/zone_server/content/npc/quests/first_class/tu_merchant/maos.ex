@@ -90,7 +90,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMerchant.Maos do
             )
             |> close()
 
-          get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 71 ->
+          max_weight(ctx) - weight(ctx) < 71 ->
             ctx
             |> next()
             |> mes("[Maos]")

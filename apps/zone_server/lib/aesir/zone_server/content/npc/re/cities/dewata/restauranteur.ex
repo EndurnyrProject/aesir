@@ -28,7 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Restauranteur do
   def on_talk(ctx) do
     ctx =
       if checkweight(ctx, [{11532, 1}]) == 0 or checkweight(ctx, [{11533, 1}]) == 0 or
-           get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 500 do
+           max_weight(ctx) - weight(ctx) < 500 do
         ctx =
           ctx
           |> mes("[Restauranteur]")

@@ -176,7 +176,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Skills.BlacksmithSkills.Goodman do
   end
 
   defp check_inventory(ctx, master?) do
-    if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) >= 5000 do
+    if max_weight(ctx) - weight(ctx) >= 5000 do
       too_early(ctx)
     else
       teach(ctx, master?)

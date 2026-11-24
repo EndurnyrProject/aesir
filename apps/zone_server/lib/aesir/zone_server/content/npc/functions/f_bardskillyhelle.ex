@@ -37,7 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FBardskillyhelle do
   @spec call(Ctx.t(), [integer()]) :: {Ctx.t(), nil} | no_return()
   def call(ctx, args) do
     if checkweight(ctx, [{1201, 1}]) == 0 or
-         get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 2000 do
+         max_weight(ctx) - weight(ctx) < 2000 do
       refuse(ctx)
     else
       {startle(ctx, args), nil}

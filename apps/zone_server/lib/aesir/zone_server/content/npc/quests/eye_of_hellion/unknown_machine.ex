@@ -42,7 +42,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.EyeOfHellion.UnknownMachine do
     step = get_char_var(ctx, :HELLIONQ, 0)
 
     cond do
-      get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 2000 or
+      max_weight(ctx) - weight(ctx) < 2000 or
           checkweight(ctx, [{1201, 1}]) == 0 ->
         capacity_warning(ctx)
 

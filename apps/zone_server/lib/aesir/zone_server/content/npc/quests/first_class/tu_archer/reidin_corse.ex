@@ -72,7 +72,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.ReidinCorse do
         |> mes("[Reidin Corse]")
         |> too_heavy()
 
-      get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 2000 ->
+      max_weight(ctx) - weight(ctx) < 2000 ->
         ctx
         |> mes("Hey, you're carrying an")
         |> mes("awful lot of stuff. You ought")
@@ -634,7 +634,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.ReidinCorse do
       )
 
     ctx =
-      if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 1000 do
+      if max_weight(ctx) - weight(ctx) < 1000 do
         ctx
         |> mes("You've got plenty of arrows")
         |> mes("for that, so go for it!")
@@ -905,7 +905,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.ReidinCorse do
         )
         |> close()
 
-      get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 1000 ->
+      max_weight(ctx) - weight(ctx) < 1000 ->
         too_heavy(ctx)
 
       true ->
@@ -1019,7 +1019,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.ReidinCorse do
       |> next()
       |> mes("[Reidin Corse]")
 
-    if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 2100 do
+    if max_weight(ctx) - weight(ctx) < 2100 do
       ctx
       |> mes("H-hey!")
       |> too_heavy()
