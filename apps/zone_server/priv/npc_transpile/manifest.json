@@ -45163,6 +45163,385 @@
       }
     ]
   },
+  "quests/quests_comodo.txt|script|BBQ Boy#cmd|comodo:221:310": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsComodo.BbqBoy",
+    "output_hash": "e58b3cd7b859f4c74e2986a9996bf7609efa6abdd41bf9443d26fe9fc25b70a9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_comodo/bbq_boy.ex",
+    "source_hash": "de1cb31ea9e21fdabd614c665a3fa604c9b27ac6a3fb7e130e45a3eb611734a9",
+    "spawns": [
+      {
+        "name": "BBQ Boy",
+        "scope": "shared",
+        "x": 221,
+        "y": 310,
+        "map": "comodo",
+        "dir": 4,
+        "unique_name": "BBQ Boy#cmd",
+        "sprite": 86
+      }
+    ]
+  },
+  "quests/quests_comodo.txt|script|BBQ Papa#cmd::CmdFamily|comodo:216:310": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsComodo.BbqPapa",
+    "output_hash": "029b41ea3999d1890186b668e57e521e737184a69961de940a26438dba91515e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_comodo/bbq_papa.ex",
+    "source_hash": "572755518657431c337439c4b978f9ee397a7d3abf529f5dfe8b9995166113ea",
+    "spawns": [
+      {
+        "name": "BBQ Papa",
+        "scope": "shared",
+        "x": 216,
+        "y": 310,
+        "map": "comodo",
+        "dir": 4,
+        "unique_name": "CmdFamily",
+        "sprite": 50
+      },
+      {
+        "name": "BBQ Mama",
+        "scope": "shared",
+        "x": 215,
+        "y": 307,
+        "map": "comodo",
+        "dir": 4,
+        "unique_name": "BBQ Mama#cmd",
+        "sprite": 74
+      },
+      {
+        "name": "BBQ Boy",
+        "scope": "shared",
+        "x": 213,
+        "y": 310,
+        "map": "comodo",
+        "dir": 4,
+        "unique_name": "BBQ Boy#cmd2",
+        "sprite": 706
+      }
+    ]
+  },
+  "quests/quests_comodo.txt|script|BBQ Visitor#cmd|comodo:218:309": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsComodo.BbqVisitor",
+    "output_hash": "336694033b4b9ac7b435cdd7dbe46c0f1e4ce08bf8c4f1f4d0222c08a2f92211",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_comodo/bbq_visitor.ex",
+    "source_hash": "bf0b7c79731a2f4cf673c18bb381a5adb1ec267c7fedd64c71bb5251f3571597",
+    "spawns": [
+      {
+        "name": "BBQ Visitor",
+        "scope": "shared",
+        "x": 218,
+        "y": 309,
+        "map": "comodo",
+        "dir": 4,
+        "unique_name": "BBQ Visitor#cmd",
+        "sprite": 90
+      }
+    ]
+  },
+  "quests/quests_comodo.txt|script|Campground Boy#cmd|comodo:206:310": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsComodo.CampgroundBoy",
+    "output_hash": "d7853afe95946d6b6544d7d2abe06bcf12ccc327ec0b66a3deeb03346e5f01f4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_comodo/campground_boy.ex",
+    "source_hash": "67f0976404e27e8c664f65cc074bad6656d0f63f9a079f6f68c8e41d16aa14e4",
+    "spawns": [
+      {
+        "name": "Campground Boy",
+        "scope": "shared",
+        "x": 206,
+        "y": 310,
+        "map": "comodo",
+        "dir": 4,
+        "unique_name": "Campground Boy#cmd",
+        "sprite": 704
+      }
+    ]
+  },
+  "quests/quests_comodo.txt|script|Campground Lad#cmd|comodo:209:314": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsComodo.CampgroundLad",
+    "output_hash": "bd70147521d93e3ff181b220d9886fffbe976ee9602e05f883bde7e0f7431cc2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_comodo/campground_lad.ex",
+    "source_hash": "5937aff77d8c259a2225bd5c04827a6d9c66eae028c55d1368755dfd8280add4",
+    "spawns": [
+      {
+        "name": "Campground Lad",
+        "scope": "shared",
+        "x": 209,
+        "y": 314,
+        "map": "comodo",
+        "dir": 4,
+        "unique_name": "Campground Lad#cmd",
+        "sprite": 706
+      }
+    ]
+  },
+  "quests/quests_comodo.txt|script|Camping Maiden#cmd|comodo:209:305": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsComodo.CampingMaiden",
+    "output_hash": "d2a90f3bb80d36c014b62093fe281faa156363064eaaf1d30c843f6e8f304034",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_comodo/camping_maiden.ex",
+    "source_hash": "d40518a2938dceab127ed94bbd25566cfc3de59de737b184cab9e619729e78b4",
+    "spawns": [
+      {
+        "name": "Camping Maiden",
+        "scope": "shared",
+        "x": 209,
+        "y": 305,
+        "map": "comodo",
+        "dir": 4,
+        "unique_name": "Camping Maiden#cmd",
+        "sprite": 71
+      }
+    ]
+  },
+  "quests/quests_comodo.txt|script|Camping Youth#cmd|comodo:204:310": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsComodo.CampingYouth",
+    "output_hash": "30208aeff043d77c54d107eec7d3471c6e455019b7790efeb31cf486a95483e4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_comodo/camping_youth.ex",
+    "source_hash": "df2a955895f9aba7466fc153eb877638c16229efa70240353c21662abec6819a",
+    "spawns": [
+      {
+        "name": "Camping Youth",
+        "scope": "shared",
+        "x": 204,
+        "y": 310,
+        "map": "comodo",
+        "dir": 4,
+        "unique_name": "Camping Youth#cmd",
+        "sprite": 65
+      }
+    ]
+  },
+  "quests/quests_comodo.txt|script|Chief#cmd|cmd_in02:32:140": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsComodo.Chief",
+    "output_hash": "0d00d4d26e20844db3226a779d591371b064027cae690cd21294a87a62e4c4e6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_comodo/chief.ex",
+    "source_hash": "d70fefdcb2c159e7f3627994e779ca6f254e97b4b924026aec3b33375b2a53fe",
+    "spawns": [
+      {
+        "name": "Chief",
+        "scope": "shared",
+        "x": 32,
+        "y": 140,
+        "map": "cmd_in02",
+        "dir": 4,
+        "unique_name": "Chief#cmd",
+        "sprite": 49
+      }
+    ]
+  },
+  "quests/quests_comodo.txt|script|Hair Ornament Girl|comodo:228:159": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsComodo.HairOrnamentGirl",
+    "output_hash": "84a1b16fb6688e9e3e0da20758a346fefb84fc23a3373f97484e5c6b4d0c5efb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_comodo/hair_ornament_girl.ex",
+    "source_hash": "9b8392dbde5cc9bb0c01e75718281886a072d0066b1c4879c7104799543bde8d",
+    "spawns": [
+      {
+        "name": "Hair Ornament Girl",
+        "scope": "shared",
+        "x": 228,
+        "y": 159,
+        "map": "comodo",
+        "dir": 3,
+        "sprite": 700
+      }
+    ]
+  },
+  "quests/quests_comodo.txt|script|Hullaris#cmd|comodo:187:153": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsComodo.Hullaris",
+    "output_hash": "906250e5935b463f3b6c1fd56f726dad615f9be159fbc25500fad91bfcef38d5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_comodo/hullaris.ex",
+    "source_hash": "68fef884386b88f69df42440bcf7835f7508ba3e702469eb3c6effa2664d923d",
+    "spawns": [
+      {
+        "name": "Hullaris",
+        "scope": "shared",
+        "x": 187,
+        "y": 153,
+        "map": "comodo",
+        "dir": 4,
+        "unique_name": "Hullaris#cmd",
+        "sprite": 701
+      }
+    ]
+  },
+  "quests/quests_comodo.txt|script|Kichiri#cmd|comodo:169:284": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsComodo.Kichiri",
+    "output_hash": "ec65975f4a8bf5d76ddab68706afe8cb4061fb0a5a7d6768e4e221a32a852dde",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_comodo/kichiri.ex",
+    "source_hash": "d2e8d331172fb72392179a044d58893843f51b52b777fc5d72c464c74ff9542e",
+    "spawns": [
+      {
+        "name": "Kichiri",
+        "scope": "shared",
+        "x": 169,
+        "y": 284,
+        "map": "comodo",
+        "dir": 4,
+        "unique_name": "Kichiri#cmd",
+        "sprite": 98
+      }
+    ]
+  },
+  "quests/quests_comodo.txt|script|Magatu#cmd|comodo:163:280": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsComodo.Magatu",
+    "output_hash": "f99933099d35ee3d7e60dc9bd08af68a6a7cb0b422e29adb011a9f5d58885029",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_comodo/magatu.ex",
+    "source_hash": "3a76db75e9d6f1e210f195468d3ecc2b6aaa81d8cf8d183ea567a6af2f11e705",
+    "spawns": [
+      {
+        "name": "Magatu",
+        "scope": "shared",
+        "x": 163,
+        "y": 280,
+        "map": "comodo",
+        "dir": 4,
+        "unique_name": "Magatu#cmd",
+        "sprite": 55
+      }
+    ]
+  },
+  "quests/quests_comodo.txt|script|Manzi#cmd|cmd_in02:189:99": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsComodo.Manzi",
+    "output_hash": "62fe52be4be9302c0692ab533b132f19fb9dff815531dc6aec67f5d1c16ecaa3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_comodo/manzi.ex",
+    "source_hash": "5d1adff62673ae34d3434919636be09b9835ac443ca9cddbbb15c99e62c0da31",
+    "spawns": [
+      {
+        "name": "Manzi",
+        "scope": "shared",
+        "x": 189,
+        "y": 99,
+        "map": "cmd_in02",
+        "dir": 4,
+        "unique_name": "Manzi#cmd",
+        "sprite": 85
+      }
+    ]
+  },
+  "quests/quests_comodo.txt|script|Meteurengut#cmd|aldebaran:44:53": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsComodo.Meteurengut",
+    "output_hash": "737fa9a82236a908eadbaf228cca9e3f09755db88bc960ee2bf72f3780f0c5d7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_comodo/meteurengut.ex",
+    "source_hash": "badcd2bf05d4b2bfacd8d10ad44269e3f7630cd65f05965851bb8079a5e3469f",
+    "spawns": [
+      {
+        "name": "Meteurengut",
+        "scope": "shared",
+        "x": 44,
+        "y": 53,
+        "map": "aldebaran",
+        "dir": 4,
+        "unique_name": "Meteurengut#cmd",
+        "sprite": 64
+      }
+    ]
+  },
+  "quests/quests_comodo.txt|script|Nigirboran#cmd|beach_dun3:30:220": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsComodo.Nigirboran",
+    "output_hash": "36f7a1b2e6e59520ea4c862fa671623fa13665cd57e7f35ee6d34f6f5bdd26a5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_comodo/nigirboran.ex",
+    "source_hash": "c740f14e985ce545c62c33a1af36bbd64d267d37e4afd3ae30276db54447aabf",
+    "spawns": [
+      {
+        "name": "Nigirboran",
+        "scope": "shared",
+        "x": 30,
+        "y": 220,
+        "map": "beach_dun3",
+        "dir": 4,
+        "unique_name": "Nigirboran#cmd",
+        "sprite": 704
+      }
+    ]
+  },
+  "quests/quests_comodo.txt|script|Rakusa#cmd|comodo:164:291": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsComodo.Rakusa",
+    "output_hash": "2d041154f4dfcf5f70c95a2e7c6a6c36cafa5a5acf3b66c58593607b7db818fb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_comodo/rakusa.ex",
+    "source_hash": "5d0d8812753361bb2bf49adf01388c8d3f3df5a95751925a7b05570fb6b258a4",
+    "spawns": [
+      {
+        "name": "Rakusa",
+        "scope": "shared",
+        "x": 164,
+        "y": 291,
+        "map": "comodo",
+        "dir": 4,
+        "unique_name": "Rakusa#cmd",
+        "sprite": 73
+      }
+    ]
+  },
+  "quests/quests_comodo.txt|script|Toruna#cmd|comodo:88:97": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsComodo.Toruna",
+    "output_hash": "e4b8ea83018fb2c21ca795b9fbc9cff7e1f844f189c6723ac3d343858e48be9d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_comodo/toruna.ex",
+    "source_hash": "66b403d57ff6a8ff417ef9f709c9a078851eb45f9e9923b5cc3e258b0f0f9b50",
+    "spawns": [
+      {
+        "name": "Toruna",
+        "scope": "shared",
+        "x": 88,
+        "y": 97,
+        "map": "comodo",
+        "dir": 4,
+        "unique_name": "Toruna#cmd",
+        "sprite": 109
+      }
+    ]
+  },
+  "quests/quests_comodo.txt|script|Traveler#head|comodo:273:137": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsComodo.Traveler",
+    "output_hash": "8ad72d6a227345a6516df1a4b4fe9a6dd7a45f90bae317d8f34495d3fd22d015",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_comodo/traveler.ex",
+    "source_hash": "5dec9f1c55fe5b55ef83437137d24f21005cf0b046f5140b5fe4c5fadd4165a3",
+    "spawns": [
+      {
+        "name": "Traveler",
+        "scope": "shared",
+        "x": 273,
+        "y": 137,
+        "map": "comodo",
+        "dir": 4,
+        "unique_name": "Traveler#head",
+        "sprite": 702
+      }
+    ]
+  },
+  "quests/quests_comodo.txt|script|Won#cmd|comodo:232:87": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsComodo.Won",
+    "output_hash": "2f36b41ff90c79c3a0d6e51db3a0018393c61ada6e285d32d1076b6d7e50206e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_comodo/won.ex",
+    "source_hash": "971092582638f93dcfcae2f8ac481ea7c69cc4e8bc00ab9730c283098893e3aa",
+    "spawns": [
+      {
+        "name": "Won",
+        "scope": "shared",
+        "x": 232,
+        "y": 87,
+        "map": "comodo",
+        "dir": 4,
+        "unique_name": "Won#cmd",
+        "sprite": 106
+      }
+    ]
+  },
+  "quests/quests_comodo.txt|script|Zaka#cmd|morocc:201:30": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsComodo.Zaka",
+    "output_hash": "267d4d60ca790262aafa838855aedcd437024519e8f6fe23d687688de4e337cd",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_comodo/zaka.ex",
+    "source_hash": "f6671764d0c7d45bba1e615bc315e66367eb8f72e720dfcc4cd12a3105397c5c",
+    "spawns": [
+      {
+        "name": "Zaka",
+        "scope": "shared",
+        "x": 201,
+        "y": 30,
+        "map": "morocc",
+        "dir": 4,
+        "unique_name": "Zaka#cmd",
+        "sprite": 99
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
