@@ -188,7 +188,7 @@ defmodule PlacementsCheck do
     with [position, "duplicate(" <> duplicate | rest] <- String.split(line, "\t"),
          [map, x, y, dir] <- String.split(position, ",") do
       body = duplicate |> String.trim_trailing(")") |> exname()
-      name = rest |> Enum.at(0, "") |> String.trim() |> exname()
+      name = rest |> Enum.at(0, "") |> String.trim_trailing() |> exname()
 
       [
         {body,

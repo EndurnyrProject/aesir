@@ -232,6 +232,14 @@ Rules that repeatedly bite:
   sit after a label's `end`. A value stored into a variable whose name has no `$`, and a `switch`
   subject (rAthena keeps it in `$@__SW…_VAL`), is converted to a number with `Rathena.atoi`, which is
   why `switch (charat(strnpcinfo(2),9)) { case 1: }` compares integers.
+- A label is a code position, so a jump or event label nested in a block (`if (x) { OnTalk: … }`)
+  is hoisted to its own segment: the rest of its block, then a copy of what follows the enclosing
+  `if`/block chain up to the next top-level segment or the end of the script; its old position
+  becomes a call. Below a loop or `switch` there is no plain continuation, so such a label is
+  hoisted only when its block terminates; otherwise an event label becomes a `todo(ctx, :goto, …)`
+  stub (reported, never an undefined `ev_*` call). An event function is also an `on_event`
+  entry, so it returns normally at its tail; every non-tail entry into one is followed by the
+  `script_end` throw.
 - Unsupported buildins become runtime-raising `todo(ctx, :name, args)` stubs. Implementing
   one = add a DSL op + a `CommandMap` entry (or `@call_reads`/`@functions` for reads and
   global callfuncs), then force-regen. Codegen-native reads must also be added to Analyzer

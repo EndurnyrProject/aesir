@@ -942,6 +942,111 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ ~r/def ev_oninit\(ctx\) do\n\s*disablenpc\(ctx, "Hansenne#ep131_rhea07"\)/
   end
 
+  test "an event label nested in a block runs the rest of the block, then what follows the block" do
+    module = Module.concat(__MODULE__, "NestedEvent#{System.unique_integer([:positive])}")
+
+    src =
+      gen!(
+        """
+        if (!$@active) {
+          if (quest == 13) {
+            mes "bushes";
+            close;
+          }
+        OnTouch_:
+          if (quest == 12) mes "blood";
+        }
+        mes "after";
+        close;
+        """,
+        module: inspect(module)
+      )
+
+    assert src =~ ~S|def on_event("OnTouch_", ctx)|
+    assert src =~ ~r/def ev_ontouch\(ctx\) do.*"blood".*mes\("after"\)/s
+    # Entered mid-block, the label's function runs "after" itself; the talk path must end there.
+    assert src =~ ~r/"bushes".*ctx = ev_ontouch\(ctx\)\n\s*throw\(\{:script_end, ctx\}\)/s
+
+    Code.compile_string(src)
+    on_exit(fn -> :code.delete(module) end)
+  end
+
+  test "a hoisted label's continuation runs into the next top-level segment" do
+    src =
+      gen!(
+        """
+        if (quest) {
+        OnTalk:
+          mes "talk";
+        }
+        mes "tail";
+        OnInit:
+          mes "init";
+          end;
+        """,
+        module: "Aesir.ZoneServer.Content.Npc.Payon.TestNpcNestedContinuation"
+      )
+
+    assert src =~
+             ~r/def ev_ontalk\(ctx\) do\n\s*ctx \|> mes\("talk"\) \|> mes\("tail"\) \|> ev_oninit\(\)/
+  end
+
+  test "a goto target that runs into an event label still ends the script there" do
+    src =
+      gen!(
+        """
+        if (quest) goto L_A;
+        mes "z";
+        end;
+        L_A:
+          mes "a";
+        OnInit:
+          mes "init";
+          end;
+        """,
+        module: "Aesir.ZoneServer.Content.Npc.Payon.TestNpcJumpIntoEvent"
+      )
+
+    assert src =~
+             ~r/defp l_l_a\(ctx\) do\n\s*ctx = ctx \|> mes\("a"\) \|> ev_oninit\(\)\n\s*throw\(\{:script_end, ctx\}\)/
+  end
+
+  test "the body ends before hoisted labels instead of running into them" do
+    src =
+      gen!(
+        """
+        if (quest) goto L_Found;
+        if (other) {
+        L_Found:
+          mes "found";
+          close;
+        }
+        mes "bye";
+        """,
+        module: "Aesir.ZoneServer.Content.Npc.Payon.TestNpcHoistedTail"
+      )
+
+    assert src =~ "defp l_l_found(ctx) do"
+    refute src =~ ~r/mes\("bye"\)[^\n]*l_l_found/
+  end
+
+  test "an event label nested in a non-terminating loop becomes a todo stub" do
+    src =
+      gen!(
+        """
+        end;
+        OnInit:
+          while (1) {
+          OnTimer1000:
+            mes "tick";
+          }
+        """,
+        module: "Aesir.ZoneServer.Content.Npc.Payon.TestNpcLoopLabel"
+      )
+
+    assert src =~ ~S|def on_event("OnTimer1000", ctx), do: todo(ctx, :goto, ["OnTimer1000"])|
+  end
+
   test "a body that starts at an event label makes on_talk run that label" do
     src =
       gen!(

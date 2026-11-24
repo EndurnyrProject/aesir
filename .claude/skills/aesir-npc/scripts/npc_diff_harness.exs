@@ -32,7 +32,8 @@
 #
 # - Every local, non-Kernel call in the module body is redirected to `H.Core.call/2`.
 #   Unknown ctx-first calls are logged as effects and return the ctx; reads need an
-#   explicit clause. `Helper.call(ctx, args)` maps to the downcased last alias segment
+#   explicit clause. Generated `ev_*`/`fn_*` helpers are never redirected, so a missing
+#   one fails to load. `Helper.call(ctx, args)` maps to the downcased last alias segment
 #   (for example `FClearjobvar.call` -> `:fclearjobvar`).
 # - `Rathena.*` helpers go through `H.Core.rathena/2`. The ones with a project-specific
 #   model (item names, job ids, array writes) are defined there; any other helper is
@@ -337,6 +338,8 @@ defmodule H.Core do
   # literals widen both the purse and the item counts; otherwise every expensive path is a dead end.
   def call(:zeny, [_ctx]), do: pick(:zeny, Enum.uniq([0, 9999, 10_000, 50_000] ++ ints()))
   def call(:weight, [_ctx]), do: pick(:weight, [0, 100, 5000, 20_000])
+  # Free-capacity gates spell `max_weight - weight < N`; both sides of 2000/4000/5000 are reachable.
+  def call(:max_weight, [_ctx]), do: pick(:max_weight, [8000, 24_000])
   def call(:char_name, [_ctx | args]), do: "Name#{inspect(args)}"
 
   # Guild names only reach `announce`/`mes` text; any stable string keeps the comparison honest.
@@ -367,6 +370,8 @@ defmodule H.Core do
   def call(:getcharid, [_ctx | args]), do: pick({:getcharid, args}, [0, 150_001, 150_002])
   # The DSL answers 1/0, like rAthena: gates spell `== 0` for "would not fit".
   def call(:checkweight, [_ctx | args]), do: pick({:checkweight, args}, [1, 0])
+  # Equipment gates compare against 1, like rAthena's isequipped.
+  def call(:is_equipped, [_ctx | args]), do: pick({:is_equipped, args}, [1, 0])
 
   # 0 when unmarried; any other value when the player has a partner.
   def call(:getpartnerid, [_ctx | _args]), do: pick(:getpartnerid, [0, 150_001])
@@ -602,9 +607,14 @@ defmodule H.Load do
   def helper_name(mods),
     do: mods |> List.last() |> Atom.to_string() |> String.downcase() |> String.to_atom()
 
+  # Generated label (`ev_*`) and script-function (`fn_*`) helpers are always module-local, so an
+  # undefined one is a transpiler bug: it is left unredirected and fails to load instead of being
+  # logged as a fake DSL effect.
   defp redirect?(name, defined) do
+    string = Atom.to_string(name)
+
     name not in defined and name not in @syntax and name not in @kernel_names and
-      Atom.to_string(name) =~ ~r/^[a-z][a-zA-Z0-9_]*[?!]?$/
+      string =~ ~r/^[a-z][a-zA-Z0-9_]*[?!]?$/ and not String.starts_with?(string, ["ev_", "fn_"])
   end
 
   defp attributes(body) do

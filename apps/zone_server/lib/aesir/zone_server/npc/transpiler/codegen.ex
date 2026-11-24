@@ -156,7 +156,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     with {:ok, ast} <- Parser.parse_body(body) do
       analysis = Analyzer.analyze(ast)
       reset_state()
-      {ast, unresolvable} = hoist_nested_labels(ast, analysis)
+      {ast, unresolvable} = hoist_nested_labels(ast, analysis, opts.kind)
 
       env = %{
         a: analysis,
@@ -325,10 +325,16 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   # subroutine returning `{ctx, value}`; unwrap it so the clause still
   # returns ctx like every other on_event/on_talk entry point.
   defp event_call(env, label) do
-    if MapSet.member?(env.a.callsub_targets, String.downcase(label)) do
-      "elem(#{fn_name(env, label)}(ctx, []), 0)"
-    else
-      "#{fn_name(env, label)}(ctx)"
+    cond do
+      not label?(env, label) ->
+        flag(:todo_fun)
+        "todo(ctx, :goto, [#{inspect(label)}])"
+
+      MapSet.member?(env.a.callsub_targets, String.downcase(label)) ->
+        "elem(#{fn_name(env, label)}(ctx, []), 0)"
+
+      true ->
+        "#{fn_name(env, label)}(ctx)"
     end
   end
 
@@ -515,73 +521,137 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   # -- nested-label hoisting ----------------------------------------------------
 
-  defp hoist_nested_labels(ast, analysis) do
-    {body, hoisted, unresolvable} = hoist_list(ast, analysis, true, [], [], MapSet.new())
+  # A label is only a code position, so one nested inside a block (`if (x) { OnTalk: ... }`) is
+  # entered mid-block: from there the script runs the rest of that block, then whatever follows
+  # each enclosing statement. Segments are top-level functions, so a nested jump or event label is
+  # moved to the top level with that continuation: the rest of its block, plus a copy of the
+  # statements after the enclosing `if`/block chain up to the next top-level segment (reached by
+  # `goto`) or the end of the script. Its old position becomes a `goto`, so the code before it
+  # still falls into it. A loop or `switch` between the label and the top level has no plain
+  # continuation (its `break`/`continue` and re-check), so there the label is hoisted only when the
+  # rest of its block terminates, and is otherwise unresolvable.
+  defp hoist_nested_labels(ast, analysis, kind) do
+    st = %{analysis: analysis, kind: kind, top: ast}
+    {body, hoisted, unresolvable} = hoist_list(ast, st, :top, [], [], MapSet.new())
 
     appended =
       hoisted
       |> Enum.reverse()
       |> Enum.flat_map(fn {label, stmts} -> [{:label, label} | stmts] end)
 
-    {body ++ appended, unresolvable}
+    # The last top-level segment would otherwise run off its end into the first hoisted label.
+    ender = if appended == [], do: [], else: [script_terminal(kind)]
+    {body ++ ender ++ appended, unresolvable}
   end
 
-  defp hoist_list([], _analysis, _is_top, acc, hoisted, unresolvable),
+  defp script_terminal(:function), do: {:return, nil}
+  defp script_terminal(_kind), do: {:cmd, "end", []}
+
+  # `cont` is what runs after the list being walked: `:top` for the body itself, a statement list
+  # ending in a terminal, or `:unknown` below a loop or `switch`.
+  defp hoist_list([], _st, _cont, acc, hoisted, unresolvable),
     do: {Enum.reverse(acc), hoisted, unresolvable}
 
-  defp hoist_list([{:label, label} | rest], analysis, is_top, acc, hoisted, unresolvable) do
-    if is_top or not hoistable?(label, analysis) do
-      hoist_list(rest, analysis, is_top, [{:label, label} | acc], hoisted, unresolvable)
-    else
-      if terminates?(rest) do
-        {rest, hoisted, unresolvable} =
-          hoist_list(rest, analysis, false, [], hoisted, unresolvable)
+  defp hoist_list([{:label, label} | rest], st, cont, acc, hoisted, unresolvable) do
+    with true <- cont != :top,
+         kind when not is_nil(kind) <- hoist_kind(label, st),
+         {:ok, body} <- label_body(kind, rest, cont) do
+      {body, hoisted, unresolvable} =
+        hoist_list(body, st, [script_terminal(st.kind)], [], hoisted, unresolvable)
 
-        hoist_list(
-          [],
-          analysis,
-          is_top,
-          [{:goto, label} | acc],
-          [{label, rest} | hoisted],
-          unresolvable
-        )
-      else
+      {Enum.reverse([{:goto, label} | acc]), [{label, body} | hoisted], unresolvable}
+    else
+      :error ->
         hoist_list(
           rest,
-          analysis,
-          is_top,
+          st,
+          cont,
           [{:label, label} | acc],
           hoisted,
           MapSet.put(unresolvable, String.downcase(label))
         )
-      end
+
+      _ ->
+        hoist_list(rest, st, cont, [{:label, label} | acc], hoisted, unresolvable)
     end
   end
 
-  defp hoist_list([stmt | rest], analysis, is_top, acc, hoisted, unresolvable) do
-    {stmt, hoisted, unresolvable} = hoist_stmt(stmt, analysis, hoisted, unresolvable)
-    hoist_list(rest, analysis, is_top, [stmt | acc], hoisted, unresolvable)
+  defp hoist_list([stmt | rest], st, cont, acc, hoisted, unresolvable) do
+    {stmt, hoisted, unresolvable} =
+      hoist_stmt(stmt, st, continuation(rest, cont, st), hoisted, unresolvable)
+
+    hoist_list(rest, st, cont, [stmt | acc], hoisted, unresolvable)
   end
 
-  defp hoist_stmt({:if, cond_expr, then_stmts, else_stmts}, analysis, hoisted, unresolvable) do
+  # A `callsub` target keeps the old rule (its block must terminate): a subroutine returns to its
+  # caller, so splicing in the enclosing continuation would change where it ends.
+  defp label_body(kind, rest, cont) do
+    cond do
+      terminates?(rest) -> {:ok, rest}
+      kind == :sub or cont == :unknown -> :error
+      true -> {:ok, rest ++ cont}
+    end
+  end
+
+  defp continuation(_following, :unknown, _st), do: :unknown
+  defp continuation(following, :top, st), do: top_continuation(following, st, [])
+
+  defp continuation(following, cont, _st) do
+    cond do
+      nests_label_or_function?(following) -> :unknown
+      terminates?(following) -> following
+      true -> following ++ cont
+    end
+  end
+
+  defp top_continuation([], st, acc), do: Enum.reverse([script_terminal(st.kind) | acc])
+
+  defp top_continuation([{:label, label} = stmt | rest], st, acc) do
+    case segment_kind(label, st.analysis, st.kind) do
+      nil -> top_continuation(rest, st, [stmt | acc])
+      :sub -> :unknown
+      _jump_or_event -> Enum.reverse([{:goto, label} | acc])
+    end
+  end
+
+  defp top_continuation([stmt | rest], st, acc) do
+    if nests_label_or_function?([stmt]),
+      do: :unknown,
+      else: top_continuation(rest, st, [stmt | acc])
+  end
+
+  # A copied continuation must not carry a label or a local-function declaration: both would be
+  # emitted twice.
+  defp nests_label_or_function?(term) when is_list(term),
+    do: Enum.any?(term, &nests_label_or_function?/1)
+
+  defp nests_label_or_function?({:label, _}), do: true
+  defp nests_label_or_function?({:function, _, _}), do: true
+
+  defp nests_label_or_function?(term) when is_tuple(term),
+    do: term |> Tuple.to_list() |> nests_label_or_function?()
+
+  defp nests_label_or_function?(_term), do: false
+
+  defp hoist_stmt({:if, cond_expr, then_stmts, else_stmts}, st, cont, hoisted, unresolvable) do
     {then_stmts, hoisted, unresolvable} =
-      hoist_list(then_stmts, analysis, false, [], hoisted, unresolvable)
+      hoist_list(then_stmts, st, cont, [], hoisted, unresolvable)
 
     {else_stmts, hoisted, unresolvable} =
-      hoist_list(else_stmts, analysis, false, [], hoisted, unresolvable)
+      hoist_list(else_stmts, st, cont, [], hoisted, unresolvable)
 
     {{:if, cond_expr, then_stmts, else_stmts}, hoisted, unresolvable}
   end
 
-  defp hoist_stmt({:switch, expr, clauses, prelude}, analysis, hoisted, unresolvable) do
+  defp hoist_stmt({:switch, expr, clauses, prelude}, st, _cont, hoisted, unresolvable) do
     {prelude, hoisted, unresolvable} =
-      hoist_list(prelude, analysis, false, [], hoisted, unresolvable)
+      hoist_list(prelude, st, :unknown, [], hoisted, unresolvable)
 
     {clauses, {hoisted, unresolvable}} =
       Enum.map_reduce(clauses, {hoisted, unresolvable}, fn {values, stmts},
                                                            {hoisted, unresolvable} ->
         {stmts, hoisted, unresolvable} =
-          hoist_list(stmts, analysis, false, [], hoisted, unresolvable)
+          hoist_list(stmts, st, :unknown, [], hoisted, unresolvable)
 
         {{values, stmts}, {hoisted, unresolvable}}
       end)
@@ -589,39 +659,38 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {{:switch, expr, clauses, prelude}, hoisted, unresolvable}
   end
 
-  defp hoist_stmt({:while, cond_expr, body}, analysis, hoisted, unresolvable) do
-    {body, hoisted, unresolvable} = hoist_list(body, analysis, false, [], hoisted, unresolvable)
+  defp hoist_stmt({:while, cond_expr, body}, st, _cont, hoisted, unresolvable) do
+    {body, hoisted, unresolvable} = hoist_list(body, st, :unknown, [], hoisted, unresolvable)
     {{:while, cond_expr, body}, hoisted, unresolvable}
   end
 
-  defp hoist_stmt({:do_while, body, cond_expr}, analysis, hoisted, unresolvable) do
-    {body, hoisted, unresolvable} = hoist_list(body, analysis, false, [], hoisted, unresolvable)
+  defp hoist_stmt({:do_while, body, cond_expr}, st, _cont, hoisted, unresolvable) do
+    {body, hoisted, unresolvable} = hoist_list(body, st, :unknown, [], hoisted, unresolvable)
     {{:do_while, body, cond_expr}, hoisted, unresolvable}
   end
 
-  defp hoist_stmt({:for, init, cond_expr, step, body}, analysis, hoisted, unresolvable) do
-    {init, hoisted, unresolvable} = hoist_list(init, analysis, false, [], hoisted, unresolvable)
-    {step, hoisted, unresolvable} = hoist_list(step, analysis, false, [], hoisted, unresolvable)
-    {body, hoisted, unresolvable} = hoist_list(body, analysis, false, [], hoisted, unresolvable)
+  defp hoist_stmt({:for, init, cond_expr, step, body}, st, _cont, hoisted, unresolvable) do
+    {init, hoisted, unresolvable} = hoist_list(init, st, :unknown, [], hoisted, unresolvable)
+    {step, hoisted, unresolvable} = hoist_list(step, st, :unknown, [], hoisted, unresolvable)
+    {body, hoisted, unresolvable} = hoist_list(body, st, :unknown, [], hoisted, unresolvable)
     {{:for, init, cond_expr, step, body}, hoisted, unresolvable}
   end
 
-  defp hoist_stmt({:function, name, stmts}, analysis, hoisted, unresolvable) do
-    {stmts, hoisted, unresolvable} = hoist_list(stmts, analysis, false, [], hoisted, unresolvable)
+  defp hoist_stmt({:function, name, stmts}, st, _cont, hoisted, unresolvable) do
+    {stmts, hoisted, unresolvable} = hoist_list(stmts, st, :unknown, [], hoisted, unresolvable)
     {{:function, name, stmts}, hoisted, unresolvable}
   end
 
-  defp hoist_stmt({:block, stmts}, analysis, hoisted, unresolvable) do
-    {stmts, hoisted, unresolvable} = hoist_list(stmts, analysis, false, [], hoisted, unresolvable)
+  defp hoist_stmt({:block, stmts}, st, cont, hoisted, unresolvable) do
+    {stmts, hoisted, unresolvable} = hoist_list(stmts, st, cont, [], hoisted, unresolvable)
     {{:block, stmts}, hoisted, unresolvable}
   end
 
-  defp hoist_stmt(other, _analysis, hoisted, unresolvable), do: {other, hoisted, unresolvable}
+  defp hoist_stmt(other, _st, _cont, hoisted, unresolvable), do: {other, hoisted, unresolvable}
 
-  defp hoistable?(label, analysis) do
-    key = String.downcase(label)
-    MapSet.member?(analysis.jump_targets, key) or MapSet.member?(analysis.callsub_targets, key)
-  end
+  # Nested labels that get their own function: `goto`/`menu` and `callsub` targets, and event
+  # labels outside global functions (their `On*` labels stay plain positions in `call/2`).
+  defp hoist_kind(label, st), do: segment_kind(label, st.analysis, st.kind)
 
   defp terminates?(stmts) do
     case List.last(stmts) do
@@ -734,11 +803,24 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp fall_through(:cont, [{:jump, name, _} | _], env),
     do: ["#{fn_name(env, name)}(ctx#{helper_call(env)})"]
 
-  defp fall_through(:cont, [{:event, name, _} | _], env),
-    do: ["#{fn_name(env, name)}(ctx#{helper_call(env)})"]
+  defp fall_through(:cont, [{:event, name, _} | _], env), do: enter_event(env, name)
 
   defp fall_through(:cont, [{:sub, name, _} | _], env),
     do: ["{ctx, _} = #{fn_name(env, name)}(ctx, [])", "ctx"]
+
+  # An event segment is also an `on_event/2` entry point, so its tail `close`/`end` is rewritten
+  # into a plain return. Entered from anywhere else, the script must still end there: the call is
+  # followed by the `script_end` throw, which `tail_return/1` folds back away in tail position.
+  defp enter_event(env, label),
+    do: ["ctx = #{fn_name(env, label)}(ctx#{helper_call(env)})", @script_end]
+
+  defp event_segment?(env, label) do
+    key = String.downcase(label)
+
+    String.starts_with?(label, "On") and label?(env, label) and
+      not MapSet.member?(env.a.jump_targets, key) and
+      not MapSet.member?(env.a.callsub_targets, key)
+  end
 
   # Label → emitted function name. Keyed by downcased label, so references
   # resolve case-insensitively like rAthena's own label lookup.
@@ -846,11 +928,16 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   end
 
   defp emit_stmt({:goto, label}, env) do
-    if label?(env, label) do
-      {["#{fn_name(env, label)}(ctx#{helper_call(env)})"], :stop}
-    else
-      flag(:todo_fun)
-      {["ctx = todo(ctx, :goto, [#{inspect(label)}])"], :cont}
+    cond do
+      event_segment?(env, label) ->
+        {enter_event(env, label), :stop}
+
+      label?(env, label) ->
+        {["#{fn_name(env, label)}(ctx#{helper_call(env)})"], :stop}
+
+      true ->
+        flag(:todo_fun)
+        {["ctx = todo(ctx, :goto, [#{inspect(label)}])"], :cont}
     end
   end
 
