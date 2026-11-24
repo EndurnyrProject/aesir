@@ -47648,6 +47648,1628 @@
       }
     ]
   },
+  "quests/quests_hugel.txt|script|#DrawerOpener|hu_in01:1:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Draweropener",
+    "output_hash": "929c220fb8029cfd1197531f8f51f29df4d962801f35162b29e313aa629d247c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/draweropener.ex",
+    "source_hash": "6ed37f1167f293453e6ab6f61ccf312b29441ca0bb9d1fcfe5ac8c32d5ef94df",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 1,
+        "y": 1,
+        "map": "hu_in01",
+        "dir": 0,
+        "unique_name": "#DrawerOpener",
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|#Hg_Quest|que_bingo:49:12": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.HgQuest",
+    "output_hash": "968b4f96939fe5c36565e79ed271ed9b63839e0a245e8a5ff2d810d7639d0c37",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/hg_quest.ex",
+    "source_hash": "5da82e7b82b11ed21564e26d6930487523a32120e4b4325229c7e3f750a7f85a",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 49,
+        "y": 12,
+        "map": "que_bingo",
+        "dir": 0,
+        "unique_name": "#Hg_Quest",
+        "sprite": 139,
+        "trigger": [
+          4,
+          4
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|#HugelTree|hugel:198:169": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Hugeltree",
+    "output_hash": "cec6521014eec8b133ff7f99ae439158baa2de220a5478a8a70e306db36d657b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/hugeltree.ex",
+    "source_hash": "85db7ace74cd8cdca9bcb812bf1edc5f52386519b41db096cbc830c7390b0709",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 198,
+        "y": 169,
+        "map": "hugel",
+        "dir": 0,
+        "unique_name": "#HugelTree",
+        "sprite": 139,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|A Pile of Paper|lhz_in01:214:129": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.APileOfPaper",
+    "output_hash": "aa07bdacad31de38a7fb7de1e572bd04523e58d11d1062fbdd06d1276e8b5c38",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/a_pile_of_paper.ex",
+    "source_hash": "f5e65e4b05eb0e45daabed68c8816672ebba3c63c706247adf8a291d2f2cb48b",
+    "spawns": [
+      {
+        "name": "A Pile of Paper",
+        "scope": "shared",
+        "x": 214,
+        "y": 129,
+        "map": "lhz_in01",
+        "dir": 0,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|A Spirit#HQuest|niflheim:90:106": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.ASpirit",
+    "output_hash": "67eb0ce593d51f292b42fbc322735048b1574bf517a20e2adc89a46a746ca6dc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/a_spirit.ex",
+    "source_hash": "d971d74c2d8df67d0889241aa62f5d6aaec428d83c08c07f641224b114ad3122",
+    "spawns": [
+      {
+        "name": "A Spirit",
+        "scope": "shared",
+        "x": 90,
+        "y": 106,
+        "map": "niflheim",
+        "dir": 3,
+        "unique_name": "A Spirit#HQuest",
+        "sprite": 802
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Alex|hu_in01:19:161": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Alex",
+    "output_hash": "a4325df28eace3ae051a6aef2934e45962b82c4ff3a72e9fb9ac4cfbf28f67f4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/alex.ex",
+    "source_hash": "d39c1a67951d76c881e2a324934ba0198626b0f78bb8e0ce8373a34eb1e4616e",
+    "spawns": [
+      {
+        "name": "Alex",
+        "scope": "shared",
+        "x": 19,
+        "y": 161,
+        "map": "hu_in01",
+        "dir": 0,
+        "sprite": 803
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Allen Schuwell|hu_in01:387:245": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.AllenSchuwell",
+    "output_hash": "cc71dee365c6749e5a528c8d15100e43aba30c5116fdbc68ff8f14312f5c69c2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/allen_schuwell.ex",
+    "source_hash": "059d84051664308d8f731a284d30df096bdc01bde265bbb434b80e902de66c81",
+    "spawns": [
+      {
+        "name": "Allen Schuwell",
+        "scope": "shared",
+        "x": 387,
+        "y": 245,
+        "map": "hu_in01",
+        "dir": 0,
+        "sprite": 849,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Ashe#2|hu_in01:162:85": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Ashe16285",
+    "output_hash": "a99d567d10405bdc43a993c3a651201c62a888baa9295a9e00b54dae5ade2d79",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/ashe_162_85.ex",
+    "source_hash": "fc284dce031960f0e51235203509cdbe133e69e1ac4bc0fbacd61ca4d26c5b65",
+    "spawns": [
+      {
+        "name": "Ashe",
+        "scope": "shared",
+        "x": 162,
+        "y": 85,
+        "map": "hu_in01",
+        "dir": 4,
+        "unique_name": "Ashe#2",
+        "sprite": 95
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Ashe#3|hu_in01:171:90": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Ashe17190",
+    "output_hash": "772334005a54bac7812fcc5cd42335d6e1e7f6f69a7c083ea3aa8d5c2c1cd3c0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/ashe_171_90.ex",
+    "source_hash": "4d2477f59b914fac91ce8c4a21188fb4f564bda372c6de60ad17bdbdf7fb78d3",
+    "spawns": [
+      {
+        "name": "Ashe",
+        "scope": "shared",
+        "x": 171,
+        "y": 90,
+        "map": "hu_in01",
+        "dir": 0,
+        "unique_name": "Ashe#3",
+        "sprite": 139,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Ashe#4|moc_fild12:160:365": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Ashe160365",
+    "output_hash": "b7651b87134d458de9280657e1ec6bcf1c9c38fd9671dfe7eebd5cbf99648d22",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/ashe_160_365.ex",
+    "source_hash": "b2eac341ba18a9e42ffd2238a755221e5364c5f8bcb65ac09d0ef87ca09a4c47",
+    "spawns": [
+      {
+        "name": "Ashe",
+        "scope": "shared",
+        "x": 160,
+        "y": 365,
+        "map": "moc_fild12",
+        "dir": 0,
+        "unique_name": "Ashe#4",
+        "sprite": 139,
+        "trigger": [
+          4,
+          4
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Ashe#5|hu_in01:16:21": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Ashe",
+    "output_hash": "edb98a3d849e41341f5d96b37fba79d833c4c55d37a48e5b7a1f8d053d78b933",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/ashe.ex",
+    "source_hash": "f9edc55f201861e05e064d34ae27b37045e54473b334bdc10d9c03b4ba2edfcf",
+    "spawns": [
+      {
+        "name": "Ashe",
+        "scope": "shared",
+        "x": 16,
+        "y": 21,
+        "map": "hu_in01",
+        "dir": 0,
+        "unique_name": "Ashe#5",
+        "sprite": 139,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Ashe|hu_in01:16:20": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Ashe1620",
+    "output_hash": "e3110468c8bfbe51bb80469a64475a0f7e431093ed816253b08545e05b1855e3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/ashe_16_20.ex",
+    "source_hash": "d2e8d81ef027ee814fe1b56aa0a5c798f80cce43ec933e9bc4bd84558247984f",
+    "spawns": [
+      {
+        "name": "Ashe",
+        "scope": "shared",
+        "x": 16,
+        "y": 20,
+        "map": "hu_in01",
+        "dir": 4,
+        "sprite": 95
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Boatman#hugel|hugel:209:109": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Boatman",
+    "output_hash": "fe87a079b9cf9b0c5bd4e66ee3cd07c2d3a68d7fc8014449029fdfd7db57acf9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/boatman.ex",
+    "source_hash": "075761f429c50b98bf4885405faedd9461a2000441e6fe94d3c0e38604d96d49",
+    "spawns": [
+      {
+        "name": "Boatman",
+        "scope": "shared",
+        "x": 209,
+        "y": 109,
+        "map": "hugel",
+        "dir": 2,
+        "unique_name": "Boatman#hugel",
+        "sprite": 709
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Boatman|odin_tem01:93:146": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Boatman93146",
+    "output_hash": "7d5688fb8607abfc1cfe00634f5a9329d2bedf4f4f4ae575231ea2313964d564",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/boatman_93_146.ex",
+    "source_hash": "4649b044eb6578dca1eb9d2b554a3d71c820c23736c5bf49a18fef795c50bac0",
+    "spawns": [
+      {
+        "name": "Boatman",
+        "scope": "shared",
+        "x": 93,
+        "y": 146,
+        "map": "odin_tem01",
+        "dir": 4,
+        "sprite": 709
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Bomb Maker|einbech:208:124": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.BombMaker",
+    "output_hash": "202b6bacd570cd6e6def4af76e3e6ebda03acc3519f0bf0e623bbf2230a6673e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/bomb_maker.ex",
+    "source_hash": "e535b33ae2ba113f03a1ed9a5bcbce157a9c8b2a019c1c590ead483ff0732c89",
+    "spawns": [
+      {
+        "name": "Bomb Maker",
+        "scope": "shared",
+        "x": 208,
+        "y": 124,
+        "map": "einbech",
+        "dir": 3,
+        "sprite": 851
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Booboo the Cow|hugel:68:99": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.BoobooTheCow",
+    "output_hash": "001162a47d82fd3cc098ce1bd0516b8a43fed05a2e02608caa4315ba2646b221",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/booboo_the_cow.ex",
+    "source_hash": "b92ce99a00fc4c7de437ac12b15e095c6777af770ffff43442e6e21aac125e8d",
+    "spawns": [
+      {
+        "name": "Booboo the Cow",
+        "scope": "shared",
+        "x": 68,
+        "y": 99,
+        "map": "hugel",
+        "dir": 3,
+        "sprite": 889
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Book|hu_in01:317:312": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Book",
+    "output_hash": "da4a08bab51726bd3a1eb1cc75e214f7411fa38fa638b03b77bdde7ccb528345",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/book.ex",
+    "source_hash": "10bb2da660b5980589e412ab576371022691cd488e60823c8d22d8b2cf0c69d5",
+    "spawns": [
+      {
+        "name": "Book",
+        "scope": "shared",
+        "x": 317,
+        "y": 312,
+        "map": "hu_in01",
+        "dir": 0,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Burupu's Instructions|hugel:72:101": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.BurupuSInstructions",
+    "output_hash": "b2bbfc999026809b6c553c276e8ede0e30ea611a339609330ce3ad3e63995544",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/burupu_s_instructions.ex",
+    "source_hash": "d4e934590e555ad224d18b0b2c52fbe3b14097761c38754b732371343b234dc2",
+    "spawns": [
+      {
+        "name": "Burupu's Instructions",
+        "scope": "shared",
+        "x": 72,
+        "y": 101,
+        "map": "hugel",
+        "dir": 0,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Burupu|hu_fild06:217:270": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Burupu",
+    "output_hash": "6deae455530634fea737c07b2c8c1c63730d74aea5777ebc476e1ab7fd979324",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/burupu.ex",
+    "source_hash": "4a1d99337b2e3891f0f7472edcd6194207129da9421fefa889c58e9884c19c7c",
+    "spawns": [
+      {
+        "name": "Burupu",
+        "scope": "shared",
+        "x": 217,
+        "y": 270,
+        "map": "hu_fild06",
+        "dir": 3,
+        "sprite": 896,
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Cellette Lavit|hu_in01:15:372": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.CelletteLavit",
+    "output_hash": "10f0a907dd5be30e78c9d94ba4d2fe5eb29499e5176811ce6372ae0aee4d034c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/cellette_lavit.ex",
+    "source_hash": "e940da2e9f2736c84ede5dc1bc5ed2a5f39434f4c35d291c151fddcd08a92a86",
+    "spawns": [
+      {
+        "name": "Cellette Lavit",
+        "scope": "shared",
+        "x": 15,
+        "y": 372,
+        "map": "hu_in01",
+        "dir": 3,
+        "sprite": 74
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Clam#C1|hugel:209:163": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Clam",
+    "output_hash": "80bfea96fca988d41af8b02bb34bd24fa8b13c3fbd2395394f58116c730c5de1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/clam.ex",
+    "source_hash": "f000a61234289d22948c291053b3af0f18057e98941c6f003656ceffdd0ed2c2",
+    "spawns": [
+      {
+        "name": "Clam",
+        "scope": "shared",
+        "x": 209,
+        "y": 163,
+        "map": "hugel",
+        "dir": 3,
+        "unique_name": "Clam#C1",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Clam#C2|hugel:203:166": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Clam203166",
+    "output_hash": "7259dd3ba8a72f5dd3e8f7d9f014a36ffc8a2e83defd21b0601167046c9f1540",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/clam_203_166.ex",
+    "source_hash": "51063a2369d8fb1cc251dff3c8b4d3f07ffe657d2bc6d70eba02641b8acb2f34",
+    "spawns": [
+      {
+        "name": "Clam",
+        "scope": "shared",
+        "x": 203,
+        "y": 166,
+        "map": "hugel",
+        "dir": 3,
+        "unique_name": "Clam#C2",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Clam#C3|hugel:217:158": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Clam217158",
+    "output_hash": "b3bf5001ac7f9fe3e70558b3d3b14ee365d2756dcf4a1224e9bbdbf0adf495de",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/clam_217_158.ex",
+    "source_hash": "ca3286ab64ad97ebd1c38cd4c39f91aa393698a53ef89eb148ac1f2ae5f94553",
+    "spawns": [
+      {
+        "name": "Clam",
+        "scope": "shared",
+        "x": 217,
+        "y": 158,
+        "map": "hugel",
+        "dir": 3,
+        "unique_name": "Clam#C3",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Clam#C4|hugel:204:150": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Clam204150",
+    "output_hash": "e60c82f6c1842f26250ade44b21aad6f33de684a4bbcceb6d02c3f04c97379f0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/clam_204_150.ex",
+    "source_hash": "d3d48c0a184d2273d78b5a77471d3e913d8bf01d55469c9ddbc5cbde3f61033b",
+    "spawns": [
+      {
+        "name": "Clam",
+        "scope": "shared",
+        "x": 204,
+        "y": 150,
+        "map": "hugel",
+        "dir": 3,
+        "unique_name": "Clam#C4",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Dono|lighthalzen:88:79": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Dono",
+    "output_hash": "af0152da9255f720f2dcce2cc86a266402e0dffc1ed557bd354ec2948b252c2a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/dono.ex",
+    "source_hash": "a32fa71baa0a4af21bb79fd6c4f2cd0f5969cce9dbb820922dd8c7ad25edf49d",
+    "spawns": [
+      {
+        "name": "Dono",
+        "scope": "shared",
+        "x": 88,
+        "y": 79,
+        "map": "lighthalzen",
+        "dir": 7,
+        "sprite": 85
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|El Schatt|hugel:196:164": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.ElSchatt",
+    "output_hash": "b34f4b959b475dacbbc90dfe296d18eb9b8005d69ef1405e6ec917c3b278566e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/el_schatt.ex",
+    "source_hash": "9101ffeb7266756fb2b0276ea0dc5efa09c28e0cb2a605827267a7adc0922a47",
+    "spawns": [
+      {
+        "name": "El Schatt",
+        "scope": "shared",
+        "x": 196,
+        "y": 164,
+        "map": "hugel",
+        "dir": 3,
+        "sprite": 50
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Empty|hu_in01:99:90": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Empty",
+    "output_hash": "d4681e2d5529e5ee363605f2abfb2d79ab89a0e2c33720d1b9bf9cdddd54cc3a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/empty.ex",
+    "source_hash": "0bdd503cc79fee1f4efbd0a9b444c8c1871c30084668c83af27e61026dfd2915",
+    "spawns": [
+      {
+        "name": "Empty",
+        "scope": "shared",
+        "x": 99,
+        "y": 90,
+        "map": "hu_in01",
+        "dir": 0,
+        "sprite": 139,
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Enquro Carson|lhz_in03:39:44": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.EnquroCarson",
+    "output_hash": "6b3df161df27afeb162acd865e6584cf0b5a1f85b0ab321e0974e2bbf2d88eb5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/enquro_carson.ex",
+    "source_hash": "167f1e78ec50ff30d5fd104fe72ad91c685a9fafc46a7797b40bfb1ef535c6ae",
+    "spawns": [
+      {
+        "name": "Enquro Carson",
+        "scope": "shared",
+        "x": 39,
+        "y": 44,
+        "map": "lhz_in03",
+        "dir": 3,
+        "sprite": 97
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Entrance|hu_in01:174:90": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Entrance",
+    "output_hash": "10af5e50524b3dfbfc26202b3cd140247c0c80ee36886da0c134f75dfa1e3451",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/entrance.ex",
+    "source_hash": "7d0dcf6428f8ca2767830414f7ece9b12387c8b2e0de4c8cb7e1b1b2c2c6f1b5",
+    "spawns": [
+      {
+        "name": "Entrance",
+        "scope": "shared",
+        "x": 174,
+        "y": 90,
+        "map": "hu_in01",
+        "dir": 0,
+        "sprite": 139,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Erjan|hugel:102:161": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Erjan",
+    "output_hash": "c09c1e20b5b59543fdb67d53aeb25b261d9e1a2e299cf242cf391f25a0e41a16",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/erjan.ex",
+    "source_hash": "16da9db3ebe146c6dc1344e45fb088e1983626ce3f6e0655f87bc1fb1c53d26d",
+    "spawns": [
+      {
+        "name": "Erjan",
+        "scope": "shared",
+        "x": 102,
+        "y": 161,
+        "map": "hugel",
+        "dir": 3,
+        "sprite": 100
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Eukran|que_bingo:53:190": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Eukran",
+    "output_hash": "a855e889df98d6e55a32859107810c4c52d6418d9db1583a5d276d0242da6672",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/eukran.ex",
+    "source_hash": "f9f3b224beb753dce5731a98fa5896f61bde1765cf11ab2e0b7f025e695a8d8a",
+    "spawns": [
+      {
+        "name": "Eukran",
+        "scope": "shared",
+        "x": 53,
+        "y": 190,
+        "map": "que_bingo",
+        "dir": 7,
+        "sprite": 778
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Euslan|yuno:111:156": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Euslan",
+    "output_hash": "9cdf678689111ae759c9d2aa46af44e84e4d21f2cefa418692ee2a8000c6e4ee",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/euslan.ex",
+    "source_hash": "d2345b8a140f6721e2c1977c858666016d41b2317f1783acc4572c19d3a47cce",
+    "spawns": [
+      {
+        "name": "Euslan",
+        "scope": "shared",
+        "x": 111,
+        "y": 156,
+        "map": "yuno",
+        "dir": 3,
+        "sprite": 90
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Girl#Hu|hu_in01:365:170": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Girl365170",
+    "output_hash": "fdc0fb1f7438805d8d82b39341315ef54280a14d782658741f7cfe7f859ff144",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/girl_365_170.ex",
+    "source_hash": "20a88743669426ce3f2ddb5014cf39431660e8039c38275c35362c6e515d18fa",
+    "spawns": [
+      {
+        "name": "Girl",
+        "scope": "shared",
+        "x": 365,
+        "y": 170,
+        "map": "hu_in01",
+        "dir": 3,
+        "unique_name": "Girl#Hu",
+        "sprite": 793
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Girl#hugel|hu_in01:310:380": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Girl",
+    "output_hash": "bf9a39a9120d824aecf28d1dc5fdef2fb8a663fe254eeed18a57ad5894d1d61f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/girl.ex",
+    "source_hash": "46ac78a758febf2feb87afad81b312e6bcc83fc96613b899d6373952008f750f",
+    "spawns": [
+      {
+        "name": "Girl",
+        "scope": "shared",
+        "x": 310,
+        "y": 380,
+        "map": "hu_in01",
+        "dir": 5,
+        "unique_name": "Girl#hugel",
+        "sprite": 891
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Herico|hu_in01:256:40": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Herico",
+    "output_hash": "5d5873c9f06dfe14662b2261f9778683edaff556e9a7ed1896a8c635710128f9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/herico.ex",
+    "source_hash": "92cafe26ac0b0d6cb63ebcc859c7bd57cfb8cef110f3e890e51b6b60a26172ba",
+    "spawns": [
+      {
+        "name": "Herico",
+        "scope": "shared",
+        "x": 256,
+        "y": 40,
+        "map": "hu_in01",
+        "dir": 3,
+        "sprite": 897
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|HiddenActivator#Hugel|odin_tem01:129:127": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Hiddenactivator",
+    "output_hash": "c47891f65d6cd16c163bbf59fb7a6a3b77cc40345ede235275409f977e371f5d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/hiddenactivator.ex",
+    "source_hash": "5effeee87b013eb4a049ee5483aff36e1f063621257176004aa4d3b811cad8d1",
+    "spawns": [
+      {
+        "name": "HiddenActivator",
+        "scope": "shared",
+        "x": 129,
+        "y": 127,
+        "map": "odin_tem01",
+        "dir": 0,
+        "unique_name": "HiddenActivator#Hugel",
+        "sprite": 139,
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|HiddenExplosion|lhz_dun02:244:227": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Hiddenexplosion",
+    "output_hash": "abc20fea94511838b61e6a52c0104486692effcfc4345211f68b389478e95440",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/hiddenexplosion.ex",
+    "source_hash": "f37e33093b182afad6facd8e21205ff03986b5d9334881615e602cf7a13ffe1b",
+    "spawns": [
+      {
+        "name": "HiddenExplosion",
+        "scope": "shared",
+        "x": 244,
+        "y": 227,
+        "map": "lhz_dun02",
+        "dir": 0,
+        "sprite": 139,
+        "trigger": [
+          5,
+          5
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|HiddenHugel|odin_tem01:111:144": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Hiddenhugel",
+    "output_hash": "9626ed49952181fe75ab1aa64115892d88f9572d71fbbb04262e8ab3bf1a0905",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/hiddenhugel.ex",
+    "source_hash": "6fc159ce0fc7e4ea38c9093177c405f07b8c91c0d6bc2cf20d0f4fc63ebafb98",
+    "spawns": [
+      {
+        "name": "HiddenHugel",
+        "scope": "shared",
+        "x": 111,
+        "y": 144,
+        "map": "odin_tem01",
+        "dir": 0,
+        "sprite": 139,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Hit|moc_fild12:160:372": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Hit",
+    "output_hash": "2aef0ad216a487c6fff99988bdf6bf3d491517a82cb072c6737852c8887642bc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/hit.ex",
+    "source_hash": "f042b7560e71e6afafdeef70d77846d0bb43679f4c43271c98ddfa4701c0e968",
+    "spawns": [
+      {
+        "name": "Hit",
+        "scope": "shared",
+        "x": 160,
+        "y": 372,
+        "map": "moc_fild12",
+        "dir": 0,
+        "sprite": 139
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|HuMSpawner|lhz_in01:235:129": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Humspawner",
+    "output_hash": "33a2545f44763c52b175c0ddb51b58a5447095462bc5041a95595a2b6950355c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/humspawner.ex",
+    "source_hash": "dec19c37f73ec55195f7567b390f249a6379a1fc74c512c22f4b555910e99b0d",
+    "spawns": [
+      {
+        "name": "HuMSpawner",
+        "scope": "shared",
+        "x": 235,
+        "y": 129,
+        "map": "lhz_in01",
+        "dir": 0,
+        "sprite": 139
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Julian#2|hu_in01:155:82": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Julian15582",
+    "output_hash": "1b6dbb57069c85a606a405d37b98b1c241d8b5810d344d697e2fc72f701c000d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/julian_155_82.ex",
+    "source_hash": "8fa6364b3892b10849e6e9bd33f01c470a8631809db9223188601eb15f3ba7b7",
+    "spawns": [
+      {
+        "name": "Julian",
+        "scope": "shared",
+        "x": 155,
+        "y": 82,
+        "map": "hu_in01",
+        "dir": 4,
+        "unique_name": "Julian#2",
+        "sprite": 86
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Julian|hu_in01:18:167": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Julian",
+    "output_hash": "e59048670ba12d6e1e6cf91d9b959d7462c9dc2f171483dddf5eda58f0f61c6e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/julian.ex",
+    "source_hash": "9ccff1bfc58345c0add3c563427d28c030d899be93af0da56c352c856009eec3",
+    "spawns": [
+      {
+        "name": "Julian",
+        "scope": "shared",
+        "x": 18,
+        "y": 167,
+        "map": "hu_in01",
+        "dir": 4,
+        "sprite": 86
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Kurupe|hugel:56:104": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Kurupe",
+    "output_hash": "08a265b9bf42468c0fcc6ddb93c6c16eaa27a3de3c643cb9c73aad123341ff72",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/kurupe.ex",
+    "source_hash": "d6a928e42f55ef5d512c94f5522ec8bc564978b2c2e8a2676a0fcfa4ed0892d6",
+    "spawns": [
+      {
+        "name": "Kurupe",
+        "scope": "shared",
+        "x": 56,
+        "y": 104,
+        "map": "hugel",
+        "dir": 3,
+        "sprite": 709,
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Laura#2|hu_in01:159:84": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Laura15984",
+    "output_hash": "1a1481568bcda30bd7333ec9bcb2da3687e158f98eb7e8158e38b3ec7fcea04f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/laura_159_84.ex",
+    "source_hash": "b70e6a4f0c74aefeb9866dea5b7499fbbf1f6ba06aeff61d8d31d2ecae748036",
+    "spawns": [
+      {
+        "name": "Laura",
+        "scope": "shared",
+        "x": 159,
+        "y": 84,
+        "map": "hu_in01",
+        "dir": 3,
+        "unique_name": "Laura#2",
+        "sprite": 70
+      },
+      {
+        "name": "Alex",
+        "scope": "shared",
+        "x": 158,
+        "y": 84,
+        "map": "hu_in01",
+        "dir": 5,
+        "unique_name": "Alex#2",
+        "sprite": 803
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Laura|hu_in01:14:11": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Laura",
+    "output_hash": "692f1dcd7087ac749b1515b76caf4a22434b3037fbf0fa1a62ba18e4e680048c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/laura.ex",
+    "source_hash": "a2ce28973a233fd2fda701d5a052bf022b6cfc476694e2fcd18e2a723fd0e0ed",
+    "spawns": [
+      {
+        "name": "Laura",
+        "scope": "shared",
+        "x": 14,
+        "y": 11,
+        "map": "hu_in01",
+        "dir": 4,
+        "sprite": 70
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Layoma|hugel:84:125": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Layoma",
+    "output_hash": "a708b9534bad81c9bae6212d5faf13484c205159bb8302e95ab32c1273e61427",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/layoma.ex",
+    "source_hash": "b8c40a09385f62da8b219d877cf80ea7d7d1ab64fbed830870e6a2bf3830fafb",
+    "spawns": [
+      {
+        "name": "Layoma",
+        "scope": "shared",
+        "x": 84,
+        "y": 125,
+        "map": "hugel",
+        "dir": 3,
+        "sprite": 700
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Maewan|hugel:87:139": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Maewan",
+    "output_hash": "fae452fbd2dfe0bd84879372882d16b8520bfe2ef60accbaa23e624ed6f3235c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/maewan.ex",
+    "source_hash": "3a06ab9ab13842b44a20ea31e3d1a78a97b6968ae618f21f43769040e3326e3d",
+    "spawns": [
+      {
+        "name": "Maewan",
+        "scope": "shared",
+        "x": 87,
+        "y": 139,
+        "map": "hugel",
+        "dir": 3,
+        "sprite": 86
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Makkie|lhz_in03:193:28": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Makkie",
+    "output_hash": "5b2e541efbaddc0e143a899e6fd740db2acccb7fb49d443096fe0e12f065ac7a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/makkie.ex",
+    "source_hash": "f0b65be08450ad7080ef634ae97b96240f11ce88c54fdd3b7201413db8d2483f",
+    "spawns": [
+      {
+        "name": "Makkie",
+        "scope": "shared",
+        "x": 193,
+        "y": 28,
+        "map": "lhz_in03",
+        "dir": 3,
+        "sprite": 83
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Manainne|hugel:191:172": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Manainne",
+    "output_hash": "2fb9163593a554a88aeb4117a5c8b09048998cf07c85d68503059f92571a3ad3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/manainne.ex",
+    "source_hash": "3cb20c8c8aed471a289fc6fc7d2d57af83bd02654ff5152f63425dd81883d00a",
+    "spawns": [
+      {
+        "name": "Manainne",
+        "scope": "shared",
+        "x": 191,
+        "y": 172,
+        "map": "hugel",
+        "dir": 3,
+        "sprite": 892
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Moks Bugs#Bug1|hu_fild06:155:309": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.MoksBugs",
+    "output_hash": "e547a7b6e263029d0fad69c3d1a1ea089983dd56cc02b801f6683aac9f3be1a6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/moks_bugs.ex",
+    "source_hash": "39ef7dcc768b6fa31f87b4e68cf465753701da8fe5b9984fb9955b905e0420cb",
+    "spawns": [
+      {
+        "name": "Moks Bugs",
+        "scope": "shared",
+        "x": 155,
+        "y": 309,
+        "map": "hu_fild06",
+        "dir": 1,
+        "unique_name": "Moks Bugs#Bug1",
+        "sprite": 1053
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Moks Bugs#Bug2|hu_fild06:218:320": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.MoksBugs218320",
+    "output_hash": "ac29bac0195798958c3147d70c6aeee69db36cb39c7d341a4abf68d30b2b6c35",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/moks_bugs_218_320.ex",
+    "source_hash": "aabf3d015c7c1a80c0eb87ea17635a228bf71f7d078162d3d29f6cfa847c649a",
+    "spawns": [
+      {
+        "name": "Moks Bugs",
+        "scope": "shared",
+        "x": 218,
+        "y": 320,
+        "map": "hu_fild06",
+        "dir": 1,
+        "unique_name": "Moks Bugs#Bug2",
+        "sprite": 1053
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Moks Bugs#Bug3|hu_fild06:249:329": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.MoksBugs249329",
+    "output_hash": "bb79cf4dd904596ba03c7be528300e8eb327239444caa4f9ee2345f0af23baef",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/moks_bugs_249_329.ex",
+    "source_hash": "ac65823a119b1025654722ad21181c75d0ae7ecb21e4380912307cd6a35132c9",
+    "spawns": [
+      {
+        "name": "Moks Bugs",
+        "scope": "shared",
+        "x": 249,
+        "y": 329,
+        "map": "hu_fild06",
+        "dir": 1,
+        "unique_name": "Moks Bugs#Bug3",
+        "sprite": 1053
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Moks Bugs#Bug4|hu_fild06:218:373": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.MoksBugs218373",
+    "output_hash": "876d66c85b45e85944202cd5fe44feeff6830826728fe86fa21a22094a35827e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/moks_bugs_218_373.ex",
+    "source_hash": "ffbed05dc1f394923d2e072789530aa7ccadba56276a8eb530d7a76cf5cfc0d1",
+    "spawns": [
+      {
+        "name": "Moks Bugs",
+        "scope": "shared",
+        "x": 218,
+        "y": 373,
+        "map": "hu_fild06",
+        "dir": 1,
+        "unique_name": "Moks Bugs#Bug4",
+        "sprite": 1053
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Moks Mushrooms#Mush1|hu_fild06:168:359": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.MoksMushrooms",
+    "output_hash": "4957fb484a8d61ec5c94da9ad776633ed748461e0c7a9cea33d9d0ef023ec5eb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/moks_mushrooms.ex",
+    "source_hash": "d4c6df3d8f522f5f06c15c169f3243ad951ebb6a7e8345c389faaedde89990e8",
+    "spawns": [
+      {
+        "name": "Moks Mushrooms",
+        "scope": "shared",
+        "x": 168,
+        "y": 359,
+        "map": "hu_fild06",
+        "dir": 3,
+        "unique_name": "Moks Mushrooms#Mush1",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Moks Mushrooms#Mush2|hu_fild06:194:341": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.MoksMushrooms194341",
+    "output_hash": "c83ea9a12bb2061bae519e9197f610041f1c813758880fcd29dfda0f5f09a713",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/moks_mushrooms_194_341.ex",
+    "source_hash": "07a1c78db6bd18c51ce6e9ef463f2b27cac32f2bb28b7a7f5be6dbd3dcb6ef79",
+    "spawns": [
+      {
+        "name": "Moks Mushrooms",
+        "scope": "shared",
+        "x": 194,
+        "y": 341,
+        "map": "hu_fild06",
+        "dir": 3,
+        "unique_name": "Moks Mushrooms#Mush2",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Moks Mushrooms#Mush3|hu_fild06:198:339": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.MoksMushrooms198339",
+    "output_hash": "0419ac51c602a9ef23be095f1aeb5e80a8b096e4cfb11fa4f5b1b7c234609f95",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/moks_mushrooms_198_339.ex",
+    "source_hash": "cdecc7a24935018712cc2250c09988edda494cec06281561abb29403227eb59f",
+    "spawns": [
+      {
+        "name": "Moks Mushrooms",
+        "scope": "shared",
+        "x": 198,
+        "y": 339,
+        "map": "hu_fild06",
+        "dir": 3,
+        "unique_name": "Moks Mushrooms#Mush3",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Morriphen|ein_in01:16:36": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Morriphen",
+    "output_hash": "f1b5bd0397dc068c7aedb6c548939881c1e6c7cb3b13cae7ecd2ff36dd0dc8fe",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/morriphen.ex",
+    "source_hash": "f7f3f29fa39c8fa96172bf19f25e6b27646503def0f5e95184e59879e29bb6f6",
+    "spawns": [
+      {
+        "name": "Morriphen",
+        "scope": "shared",
+        "x": 16,
+        "y": 36,
+        "map": "ein_in01",
+        "dir": 3,
+        "sprite": 86
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Neha|hugel:76:134": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Neha",
+    "output_hash": "1e86314519f52daa854fb6a4253eefe99b19e092048282e29bc189d7dbfb2827",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/neha.ex",
+    "source_hash": "48e12a703fbcf9b05df44a76b2a9678ae5f92ac6d66f93f990e5d6b63fb88844",
+    "spawns": [
+      {
+        "name": "Neha",
+        "scope": "shared",
+        "x": 76,
+        "y": 134,
+        "map": "hugel",
+        "dir": 3,
+        "sprite": 101
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|OdinInit|odin_tem03:4:2": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Odininit",
+    "output_hash": "4bca7769f927ea5588e72f0fdf3da3f6dbd5a1feda34d89afaaf425e77e5f53b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/odininit.ex",
+    "source_hash": "347b675ed7828899ec4b6e8bdbbd010bf53285f74968f8323d7103ca7536761f",
+    "spawns": [
+      {
+        "name": "OdinInit",
+        "scope": "shared",
+        "x": 4,
+        "y": 2,
+        "map": "odin_tem03",
+        "dir": 0,
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Perfitz|hugel:100:103": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Perfitz",
+    "output_hash": "210fb8e725b417feada75904a79a1374f865147ed2fe8dea62d30bbc98022a0f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/perfitz.ex",
+    "source_hash": "3acbdc83e8ec4add4d5482b3b562549c4646b5e3a1f33306cff1f2b996fedbdd",
+    "spawns": [
+      {
+        "name": "Perfitz",
+        "scope": "shared",
+        "x": 100,
+        "y": 103,
+        "map": "hugel",
+        "dir": 3,
+        "sprite": 866
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Postell Schuwell#D|hu_in01:385:247": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.PostellSchuwell",
+    "output_hash": "20a3481e184f96126a95c9c08f829f1c48292dfaa3ae0351518e103405c12159",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/postell_schuwell.ex",
+    "source_hash": "dadf3b2f1542e34b33e9a700ec896d1075ad3b53cce534dd5e6ad20de9b3d5d5",
+    "spawns": [
+      {
+        "name": "Postell Schuwell",
+        "scope": "shared",
+        "x": 385,
+        "y": 247,
+        "map": "hu_in01",
+        "dir": 5,
+        "unique_name": "Postell Schuwell#D",
+        "sprite": 97
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Postell Schuwell|hu_fild06:34:123": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.PostellSchuwell34123",
+    "output_hash": "f3b0c2a8f77dc6f487a0bdaeb2cfc990182732c01b8339f4f844e8215a99f5eb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/postell_schuwell_34_123.ex",
+    "source_hash": "66fb98f4102208c32581b1bcce9280b254f2e0ba4b5801fe515665f8acbf57e8",
+    "spawns": [
+      {
+        "name": "Postell Schuwell",
+        "scope": "shared",
+        "x": 34,
+        "y": 123,
+        "map": "hu_fild06",
+        "dir": 3,
+        "sprite": 97
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Pub Granny|hu_in01:377:106": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.PubGranny",
+    "output_hash": "bdf4e26598d327e3e82806fbd60d2a6c1757fb6388f121d6c804431020c9997f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/pub_granny.ex",
+    "source_hash": "abaa2a14a3ab2d54ee4490f737763bd05c39a39b4e8dd6a3f718679adf9be45c",
+    "spawns": [
+      {
+        "name": "Pub Granny",
+        "scope": "shared",
+        "x": 377,
+        "y": 106,
+        "map": "hu_in01",
+        "dir": 3,
+        "sprite": 892
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Shede|hugel:70:137": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Shede",
+    "output_hash": "3b93e3713bb6ca31825cf64524ab60dc54a021443ee2fc15bed5accaf2134aca",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/shede.ex",
+    "source_hash": "856ede5369ee20b3c78a936f9d244b25c8f867e067f886ea37b79f61828154cd",
+    "spawns": [
+      {
+        "name": "Shede",
+        "scope": "shared",
+        "x": 70,
+        "y": 137,
+        "map": "hugel",
+        "dir": 5,
+        "sprite": 879
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Sign|hugel:91:152": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Sign",
+    "output_hash": "b562885a92e9cb9dcec42544681524e50fffa2477a288832911d299877989ab3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/sign.ex",
+    "source_hash": "0cfb7b28969cf06434c8af4ebfb7cd9cb2bb4930eb0d60db372cc8ced172e1a5",
+    "spawns": [
+      {
+        "name": "Sign",
+        "scope": "shared",
+        "x": 91,
+        "y": 152,
+        "map": "hugel",
+        "dir": 1,
+        "sprite": 837
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Siria|hu_in01:326:307": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Siria",
+    "output_hash": "dadee84116ab38529ac9369cb4b921cceb1a36c6b4a8633fdeb621ae70afa752",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/siria.ex",
+    "source_hash": "13848e2a32c641e774ad7f3b4912478523f9712a6b932b3a3341e7dad39be171",
+    "spawns": [
+      {
+        "name": "Siria",
+        "scope": "shared",
+        "x": 326,
+        "y": 307,
+        "map": "hu_in01",
+        "dir": 3,
+        "sprite": 90
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Strange Man#Hugel|hugel:100:174": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.StrangeMan",
+    "output_hash": "9c086af9a424dee7e242c3cf4d32f2bda721d7c4ff10ac26111191549118f610",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/strange_man.ex",
+    "source_hash": "c23501acf85246499392a6db90b4aafb35c19e3be72de0a7cb6a72d1418ccda8",
+    "spawns": [
+      {
+        "name": "Strange Man",
+        "scope": "shared",
+        "x": 100,
+        "y": 174,
+        "map": "hugel",
+        "dir": 3,
+        "unique_name": "Strange Man#Hugel",
+        "sprite": 898
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Suspicious Barrel|hugel:100:176": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.SuspiciousBarrel",
+    "output_hash": "ce8a3a886087eb19886f9cecf841d4b51f25c883da734e0bf39466bd09baf535",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/suspicious_barrel.ex",
+    "source_hash": "447b4b49c2a4fee7fd7a42781e979e3be81e6acc036aeb37e8c99aeba14f72ae",
+    "spawns": [
+      {
+        "name": "Suspicious Barrel",
+        "scope": "shared",
+        "x": 100,
+        "y": 176,
+        "map": "hugel",
+        "dir": 3,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Torpy's Mom|hu_fild06:190:367": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.TorpySMom",
+    "output_hash": "ae745600aca7ceea57e871867d67f9653437534b54de34b0c41cf781930cf3bd",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/torpy_s_mom.ex",
+    "source_hash": "c4498093389d7b0e5b255d02fb64df2f4ad40a29ae5592ee107d8603fe7f870f",
+    "spawns": [
+      {
+        "name": "Torpy's Mom",
+        "scope": "shared",
+        "x": 190,
+        "y": 367,
+        "map": "hu_fild06",
+        "dir": 3,
+        "sprite": 701
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Torpy|hugel:107:67": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Torpy",
+    "output_hash": "2fffc41c6a9a694d4efc2c5f6fccc429fbcd0ab113ed41a98c6a5bbef7bb6eb4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/torpy.ex",
+    "source_hash": "cc0cd211e6f0fa513c689c14dc19b8e5d9d1a34f3c894fa96259400a97256771",
+    "spawns": [
+      {
+        "name": "Torpy",
+        "scope": "shared",
+        "x": 107,
+        "y": 67,
+        "map": "hugel",
+        "dir": 3,
+        "sprite": 706
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Unethical Machine|lhz_dun02:244:226": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.UnethicalMachine",
+    "output_hash": "d98aa56afbce003d1dae551422c3a375d4bec5d0449c00e5bed397b5d9c3c6da",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/unethical_machine.ex",
+    "source_hash": "628a1350b3f1e3ac1fd0ed428379b3d6684304a55d3f3d5778e48101914a47c2",
+    "spawns": [
+      {
+        "name": "Unethical Machine",
+        "scope": "shared",
+        "x": 244,
+        "y": 226,
+        "map": "lhz_dun02",
+        "dir": 0,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Upper Drawer#First|hu_in01:370:255": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.UpperDrawer",
+    "output_hash": "afed80a7cf13da777a8d0e2c3770c2a2baef7f2994c34ca04044eea6e06a97d5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/upper_drawer.ex",
+    "source_hash": "e39ea22375ab6ed49981aed3a2e8c7a361c344e7a730f765705f69227df58969",
+    "spawns": [
+      {
+        "name": "Upper Drawer",
+        "scope": "shared",
+        "x": 370,
+        "y": 255,
+        "map": "hu_in01",
+        "dir": 3,
+        "unique_name": "Upper Drawer#First",
+        "sprite": 139,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Upper Drawer#Second|hu_in01:370:255": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.UpperDrawer370255",
+    "output_hash": "49999d0ef8b71a8342255b3ff90ddd341897574842ea2ced7f34b5059880acbf",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/upper_drawer_370_255.ex",
+    "source_hash": "01e14b88c3ac096fded7b5789d56e7193a99711ede6945392a02d9212717cc08",
+    "spawns": [
+      {
+        "name": "Upper Drawer",
+        "scope": "shared",
+        "x": 370,
+        "y": 255,
+        "map": "hu_in01",
+        "dir": 3,
+        "unique_name": "Upper Drawer#Second",
+        "sprite": 139,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|Young Man#Hu_Quest|odin_tem01:130:134": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.YoungMan",
+    "output_hash": "0542d0463695ef5906512723e1bd63ff18a341d3406a1eb7a97ee89f484905e3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/young_man.ex",
+    "source_hash": "7979fb6b1afdd1604d9af769b9afc2cf5356904d4800d66e2d10afc5c09b8ce8",
+    "spawns": [
+      {
+        "name": "Young Man",
+        "scope": "shared",
+        "x": 130,
+        "y": 134,
+        "map": "odin_tem01",
+        "dir": 4,
+        "unique_name": "Young Man#Hu_Quest",
+        "sprite": 774
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|alex#warp2|hugel:52:90": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Alex5290",
+    "output_hash": "939b2bf0f40fc4764524db8678259f8edb6607a306d79699d01423cde3e05e13",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/alex_52_90.ex",
+    "source_hash": "57da88dac4e783cae78e7d56bce138d6c07bd97fa92c389c24732c9b1dd31d41",
+    "spawns": [
+      {
+        "name": "alex",
+        "scope": "shared",
+        "x": 52,
+        "y": 90,
+        "map": "hugel",
+        "dir": 0,
+        "unique_name": "alex#warp2",
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|alex#warp3|hu_in01:155:70": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Alex15570",
+    "output_hash": "b32ff88b4aa6434bd45e25e7c0ac145a22737953aaf0ef3f6c2a8978353b9c83",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/alex_155_70.ex",
+    "source_hash": "e49d819a24e850b0be7b5a3bf2ae9f888a6acf558d0969170bd2a35a5cfb3078",
+    "spawns": [
+      {
+        "name": "alex",
+        "scope": "shared",
+        "x": 155,
+        "y": 70,
+        "map": "hu_in01",
+        "dir": 0,
+        "unique_name": "alex#warp3",
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|alex#warp4|hu_in01:155:108": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Alex155108",
+    "output_hash": "c61883b78f07a01e1084789a51a88b84e66f50dcc7fc0d62e3d106588b6a6468",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/alex_155_108.ex",
+    "source_hash": "073d97a5f1b4e337dc3a6c30bfb4ff26a930e9407067220220951f23a1c90b6d",
+    "spawns": [
+      {
+        "name": "alex",
+        "scope": "shared",
+        "x": 155,
+        "y": 108,
+        "map": "hu_in01",
+        "dir": 0,
+        "unique_name": "alex#warp4",
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|alex#warp|hu_in01:15:108": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Alex15108",
+    "output_hash": "4e4b8ae93090182e0de33141fd89a4d2abc881d6348d65861881f29993504b1b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/alex_15_108.ex",
+    "source_hash": "74630ea614140d26f96347a2dbc2eadab9c7eb4ecc5181eccb6ffca08c407541",
+    "spawns": [
+      {
+        "name": "alex",
+        "scope": "shared",
+        "x": 15,
+        "y": 108,
+        "map": "hu_in01",
+        "dir": 0,
+        "unique_name": "alex#warp",
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|object#1|que_hugel:35:29": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Object",
+    "output_hash": "62419276c096a3c8a9f1797d19d31af5af7ac39d0ab61e422184ef82b55aae36",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/object.ex",
+    "source_hash": "2dfa6647f96ca8bed0cb66ee51f734031e7c6e946a4f0301443a95725c46b43e",
+    "spawns": [
+      {
+        "name": "object",
+        "scope": "shared",
+        "x": 35,
+        "y": 29,
+        "map": "que_hugel",
+        "dir": 5,
+        "unique_name": "object#1",
+        "sprite": 139,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|object#2|que_hugel:163:31": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Object16331",
+    "output_hash": "d362e5db522cebb75da02dca203a0d929e28e9c3388e7fa4c127a81171536b18",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/object_163_31.ex",
+    "source_hash": "a502ff766edae593d82e54c5e73338432b121c040d8e7b610eb90400ee023895",
+    "spawns": [
+      {
+        "name": "object",
+        "scope": "shared",
+        "x": 163,
+        "y": 31,
+        "map": "que_hugel",
+        "dir": 0,
+        "unique_name": "object#2",
+        "sprite": 139,
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|object#3|que_hugel:163:178": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Object163178",
+    "output_hash": "27925eb416918cbe6268761158449ce8754acb06ca4cfe98ed83826a7e3b6a3f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/object_163_178.ex",
+    "source_hash": "6e74de5a16bff84d1b9769cf9b50cc56442bf996e0d4947606b1947c6c55c629",
+    "spawns": [
+      {
+        "name": "object",
+        "scope": "shared",
+        "x": 163,
+        "y": 178,
+        "map": "que_hugel",
+        "dir": 0,
+        "unique_name": "object#3",
+        "sprite": 139,
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|warpinside#1|odin_tem03:266:302": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Warpinside",
+    "output_hash": "162ce588542c9ecd7a894b1590b64c5471d12912ef7aa383cee363d4ace98d7e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/warpinside.ex",
+    "source_hash": "257293a70a1dbd004f46ecc5cd0f51a44f52e743563790f3033d4ae80077eb3a",
+    "spawns": [
+      {
+        "name": "warpinside",
+        "scope": "shared",
+        "x": 266,
+        "y": 302,
+        "map": "odin_tem03",
+        "dir": 0,
+        "unique_name": "warpinside#1",
+        "sprite": 139,
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|warpinside#2|odin_tem03:288:271": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Warpinside288271",
+    "output_hash": "3632b8650eedf461ec4791a4e5104b8bbb8c0ad962ec19ddd297b23d31286892",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/warpinside_288_271.ex",
+    "source_hash": "0f4d8630d523c9ea40906cc42f8f2d9f1500675dc1ebcde024227e3a41617e4a",
+    "spawns": [
+      {
+        "name": "warpinside",
+        "scope": "shared",
+        "x": 288,
+        "y": 271,
+        "map": "odin_tem03",
+        "dir": 0,
+        "unique_name": "warpinside#2",
+        "sprite": 139,
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|warpinside#3|odin_tem03:283:241": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Warpinside283241",
+    "output_hash": "bd0fc351c14a970cc3360523bd5dc1f986c20520d41e753ab926d94ddba84f31",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/warpinside_283_241.ex",
+    "source_hash": "7eac801d87491deb064ff785ab92b6a9a5be0124258a63685f517fee6c759866",
+    "spawns": [
+      {
+        "name": "warpinside",
+        "scope": "shared",
+        "x": 283,
+        "y": 241,
+        "map": "odin_tem03",
+        "dir": 0,
+        "unique_name": "warpinside#3",
+        "sprite": 139,
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|warpinside#4|odin_tem03:179:275": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Warpinside179275",
+    "output_hash": "30429d079f3c426130004ff3bccfff9986b248a9e4f206dd66809d642604492c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/warpinside_179_275.ex",
+    "source_hash": "e980d09ceb478729601238833983c360e04f14c8769c48d8a479b408484598e6",
+    "spawns": [
+      {
+        "name": "warpinside",
+        "scope": "shared",
+        "x": 179,
+        "y": 275,
+        "map": "odin_tem03",
+        "dir": 0,
+        "unique_name": "warpinside#4",
+        "sprite": 139,
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_hugel.txt|script|warpinside#5|odin_tem03:320:264": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Warpinside320264",
+    "output_hash": "7c86148a728a2b36f5035cb9a14dfa93c330bf4963bcaed614e22cc1c9bef671",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_hugel/warpinside_320_264.ex",
+    "source_hash": "3a1c4cd013890985e612c7d99ddfe15bf4fb064d10cac147eef72210db7db4e0",
+    "spawns": [
+      {
+        "name": "warpinside",
+        "scope": "shared",
+        "x": 320,
+        "y": 264,
+        "map": "odin_tem03",
+        "dir": 0,
+        "unique_name": "warpinside#5",
+        "sprite": 139,
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
