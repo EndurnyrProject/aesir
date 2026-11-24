@@ -248,6 +248,11 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   def max_hp(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "max_hp/1")
   def max_hp(%Ctx{game_state: gs}), do: gs.stats.derived_stats.max_hp
 
+  @doc "The player's maximum SP."
+  @spec max_sp(Ctx.t()) :: non_neg_integer()
+  def max_sp(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "max_sp/1")
+  def max_sp(%Ctx{game_state: gs}), do: gs.stats.derived_stats.max_sp
+
   @doc "The player's current carried weight."
   @spec weight(Ctx.t()) :: non_neg_integer()
   def weight(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "weight/1")
