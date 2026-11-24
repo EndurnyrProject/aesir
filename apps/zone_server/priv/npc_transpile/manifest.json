@@ -42866,6 +42866,656 @@
       }
     ]
   },
+  "quests/quests_amatsu.txt|script|Am Mut#ama|ama_test:34:17": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.AmMut",
+    "output_hash": "4c5121951f37603982435b1db8232190ed8c1bcfb5d6eb80be9ddfb1f2496bb8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/am_mut.ex",
+    "source_hash": "95ad9ffa35b9ce5f263d72f438a64aa65d92ecb27e180c94dcf8146bdbfec51b",
+    "spawns": [
+      {
+        "name": "Am Mut",
+        "scope": "shared",
+        "x": 34,
+        "y": 17,
+        "map": "ama_test",
+        "dir": 0,
+        "unique_name": "Am Mut#ama",
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Assistant#ama|ama_test:52:44": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Assistant",
+    "output_hash": "016a9110651214dcd0d8e6d2c9d77c6a16cfc39182ba91c895aa921c3b497b1a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/assistant.ex",
+    "source_hash": "3f0e7a5494ef7298f1d537986f94dc10e1cd0e94d15bc50b1deffc5eda00dd61",
+    "spawns": [
+      {
+        "name": "Assistant",
+        "scope": "shared",
+        "x": 52,
+        "y": 44,
+        "map": "ama_test",
+        "dir": 3,
+        "unique_name": "Assistant#ama",
+        "sprite": 109
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Coach#after|ama_test:50:100": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Coach50100",
+    "output_hash": "387d595cf11e74c05a3a6af9bbab1596bed7ec9cdf271c65c6c8a8902ede79f2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/coach_50_100.ex",
+    "source_hash": "6ce7524e129df0ae3f59c3b9dc97a8964ed87c5342ae01eaadd39e292434f536",
+    "spawns": [
+      {
+        "name": "Coach",
+        "scope": "shared",
+        "x": 50,
+        "y": 100,
+        "map": "ama_test",
+        "dir": 3,
+        "unique_name": "Coach#after",
+        "sprite": 762,
+        "trigger": [
+          5,
+          5
+        ]
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Coach#ama|ama_test:50:100": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Coach",
+    "output_hash": "fea0debf90330247fb06cda42f85c0235179e854f9cfe998c254f5a03bf7e3e7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/coach.ex",
+    "source_hash": "184d93860609e7cf987259e7629248cd5398e40809653d8bf3394e4c700f82eb",
+    "spawns": [
+      {
+        "name": "Coach",
+        "scope": "shared",
+        "x": 50,
+        "y": 100,
+        "map": "ama_test",
+        "dir": 3,
+        "unique_name": "Coach#ama",
+        "sprite": 762,
+        "trigger": [
+          15,
+          15
+        ]
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Dokebi#ez|ama_test:34:15": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Dokebi",
+    "output_hash": "4e14e33dff331b5494547394dcc8ef11da1bcb43b1cc9b89361af2411556fec0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/dokebi.ex",
+    "source_hash": "be89b836a5ac27a8fb20c82be48017638870fe5d738a473beb634639b6e38162",
+    "spawns": [
+      {
+        "name": "Dokebi",
+        "scope": "shared",
+        "x": 34,
+        "y": 15,
+        "map": "ama_test",
+        "dir": 0,
+        "unique_name": "Dokebi#ez",
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Dokebi#hd|ama_test:34:16": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Dokebi3416",
+    "output_hash": "405b735a4d8829084ef9229208ae89b781c7e0a0bc89caed2f243c469d27f698",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/dokebi_34_16.ex",
+    "source_hash": "5a63acea4d7fe98c47f927bb3c0de631144232a332b305cf01fd70944e05dd7e",
+    "spawns": [
+      {
+        "name": "Dokebi",
+        "scope": "shared",
+        "x": 34,
+        "y": 16,
+        "map": "ama_test",
+        "dir": 0,
+        "unique_name": "Dokebi#hd",
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Gate Soldier#ama1|amatsu:112:164": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.GateSoldier",
+    "output_hash": "7c98af9e6e4d7073500260cc51afd6f4255efa1aa8666408d62595934f3440e0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/gate_soldier.ex",
+    "source_hash": "0797b0baf622c2b9110be151543c00a3f9a5fe071e26f88c55e9ab383cd8a387",
+    "spawns": [
+      {
+        "name": "Gate Soldier",
+        "scope": "shared",
+        "x": 112,
+        "y": 164,
+        "map": "amatsu",
+        "dir": 4,
+        "unique_name": "Gate Soldier#ama1",
+        "sprite": 767
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Gate Soldier#ama2|amatsu:119:164": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.GateSoldier119164",
+    "output_hash": "92421d292050b1fef1b2cd0012c2e5fd193daa609fdea68cd6c9ea7f33720104",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/gate_soldier_119_164.ex",
+    "source_hash": "9ffa5dc93b48313253b1aeedd7909817002b0f0e9a7114e3a0c8bcf8adfe1858",
+    "spawns": [
+      {
+        "name": "Gate Soldier",
+        "scope": "shared",
+        "x": 119,
+        "y": 164,
+        "map": "amatsu",
+        "dir": 4,
+        "unique_name": "Gate Soldier#ama2",
+        "sprite": 767
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Gate Soldier#ama3|ama_in02:207:40": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.GateSoldier20740",
+    "output_hash": "7a7dc96f3905c9d8c9488480c11420b761e85e3978aa4b481455e6767f0ed2d0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/gate_soldier_207_40.ex",
+    "source_hash": "ac7e336b908a9d4d136730dba65b281b521f6394a243ddb1c67af5a835634bd3",
+    "spawns": [
+      {
+        "name": "Gate Soldier",
+        "scope": "shared",
+        "x": 207,
+        "y": 40,
+        "map": "ama_in02",
+        "dir": 6,
+        "unique_name": "Gate Soldier#ama3",
+        "sprite": 767
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Gate Soldier#ama4|ama_in02:207:49": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.GateSoldier20749",
+    "output_hash": "b25495d7a0cfd739c44fac72cd7a1e6a239efdb0a9e48d0ded9dcacb1dde4f70",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/gate_soldier_207_49.ex",
+    "source_hash": "faafcf5349ff6a6a7842575a5cf3911200a240b53251b0486279eb900bf8c92c",
+    "spawns": [
+      {
+        "name": "Gate Soldier",
+        "scope": "shared",
+        "x": 207,
+        "y": 49,
+        "map": "ama_in02",
+        "dir": 6,
+        "unique_name": "Gate Soldier#ama4",
+        "sprite": 767
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Gate Soldier#ama5|amatsu:164:174": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.GateSoldier164174",
+    "output_hash": "6e6e61386ede6b9ee295ecab4fe3afcbe7b3b123063e7d5016a0f03d683c8b84",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/gate_soldier_164_174.ex",
+    "source_hash": "45f42d287b9e79dee750cf3b0b9221a5d5888edba1c5ce69e89f5af54b6a189a",
+    "spawns": [
+      {
+        "name": "Gate Soldier",
+        "scope": "shared",
+        "x": 164,
+        "y": 174,
+        "map": "amatsu",
+        "dir": 4,
+        "unique_name": "Gate Soldier#ama5",
+        "sprite": 767
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Gate Soldier#ama6|amatsu:171:174": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.GateSoldier171174",
+    "output_hash": "33c62f14128355e4e017e1f2e099cd596a250c49bb9722d54406d300470dfa80",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/gate_soldier_171_174.ex",
+    "source_hash": "24d4c80b721f450971e1dc8c3bd4132cbcdb4fc4d329c8894628c16eb6e5fc3a",
+    "spawns": [
+      {
+        "name": "Gate Soldier",
+        "scope": "shared",
+        "x": 171,
+        "y": 174,
+        "map": "amatsu",
+        "dir": 4,
+        "unique_name": "Gate Soldier#ama6",
+        "sprite": 767
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Grandma#ama1|ama_test:50:93": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Grandma",
+    "output_hash": "4c5aec219b158b38e80fcc29f020e1953c1b8bac93db04d1dc9877a8127cd94c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/grandma.ex",
+    "source_hash": "a71e658a771c32c20f698610ccac75f7f5e77a0ecff1de18652248b28bc32eaa",
+    "spawns": [
+      {
+        "name": "Grandma",
+        "scope": "shared",
+        "x": 50,
+        "y": 93,
+        "map": "ama_test",
+        "dir": 4,
+        "unique_name": "Grandma#ama1",
+        "sprite": 761,
+        "trigger": [
+          10,
+          10
+        ]
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Grandma#ama2|ama_in01:22:111": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Grandma22111",
+    "output_hash": "95dea3f89662dc72b8a2cf0b1f0163f674b4b46dbfa3a20e35baef91850834ef",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/grandma_22_111.ex",
+    "source_hash": "dc4885c4cb23784c25c418be4a840c5f7e8cee6426a4a5fae318f8dcb5b1d022",
+    "spawns": [
+      {
+        "name": "Grandma",
+        "scope": "shared",
+        "x": 22,
+        "y": 111,
+        "map": "ama_in01",
+        "dir": 0,
+        "unique_name": "Grandma#ama2",
+        "sprite": 761
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Grandpa#ama|ama_test:49:93": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Grandpa",
+    "output_hash": "e957d2b676a1b17de71a6dfd6a1edcf901a43b8440b24be4e7b0dcb1111d18bc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/grandpa.ex",
+    "source_hash": "c9d26c282236fda35c0be1608f7360b604a86e6a04e12fe8a0107fe89520a085",
+    "spawns": [
+      {
+        "name": "Grandpa",
+        "scope": "shared",
+        "x": 49,
+        "y": 93,
+        "map": "ama_test",
+        "dir": 4,
+        "unique_name": "Grandpa#ama",
+        "sprite": 766
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Hanako chan#ama|ama_test:34:25": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.HanakoChan",
+    "output_hash": "5a0f335957e100d879cc358cf27e272f331107d1a4b53a10f060e825678f3751",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/hanako_chan.ex",
+    "source_hash": "e0c6967cbe73ada3136c614cb82f1e7710651e7631670c191d7c65d0847d992f",
+    "spawns": [
+      {
+        "name": "Hanako chan",
+        "scope": "shared",
+        "x": 34,
+        "y": 25,
+        "map": "ama_test",
+        "dir": 0,
+        "unique_name": "Hanako chan#ama",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Kitsune Mask#ama|ama_in01:180:173": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.KitsuneMask",
+    "output_hash": "fcd9ca8e694434f2d9c9bb88c539f71fcc549bf663da8a88d5d0d7f376f56f52",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/kitsune_mask.ex",
+    "source_hash": "9d1a4b48971b7c8d60bdc5e2b44504dc9a794bcf06b446b62c6e1fe0ceff69ec",
+    "spawns": [
+      {
+        "name": "Kitsune Mask",
+        "scope": "shared",
+        "x": 180,
+        "y": 173,
+        "map": "ama_in01",
+        "dir": 3,
+        "unique_name": "Kitsune Mask#ama",
+        "sprite": 762
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Kouji#ama|amatsu:189:166": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Kouji",
+    "output_hash": "304ffa280870d047d9c23f6a05bf03a8feeedfecbd2642df6f4e22758f1a2c75",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/kouji.ex",
+    "source_hash": "1109e0ad9136791d7198d87f577071a989dcf1f534358b161c7155861e3c2d63",
+    "spawns": [
+      {
+        "name": "Kouji",
+        "scope": "shared",
+        "x": 189,
+        "y": 166,
+        "map": "amatsu",
+        "dir": 5,
+        "unique_name": "Kouji#ama",
+        "sprite": 764
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Lord of Palace#ama|ama_in02:200:176": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.LordOfPalace",
+    "output_hash": "e0d784eeb70bcc54df89d1c4819359fad0d515250eb3643596653dcc0fef4fab",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/lord_of_palace.ex",
+    "source_hash": "ace5c8210b33fc29f01ed85e5181f86b5d94558a090fa7da002dc1640cc9db5a",
+    "spawns": [
+      {
+        "name": "Lord of Palace",
+        "scope": "shared",
+        "x": 200,
+        "y": 176,
+        "map": "ama_in02",
+        "dir": 4,
+        "unique_name": "Lord of Palace#ama",
+        "sprite": 768
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Publisher#ama|amatsu:223:236": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Publisher",
+    "output_hash": "8d6acc607df23e597bf779970def5f481b67b79f6e0dfb13bc952140b7b6352a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/publisher.ex",
+    "source_hash": "d68709541528bc641a3f160f3387aaa8fbfa659a286b68a349d565f84edfd439",
+    "spawns": [
+      {
+        "name": "Publisher",
+        "scope": "shared",
+        "x": 223,
+        "y": 236,
+        "map": "amatsu",
+        "dir": 3,
+        "unique_name": "Publisher#ama",
+        "sprite": 763
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Shaman#ama|ama_in01:169:173": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Shaman",
+    "output_hash": "4d66faf43aef3a1c0582544afac76b1c5f3a06ef33a6b69350e664f3ae9791a5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/shaman.ex",
+    "source_hash": "30a1b4e4f8b8af246fa2713e717e5e7a80215bb7346bb460c6efda8ff993710d",
+    "spawns": [
+      {
+        "name": "Shaman",
+        "scope": "shared",
+        "x": 169,
+        "y": 173,
+        "map": "ama_in01",
+        "dir": 1,
+        "unique_name": "Shaman#ama",
+        "sprite": 769
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Soldier#ama10|ama_in02:115:177": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Soldier115177",
+    "output_hash": "64ebf4c6595a41670320fd732dbcc509d50bd283ba9e28fa5e46a4b0328d2adf",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/soldier_115_177.ex",
+    "source_hash": "9cb1fc25f347424c6804d4e03a887e53ab5c9042fb1f6d6f7c3e8107ae9c8584",
+    "spawns": [
+      {
+        "name": "Soldier",
+        "scope": "shared",
+        "x": 115,
+        "y": 177,
+        "map": "ama_in02",
+        "dir": 7,
+        "unique_name": "Soldier#ama10",
+        "sprite": 767
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Soldier#ama11|ama_dun01:229:7": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Soldier2297",
+    "output_hash": "7f93b350100bf0e6f3dc8350d9d82b1e2720f10f24d60035e925a697edb8d108",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/soldier_229_7.ex",
+    "source_hash": "a65de635af394187c4686c041bd3682fab4f7355707f156bdc5fe3e20d911d6e",
+    "spawns": [
+      {
+        "name": "Soldier",
+        "scope": "shared",
+        "x": 229,
+        "y": 7,
+        "map": "ama_dun01",
+        "dir": 0,
+        "unique_name": "Soldier#ama11",
+        "sprite": 767
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Soldier#ama1|ama_in02:187:57": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Soldier",
+    "output_hash": "6990ac856126c48decab676fdaaae0db0f627bd98c83b1e248a65bd5376c2d54",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/soldier.ex",
+    "source_hash": "74108806e2a99887787f6d16dc675ffdca68d93e4f479d9d4ca04876deac7cb6",
+    "spawns": [
+      {
+        "name": "Soldier",
+        "scope": "shared",
+        "x": 187,
+        "y": 57,
+        "map": "ama_in02",
+        "dir": 2,
+        "unique_name": "Soldier#ama1",
+        "sprite": 767
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Soldier#ama2|ama_in02:170:62": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Soldier17062",
+    "output_hash": "c8ac0106f44dd493079feb734633ee37347862f5fa4487e60fdb71e6b4463a8d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/soldier_170_62.ex",
+    "source_hash": "7fcb2aada2acc3f79186141e4abec9aed48282fdff41769d78461a3328ab752a",
+    "spawns": [
+      {
+        "name": "Soldier",
+        "scope": "shared",
+        "x": 170,
+        "y": 62,
+        "map": "ama_in02",
+        "dir": 4,
+        "unique_name": "Soldier#ama2",
+        "sprite": 767
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Soldier#ama3|ama_in02:37:157": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Soldier37157",
+    "output_hash": "5b2cc431c38c6f13700bd1016267ac205fb6b37078ad3455e5007c708b5f6961",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/soldier_37_157.ex",
+    "source_hash": "418d628554dd77d77e5a960e1f306d2427764ca31dcbd0fff7af4e76b7573235",
+    "spawns": [
+      {
+        "name": "Soldier",
+        "scope": "shared",
+        "x": 37,
+        "y": 157,
+        "map": "ama_in02",
+        "dir": 4,
+        "unique_name": "Soldier#ama3",
+        "sprite": 767
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Soldier#ama4|ama_in02:32:51": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Soldier3251",
+    "output_hash": "67d0a65f1f5052879de6583750a699df694b79cf7a99662377d8a92d17820e5e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/soldier_32_51.ex",
+    "source_hash": "2a86645755cd7113716153fc266939d7907aa4733e0d03e245d95dde0e7412aa",
+    "spawns": [
+      {
+        "name": "Soldier",
+        "scope": "shared",
+        "x": 32,
+        "y": 51,
+        "map": "ama_in02",
+        "dir": 6,
+        "unique_name": "Soldier#ama4",
+        "sprite": 767
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Soldier#ama5|ama_in02:40:167": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Soldier40167",
+    "output_hash": "c0e56f4b4cfc43fd1be3e2e0f2c378bd710bea4ee3d294f5f2a1c16ba91ee7f3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/soldier_40_167.ex",
+    "source_hash": "b21b0a8521eb6bd6576b82bce3256ae025323baad6f20c616027e3370177e333",
+    "spawns": [
+      {
+        "name": "Soldier",
+        "scope": "shared",
+        "x": 40,
+        "y": 167,
+        "map": "ama_in02",
+        "dir": 3,
+        "unique_name": "Soldier#ama5",
+        "sprite": 767
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Soldier#ama6|ama_in02:32:167": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Soldier32167",
+    "output_hash": "098b34bda93ecce2049162a0e7c1c9a0bb9a1cb8b1c7982bc4cfda54215ed646",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/soldier_32_167.ex",
+    "source_hash": "6e7e8d345d451566e2fbb7262ebc0bb8e57c80d51e50aca8cd945b044873e169",
+    "spawns": [
+      {
+        "name": "Soldier",
+        "scope": "shared",
+        "x": 32,
+        "y": 167,
+        "map": "ama_in02",
+        "dir": 5,
+        "unique_name": "Soldier#ama6",
+        "sprite": 767
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Soldier#ama7|ama_in02:42:34": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Soldier4234",
+    "output_hash": "d8287a1a1761491c92745dd21e39430114c3b123ca9e9e32e987d5d32d810b1e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/soldier_42_34.ex",
+    "source_hash": "bf7d6965b111d9fd3e5ea131df6a1a496c688d0f0677218261c40510e0f7e648",
+    "spawns": [
+      {
+        "name": "Soldier",
+        "scope": "shared",
+        "x": 42,
+        "y": 34,
+        "map": "ama_in02",
+        "dir": 2,
+        "unique_name": "Soldier#ama7",
+        "sprite": 767
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Soldier#ama8|ama_in02:203:156": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Soldier203156",
+    "output_hash": "c5f27f7d11892c3e92b507254923579320fc42040d942659b520094d3e896e68",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/soldier_203_156.ex",
+    "source_hash": "1ca7cf3d17be9137a76b855c8ac8583ad4b1d45d95ab123fc9d50b14d3e68da4",
+    "spawns": [
+      {
+        "name": "Soldier",
+        "scope": "shared",
+        "x": 203,
+        "y": 156,
+        "map": "ama_in02",
+        "dir": 4,
+        "unique_name": "Soldier#ama8",
+        "sprite": 767
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Soldier#ama9|ama_in02:195:156": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Soldier195156",
+    "output_hash": "636c173cadbadd9e00dcb9ace94e8fcaaf42e9094079d07e3424823700251d35",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/soldier_195_156.ex",
+    "source_hash": "7d06cf04dae742ada919dd811e6f076ee482feaf6d722148e5f0eba900393842",
+    "spawns": [
+      {
+        "name": "Soldier",
+        "scope": "shared",
+        "x": 195,
+        "y": 156,
+        "map": "ama_in02",
+        "dir": 4,
+        "unique_name": "Soldier#ama9",
+        "sprite": 767
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Sushi Master#ama|ama_in01:162:17": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.SushiMaster",
+    "output_hash": "896d5c4b2c98602ff36316ab1045e72fe2273c5db10e193c71ad8f346637d7f9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/sushi_master.ex",
+    "source_hash": "549b7ea7a2745fff12b4c0affe7306751e01c399e4968eaebf665e3691f224ea",
+    "spawns": [
+      {
+        "name": "Sushi Master",
+        "scope": "shared",
+        "x": 162,
+        "y": 17,
+        "map": "ama_in01",
+        "dir": 1,
+        "unique_name": "Sushi Master#ama",
+        "sprite": 765
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|Timer#ama|ama_test:34:18": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Timer",
+    "output_hash": "1a0651b0345b57ca6872d6a50c60f6df8c1b5e8006394eb355d16ac95c0533e9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/timer.ex",
+    "source_hash": "602985fdf02615c4ee37725aad90f8554deaa3de0f8a5110f7fff6b12696a70b",
+    "spawns": [
+      {
+        "name": "Timer",
+        "scope": "shared",
+        "x": 34,
+        "y": 18,
+        "map": "ama_test",
+        "dir": 0,
+        "unique_name": "Timer#ama",
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_amatsu.txt|script|backwarp#ama|ama_test:50:100": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Backwarp",
+    "output_hash": "f021a85b5be5cfb8ff9560ddfc1ffe3ced79ee1bf48dfcf74ff8db72cb3ebea7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_amatsu/backwarp.ex",
+    "source_hash": "0b1b4e9da72a52fc0d1160162f6a29bee3dfdce50cb4620afa03fe3434b75e9b",
+    "spawns": [
+      {
+        "name": "backwarp",
+        "scope": "shared",
+        "x": 50,
+        "y": 100,
+        "map": "ama_test",
+        "dir": 0,
+        "unique_name": "backwarp#ama",
+        "sprite": -1,
+        "trigger": [
+          25,
+          25
+        ]
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
