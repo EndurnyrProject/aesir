@@ -76,13 +76,20 @@ defmodule Aesir.ZoneServer.Unit.Movement do
   updates are those of `set_position/4`. After leaving the ground units, a
   Homunculus vanishes with the teleport reason for every player that saw it
   and appears for every player in view of its new cell; a mob vanishes with
-  the teleport reason for the players in view of its old cell.
+  the `DespawnReason` `mob_reason` (teleport by default) for the players in
+  view of its old cell.
   """
-  @spec warp_position(unit_type(), unit_id(), map(), String.t()) :: :ok
-  def warp_position(unit_type, unit_id, updated_state, map_name) do
+  @spec warp_position(unit_type(), unit_id(), map(), String.t(), non_neg_integer()) :: :ok
+  def warp_position(
+        unit_type,
+        unit_id,
+        updated_state,
+        map_name,
+        mob_reason \\ DespawnReason.teleport()
+      ) do
     :ok = leave_ground_units(unit_type, unit_id)
     previous = SpatialIndex.get_unit_position(unit_type, unit_id)
-    vanish(unit_type, unit_id, previous)
+    vanish(unit_type, unit_id, previous, mob_reason)
 
     SpatialIndex.update_unit_position(
       unit_type,
@@ -103,22 +110,22 @@ defmodule Aesir.ZoneServer.Unit.Movement do
     )
   end
 
-  defp vanish(:homunculus, gid, previous) do
+  defp vanish(:homunculus, gid, previous, _mob_reason) do
     previous
     |> players_near()
     |> HomunculusSpawnView.notify_vanished(gid, DespawnReason.teleport())
   end
 
-  defp vanish(:pet, gid, previous) do
+  defp vanish(:pet, gid, previous, _mob_reason) do
     previous
     |> players_near()
     |> PetSpawnView.notify_vanished(gid, DespawnReason.teleport())
   end
 
-  defp vanish(:mob, instance_id, {:ok, position}),
-    do: MobSpawnView.notify_teleported(instance_id, position)
+  defp vanish(:mob, instance_id, {:ok, position}, reason),
+    do: MobSpawnView.notify_teleported(instance_id, position, reason)
 
-  defp vanish(_unit_type, _unit_id, _previous), do: :ok
+  defp vanish(_unit_type, _unit_id, _previous, _mob_reason), do: :ok
 
   defp cell_events(:step, mover, previous, map_name, x, y),
     do: fire_step(mover, previous, map_name, x, y)

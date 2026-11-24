@@ -40,6 +40,7 @@ defmodule Mix.Tasks.Aesir.Import.MapFlags do
     :gvg_noparty,
     :gvg_te,
     :gvg_te_castle,
+    :monster_noteleport,
     :nobranch,
     :noexppenalty,
     :noicewall,

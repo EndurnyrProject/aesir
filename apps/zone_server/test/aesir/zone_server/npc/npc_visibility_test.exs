@@ -169,19 +169,37 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
   end
 
   describe "cloakonnpc/1 and cloakoffnpcself/1" do
-    test "cloakonnpc hides independent of enabled; cloakoffnpcself restores it" do
+    test "cloakonnpc cloaks independent of enabled and hidden; cloakoffnpcself restores it" do
       gid = gid_for(ToggleNpc)
       ctx = npc_ctx(gid)
 
       assert Dsl.cloakonnpc(ctx) == ctx
-      assert NpcSession.hidden?(gid)
+      assert NpcSession.cloaked?(gid)
+      refute NpcSession.hidden?(gid)
       assert NpcSession.enabled?(gid)
       refute NpcSession.visible?(gid)
 
       attached = attached(ctx)
       assert Dsl.cloakoffnpcself(attached) == attached
-      refute NpcSession.hidden?(gid)
+      refute NpcSession.cloaked?(gid)
       assert NpcSession.visible?(gid)
+    end
+
+    test "the cloak and the hide are independent flags" do
+      gid = gid_for(ToggleNpc)
+      ctx = npc_ctx(gid)
+
+      ctx |> Dsl.hideonnpc() |> Dsl.cloakonnpc()
+      Dsl.hideoffnpc(ctx)
+
+      assert NpcSession.cloaked?(gid)
+      refute NpcSession.visible?(gid)
+
+      Dsl.hideonnpc(ctx)
+      Dsl.cloakoffnpcself(attached(ctx))
+
+      assert NpcSession.hidden?(gid)
+      refute NpcSession.visible?(gid)
     end
 
     @tag :capture_log
@@ -249,13 +267,13 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
       ctx = npc_ctx(nil)
 
       assert Dsl.cloakonnpc(ctx, "ToggleDup") == ctx
-      assert NpcSession.hidden?(gid_a)
-      assert NpcSession.hidden?(gid_b)
+      assert NpcSession.cloaked?(gid_a)
+      assert NpcSession.cloaked?(gid_b)
 
       attached = attached(ctx)
       assert Dsl.cloakoffnpcself(attached, "ToggleDup") == attached
-      refute NpcSession.hidden?(gid_a)
-      refute NpcSession.hidden?(gid_b)
+      refute NpcSession.cloaked?(gid_a)
+      refute NpcSession.cloaked?(gid_b)
     end
 
     test "an unknown name logs a warning and no-ops" do
@@ -337,6 +355,21 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
       assert Dsl.enablenpc(ctx) == ctx
       assert NpcSession.visible?(gid)
     end
+
+    test "disablenpc sets the hide; enablenpc clears it but keeps a cloak" do
+      gid = gid_for(ToggleNpc)
+      ctx = npc_ctx(gid)
+
+      Dsl.disablenpc(ctx)
+      assert NpcSession.hidden?(gid)
+
+      ctx |> Dsl.hideonnpc() |> Dsl.cloakonnpc() |> Dsl.enablenpc()
+
+      assert NpcSession.enabled?(gid)
+      refute NpcSession.hidden?(gid)
+      assert NpcSession.cloaked?(gid)
+      refute NpcSession.visible?(gid)
+    end
   end
 
   describe "movement diff visibility" do
@@ -364,6 +397,19 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
     test "a hidden NPC is filtered out the same way" do
       gid = gid_for(ToggleNpc)
       NpcSession.set_hidden(gid, true)
+
+      game_state = %{PlayerState.new(character(1)) | x: 300, y: 300, map_name: @map}
+      UnitRegistry.register_unit(:player, 1, PlayerState, game_state, self())
+
+      new_state = MovementHandler.handle_visibility_update(game_state)
+
+      refute_received {:"$gen_cast", {:send_packet, %UnitSpawn{gid: ^gid}}}
+      refute MapSet.member?(new_state.visible_npcs, gid)
+    end
+
+    test "a cloaked NPC is filtered out the same way" do
+      gid = gid_for(ToggleNpc)
+      NpcSession.set_cloaked(gid, true)
 
       game_state = %{PlayerState.new(character(1)) | x: 300, y: 300, map_name: @map}
       UnitRegistry.register_unit(:player, 1, PlayerState, game_state, self())
@@ -493,6 +539,21 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
       assert_receive {:"$gen_cast", {:send_packet, %UnitSpawn{gid: ^gid, name: "Toggle"}}}
     end
 
+    test "cloakonnpc vanishes an in-range standing player immediately; cloakoff respawns it" do
+      gid = gid_for(ToggleNpc)
+      register_player(1, x: 302, y: 300)
+
+      {:reply, :ok, cloaked_state} =
+        NpcSession.handle_call({:set_cloaked, true}, {self(), make_ref()}, session_state(gid))
+
+      assert_receive {:"$gen_cast", {:send_packet, %UnitDespawn{gid: ^gid}}}
+
+      {:reply, :ok, _state} =
+        NpcSession.handle_call({:set_cloaked, false}, {self(), make_ref()}, cloaked_state)
+
+      assert_receive {:"$gen_cast", {:send_packet, %UnitSpawn{gid: ^gid, name: "Toggle"}}}
+    end
+
     test "a player out of range receives nothing" do
       gid = gid_for(ToggleNpc)
       register_player(1, x: 900, y: 900)
@@ -560,6 +621,16 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
 
       assert new_state.interaction_lock == nil
       refute_receive :talked, 100
+    end
+
+    test "clicking a cloaked NPC starts an Interaction, as npc_click only checks the hide" do
+      gid = gid_for(ToggleNpc)
+      NpcSession.set_cloaked(gid, true)
+
+      {:noreply, new_state} = NpcInteractionHandler.handle_talk(gid, talk_state())
+
+      assert {_pid, _ref, ^gid} = new_state.interaction_lock
+      assert_receive :talked, 200
     end
 
     test "clicking a visible NPC starts an Interaction as usual" do

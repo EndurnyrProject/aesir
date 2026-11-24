@@ -78,6 +78,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     # Consecutive walk steps an icewall cell held the mob on; any step taken
     # resets it. Read only by the walk for now.
     field :walk_fail_count, non_neg_integer(), default: 0
+    # The script NPC whose trigger area the mob last fired `OnTouchNPC` for
+    # (the source's areanpc_id); cleared on a step onto a cell outside every
+    # NPC trigger and warp area.
+    field :areanpc_id, non_neg_integer() | nil, default: nil
     # A chase walk (the source's attack_continue): entering its path puts the
     # mob in its rush state before the first cell's skill check.
     field :chase_walk, boolean(), default: false

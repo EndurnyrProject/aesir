@@ -33,6 +33,10 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   instead of touching a nonexistent session or dereferencing a nonexistent
   game state; reads end it the same way. `attached?/1` tells the two shapes
   apart.
+
+  A detached event run for a monster (`OnTouchNPC`) carries it in
+  `attached_unit`: the unit the reference's `st->rid` names, which unit
+  commands with id 0 (`unitwarp`) target. Player commands still end the script.
   """
 
   use TypedStruct
@@ -84,6 +88,9 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   """
   @type inline_session :: %SessionState{}
 
+  @typedoc "A non-player unit a detached event runs for (the reference's `st->rid`)."
+  @type attached_unit :: {:mob, integer()} | nil
+
   @typedoc "The state carried through a running script, with or without an attached player."
   typedstruct enforce: true do
     field :char_id, integer() | nil
@@ -101,6 +108,7 @@ defmodule Aesir.ZoneServer.Script.Ctx do
     field :vars, %{optional(atom()) => term()}, default: %{}
     field :session_effects, [session_effect()], default: []
     field :failures, [failure()], default: []
+    field :attached_unit, attached_unit(), default: nil
   end
 
   @doc """

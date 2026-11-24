@@ -175,8 +175,13 @@ External-store vars are read/written directly by the interaction Task, not via
   pushed, if any); only a command whose reference ends the script halts (`Ctx.halt/2` throws
   `{:script_end, ctx}`, caught by the interaction, the event runner and compiled item scripts).
   Decide which a new buildin is from its reference body, per failure path, not by instinct.
-- `Npc.Session` (per-gid, on-demand GenServer) owns rAthena timers and enabled/hidden flags
-  (mirrored to the `:npc_session_flags` ETS table; missing row = visible).
+- `Npc.Session` (per-gid, on-demand GenServer) owns rAthena timers and the enabled/hidden/cloaked
+  flags (mirrored to the `:npc_session_flags` ETS table; missing row = visible). They are the
+  reference's three independent states (`is_invisible`, `OPTION_HIDE`, `OPTION_CLOAK`); each
+  consumer reads the ones its rAthena function reads (`visible?/1`, `touchable?/1`, `hidden?/1`).
+- OnTouchNPC: a mob's walk step scans trigger areas (`Unit.Mob.Touch`, rAthena
+  `npc_touch_areanpc2`) and fires the event detached with the mob in `Ctx.attached_unit`,
+  which `unitwarp 0` targets.
 - OnTouch: rect scan in `MovementHandler` (warp check wins); busy players skip-but-mark.
 - OnMyMobDead: `summon_mob event:` stamps `MobState.owner_event`; the map Coordinator's
   death path dispatches to the killer.

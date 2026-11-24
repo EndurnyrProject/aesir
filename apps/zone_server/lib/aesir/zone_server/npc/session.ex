@@ -1,7 +1,7 @@
 defmodule Aesir.ZoneServer.Npc.Session do
   @moduledoc """
   A GenServer owning one NPC placement's runtime state: its rAthena-style
-  timer and its `enabled`/`hidden` flags.
+  timer and its `enabled`/`hidden`/`cloaked` flags.
 
   One process per gid, spawned on demand (`ensure_started/1`) under
   `Aesir.ZoneServer.Npc.SessionDynamicSupervisor` and registered in
@@ -35,17 +35,33 @@ defmodule Aesir.ZoneServer.Npc.Session do
 
   ## Flags
 
-  `set_enabled/2` and `set_hidden/2` write this process's state and mirror it
-  to the public `:npc_session_flags` ETS table, so `enabled?/1`, `hidden?/1`
-  and `visible?/1` can read it lock-free with no GenServer call; a missing row
-  means enabled/not-hidden (so visible). The table is owned by
+  The three flags are rAthena's independent NPC view states
+  (`npc_enable_target` in `src/map/npc.cpp`): `enabled` is the inverse of
+  `is_invisible` (`enablenpc`/`disablenpc`), `hidden` is `OPTION_HIDE`
+  (`hideonnpc`/`hideoffnpc`) and `cloaked` is `OPTION_CLOAK`
+  (`cloakonnpc`/`cloakoffnpc`). As in the reference, disabling also sets
+  `hidden` and enabling also clears it; `cloaked` is only changed by the cloak
+  commands.
+
+  Each consumer reads the states its reference function reads: `visible?/1`
+  (shown to clients) needs all three clear, `touchable?/1` (the OnTouch area
+  scans, `npc_touch_areanpc`/`npc_touch_areanpc2`) ignores `hidden`,
+  `hidden?/1` alone gates a click (`npc_click`) and the nearby-NPC check
+  (`npc_isnear_sub`), and `enabled?/1` alone gates an attached event
+  (`npc_event_sub`).
+
+  `set_enabled/2`, `set_hidden/2` and `set_cloaked/2` write this process's
+  state and mirror it to the public `:npc_session_flags` ETS table as
+  `{gid, enabled?, hidden?, cloaked?}`, so the reads are lock-free with no
+  GenServer call; a missing row means enabled, not hidden and not cloaked
+  (so visible). The table is owned by
   `Aesir.ZoneServer.Npc.SessionSupervisor`, not by any one session, so it
   survives a session crash. A session clears its own row on init and on
   terminate, so a crashed (and, under the dynamic supervisor, restarted)
   session resets to defaults.
 
-  An NPC is visible iff enabled and not hidden. When a `set_enabled/2` or
-  `set_hidden/2` call flips that effective visibility, this process
+  An NPC is visible iff enabled, not hidden and not cloaked. When a flag
+  change flips that effective visibility, this process
   broadcasts the transition itself (`Npc.Packets.spawn_packet/1` on
   invisible->visible, `vanish_packet/1` on visible->invisible) to every
   player within `Config.view_range/0` of the placement, so a player standing
@@ -117,6 +133,7 @@ defmodule Aesir.ZoneServer.Npc.Session do
     field :on_fire, timer_callback()
     field :enabled?, boolean(), default: true
     field :hidden?, boolean(), default: false
+    field :cloaked?, boolean(), default: false
     field :display, display_override(), default: %{sprite: nil, name: nil, size: 0}
   end
 
@@ -170,7 +187,12 @@ defmodule Aesir.ZoneServer.Npc.Session do
     end
   end
 
-  @doc "Sets the NPC's `enabled` flag, starting the session if needed."
+  @doc """
+  Sets the NPC's `enabled` flag, starting the session if needed.
+
+  Like rAthena's `NPCVIEW_ENABLE`/`NPCVIEW_DISABLE`, enabling also clears the
+  `hidden` flag and disabling also sets it; `cloaked` is left unchanged.
+  """
   @spec set_enabled(non_neg_integer(), boolean()) :: :ok
   def set_enabled(gid, enabled?) do
     gid |> ensure_started() |> GenServer.call({:set_enabled, enabled?})
@@ -182,6 +204,12 @@ defmodule Aesir.ZoneServer.Npc.Session do
     gid |> ensure_started() |> GenServer.call({:set_hidden, hidden?})
   end
 
+  @doc "Sets the NPC's `cloaked` flag, starting the session if needed."
+  @spec set_cloaked(non_neg_integer(), boolean()) :: :ok
+  def set_cloaked(gid, cloaked?) do
+    gid |> ensure_started() |> GenServer.call({:set_cloaked, cloaked?})
+  end
+
   @doc """
   Reads the NPC's `enabled` flag directly from ETS, no GenServer call.
 
@@ -191,7 +219,7 @@ defmodule Aesir.ZoneServer.Npc.Session do
   @spec enabled?(non_neg_integer()) :: boolean()
   def enabled?(gid) do
     case :ets.lookup(@flags_table, gid) do
-      [{^gid, enabled?, _hidden?}] -> enabled?
+      [{^gid, enabled?, _hidden?, _cloaked?}] -> enabled?
       [] -> true
     end
   end
@@ -205,22 +233,50 @@ defmodule Aesir.ZoneServer.Npc.Session do
   @spec hidden?(non_neg_integer()) :: boolean()
   def hidden?(gid) do
     case :ets.lookup(@flags_table, gid) do
-      [{^gid, _enabled?, hidden?}] -> hidden?
+      [{^gid, _enabled?, hidden?, _cloaked?}] -> hidden?
+      [] -> false
+    end
+  end
+
+  @doc """
+  Reads the NPC's `cloaked` flag directly from ETS, no GenServer call.
+
+  A gid with no row (no session, or a session that never toggled it) is not
+  cloaked by default.
+  """
+  @spec cloaked?(non_neg_integer()) :: boolean()
+  def cloaked?(gid) do
+    case :ets.lookup(@flags_table, gid) do
+      [{^gid, _enabled?, _hidden?, cloaked?}] -> cloaked?
       [] -> false
     end
   end
 
   @doc """
   Reads the NPC's effective visibility directly from ETS, no GenServer call:
-  visible iff enabled and not hidden.
+  visible iff enabled, not hidden and not cloaked.
 
-  A single lookup rather than two `enabled?/1`/`hidden?/1` calls, so the
-  per-player movement diff and the click-gating check pay one ETS read each.
+  A single lookup rather than one per flag, so the per-player movement diff
+  pays one ETS read per NPC.
   """
   @spec visible?(non_neg_integer()) :: boolean()
   def visible?(gid) do
     case :ets.lookup(@flags_table, gid) do
-      [{^gid, enabled?, hidden?}] -> enabled? and not hidden?
+      [{^gid, enabled?, hidden?, cloaked?}] -> enabled? and not hidden? and not cloaked?
+      [] -> true
+    end
+  end
+
+  @doc """
+  Whether the NPC's OnTouch area can fire, read directly from ETS: enabled and
+  not cloaked. `hidden` does not block a touch, as in rAthena's
+  `npc_touch_areanpc` (`is_invisible`, `npc_is_cloaked`) and
+  `npc_touch_areanpc2` (`is_invisible || option&OPTION_CLOAK`).
+  """
+  @spec touchable?(non_neg_integer()) :: boolean()
+  def touchable?(gid) do
+    case :ets.lookup(@flags_table, gid) do
+      [{^gid, enabled?, _hidden?, cloaked?}] -> enabled? and not cloaked?
       [] -> true
     end
   end
@@ -332,7 +388,7 @@ defmodule Aesir.ZoneServer.Npc.Session do
 
   @impl GenServer
   def handle_call({:set_enabled, enabled?}, _from, state) do
-    new_state = %{state | enabled?: enabled?} |> mirror_flags()
+    new_state = %{state | enabled?: enabled?, hidden?: not enabled?} |> mirror_flags()
     broadcast_visibility_transition(state, new_state)
     if enabled?, do: recheck_touch_area(state.gid)
     {:reply, :ok, new_state}
@@ -343,6 +399,14 @@ defmodule Aesir.ZoneServer.Npc.Session do
     new_state = %{state | hidden?: hidden?} |> mirror_flags()
     broadcast_visibility_transition(state, new_state)
     unless hidden?, do: recheck_touch_area(state.gid)
+    {:reply, :ok, new_state}
+  end
+
+  @impl GenServer
+  def handle_call({:set_cloaked, cloaked?}, _from, state) do
+    new_state = %{state | cloaked?: cloaked?} |> mirror_flags()
+    broadcast_visibility_transition(state, new_state)
+    unless cloaked?, do: recheck_touch_area(state.gid)
     {:reply, :ok, new_state}
   end
 
@@ -459,8 +523,8 @@ defmodule Aesir.ZoneServer.Npc.Session do
   end
 
   @spec mirror_flags(t()) :: t()
-  defp mirror_flags(%{gid: gid, enabled?: enabled?, hidden?: hidden?} = state) do
-    :ets.insert(@flags_table, {gid, enabled?, hidden?})
+  defp mirror_flags(%{gid: gid, enabled?: enabled?, hidden?: hidden?, cloaked?: cloaked?} = state) do
+    :ets.insert(@flags_table, {gid, enabled?, hidden?, cloaked?})
     state
   end
 
@@ -505,11 +569,13 @@ defmodule Aesir.ZoneServer.Npc.Session do
   end
 
   @spec effectively_visible?(t()) :: boolean()
-  defp effectively_visible?(%{enabled?: enabled?, hidden?: hidden?}), do: enabled? and not hidden?
+  defp effectively_visible?(%{enabled?: enabled?, hidden?: hidden?, cloaked?: cloaked?}),
+    do: enabled? and not hidden? and not cloaked?
 
-  # Enabling or unhiding an NPC re-runs the touch check of every player
-  # standing in its trigger area, whether or not the flip made it visible:
-  # the player's own check reads the flags again.
+  # Enabling, unhiding or uncloaking an NPC (rAthena's `NPCVIEW_VISIBLE`)
+  # re-runs the touch check of every player standing in its trigger area,
+  # whether or not the flip made it visible: the player's own check reads the
+  # flags again (`npc_enable_sub`).
   @spec recheck_touch_area(non_neg_integer()) :: :ok
   defp recheck_touch_area(gid) do
     with_entry(gid, fn

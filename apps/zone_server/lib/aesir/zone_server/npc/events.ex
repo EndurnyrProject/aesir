@@ -109,6 +109,27 @@ defmodule Aesir.ZoneServer.Npc.Events do
   end
 
   @doc """
+  Detached event dispatch attached to a non-player unit: what a monster
+  stepping into an NPC's trigger area fires (`OnTouchNPC`, run with the
+  monster as the script's `rid`).
+
+  Spawns a detached `on_event/2` task whose ctx carries `unit` in
+  `Ctx.attached_unit`; player commands still end the script. Returns
+  `{:error, :no_handler}` when `gid` does not resolve or its module does not
+  declare `label`.
+  """
+  @spec trigger_unit(non_neg_integer(), String.t(), {:mob, integer()}) ::
+          :ok | {:error, :no_handler}
+  def trigger_unit(gid, label, {:mob, _id} = unit) do
+    with {:ok, {module, _placement}} <- Registry.module_for_unit(gid),
+         true <- label in module.events() do
+      spawn_detached(module, gid, label, unit)
+    else
+      _not_handled -> {:error, :no_handler}
+    end
+  end
+
+  @doc """
   Runs `on_event("OnInit", ctx)` once per placement declaring it, synchronously.
 
   Meant to be called once at boot, right after the NPC registry loads, and
@@ -176,9 +197,11 @@ defmodule Aesir.ZoneServer.Npc.Events do
     :ok
   end
 
-  @spec spawn_detached(module(), non_neg_integer(), String.t()) :: :ok
-  defp spawn_detached(module, gid, label) do
-    case Task.Supervisor.start_child(supervisor(), fn -> run_detached(module, gid, label) end) do
+  @spec spawn_detached(module(), non_neg_integer(), String.t(), Ctx.attached_unit()) :: :ok
+  defp spawn_detached(module, gid, label, unit \\ nil) do
+    run = fn -> run_detached(module, gid, label, unit) end
+
+    case Task.Supervisor.start_child(supervisor(), run) do
       {:ok, _pid} ->
         :ok
 
@@ -243,9 +266,9 @@ defmodule Aesir.ZoneServer.Npc.Events do
   # line is new, not the crash behavior. The one exception is the script
   # termination protocol: `{:script_end, ctx}` is a transpiled `close`/`end`
   # unwinding cleanly, not a crash, so it resolves to the final ctx.
-  @spec run_detached(module(), non_neg_integer(), String.t()) :: any()
-  defp run_detached(module, gid, label) do
-    module.on_event(label, Ctx.detached(module, gid))
+  @spec run_detached(module(), non_neg_integer(), String.t(), Ctx.attached_unit()) :: any()
+  defp run_detached(module, gid, label, unit \\ nil) do
+    module.on_event(label, %{Ctx.detached(module, gid) | attached_unit: unit})
   rescue
     reason ->
       log_crash(module, label, reason)

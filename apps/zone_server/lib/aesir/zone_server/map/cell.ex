@@ -200,6 +200,29 @@ defmodule Aesir.ZoneServer.Map.Cell do
   end
 
   @doc """
+  Returns a random traversable cell of the whole map, at least 15 cells inside
+  its edges (rAthena's map-wide `map_search_freecell`, `map_edge_size` 15),
+  trying 50 times; `:error` when none was found or the map is not loaded.
+  """
+  @spec random_traversable_inland(String.t()) :: {:ok, {integer(), integer()}} | :error
+  def random_traversable_inland(map_name) do
+    map_name = canonical_map_name(map_name)
+
+    case MapCache.get(map_name) do
+      {:ok, %MapData{xs: xs, ys: ys}} when xs > 30 and ys > 30 ->
+        Enum.find_value(1..50, :error, fn _try -> inland_cell(map_name, xs, ys) end)
+
+      _missing_or_too_small ->
+        :error
+    end
+  end
+
+  defp inland_cell(map_name, xs, ys) do
+    {x, y} = {Enum.random(15..(xs - 16)), Enum.random(15..(ys - 16))}
+    if traversable?(map_name, x, y), do: {:ok, {x, y}}
+  end
+
+  @doc """
   Returns a random traversable cell within `range` cells of `center` on each
   axis, other than `center` itself and at least five cells inside the map
   edge, trying 50 times; `center` when none was found.

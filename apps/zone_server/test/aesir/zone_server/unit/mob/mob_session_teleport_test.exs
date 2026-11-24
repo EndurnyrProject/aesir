@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
   Verifies the mob warps (`AL_TELEPORT`, Tarot, Snatch): the mob leaves its map
   and is put back. Its cast is cancelled, its attack and walk delays end, it
   keeps its target, returns to `:idle`, loses the statuses a unit leaving its
-  map loses, is moved through `Movement.warp_position/4` (which leaves its
+  map loses, is moved through `Movement.warp_position/5` (which leaves its
   ground units, then vanishes it with the teleport reason) and spawns on the
   new cell. A knockback relocation stays a step. A map with no walkable cell
   is a clean no-op, not a crash.
@@ -94,7 +94,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
 
   test "a warp cancels the cast and ends the attack and walk delays" do
     stub(Cell, :random_traversable, fn "prontera" -> {:ok, {150, 160}} end)
-    stub(Movement, :warp_position, fn :mob, 1, _state, "prontera" -> :ok end)
+    stub(Movement, :warp_position, fn :mob, 1, _state, "prontera", 3 -> :ok end)
     stub(StatusInterpreter, :remove_on_map_change, fn :mob, 1 -> :ok end)
     stub(SpawnView, :notify_spawn, fn state -> {:ok, state} end)
 
@@ -179,7 +179,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
 
   test "is a clean no-op when no walkable cell is available" do
     stub(Cell, :random_traversable, fn "prontera" -> {:error, :no_walkable_cell} end)
-    reject(&Movement.warp_position/4)
+    reject(&Movement.warp_position/5)
 
     state = build_mob_state()
 
@@ -189,7 +189,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
 
   test "is a clean no-op when the map is not cached" do
     stub(Cell, :random_traversable, fn "prontera" -> {:error, :not_found} end)
-    reject(&Movement.warp_position/4)
+    reject(&Movement.warp_position/5)
 
     state = build_mob_state()
 
@@ -204,7 +204,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
       :ok
     end)
 
-    expect(Movement, :warp_position, fn :mob, 1, updated_state, "prontera" ->
+    expect(Movement, :warp_position, fn :mob, 1, updated_state, "prontera", 3 ->
       send(test_pid, {:reposition, updated_state.x, updated_state.y})
       :ok
     end)

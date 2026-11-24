@@ -1,60 +1,72 @@
 ---
 - flags:
+    - monster_noteleport
     - nobranch
     - noteleport
   map: 1@cata
   zone: 512
 - flags:
+    - monster_noteleport
     - nobranch
     - noteleport
   map: 1@nyd
   zone: 1024
 - flags:
+    - monster_noteleport
     - nobranch
     - noteleport
   map: 1@orcs
   zone: 1024
 - flags:
+    - monster_noteleport
     - nobranch
     - noteleport
   map: 1@tower
   zone: 1024
 - flags:
+    - monster_noteleport
     - nobranch
     - noteleport
   map: 2@cata
   zone: 512
 - flags:
+    - monster_noteleport
     - nobranch
     - noteleport
   map: 2@nyd
   zone: 1024
 - flags:
+    - monster_noteleport
     - nobranch
     - noteleport
   map: 2@orcs
   zone: 1024
 - flags:
+    - monster_noteleport
     - nobranch
     - noteleport
   map: 2@tower
   zone: 1024
 - flags:
+    - monster_noteleport
     - nobranch
     - noteleport
   map: 3@tower
   zone: 1024
 - flags:
+    - monster_noteleport
     - nobranch
     - noteleport
   map: 4@tower
   zone: 1024
 - flags:
+    - monster_noteleport
     - nobranch
     - noteleport
   map: 5@tower
   zone: 1024
 - flags:
+    - monster_noteleport
     - nobranch
     - noteleport
   map: 6@tower
@@ -897,6 +909,7 @@
     - nowarp
   map: poring_w01
 - flags:
+    - monster_noteleport
     - nobranch
     - noexppenalty
     - noicewall
@@ -1066,6 +1079,7 @@
     - nozenypenalty
   map: que_ng
 - flags:
+    - monster_noteleport
     - nobranch
     - noexppenalty
     - noteleport

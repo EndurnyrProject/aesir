@@ -923,8 +923,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
     # Handle static NPC visibility — same model as warps: registered placements
     # are held statically (in `Npc.Registry`), not spatial-indexed, and diffed
-    # against `visible_npcs` by the `view_range` square. A disabled or hidden
-    # NPC (`Npc.Session.visible?/1`) and an invisible event NPC
+    # against `visible_npcs` by the `view_range` square. A disabled, hidden or
+    # cloaked NPC (`Npc.Session.visible?/1`) and an invisible event NPC
     # (`Npc.Packets.visible?/1`, a `-1` sprite touch area) are filtered out
     # here, so the diff never sends a spawn for one and drops it from
     # `visible_npcs` (as a vanish, if the player already had it visible) the
@@ -1222,8 +1222,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   end
 
   # Whether the player at `game_state` should currently see `entry`'s NPC: it
-  # has to stand on the player's map, inside the view range square, be enabled
-  # and unhidden, and have a client view at all (not an invisible event NPC).
+  # has to stand on the player's map, inside the view range square, be enabled,
+  # unhidden and uncloaked, and have a client view at all (not an invisible event NPC).
   @spec npc_visible_to?(NpcRegistry.entry(), PlayerState.t()) :: boolean()
   defp npc_visible_to?({_module, placement} = entry, game_state) do
     placement.map == game_state.map_name and

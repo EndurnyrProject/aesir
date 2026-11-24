@@ -2,15 +2,22 @@ defmodule Aesir.ZoneServer.Script.Dsl.Movement do
   @moduledoc """
   Player-relocation buildins for the script DSL: single-player warps (explicit
   cell, random cell, save point), rectangle and whole-map warps, and
-  by-character-id warps.
+  by-character-id warps, and the unit warp (`unitwarp`).
 
   Imported into scripts via the `Aesir.ZoneServer.Script.Dsl` facade.
   """
 
+  alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl.Internal
+  alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -206,6 +213,136 @@ defmodule Aesir.ZoneServer.Script.Dsl.Movement do
       end
 
       ctx
+    end
+  end
+
+  @doc """
+  Warps a unit to `(x, y)` on `map` (rAthena `unitwarp`) and returns the
+  reference's raw `unit_warp` result, where `0` is success.
+
+  `unit_id` `0` is the script's own unit: the monster an `OnTouchNPC` run is
+  attached to (`Ctx.attached_unit`), else the attached player. Any other id
+  names a monster instance, else an online player by account id. A unit that
+  is not found, or a `map` that is not loaded (`"this"` is the unit's own map),
+  fails the command and returns `0`, as the reference pushes 0.
+
+  The result is `1` for a dead monster, a monster that is not a slave on a
+  `monster_noteleport` map, a player on a `noteleport` map, and a monster warp
+  to another map (not supported yet); `2` when no destination cell is found: a
+  negative coordinate picks a random cell of the map
+  (`Cell.random_traversable_inland/1`), an unwalkable one a cell within 4 of
+  it (`Cell.random_traversable_near/3`). An attached player whose warp is
+  refused returns `1` (`pc_setpos`); another player's warp is cast to their
+  session and returns `0`.
+  """
+  @spec unitwarp(Ctx.t(), integer(), String.t(), integer(), integer()) :: {Ctx.t(), integer()}
+  def unitwarp(%Ctx{status: {:error, _}} = ctx, _unit_id, _map, _x, _y), do: {ctx, 0}
+
+  def unitwarp(%Ctx{} = ctx, unit_id, map, x, y) do
+    with {:ok, unit} <- warp_unit(ctx, unit_id),
+         {:ok, dest} <- warp_map(unit, map) do
+      unit_warp(ctx, unit, dest, x, y)
+    else
+      {:error, reason} -> {Ctx.fail(ctx, :unitwarp, reason), 0}
+    end
+  end
+
+  defp warp_unit(%Ctx{attached_unit: {:mob, id}}, 0), do: warp_mob(id)
+  defp warp_unit(%Ctx{game_state: %PlayerState{} = gs}, 0), do: {:ok, {:attached, gs}}
+  defp warp_unit(%Ctx{}, 0), do: {:error, :unit_not_found}
+
+  defp warp_unit(%Ctx{} = ctx, id) do
+    with {:error, :unit_not_found} <- warp_mob(id) do
+      warp_player(ctx, id)
+    end
+  end
+
+  defp warp_mob(id) do
+    case UnitRegistry.get_unit(:mob, id) do
+      {:ok, {_module, %MobState{} = mob, pid}} when is_pid(pid) -> {:ok, {:mob, mob, pid}}
+      _missing -> {:error, :unit_not_found}
+    end
+  end
+
+  defp warp_player(%Ctx{account_id: account_id, game_state: %PlayerState{} = gs}, account_id),
+    do: {:ok, {:attached, gs}}
+
+  defp warp_player(_ctx, account_id) do
+    with {:ok, char_id} <- UnitRegistry.get_char_id_by_account(account_id),
+         {:ok, {_module, %PlayerState{} = gs, pid}} when is_pid(pid) <-
+           UnitRegistry.get_unit(:player, char_id) do
+      {:ok, {:player, gs, pid}}
+    else
+      _missing -> {:error, :unit_not_found}
+    end
+  end
+
+  defp warp_map(unit, "this"), do: {:ok, unit_state(unit).map_name}
+
+  defp warp_map(_unit, map) do
+    map = String.replace_suffix(map, ".gat", "")
+
+    case MapCache.get(map) do
+      {:ok, _map_data} -> {:ok, map}
+      _missing -> {:error, :unknown_map}
+    end
+  end
+
+  defp unit_state({:attached, gs}), do: gs
+  defp unit_state({_kind, state, _pid}), do: state
+
+  defp unit_warp(ctx, {:mob, mob, pid}, dest, x, y) do
+    cond do
+      not Unit.living?(mob) ->
+        {ctx, 1}
+
+      MapFlags.get(mob.map_name, :monster_noteleport) and mob.master_id in [nil, 0] ->
+        {ctx, 1}
+
+      dest != mob.map_name ->
+        {Ctx.fail(ctx, :unitwarp, :cross_map_mob_warp_unsupported), 1}
+
+      true ->
+        with_cell(ctx, dest, x, y, fn wx, wy ->
+          MobSession.warp(pid, dest, wx, wy, DespawnReason.out_of_sight())
+          {ctx, 0}
+        end)
+    end
+  end
+
+  defp unit_warp(ctx, unit, dest, x, y) do
+    if MapFlags.get(unit_state(unit).map_name, :noteleport),
+      do: {ctx, 1},
+      else: with_cell(ctx, dest, x, y, &warp_player_unit(ctx, unit, dest, &1, &2))
+  end
+
+  defp warp_player_unit(ctx, {:attached, _gs}, dest, x, y) do
+    warped = Internal.apply_op(ctx, {:warp, dest, x, y})
+    if warped.failures == ctx.failures, do: {warped, 0}, else: {warped, 1}
+  end
+
+  defp warp_player_unit(ctx, {:player, _gs, pid}, dest, x, y) do
+    PlayerSession.warp(pid, dest, x, y)
+    {ctx, 0}
+  end
+
+  defp with_cell(ctx, dest, x, y, warp) do
+    case warp_cell(dest, x, y) do
+      {:ok, {wx, wy}} -> warp.(wx, wy)
+      :error -> {ctx, 2}
+    end
+  end
+
+  defp warp_cell(dest, x, y) when x < 0 or y < 0, do: Cell.random_traversable_inland(dest)
+
+  defp warp_cell(dest, x, y) do
+    if Cell.traversable?(dest, x, y), do: {:ok, {x, y}}, else: near_cell(dest, {x, y})
+  end
+
+  defp near_cell(dest, center) do
+    case Cell.random_traversable_near(dest, center, 4) do
+      ^center -> :error
+      near -> {:ok, near}
     end
   end
 

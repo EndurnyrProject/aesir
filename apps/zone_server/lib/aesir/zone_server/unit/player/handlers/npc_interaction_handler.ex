@@ -9,13 +9,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   are only forwarded to the locked interaction, including a teleport item's
   synthetic dialog id.
 
-  A click on a bespoke NPC module gid that is currently disabled or hidden
-  (`Npc.Session.visible?/1`), or that has no client view at all
-  (`Npc.Packets.visible?/1`, a `-1` sprite event NPC), starts no interaction:
-  the movement diff already keeps such an NPC off the client's screen, but
-  this guards against a click the client sent just before the vanish packet
-  arrived, and against a synthetic click on a touch area that must not be
-  talked to.
+  A click on a bespoke NPC module gid that is currently hidden
+  (`Npc.Session.hidden?/1`, also set by `disablenpc`), or that has no client
+  view at all (`Npc.Packets.visible?/1`, a `-1` sprite event NPC), starts no
+  interaction, as in rAthena's `npc_click`: this guards against a click the
+  client sent just before the vanish packet arrived, and against a synthetic
+  click on a touch area that must not be talked to. A cloaked NPC stays
+  clickable, as in the reference.
   """
 
   alias Aesir.Commons.GameMode
@@ -62,8 +62,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   @doc """
   Resolves `gid` to its bespoke NPC module and starts a supervised, monitored
   interaction process, storing the lock. A gid that resolves to no NPC
-  module, one that is currently disabled, hidden or client-invisible, or a
-  player already held by a script is a no-op.
+  module, one that is currently hidden (which `disablenpc` also sets) or
+  client-invisible, or a player already held by a script is a no-op. As in
+  rAthena's `npc_click` (`class_ < 0 || option&OPTION_HIDE`), a cloaked NPC
+  can still be talked to.
 
   Public so `TouchHandler`'s click fallback (a trigger area whose module
   declares no touch label, the reference warper behaviour) can start the same
@@ -74,7 +76,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   def talk_to_npc(gid, game_state, state) do
     with false <- SessionState.in_script?(state),
          {:ok, {module, placement}} <- NpcRegistry.module_for_unit(gid),
-         true <- NpcSession.visible?(gid),
+         false <- NpcSession.hidden?(gid),
          true <- NpcPackets.visible?({module, placement}) do
       base_ctx =
         Ctx.from_session(

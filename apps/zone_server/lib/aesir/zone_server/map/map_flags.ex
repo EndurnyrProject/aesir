@@ -30,7 +30,8 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
   and `noicewall` refuse a player's skill request, `novending` refuses Vending; and any other atom is
   rejected so typos stay inert. `nopetcapture` is for pet capture restrictions;
   `noexppenalty` and `nozenypenalty` are for death penalties; `nobranch` refuses
-  Dead Branch items.
+  Dead Branch items; `monster_noteleport` refuses a scripted warp (`unitwarp`)
+  of a monster that is not a slave.
   """
 
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
@@ -79,6 +80,7 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
           | :noexppenalty
           | :nozenypenalty
           | :nobranch
+          | :monster_noteleport
   @type map_name :: String.t()
 
   @flags [
@@ -107,7 +109,8 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
     :nopetcapture,
     :noexppenalty,
     :nozenypenalty,
-    :nobranch
+    :nobranch,
+    :monster_noteleport
   ]
   @static_woe_flags [:gvg_castle, :nosave, :noteleport, :nowarp, :noreturn]
 

@@ -197,6 +197,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     },
     "randomoptgroup" => %{dsl: "randomoptgroup", args: [:int]},
     "addmonsterdrop" => %{shape: :returning, dsl: "addmonsterdrop", args: [:int, :item, :int]},
+    "unitwarp" => %{shape: :returning, dsl: "unitwarp", args: [:int, :string, :int, :int]},
     "delmonsterdrop" => %{shape: :returning, dsl: "delmonsterdrop", args: [:int, :item]},
     "getitembound" => %{dsl: "give_item_bound", args: [:item, :int, :bound]},
     "getitem2" => %{
@@ -394,6 +395,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "getequiprandomoption" => %{dsl: "getequiprandomoption", args: [:equip_slot, :int, :int]},
     "getrandomoptinfo" => %{dsl: "getrandomoptinfo", args: [:int]},
     "addmonsterdrop" => %{shape: :returning, dsl: "addmonsterdrop", args: [:int, :item, :int]},
+    "unitwarp" => %{shape: :returning, dsl: "unitwarp", args: [:int, :string, :int, :int]},
     "delmonsterdrop" => %{shape: :returning, dsl: "delmonsterdrop", args: [:int, :item]},
     "setrandomoption" => %{
       shape: :returning,

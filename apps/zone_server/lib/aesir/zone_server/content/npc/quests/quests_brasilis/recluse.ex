@@ -6,7 +6,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Recluse do
 
   - Shares his story and lets adventurers admire the lilies.
   - Accepts coconuts in exchange for permission to pick a flower.
-  - Attempts to move nearby visitors away from the lilies.
+  - Warps monsters that wander into his area back to 67,215 (`OnTouchNPC`).
 
   ## Credits
 
@@ -40,7 +40,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Recluse do
     ]
 
   @impl true
-  def on_event("OnTouchNPC", ctx), do: todo(ctx, :unitwarp, [0, "this", 67, 215])
+  def on_event("OnTouchNPC", ctx) do
+    {ctx, _result} = unitwarp(ctx, 0, "this", 67, 215)
+    ctx
+  end
 
   @impl true
   def on_talk(ctx) do

@@ -220,7 +220,7 @@ defmodule Aesir.ZoneServer.Npc.SessionTest do
       assert Session.enabled?(gid)
       refute Session.hidden?(gid)
 
-      :ets.insert(@flags_table, {gid, false, true})
+      :ets.insert(@flags_table, {gid, false, true, false})
       on_exit(fn -> :ets.delete(@flags_table, gid) end)
 
       refute Session.enabled?(gid)
@@ -237,6 +237,34 @@ defmodule Aesir.ZoneServer.Npc.SessionTest do
 
       refute Session.enabled?(gid)
       assert Session.hidden?(gid)
+    end
+
+    test "set_enabled/2 also sets or clears the hide and leaves the cloak" do
+      gid = gid_for(NoTimerNpc)
+      start_via_dynamic_supervisor(gid)
+
+      :ok = Session.set_cloaked(gid, true)
+      :ok = Session.set_enabled(gid, false)
+      assert Session.hidden?(gid)
+
+      :ok = Session.set_enabled(gid, true)
+      refute Session.hidden?(gid)
+      assert Session.cloaked?(gid)
+    end
+
+    test "touchable?/1 is blocked by a disable or a cloak, not by a hide" do
+      gid = gid_for(NoTimerNpc)
+      on_exit(fn -> :ets.delete(@flags_table, gid) end)
+
+      for {row, expected} <- [
+            {{gid, true, false, false}, true},
+            {{gid, true, true, false}, true},
+            {{gid, true, false, true}, false},
+            {{gid, false, true, false}, false}
+          ] do
+        :ets.insert(@flags_table, row)
+        assert Session.touchable?(gid) == expected, "row #{inspect(row)}"
+      end
     end
   end
 

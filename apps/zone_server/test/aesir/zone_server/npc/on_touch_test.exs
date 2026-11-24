@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.NpcEventQueue
   alias Aesir.ZoneServer.Unit.Player.Handlers.TouchHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -302,6 +303,30 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
       refute_receive {:touched, TouchNpc}, 100
       refute MapSet.member?(state.game_state.inside_npc_areas, gid)
       assert state.interaction_lock == nil
+    end
+  end
+
+  describe "hidden and cloaked NPCs" do
+    test "a hidden NPC's area still fires, as npc_touch_areanpc ignores the hide" do
+      gid = gid_for(TouchNpc)
+      NpcSession.set_hidden(gid, true)
+
+      {:noreply, state} =
+        MovementHandler.handle_movement_tick(walking_state(58, 50, [{59, 50}]))
+
+      assert_receive {:touched, TouchNpc}
+      assert MapSet.member?(state.game_state.inside_npc_areas, gid)
+    end
+
+    test "a cloaked NPC's area never fires and is never marked entered" do
+      gid = gid_for(TouchNpc)
+      NpcSession.set_cloaked(gid, true)
+
+      {:noreply, state} =
+        MovementHandler.handle_movement_tick(walking_state(58, 50, [{59, 50}]))
+
+      refute_receive {:touched, TouchNpc}, 100
+      refute MapSet.member?(state.game_state.inside_npc_areas, gid)
     end
   end
 
@@ -588,6 +613,24 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
       refute_receive {:touched, TouchNpc}, 50
       assert moved.interaction_lock == nil
       assert moved.npc_event_queue == []
+    end
+
+    test "a queued touch is dropped once the NPC is cloaked, but still runs while hidden" do
+      gid = gid_for(TouchNpc)
+      state = walking_state(59, 50, [])
+
+      NpcSession.set_cloaked(gid, true)
+      dropped = NpcEventQueue.run_queued(state, gid, "OnTouch")
+
+      refute_receive {:touched, TouchNpc}, 50
+      assert dropped.interaction_lock == nil
+
+      NpcSession.set_cloaked(gid, false)
+      NpcSession.set_hidden(gid, true)
+      ran = NpcEventQueue.run_queued(state, gid, "OnTouch")
+
+      assert_receive {:touched, TouchNpc}
+      assert {_pid, _ref, ^gid} = ran.interaction_lock
     end
 
     @tag :capture_log

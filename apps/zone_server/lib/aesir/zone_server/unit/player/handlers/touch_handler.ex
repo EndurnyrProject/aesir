@@ -87,8 +87,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.TouchHandler do
   end
 
   @doc """
-  Evaluates every visible trigger area containing the player's cell that it
-  has not entered yet. The caller has already ruled out a warp underfoot.
+  Evaluates every touchable trigger area (`Npc.Session.touchable?/1`: enabled
+  and not cloaked; a hidden NPC still triggers, as in rAthena's
+  `npc_touch_areanpc`) containing the player's cell that it has not entered
+  yet. The caller has already ruled out a warp underfoot.
   """
   @spec scan(SessionState.t()) :: SessionState.t()
   def scan(%{game_state: %{action_state: :dead}} = state), do: state
@@ -98,7 +100,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.TouchHandler do
     |> NpcRegistry.touch_rects()
     |> Enum.filter(fn {gid, xs, ys} ->
       game_state.x in xs and game_state.y in ys and
-        not MapSet.member?(game_state.inside_npc_areas, gid) and NpcSession.visible?(gid)
+        not MapSet.member?(game_state.inside_npc_areas, gid) and NpcSession.touchable?(gid)
     end)
     |> Enum.reduce(state, fn {gid, _xs, _ys}, acc -> touch(acc, gid) end)
   end

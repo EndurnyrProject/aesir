@@ -103,12 +103,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.SpawnView do
   end
 
   @doc """
-  Broadcasts a teleport despawn for mob `instance_id` to the players in view of
-  the cell it left.
+  Broadcasts the despawn of a warped mob `instance_id` to the players in view
+  of the cell it left, with the `DespawnReason` `reason` (teleport by default).
   """
-  @spec notify_teleported(pos_integer(), {integer(), integer(), String.t()}) :: :ok
-  def notify_teleported(instance_id, {x, y, map_name}) do
-    packet = %UnitDespawn{gid: instance_id, reason: DespawnReason.teleport()}
+  @spec notify_teleported(pos_integer(), {integer(), integer(), String.t()}, non_neg_integer()) ::
+          :ok
+  def notify_teleported(instance_id, {x, y, map_name}, reason \\ DespawnReason.teleport()) do
+    packet = %UnitDespawn{gid: instance_id, reason: reason}
 
     Broadcast.to_in_range(map_name, x, y, Config.view_range(), packet)
   end

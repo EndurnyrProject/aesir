@@ -9,8 +9,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcEventQueue do
   dropped. The session drains it one event at a time: when the lock releases
   (`release/1`), the head is popped and run 100 ms later (`run_queued/3`),
   where it is re-queued at the back if the player is busy again, dropped
-  when its NPC is no longer visible or, for a touch label, when the player
-  has left the NPC's area (which pops the next one), and otherwise started.
+  when its NPC is disabled or, for a touch label, when the NPC is cloaked or
+  the player has left its area (which pops the next one), and otherwise
+  started. These are rAthena's `npc_event_sub` checks: `is_invisible` for
+  every event, plus the area and `npc_is_cloaked` for `OnTouch`/`OnTouch_`;
+  `hidden` blocks neither.
   """
 
   require Logger
@@ -101,13 +104,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcEventQueue do
   @doc """
   Starts `label` on `gid` as an attached interaction and takes the
   interaction lock. The caller has already ruled out a busy player. A
-  disabled or hidden NPC runs nothing.
+  disabled NPC runs nothing.
   """
   @spec start_attached(SessionState.t(), non_neg_integer(), String.t(), module() | nil) ::
           {:ok, SessionState.t()} | {:error, term()}
   def start_attached(state, gid, label, module \\ nil) do
     with {:ok, module} <- resolve_module(gid, module),
-         true <- NpcSession.visible?(gid) || {:error, :invisible},
+         true <- NpcSession.enabled?(gid) || {:error, :disabled},
          {:ok, pid} <-
            NpcEvents.trigger_attached(gid, label, event_ctx(state, module, gid), self()) do
       ref = Process.monitor(pid)
@@ -136,11 +139,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcEventQueue do
 
   defp runnable?(game_state, gid, label) do
     with {:ok, {_module, placement}} <- NpcRegistry.module_for_unit(gid),
-         true <- NpcSession.visible?(gid) do
+         true <- NpcSession.enabled?(gid) do
       label not in @touch_labels or
-        Placement.touch_area_contains?(placement, game_state.map_name, game_state.x, game_state.y)
+        (not NpcSession.cloaked?(gid) and
+           Placement.touch_area_contains?(
+             placement,
+             game_state.map_name,
+             game_state.x,
+             game_state.y
+           ))
     else
-      _gone_or_hidden -> false
+      _gone_or_disabled -> false
     end
   end
 

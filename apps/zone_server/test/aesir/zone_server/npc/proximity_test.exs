@@ -65,10 +65,18 @@ defmodule Aesir.ZoneServer.Npc.ProximityTest do
       hidden = placement(11, 10, "hidden")
       disabled = placement(10, 11, "disabled")
       stub_placements([hidden, disabled])
-      put_flags(hidden, true, true)
-      put_flags(disabled, false, false)
+      put_flags(hidden, true, true, false)
+      put_flags(disabled, false, true, false)
 
       refute Proximity.npc_near?("prox_map", 10, 10)
+    end
+
+    test "a cloaked NPC still counts as near" do
+      cloaked = placement(11, 10, "cloaked")
+      stub_placements([cloaked])
+      put_flags(cloaked, true, false, true)
+
+      assert Proximity.npc_near?("prox_map", 10, 10)
     end
 
     test "a warp portal or a shop counts as an NPC" do
@@ -90,9 +98,9 @@ defmodule Aesir.ZoneServer.Npc.ProximityTest do
   defp stub_placements(placements),
     do: stub(Registry, :entries, fn -> Enum.map(placements, &{__MODULE__, &1}) end)
 
-  defp put_flags(placement, enabled?, hidden?) do
+  defp put_flags(placement, enabled?, hidden?, cloaked?) do
     gid = Registry.entity_id(placement)
-    :ets.insert(:npc_session_flags, {gid, enabled?, hidden?})
+    :ets.insert(:npc_session_flags, {gid, enabled?, hidden?, cloaked?})
     on_exit(fn -> :ets.delete(:npc_session_flags, gid) end)
   end
 end

@@ -157,6 +157,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate areawarp(ctx, from_map, x1, y1, x2, y2, to_map, x3, y3, x4, y4), to: Movement
   defdelegate warpchar(ctx, map, x, y), to: Movement
   defdelegate warpchar(ctx, map, x, y, char_id), to: Movement
+  defdelegate unitwarp(ctx, unit_id, map, x, y), to: Movement
 
   # -- Items (Dsl.Items) -------------------------------------------------------
 

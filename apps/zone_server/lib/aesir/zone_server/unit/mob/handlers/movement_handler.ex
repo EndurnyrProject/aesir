@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   alias Aesir.Net.Knockback
   alias Aesir.Net.MoveStop
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
@@ -25,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.Mob.Slaves
   alias Aesir.ZoneServer.Unit.Mob.SpawnView
   alias Aesir.ZoneServer.Unit.Mob.StateCommit
+  alias Aesir.ZoneServer.Unit.Mob.Touch
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.MovementEngine
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -341,12 +343,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
 
   @doc """
   Warps the mob to `(x, y)` on `map_name`, including a boss: a living mob lands
-  there when the cell is walkable, leaving its map as `warp_to/3` describes.
+  there when the cell is walkable, leaving its map as `warp_to/4` describes and
+  vanishing with the `DespawnReason` `reason` (teleport by default).
   """
-  @spec handle_warp(MobState.t(), String.t(), integer(), integer()) :: {:noreply, MobState.t()}
-  def handle_warp(state, map_name, x, y) do
+  @spec handle_warp(MobState.t(), String.t(), integer(), integer(), non_neg_integer()) ::
+          {:noreply, MobState.t()}
+  def handle_warp(state, map_name, x, y, reason \\ DespawnReason.teleport()) do
     if Unit.living?(state) and map_name == state.map_name and Cell.traversable?(map_name, x, y) do
-      {:noreply, warp_to(state, x, y)}
+      {:noreply, warp_to(state, x, y, reason)}
     else
       {:noreply, state}
     end
@@ -358,11 +362,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   deferred work is invalidated, it drops its chase and attack orders, its
   attacked event and spotting players and goes idle (its target stays), it
   loses the statuses a unit leaving its map loses, leaves its ground units and
-  vanishes with the teleport reason (`Movement.warp_position/4`), and appears
-  on the new cell, the same cell included.
+  vanishes with the `DespawnReason` `reason`, teleport by default
+  (`Movement.warp_position/5`), and appears on the new cell, the same cell
+  included.
   """
-  @spec warp_to(MobState.t(), integer(), integer()) :: MobState.t()
-  def warp_to(%MobState{} = state, x, y) do
+  @spec warp_to(MobState.t(), integer(), integer(), non_neg_integer()) :: MobState.t()
+  def warp_to(%MobState{} = state, x, y, reason \\ DespawnReason.teleport()) do
     state =
       state
       |> cancel_cast()
@@ -373,7 +378,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
     StatusInterpreter.remove_on_map_change(:mob, state.instance_id)
     state = MobState.update_position(state, x, y)
     SpatialIndex.reenter_block(:mob, state.instance_id)
-    Movement.warp_position(:mob, state.instance_id, state, state.map_name)
+    Movement.warp_position(:mob, state.instance_id, state, state.map_name, reason)
     SpawnView.notify_spawn(state)
     Slaves.recall(state)
     state
@@ -503,6 +508,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
       updated_state,
       updated_state.map_name
     )
+
+    updated_state = Touch.step(updated_state)
 
     cond do
       updated_state.walk_target != nil ->

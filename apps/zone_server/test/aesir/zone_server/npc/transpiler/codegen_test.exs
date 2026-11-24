@@ -2223,6 +2223,19 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "Todo."
   end
 
+  test "unitwarp threads the ctx and returns the raw unit_warp result" do
+    src =
+      gen!("""
+      unitwarp 0, "this", 120, 85;
+      if (unitwarp(.@id, "prontera", -1, -1)) .@failed = 1;
+      end;
+      """)
+
+    assert src =~ ~r/\{ctx, _\} = .*unitwarp\(ctx, 0, "this", 120, 85\)/
+    assert src =~ ~r/\{ctx, \w+\} = unitwarp\(ctx, .+, "prontera", -1, -1\)/
+    refute src =~ "Todo."
+  end
+
   test "equip/item reads emit DSL calls with resolved EQI_/refine/iteminfo constants" do
     src =
       gen!("""

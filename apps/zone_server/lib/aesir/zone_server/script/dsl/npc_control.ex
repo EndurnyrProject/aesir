@@ -533,8 +533,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   detached ctx, since it mutates NPC state, not player state. A ctx with no
   `npc_gid` logs a warning and no-ops.
 
-  Independent of the `hidden` flag set by `hideonnpc`/`hideoffnpc` — an NPC
-  is visible only when enabled and not hidden (see `Npc.Session`'s moduledoc).
+  Also clears the `hidden` flag set by `hideonnpc`, as rAthena's
+  `NPCVIEW_ENABLE` clears `OPTION_HIDE`; a cloak (`cloakonnpc`) stays (see
+  `Npc.Session`'s moduledoc).
   """
   @spec enablenpc(Ctx.t()) :: Ctx.t()
   def enablenpc(%Ctx{status: {:error, _}} = ctx), do: ctx
@@ -562,7 +563,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   `disablenpc`). Targets `ctx.npc_gid`; valid on both an attached and a
   detached ctx. A ctx with no `npc_gid` logs a warning and no-ops.
 
-  Independent of the `hidden` flag — see `enablenpc/1`.
+  Also sets the `hidden` flag, as rAthena's `NPCVIEW_DISABLE` sets
+  `OPTION_HIDE`; see `enablenpc/1`.
   """
   @spec disablenpc(Ctx.t()) :: Ctx.t()
   def disablenpc(%Ctx{status: {:error, _}} = ctx), do: ctx
@@ -826,7 +828,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
 
   @doc """
   Hides the calling NPC, making it invisible and unclickable regardless of
-  its `enabled` flag (rAthena `hideonnpc`). Targets `ctx.npc_gid`; valid on
+  its `enabled` flag (rAthena `hideonnpc`, `OPTION_HIDE`). Its OnTouch area
+  still fires, as in the reference. Targets `ctx.npc_gid`; valid on
   both an attached and a detached ctx. A ctx with no `npc_gid` logs a
   warning and no-ops.
   """
@@ -879,20 +882,18 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   end
 
   @doc """
-  Cloaks the calling NPC, making it invisible (rAthena `cloakonnpc`/`cloakonnpcself`
-  without a name). Targets `ctx.npc_gid`; valid on both an attached and a detached
-  ctx. A ctx with no `npc_gid` logs a warning and no-ops.
-
-  rAthena distinguishes `OPTION_HIDE` (`hideonnpc`) from `OPTION_CLOAK`
-  (`cloakonnpc`); Aesir models both with the single `hidden` flag, so this is
-  equivalent to `hideonnpc/1`. See `Npc.Session`'s moduledoc.
+  Cloaks the calling NPC (rAthena `cloakonnpc`/`cloakonnpcself` without a
+  name, `OPTION_CLOAK`): it is not shown and its OnTouch area does not fire,
+  but it stays clickable and still counts as a nearby NPC. Targets
+  `ctx.npc_gid`; valid on both an attached and a detached ctx. A ctx with no
+  `npc_gid` logs a warning and no-ops. See `Npc.Session`'s moduledoc.
   """
   @spec cloakonnpc(Ctx.t()) :: Ctx.t()
   def cloakonnpc(%Ctx{status: {:error, _}} = ctx), do: ctx
   def cloakonnpc(%Ctx{npc_gid: nil} = ctx), do: warn_no_npc_gid(ctx, "cloakonnpc/1")
 
   def cloakonnpc(%Ctx{npc_gid: gid} = ctx) do
-    NpcSession.set_hidden(gid, true)
+    NpcSession.set_cloaked(gid, true)
     ctx
   end
 
@@ -904,7 +905,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   def cloakonnpc(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
 
   def cloakonnpc(%Ctx{} = ctx, name) do
-    each_named(ctx, name, "cloakonnpc/2", &NpcSession.set_hidden(&1, true))
+    each_named(ctx, name, "cloakonnpc/2", &NpcSession.set_cloaked(&1, true))
   end
 
   @doc """
@@ -912,7 +913,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   `ctx.npc_gid`. The cloak is per player, so a detached ctx halts `:no_player`;
   a ctx with no `npc_gid` logs a warning and no-ops. In rAthena `cloakoffnpcself` is a
   per-player cloak targeted at the attached player; Aesir's single global
-  `hidden` flag collapses this to the same behaviour as `hideoffnpc/1`.
+  `cloaked` flag collapses this to clearing the NPC's cloak.
   """
   @spec cloakoffnpcself(Ctx.t()) :: Ctx.t()
   def cloakoffnpcself(%Ctx{status: {:error, _}} = ctx), do: ctx
@@ -920,22 +921,22 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   def cloakoffnpcself(%Ctx{npc_gid: nil} = ctx), do: warn_no_npc_gid(ctx, "cloakoffnpcself/1")
 
   def cloakoffnpcself(%Ctx{npc_gid: gid} = ctx) do
-    NpcSession.set_hidden(gid, false)
+    NpcSession.set_cloaked(gid, false)
     ctx
   end
 
   @doc """
   Un-cloaks every placement registered under `name` (rAthena
   `cloakoffnpcself("Name")` — the per-player target is dropped and the concern is
-  collapsed to the global `hidden` flag). An unresolved name logs a warning and
-  no-ops; a detached ctx halts `:no_player`. Equivalent to `hideoffnpc/2`.
+  collapsed to the global `cloaked` flag). An unresolved name logs a warning and
+  no-ops; a detached ctx halts `:no_player`.
   """
   @spec cloakoffnpcself(Ctx.t(), String.t()) :: Ctx.t()
   def cloakoffnpcself(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
   def cloakoffnpcself(%Ctx{game_state: nil} = ctx, _name), do: Ctx.halt(ctx, :no_player)
 
   def cloakoffnpcself(%Ctx{} = ctx, name) do
-    each_named(ctx, name, "cloakoffnpcself/2", &NpcSession.set_hidden(&1, false))
+    each_named(ctx, name, "cloakoffnpcself/2", &NpcSession.set_cloaked(&1, false))
   end
 
   @spec dispatch_doevent(Ctx.t(), String.t(), String.t()) :: Ctx.t()

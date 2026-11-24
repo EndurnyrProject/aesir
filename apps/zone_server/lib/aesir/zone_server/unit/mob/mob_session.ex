@@ -302,6 +302,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @doc """
+  Warps the mob like `warp/4`, vanishing for nearby players with the
+  `DespawnReason` `reason` instead of the teleport one (rAthena's `clr_type`,
+  `CLR_OUTSIGHT` for `unitwarp`).
+  """
+  @spec warp(pid(), String.t(), integer(), integer(), non_neg_integer()) :: :ok
+  def warp(pid, map_name, x, y, reason) do
+    GenServer.cast(pid, {:movement, {:warp, map_name, x, y, reason}})
+  end
+
+  @doc """
   Stops the mob session.
   """
   @spec stop(pid()) :: :ok
@@ -444,6 +454,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   def handle_cast({:movement, {:warp, map_name, x, y}}, state) do
     MovementHandler.handle_warp(state, map_name, x, y)
+  end
+
+  def handle_cast({:movement, {:warp, map_name, x, y, reason}}, state) do
+    MovementHandler.handle_warp(state, map_name, x, y, reason)
   end
 
   def handle_cast({:movement, {:knockback, expected_x, expected_y, map_name, x, y}}, state) do
