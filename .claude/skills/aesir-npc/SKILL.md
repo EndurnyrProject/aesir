@@ -93,8 +93,19 @@ adaptation. Do not label original Aesir content as imported.
 
 1. **Read the complete flow first.** Use the manifest to locate the original source and compare
    the generated module with it. Identify dialogue pages, menu loops and exits, variable gates,
-   rewards, random choices, and the order of side effects. Keep bug fixes separate from a
-   behavior-preserving refactor; flag existing quirks instead of silently changing them.
+   rewards, random choices, and the order of side effects. Flag odd but working quirks (typos,
+   strange rewards, text that disagrees with the code) and keep them; do not change them
+   silently.
+
+   **Fix obvious upstream script bugs; do not port them.** When the rAthena script clearly
+   breaks its own intent (a condition that can never be true, such as `X == 4 && X == 5`; a
+   gate on the wrong parameter, such as `BaseClass == Job_Blacksmith`, where `BaseClass` is the
+   first class; a branch that can never run), fix it to the intent. Do not keep it and do not
+   delete it. Derive the intent from the source, never by guessing: checks inside the dead
+   branch, sibling scripts, and the quest's variable progression. Add an `## Adaptation` bullet
+   naming the original expression and the fix, and report it. The harness then mismatches only
+   on the fixed paths; confirm that is the only difference. If the intent is not obvious, ask.
+   This covers NPC script bugs only; engine mechanics stay identical to rAthena (see AGENTS.md).
 2. **Use ordinary Elixir.** Replace generated `ctx = ...; ctx` wrappers, deeply nested `if`s,
    numbered variables, and `loop_1`-style helpers with pipelines, descriptive variables,
    function clauses, `case`/`cond`, and small purpose-named private functions. Share genuinely
