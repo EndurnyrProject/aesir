@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcEventQueue
+  alias Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcOwnerEventHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler
@@ -694,6 +695,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @spec script_apply(pid(), ScriptEffectHandler.op()) :: ScriptEffectHandler.reply()
   def script_apply(pid, op) do
     GenServer.call(pid, {:npc, {:script_apply, op}})
+  end
+
+  @doc """
+  Frees this player from the script `interaction_pid` runs, which detached it
+  (`sleep`) and goes on without the player. A session that is gone has
+  nothing to free.
+  """
+  @spec detach_script(pid(), pid()) :: :ok | {:error, :target_unavailable}
+  def detach_script(pid, interaction_pid) do
+    call_session(pid, {:npc, {:detach_script, interaction_pid}})
   end
 
   @doc """
@@ -1785,6 +1796,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_call({:npc, {:script_apply, op}}, _from, state) do
     ScriptEffectHandler.handle_script_apply(op, state)
+  end
+
+  def handle_call({:npc, {:detach_script, interaction_pid}}, _from, state) do
+    {:reply, :ok, NpcInteractionHandler.detach_script(interaction_pid, state)}
   end
 
   @impl true

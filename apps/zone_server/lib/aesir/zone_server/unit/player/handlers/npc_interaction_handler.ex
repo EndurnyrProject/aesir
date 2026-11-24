@@ -95,6 +95,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   end
 
   @doc """
+  Frees the player from the script `pid` runs when that script detaches it
+  (rAthena `sleep`, `script_detach_rid`): the dialog lock clears so the player
+  can act again while the script goes on without it. Events queued behind the
+  script stay queued, as the reference detaches without dequeuing them
+  (`script_detach_state(st, false)`); the next script to end releases them. A
+  `pid` that no longer holds the lock changes nothing.
+  """
+  @spec detach_script(pid(), SessionState.t()) :: SessionState.t()
+  def detach_script(pid, %{interaction_lock: {pid, ref, _gid}} = state) do
+    Process.demonitor(ref, [:flush])
+    %{state | interaction_lock: nil, npc_item_flag: nil}
+  end
+
+  def detach_script(_pid, state), do: state
+
+  @doc """
   Forwards the player's response to the pending NpcDialog to the locked
   interaction process. Dropped when no dialog is active or the response
   carries a different npc_id than the active interaction.

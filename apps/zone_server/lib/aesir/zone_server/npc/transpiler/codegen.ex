@@ -1422,12 +1422,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
   end
 
-  # `initnpctimer`/`stopnpctimer`: no args targets the calling NPC, one arg
-  # targets a name; the attach-flag variants have no DSL equivalent yet.
+  # `initnpctimer`/`stopnpctimer`/`startnpctimer`: no args targets the calling
+  # NPC, one name arg targets a name; the attach-flag variants (a numeric
+  # first argument, or a name and a flag) have no DSL equivalent yet.
   defp emit_mapped(_name, %{shape: :timer, dsl: dsl}, [], _env),
     do: {["ctx = #{dsl}(ctx)"], :cont}
 
-  defp emit_mapped(_name, %{shape: :timer, dsl: dsl}, [arg], env) do
+  defp emit_mapped(_name, %{shape: :timer, dsl: dsl}, [arg], env) when elem(arg, 0) != :int do
     {pre, [arg]} = hoist_all([arg], env)
     {pre ++ ["ctx = #{dsl}(ctx, #{render(arg, env)})"], :cont}
   end
@@ -1436,6 +1437,23 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre, args} = hoist_all(args, env)
     rendered = Enum.map_join(args, ", ", &render(&1, env))
     {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
+  end
+
+  # `setnpctimer <tick>{,"<npc name>"}`: the tick, then the optional name.
+  defp emit_mapped(name, %{shape: :timer_tick, dsl: dsl}, args, env) do
+    {pre, args} = hoist_all(args, env)
+
+    case args do
+      [tick] ->
+        {pre ++ ["ctx = #{dsl}(ctx, #{typed_arg(tick, :int, env)})"], :cont}
+
+      [tick, npc] ->
+        {pre ++ ["ctx = #{dsl}(ctx, #{typed_arg(tick, :int, env)}, #{render(npc, env)})"], :cont}
+
+      _other ->
+        rendered = Enum.map_join(args, ", ", &render(&1, env))
+        {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
+    end
   end
 
   # `specialeffect <effect>{,<send target>{,"<NPC name>"}}`: the target narrows the

@@ -14,7 +14,9 @@ defmodule Aesir.ZoneServer.Npc.Events do
   `run_on_init/1` is the boot-time (and `@reloadscript`-time) counterpart:
   synchronous, so callers can await every `OnInit` handler before proceeding,
   but still isolates each NPC's handler in its own detached task so one
-  crashing or hanging NPC cannot block or fail the others.
+  crashing or hanging NPC cannot block or fail the others. A handler that
+  sleeps counts as done, as in rAthena, where `npc_event_doall` moves on once
+  a script suspends.
   """
 
   require Logger
@@ -138,12 +140,13 @@ defmodule Aesir.ZoneServer.Npc.Events do
   detached task dispatched straight to the declaring module (so a cell shared by
   a non-`OnInit` NPC cannot misroute the event), then this waits up to
   `:timeout` (default #{@on_init_timeout}ms; a test seam, not a production
-  knob) total for all of them via `Task.yield_many/2`. A handler that raises
-  is logged and does not stop the others; a handler still running past the
-  timeout is logged as a straggler and killed. Always returns `:ok` so the
-  boot sequence proceeds regardless of outcome.
+  knob) total for each of them to end or `sleep`. A handler that sleeps is left
+  running unawaited. A handler that raises is logged and does not stop the
+  others; a handler still running past the timeout is logged as a straggler
+  and killed. Always returns `:ok` so the boot sequence proceeds regardless of
+  outcome.
   """
-  @spec run_on_init(timeout: timeout()) :: :ok
+  @spec run_on_init(timeout: non_neg_integer()) :: :ok
   def run_on_init(opts \\ []) do
     timeout = Keyword.get(opts, :timeout, @on_init_timeout)
 
@@ -199,7 +202,8 @@ defmodule Aesir.ZoneServer.Npc.Events do
 
   @spec spawn_detached(module(), non_neg_integer(), String.t(), Ctx.attached_unit()) :: :ok
   defp spawn_detached(module, gid, label, unit \\ nil) do
-    run = fn -> run_detached(module, gid, label, unit) end
+    ctx = %{Ctx.detached(module, gid) | attached_unit: unit}
+    run = fn -> run_detached(module, label, ctx) end
 
     case Task.Supervisor.start_child(supervisor(), run) do
       {:ok, _pid} ->
@@ -217,47 +221,71 @@ defmodule Aesir.ZoneServer.Npc.Events do
 
   @spec start_on_init_task({module(), non_neg_integer()}) :: {non_neg_integer(), Task.t()}
   defp start_on_init_task({module, gid}) do
+    ctx = %{Ctx.detached(module, gid) | awaiter: self()}
+
     task =
-      Task.Supervisor.async_nolink(supervisor(), fn ->
-        run_detached(module, gid, "OnInit")
-      end)
+      Task.Supervisor.async_nolink(supervisor(), fn -> run_detached(module, "OnInit", ctx) end)
 
     {gid, task}
   end
 
-  @spec await_on_init([{non_neg_integer(), Task.t()}], timeout()) :: :ok
+  @spec await_on_init([{non_neg_integer(), Task.t()}], non_neg_integer()) :: :ok
   defp await_on_init(gid_tasks, timeout) do
-    gids_by_ref = Map.new(gid_tasks, fn {gid, task} -> {task.ref, gid} end)
-    tasks = Enum.map(gid_tasks, fn {_gid, task} -> task end)
+    deadline = System.monotonic_time(:millisecond) + timeout
 
-    tasks
-    |> Task.yield_many(timeout: timeout)
-    |> Enum.each(fn {task, result} ->
-      handle_on_init_result(gids_by_ref[task.ref], task, result, timeout)
-    end)
-
-    :ok
+    gid_tasks
+    |> Map.new(fn {gid, task} -> {task.ref, {gid, task}} end)
+    |> await_pending(deadline, timeout)
   end
 
-  @spec handle_on_init_result(
-          non_neg_integer(),
-          Task.t(),
-          {:ok, any()} | {:exit, term()} | nil,
-          timeout()
-        ) :: :ok
-  defp handle_on_init_result(_gid, _task, {:ok, _result}, _timeout), do: :ok
+  # Waits for every pending task to reply, crash or report that it sleeps
+  # (`Dsl.Dialog.sleep/2` sends `{:script_suspended, pid}` to `ctx.awaiter`).
+  # A sleeping task is ignored, not killed: it finishes on its own.
+  @spec await_pending(
+          %{reference() => {non_neg_integer(), Task.t()}},
+          integer(),
+          non_neg_integer()
+        ) ::
+          :ok
+  defp await_pending(pending, _deadline, _timeout) when map_size(pending) == 0, do: :ok
 
-  defp handle_on_init_result(gid, _task, {:exit, reason}, _timeout) do
-    Logger.warning("npc OnInit: gid #{inspect(gid)} crashed: #{inspect(reason)}")
+  defp await_pending(pending, deadline, timeout) do
+    remaining = max(deadline - System.monotonic_time(:millisecond), 0)
+
+    receive do
+      {ref, _result} when is_map_key(pending, ref) ->
+        Process.demonitor(ref, [:flush])
+        await_pending(Map.delete(pending, ref), deadline, timeout)
+
+      {:DOWN, ref, :process, _pid, reason} when is_map_key(pending, ref) ->
+        {gid, _task} = pending[ref]
+        Logger.warning("npc OnInit: gid #{inspect(gid)} crashed: #{inspect(reason)}")
+        await_pending(Map.delete(pending, ref), deadline, timeout)
+
+      {:script_suspended, pid} ->
+        pending |> drop_suspended(pid) |> await_pending(deadline, timeout)
+    after
+      remaining -> Enum.each(pending, fn {_ref, gid_task} -> abandon(gid_task, timeout) end)
+    end
   end
 
-  defp handle_on_init_result(gid, task, nil, timeout) do
+  defp drop_suspended(pending, pid) do
+    case Enum.find(pending, fn {_ref, {_gid, task}} -> task.pid == pid end) do
+      {ref, {_gid, task}} ->
+        Task.ignore(task)
+        Map.delete(pending, ref)
+
+      nil ->
+        pending
+    end
+  end
+
+  defp abandon({gid, task}, timeout) do
     Logger.warning(
       "npc OnInit: gid #{inspect(gid)} did not finish within #{timeout}ms, abandoning"
     )
 
     Task.shutdown(task, :brutal_kill)
-    :ok
   end
 
   # Runs the handler with nothing swallowed: an exception, exit, or throw is
@@ -266,9 +294,9 @@ defmodule Aesir.ZoneServer.Npc.Events do
   # line is new, not the crash behavior. The one exception is the script
   # termination protocol: `{:script_end, ctx}` is a transpiled `close`/`end`
   # unwinding cleanly, not a crash, so it resolves to the final ctx.
-  @spec run_detached(module(), non_neg_integer(), String.t(), Ctx.attached_unit()) :: any()
-  defp run_detached(module, gid, label, unit \\ nil) do
-    module.on_event(label, %{Ctx.detached(module, gid) | attached_unit: unit})
+  @spec run_detached(module(), String.t(), Ctx.t()) :: any()
+  defp run_detached(module, label, ctx) do
+    module.on_event(label, ctx)
   rescue
     reason ->
       log_crash(module, label, reason)

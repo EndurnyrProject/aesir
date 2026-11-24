@@ -37,9 +37,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     (`name(ctx, msg, npc: _, target: _)`). An empty-string NPC name means the
     attached NPC and is dropped; the `<color>` argument is hoisted (for side
     effects) then dropped, as the chat wire message carries no color.
-  - `%{shape: :timer, dsl: name}` — `initnpctimer`/`stopnpctimer`: zero args
-    (self) → `name(ctx)`, one name arg → `name(ctx, arg)`; attach-flag
-    variants stay a stub.
+  - `%{shape: :timer, dsl: name}` — `initnpctimer`/`stopnpctimer`/`startnpctimer`:
+    zero args (self) → `name(ctx)`, one name arg → `name(ctx, arg)`;
+    attach-flag variants stay a stub.
+  - `%{shape: :timer_tick, dsl: name}` — `setnpctimer <tick>{,"<npc name>"}`:
+    `name(ctx, tick)` or `name(ctx, tick, npc)`; any other arity stays a stub.
   - `%{shape: :opt1, dsl: name}` — an effect with one optional argument
     (`setcart {<type>}`, `enablenpc {"name"}`): zero args → `name(ctx)` (the
     DSL default/self form), one arg → `name(ctx, arg)`; any longer form stays
@@ -267,6 +269,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "viewpoint" => %{dsl: "viewpoint", args: [:int, :int, :int, :int, :int]},
     "killmonster" => %{dsl: "killmonster", args: [:string, :string]},
     "killmonsterall" => %{dsl: "killmonsterall", args: [:string]},
+    "sleep" => %{dsl: "sleep", args: [:int]},
     "sleep2" => %{dsl: "sleep2", args: [:int]},
     "warp" => %{shape: :warp},
     "mapwarp" => %{
@@ -293,6 +296,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "cloakoffnpcself" => %{shape: :opt1, dsl: "cloakoffnpcself"},
     "initnpctimer" => %{shape: :timer, dsl: "initnpctimer"},
     "stopnpctimer" => %{shape: :timer, dsl: "stopnpctimer"},
+    "startnpctimer" => %{shape: :timer, dsl: "startnpctimer"},
+    "setnpctimer" => %{shape: :timer_tick, dsl: "setnpctimer"},
     "monster" => %{shape: :monster},
     "areamonster" => %{shape: :areamonster},
     "announce" => %{shape: :announce, dsl: "announce", fixed: 2},

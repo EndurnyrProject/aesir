@@ -11,18 +11,22 @@ defmodule Aesir.ZoneServer.Npc.Session do
 
   rAthena gives each NPC a single timer, not one per label: the schedule is
   the module's `OnTimer<ms>` labels (from `events/0`), parsed and sorted
-  ascending. `init_timer/1` resets elapsed to zero and arms a single
-  `Process.send_after/3` for the next due label — never a polling tick. When
-  it fires, the label's callback runs and the next label is armed
-  immediately, computing its delay from the current elapsed time (a
-  monotonic-based read) rather than accumulating drift off the previous
-  delay.
+  ascending. Starting the timer at an elapsed time arms a single
+  `Process.send_after/3` for the first label due strictly after it, as
+  `npc_timerevent_start` does — never a polling tick. When it fires, the
+  label's callback runs and the next label is armed immediately, computing
+  its delay from the current elapsed time (a monotonic-based read) rather
+  than accumulating drift off the previous delay.
 
   After the last label fires the timer goes idle: elapsed keeps counting
   (scripts loop by calling `init_timer/1` again, typically from the last
-  label). `stop_timer/1` cancels the pending fire and freezes elapsed;
-  `get_timer/1` reads it back, monotonic-based while running/idle, frozen
-  while stopped.
+  label). `init_timer/1` (rAthena `initnpctimer`) starts it from zero;
+  `start_timer/1` (`startnpctimer`) resumes a stopped timer from its frozen
+  elapsed time and leaves a running one alone; `set_timer/2`
+  (`setnpctimer`, `npc_settimerevent_tick`) sets the elapsed time, restarting
+  from it when the timer runs. `stop_timer/1` cancels the pending fire and
+  freezes elapsed; `get_timer/1` reads it back, monotonic-based while
+  running/idle, frozen while stopped.
 
   ## Dispatch decoupling
 
@@ -128,7 +132,7 @@ defmodule Aesir.ZoneServer.Npc.Session do
     field :pending, [timer_entry()], default: []
     field :status, status(), default: :stopped
     field :start_mono, integer() | nil, default: nil
-    field :frozen_elapsed, non_neg_integer(), default: 0
+    field :frozen_elapsed, integer(), default: 0
     field :timer_ref, reference() | nil, default: nil
     field :on_fire, timer_callback()
     field :enabled?, boolean(), default: true
@@ -161,6 +165,24 @@ defmodule Aesir.ZoneServer.Npc.Session do
   end
 
   @doc """
+  Resumes a stopped timer from its frozen elapsed time, starting the session
+  if needed. A running or idle timer is left unchanged.
+  """
+  @spec start_timer(non_neg_integer()) :: :ok
+  def start_timer(gid) do
+    gid |> ensure_started() |> GenServer.call(:start_timer)
+  end
+
+  @doc """
+  Sets the timer's elapsed milliseconds, starting the session if needed. A
+  stopped timer stays stopped at `ms`; a running or idle one restarts from it.
+  """
+  @spec set_timer(non_neg_integer(), integer()) :: :ok
+  def set_timer(gid, ms) do
+    gid |> ensure_started() |> GenServer.call({:set_timer, ms})
+  end
+
+  @doc """
   Cancels the pending timer fire and freezes elapsed time.
 
   A gid with no running session has nothing to stop.
@@ -179,7 +201,7 @@ defmodule Aesir.ZoneServer.Npc.Session do
   A gid with no running session has never had its timer started, so this
   returns `0` without spawning one.
   """
-  @spec get_timer(non_neg_integer()) :: non_neg_integer()
+  @spec get_timer(non_neg_integer()) :: integer()
   def get_timer(gid) do
     case whereis(gid) do
       nil -> 0
@@ -361,12 +383,22 @@ defmodule Aesir.ZoneServer.Npc.Session do
 
   @impl GenServer
   def handle_call(:init_timer, _from, state) do
-    new_state =
-      %{state | pending: state.schedule, start_mono: now_ms(), frozen_elapsed: 0}
-      |> arm_next(0)
-
-    {:reply, :ok, new_state}
+    {:reply, :ok, start_at(state, 0)}
   end
+
+  @impl GenServer
+  def handle_call(:start_timer, _from, %{status: :stopped} = state) do
+    {:reply, :ok, start_at(state, state.frozen_elapsed)}
+  end
+
+  def handle_call(:start_timer, _from, state), do: {:reply, :ok, state}
+
+  @impl GenServer
+  def handle_call({:set_timer, ms}, _from, %{status: :stopped} = state) do
+    {:reply, :ok, %{state | frozen_elapsed: ms}}
+  end
+
+  def handle_call({:set_timer, ms}, _from, state), do: {:reply, :ok, start_at(state, ms)}
 
   @impl GenServer
   def handle_call(:stop_timer, _from, state) do
@@ -466,12 +498,22 @@ defmodule Aesir.ZoneServer.Npc.Session do
     ProcessTree.get({@session_dynamic_supervisor, :server}) || @session_dynamic_supervisor
   end
 
+  # Runs the timer from `elapsed_ms`: only labels due strictly after it are
+  # pending, as `npc_timerevent_start` picks the first `timer > nd->u.scr.timer`.
+  @spec start_at(t(), integer()) :: t()
+  defp start_at(state, elapsed_ms) do
+    pending = Enum.filter(state.schedule, fn {due_ms, _label} -> due_ms > elapsed_ms end)
+
+    %{state | pending: pending, start_mono: now_ms() - elapsed_ms, frozen_elapsed: 0}
+    |> arm_next(elapsed_ms)
+  end
+
   # `elapsed_ms` is the caller's authoritative elapsed reading, taken
   # explicitly rather than re-derived from `state` here: at the init_timer
   # call site `status` hasn't yet flipped away from :stopped when this runs,
   # so `elapsed_now/1`'s :stopped clause would silently answer from
   # whatever `frozen_elapsed` happens to hold instead of the just-reset 0.
-  @spec arm_next(t(), non_neg_integer()) :: t()
+  @spec arm_next(t(), integer()) :: t()
   defp arm_next(%{pending: []} = state, _elapsed_ms), do: %{state | status: :idle, timer_ref: nil}
 
   defp arm_next(%{pending: [{due_ms, label} | rest]} = state, elapsed_ms) do
@@ -481,7 +523,7 @@ defmodule Aesir.ZoneServer.Npc.Session do
     %{state | status: :running, timer_ref: ref, pending: rest}
   end
 
-  @spec elapsed_now(t()) :: non_neg_integer()
+  @spec elapsed_now(t()) :: integer()
   defp elapsed_now(%{status: :stopped, frozen_elapsed: frozen_elapsed}), do: frozen_elapsed
   defp elapsed_now(%{start_mono: nil}), do: 0
   defp elapsed_now(%{start_mono: start_mono}), do: now_ms() - start_mono

@@ -104,6 +104,21 @@ defmodule Aesir.ZoneServer.Npc.OnInitTest do
     def on_event("OnTouch", ctx), do: ctx
   end
 
+  defmodule SuspendingInitNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [%{map: "prontera", x: 70, y: 70, sprite: 58, name: "Suspending"}]
+
+    @impl true
+    def on_talk(ctx), do: ctx
+
+    @impl true
+    def on_event("OnInit", ctx) do
+      ctx = sleep(ctx, 200)
+      send(:on_init_test_probe, {:resumed, ctx.npc_gid})
+      ctx
+    end
+  end
+
   setup do
     Aesir.TestProbe.register!(:on_init_test_probe)
     on_exit(fn -> :persistent_term.erase(Registry) end)
@@ -180,5 +195,20 @@ defmodule Aesir.ZoneServer.Npc.OnInitTest do
 
     assert log =~ "did not finish"
     assert elapsed_us < 1_000_000
+  end
+
+  test "an OnInit that sleeps releases the run, which returns before it resumes" do
+    Registry.reload([SuspendingInitNpc])
+    [{SuspendingInitNpc, placement}] = Registry.entries()
+    gid = Registry.entity_id(placement)
+
+    {elapsed_us, log} =
+      :timer.tc(fn ->
+        capture_log(fn -> assert :ok = Events.run_on_init(timeout: 100) end)
+      end)
+
+    assert elapsed_us < 200_000
+    refute log =~ "did not finish"
+    assert_receive {:resumed, ^gid}, 1_000
   end
 end

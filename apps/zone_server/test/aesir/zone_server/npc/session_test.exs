@@ -63,9 +63,21 @@ defmodule Aesir.ZoneServer.Npc.SessionTest do
     end
   end
 
+  defmodule ZeroTimerNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [%{map: "prontera", x: 904, y: 904, dir: 0, sprite: 58, name: "ZeroTimerNpc"}]
+
+    @impl true
+    def on_talk(ctx), do: ctx
+
+    @impl true
+    def on_event("OnTimer0", ctx), do: ctx
+    def on_event("OnTimer30", ctx), do: ctx
+  end
+
   setup do
     on_exit(fn -> :persistent_term.erase(NpcRegistry) end)
-    NpcRegistry.reload([TimerNpc, NoTimerNpc, StaleTimerNpc])
+    NpcRegistry.reload([TimerNpc, NoTimerNpc, StaleTimerNpc, ZeroTimerNpc])
     :ok
   end
 
@@ -210,6 +222,92 @@ defmodule Aesir.ZoneServer.Npc.SessionTest do
 
       assert Session.stop_timer(gid) == :ok
       assert Registry.lookup(Aesir.ZoneServer.Npc.SessionRegistry, gid) == []
+    end
+  end
+
+  describe "start_timer/1" do
+    test "resumes a stopped timer from its frozen elapsed time, firing only later labels" do
+      gid = gid_for(TimerNpc)
+      test_pid = self()
+
+      start_test_session(gid, fn fired_gid, label ->
+        send(test_pid, {:fired, fired_gid, label})
+      end)
+
+      :ok = Session.init_timer(gid)
+      assert_receive {:fired, ^gid, "OnTimer50"}, 300
+      :ok = Session.stop_timer(gid)
+      frozen = Session.get_timer(gid)
+
+      :ok = Session.start_timer(gid)
+
+      assert Session.get_timer(gid) >= frozen
+      assert_receive {:fired, ^gid, "OnTimer120"}, 300
+      refute_received {:fired, ^gid, "OnTimer50"}
+    end
+
+    test "leaves a running timer alone instead of restarting it" do
+      gid = gid_for(TimerNpc)
+      start_test_session(gid, fn _gid, _label -> :ok end)
+
+      :ok = Session.init_timer(gid)
+      Process.sleep(30)
+      :ok = Session.start_timer(gid)
+
+      assert Session.get_timer(gid) >= 30
+    end
+  end
+
+  describe "set_timer/2" do
+    test "sets a stopped timer's elapsed time without starting it" do
+      gid = gid_for(TimerNpc)
+      test_pid = self()
+
+      start_test_session(gid, fn fired_gid, label ->
+        send(test_pid, {:fired, fired_gid, label})
+      end)
+
+      :ok = Session.set_timer(gid, 100)
+
+      assert Session.get_timer(gid) == 100
+      refute_receive {:fired, ^gid, _label}, 150
+
+      :ok = Session.start_timer(gid)
+
+      assert_receive {:fired, ^gid, "OnTimer120"}, 300
+      refute_received {:fired, ^gid, "OnTimer50"}
+    end
+
+    test "restarts a running timer from the tick, skipping the labels at or before it" do
+      gid = gid_for(TimerNpc)
+      test_pid = self()
+
+      start_test_session(gid, fn fired_gid, label ->
+        send(test_pid, {:fired, fired_gid, label})
+      end)
+
+      :ok = Session.init_timer(gid)
+      :ok = Session.set_timer(gid, 50)
+
+      assert Session.get_timer(gid) >= 50
+      assert_receive {:fired, ^gid, "OnTimer120"}, 300
+      refute_received {:fired, ^gid, "OnTimer50"}
+    end
+  end
+
+  describe "init_timer/1 with an OnTimer0 label" do
+    test "never fires it, as the reference arms only labels due after the start time" do
+      gid = gid_for(ZeroTimerNpc)
+      test_pid = self()
+
+      start_test_session(gid, fn fired_gid, label ->
+        send(test_pid, {:fired, fired_gid, label})
+      end)
+
+      :ok = Session.init_timer(gid)
+
+      assert_receive {:fired, ^gid, "OnTimer30"}, 300
+      refute_received {:fired, ^gid, "OnTimer0"}
     end
   end
 

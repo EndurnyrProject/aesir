@@ -2,8 +2,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   @moduledoc """
   Blocking dialog buildins for the script DSL: the page buffer (`mes/2`), the
   suspending primitives (`next/1`, `select/2`, `input/2`, `progressbar/3`,
-  `sleep2/2`), and the terminal `close/1`, plus the shared suspension plumbing
-  (`flush`/`await`) and the dialog idle deadline.
+  `sleep/2`, `sleep2/2`), and the terminal `close/1`, plus the shared
+  suspension plumbing (`flush`/`await`) and the dialog idle deadline.
 
   Imported into scripts via the `Aesir.ZoneServer.Script.Dsl` facade.
   """
@@ -179,6 +179,52 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   defp abandon(%Ctx{connection_pid: connection_pid}) do
     MessageRouter.send_to(connection_pid, %Cutin{image: "", type: 255})
     exit(:normal)
+  end
+
+  @doc """
+  Detaches the player, then pauses the running script for `ms` milliseconds
+  and resumes it without a player (rAthena `sleep`, which calls
+  `script_detach_rid` before it sleeps).
+
+  An NPC interaction frees its player session from the dialog lock first, so
+  the player can act while the script sleeps; from then on the script runs
+  with the `Ctx.detached/2` shape and player commands end it. A boot `OnInit`
+  waiting on this script (`ctx.awaiter`) is released before the pause, as
+  rAthena's `OnInit` run moves on once a script sleeps.
+
+  A non-positive duration fails the command and the script goes on without
+  pausing or detaching. An item script running inline in its player session
+  cannot pause without blocking that session, so it fails the command too.
+  """
+  @spec sleep(Ctx.t(), integer()) :: Ctx.t()
+  def sleep(%Ctx{status: {:error, _}} = ctx, _ms), do: ctx
+
+  def sleep(%Ctx{session_pid: nil, session_state: state} = ctx, _ms) when state != nil,
+    do: Ctx.fail(ctx, :sleep, :inline_script)
+
+  def sleep(%Ctx{} = ctx, ms) when is_integer(ms) and ms > 0 do
+    ctx = ctx |> release_player() |> release_awaiter()
+    Process.sleep(ms)
+    ctx
+  end
+
+  def sleep(%Ctx{} = ctx, ms), do: Ctx.fail(ctx, :sleep, {:invalid_duration, ms})
+
+  @spec release_player(Ctx.t()) :: Ctx.t()
+  defp release_player(%Ctx{session_pid: nil} = ctx), do: Ctx.detach(ctx)
+
+  defp release_player(%Ctx{session_pid: session_pid, session_ref: session_ref} = ctx) do
+    _ = PlayerSession.detach_script(session_pid, self())
+    if session_ref, do: Process.demonitor(session_ref, [:flush])
+    Ctx.detach(ctx)
+  end
+
+  @spec release_awaiter(Ctx.t()) :: Ctx.t()
+  defp release_awaiter(%Ctx{awaiter: nil} = ctx), do: ctx
+
+  defp release_awaiter(%Ctx{awaiter: awaiter} = ctx) do
+    send(awaiter, {:script_suspended, self()})
+    %{ctx | awaiter: nil}
   end
 
   @doc """

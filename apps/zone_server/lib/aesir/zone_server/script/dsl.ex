@@ -16,7 +16,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   Implementations live in the domain modules under `Dsl.`:
 
-  - `Dsl.Dialog` — mes/next/select/input/close, sleep2, progressbar
+  - `Dsl.Dialog` — mes/next/select/input/close, sleep, sleep2, progressbar
   - `Dsl.PlayerEffects` — heal/sc_*, homunculus staging, exp, job, mounts,
     savepoint, storage, attachrid
   - `Dsl.Skills` — npcskill, skilleffect, itemskill, produce, skill grants/reset
@@ -96,6 +96,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate select(ctx, options), to: Dialog
   defdelegate input(ctx, kind), to: Dialog
   defdelegate close(ctx), to: Dialog
+  defdelegate sleep(ctx, ms), to: Dialog
   defdelegate sleep2(ctx, ms), to: Dialog
   defdelegate progressbar(ctx, color, seconds), to: Dialog
 
@@ -494,6 +495,10 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate initnpctimer(ctx, name), to: NpcControl
   defdelegate stopnpctimer(ctx), to: NpcControl
   defdelegate stopnpctimer(ctx, name), to: NpcControl
+  defdelegate startnpctimer(ctx), to: NpcControl
+  defdelegate startnpctimer(ctx, name), to: NpcControl
+  defdelegate setnpctimer(ctx, tick), to: NpcControl
+  defdelegate setnpctimer(ctx, tick, name), to: NpcControl
   defdelegate getnpctimer(ctx), to: NpcControl
   defdelegate getnpctimer(ctx, name), to: NpcControl
   defdelegate npctalk(ctx, text), to: NpcControl

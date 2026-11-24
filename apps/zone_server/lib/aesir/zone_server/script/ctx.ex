@@ -37,6 +37,10 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   A detached event run for a monster (`OnTouchNPC`) carries it in
   `attached_unit`: the unit the reference's `st->rid` names, which unit
   commands with id 0 (`unitwarp`) target. Player commands still end the script.
+
+  A boot `OnInit` run waits for each handler to end or first suspend, as
+  rAthena's `npc_event_doall` returns once a script sleeps: `awaiter` is that
+  waiting process, which `sleep` releases before it pauses.
   """
 
   use TypedStruct
@@ -109,6 +113,7 @@ defmodule Aesir.ZoneServer.Script.Ctx do
     field :session_effects, [session_effect()], default: []
     field :failures, [failure()], default: []
     field :attached_unit, attached_unit(), default: nil
+    field :awaiter, pid() | nil, default: nil
   end
 
   @doc """
@@ -218,4 +223,28 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   @spec attached?(t()) :: boolean()
   def attached?(%__MODULE__{game_state: nil}), do: false
   def attached?(%__MODULE__{}), do: true
+
+  @doc """
+  Drops the player or unit the script runs for (rAthena `script_detach_rid`).
+
+  The ctx keeps its NPC, source and script-local `vars` but takes the
+  `detached/2` shape, so from here on player commands end the script and
+  unit commands find no unit. Buffered page text is dropped: no dialog is
+  left to show it in.
+  """
+  @spec detach(t()) :: t()
+  def detach(%__MODULE__{} = ctx) do
+    %{
+      ctx
+      | char_id: nil,
+        account_id: nil,
+        connection_pid: nil,
+        game_state: nil,
+        session_pid: nil,
+        session_ref: nil,
+        session_state: nil,
+        attached_unit: nil,
+        page: []
+    }
+  end
 end

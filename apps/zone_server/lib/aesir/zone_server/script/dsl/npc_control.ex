@@ -342,12 +342,75 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   end
 
   @doc """
+  Resumes the calling NPC's stopped timer from its frozen elapsed time; a
+  running timer is left alone (rAthena `startnpctimer`, `npc_timerevent_start`).
+  Targets `ctx.npc_gid`; valid on both an attached and a detached ctx. A ctx
+  with no `npc_gid` logs a warning and no-ops.
+  """
+  @spec startnpctimer(Ctx.t()) :: Ctx.t()
+  def startnpctimer(%Ctx{status: {:error, _}} = ctx), do: ctx
+  def startnpctimer(%Ctx{npc_gid: nil} = ctx), do: warn_no_npc_gid(ctx, "startnpctimer/1")
+
+  def startnpctimer(%Ctx{npc_gid: gid} = ctx) do
+    NpcSession.start_timer(gid)
+    ctx
+  end
+
+  @doc """
+  Resumes the timer of every placement registered under `name` (rAthena
+  `startnpctimer("Name")`). An unresolved name logs a warning and no-ops.
+  """
+  @spec startnpctimer(Ctx.t(), String.t()) :: Ctx.t()
+  def startnpctimer(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
+
+  def startnpctimer(%Ctx{} = ctx, name) do
+    each_named(ctx, name, "startnpctimer/2", &NpcSession.start_timer/1)
+  end
+
+  @doc """
+  Sets the calling NPC's timer to `tick` elapsed milliseconds (rAthena
+  `setnpctimer`, `npc_settimerevent_tick`): a stopped timer stays stopped at
+  `tick`, a running one restarts from it, so only the labels due after `tick`
+  fire. Targets `ctx.npc_gid`; valid on both an attached and a detached ctx.
+  A ctx with no `npc_gid` fails the command (the reference's "Invalid NPC").
+  """
+  @spec setnpctimer(Ctx.t(), integer()) :: Ctx.t()
+  def setnpctimer(%Ctx{status: {:error, _}} = ctx, _tick), do: ctx
+  def setnpctimer(%Ctx{npc_gid: nil} = ctx, _tick), do: Ctx.fail(ctx, :setnpctimer, :invalid_npc)
+
+  def setnpctimer(%Ctx{npc_gid: gid} = ctx, tick) do
+    NpcSession.set_timer(gid, tick)
+    ctx
+  end
+
+  @doc """
+  Sets the timer of every placement registered under `name` to `tick`
+  (rAthena `setnpctimer <tick>,"Name"`). An unresolved name fails the command.
+  """
+  @spec setnpctimer(Ctx.t(), integer(), String.t()) :: Ctx.t()
+  def setnpctimer(%Ctx{status: {:error, _}} = ctx, _tick, _name), do: ctx
+
+  def setnpctimer(%Ctx{} = ctx, tick, name) do
+    case NpcRegistry.by_name(name) do
+      [] ->
+        Ctx.fail(ctx, :setnpctimer, :invalid_npc)
+
+      entries ->
+        Enum.each(entries, fn {_module, placement} ->
+          NpcSession.set_timer(NpcRegistry.entity_id(placement), tick)
+        end)
+
+        ctx
+    end
+  end
+
+  @doc """
   Reads the calling NPC's own timer's elapsed milliseconds (rAthena
   `getnpctimer`). Targets `ctx.npc_gid`; a pure read that ignores
   `ctx.status` and does not raise on a detached ctx, since npc timer state
   is not player state. A ctx with no `npc_gid` logs a warning and returns `0`.
   """
-  @spec getnpctimer(Ctx.t()) :: non_neg_integer()
+  @spec getnpctimer(Ctx.t()) :: integer()
   def getnpctimer(%Ctx{npc_gid: nil} = ctx) do
     warn_no_npc_gid(ctx, "getnpctimer/1")
     0
@@ -361,7 +424,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   (same per-placement timer model as `initnpctimer/2`). An unresolved name
   logs a warning and returns `0`.
   """
-  @spec getnpctimer(Ctx.t(), String.t()) :: non_neg_integer()
+  @spec getnpctimer(Ctx.t(), String.t()) :: integer()
   def getnpctimer(%Ctx{}, name) do
     case NpcRegistry.by_name(name) do
       [] ->

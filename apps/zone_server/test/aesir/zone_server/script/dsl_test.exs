@@ -464,6 +464,49 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
   end
 
+  describe "sleep/2" do
+    test "drops the player, pauses for the duration and resumes detached" do
+      ctx = %{build_ctx() | npc_gid: 7, vars: %{".@step": 2}}
+      started = System.monotonic_time(:millisecond)
+
+      result = Dsl.sleep(ctx, 20)
+
+      assert System.monotonic_time(:millisecond) - started >= 20
+      refute Ctx.attached?(result)
+      assert %{char_id: nil, connection_pid: nil, npc_gid: 7} = result
+      assert result.vars == ctx.vars
+      assert result.failures == []
+    end
+
+    test "releases the process awaiting the script before it pauses" do
+      ctx = %{build_ctx() | awaiter: self()}
+
+      task = Task.async(fn -> Dsl.sleep(ctx, 200) end)
+
+      assert_receive {:script_suspended, pid}, 100
+      assert pid == task.pid
+      assert %Ctx{awaiter: nil} = Task.await(task)
+    end
+
+    @tag :capture_log
+    test "a non-positive duration fails the command and keeps the player attached" do
+      result = Dsl.sleep(build_ctx(), 0)
+
+      assert Ctx.attached?(result)
+      assert result.failures == [{:sleep, {:invalid_duration, 0}}]
+    end
+
+    @tag :capture_log
+    test "an inline item script fails the command instead of blocking its session" do
+      started = System.monotonic_time(:millisecond)
+
+      result = Dsl.sleep(warp_ctx(), 50)
+
+      assert result.failures == [{:sleep, :inline_script}]
+      assert System.monotonic_time(:millisecond) - started < 50
+    end
+  end
+
   describe "sleep2/2" do
     test "pauses for the duration and returns the ctx unchanged" do
       ctx = build_ctx()

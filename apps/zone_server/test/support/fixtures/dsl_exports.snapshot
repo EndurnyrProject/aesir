@@ -244,6 +244,8 @@ setcell/8
 setd/3
 setfalcon/2
 setlook/3
+setnpctimer/2
+setnpctimer/3
 setquest/2
 setrandomoption/6
 setrandomoption/7
@@ -251,6 +253,7 @@ sex/1
 skill/4
 skill_point/1
 skilleffect/3
+sleep/2
 sleep2/2
 soundeffect/3
 sp/1
@@ -258,6 +261,8 @@ specialeffect/2
 specialeffect/3
 specialeffect/4
 specialeffect2/2
+startnpctimer/1
+startnpctimer/2
 stopnpctimer/1
 stopnpctimer/2
 strnpcinfo/2
