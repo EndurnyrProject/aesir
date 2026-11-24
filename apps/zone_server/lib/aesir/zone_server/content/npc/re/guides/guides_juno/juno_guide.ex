@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesJuno.JunoGuide do
         sprite: 700,
         name: "Juno Guide",
         scope: :renewal,
-        unique_name: "GuideJuno"
+        unique_name: "GuideJuno",
+        hidden_name: "yuno01"
       },
       %{
         map: "yuno",

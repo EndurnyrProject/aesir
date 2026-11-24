@@ -25,7 +25,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.VolunteerMorocc223102 do
         sprite: 741,
         name: "Volunteer - Morocc",
         scope: :shared,
-        unique_name: "MocVolunteer"
+        unique_name: "MocVolunteer",
+        hidden_name: "06"
       },
       %{
         map: "morocc",

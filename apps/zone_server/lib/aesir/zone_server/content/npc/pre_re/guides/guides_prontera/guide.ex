@@ -37,7 +37,8 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesProntera.Guide do
         sprite: 105,
         name: "Guide",
         scope: :pre_renewal,
-        unique_name: "PrtGuide"
+        unique_name: "PrtGuide",
+        hidden_name: "prt"
       },
       %{
         map: "prontera",

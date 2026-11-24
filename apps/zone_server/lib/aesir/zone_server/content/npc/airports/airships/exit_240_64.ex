@@ -24,7 +24,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Exit24064 do
         sprite: 857,
         name: "Exit",
         scope: :shared,
-        unique_name: "ExitAirplane01"
+        unique_name: "ExitAirplane01",
+        hidden_name: "airplane_011a"
       },
       %{
         map: "airplane_01",

@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMorroc.Guide15953 do
         sprite: 707,
         name: "Guide",
         scope: :renewal,
-        unique_name: "GuideMocRuins"
+        unique_name: "GuideMocRuins",
+        hidden_name: "01ruins"
       },
       %{
         map: "moc_ruins",

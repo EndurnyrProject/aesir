@@ -26,7 +26,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Guard do
         sprite: 868,
         name: "Guard",
         scope: :shared,
-        unique_name: "LhzRekGuard"
+        unique_name: "LhzRekGuard",
+        hidden_name: "01"
       },
       %{
         map: "lhz_in01",

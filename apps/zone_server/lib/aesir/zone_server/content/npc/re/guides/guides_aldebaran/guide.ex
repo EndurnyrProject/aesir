@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesAldebaran.Guide do
         sprite: 105,
         name: "Guide",
         scope: :renewal,
-        unique_name: "GuideAldearan"
+        unique_name: "GuideAldearan",
+        hidden_name: "01aldebaran"
       },
       %{
         map: "aldebaran",

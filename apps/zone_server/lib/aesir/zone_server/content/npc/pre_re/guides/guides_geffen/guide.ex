@@ -34,7 +34,8 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesGeffen.Guide do
         sprite: 705,
         name: "Guide",
         scope: :pre_renewal,
-        unique_name: "GefGuide"
+        unique_name: "GefGuide",
+        hidden_name: "gef"
       },
       %{
         map: "geffen",

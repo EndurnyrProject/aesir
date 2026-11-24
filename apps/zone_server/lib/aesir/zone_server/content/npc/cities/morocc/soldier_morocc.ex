@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.SoldierMorocc do
         name: "Soldier - Morocc",
         scope: :shared,
         unique_name: "MocSoldier",
+        hidden_name: "01",
         trigger: {3, 3}
       }
     ]

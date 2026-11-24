@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.Maia do
         name: "Maia",
         scope: :shared,
         unique_name: "SLTester",
+        hidden_name: "link2",
         trigger: {3, 3}
       },
       %{

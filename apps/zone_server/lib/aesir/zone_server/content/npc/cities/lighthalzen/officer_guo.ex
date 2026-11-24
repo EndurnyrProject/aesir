@@ -26,7 +26,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.OfficerGuo do
         sprite: 85,
         name: "Officer Guo",
         scope: :shared,
-        unique_name: "off_guo"
+        unique_name: "off_guo",
+        hidden_name: "06"
       },
       %{
         map: "lhz_in02",

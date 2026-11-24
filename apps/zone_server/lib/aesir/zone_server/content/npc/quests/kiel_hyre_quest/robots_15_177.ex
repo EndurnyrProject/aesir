@@ -26,7 +26,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Robots15177 do
         sprite: 111,
         name: "Robots",
         scope: :shared,
-        unique_name: "RobotsKHQ"
+        unique_name: "RobotsKHQ",
+        hidden_name: "kh2"
       },
       %{
         map: "kh_kiehl01",

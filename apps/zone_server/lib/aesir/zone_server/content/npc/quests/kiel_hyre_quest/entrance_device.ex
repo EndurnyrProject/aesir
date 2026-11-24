@@ -31,7 +31,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.EntranceDevice do
         sprite: 111,
         name: "Entrance Device",
         scope: :shared,
-        unique_name: "KHAccess"
+        unique_name: "KHAccess",
+        hidden_name: "khd2"
       },
       %{
         map: "kh_dun01",

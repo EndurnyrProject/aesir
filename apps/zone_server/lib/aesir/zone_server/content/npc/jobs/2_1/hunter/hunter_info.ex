@@ -36,7 +36,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.HunterInfo do
         sprite: 727,
         name: "Hunter Info",
         scope: :shared,
-        unique_name: "HntNotice"
+        unique_name: "HntNotice",
+        hidden_name: "hnt"
       },
       %{
         map: "pay_fild10",

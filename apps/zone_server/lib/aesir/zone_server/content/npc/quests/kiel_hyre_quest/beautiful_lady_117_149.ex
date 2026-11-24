@@ -26,7 +26,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.BeautifulLady117149 
         sprite: 894,
         name: "Beautiful lady",
         scope: :shared,
-        unique_name: "BeatifulLadyKHQ2"
+        unique_name: "BeatifulLadyKHQ2",
+        hidden_name: "kh2"
       },
       %{
         map: "kh_school",

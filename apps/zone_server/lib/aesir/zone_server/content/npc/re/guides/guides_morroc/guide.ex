@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMorroc.Guide do
         sprite: 707,
         name: "Guide",
         scope: :renewal,
-        unique_name: "GuideMorocc"
+        unique_name: "GuideMorocc",
+        hidden_name: "01morocc"
       },
       %{
         map: "morocc",

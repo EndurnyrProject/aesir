@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Moscovia.Soldier do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
-      %{name: "Soldier", unique_name: "MoscSoldier"},
+      %{name: "Soldier", unique_name: "MoscSoldier", hidden_name: "mosk"},
       %{
         map: "mosk_in",
         x: 118,

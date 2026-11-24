@@ -30,7 +30,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.Book do
         sprite: 111,
         name: "Book",
         scope: :shared,
-        unique_name: "BookKHQ1"
+        unique_name: "BookKHQ1",
+        hidden_name: "kh1"
       },
       %{
         map: "kh_vila",

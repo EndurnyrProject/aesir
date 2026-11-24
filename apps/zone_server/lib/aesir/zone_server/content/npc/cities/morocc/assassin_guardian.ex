@@ -29,7 +29,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.AssassinGuardian do
         sprite: 707,
         name: "Assassin Guardian",
         scope: :shared,
-        unique_name: "SinGuard"
+        unique_name: "SinGuard",
+        hidden_name: "1"
       },
       %{
         map: "moc_fild16",

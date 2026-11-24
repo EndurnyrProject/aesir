@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesGeffen.Guide do
         sprite: 705,
         name: "Guide",
         scope: :renewal,
-        unique_name: "GuideGeffen"
+        unique_name: "GuideGeffen",
+        hidden_name: "01geffen"
       },
       %{
         map: "geffen",

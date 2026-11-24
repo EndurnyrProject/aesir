@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Novice.MerchantGu
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
-      %{name: "Merchant Guide", unique_name: "NvMerchant"},
+      %{name: "Merchant Guide", unique_name: "NvMerchant", hidden_name: "newbe10"},
       %{
         map: "new_1-3",
         x: 109,

@@ -10,6 +10,10 @@ defmodule Aesir.ZoneServer.Npc.Placement do
   view and cannot be clicked. `unique_name` is the
   name used for `donpcevent`-style targeting; the normalizer falls back to
   `name` when not declared, so this struct carries whatever it is given.
+  `hidden_name` is the part of the script's name after its first `#` (`"0"` for
+  `Mysterious Rock#0::manukrock`), what `strnpcinfo` reports as the hidden
+  part of the name, or `nil` when the name has no `#`; the normalizer derives it
+  from a `unique_name` of the form `"<name>#<hidden>"` when not declared.
   `trigger` is the touch-area half-extents `{xs, ys}` around the placement's
   cell, or `nil` when the NPC has no touch area. `scope` determines the game
   mode in which the placement participates. `state` is the view state the NPC
@@ -46,6 +50,7 @@ defmodule Aesir.ZoneServer.Npc.Placement do
     field :sprite, integer()
     field :name, String.t(), default: ""
     field :unique_name, String.t(), default: ""
+    field :hidden_name, String.t() | nil, default: nil
     field :trigger, trigger() | nil, default: nil
     field :scope, ContentScope.t(), default: :shared
     field :state, state() | nil, default: nil

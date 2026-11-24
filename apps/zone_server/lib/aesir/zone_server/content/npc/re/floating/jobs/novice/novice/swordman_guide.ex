@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Novice.SwordmanGu
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
-      %{name: "Swordman Guide", unique_name: "NvSwordman"},
+      %{name: "Swordman Guide", unique_name: "NvSwordman", hidden_name: "newbe10"},
       %{
         map: "new_1-3",
         x: 97,

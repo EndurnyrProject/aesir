@@ -55651,9 +55651,9 @@
   },
   "re/guides/guides_alberta.txt|script|Guide#01alberta::AlbertaGuide|alberta:23:238": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesAlberta.Guide",
-    "output_hash": "d6a67e11b7035af8e8571828977462c57d12905525e1dbcf537bb434d65dacc7",
+    "output_hash": "7d3e20a94f9a5a7562a0206abe3e76d3bf4f29b44cf70dc974bf4fdb85b9aef2",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_alberta/guide.ex",
-    "source_hash": "741111f41463b08275ff4eec3be455c374757a77c8750e12e0e1506d70a0f975",
+    "source_hash": "71de5f68094a0628fcaa6e731b404c1f7dad028efb424ceacb23118df5616142",
     "spawns": [
       {
         "name": "Guide",
@@ -55663,7 +55663,8 @@
         "map": "alberta",
         "dir": 4,
         "unique_name": "AlbertaGuide",
-        "sprite": 105
+        "sprite": 105,
+        "hidden_name": "01alberta"
       },
       {
         "name": "Guide",
@@ -55689,9 +55690,9 @@
   },
   "re/guides/guides_aldebaran.txt|script|Guide#01aldebaran::GuideAldearan|aldebaran:139:63": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesAldebaran.Guide",
-    "output_hash": "07f3c5b3bc2da80faadb5cebe189262c7a92a6b54497fc05f7b5694a36eac4cb",
+    "output_hash": "126643b93b57ef177bd197ecb32dc522779a54f25b004624e79c17f1dfeac4f3",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_aldebaran/guide.ex",
-    "source_hash": "544de25270fa5787ee9346c3b3a00fc3461c27120a922af43be3a0d8300ceb21",
+    "source_hash": "9228f2d66a1e9634ab0f8961ca52b245b11e97708fd00c89fa50e26298f0c8b6",
     "spawns": [
       {
         "name": "Guide",
@@ -55701,7 +55702,8 @@
         "map": "aldebaran",
         "dir": 4,
         "unique_name": "GuideAldearan",
-        "sprite": 105
+        "sprite": 105,
+        "hidden_name": "01aldebaran"
       },
       {
         "name": "Guide",
@@ -55800,9 +55802,9 @@
   },
   "re/guides/guides_comodo.txt|script|Comodo Guide#01comodo::GuideComodo|comodo:322:178": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesComodo.ComodoGuide",
-    "output_hash": "3e1eec405582206462dca1817a3c9a78023675a0dd197b1d31668bc0d99ca7a3",
+    "output_hash": "733ff179d7ed6d5a8902556a433f03d0777cc4164eb518421c26e0101675e1a8",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_comodo/comodo_guide.ex",
-    "source_hash": "c16f46171ef69504da032fcdd333d2ecd80c7a2e70fba2d08a70e77b4b71ad70",
+    "source_hash": "544022cf9947b3c3fabb271f8641ef1ff508560618bd6b250413ce7e3cd676fd",
     "spawns": [
       {
         "name": "Comodo Guide",
@@ -55812,7 +55814,8 @@
         "map": "comodo",
         "dir": 4,
         "unique_name": "GuideComodo",
-        "sprite": 700
+        "sprite": 700,
+        "hidden_name": "01comodo"
       },
       {
         "name": "Comodo Guide",
@@ -55916,9 +55919,9 @@
   },
   "re/guides/guides_einbroch.txt|script|Einbech Guide#einbech01::GuideEinbech|einbech:67:37": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesEinbroch.EinbechGuide",
-    "output_hash": "43aef171598900784936f3f718b12957a7c77707bb96308564eaa4f5a43419d4",
+    "output_hash": "bf8a19add61be8ef19f367459df95508191876de998314fc1b4a3e5909fb95fb",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_einbroch/einbech_guide.ex",
-    "source_hash": "d869644d2144f12b7c3903649dc976b83ffa9ee5f8ce388997cd5e3ef84e1c2f",
+    "source_hash": "0059fd99cecb241b825a81997c7a27ff630fc3d0f66eafba969f0b405a87f536",
     "spawns": [
       {
         "name": "Einbech Guide",
@@ -55928,7 +55931,8 @@
         "map": "einbech",
         "dir": 4,
         "unique_name": "GuideEinbech",
-        "sprite": 852
+        "sprite": 852,
+        "hidden_name": "einbech01"
       },
       {
         "name": "Einbech Guide",
@@ -55944,9 +55948,9 @@
   },
   "re/guides/guides_einbroch.txt|script|Einbroch Guide#ein01::GuideEinbroch|einbroch:72:202": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesEinbroch.EinbrochGuide",
-    "output_hash": "34c96097ef99cdf50c4d621a7f2f8108b07971dfe83c4af2b8f7c86b8aa39a2b",
+    "output_hash": "ade5531d15976c118271d4d90ead1e0453d0e133e8e8264ae751a2b012b7417a",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_einbroch/einbroch_guide.ex",
-    "source_hash": "231f1ff91e8d2477f8b92b99693c02e4be624d25942f3ce302171d495b76046e",
+    "source_hash": "bbcdf37e6335982f2a79aaa3230b71f9c23a1e640762f65e0dc9229b81be5a62",
     "spawns": [
       {
         "name": "Einbroch Guide",
@@ -55956,7 +55960,8 @@
         "map": "einbroch",
         "dir": 4,
         "unique_name": "GuideEinbroch",
-        "sprite": 852
+        "sprite": 852,
+        "hidden_name": "ein01"
       },
       {
         "name": "Einbroch Guide",
@@ -55992,9 +55997,9 @@
   },
   "re/guides/guides_geffen.txt|script|Guide#01geffen::GuideGeffen|geffen:203:116": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesGeffen.Guide",
-    "output_hash": "7a14c74f31f953aa6d22f3bc8909e349592cbb8c48bb0bbf909465ab035dede3",
+    "output_hash": "9330c35fc1c60711261636cc5cb646b55eb7d272ea8c238a3d0e93d212e7437f",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_geffen/guide.ex",
-    "source_hash": "77378489be216037d805c8410e5dd627bfd630c28a83e000a21ee2f321c395aa",
+    "source_hash": "7e51921f7e24b225aaa704f2738143c234b5baf5c8a287c22eb96cfd3b611e67",
     "spawns": [
       {
         "name": "Guide",
@@ -56004,7 +56009,8 @@
         "map": "geffen",
         "dir": 4,
         "unique_name": "GuideGeffen",
-        "sprite": 705
+        "sprite": 705,
+        "hidden_name": "01geffen"
       },
       {
         "name": "Guide",
@@ -56202,9 +56208,9 @@
   },
   "re/guides/guides_juno.txt|script|Juno Guide#yuno01::GuideJuno|yuno:59:212": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesJuno.JunoGuide",
-    "output_hash": "367a411560a418c525052bc6b8f0a4e45aab93ab2a61ef7ab7f140d530667084",
+    "output_hash": "4fb2e39a233608fd39d25d125ac3bad995dd297c0330eb481259b0ffeae41c57",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_juno/juno_guide.ex",
-    "source_hash": "5655e90dd55a487664b2b3b8327d6dcdf2a0f4da31e246278ddf9764fc66abbc",
+    "source_hash": "ba5716a3d19174a67c8c4e7cf281dffddf0a8f97067208e6ce23452dc302b36e",
     "spawns": [
       {
         "name": "Juno Guide",
@@ -56214,7 +56220,8 @@
         "map": "yuno",
         "dir": 4,
         "unique_name": "GuideJuno",
-        "sprite": 700
+        "sprite": 700,
+        "hidden_name": "yuno01"
       },
       {
         "name": "Juno Guide",
@@ -56230,9 +56237,9 @@
   },
   "re/guides/guides_lighthalzen.txt|script|Lighthalzen Guide#lhz01::GuideLighthalzen|lighthalzen:207:310": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesLighthalzen.LighthalzenGuide",
-    "output_hash": "b40c10a488b6471d3d1743934aff5d8c775a5c073d4618716ddde9d33834121b",
+    "output_hash": "4862e969d5e42781e7a983839dcf320331ddf1cc391e9b1d16f72af934016730",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_lighthalzen/lighthalzen_guide.ex",
-    "source_hash": "c9ccc49a347384d4ab4386ff7cf0c5f13bc1d6101d99d50e7d4760f32e6fa171",
+    "source_hash": "b3df9ecca550599a597947196a5cbaf8b4c979f2c0db04ee4b7b66d66373da8c",
     "spawns": [
       {
         "name": "Lighthalzen Guide",
@@ -56242,7 +56249,8 @@
         "map": "lighthalzen",
         "dir": 5,
         "unique_name": "GuideLighthalzen",
-        "sprite": 852
+        "sprite": 852,
+        "hidden_name": "lhz01"
       },
       {
         "name": "Lighthalzen Guide",
@@ -56342,9 +56350,9 @@
   },
   "re/guides/guides_malaya.txt|script|Port Malaya Guide#01::GuideMalaya|malaya:71:72": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMalaya.PortMalayaGuide",
-    "output_hash": "b020ebd1de281671a32f1dfed3d4ec70f699e5ae2ac81041334105a54906a6eb",
+    "output_hash": "fc30db3470349b1c45e1d0493e8449a457d41050bc0c11e9dc1015222696ddad",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_malaya/port_malaya_guide.ex",
-    "source_hash": "0fff6c6f9339525077e59bd28863564719c97e8ee0646a0ecd9284fa2335755f",
+    "source_hash": "9b4e291fe50ca04e885236da508d9ce355f01d92bbe3437815853713dcaa82fe",
     "spawns": [
       {
         "name": "Port Malaya Guide",
@@ -56354,7 +56362,8 @@
         "map": "malaya",
         "dir": 4,
         "unique_name": "GuideMalaya",
-        "sprite": 579
+        "sprite": 579,
+        "hidden_name": "01"
       },
       {
         "name": "Port Malaya Guide",
@@ -56452,9 +56461,9 @@
   },
   "re/guides/guides_morroc.txt|script|Guide#01morocc::GuideMorocc|morocc:153:286": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMorroc.Guide",
-    "output_hash": "e1346ff44458ba4743ece2a512be1ca6b3a0ac9227542fc7d6a50c09b70fca1e",
+    "output_hash": "c6b7344de8f67664248fc10a18c89a59d98c3ea46ab2ede5c57cff1930515e85",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_morroc/guide.ex",
-    "source_hash": "84838cad35c6092726a80f35a5e890960d71c8c1adbcec5a14a31c80d540e510",
+    "source_hash": "14ed5ff9baecc3ef11a51cd756923782c1522db5672994fd9a5ffab04d8a66ff",
     "spawns": [
       {
         "name": "Guide",
@@ -56464,7 +56473,8 @@
         "map": "morocc",
         "dir": 6,
         "unique_name": "GuideMorocc",
-        "sprite": 707
+        "sprite": 707,
+        "hidden_name": "01morocc"
       },
       {
         "name": "Guide",
@@ -56500,9 +56510,9 @@
   },
   "re/guides/guides_morroc.txt|script|Guide#01ruins::GuideMocRuins|moc_ruins:159:53": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMorroc.Guide15953",
-    "output_hash": "b414be641a175cb2b8cba3d20ee9772d213bdb4f827eabf542d0bc2d9cb89e48",
+    "output_hash": "e6e713185e45cf715373f65d0a2b48b22aeb50c5e7ac2a9df517e25ac3fcd7f9",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_morroc/guide_159_53.ex",
-    "source_hash": "4d59d322b96dab2bed766cb553d7acd8af674e9c2b642c24406dc08428dfce97",
+    "source_hash": "dab11459035f1cd9e0c6b56e3191fe8309a1c011c8d611276a616a3450e374b6",
     "spawns": [
       {
         "name": "Guide",
@@ -56512,7 +56522,8 @@
         "map": "moc_ruins",
         "dir": 3,
         "unique_name": "GuideMocRuins",
-        "sprite": 707
+        "sprite": 707,
+        "hidden_name": "01ruins"
       },
       {
         "name": "Guide",
@@ -56584,9 +56595,9 @@
   },
   "re/guides/guides_payon.txt|script|Guide#01payon::GuidePayon|payon:160:67": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesPayon.Guide",
-    "output_hash": "5e164a9b0571c920a7bd090a6c20fb5d56c31f69183d86d0530f8050cd578d1b",
+    "output_hash": "9b5086a96dd762b4fa71e9f40e95e8aeff2a3848733d98a7cd25b3e05af59445",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_payon/guide.ex",
-    "source_hash": "f5b88f319d11776d8733080f35a7ee835315030c767cea5b8b45f8798ac6ec80",
+    "source_hash": "32b334ca9176e1bc75fb82ccdbb4e205bec0279c2003b3a0b22eebb398be4a12",
     "spawns": [
       {
         "name": "Guide",
@@ -56596,7 +56607,8 @@
         "map": "payon",
         "dir": 3,
         "unique_name": "GuidePayon",
-        "sprite": 708
+        "sprite": 708,
+        "hidden_name": "01payon"
       },
       {
         "name": "Guide",
@@ -56650,9 +56662,9 @@
   },
   "re/guides/guides_prontera.txt|script|Guide#01prontera::GuideProntera|prontera:154:187": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesProntera.Guide",
-    "output_hash": "6f696ae7f89c96f3356aaae3555f20b7be3c0e99d544c76db07c36d826ac4f61",
+    "output_hash": "e4221077797cfd1234a31e6e52617c91031427a6ff3946939aab5400981bb89c",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_prontera/guide.ex",
-    "source_hash": "e3ba4ad01479cd3f93e6c99ce6694379e9c21e4a11b92f82d0e010f0aa414650",
+    "source_hash": "b2f10e3335c35e7eb379127bb7822d47ec81aa1ec7233ff728f9ec0215dbdb10",
     "spawns": [
       {
         "name": "Guide",
@@ -56662,7 +56674,8 @@
         "map": "prontera",
         "dir": 4,
         "unique_name": "GuideProntera",
-        "sprite": 105
+        "sprite": 105,
+        "hidden_name": "01prontera"
       },
       {
         "name": "Guide",
@@ -56754,9 +56767,9 @@
   },
   "re/guides/guides_umbala.txt|script|Umbala Guide#01umbala::GuideUmbala|umbala:128:94": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesUmbala.UmbalaGuide",
-    "output_hash": "74cdd90011cbaacd9775ba3ac6399dccaed1dda9b35b0660518677c575348eb7",
+    "output_hash": "a59a34aaa2b8de305b027752a7518af540995d10ecc165c512cf9b4e6a754fae",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_umbala/umbala_guide.ex",
-    "source_hash": "affb308c85474a127d96a6495fceb4479d271dac1409635fc3756708d2a7b573",
+    "source_hash": "f9489bbed21882a1041950d93008e99a0e82e3a3dd6c94e2752c18c30d0ec7c3",
     "spawns": [
       {
         "name": "Umbala Guide",
@@ -56766,7 +56779,8 @@
         "map": "umbala",
         "dir": 3,
         "unique_name": "GuideUmbala",
-        "sprite": 702
+        "sprite": 702,
+        "hidden_name": "01umbala"
       },
       {
         "name": "Umbala Guide",
@@ -56782,9 +56796,9 @@
   },
   "re/guides/guides_veins.txt|script|Veins Guide#veins01::GuideVeins|veins:210:345": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesVeins.VeinsGuide",
-    "output_hash": "b39fe28efaa5b59308fe105c92b72f2f5234e5518307ef7af0bffe9e1d48e37e",
+    "output_hash": "1c7808f669aa0cce750968f549308ff5d3466a91f5be443652326dcee2990ebd",
     "output_path": "lib/aesir/zone_server/content/npc/re/guides/guides_veins/veins_guide.ex",
-    "source_hash": "ac727a79d062f1e14b59d9d50358bc376248f64afd6e49ae03ae650bba879cd7",
+    "source_hash": "e596f97edf84d20ce3e5f555e5c03c4e61190bbbee58d76093ada863b32d8dba",
     "spawns": [
       {
         "name": "Veins Guide",
@@ -56794,7 +56808,8 @@
         "map": "veins",
         "dir": 5,
         "unique_name": "GuideVeins",
-        "sprite": 934
+        "sprite": 934,
+        "hidden_name": "veins01"
       },
       {
         "name": "Veins Guide",

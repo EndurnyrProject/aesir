@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.ThDun11Ayotrap2 do
         name: " ",
         scope: :shared,
         unique_name: "AyoTrap2",
+        hidden_name: "th_dun1_1",
         trigger: {1, 1}
       },
       %{

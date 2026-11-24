@@ -22,7 +22,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Prontera.Guard do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
-      %{name: "Guard", unique_name: "prtguard"},
+      %{name: "Guard", unique_name: "prtguard", hidden_name: "pront"},
       %{
         map: "prontera",
         x: 223,

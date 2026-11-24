@@ -45,9 +45,27 @@ defmodule Aesir.ZoneServer.Script.DslNpcInfoTest do
     def on_talk(ctx), do: ctx
   end
 
+  defmodule ExnameNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [
+        %{
+          map: "morocc",
+          x: 220,
+          y: 90,
+          sprite: 58,
+          name: "Mysterious Rock",
+          unique_name: "manukrock",
+          hidden_name: "0"
+        }
+      ]
+
+    @impl true
+    def on_talk(ctx), do: ctx
+  end
+
   setup do
     on_exit(fn -> :persistent_term.erase(NpcRegistry) end)
-    NpcRegistry.reload([InfoNpc, HiddenNpc])
+    NpcRegistry.reload([InfoNpc, HiddenNpc, ExnameNpc])
 
     placement = hd(InfoNpc.spawn())
     hidden_placement = hd(HiddenNpc.spawn())
@@ -93,6 +111,16 @@ defmodule Aesir.ZoneServer.Script.DslNpcInfoTest do
       assert Dsl.strnpcinfo(ctx, 1) == "Creature"
       assert Dsl.strnpcinfo(ctx, 2) == "01"
       assert Dsl.strnpcinfo(ctx, 3) == "Creature#01"
+    end
+
+    test "reads the hidden fragment from the name, not from a separate unique name" do
+      gid = NpcRegistry.entity_id(hd(ExnameNpc.spawn()))
+      ctx = Ctx.detached(ExnameNpc, gid)
+
+      assert Dsl.strnpcinfo(ctx, 0) == "Mysterious Rock#0"
+      assert Dsl.strnpcinfo(ctx, 1) == "Mysterious Rock"
+      assert Dsl.strnpcinfo(ctx, 2) == "0"
+      assert Dsl.strnpcinfo(ctx, 3) == "manukrock"
     end
 
     test "returns an empty string when there is no npc_gid" do

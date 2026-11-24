@@ -14,7 +14,9 @@ defmodule Aesir.ZoneServer.Npc do
       placements normalized into `Aesir.ZoneServer.Npc.Placement` structs.
 
   Each spawn entry may also declare `unique_name` (defaults to `name` when
-  omitted; used for `donpcevent`-style targeting) and `trigger: {xs, ys}`
+  omitted; used for `donpcevent`-style targeting), `hidden_name` (the part of
+  the script's name after `#`, needed only when `unique_name` does not carry it;
+  see `Aesir.ZoneServer.Npc.Placement`) and `trigger: {xs, ys}`
   (touch-area half-extents around the cell; omit for no touch area), and
   `state` (`:disabled`, `:hidden` or `:cloaked`, the view state the NPC starts
   in; see `t:Aesir.ZoneServer.Npc.Placement.state/0`). A spawn
@@ -24,7 +26,7 @@ defmodule Aesir.ZoneServer.Npc do
 
   A spawn entry without `map` declares a floating NPC, rAthena's `-` script or
   duplicate: `%{name: "Red Alarm On#1-2"}`. It accepts only `name`,
-  `unique_name`, `scope` and `state`; it sits on no map but is registered by id and
+  `unique_name`, `hidden_name`, `scope` and `state`; it sits on no map but is registered by id and
   name, so its events, timers and `OnInit` run (see
   `Aesir.ZoneServer.Npc.Placement`).
 
@@ -137,7 +139,7 @@ defmodule Aesir.ZoneServer.Npc do
     end
   end
 
-  @floating_keys [:name, :unique_name, :scope, :state]
+  @floating_keys [:name, :unique_name, :hidden_name, :scope, :state]
 
   @typep spawn_attrs :: %{
            required(:map) => String.t(),
@@ -147,6 +149,7 @@ defmodule Aesir.ZoneServer.Npc do
            optional(:dir) => non_neg_integer(),
            optional(:name) => String.t(),
            optional(:unique_name) => String.t(),
+           optional(:hidden_name) => String.t(),
            optional(:scope) => ContentScope.t(),
            optional(:trigger) => Placement.trigger() | nil,
            optional(:state) => Placement.state()
@@ -155,6 +158,7 @@ defmodule Aesir.ZoneServer.Npc do
   @typep floating_attrs :: %{
            optional(:name) => String.t(),
            optional(:unique_name) => String.t(),
+           optional(:hidden_name) => String.t(),
            optional(:scope) => ContentScope.t(),
            optional(:state) => Placement.state()
          }
@@ -164,6 +168,7 @@ defmodule Aesir.ZoneServer.Npc do
     case Map.keys(entry) -- @floating_keys do
       [] ->
         name = Map.get(entry, :name, "")
+        unique_name = Map.get(entry, :unique_name, name)
 
         %Placement{
           map: nil,
@@ -171,7 +176,8 @@ defmodule Aesir.ZoneServer.Npc do
           y: 0,
           sprite: -1,
           name: name,
-          unique_name: Map.get(entry, :unique_name, name),
+          unique_name: unique_name,
+          hidden_name: hidden_name(entry, name, unique_name),
           scope: entry |> Map.get(:scope, body_scope) |> validate_content_scope!(:placement),
           state: validate_state!(Map.get(entry, :state))
         }
@@ -185,6 +191,7 @@ defmodule Aesir.ZoneServer.Npc do
 
   defp to_placement!(entry, body_scope) do
     name = Map.get(entry, :name, "")
+    unique_name = Map.get(entry, :unique_name, name)
 
     %Placement{
       map: Map.fetch!(entry, :map),
@@ -193,7 +200,8 @@ defmodule Aesir.ZoneServer.Npc do
       dir: Map.get(entry, :dir, 0),
       sprite: Map.fetch!(entry, :sprite),
       name: name,
-      unique_name: Map.get(entry, :unique_name, name),
+      unique_name: unique_name,
+      hidden_name: hidden_name(entry, name, unique_name),
       trigger: validate_trigger!(Map.get(entry, :trigger)),
       scope: entry |> Map.get(:scope, body_scope) |> validate_content_scope!(:placement),
       state: validate_state!(Map.get(entry, :state))
@@ -207,6 +215,19 @@ defmodule Aesir.ZoneServer.Npc do
   defp validate_content_scope!(scope, kind) do
     raise ArgumentError,
           "npc #{kind} content scope must be :shared, :renewal, or :pre_renewal, got: #{inspect(scope)}"
+  end
+
+  # A `unique_name` of `"<name>#<hidden>"` is the whole script name, so it
+  # carries the hidden part; any other needs `hidden_name` declared.
+  @spec hidden_name(map(), String.t(), String.t()) :: String.t() | nil
+  defp hidden_name(%{hidden_name: hidden}, _name, _unique_name) when is_binary(hidden),
+    do: hidden
+
+  defp hidden_name(_entry, name, unique_name) do
+    case String.split(unique_name, "#", parts: 2) do
+      [^name, hidden] -> hidden
+      _no_fragment -> nil
+    end
   end
 
   @spec validate_state!(term()) :: Placement.state() | nil

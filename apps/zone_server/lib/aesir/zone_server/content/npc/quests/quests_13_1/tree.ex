@@ -34,7 +34,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Tree do
         sprite: 111,
         name: "Tree",
         scope: :shared,
-        unique_name: "ep13tree"
+        unique_name: "ep13tree",
+        hidden_name: "ep13bs1"
       },
       %{
         map: "spl_fild02",

@@ -27,7 +27,8 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesComodo.ComodoGuide do
         sprite: 700,
         name: "Comodo Guide",
         scope: :pre_renewal,
-        unique_name: "CmdGuide"
+        unique_name: "CmdGuide",
+        hidden_name: "cmd"
       }
     ]
 

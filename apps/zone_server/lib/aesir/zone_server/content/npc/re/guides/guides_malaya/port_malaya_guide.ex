@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMalaya.PortMalayaGuide do
         sprite: 579,
         name: "Port Malaya Guide",
         scope: :renewal,
-        unique_name: "GuideMalaya"
+        unique_name: "GuideMalaya",
+        hidden_name: "01"
       },
       %{
         map: "malaya",

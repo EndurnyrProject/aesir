@@ -30,7 +30,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.MechanicalDevice do
         sprite: 111,
         name: "Mechanical Device",
         scope: :shared,
-        unique_name: "KHKeyardReader"
+        unique_name: "KHKeyardReader",
+        hidden_name: "kh"
       },
       %{
         map: "kh_dun01",

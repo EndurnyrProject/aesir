@@ -31,7 +31,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.HeavyDoor do
         sprite: 111,
         name: "Heavy Door",
         scope: :shared,
-        unique_name: "HeavyDoorKHQ1"
+        unique_name: "HeavyDoorKHQ1",
+        hidden_name: "kh1"
       }
     ]
 

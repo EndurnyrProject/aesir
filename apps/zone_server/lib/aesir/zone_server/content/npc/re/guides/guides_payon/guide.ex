@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesPayon.Guide do
         sprite: 708,
         name: "Guide",
         scope: :renewal,
-        unique_name: "GuidePayon"
+        unique_name: "GuidePayon",
+        hidden_name: "01payon"
       },
       %{
         map: "payon",

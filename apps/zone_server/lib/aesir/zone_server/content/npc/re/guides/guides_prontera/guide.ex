@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesProntera.Guide do
         sprite: 105,
         name: "Guide",
         scope: :renewal,
-        unique_name: "GuideProntera"
+        unique_name: "GuideProntera",
+        hidden_name: "01prontera"
       },
       %{
         map: "prontera",

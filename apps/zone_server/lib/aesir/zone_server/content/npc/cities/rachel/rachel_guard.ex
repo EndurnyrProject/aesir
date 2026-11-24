@@ -27,7 +27,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.RachelGuard do
         sprite: 934,
         name: "Rachel Guard",
         scope: :shared,
-        unique_name: "RaGuard"
+        unique_name: "RaGuard",
+        hidden_name: "1aru"
       },
       %{
         map: "rachel",

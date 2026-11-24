@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesAlberta.Guide do
         sprite: 105,
         name: "Guide",
         scope: :renewal,
-        unique_name: "AlbertaGuide"
+        unique_name: "AlbertaGuide",
+        hidden_name: "01alberta"
       },
       %{
         map: "alberta",

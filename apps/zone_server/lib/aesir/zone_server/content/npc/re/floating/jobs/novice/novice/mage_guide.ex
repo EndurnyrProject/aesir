@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Novice.MageGuide 
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
-      %{name: "Mage Guide", unique_name: "NvMage"},
+      %{name: "Mage Guide", unique_name: "NvMage", hidden_name: "newbe10"},
       %{
         map: "new_1-3",
         x: 117,

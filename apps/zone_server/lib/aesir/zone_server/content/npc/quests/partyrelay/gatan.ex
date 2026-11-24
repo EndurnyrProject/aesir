@@ -38,7 +38,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Partyrelay.Gatan do
         sprite: 86,
         name: "Gatan",
         scope: :shared,
-        unique_name: "RelayGatan"
+        unique_name: "RelayGatan",
+        hidden_name: "payon"
       },
       %{
         map: "comodo",

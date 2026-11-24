@@ -30,7 +30,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Lighthalzen.ArrivalStaff do
         sprite: 90,
         name: "Arrival Staff",
         scope: :shared,
-        unique_name: "lhz_airport2"
+        unique_name: "lhz_airport2",
+        hidden_name: "lhz_air2a"
       },
       %{
         map: "lhz_airport",

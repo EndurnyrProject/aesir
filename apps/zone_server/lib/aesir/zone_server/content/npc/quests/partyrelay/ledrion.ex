@@ -32,7 +32,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Partyrelay.Ledrion do
         sprite: 109,
         name: "Ledrion",
         scope: :shared,
-        unique_name: "RelayLedrion"
+        unique_name: "RelayLedrion",
+        hidden_name: "payon"
       },
       %{
         map: "comodo",

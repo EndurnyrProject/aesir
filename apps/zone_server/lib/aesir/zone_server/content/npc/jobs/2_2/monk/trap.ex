@@ -37,7 +37,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Trap do
         sprite: -1,
         name: "Trap",
         scope: :shared,
-        unique_name: "MonkTrap"
+        unique_name: "MonkTrap",
+        hidden_name: "t_monk1_1"
       },
       %{
         map: "monk_test",

@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesComodo.ComodoGuide do
         sprite: 700,
         name: "Comodo Guide",
         scope: :renewal,
-        unique_name: "GuideComodo"
+        unique_name: "GuideComodo",
+        hidden_name: "01comodo"
       },
       %{
         map: "comodo",

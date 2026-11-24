@@ -180,6 +180,31 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.TranspilerTest do
   end
 
   @tag :tmp_dir
+  test "a Display#fragment::exname name keeps its # fragment as hidden_name", %{
+    tmp_dir: tmp_dir
+  } do
+    npc_dir = Path.join(tmp_dir, "npc")
+    File.mkdir_p!(npc_dir)
+
+    File.write!(Path.join(npc_dir, "rock.txt"), """
+    prontera,190,190,4\tscript\tMysterious Rock#0::manukrock\t86,{
+    end;
+    }
+    prontera,195,195,4\tduplicate(manukrock)\tMysterious Rock#1\t86
+    """)
+
+    out_root = Path.join(tmp_dir, "out")
+    result = run_enabled(tmp_dir, out_root)
+
+    assert result.failures == []
+    assert [rel_path] = result.written
+
+    rock = File.read!(Path.join(out_root, rel_path))
+    assert rock =~ ~r/x: 190,[^}]*unique_name: "manukrock",\s*hidden_name: "0"/
+    refute rock =~ ~r/x: 195,[^}]*hidden_name/
+  end
+
+  @tag :tmp_dir
   test "a placement without touch dims or a :: exname omits both keys", %{tmp_dir: tmp_dir} do
     npc_dir = Path.join(tmp_dir, "npc")
     File.mkdir_p!(npc_dir)

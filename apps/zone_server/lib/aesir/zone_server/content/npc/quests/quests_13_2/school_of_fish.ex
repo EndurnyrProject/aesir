@@ -35,7 +35,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests132.SchoolOfFish do
         sprite: 844,
         name: "School of Fish",
         scope: :shared,
-        unique_name: "FishingHole_spl3"
+        unique_name: "FishingHole_spl3",
+        hidden_name: "5"
       },
       %{
         map: "spl_fild03",

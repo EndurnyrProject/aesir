@@ -23,7 +23,8 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.Novice.Novice.TestExaminer do
         dir: 3,
         sprite: 85,
         name: "Test Examiner",
-        unique_name: "NovKeyman"
+        unique_name: "NovKeyman",
+        hidden_name: "nv1"
       },
       %{
         map: "new_2-3",

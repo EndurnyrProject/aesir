@@ -29,7 +29,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Louyang.Trainee do
         sprite: 819,
         name: "Trainee",
         scope: :shared,
-        unique_name: "LouTrainee"
+        unique_name: "LouTrainee",
+        hidden_name: "1lou"
       },
       %{
         map: "louyang",

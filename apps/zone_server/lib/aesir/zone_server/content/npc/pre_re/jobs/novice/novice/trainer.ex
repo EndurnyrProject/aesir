@@ -23,7 +23,8 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.Novice.Novice.Trainer do
         dir: 4,
         sprite: 84,
         name: "Trainer",
-        unique_name: "NovHoffman"
+        unique_name: "NovHoffman",
+        hidden_name: "nv1"
       },
       %{
         map: "new_2-3",

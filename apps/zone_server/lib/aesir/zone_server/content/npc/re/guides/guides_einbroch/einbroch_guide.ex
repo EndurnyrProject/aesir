@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesEinbroch.EinbrochGuide do
         sprite: 852,
         name: "Einbroch Guide",
         scope: :renewal,
-        unique_name: "GuideEinbroch"
+        unique_name: "GuideEinbroch",
+        hidden_name: "ein01"
       },
       %{
         map: "einbroch",

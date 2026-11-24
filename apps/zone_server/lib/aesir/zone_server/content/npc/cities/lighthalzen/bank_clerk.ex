@@ -26,7 +26,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.BankClerk do
         sprite: 86,
         name: "Bank Clerk",
         scope: :shared,
-        unique_name: "BankClerk"
+        unique_name: "BankClerk",
+        hidden_name: "1"
       },
       %{
         map: "lhz_in02",

@@ -31,7 +31,8 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesLighthalzen.Guide do
         sprite: 852,
         name: "Guide",
         scope: :pre_renewal,
-        unique_name: "LhzGuide"
+        unique_name: "LhzGuide",
+        hidden_name: "lhz"
       },
       %{
         map: "lighthalzen",

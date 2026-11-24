@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesUmbala.UmbalaGuide do
         sprite: 702,
         name: "Umbala Guide",
         scope: :renewal,
-        unique_name: "GuideUmbala"
+        unique_name: "GuideUmbala",
+        hidden_name: "01umbala"
       },
       %{
         map: "umbala",

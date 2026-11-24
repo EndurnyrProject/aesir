@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Hint01Ayohint do
         name: " ",
         scope: :shared,
         unique_name: "AyoHint",
+        hidden_name: "hint01",
         trigger: {0, 4}
       },
       %{

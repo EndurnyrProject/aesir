@@ -33,7 +33,8 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesEinbroch.Guide6737 do
         sprite: 852,
         name: "Guide",
         scope: :pre_renewal,
-        unique_name: "EinGuide2"
+        unique_name: "EinGuide2",
+        hidden_name: "4ein"
       },
       %{
         map: "einbech",

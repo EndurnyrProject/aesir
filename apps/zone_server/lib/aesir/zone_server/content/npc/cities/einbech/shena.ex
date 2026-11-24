@@ -29,7 +29,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbech.Shena do
         sprite: 846,
         name: "Shena",
         scope: :shared,
-        unique_name: "EinMonsters"
+        unique_name: "EinMonsters",
+        hidden_name: "ein"
       },
       %{
         map: "einbech",

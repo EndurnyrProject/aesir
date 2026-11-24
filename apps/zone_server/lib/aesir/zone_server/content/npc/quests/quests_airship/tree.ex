@@ -26,7 +26,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Tree do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
-      %{map: "einbech", x: 45, y: 113, dir: 5, sprite: 111, name: "Tree", scope: :shared},
+      %{
+        map: "einbech",
+        x: 45,
+        y: 113,
+        dir: 5,
+        sprite: 111,
+        name: "Tree",
+        scope: :shared,
+        hidden_name: "t1-1"
+      },
       %{
         map: "einbech",
         x: 36,

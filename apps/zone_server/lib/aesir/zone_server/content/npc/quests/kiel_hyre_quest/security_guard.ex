@@ -31,7 +31,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.SecurityGuard do
         sprite: 852,
         name: "Security Guard",
         scope: :shared,
-        unique_name: "KHAGuard"
+        unique_name: "KHAGuard",
+        hidden_name: "1"
       },
       %{
         map: "yuno_fild08",

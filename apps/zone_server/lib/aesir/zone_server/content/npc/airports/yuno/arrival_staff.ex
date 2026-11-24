@@ -30,7 +30,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Yuno.ArrivalStaff do
         sprite: 90,
         name: "Arrival Staff",
         scope: :shared,
-        unique_name: "y_airport2"
+        unique_name: "y_airport2",
+        hidden_name: "y_air2a"
       },
       %{
         map: "y_airport",

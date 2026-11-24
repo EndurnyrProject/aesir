@@ -37,7 +37,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Partyrelay.Bafhail do
         sprite: 731,
         name: "Bafhail",
         scope: :shared,
-        unique_name: "RelayBafhail"
+        unique_name: "RelayBafhail",
+        hidden_name: "payon"
       },
       %{
         map: "comodo",

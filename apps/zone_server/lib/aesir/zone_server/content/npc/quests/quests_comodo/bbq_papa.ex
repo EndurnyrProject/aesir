@@ -29,7 +29,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsComodo.BbqPapa do
         sprite: 50,
         name: "BBQ Papa",
         scope: :shared,
-        unique_name: "CmdFamily"
+        unique_name: "CmdFamily",
+        hidden_name: "cmd"
       },
       %{
         map: "comodo",

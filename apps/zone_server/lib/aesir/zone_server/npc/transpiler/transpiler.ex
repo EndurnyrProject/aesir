@@ -661,6 +661,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
             scope: placement.scope
           }
           |> maybe_put(:unique_name, unique_name(placement.name))
+          |> maybe_put(:hidden_name, hidden_name(placement.name))
           |> maybe_put(:trigger, placement[:touch])
 
         {spawn, unresolved}
@@ -683,6 +684,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
       scope: entry.scope
     }
     |> maybe_put(:unique_name, unique_name(entry.name))
+    |> maybe_put(:hidden_name, hidden_name(entry.name))
   end
 
   # rAthena registers every floating script itself (`map_addiddb` in
@@ -699,6 +701,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
     unique = ModuleName.exname(name) || String.trim_leading(name, ":")
 
     if unique == ModuleName.display_name(name), do: nil, else: unique
+  end
+
+  # The `#` fragment of a `Display#fragment::exname` name. Without an exname the
+  # unique name is the whole name and already carries it, so nothing is emitted.
+  defp hidden_name(name) do
+    with [display_part, _exname] when display_part != "" <- String.split(name, "::", parts: 2),
+         [_visible, hidden] <- String.split(display_part, "#", parts: 2) do
+      hidden
+    else
+      _no_fragment -> nil
+    end
   end
 
   defp maybe_put(map, _key, nil), do: map

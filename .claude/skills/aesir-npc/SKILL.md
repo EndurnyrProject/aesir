@@ -33,12 +33,14 @@ A placement cannot activate an inactive body. `scope:` accepts only `:shared`, `
 
 - `spawn:` placements require `%{map, x, y, sprite}`; `dir` defaults to `0` and `name` to `""`.
   They also accept optional `unique_name` (rAthena exname, used for `donpcevent "Name::Label"`
-  resolution), `trigger: {xs, ys}` (OnTouch rect half-extents) and `state:` (`:disabled`,
+  resolution), `hidden_name` (the `#` fragment of a `Display#fragment::exname` name, which
+  `unique_name` cannot carry; derived from a `"<name>#<fragment>"` unique name otherwise),
+  `trigger: {xs, ys}` (OnTouch rect half-extents) and `state:` (`:disabled`,
   `:hidden` or `:cloaked`, the `script(<STATE>)` view state the NPC starts in; a duplicate
   inherits its source's).
 - A floating `-` script or `-` duplicate is a spawn entry without `map`:
-  `%{name: "Red Alarm On", unique_name: "Red Alarm On#1-2"}` (only `name`, `unique_name`, `scope`,
-  `state`).
+  `%{name: "Red Alarm On", unique_name: "Red Alarm On#1-2"}` (only `name`, `unique_name`,
+  `hidden_name`, `scope`, `state`).
   It gets a gid, a name and its events, timers and `OnInit` like rAthena's `map_addiddb`, but no
   cell, view or touch area. Every floating body carries its own entry first; never `spawn: []`.
 - Callbacks: `on_talk/1` (required), `on_init/1` and `on_event/2` (optional). `events/0` is

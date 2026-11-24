@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Novice.Sprakki0 d
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
-      %{name: "Sprakki", unique_name: "NvSprakkiB"},
+      %{name: "Sprakki", unique_name: "NvSprakkiB", hidden_name: "newbe05"},
       %{
         map: "new_1-2",
         x: 100,

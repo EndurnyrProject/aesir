@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesLighthalzen.LighthalzenGu
         sprite: 852,
         name: "Lighthalzen Guide",
         scope: :renewal,
-        unique_name: "GuideLighthalzen"
+        unique_name: "GuideLighthalzen",
+        hidden_name: "lhz01"
       },
       %{
         map: "lighthalzen",

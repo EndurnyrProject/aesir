@@ -30,7 +30,8 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesLouyang.Soldier do
         sprite: 825,
         name: "Soldier",
         scope: :pre_renewal,
-        unique_name: "LouGuide"
+        unique_name: "LouGuide",
+        hidden_name: "BA"
       },
       %{
         map: "louyang",

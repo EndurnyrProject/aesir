@@ -30,7 +30,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Einbroch.ArrivalStaff do
         sprite: 90,
         name: "Arrival Staff",
         scope: :shared,
-        unique_name: "airport2"
+        unique_name: "airport2",
+        hidden_name: "airport2a"
       },
       %{
         map: "airport",

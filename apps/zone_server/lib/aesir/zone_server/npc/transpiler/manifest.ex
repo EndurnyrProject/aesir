@@ -133,6 +133,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Manifest do
         name: spawn["name"]
       }
       |> put_present(:unique_name, spawn["unique_name"])
+      |> put_present(:hidden_name, spawn["hidden_name"])
       |> put_present(:trigger, decode_trigger(spawn["trigger"]))
       |> put_present(:state, decode_state(spawn["state"]))
       |> Map.put(:scope, decode_spawn_scope(spawn, body_scope))

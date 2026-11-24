@@ -949,9 +949,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   `2` the hidden fragment, `3` the unique name, `4` the map name (empty for a
   floating NPC); the file
   path (`5`) is not modelled and returns an empty string. The hidden fragment
-  exists only when the placement's `unique_name` is the rAthena full-name form
-  `<visible>#<hidden>` (what the transpiler emits for duplicates); otherwise
-  `0` falls back to the visible name and `2` is empty. A pure read that does
+  is the placement's `hidden_name`; without one `0` is the visible name and
+  `2` is empty. A pure read that does
   not raise on a detached ctx; an absent or unresolvable `npc_gid` returns an
   empty string, matching rAthena's "no NPC" result.
   """
@@ -965,23 +964,11 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
     end
   end
 
-  defp npc_info(%{name: name} = placement, 0) do
-    case npc_hidden_fragment(placement) do
-      "" -> name
-      hidden -> name <> "#" <> hidden
-    end
-  end
-
+  defp npc_info(%{name: name, hidden_name: nil}, 0), do: name
+  defp npc_info(%{name: name, hidden_name: hidden}, 0), do: name <> "#" <> hidden
   defp npc_info(%{name: name}, 1), do: name
-  defp npc_info(%{} = placement, 2), do: npc_hidden_fragment(placement)
+  defp npc_info(%{hidden_name: hidden}, 2), do: hidden || ""
   defp npc_info(%{unique_name: unique_name}, 3), do: unique_name
   defp npc_info(%{map: map}, 4), do: map || ""
   defp npc_info(_placement, _type), do: ""
-
-  defp npc_hidden_fragment(%{name: name, unique_name: unique_name}) do
-    case String.split(unique_name, "#", parts: 2) do
-      [^name, hidden] -> hidden
-      _other -> ""
-    end
-  end
 end

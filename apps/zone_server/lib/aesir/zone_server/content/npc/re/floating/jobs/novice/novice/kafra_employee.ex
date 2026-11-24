@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Novice.KafraEmplo
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
-      %{name: "Kafra Employee", unique_name: "NvKafra"},
+      %{name: "Kafra Employee", unique_name: "NvKafra", hidden_name: "newbe07"},
       %{
         map: "new_1-2",
         x: 30,

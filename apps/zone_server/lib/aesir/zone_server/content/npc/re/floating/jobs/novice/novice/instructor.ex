@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Novice.Instructor
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
-      %{name: "Instructor", unique_name: "NvEdwin"},
+      %{name: "Instructor", unique_name: "NvEdwin", hidden_name: "Edwin"},
       %{
         map: "new_1-2",
         x: 161,

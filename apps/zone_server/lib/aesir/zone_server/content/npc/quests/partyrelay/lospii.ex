@@ -36,7 +36,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Partyrelay.Lospii do
         sprite: 706,
         name: "Lospii",
         scope: :shared,
-        unique_name: "RelayLospii"
+        unique_name: "RelayLospii",
+        hidden_name: "payon"
       },
       %{
         map: "comodo",

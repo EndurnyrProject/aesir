@@ -38,7 +38,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Kafras.Kafras.KafraEmployee do
         sprite: 860,
         name: "Kafra Employee",
         scope: :shared,
-        unique_name: "kaf_einbech"
+        unique_name: "kaf_einbech",
+        hidden_name: "ein3"
       }
     ]
 

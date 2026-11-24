@@ -40,7 +40,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.TrainStationStaff do
         sprite: 852,
         name: "Train Station Staff",
         scope: :shared,
-        unique_name: "EinbrochTrain"
+        unique_name: "EinbrochTrain",
+        hidden_name: "ein1"
       },
       %{
         map: "einbroch",

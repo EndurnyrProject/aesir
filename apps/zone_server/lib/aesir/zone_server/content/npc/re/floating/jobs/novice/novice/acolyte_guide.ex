@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Novice.AcolyteGui
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
-      %{name: "Acolyte Guide", unique_name: "NvAcolyte"},
+      %{name: "Acolyte Guide", unique_name: "NvAcolyte", hidden_name: "newbe10"},
       %{
         map: "new_1-3",
         x: 101,

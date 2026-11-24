@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesVeins.VeinsGuide do
         sprite: 934,
         name: "Veins Guide",
         scope: :renewal,
-        unique_name: "GuideVeins"
+        unique_name: "GuideVeins",
+        hidden_name: "veins01"
       },
       %{
         map: "veins",
