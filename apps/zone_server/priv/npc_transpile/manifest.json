@@ -44373,6 +44373,796 @@
       }
     ]
   },
+  "quests/quests_brasilis.txt|floating|Puppy#bra|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsBrasilis.Puppy",
+    "output_hash": "0fa85e3e8c40204d5ea6eaf3bd3b6a6ffc31888324d44783e28919a85163f207",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_brasilis/puppy.ex",
+    "source_hash": "b41133db2575e57774f97827f98cbcfb563fa6c6d64285e67dab95935c46624e",
+    "spawns": [
+      {
+        "name": "Puppy",
+        "scope": "shared",
+        "x": 98,
+        "y": 96,
+        "map": "bra_fild01",
+        "dir": 3,
+        "unique_name": "Puppy#a1",
+        "sprite": 81
+      },
+      {
+        "name": "Puppy",
+        "scope": "shared",
+        "x": 59,
+        "y": 116,
+        "map": "bra_fild01",
+        "dir": 5,
+        "unique_name": "Puppy#a2",
+        "sprite": 81
+      },
+      {
+        "name": "Puppy",
+        "scope": "shared",
+        "x": 62,
+        "y": 142,
+        "map": "bra_fild01",
+        "dir": 3,
+        "unique_name": "Puppy#a3",
+        "sprite": 81
+      },
+      {
+        "name": "Puppy",
+        "scope": "shared",
+        "x": 80,
+        "y": 163,
+        "map": "bra_fild01",
+        "dir": 3,
+        "unique_name": "Puppy#b1",
+        "sprite": 81
+      },
+      {
+        "name": "Puppy",
+        "scope": "shared",
+        "x": 73,
+        "y": 210,
+        "map": "bra_fild01",
+        "dir": 3,
+        "unique_name": "Puppy#b2",
+        "sprite": 81
+      },
+      {
+        "name": "Puppy",
+        "scope": "shared",
+        "x": 80,
+        "y": 210,
+        "map": "bra_fild01",
+        "dir": 3,
+        "unique_name": "Puppy#b3",
+        "sprite": 81
+      },
+      {
+        "name": "Puppy",
+        "scope": "shared",
+        "x": 38,
+        "y": 235,
+        "map": "bra_fild01",
+        "dir": 3,
+        "unique_name": "Puppy#c1",
+        "sprite": 81
+      },
+      {
+        "name": "Puppy",
+        "scope": "shared",
+        "x": 307,
+        "y": 64,
+        "map": "bra_fild01",
+        "dir": 3,
+        "unique_name": "Puppy#c2",
+        "sprite": 81
+      },
+      {
+        "name": "Puppy",
+        "scope": "shared",
+        "x": 260,
+        "y": 60,
+        "map": "bra_fild01",
+        "dir": 3,
+        "unique_name": "Puppy#c3",
+        "sprite": 81
+      },
+      {
+        "name": "Puppy",
+        "scope": "shared",
+        "x": 234,
+        "y": 101,
+        "map": "bra_fild01",
+        "dir": 3,
+        "unique_name": "Puppy#d1",
+        "sprite": 81
+      },
+      {
+        "name": "Puppy",
+        "scope": "shared",
+        "x": 200,
+        "y": 84,
+        "map": "bra_fild01",
+        "dir": 3,
+        "unique_name": "Puppy#d2",
+        "sprite": 81
+      },
+      {
+        "name": "Puppy",
+        "scope": "shared",
+        "x": 176,
+        "y": 63,
+        "map": "bra_fild01",
+        "dir": 5,
+        "unique_name": "Puppy#d3",
+        "sprite": 81
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|#Monkeybra|bra_fild01:245:53": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Monkeybra",
+    "output_hash": "3edbf9d287376b8c35d69b7b9e3e77a067a3ba298dd2757475e3488c86aa37d1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/monkeybra.ex",
+    "source_hash": "3a814da532b257798b7977d72dbf9548c4d60d95beb41f80129d49a1ceafc3db",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 245,
+        "y": 53,
+        "map": "bra_fild01",
+        "dir": 3,
+        "unique_name": "#Monkeybra",
+        "sprite": 1057
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Angelo#br|brasilis:297:307": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Angelo",
+    "output_hash": "26cb8953b8cef39c5f53334e7009ba0cb13675d97a1edfe9a591ccd6e507e39e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/angelo.ex",
+    "source_hash": "a410d516b66481e1464ced2e54693925046bc16f1f3bca625aa861e2aece64e7",
+    "spawns": [
+      {
+        "name": "Angelo",
+        "scope": "shared",
+        "x": 297,
+        "y": 307,
+        "map": "brasilis",
+        "dir": 5,
+        "unique_name": "Angelo#br",
+        "sprite": 50
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Botanist Karmen#bra|brasilis:203:286": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.BotanistKarmen",
+    "output_hash": "4afcd1de5f046af2d05a9584312b94c591a202c1fb24109350b2a45b4dea6aef",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/botanist_karmen.ex",
+    "source_hash": "744dc754c48d363ef0a5cad6ffe842c59206d9753ee880e0ebbb6e878004f3d0",
+    "spawns": [
+      {
+        "name": "Botanist Karmen",
+        "scope": "shared",
+        "x": 203,
+        "y": 286,
+        "map": "brasilis",
+        "dir": 3,
+        "unique_name": "Botanist Karmen#bra",
+        "sprite": 893
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Brasilis Girl#bra|brasilis:270:145": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.BrasilisGirl",
+    "output_hash": "6ea331c8e1f80333f15c6a52979ab86c1955e3a865455f86c8b84ce903ac3503",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/brasilis_girl.ex",
+    "source_hash": "42c99ed046142400c788166b14060706851156a531650fb1e46a4183f27ddbe7",
+    "spawns": [
+      {
+        "name": "Brasilis Girl",
+        "scope": "shared",
+        "x": 270,
+        "y": 145,
+        "map": "brasilis",
+        "dir": 5,
+        "unique_name": "Brasilis Girl#bra",
+        "sprite": 473,
+        "trigger": [
+          5,
+          5
+        ]
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Candy Maker|brasilis:187:162": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.CandyMaker",
+    "output_hash": "83017337ef295c7e63fc0626ac31e3a5b9bcbd31344faabd54a6525154385f3a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/candy_maker.ex",
+    "source_hash": "943f389d3a6ec386990ecb62c8135d9410d65cb837298eb10fb9494cb22a3284",
+    "spawns": [
+      {
+        "name": "Candy Maker",
+        "scope": "shared",
+        "x": 187,
+        "y": 162,
+        "map": "brasilis",
+        "dir": 5,
+        "sprite": 476
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Carpet#bra|bra_in01:138:184": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Carpet",
+    "output_hash": "36a0fb5d84f4ec4473698851192e16a2bea26a215bceb906301e55b9636f728b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/carpet.ex",
+    "source_hash": "fe0a7b08abe19c13d9d43500028c17e379572ff7bf6c7d92a17a12181baf8123",
+    "spawns": [
+      {
+        "name": "Carpet",
+        "scope": "shared",
+        "x": 138,
+        "y": 184,
+        "map": "bra_in01",
+        "dir": 3,
+        "unique_name": "Carpet#bra",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Cherto|bra_in01:95:179": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Cherto",
+    "output_hash": "ef04937b1a16dcba7c886ccf96a26442145bec871548652991d1191b196f4f6b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/cherto.ex",
+    "source_hash": "de16ecf4ce0fd67af756c993a063879bf7f667a4f425e263a6354269dc5ae1a9",
+    "spawns": [
+      {
+        "name": "Cherto",
+        "scope": "shared",
+        "x": 95,
+        "y": 179,
+        "map": "bra_in01",
+        "dir": 3,
+        "sprite": 477
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Curator#bra|bra_in01:7:181": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Curator",
+    "output_hash": "01b50b6c28d3951d211c962ab07f07338d35a6063f56031e30ade9bae5b808a4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/curator.ex",
+    "source_hash": "517536dfa9dc89ca123a9d13a9100103ad8df3c5f7e976c0bf1c999868d9189e",
+    "spawns": [
+      {
+        "name": "Curator",
+        "scope": "shared",
+        "x": 7,
+        "y": 181,
+        "map": "bra_in01",
+        "dir": 5,
+        "unique_name": "Curator#bra",
+        "sprite": 477
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Daniel#bra|brasilis:180:249": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Daniel",
+    "output_hash": "6630c2b435df761caeefcb15b3a90ca37f9c33532adfd831d87dd8b36de7b55b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/daniel.ex",
+    "source_hash": "45964222f81fa543d7e82aa627d6c9cd5cfb24dc7a9d88e332d9e0594115f07f",
+    "spawns": [
+      {
+        "name": "Daniel",
+        "scope": "shared",
+        "x": 180,
+        "y": 249,
+        "map": "brasilis",
+        "dir": 5,
+        "unique_name": "Daniel#bra",
+        "sprite": 706
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Door#bra|bra_in01:149:184": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Door",
+    "output_hash": "2b20e30ee0b0692163f59b46d0052202a8ada515241a79f9330771030eccef6a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/door.ex",
+    "source_hash": "bf5b86d89cb7efc9f80c75636a5bb71e4c38990836e41fd8167992794751b78f",
+    "spawns": [
+      {
+        "name": "Door",
+        "scope": "shared",
+        "x": 149,
+        "y": 184,
+        "map": "bra_in01",
+        "dir": 3,
+        "unique_name": "Door#bra",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Fabio#bra|brasilis:181:250": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Fabio",
+    "output_hash": "fd01f854d0f3ab38b4f572594ee8f60326706d50d0858bff5f2d415aaba37901",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/fabio.ex",
+    "source_hash": "dddec9cd9b9644ab642b571c7cb3b0a6dafbfa8b2eb197b4c764deb963e75baf",
+    "spawns": [
+      {
+        "name": "Fabio",
+        "scope": "shared",
+        "x": 181,
+        "y": 250,
+        "map": "brasilis",
+        "dir": 5,
+        "unique_name": "Fabio#bra",
+        "sprite": 706
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Faucet#bra|bra_in01:134:189": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Faucet",
+    "output_hash": "d69e35549c84795dffa158386d184beaacb9741acbb6f09c9f6457edc902c736",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/faucet.ex",
+    "source_hash": "e660724c7f412d5a12c9fd599715342e1f3efbff9bb19e9debc4059a4eb0aa3e",
+    "spawns": [
+      {
+        "name": "Faucet",
+        "scope": "shared",
+        "x": 134,
+        "y": 189,
+        "map": "bra_in01",
+        "dir": 3,
+        "unique_name": "Faucet#bra",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Ghost#bra_end|bra_in01:206:190": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Ghost206190",
+    "output_hash": "af89b61f0ae250bf1b32d970cc26cfa93cf3ddb7f7a4f0914a16229091bdc0e4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/ghost_206_190.ex",
+    "source_hash": "bdfaca9ff322c65df6032a74ac735dbc13aa11ff0403e867fb0a75f75658b836",
+    "spawns": [
+      {
+        "name": "Ghost",
+        "scope": "shared",
+        "x": 206,
+        "y": 190,
+        "map": "bra_in01",
+        "dir": 3,
+        "unique_name": "Ghost#bra_end",
+        "sprite": 1867
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Ghost#bra|bra_in01:136:180": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Ghost",
+    "output_hash": "2daa566b7e42785d16c4b3a8920386774da40d34c345dfb492d0e8cb48e3444c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/ghost.ex",
+    "source_hash": "a46222c829cfe3e6c081f060a9a6732198a6001694057459c3b901139817bbe9",
+    "spawns": [
+      {
+        "name": "Ghost",
+        "scope": "shared",
+        "x": 136,
+        "y": 180,
+        "map": "bra_in01",
+        "dir": 5,
+        "unique_name": "Ghost#bra",
+        "sprite": 1867
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Iara#nk|bra_dun02:157:74": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Iara",
+    "output_hash": "ad67e39e1be80260f6d90bcd879a57b6fdec94f361834d307019b40ad36b9c4b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/iara.ex",
+    "source_hash": "80da4ea6a06ccec4f624261cac2b7a3f57676979ecc72d1e27cd8fb485f39272",
+    "spawns": [
+      {
+        "name": "Iara",
+        "scope": "shared",
+        "x": 157,
+        "y": 74,
+        "map": "bra_dun02",
+        "dir": 5,
+        "unique_name": "Iara#nk",
+        "sprite": 478,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Jaguar#bra|bra_fild01:34:184": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Jaguar",
+    "output_hash": "e56f22e14b042536ee41a9f9713922c798b1e40abd4461a5a8569267e7886207",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/jaguar.ex",
+    "source_hash": "8265668b988b13d2aecd571ab050ad9a0eb1534fd036ce3316feab996a34a70c",
+    "spawns": [
+      {
+        "name": "Jaguar",
+        "scope": "shared",
+        "x": 34,
+        "y": 184,
+        "map": "bra_fild01",
+        "dir": 5,
+        "unique_name": "Jaguar#bra",
+        "sprite": 2072,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Lucia#brasilis|brasilis:192:133": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Lucia",
+    "output_hash": "7fa423aae639cd583c5e49f82cd90d0c0ddd1c69ad1a7e904a54e282f85734d7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/lucia.ex",
+    "source_hash": "5096c3bbea3fc8d7a1531caecdccb98289fc7912340fb2fbac6227fa817d1542",
+    "spawns": [
+      {
+        "name": "Lucia",
+        "scope": "shared",
+        "x": 192,
+        "y": 133,
+        "map": "brasilis",
+        "dir": 6,
+        "unique_name": "Lucia#brasilis",
+        "sprite": 478
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Mage Paje#bra|brasilis:56:224": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.MagePaje",
+    "output_hash": "5cfcd2d2feef37ecd26aa134101b5a6efeca691d3b5648730bd3607d6320faa6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/mage_paje.ex",
+    "source_hash": "47f7368f2da935745da0728f95223cde1ba3bbdcdc882943542e005224cd7823",
+    "spawns": [
+      {
+        "name": "Mage Paje",
+        "scope": "shared",
+        "x": 56,
+        "y": 224,
+        "map": "brasilis",
+        "dir": 7,
+        "unique_name": "Mage Paje#bra",
+        "sprite": 704
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Mariana#bra|brasilis:187:244": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Mariana",
+    "output_hash": "24c021d968e69eb202a321d2bf366e06c3e16bbeb416d38225bf4f85b63c5db1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/mariana.ex",
+    "source_hash": "9bdc68d68e14061585aa56fdc8c93cfe73e275ff0862675d7a9575731cbd1892",
+    "spawns": [
+      {
+        "name": "Mariana",
+        "scope": "shared",
+        "x": 187,
+        "y": 244,
+        "map": "brasilis",
+        "dir": 1,
+        "unique_name": "Mariana#bra",
+        "sprite": 72
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Marta#bra|bra_in01:142:27": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Marta",
+    "output_hash": "b050ed9407c373138b42c1ff0474ab6ae3fa2d247a87887b82f8c138e7ab2ce2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/marta.ex",
+    "source_hash": "aed2e8010d2fd80b74c8be2e9351f7b77088b447be7930280700379f651e5054",
+    "spawns": [
+      {
+        "name": "Marta",
+        "scope": "shared",
+        "x": 142,
+        "y": 27,
+        "map": "bra_in01",
+        "dir": 5,
+        "unique_name": "Marta#bra",
+        "sprite": 474
+      },
+      {
+        "name": "Brasilis Boy",
+        "scope": "shared",
+        "x": 145,
+        "y": 27,
+        "map": "bra_in01",
+        "dir": 3,
+        "unique_name": "Brasilis Boy#bra",
+        "sprite": 472
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Mirror#bra|bra_in01:151:180": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Mirror",
+    "output_hash": "8e3f9e14b36900d336759e0be3d671dba2cf20ff33a32d2956f79939242527c1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/mirror.ex",
+    "source_hash": "394a42ecdb175cbede895a3532136881524d06162cdd9b74f8a2f7fdb417d328",
+    "spawns": [
+      {
+        "name": "Mirror",
+        "scope": "shared",
+        "x": 151,
+        "y": 180,
+        "map": "bra_in01",
+        "dir": 3,
+        "unique_name": "Mirror#bra",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Monkey#bra|bra_fild01:245:52": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Monkey",
+    "output_hash": "f76b5e5f99742079af0403915362afce6b988634b37b7edb514a42ba841e5dbb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/monkey.ex",
+    "source_hash": "3ae74fbf4358a3acf71a98ed0cd138b40b16a6e70f5b7d7a7340b3fba8f9a5d5",
+    "spawns": [
+      {
+        "name": "Monkey",
+        "scope": "shared",
+        "x": 245,
+        "y": 52,
+        "map": "bra_fild01",
+        "dir": 3,
+        "unique_name": "Monkey#bra",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Native Warrior#nk|bra_fild01:188:301": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.NativeWarrior",
+    "output_hash": "44a2679efa2e9727b8acd5e6a120165679642f0d1b1fb2aa524f84095acd8068",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/native_warrior.ex",
+    "source_hash": "32f06c98ce59e9139bc9b11daf62e9028dd468c5a5eeef2aa8fdcad2eb4358e7",
+    "spawns": [
+      {
+        "name": "Native Warrior",
+        "scope": "shared",
+        "x": 188,
+        "y": 301,
+        "map": "bra_fild01",
+        "dir": 5,
+        "unique_name": "Native Warrior#nk",
+        "sprite": 472
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Open Manhole#todunbra|bra_in01:206:188": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.OpenManhole",
+    "output_hash": "7fc9eba2f75004f908a954d65bd7e3decbad1b4d0d04033b3cce516dbeb83356",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/open_manhole.ex",
+    "source_hash": "9f7a68ca64eecbb0287d54c85cca43598673bcbfec104e0ce7b90071a72bd297",
+    "spawns": [
+      {
+        "name": "Open Manhole",
+        "scope": "shared",
+        "x": 206,
+        "y": 188,
+        "map": "bra_in01",
+        "dir": 1,
+        "unique_name": "Open Manhole#todunbra",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Pedro#bra|brasilis:185:246": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Pedro",
+    "output_hash": "eae78c65cebbf01f777a57279f020a3f442179dabef2d1ee2801ce33dd419a0c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/pedro.ex",
+    "source_hash": "d5888d8ddeae1ef7900c1e43ca26fc4f555d99553fc7df52926bd65010b1313f",
+    "spawns": [
+      {
+        "name": "Pedro",
+        "scope": "shared",
+        "x": 185,
+        "y": 246,
+        "map": "brasilis",
+        "dir": 5,
+        "unique_name": "Pedro#bra",
+        "sprite": 62
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Pipe#brafild|bra_fild01:323:136": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Pipe323136",
+    "output_hash": "6ca573a9c5a55ec8fcf06d3b0d9385a8bb1e85aaac3304e5962aeb4d78f8003d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/pipe_323_136.ex",
+    "source_hash": "a5a89f3bd80887cbc1e23cdaa4af1240738e68097b2d88be5daa4c28b09484b8",
+    "spawns": [
+      {
+        "name": "Pipe",
+        "scope": "shared",
+        "x": 323,
+        "y": 136,
+        "map": "bra_fild01",
+        "dir": 1,
+        "unique_name": "Pipe#brafild",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Pipe#bra|bra_dun01:87:43": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Pipe",
+    "output_hash": "d12d368325b834e3d5f11d26f2e16150d7644d09f898606ab48c55ad8edeb8d8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/pipe.ex",
+    "source_hash": "939da81fd3522c9b171a6b59f2d8d4843ce458bba192a1044f11e0752c55b844",
+    "spawns": [
+      {
+        "name": "Pipe",
+        "scope": "shared",
+        "x": 87,
+        "y": 43,
+        "map": "bra_dun01",
+        "dir": 1,
+        "unique_name": "Pipe#bra",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Poring#bra|brasilis:59:226": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Poring",
+    "output_hash": "62562fe8159680aac4f69b2721aa8b96b6f3f98f290a798bf2cd1089632cb4a2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/poring.ex",
+    "source_hash": "6313749c8586ecf4b017ef8bdfd02a484c7b3eb7d7da38eebe5e96a181e7c382",
+    "spawns": [
+      {
+        "name": "Poring",
+        "scope": "shared",
+        "x": 59,
+        "y": 226,
+        "map": "brasilis",
+        "dir": 3,
+        "unique_name": "Poring#bra",
+        "sprite": 909
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Recluse#bra|bra_dun02:67:205": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Recluse",
+    "output_hash": "9c42970ff9d66e380882840052c594441b695f0ea1ed286666cb511409c19e46",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/recluse.ex",
+    "source_hash": "575e9aa1155c272c79c7204f6abf7add3c334bbe96dd10e3ccf7c1562c2790b2",
+    "spawns": [
+      {
+        "name": "Recluse",
+        "scope": "shared",
+        "x": 67,
+        "y": 205,
+        "map": "bra_dun02",
+        "dir": 5,
+        "unique_name": "Recluse#bra",
+        "sprite": 475,
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Shaman#nk|brasilis:315:334": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Shaman",
+    "output_hash": "d18ccd864d4e1966f0c5d7cc11e1c425b8b45cf450811052df76b02a1fe51c61",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/shaman.ex",
+    "source_hash": "b22050a7ddf7641a98203f6e8d135043dd525e9f39d85522e4d4a2a6f805d7c7",
+    "spawns": [
+      {
+        "name": "Shaman",
+        "scope": "shared",
+        "x": 315,
+        "y": 334,
+        "map": "brasilis",
+        "dir": 5,
+        "unique_name": "Shaman#nk",
+        "sprite": 474
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Strange Kid#bra|brasilis:203:64": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.StrangeKid",
+    "output_hash": "d56a00ba55685d28ed345e9dd27124ddaf4366375692d82e687481565a23be83",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/strange_kid.ex",
+    "source_hash": "07222c4726174d1df005d4943ed5f1e045dd1b5f08072af028c14d36990d54ff",
+    "spawns": [
+      {
+        "name": "Strange Kid",
+        "scope": "shared",
+        "x": 203,
+        "y": 64,
+        "map": "brasilis",
+        "dir": 3,
+        "unique_name": "Strange Kid#bra",
+        "sprite": 706
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Toilet#bra|bra_in01:144:187": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Toilet",
+    "output_hash": "57345017b95ad0c209604b12c02c73de5c54c7a717397763cd2853417d74a6fa",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/toilet.ex",
+    "source_hash": "6eb31da158ef6cc6603269e3c2b7edf5c07193372bb5d6e998f0fdf3a78c6ee4",
+    "spawns": [
+      {
+        "name": "Toilet",
+        "scope": "shared",
+        "x": 144,
+        "y": 187,
+        "map": "bra_in01",
+        "dir": 3,
+        "unique_name": "Toilet#bra",
+        "sprite": 844
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Toucan#bra|bra_fild01:75:83": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Toucan",
+    "output_hash": "4c628868ca625db4d0b03c70ed26f4673ae1bfb507bfb217513ce469832371ff",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/toucan.ex",
+    "source_hash": "f54c741584f14a4b2ca4f2b537c40c0912206019523eee36503353edbd8679d2",
+    "spawns": [
+      {
+        "name": "Toucan",
+        "scope": "shared",
+        "x": 75,
+        "y": 83,
+        "map": "bra_fild01",
+        "dir": 5,
+        "unique_name": "Toucan#bra",
+        "sprite": 2073,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|Water lily#bra|bra_dun02:71:200": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.WaterLily",
+    "output_hash": "1b6bd1707860c7ff4f8181288cf9ca07ce2fcdc574ce8a43e9fd87c4a8c1b3e5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/water_lily.ex",
+    "source_hash": "aa34aa5218ffa5846412c952e86026c72b43d36832740c8d4cbc51daeec86a3b",
+    "spawns": [
+      {
+        "name": "Water lily",
+        "scope": "shared",
+        "x": 71,
+        "y": 200,
+        "map": "bra_dun02",
+        "dir": 3,
+        "unique_name": "Water lily#bra",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_brasilis.txt|script|inbathroom#bra|bra_in01:12:185": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsBrasilis.Inbathroom",
+    "output_hash": "a1d2fe0cc73265ebd048b6463193a441b03958bb385211cec01bb74574f59dd0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_brasilis/inbathroom.ex",
+    "source_hash": "ad0d20da65a2a9a29fd14e91715ce94c56f4c4cd106a16e79cb3b8dc8a3bd3df",
+    "spawns": [
+      {
+        "name": "inbathroom",
+        "scope": "shared",
+        "x": 12,
+        "y": 185,
+        "map": "bra_in01",
+        "dir": 0,
+        "unique_name": "inbathroom#bra",
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
