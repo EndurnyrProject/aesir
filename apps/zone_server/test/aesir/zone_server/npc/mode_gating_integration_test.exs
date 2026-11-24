@@ -12,6 +12,8 @@ defmodule Aesir.ZoneServer.Npc.ModeGatingIntegrationTest do
   @shared_label "OnZzzTask8SharedGate"
   @renewal_label "OnZzzTask8RenewalGate"
   @pre_renewal_label "OnZzzTask8PreRenewalGate"
+  # The floating shared body itself (rAthena registers every `-` script).
+  @floating_x 0
 
   @shared_module Aesir.ZoneServer.Content.Npc.Floating.ZzzTask8ModeGating.Shared.Zzztask8modegatingsharedbody
   @renewal_module Aesir.ZoneServer.Content.Npc.Re.ZzzTask8ModeGating.RenewalOnly.RenewalOnly
@@ -97,6 +99,7 @@ defmodule Aesir.ZoneServer.Npc.ModeGatingIntegrationTest do
         end)
 
       assert placement_scopes(all_entries) == %{
+               0 => :shared,
                10 => :shared,
                20 => :renewal,
                21 => :renewal,
@@ -141,7 +144,12 @@ defmodule Aesir.ZoneServer.Npc.ModeGatingIntegrationTest do
   defp assert_mode(modules, all_entries, expected) do
     Registry.reload(modules, expected.mode)
 
-    assert entry_xs(Registry.entries()) == expected.active_xs
+    assert entry_xs(Registry.entries()) == [@floating_x | expected.active_xs]
+
+    {module, floating} = entry_at(all_entries, @floating_x)
+    assert floating.map == nil
+    assert {:ok, {^module, ^floating}} = Registry.module_for_unit(Registry.entity_id(floating))
+    assert :error = Registry.module_at(@map, @floating_x, @floating_x)
 
     Enum.each(expected.active_xs, fn x ->
       {module, placement} = entry_at(all_entries, x)
@@ -170,8 +178,8 @@ defmodule Aesir.ZoneServer.Npc.ModeGatingIntegrationTest do
     assert Enum.sort(Registry.labels()) ==
              Enum.sort(["OnInit", @shared_label, expected.active_exclusive_label])
 
-    assert label_xs("OnInit") == expected.active_xs
-    assert label_xs(@shared_label) == expected.fanout_xs
+    assert label_xs("OnInit") == [@floating_x | expected.active_xs]
+    assert label_xs(@shared_label) == [@floating_x | expected.fanout_xs]
     assert label_xs(expected.active_exclusive_label) == [List.last(expected.active_xs)]
     assert Registry.entries_for_label(expected.inactive_exclusive_label) == []
     assert Registry.gids_for_label(expected.inactive_exclusive_label) == []

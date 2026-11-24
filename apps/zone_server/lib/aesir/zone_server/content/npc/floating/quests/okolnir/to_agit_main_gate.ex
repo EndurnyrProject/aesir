@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.ToAgitMainGate do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "#to_agit_main_gate"},
       %{
         map: "que_qaru01",
         x: 252,

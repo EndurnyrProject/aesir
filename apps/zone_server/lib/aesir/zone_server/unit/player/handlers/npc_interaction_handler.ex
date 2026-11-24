@@ -63,7 +63,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   Resolves `gid` to its bespoke NPC module and starts a supervised, monitored
   interaction process, storing the lock. A gid that resolves to no NPC
   module, one that is currently hidden (which `disablenpc` also sets) or
-  client-invisible, or a player already held by a script is a no-op. As in
+  client-invisible, a floating NPC (on no map, which rAthena's `npc_checknear`
+  rejects), or a player already held by a script is a no-op. As in
   rAthena's `npc_click` (`class_ < 0 || option&OPTION_HIDE`), a cloaked NPC
   can still be talked to.
 
@@ -75,7 +76,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   @spec talk_to_npc(non_neg_integer(), map(), SessionState.t()) :: {:noreply, SessionState.t()}
   def talk_to_npc(gid, game_state, state) do
     with false <- SessionState.in_script?(state),
-         {:ok, {module, placement}} <- NpcRegistry.module_for_unit(gid),
+         {:ok, {module, %{map: map} = placement}} when map != nil <-
+           NpcRegistry.module_for_unit(gid),
          false <- NpcSession.hidden?(gid),
          true <- NpcPackets.visible?({module, placement}) do
       base_ctx =

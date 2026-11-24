@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Novice.Brade do
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
+      %{name: "Brade", unique_name: "NvBradeA"},
       %{
         map: "new_1-2",
         x: 100,

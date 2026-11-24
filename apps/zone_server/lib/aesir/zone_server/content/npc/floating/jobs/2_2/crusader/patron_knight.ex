@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M22.Crusader.PatronKnight d
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Patron Knight_"},
       %{
         map: "prt_cas",
         x: 261,

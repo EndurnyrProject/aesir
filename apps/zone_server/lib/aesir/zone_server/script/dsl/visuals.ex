@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
   alias Aesir.Net.SoundEffect
   alias Aesir.Net.Viewpoint
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.QuestInfo, as: NpcQuestInfo
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Script.Ctx
@@ -213,7 +214,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
   player's state (a bubble with no condition always shows). Multiple calls on
   one NPC accumulate in declaration order; the first passing entry wins.
 
-  A no-op on a halted ctx or one with no NPC (`npc_gid` nil).
+  A no-op on a halted ctx or one with no NPC (`npc_gid` nil). On a floating NPC
+  (on no map) the command fails and the script goes on, as the reference's
+  `nd->m == -1` check.
   """
   @spec questinfo(
           Ctx.t(),
@@ -227,6 +230,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
 
   def questinfo(%Ctx{npc_gid: gid} = ctx, icon, color, condition) do
     case NpcRegistry.module_for_unit(gid) do
+      {:ok, {_module, %Placement{map: nil}}} ->
+        Ctx.fail(ctx, :questinfo, :floating_npc)
+
       {:ok, {_module, placement}} ->
         NpcQuestInfo.register(
           gid,
@@ -238,11 +244,11 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
           condition
         )
 
-      :error ->
-        :ok
-    end
+        ctx
 
-    ctx
+      :error ->
+        ctx
+    end
   end
 
   @doc """

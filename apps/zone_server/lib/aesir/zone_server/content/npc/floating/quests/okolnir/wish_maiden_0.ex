@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.WishMaiden0 do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Wish Maiden", unique_name: "Wish Maiden#main_boss"},
       %{
         map: "que_qaru01",
         x: 251,

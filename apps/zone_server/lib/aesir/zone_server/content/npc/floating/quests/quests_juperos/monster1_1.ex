@@ -25,7 +25,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.Monster11 d
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [%{name: "Monster1", unique_name: "Monster1#1-3"}]
 
   @guard_name "Security Guard"
   @guard_event "Monster1#1-3::OnMyMobDead"

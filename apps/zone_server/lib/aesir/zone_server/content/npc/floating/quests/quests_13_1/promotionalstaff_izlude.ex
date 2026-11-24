@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests131.Promotionalstaf
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "PromotionalStaff_izlude"},
       %{
         map: "izlude",
         x: 102,

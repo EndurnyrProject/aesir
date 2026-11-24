@@ -36,7 +36,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Kafras.Kafras.KafraEmployeeKafMjolnir02 d
         y: 362,
         dir: 4,
         sprite: 116,
-        name: "Kafra Employee::kaf_mjolnir_02",
+        name: "Kafra Employee",
         scope: :shared,
         unique_name: "kaf_mjolnir_02"
       }

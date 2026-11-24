@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.BloodyHunter do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Bloody Hunter", unique_name: "Bloody Hunter#main_all"},
       %{
         map: "que_qaru01",
         x: 266,

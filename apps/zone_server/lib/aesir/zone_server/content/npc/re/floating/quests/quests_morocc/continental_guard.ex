@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Quests.QuestsMorocc.Continent
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
+      %{name: "Continental Guard", unique_name: "Continental Guard#man"},
       %{
         map: "moc_fild07",
         x: 380,

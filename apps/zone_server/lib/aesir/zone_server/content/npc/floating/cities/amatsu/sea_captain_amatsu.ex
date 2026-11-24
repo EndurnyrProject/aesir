@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Amatsu.SeaCaptainAmatsu d
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "Sea_Captain_amatsu"},
       %{
         map: "alberta",
         x: 246,

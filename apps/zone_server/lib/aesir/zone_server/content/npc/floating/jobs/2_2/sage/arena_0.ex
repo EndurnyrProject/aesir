@@ -28,7 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M22.Sage.Arena0 do
   - LLM-assisted Elixir refactor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc, scope: :shared, spawn: [%{name: "Arena", unique_name: "Arena#2"}]
 
   @arena "job_sage"
   @on_mob_dead "Arena#2::OnMyMobDead"

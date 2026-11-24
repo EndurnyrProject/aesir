@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Izlude.RedIzlude do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "Red_izlude"},
       %{
         map: "izlude",
         x: 57,

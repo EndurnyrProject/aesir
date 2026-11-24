@@ -36,7 +36,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Kafras.Kafras.KafraEmployeeMocRuins do
         y: 157,
         dir: 5,
         sprite: 114,
-        name: "Kafra Employee::moc_ruins",
+        name: "Kafra Employee",
         scope: :shared,
         unique_name: "moc_ruins"
       }

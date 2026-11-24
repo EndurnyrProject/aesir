@@ -30,7 +30,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M21.Priest.ZombieGenerator 
   - LLM-assisted Elixir refactor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [%{name: "Zombie_Generator", unique_name: "Zombie_Generator#prst"}]
 
   @name "Zombie_Generator#prst"
   @room "job_prist"

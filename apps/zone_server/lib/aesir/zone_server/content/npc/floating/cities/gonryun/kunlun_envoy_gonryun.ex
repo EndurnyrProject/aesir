@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Gonryun.KunlunEnvoyGonryu
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "Kunlun_Envoy_gonryun"},
       %{
         map: "alberta",
         x: 246,

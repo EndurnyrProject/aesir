@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests132.DragonEgg do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Dragon Egg", unique_name: "Dragon Egg#ep13_degg_0"},
       %{
         map: "nyd_dun01",
         x: 258,

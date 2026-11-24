@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests131.RecruiterForThe
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Recruiter for the Brave_"},
       %{
         map: "prt_cas",
         x: 207,

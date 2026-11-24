@@ -10,13 +10,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Academy.Izludewag
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
+      %{name: "", unique_name: "izludeWagjak"},
       %{
         map: "izlude",
         x: 153,
         y: 121,
         dir: 3,
         sprite: 406,
-        name: "Refining Machine Wagjak::iz",
+        name: "Refining Machine Wagjak",
         scope: :renewal,
         unique_name: "iz"
       },
@@ -26,7 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Academy.Izludewag
         y: 121,
         dir: 3,
         sprite: 406,
-        name: "Refining Machine Wagjak::iz_a",
+        name: "Refining Machine Wagjak",
         scope: :renewal,
         unique_name: "iz_a"
       },
@@ -36,7 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Academy.Izludewag
         y: 121,
         dir: 3,
         sprite: 406,
-        name: "Refining Machine Wagjak::iz_b",
+        name: "Refining Machine Wagjak",
         scope: :renewal,
         unique_name: "iz_b"
       },
@@ -46,7 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Academy.Izludewag
         y: 121,
         dir: 3,
         sprite: 406,
-        name: "Refining Machine Wagjak::iz_c",
+        name: "Refining Machine Wagjak",
         scope: :renewal,
         unique_name: "iz_c"
       },
@@ -56,7 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Academy.Izludewag
         y: 121,
         dir: 3,
         sprite: 406,
-        name: "Refining Machine Wagjak::iz_d",
+        name: "Refining Machine Wagjak",
         scope: :renewal,
         unique_name: "iz_d"
       }

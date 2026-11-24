@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Novice.BulletinBo
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
+      %{name: "Bulletin Board", unique_name: "NvBulletin"},
       %{
         map: "new_1-1",
         x: 66,

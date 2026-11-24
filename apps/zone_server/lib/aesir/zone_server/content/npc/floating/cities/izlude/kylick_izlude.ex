@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Izlude.KylickIzlude do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "Kylick_izlude"},
       %{
         map: "izlude",
         x: 140,

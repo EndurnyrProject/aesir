@@ -57,6 +57,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ModuleNameTest do
     assert ModuleName.display_name("#Gate_manager_main") == ""
   end
 
+  test "display names drop the :: exname like rAthena's npc_parsename" do
+    assert ModuleName.display_name("Cool Event Corp. Staff::CoolEventCorpStaffVeins") ==
+             "Cool Event Corp. Staff"
+
+    assert ModuleName.display_name("Mysterious Rock#0::manukrock") == "Mysterious Rock"
+    assert ModuleName.display_name("::Kafra_Template") == ""
+  end
+
   test "shared output APIs and placed-script outputs remain unchanged" do
     entry = %{file: "cities/morocc.txt"}
 

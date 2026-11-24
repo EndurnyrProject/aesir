@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests132.Purifier do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Purifier"},
       %{
         map: "splendide",
         x: 160,

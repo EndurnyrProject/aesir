@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Mrsmile.SmileAssistanceSm
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Smile Assistance", unique_name: "SmileHelper"},
       %{
         map: "alberta",
         x: 113,

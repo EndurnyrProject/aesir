@@ -41,7 +41,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.M011Sintrap do
         y: 158,
         dir: 0,
         sprite: -1,
-        name: "01_1::SinTrap",
+        name: "01_1",
         scope: :shared,
         unique_name: "SinTrap",
         trigger: {0, 0}

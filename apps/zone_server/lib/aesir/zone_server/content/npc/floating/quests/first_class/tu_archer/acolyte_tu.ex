@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.FirstClass.TuArcher.Acoly
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "Acolyte_Tu"},
       %{
         map: "pay_fild08",
         x: 40,

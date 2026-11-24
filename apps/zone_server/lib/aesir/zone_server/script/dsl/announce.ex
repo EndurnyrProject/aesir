@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Announce do
 
   alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.Announcement.Flags
+  alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Script.Ctx
 
@@ -238,6 +239,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Announce do
 
   defp area_anchor(%Ctx{npc_gid: npc_gid}, :npc) do
     case NpcRegistry.module_for_unit(npc_gid) do
+      {:ok, {_module, %Placement{map: nil}}} -> :error
       {:ok, {_module, placement}} -> {:ok, placement.map, {placement.x, placement.y}}
       :error -> :error
     end

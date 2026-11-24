@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Skills.MerchantSkills.Ger
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "Gershaun_alberta"},
       %{
         map: "alberta",
         x: 232,

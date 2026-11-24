@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests132.HuFind do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "hu_find"},
       %{
         map: "hu_fild05",
         x: 251,

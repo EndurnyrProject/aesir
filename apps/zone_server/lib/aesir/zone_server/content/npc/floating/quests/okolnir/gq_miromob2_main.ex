@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.GqMiromob2Main do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "#gq_miromob2_main"},
       %{
         map: "que_qaru01",
         x: 1,

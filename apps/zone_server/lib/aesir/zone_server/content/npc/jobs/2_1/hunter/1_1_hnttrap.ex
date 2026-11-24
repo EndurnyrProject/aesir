@@ -40,7 +40,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.M11Hnttrap do
         y: 140,
         dir: 0,
         sprite: -1,
-        name: "1-1::HntTrap",
+        name: "1-1",
         scope: :shared,
         unique_name: "HntTrap",
         trigger: {0, 1}

@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests131.AllianceManager
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Alliance Manager", unique_name: "Alliance Manager#prt_"},
       %{
         map: "prt_cas",
         x: 19,

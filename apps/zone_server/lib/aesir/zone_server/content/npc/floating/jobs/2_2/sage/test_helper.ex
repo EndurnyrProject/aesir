@@ -25,7 +25,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M22.Sage.TestHelper do
   - LLM-assisted Elixir refactor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [%{name: "Test Helper", unique_name: "Test Helper#sg"}]
 
   @arena "job_sage"
   @bc_map 1

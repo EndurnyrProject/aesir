@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests132.Ep13WarpS1 do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "ep13_warp_s_1"},
       %{
         map: "nyd_dun02",
         x: 146,

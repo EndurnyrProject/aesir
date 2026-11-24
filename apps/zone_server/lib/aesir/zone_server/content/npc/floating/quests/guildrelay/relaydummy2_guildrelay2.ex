@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Guildrelay.Relaydummy2Gui
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "RelayDummy2", unique_name: "GuildRelay2"},
       %{
         map: "aldeg_cas01",
         x: 75,

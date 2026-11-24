@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M11e.Taekwon.PhoenixPhoenix
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Phoenix", unique_name: "PhoenixTKJobChange"},
       %{
         map: "payon_in01",
         x: 62,

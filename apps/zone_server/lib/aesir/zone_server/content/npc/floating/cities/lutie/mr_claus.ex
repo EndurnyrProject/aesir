@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Lutie.MrClaus do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Mr. Claus"},
       %{
         map: "aldebaran",
         x: 168,

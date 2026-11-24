@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.FirstClass.TuArcher.Sound
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "#sound_tu_"},
       %{
         map: "prt_cas",
         x: 94,

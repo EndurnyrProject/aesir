@@ -31,6 +31,15 @@ defmodule Aesir.ZoneServer.NpcTest do
     def on_talk(ctx), do: ctx
   end
 
+  defmodule FloatingNpc do
+    use Aesir.ZoneServer.Npc,
+      scope: :renewal,
+      spawn: [%{name: "Red Alarm On", unique_name: "Red Alarm On#1-2"}]
+
+    @impl true
+    def on_talk(ctx), do: ctx
+  end
+
   describe "use Aesir.ZoneServer.Npc" do
     test "defaults content scope to shared" do
       assert SampleNpc.content_scope() == :shared
@@ -110,6 +119,30 @@ defmodule Aesir.ZoneServer.NpcTest do
 
     test "declares the Npc behaviour" do
       assert Aesir.ZoneServer.Npc in (SampleNpc.module_info(:attributes)[:behaviour] || [])
+    end
+
+    test "normalizes a spawn entry without map to a floating placement" do
+      assert [placement] = FloatingNpc.spawn()
+
+      assert %Placement{map: nil, x: 0, y: 0, sprite: -1, scope: :renewal} = placement
+      assert placement.name == "Red Alarm On"
+      assert placement.unique_name == "Red Alarm On#1-2"
+      assert Placement.floating?(placement)
+    end
+
+    test "rejects placement keys on a floating spawn entry at compile time" do
+      source = """
+      defmodule Aesir.ZoneServer.NpcTest.FloatingWithCellNpc do
+        use Aesir.ZoneServer.Npc, spawn: [%{name: "Float", x: 1, sprite: 58}]
+
+        @impl true
+        def on_talk(ctx), do: ctx
+      end
+      """
+
+      assert_raise ArgumentError, ~r/floating npc spawn/, fn ->
+        Code.compile_string(source)
+      end
     end
   end
 end

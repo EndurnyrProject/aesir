@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Louyang.GirlLouyang do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "Girl_louyang"},
       %{
         map: "alberta",
         x: 246,

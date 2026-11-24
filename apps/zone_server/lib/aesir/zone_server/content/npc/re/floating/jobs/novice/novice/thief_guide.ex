@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Novice.ThiefGuide
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
+      %{name: "Thief Guide", unique_name: "NvThief"},
       %{
         map: "new_1-3",
         x: 105,

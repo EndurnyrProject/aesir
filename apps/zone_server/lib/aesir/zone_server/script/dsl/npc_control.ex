@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   alias Aesir.ZoneServer.Mmo.MobManagement.SummonGroups
   alias Aesir.ZoneServer.Mmo.WaitingRoom
   alias Aesir.ZoneServer.Npc.Events, as: NpcEvents
+  alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Session, as: NpcSession
   alias Aesir.ZoneServer.Script.Ctx
@@ -64,8 +65,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   Detached-capable: on a detached ctx, `:map`/`:at` still apply, but the
   default map and position come from `ctx.npc_gid`'s own placement
   (`Npc.Registry.module_for_unit/1`) instead of a player. Without `:map`,
-  nothing spawns (and the script goes on) when `ctx.npc_gid` is `nil` or
-  doesn't resolve — there is nowhere to spawn.
+  nothing spawns (and the script goes on) when `ctx.npc_gid` is `nil`, doesn't
+  resolve, or is a floating NPC (on no map) — there is nowhere to spawn.
   """
   @spec summon_mob(Ctx.t(), keyword()) :: Ctx.t()
   def summon_mob(%Ctx{status: {:error, _}} = ctx, _opts), do: ctx
@@ -583,6 +584,11 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
     Logger.warning("npc npctalk/3: unknown target #{inspect(other)}, using :area")
     :area
   end
+
+  # A floating NPC is on no map, so rAthena's AREA and ALL_SAMEMAP sends reach
+  # nobody (`map_foreachinallarea` returns for `m < 0`).
+  defp deliver_npctalk(_ctx, _packet, %Placement{map: nil}, target) when target in [:area, :map],
+    do: :ok
 
   defp deliver_npctalk(_ctx, packet, placement, :area) do
     Broadcast.to_in_range(
@@ -1112,7 +1118,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
 
   defp broadcast_room_info(gid) do
     with {:ok, room} <- WaitingRoom.get(gid),
-         {:ok, {_module, placement}} <- NpcRegistry.module_for_unit(gid) do
+         {:ok, {_module, %{map: map} = placement}} when map != nil <-
+           NpcRegistry.module_for_unit(gid) do
       packet = %WaitingRoomInfo{
         room_id: gid,
         title: room.title,
@@ -1131,6 +1138,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
 
   defp broadcast_room_removed(gid) do
     case NpcRegistry.module_for_unit(gid) do
+      {:ok, {_module, %Placement{map: nil}}} ->
+        :ok
+
       {:ok, {_module, placement}} ->
         Broadcast.to_in_range(
           placement.map,
@@ -1237,6 +1247,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
 
   defp spawn_mob_here(%Ctx{npc_gid: gid} = ctx, mob_id, opts) do
     case NpcRegistry.module_for_unit(gid) do
+      {:ok, {_module, %Placement{map: nil}}} ->
+        ctx
+
       {:ok, {_module, placement}} ->
         at = Keyword.get(opts, :at, {placement.x, placement.y})
         do_summon(ctx, placement.map, at, mob_id, opts)
@@ -1272,6 +1285,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
 
   defp spawn_mob_area_here(%Ctx{npc_gid: gid} = ctx, mob_id, opts) do
     case NpcRegistry.module_for_unit(gid) do
+      {:ok, {_module, %Placement{map: nil}}} -> ctx
       {:ok, {_module, placement}} -> do_summon_area(ctx, placement.map, mob_id, opts)
       :error -> ctx
     end

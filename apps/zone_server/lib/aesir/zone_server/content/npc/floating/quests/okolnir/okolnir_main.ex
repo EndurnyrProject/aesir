@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.OkolnirMain do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "#okolnir_main"},
       %{
         map: "que_qaru01",
         x: 1,

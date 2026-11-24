@@ -199,6 +199,20 @@ defmodule Aesir.ZoneServer.Npc.RegistryTest do
     def on_event("OnMode", ctx), do: ctx
   end
 
+  defmodule FloatingEventNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [
+        %{name: "Red Alarm On", unique_name: "Red Alarm On#1-2"},
+        %{map: "prontera", x: 130, y: 130, sprite: 58, name: "Placed Dup"}
+      ]
+
+    @impl true
+    def on_talk(ctx), do: ctx
+
+    @impl true
+    def on_event("OnInit", ctx), do: ctx
+  end
+
   setup do
     on_exit(fn -> :persistent_term.erase(Registry) end)
     Registry.reload([DiscoverableNpc, NotAnNpc])
@@ -219,6 +233,24 @@ defmodule Aesir.ZoneServer.Npc.RegistryTest do
       assert [{UncachedMapNpc, %Placement{map: "prontera"}}] = Registry.entries()
       assert Registry.module_at("no_such_map", 5, 5) == :error
       assert log =~ ~s[map "no_such_map" has no map cache; not placing its 1 NPC placement(s)]
+    end
+
+    test "registers a floating placement by gid, name and label, without a cell" do
+      log = capture_log(fn -> Registry.reload([FloatingEventNpc]) end)
+      refute log =~ "no map cache"
+
+      assert [{FloatingEventNpc, floating}] = Registry.by_name("Red Alarm On#1-2")
+      assert floating.map == nil
+
+      gid = Registry.entity_id(floating)
+      assert Registry.module_for_unit(gid) == {:ok, {FloatingEventNpc, floating}}
+      assert {FloatingEventNpc, gid} in Registry.entries_for_label("OnInit")
+      assert length(Registry.entries_for_label("OnInit")) == 2
+
+      assert {:ok, {FloatingEventNpc, %Placement{name: "Placed Dup"}}} =
+               Registry.module_at("prontera", 130, 130)
+
+      assert Registry.module_at(nil, 0, 0) == :error
     end
 
     test "terminates every running Npc.Session before rebuilding" do

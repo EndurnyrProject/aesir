@@ -13,6 +13,11 @@ defmodule Aesir.ZoneServer.Npc.Placement do
   `trigger` is the touch-area half-extents `{xs, ys}` around the placement's
   cell, or `nil` when the NPC has no touch area. `scope` determines the game
   mode in which the placement participates.
+
+  A placement with `map: nil` is a floating NPC, rAthena's `-` script or
+  duplicate (`npc_parse_script`, `npc_parse_duplicate` in `npc.cpp`): it sits on
+  no map (`m = -1`, `x = y = 0`, `class_ = JT_FAKENPC`), yet it is registered
+  by id and name and receives its events, timers and `OnInit`.
   """
 
   use TypedStruct
@@ -24,7 +29,7 @@ defmodule Aesir.ZoneServer.Npc.Placement do
 
   @typedoc "A normalized script placement, including its display and touch area."
   typedstruct enforce: true do
-    field :map, String.t()
+    field :map, String.t() | nil
     field :x, non_neg_integer()
     field :y, non_neg_integer()
     field :dir, non_neg_integer(), default: 0
@@ -44,6 +49,14 @@ defmodule Aesir.ZoneServer.Npc.Placement do
   """
   @spec invisible?(t()) :: boolean()
   def invisible?(%__MODULE__{sprite: sprite}), do: sprite < 0
+
+  @doc """
+  Whether this is a floating placement (rAthena `m == -1`): on no map, so it
+  has no cell, no touch area and no view, but it still has an id, a name and
+  its events.
+  """
+  @spec floating?(t()) :: boolean()
+  def floating?(%__MODULE__{map: map}), do: is_nil(map)
 
   @doc """
   Whether the cell `{map, x, y}` lies inside this placement's touch area. A

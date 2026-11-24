@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M21.Assassin.MocAssinDup do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "#moc_assin_dup"},
       %{map: "in_moc_16", x: 156, y: 87, dir: 1, sprite: 55, name: "[Huey]", scope: :shared},
       %{map: "in_moc_16", x: 156, y: 85, dir: 1, sprite: 730, name: "[Khai]", scope: :shared},
       %{

@@ -20,6 +20,12 @@ defmodule Aesir.ZoneServer.Npc do
   registered and its touch area and events work, but no client ever sees it
   and it cannot be clicked.
 
+  A spawn entry without `map` declares a floating NPC, rAthena's `-` script or
+  duplicate: `%{name: "Red Alarm On#1-2"}`. It accepts only `name`,
+  `unique_name` and `scope`; it sits on no map but is registered by id and
+  name, so its events, timers and `OnInit` run (see
+  `Aesir.ZoneServer.Npc.Placement`).
+
   NPCs may also implement `on_event/2`, the uniform handler for rAthena-style
   event labels (`on_event("OnTouch", ctx)`, `on_event("OnTimer5000", ctx)`,
   `on_event("OnInit", ctx)`, ...). The same `@before_compile` hook derives
@@ -129,6 +135,8 @@ defmodule Aesir.ZoneServer.Npc do
     end
   end
 
+  @floating_keys [:name, :unique_name, :scope]
+
   @typep spawn_attrs :: %{
            required(:map) => String.t(),
            required(:x) => non_neg_integer(),
@@ -141,7 +149,35 @@ defmodule Aesir.ZoneServer.Npc do
            optional(:trigger) => Placement.trigger() | nil
          }
 
-  @spec to_placement!(spawn_attrs(), ContentScope.t()) :: Placement.t()
+  @typep floating_attrs :: %{
+           optional(:name) => String.t(),
+           optional(:unique_name) => String.t(),
+           optional(:scope) => ContentScope.t()
+         }
+
+  @spec to_placement!(spawn_attrs() | floating_attrs(), ContentScope.t()) :: Placement.t()
+  defp to_placement!(entry, body_scope) when not is_map_key(entry, :map) do
+    case Map.keys(entry) -- @floating_keys do
+      [] ->
+        name = Map.get(entry, :name, "")
+
+        %Placement{
+          map: nil,
+          x: 0,
+          y: 0,
+          sprite: -1,
+          name: name,
+          unique_name: Map.get(entry, :unique_name, name),
+          scope: entry |> Map.get(:scope, body_scope) |> validate_content_scope!(:placement)
+        }
+
+      extra ->
+        raise ArgumentError,
+              "floating npc spawn (no :map) only accepts #{inspect(@floating_keys)}, " <>
+                "got: #{inspect(extra)}"
+    end
+  end
+
   defp to_placement!(entry, body_scope) do
     name = Map.get(entry, :name, "")
 

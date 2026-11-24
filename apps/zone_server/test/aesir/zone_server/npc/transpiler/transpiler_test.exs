@@ -105,6 +105,45 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.TranspilerTest do
   end
 
   @tag :tmp_dir
+  test "floating scripts and floating duplicates are emitted as floating spawns", %{
+    tmp_dir: tmp_dir
+  } do
+    npc_dir = Path.join(tmp_dir, "npc")
+    File.mkdir_p!(npc_dir)
+
+    File.write!(Path.join(npc_dir, "alarm.txt"), """
+    -\tscript\tRed Alarm On#1-2\t-1,{
+    end;
+    OnInit:
+    end;
+    }
+    -\tscript\t::AlarmTemplate\t-1,{
+    end;
+    }
+    -\tduplicate(AlarmTemplate)\tAlarm Dup#1\t-1
+    -\tduplicate(AlarmTemplate)\tAlarm Dup#2\t-1
+    """)
+
+    out_root = Path.join(tmp_dir, "out")
+    result = run_enabled(tmp_dir, out_root)
+
+    assert result.failures == []
+    assert result.orphan_duplicates == []
+
+    sources = Map.new(result.written, &{Path.basename(&1), File.read!(Path.join(out_root, &1))})
+    alarm = sources["red_alarm_on.ex"]
+    template = sources["alarmtemplate.ex"]
+
+    assert alarm =~
+             ~S|spawn: [%{name: "Red Alarm On", scope: :shared, unique_name: "Red Alarm On#1-2"}]|
+
+    assert template =~ ~S|%{name: "", scope: :shared, unique_name: "AlarmTemplate"}|
+    assert template =~ ~S|%{name: "Alarm Dup", scope: :shared, unique_name: "Alarm Dup#1"}|
+    assert template =~ ~S|%{name: "Alarm Dup", scope: :shared, unique_name: "Alarm Dup#2"}|
+    refute template =~ "map:"
+  end
+
+  @tag :tmp_dir
   test "a placement without touch dims or a :: exname omits both keys", %{tmp_dir: tmp_dir} do
     npc_dir = Path.join(tmp_dir, "npc")
     File.mkdir_p!(npc_dir)

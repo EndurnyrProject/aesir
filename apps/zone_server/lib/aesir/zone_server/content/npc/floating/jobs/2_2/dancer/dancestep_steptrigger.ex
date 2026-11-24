@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M22.Dancer.DancestepSteptri
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "dancestep", unique_name: "StepTrigger"},
       %{
         map: "job_duncer",
         x: 69,

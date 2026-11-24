@@ -614,7 +614,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
         # enables them; without event wiring they must not spawn.
         []
       else
-        Enum.filter([entry | duplicates], &placed?/1)
+        # A floating source is not a recorded spawn: `generate/4` emits it from
+        # the entry itself (`floating_source_spawns/1`).
+        Enum.filter([entry], &placed?/1) ++ duplicates
       end
 
     resolve_placements(placements, sprites)
@@ -626,30 +628,57 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
     if entry[:flag] do
       {[], MapSet.new()}
     else
-      resolve_placements(Enum.filter(duplicates, &placed?/1), sprites)
+      resolve_placements(duplicates, sprites)
     end
   end
 
   defp resolve_placements(placements, sprites) do
-    Enum.map_reduce(placements, MapSet.new(), fn placement, unresolved ->
-      {sprite, unresolved} = resolve_sprite(placement.sprite, sprites, unresolved)
+    Enum.map_reduce(placements, MapSet.new(), fn
+      %{map: _} = placement, unresolved ->
+        {sprite, unresolved} = resolve_sprite(placement.sprite, sprites, unresolved)
 
-      spawn =
-        %{
-          map: placement.map,
-          x: placement.x,
-          y: placement.y,
-          dir: placement[:dir],
-          sprite: sprite,
-          name: ModuleName.display_name(placement.name),
-          scope: placement.scope
-        }
-        |> maybe_put(:unique_name, unique_name(placement.name))
-        |> maybe_put(:trigger, placement[:touch])
+        spawn =
+          %{
+            map: placement.map,
+            x: placement.x,
+            y: placement.y,
+            dir: placement[:dir],
+            sprite: sprite,
+            name: ModuleName.display_name(placement.name),
+            scope: placement.scope
+          }
+          |> maybe_put(:unique_name, unique_name(placement.name))
+          |> maybe_put(:trigger, placement[:touch])
 
-      {spawn, unresolved}
+        {spawn, unresolved}
+
+      floating, unresolved ->
+        {floating_spawn(floating), unresolved}
     end)
   end
+
+  # A floating `-` script or duplicate (rAthena `m = -1`, `x = y = 0`,
+  # `class_ = JT_FAKENPC`): no cell and no view, only its name and scope.
+  defp floating_spawn(entry) do
+    %{
+      map: nil,
+      x: 0,
+      y: 0,
+      dir: 0,
+      sprite: -1,
+      name: ModuleName.display_name(entry.name),
+      scope: entry.scope
+    }
+    |> maybe_put(:unique_name, unique_name(entry.name))
+  end
+
+  # rAthena registers every floating script itself (`map_addiddb` in
+  # `npc_parse_script`), not only its duplicates.
+  defp floating_source_spawns(%{kind: :floating, entry: entry}) do
+    if entry[:flag], do: [], else: [floating_spawn(entry)]
+  end
+
+  defp floating_source_spawns(_unit), do: []
 
   # rAthena's exname — what `donpcevent`/`strnpcinfo` target: the part after
   # `::` when present, else the full name including the `#hidden` fragment.
@@ -663,7 +692,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
 
-  # A placement needs a map to be placed at all. Sprite `-1` is not filtered
+  # A placed source keeps its own spawn; a floating source is emitted from the
+  # entry instead (`floating_source_spawns/1`). Sprite `-1` is not filtered
   # out: it marks an invisible event NPC (a touch-trigger area or controller),
   # which is registered and fires its events while staying off every client's
   # screen. Dropping those placements silently loses the trigger areas.
@@ -763,7 +793,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
   defp merge_spawns(prior, new) do
     {merged, _seen} =
       Enum.reduce(prior ++ new, {[], MapSet.new()}, fn spawn, {acc, seen} ->
-        key = {spawn.map, spawn.x, spawn.y, spawn.scope}
+        key = spawn_key(spawn)
 
         if MapSet.member?(seen, key) do
           {acc, seen}
@@ -774,6 +804,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
 
     Enum.reverse(merged)
   end
+
+  # Floating spawns share the `nil` cell, so their name tells them apart.
+  defp spawn_key(%{map: nil} = spawn),
+    do: {nil, Map.get(spawn, :unique_name, spawn.name), spawn.scope}
+
+  defp spawn_key(spawn), do: {spawn.map, spawn.x, spawn.y, spawn.scope}
 
   # -- per-unit processing -----------------------------------------------------
 
@@ -941,7 +977,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
     opts = %{
       module: module,
       kind: unit.kind,
-      spawns: spawns,
+      spawns: floating_source_spawns(unit) ++ spawns,
       functions: state.functions,
       scope: entry.scope,
       sprites: state.sprites,

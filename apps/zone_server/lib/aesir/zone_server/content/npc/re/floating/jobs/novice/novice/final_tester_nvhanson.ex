@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Novice.FinalTeste
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
+      %{name: "Final Tester", unique_name: "NvHanson"},
       %{
         map: "new_1-4",
         x: 100,

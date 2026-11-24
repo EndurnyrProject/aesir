@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.Piamette do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Piamette", unique_name: "Piamette#main"},
       %{
         map: "que_qaru01",
         x: 131,

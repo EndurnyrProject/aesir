@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Cities.Malangdo.Odgnalam do
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
+      %{name: "", unique_name: "Odgnalam"},
       %{
         map: "alberta",
         x: 200,

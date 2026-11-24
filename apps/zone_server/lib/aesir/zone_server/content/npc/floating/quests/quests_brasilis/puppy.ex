@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsBrasilis.Puppy do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Puppy", unique_name: "Puppy#bra"},
       %{
         map: "bra_fild01",
         x: 98,

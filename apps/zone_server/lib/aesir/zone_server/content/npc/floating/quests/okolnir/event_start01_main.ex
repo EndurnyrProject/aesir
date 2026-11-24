@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.EventStart01Main 
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "#event_start01_main"},
       %{
         map: "que_qaru01",
         x: 114,

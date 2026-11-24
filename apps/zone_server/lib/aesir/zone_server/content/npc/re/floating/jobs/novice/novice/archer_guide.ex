@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Novice.ArcherGuid
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
+      %{name: "Archer Guide", unique_name: "NvArcher"},
       %{
         map: "new_1-3",
         x: 113,

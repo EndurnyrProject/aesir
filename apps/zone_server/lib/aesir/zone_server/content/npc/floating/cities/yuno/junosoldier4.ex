@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Yuno.Junosoldier4 do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "JunoSoldier4"},
       %{
         map: "yuno",
         x: 165,

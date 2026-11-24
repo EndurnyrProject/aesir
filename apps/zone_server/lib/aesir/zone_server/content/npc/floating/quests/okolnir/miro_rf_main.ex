@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.MiroRfMain do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "#miro_rf_main"},
       %{
         map: "que_qaru01",
         x: 2,

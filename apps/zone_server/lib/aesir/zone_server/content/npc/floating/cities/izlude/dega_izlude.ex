@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Izlude.DegaIzlude do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "Dega_izlude"},
       %{
         map: "izlude",
         x: 85,

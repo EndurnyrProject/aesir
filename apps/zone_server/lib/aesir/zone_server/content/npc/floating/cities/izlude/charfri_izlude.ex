@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Izlude.CharfriIzlude do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "Charfri_izlude"},
       %{
         map: "izlude",
         x: 172,

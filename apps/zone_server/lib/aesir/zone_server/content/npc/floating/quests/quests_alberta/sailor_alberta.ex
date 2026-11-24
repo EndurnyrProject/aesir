@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsAlberta.SailorAlber
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "Sailor_alberta"},
       %{
         map: "alberta",
         x: 244,

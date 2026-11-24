@@ -766,8 +766,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   @doc """
   The position of the attached player (`:player`) or of the running NPC
   (`:npc`) as `{map_name, x, y}` (rAthena `getmapxy`). The transpiled form
-  writes the buildin's three output variables from this tuple. Ends the script
-  when the requested unit cannot be resolved.
+  writes the buildin's three output variables from this tuple. A floating NPC
+  is on no map and reads `{"", 0, 0}`, as the reference's `m < 0` branch. Ends
+  the script when the requested unit cannot be resolved.
   """
   @spec getmapxy(Ctx.t(), :player | :npc) :: {String.t(), integer(), integer()}
   def getmapxy(%Ctx{game_state: nil} = ctx, :player), do: no_player!(ctx, "getmapxy/2")
@@ -776,7 +777,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   def getmapxy(%Ctx{} = ctx, :npc) do
     with gid when is_integer(gid) <- ctx.npc_gid,
          {:ok, {_module, placement}} <- NpcRegistry.module_for_unit(gid) do
-      {placement.map, placement.x, placement.y}
+      npc_position(placement)
     else
       _missing -> no_player!(ctx, "getmapxy/2")
     end
@@ -793,17 +794,19 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
           {String.t(), integer(), integer()} | :error
   def getmapxy(%Ctx{}, :npc, name) when is_binary(name) do
     case NpcRegistry.by_name(name) do
-      [{_module, placement} | _rest] -> {placement.map, placement.x, placement.y}
+      [{_module, placement} | _rest] -> npc_position(placement)
       [] -> :error
     end
   end
 
   def getmapxy(%Ctx{}, :npc, gid) when is_integer(gid) do
     case NpcRegistry.module_for_unit(gid) do
-      {:ok, {_module, placement}} -> {placement.map, placement.x, placement.y}
+      {:ok, {_module, placement}} -> npc_position(placement)
       :error -> :error
     end
   end
+
+  defp npc_position(%{map: map, x: x, y: y}), do: {map || "", x, y}
 
   @typedoc """
   Which `$@partymember*` array `getpartymember` fills: `:name` the member
@@ -943,7 +946,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   @doc """
   A field of the running NPC's info as a string (rAthena `strnpcinfo`):
   `0` the full name including the hidden `#`-fragment, `1` the visible name,
-  `2` the hidden fragment, `3` the unique name, `4` the map name; the file
+  `2` the hidden fragment, `3` the unique name, `4` the map name (empty for a
+  floating NPC); the file
   path (`5`) is not modelled and returns an empty string. The hidden fragment
   exists only when the placement's `unique_name` is the rAthena full-name form
   `<visible>#<hidden>` (what the transpiler emits for duplicates); otherwise
@@ -971,7 +975,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   defp npc_info(%{name: name}, 1), do: name
   defp npc_info(%{} = placement, 2), do: npc_hidden_fragment(placement)
   defp npc_info(%{unique_name: unique_name}, 3), do: unique_name
-  defp npc_info(%{map: map}, 4), do: map
+  defp npc_info(%{map: map}, 4), do: map || ""
   defp npc_info(_placement, _type), do: ""
 
   defp npc_hidden_fragment(%{name: name, unique_name: unique_name}) do

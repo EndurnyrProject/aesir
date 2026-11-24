@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Izlude.CebalisIzlude do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "Cebalis_izlude"},
       %{
         map: "izlude",
         x: 55,

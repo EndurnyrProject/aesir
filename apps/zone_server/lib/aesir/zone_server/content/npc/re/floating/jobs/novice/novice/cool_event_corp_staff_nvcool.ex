@@ -10,13 +10,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Novice.CoolEventC
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
+      %{name: "Cool Event Corp. Staff", unique_name: "NvCool"},
       %{
         map: "new_1-2",
         x: 33,
         y: 176,
         dir: 4,
         sprite: 874,
-        name: "Cool Event Corp. Staff::NvCool1",
+        name: "Cool Event Corp. Staff",
         scope: :renewal,
         unique_name: "NvCool1"
       },
@@ -26,7 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Novice.CoolEventC
         y: 176,
         dir: 4,
         sprite: 874,
-        name: "Cool Event Corp. Staff::NvCool2",
+        name: "Cool Event Corp. Staff",
         scope: :renewal,
         unique_name: "NvCool2"
       },
@@ -36,7 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Novice.CoolEventC
         y: 176,
         dir: 4,
         sprite: 874,
-        name: "Cool Event Corp. Staff::NvCool3",
+        name: "Cool Event Corp. Staff",
         scope: :renewal,
         unique_name: "NvCool3"
       },
@@ -46,7 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Novice.CoolEventC
         y: 176,
         dir: 4,
         sprite: 874,
-        name: "Cool Event Corp. Staff::NvCool4",
+        name: "Cool Event Corp. Staff",
         scope: :renewal,
         unique_name: "NvCool4"
       },
@@ -56,7 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Novice.CoolEventC
         y: 176,
         dir: 4,
         sprite: 874,
-        name: "Cool Event Corp. Staff::NvCool5",
+        name: "Cool Event Corp. Staff",
         scope: :renewal,
         unique_name: "NvCool5"
       }

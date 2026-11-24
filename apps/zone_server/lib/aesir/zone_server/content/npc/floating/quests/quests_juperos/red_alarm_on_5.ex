@@ -23,7 +23,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.RedAlarmOn5
   - LLM-assisted Elixir refactor reviewed by Cλstor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [%{name: "Red Alarm On", unique_name: "Red Alarm On#2-3"}]
 
   @impl true
   def on_event("OnInit", ctx), do: disablenpc(ctx, "Red Alarm On#2-3")

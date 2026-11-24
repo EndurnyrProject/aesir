@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler do
   alias Aesir.ZoneServer.Mmo.WaitingRoom
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Events, as: NpcEvents
+  alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Proximity
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -405,11 +406,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler do
   @doc """
   Resolves where `room`'s bubble is anchored: the NPC placement for NPC rooms,
   the owning player's current position for player rooms. `:error` when the
-  owner is not in the world.
+  owner is not in the world, or is a floating NPC (on no map).
   """
   @spec owner_position(WaitingRoom.t()) :: {:ok, {String.t(), integer(), integer()}} | :error
   def owner_position(%WaitingRoom{owner: {:npc, gid}}) do
     case NpcRegistry.module_for_unit(gid) do
+      {:ok, {_module, %Placement{map: nil}}} -> :error
       {:ok, {_module, placement}} -> {:ok, {placement.map, placement.x, placement.y}}
       :error -> :error
     end

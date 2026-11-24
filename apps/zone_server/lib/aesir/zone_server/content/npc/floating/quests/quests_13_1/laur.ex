@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests131.Laur do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Laur_"},
       %{map: "prt_cas", x: 108, y: 265, dir: 5, sprite: 57, name: "Laur", scope: :renewal},
       %{map: "prt_castle", x: 88, y: 165, dir: 3, sprite: 57, name: "Laur", scope: :pre_renewal}
     ]

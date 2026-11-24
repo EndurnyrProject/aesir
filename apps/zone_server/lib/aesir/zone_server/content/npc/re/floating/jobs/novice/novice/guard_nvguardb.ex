@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Novice.GuardNvgua
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
+      %{name: "Guard", unique_name: "NvGuardB"},
       %{
         map: "new_1-1",
         x: 144,

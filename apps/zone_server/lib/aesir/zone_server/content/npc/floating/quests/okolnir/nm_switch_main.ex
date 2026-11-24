@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.NmSwitchMain do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "#nm_switch_main"},
       %{
         map: "que_qaru01",
         x: 253,

@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Brasilis.CrewmanBra2 do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "Crewman_bra2"},
       %{
         map: "alberta",
         x: 246,

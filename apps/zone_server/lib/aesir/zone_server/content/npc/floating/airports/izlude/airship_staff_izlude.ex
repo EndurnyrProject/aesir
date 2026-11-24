@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Airports.Izlude.AirshipStaffIzlu
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "Airship_Staff_izlude"},
       %{
         map: "izlude",
         x: 202,

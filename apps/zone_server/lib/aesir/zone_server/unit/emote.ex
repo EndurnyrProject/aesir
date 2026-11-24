@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Emote do
   alias Aesir.Net.Emotion, as: EmotionMsg
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Emotion
+  alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -76,6 +77,7 @@ defmodule Aesir.ZoneServer.Unit.Emote do
 
       {:error, :not_found} ->
         case NpcRegistry.module_for_unit(unit_id) do
+          {:ok, {_module, %Placement{map: nil}}} -> {:error, :not_found}
           {:ok, {_module, placement}} -> {:ok, {placement.x, placement.y, placement.map}}
           :error -> {:error, :not_found}
         end

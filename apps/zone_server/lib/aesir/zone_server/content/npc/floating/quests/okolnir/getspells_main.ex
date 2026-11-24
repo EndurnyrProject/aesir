@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.GetspellsMain do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "#getspells_main"},
       %{
         map: "que_qaru01",
         x: 113,

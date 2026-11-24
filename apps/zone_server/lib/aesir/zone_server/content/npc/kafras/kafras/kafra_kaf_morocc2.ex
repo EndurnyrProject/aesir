@@ -36,7 +36,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Kafras.Kafras.KafraKafMorocc2 do
         y: 258,
         dir: 4,
         sprite: 114,
-        name: "Kafra::kaf_morocc2",
+        name: "Kafra",
         scope: :shared,
         unique_name: "kaf_morocc2"
       }

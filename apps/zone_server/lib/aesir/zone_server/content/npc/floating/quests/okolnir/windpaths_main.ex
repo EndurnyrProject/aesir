@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.WindpathsMain do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "windpaths_main"},
       %{
         map: "que_qaru01",
         x: 149,

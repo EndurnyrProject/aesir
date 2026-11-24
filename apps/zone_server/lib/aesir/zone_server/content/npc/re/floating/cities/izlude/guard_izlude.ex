@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Cities.Izlude.GuardIzlude do
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
+      %{name: "", unique_name: "Guard_izlude"},
       %{
         map: "prt_fild08",
         x: 350,

@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.TempleKeeper do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Temple Keeper", unique_name: "Temple Keeper#main_all"},
       %{
         map: "que_qaru01",
         x: 247,

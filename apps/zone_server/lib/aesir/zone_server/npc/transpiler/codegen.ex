@@ -120,9 +120,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   @pipe_bind ~r/^(\{ctx, [A-Za-z0-9_]+\}) = ([A-Za-z_][A-Za-z0-9_.]*[!?]?)\(ctx(?:, (.+))?\)$/
   @ctx_word ~r/\bctx\b/
 
-  @typedoc "A resolved placement ready for emission in a generated NPC module."
+  @typedoc """
+  A resolved placement ready for emission in a generated NPC module. `map: nil`
+  is a floating placement, emitted with only its name fields and scope.
+  """
   @type spawn :: %{
-          required(:map) => String.t(),
+          required(:map) => String.t() | nil,
           required(:x) => non_neg_integer(),
           required(:y) => non_neg_integer(),
           required(:dir) => non_neg_integer(),
@@ -135,7 +138,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   @typedoc """
   Options: `:module` (full module name string), `:spawns` (resolved placement
-  maps for the `use` line; `[]` for floating/functions), `:kind`
+  maps for the `use` line, floating ones included; `[]` for functions), `:kind`
   (`:script | :floating | :function`), `:scope` (body content scope, defaults
   to `:shared`), `:functions` (scoped global helper index), `:source`
   (file:line provenance for the moduledoc and helper-link failures), and
@@ -235,6 +238,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     scope = Map.get(opts, :scope, :shared)
     spawns = Enum.map_join(opts.spawns, ",\n", &render_spawn(&1, scope))
     "use Aesir.ZoneServer.Npc, scope: #{inspect(scope)}, spawn: [#{spawns}]"
+  end
+
+  defp render_spawn(%{map: nil} = s, body_scope) do
+    fields =
+      ["name: #{inspect(s.name)}", "scope: #{inspect(Map.get(s, :scope, body_scope))}"] ++
+        optional_spawn_fields(s)
+
+    "%{" <> Enum.join(fields, ", ") <> "}"
   end
 
   defp render_spawn(s, body_scope) do

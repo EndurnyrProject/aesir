@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Jobs.Novice.Novice.Chocolat d
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
+      %{name: "Chocolat", unique_name: "NvChocolat"},
       %{
         map: "new_1-2",
         x: 33,

@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Jawaii.HoneymoonHelperIzl
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "Honeymoon_Helper_Izlude"},
       %{
         map: "izlude",
         x: 180,

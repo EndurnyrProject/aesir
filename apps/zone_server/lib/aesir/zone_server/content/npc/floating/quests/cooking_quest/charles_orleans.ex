@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.CookingQuest.CharlesOrlea
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Charles Orleans", unique_name: "Charles Orleans#cook_"},
       %{
         map: "prt_cas",
         x: 324,

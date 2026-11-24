@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests132.MysteriousRock 
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Mysterious Rock", unique_name: "manukrock2"},
       %{
         map: "man_fild02",
         x: 146,

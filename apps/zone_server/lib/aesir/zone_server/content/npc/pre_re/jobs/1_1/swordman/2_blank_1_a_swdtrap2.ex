@@ -23,7 +23,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.M2Blank1ASwdtrap2
         y: 212,
         dir: 0,
         sprite: -1,
-        name: "2_blank_1_a::SwdTrap2",
+        name: "2_blank_1_a",
         scope: :pre_renewal,
         unique_name: "SwdTrap2",
         trigger: {40, 0}

@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Cities.Malangdo.Dolangmal do
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
+      %{name: "Dolangmal"},
       %{
         map: "prontera",
         x: 114,

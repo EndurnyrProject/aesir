@@ -22,7 +22,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Comodo.KafraEmployeeKafComodo2 do
         y: 180,
         dir: 4,
         sprite: 721,
-        name: "Kafra Employee::kaf_comodo2",
+        name: "Kafra Employee",
         scope: :shared,
         unique_name: "kaf_comodo2"
       }

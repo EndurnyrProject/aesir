@@ -36,7 +36,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Kafras.Kafras.KafraEmployeeKafAyothaya do
         y: 169,
         dir: 5,
         sprite: 116,
-        name: "Kafra Employee::kaf_ayothaya",
+        name: "Kafra Employee",
         scope: :shared,
         unique_name: "kaf_ayothaya"
       }

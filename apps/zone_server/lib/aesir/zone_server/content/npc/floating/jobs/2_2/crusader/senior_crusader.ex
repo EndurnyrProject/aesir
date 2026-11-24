@@ -41,6 +41,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M22.Crusader.SeniorCrusader
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Senior Crusader_"},
       %{
         map: "prt_cas",
         x: 251,

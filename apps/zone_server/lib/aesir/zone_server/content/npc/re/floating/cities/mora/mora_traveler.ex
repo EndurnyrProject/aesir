@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Cities.Mora.MoraTraveler do
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
+      %{name: "", unique_name: "#mora_traveler"},
       %{
         map: "mora",
         x: 140,

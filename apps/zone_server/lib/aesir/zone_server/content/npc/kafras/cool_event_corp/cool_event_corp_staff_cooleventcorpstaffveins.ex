@@ -31,7 +31,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Kafras.CoolEventCorp.CoolEventCorpStaffCo
         y: 128,
         dir: 5,
         sprite: 874,
-        name: "Cool Event Corp. Staff::CoolEventCorpStaffVeins",
+        name: "Cool Event Corp. Staff",
         scope: :shared,
         unique_name: "CoolEventCorpStaffVeins"
       }

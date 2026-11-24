@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.CookingQuest.Wickebine do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Wickebine", unique_name: "Wickebine#cook_"},
       %{
         map: "prt_cas",
         x: 329,

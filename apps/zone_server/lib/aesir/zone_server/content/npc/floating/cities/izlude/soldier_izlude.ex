@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Izlude.SoldierIzlude do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "Soldier_izlude"},
       %{
         map: "izlude",
         x: 165,

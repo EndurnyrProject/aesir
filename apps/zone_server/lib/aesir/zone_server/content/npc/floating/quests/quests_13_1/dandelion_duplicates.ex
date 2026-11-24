@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests131.DandelionDuplic
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "#dandelion_duplicates"},
       %{
         map: "que_dan01",
         x: 34,

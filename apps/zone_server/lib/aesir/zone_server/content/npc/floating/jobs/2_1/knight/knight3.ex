@@ -32,7 +32,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M21.Knight.Knight3 do
   - LLM-assisted Elixir refactor
   """
 
-  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
+  use Aesir.ZoneServer.Npc, scope: :shared, spawn: [%{name: "Knight3"}]
 
   alias Aesir.ZoneServer.Script.Rathena
 

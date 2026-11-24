@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.OkolnirMainTime01
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "#okolnir_main_time01"},
       %{
         map: "que_qaru01",
         x: 1,

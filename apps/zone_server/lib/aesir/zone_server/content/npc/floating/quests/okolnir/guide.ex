@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.Guide do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Guide", unique_name: "Guide#gq_main"},
       %{
         map: "arug_cas01",
         x: 161,

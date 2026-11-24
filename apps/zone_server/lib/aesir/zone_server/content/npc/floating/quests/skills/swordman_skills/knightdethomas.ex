@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Skills.SwordmanSkills.Kni
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "KnightDeThomas"},
       %{
         map: "izlude_in",
         x: 118,

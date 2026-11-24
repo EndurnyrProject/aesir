@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.CookingQuest.ChildWithCat
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Child with Cat", unique_name: "Child with Cat#cook_"},
       %{
         map: "prt_cas",
         x: 329,

@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.CookingQuest.MadeleineChu
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Madeleine Chu", unique_name: "Madeleine Chu#cook_"},
       %{
         map: "prt_cas",
         x: 329,

@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Guides.GuidesIzlude.Guideizlu
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
+      %{name: "", unique_name: "GuideIzlude"},
       %{
         map: "izlude",
         x: 129,

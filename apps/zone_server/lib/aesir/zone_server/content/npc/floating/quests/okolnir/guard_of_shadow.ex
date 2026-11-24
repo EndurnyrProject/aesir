@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.GuardOfShadow do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Guard of Shadow", unique_name: "Guard of Shadow#main_all"},
       %{
         map: "que_qaru01",
         x: 235,

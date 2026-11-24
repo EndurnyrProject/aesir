@@ -36,7 +36,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Kafras.Kafras.KafraEmployeeKafProntera do
         y: 326,
         dir: 3,
         sprite: 112,
-        name: "Kafra Employee::kaf_prontera",
+        name: "Kafra Employee",
         scope: :shared,
         unique_name: "kaf_prontera"
       }

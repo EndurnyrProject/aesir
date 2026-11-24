@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.GateManagerMain d
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "#Gate_manager_main"},
       %{
         map: "que_qaru01",
         x: 1,

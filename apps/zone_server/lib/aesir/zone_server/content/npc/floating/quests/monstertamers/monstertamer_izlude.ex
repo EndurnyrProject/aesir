@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Monstertamers.Monstertame
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "MonsterTamer_izlude"},
       %{
         map: "izlude_in",
         x: 55,

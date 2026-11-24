@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.FirstClass.TuArcher.Minis
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Minister", unique_name: "Minister#tu_"},
       %{
         map: "prt_cas",
         x: 97,

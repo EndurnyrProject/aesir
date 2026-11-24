@@ -7,7 +7,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ModuleName do
   (`Content.Npc.<Dir…>.<File>.<Name>` under `content/npc/<dir>/<file>/<slug>.ex`),
   so every NPC in one source file shares a folder and module parent; floating
   scripts and global functions keep their own namespaces. rAthena names are
-  sanitized (the `#hidden` suffix and `::exported` prefix stripped for display,
+  sanitized (the `::exname` and `#hidden` suffixes stripped for display,
   everything non-alphanumeric squashed for slugs); directory/map names like
   `1-1` or `1@mcd` gain an `M` prefix to stay valid Elixir aliases.
   """
@@ -16,11 +16,16 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ModuleName do
 
   @root "Aesir.ZoneServer.Content.Npc"
 
-  @doc "The player-visible display name: everything before the `#` suffix."
+  @doc """
+  The player-visible display name: rAthena's `npc_parsename` display part
+  (everything before `::`), cut at the `#` suffix. `::Name` has an empty
+  display name.
+  """
   @spec display_name(String.t()) :: String.t()
   def display_name(name) do
     name
-    |> String.trim_leading(":")
+    |> String.split("::", parts: 2)
+    |> hd()
     |> String.split("#")
     |> hd()
   end

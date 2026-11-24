@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests131.Diego do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Diego", unique_name: "Diego#ep13bs_"},
       %{
         map: "mid_camp",
         x: 266,

@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests131.MemberOfAllianc
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Member of Alliance", unique_name: "Member of Alliance#prt_"},
       %{
         map: "prt_cas",
         x: 23,

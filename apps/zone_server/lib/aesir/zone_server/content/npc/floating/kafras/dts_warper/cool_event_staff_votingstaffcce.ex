@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Kafras.DtsWarper.CoolEventStaffV
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "Cool Event Staff", unique_name: "VotingStaffCCE"},
       %{
         map: "yuno",
         x: 153,

@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Floating.Cities.Malaya.UnidentifiedCre
   use Aesir.ZoneServer.Npc,
     scope: :renewal,
     spawn: [
+      %{name: "Unidentified Creature", unique_name: "Unidentified Creature#i"},
       %{
         map: "ma_fild01",
         x: 74,

@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.TestTubeTesttubekhq2
         y: 68,
         dir: 0,
         sprite: 111,
-        name: "Test Tube::TestTubeKHQ2",
+        name: "Test Tube",
         scope: :shared,
         unique_name: "TestTubeKHQ2"
       }

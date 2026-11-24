@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests132.MjoFind do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "mjo_find"},
       %{
         map: "mjolnir_01",
         x: 32,

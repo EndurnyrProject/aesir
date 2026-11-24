@@ -120,13 +120,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NameHandler do
 
   # Resolves entity_id to a static NPC placement and replies with its name.
   # Reached only after the own-char/visible_players/visible_mobs branches
-  # decline the id; an id that resolves to no NPC module is ignored.
+  # decline the id; an id that resolves to no NPC module, or to a floating NPC
+  # (on no map, so never in view), is ignored.
   defp reply_npc_name(connection_pid, entity_id) do
     case NpcRegistry.module_for_unit(entity_id) do
-      {:ok, {_module, placement}} ->
+      {:ok, {_module, %{map: map} = placement}} when map != nil ->
         MessageRouter.send_to(connection_pid, %NameResponse{gid: entity_id, name: placement.name})
 
-      :error ->
+      _not_in_view ->
         Logger.debug("Ignoring name request for entity #{entity_id} (not in view range)")
     end
   end

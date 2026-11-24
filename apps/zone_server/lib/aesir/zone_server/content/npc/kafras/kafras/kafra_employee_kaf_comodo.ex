@@ -36,7 +36,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Kafras.Kafras.KafraEmployeeKafComodo do
         y: 150,
         dir: 4,
         sprite: 721,
-        name: "Kafra Employee::kaf_comodo",
+        name: "Kafra Employee",
         scope: :shared,
         unique_name: "kaf_comodo"
       }

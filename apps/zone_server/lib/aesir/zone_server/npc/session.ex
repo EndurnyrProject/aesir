@@ -819,6 +819,8 @@ defmodule Aesir.ZoneServer.Npc.Session do
   end
 
   @spec broadcast_to_range(Placement.t(), struct()) :: :ok
+  defp broadcast_to_range(%Placement{map: nil}, _packet), do: :ok
+
   defp broadcast_to_range(placement, packet) do
     Broadcast.to_in_range(placement.map, placement.x, placement.y, Config.view_range(), packet)
   end

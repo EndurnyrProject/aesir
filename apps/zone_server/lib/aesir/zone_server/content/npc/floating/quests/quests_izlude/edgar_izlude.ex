@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsIzlude.EdgarIzlude 
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "Edgar_izlude"},
       %{
         map: "izlude",
         x: 179,

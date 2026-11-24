@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.Gdtimer01Main do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "#gdtimer01_main"},
       %{
         map: "que_qaru01",
         x: 2,

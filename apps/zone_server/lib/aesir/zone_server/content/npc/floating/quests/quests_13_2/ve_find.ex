@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Quests132.VeFind do
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "ve_find"},
       %{
         map: "ve_fild03",
         x: 152,

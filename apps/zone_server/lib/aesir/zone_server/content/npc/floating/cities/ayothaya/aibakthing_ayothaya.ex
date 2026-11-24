@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Ayothaya.AibakthingAyotha
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "Aibakthing_ayothaya"},
       %{
         map: "alberta",
         x: 246,

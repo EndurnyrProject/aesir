@@ -25,7 +25,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.CheshrumnirGuardChesguard d
         y: 243,
         dir: 5,
         sprite: 934,
-        name: "Cheshrumnir Guard::ChesGuard",
+        name: "Cheshrumnir Guard",
         scope: :shared,
         unique_name: "ChesGuard"
       },

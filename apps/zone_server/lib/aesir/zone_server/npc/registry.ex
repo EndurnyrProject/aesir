@@ -27,6 +27,11 @@ defmodule Aesir.ZoneServer.Npc.Registry do
   (used by `trigger_all/1` and the clock scheduler); `touch_rects/1` lists the
   touch-area rects on a map, derived from placements with `trigger` set (used
   by movement's `OnTouch` check).
+
+  Floating placements (`map: nil`, rAthena `-` scripts) have no cell, so they
+  are left out of the cell index and touch rects, but they get a gid, a name
+  entry and label entries like any other placement (rAthena `map_addiddb` and
+  `npcname_db` in `npc_parse_script`).
   """
 
   require Logger
@@ -106,7 +111,8 @@ defmodule Aesir.ZoneServer.Npc.Registry do
   `reload/0` and `reload/1` resolve the configured `GameMode`; `reload/2`
   accepts an explicit mode for deterministic composition. Inactive NPC bodies
   and placements are excluded before any index is built, as are placements on a
-  map missing from the `MapCache` (one warning is logged per such map).
+  map missing from the `MapCache` (one warning is logged per such map);
+  floating placements are on no map and always kept.
 
   Does **not** run `OnInit` itself — callers that want rAthena's full
   `@reloadscript` semantics call `Events.run_on_init/0` afterwards.
@@ -275,6 +281,7 @@ defmodule Aesir.ZoneServer.Npc.Registry do
   defp build(entries) do
     index =
       for {module, placement} <- entries,
+          not Placement.floating?(placement),
           into: %{},
           do: {{placement.map, placement.x, placement.y}, {module, placement}}
 
@@ -318,7 +325,10 @@ defmodule Aesir.ZoneServer.Npc.Registry do
 
   @spec drop_uncached_maps([entry()]) :: [entry()]
   defp drop_uncached_maps(entries) do
-    {placed, dropped} = Enum.split_with(entries, fn {_module, p} -> MapCache.exists?(p.map) end)
+    {placed, dropped} =
+      Enum.split_with(entries, fn {_module, p} ->
+        Placement.floating?(p) or MapCache.exists?(p.map)
+      end)
 
     dropped
     |> Enum.frequencies_by(fn {_module, p} -> p.map end)

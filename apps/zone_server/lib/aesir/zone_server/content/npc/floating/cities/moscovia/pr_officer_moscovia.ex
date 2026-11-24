@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Cities.Moscovia.PrOfficerMoscovi
   use Aesir.ZoneServer.Npc,
     scope: :shared,
     spawn: [
+      %{name: "", unique_name: "PR_Officer_moscovia"},
       %{
         map: "alberta",
         x: 246,
