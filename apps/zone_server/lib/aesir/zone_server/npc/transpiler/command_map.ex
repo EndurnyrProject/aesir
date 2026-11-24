@@ -37,6 +37,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     (`name(ctx, msg, npc: _, target: _)`). An empty-string NPC name means the
     attached NPC and is dropped; the `<color>` argument is hoisted (for side
     effects) then dropped, as the chat wire message carries no color.
+  - `%{shape: :soundeffectall, dsl: name}` — `soundeffectall "<file>",<type>
+    {,"<map>"{,<x0>,<y0>,<x1>,<y1>}}` → `name(ctx, file, type)`,
+    `name(ctx, file, type, map)` or `name(ctx, file, type, map, {x0, y0, x1, y1})`;
+    a map with an incomplete rectangle stays a stub.
   - `%{shape: :timer, dsl: name}` — `initnpctimer`/`stopnpctimer`/`startnpctimer`:
     zero args (self) → `name(ctx)`, one name arg → `name(ctx, arg)`;
     attach-flag variants stay a stub.
@@ -259,7 +263,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "specialeffect2" => %{dsl: "specialeffect2", args: [:effect]},
     "cutin" => %{dsl: "cutin", args: [:string, :int]},
     "soundeffect" => %{dsl: "soundeffect", args: [:string, :int]},
-    "soundeffectall" => %{dsl: "soundeffectall", args: [:string, :int]},
+    "soundeffectall" => %{shape: :soundeffectall, dsl: "soundeffectall"},
     "progressbar" => %{dsl: "progressbar", args: [:string, :int]},
     "navigateto" => %{shape: :navigateto, dsl: "navigateto"},
     "getmapxy" => %{shape: :getmapxy, dsl: "getmapxy"},

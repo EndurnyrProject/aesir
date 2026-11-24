@@ -126,6 +126,8 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate cutin(ctx, image, type), to: Visuals
   defdelegate soundeffect(ctx, name, type), to: Visuals
   defdelegate soundeffectall(ctx, name, type), to: Visuals
+  defdelegate soundeffectall(ctx, name, type, map), to: Visuals
+  defdelegate soundeffectall(ctx, name, type, map, area), to: Visuals
   defdelegate navigateto(ctx, map, x, y, flag, hide_window, monster_id), to: Visuals
   defdelegate emotion(ctx, emote), to: Visuals
   defdelegate emotion(ctx, emote, target_id), to: Visuals

@@ -256,6 +256,9 @@ skilleffect/3
 sleep/2
 sleep2/2
 soundeffect/3
+soundeffectall/3
+soundeffectall/4
+soundeffectall/5
 sp/1
 specialeffect/2
 specialeffect/3

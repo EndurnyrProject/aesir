@@ -51,8 +51,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.Monster23 d
   def on_event("OnTimer2000", ctx) do
     ctx
     |> mapannounce("jupe_area2", "How about now?", 1, "0xFF0000")
-    |> soundeffectall("jupe_warning.wav", 0)
-    |> soundeffectall("jupe_warning.wav", 0)
+    |> soundeffectall("jupe_warning.wav", 0, "jupe_area2")
+    |> soundeffectall("jupe_warning.wav", 0, "jupe_area2")
   end
 
   def on_event("OnTimer4000", ctx) do
@@ -62,8 +62,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.Monster23 d
   def on_event("OnTimer7000", ctx) do
     ctx
     |> mapannounce("jupe_area2", "Just how strong you are!", 1, "0xFF0000")
-    |> soundeffectall("jupe_warning.wav", 0)
-    |> soundeffectall("jupe_warning.wav", 0)
+    |> soundeffectall("jupe_warning.wav", 0, "jupe_area2")
+    |> soundeffectall("jupe_warning.wav", 0, "jupe_area2")
     |> set_npc_var("MyMobs", 8)
     |> summon_guards()
   end

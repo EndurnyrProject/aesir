@@ -286,15 +286,14 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
 
   @doc """
   Plays a one-shot sound effect for every player in view range of the origin
-  unit (rAthena `soundeffectall`, area-around form — the trailing map-name and
-  bounding-box arguments are dropped, so the map-wide and sub-area variants are
-  approximated by the local broadcast). `name` is the `.wav` filename; `type`
-  selects the playback source (`0` = `data/wav`).
+  unit (rAthena `soundeffectall "<file>",<type>`, the area-around form).
+  `name` is the `.wav` filename; `type` selects the playback source (`0` =
+  `data/wav`).
 
   The origin is the invoking player when one is attached, otherwise the NPC
   running the script, matching rAthena's rid-then-oid fallback. Purely cosmetic,
   so the context is returned unchanged and a detached ctx with no origin (no
-  player and no `npc_gid`) is a silent no-op — a missing sound must never abort
+  player and no `npc_gid`) is a silent no-op: a missing sound must never abort
   the surrounding script.
   """
   @spec soundeffectall(Ctx.t(), String.t(), non_neg_integer()) :: Ctx.t()
@@ -306,6 +305,52 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
     case origin_unit(ctx) do
       {:ok, unit_type, unit_id} -> broadcast_area(unit_type, unit_id, packet)
       :error -> :ok
+    end
+
+    ctx
+  end
+
+  @doc """
+  Plays a one-shot sound effect for every player on `map` (rAthena
+  `soundeffectall "<file>",<type>,"<map>"`, `map_foreachinmap`).
+
+  As in the reference, the script still needs an origin unit (a player or the
+  NPC) even though the recipients do not depend on it; without one it is a
+  silent no-op.
+  """
+  @spec soundeffectall(Ctx.t(), String.t(), non_neg_integer(), String.t()) :: Ctx.t()
+  def soundeffectall(%Ctx{status: {:error, _}} = ctx, _name, _type, _map), do: ctx
+
+  def soundeffectall(%Ctx{} = ctx, name, type, map) do
+    if origin_unit(ctx) != :error do
+      map
+      |> SpatialIndex.get_players_on_map()
+      |> Broadcast.to_players(%SoundEffect{name: name, type: type})
+    end
+
+    ctx
+  end
+
+  @doc """
+  Plays a one-shot sound effect for every player on `map` standing inside the
+  inclusive rectangle `{x0, y0, x1, y1}` (rAthena
+  `soundeffectall "<file>",<type>,"<map>",<x0>,<y0>,<x1>,<y1>`,
+  `map_foreachinallarea`). Needs an origin unit like `soundeffectall/4`.
+  """
+  @spec soundeffectall(
+          Ctx.t(),
+          String.t(),
+          non_neg_integer(),
+          String.t(),
+          {integer(), integer(), integer(), integer()}
+        ) :: Ctx.t()
+  def soundeffectall(%Ctx{status: {:error, _}} = ctx, _name, _type, _map, _area), do: ctx
+
+  def soundeffectall(%Ctx{} = ctx, name, type, map, {x0, y0, x1, y1}) do
+    if origin_unit(ctx) != :error do
+      map
+      |> SpatialIndex.get_players_in_area(x0, y0, x1, y1)
+      |> Broadcast.to_players(%SoundEffect{name: name, type: type})
     end
 
     ctx

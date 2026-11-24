@@ -37,8 +37,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.RedAlarmOn3
   def on_event("OnTimer3000", ctx) do
     ctx
     |> mapannounce("jupe_area2", "I do not intend to stop you.", 1, "0xFF0000")
-    |> soundeffectall("jupe_warning.wav", 0)
-    |> soundeffectall("jupe_warning.wav", 0)
+    |> soundeffectall("jupe_warning.wav", 0, "jupe_area2")
+    |> soundeffectall("jupe_warning.wav", 0, "jupe_area2")
   end
 
   def on_event("OnTimer5000", ctx) do
@@ -65,8 +65,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsJuperos.RedAlarmOn3
   def on_event("OnTimer8000", ctx) do
     ctx
     |> disablenpc("Red Alarm On#2-1")
-    |> soundeffectall("jupe_warning.wav", 0)
-    |> soundeffectall("jupe_warning.wav", 0)
+    |> soundeffectall("jupe_warning.wav", 0, "jupe_area2")
+    |> soundeffectall("jupe_warning.wav", 0, "jupe_area2")
     |> stopnpctimer()
   end
 

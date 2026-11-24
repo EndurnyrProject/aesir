@@ -1409,6 +1409,38 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = #{dsl}(ctx, #{Enum.join([render(text, env) | opts], ", ")})"], :cont}
   end
 
+  # `soundeffectall "<file>",<type>{,"<map>"{,<x0>,<y0>,<x1>,<y1>}}`: the
+  # area-around form, the whole-map form and the map-rectangle form. A map
+  # with an incomplete rectangle is the reference's "insufficient arguments"
+  # error and stays a stub.
+  defp emit_mapped(_name, %{shape: :soundeffectall, dsl: dsl}, args, env)
+       when length(args) in [2, 3, 7] do
+    {pre, args} = hoist_all(args, env)
+    [file, type | rest] = args
+    head = [typed_arg(file, :string, env), typed_arg(type, :int, env)]
+
+    tail =
+      case rest do
+        [] ->
+          []
+
+        [map] ->
+          [typed_arg(map, :string, env)]
+
+        [map | coords] ->
+          rect = Enum.map_join(coords, ", ", &typed_arg(&1, :int, env))
+          [typed_arg(map, :string, env), "{#{rect}}"]
+      end
+
+    {pre ++ ["ctx = #{dsl}(ctx, #{Enum.join(head ++ tail, ", ")})"], :cont}
+  end
+
+  defp emit_mapped(name, %{shape: :soundeffectall}, args, env) do
+    {pre, args} = hoist_all(args, env)
+    rendered = Enum.map_join(args, ", ", &render(&1, env))
+    {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
+  end
+
   # A single-argument buildin (event ref, NPC name): any other arity is a
   # form the DSL cannot express, so it stays a stub.
   defp emit_mapped(_name, %{shape: :ref1, dsl: dsl}, [arg], env) do

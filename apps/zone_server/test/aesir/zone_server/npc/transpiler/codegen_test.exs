@@ -2779,17 +2779,20 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "todo(ctx, :soundeffect"
   end
 
-  test "soundeffectall maps to its broadcast op, dropping the area arguments" do
+  test "soundeffectall maps the area, whole-map and map-rectangle forms" do
     src =
       gen!("""
       soundeffectall "election.wav",0;
-      soundeffectall "election.wav",0,0,"prontera";
+      soundeffectall "election.wav",0,"prontera";
+      soundeffectall "election.wav",0,"prontera",10,20,30,40;
+      soundeffectall "election.wav",0,"prontera",10,20;
       close;
       """)
 
     assert src =~ ~S{soundeffectall("election.wav", 0)}
-    refute src =~ "todo(ctx, :soundeffectall"
-    refute src =~ ~S{"prontera"}
+    assert src =~ ~S{soundeffectall("election.wav", 0, "prontera")}
+    assert src =~ ~S|soundeffectall("election.wav", 0, "prontera", {10, 20, 30, 40})|
+    assert src =~ ~S{todo(:soundeffectall, ["election.wav", 0, "prontera", 10, 20])}
   end
 
   test "gettime maps to its read, resolving DT_* date-type constants" do
