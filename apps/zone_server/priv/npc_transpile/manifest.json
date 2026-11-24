@@ -43516,6 +43516,863 @@
       }
     ]
   },
+  "quests/quests_ayothaya.txt|script| #2_dun_in|ayo_dun01:24:283": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.M2DunIn",
+    "output_hash": "491d64a4fb0f997c7d4873eb0e8c4f7bf10f709999d329c9389b1802c9cbe982",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/2_dun_in.ex",
+    "source_hash": "15f34d76c3acc2fbf3664bd9ec9f8687623761dc2e2d73f1241a7b2ede2bf9bc",
+    "spawns": [
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 24,
+        "y": 283,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #2_dun_in",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script| #hint01::AyoHint|ayo_dun01:156:148": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Hint01Ayohint",
+    "output_hash": "a601274e744bfaf1164cca89bc579490240f8622cb90b11d6e2322b1415651e5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/hint01_ayohint.ex",
+    "source_hash": "d03b835dea227169201879448bda8c42b75f8dd2d946379a75ff1503e2b4ffc5",
+    "spawns": [
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 156,
+        "y": 148,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": "AyoHint",
+        "sprite": -1,
+        "trigger": [
+          0,
+          4
+        ]
+      },
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 259,
+        "y": 42,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #hint02",
+        "sprite": -1,
+        "trigger": [
+          2,
+          0
+        ]
+      },
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 259,
+        "y": 44,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #hint02_2",
+        "sprite": -1,
+        "trigger": [
+          2,
+          0
+        ]
+      },
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 259,
+        "y": 46,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #hint02_3",
+        "sprite": -1,
+        "trigger": [
+          2,
+          0
+        ]
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script| #hun_thai_1|ayo_dun01:198:164": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.HunThai1",
+    "output_hash": "95f24ba64a9a8c19bd4dd2db986e0b156863b41539fca5eaf09e8bc17a8b7421",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/hun_thai_1.ex",
+    "source_hash": "9690dc6a978e86d98e318407916f56d2d4086328f13edcc7f33e1a9c0a249344",
+    "spawns": [
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 198,
+        "y": 164,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #hun_thai_1",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script| #hun_thai_2|ayo_dun01:87:16": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.HunThai2",
+    "output_hash": "31704b88e68febbb0703da9448599ad6394b14b0ac7e3972b1b24f3392f43f59",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/hun_thai_2.ex",
+    "source_hash": "c3dd1706b5e543e88bb28b1e33b47e3bda36068ad2a953a08235e43b8b607207",
+    "spawns": [
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 87,
+        "y": 16,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #hun_thai_2",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script| #hun_thai_3|ayo_dun01:268:214": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.HunThai3",
+    "output_hash": "63c76e67dbfd23167a24acdaf1a1ff9d1903ba184a32e24bda4c92c4f85f3335",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/hun_thai_3.ex",
+    "source_hash": "551007e4c352ac2d494037e5a73f824dfce1b71cf08044260a86fcaf19c7c917",
+    "spawns": [
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 268,
+        "y": 214,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #hun_thai_3",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script| #hun_thai_4|ayo_dun01:147:274": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.HunThai4",
+    "output_hash": "f0bf963dba45832c84ffce83f573543ac47808564442297a7af88fed3f7bb8ed",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/hun_thai_4.ex",
+    "source_hash": "1ccff2e127113b5f738eddcde3c0f2ba78865d1c56b04edf08b138a21b668566",
+    "spawns": [
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 147,
+        "y": 274,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #hun_thai_4",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script| #hun_thai_5|ayo_dun01:99:118": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.HunThai5",
+    "output_hash": "6898aaa128627d164fec48ebfaf51a6c2b3203b176f21901778a7b4ffb4034e8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/hun_thai_5.ex",
+    "source_hash": "6c6101e7920aa488058a99deeb3fb0a42f7243ad320390f24f73733381eaa7b7",
+    "spawns": [
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 99,
+        "y": 118,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #hun_thai_5",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script| #hun_thai_6|ayo_dun01:16:188": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.HunThai6",
+    "output_hash": "501d0787bccd9ebb4645954491b1baf4b1a87a1345dd98bf6a4928c988002d36",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/hun_thai_6.ex",
+    "source_hash": "fa207b54e5817110e99ba669fc8af5cfce6aa59ee070dc006e60b98cbff2ccbd",
+    "spawns": [
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 16,
+        "y": 188,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #hun_thai_6",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script| #reward_tiger|ayo_dun02:268:108": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.RewardTiger",
+    "output_hash": "050a484d9011dcc3fc5fae03ea92c4d85c668498bce792ba22516fa9d1041c02",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/reward_tiger.ex",
+    "source_hash": "4c315034c461e9ff88482ae0dd5e92430ecf5414efc9718cc0e3e8f1500a94b8",
+    "spawns": [
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 268,
+        "y": 108,
+        "map": "ayo_dun02",
+        "dir": 0,
+        "unique_name": " #reward_tiger",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script| #th_dun1_1::AyoTrap2|ayo_dun01:26:27": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.ThDun11Ayotrap2",
+    "output_hash": "c563714f4e86cf19f0c3cb3b12725a8527b4491914832980f8de9b0da3421f18",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/th_dun1_1_ayotrap2.ex",
+    "source_hash": "cf7272f9a91a5f862f61f75746e210cff7f85f2ac1c1c9591ee48e645876eb42",
+    "spawns": [
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 26,
+        "y": 27,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": "AyoTrap2",
+        "sprite": -1,
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 28,
+        "y": 27,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #th_dun1_2",
+        "sprite": -1,
+        "trigger": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 27,
+        "y": 25,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #th_dun1_3",
+        "sprite": -1,
+        "trigger": [
+          1,
+          0
+        ]
+      },
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 25,
+        "y": 25,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #th_dun1_4",
+        "sprite": -1
+      },
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 272,
+        "y": 273,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #th_dun1_5",
+        "sprite": -1,
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 274,
+        "y": 273,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #th_dun1_6",
+        "sprite": -1,
+        "trigger": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 273,
+        "y": 271,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #th_dun1_7",
+        "sprite": -1,
+        "trigger": [
+          1,
+          0
+        ]
+      },
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 271,
+        "y": 271,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #th_dun1_8",
+        "sprite": -1
+      },
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 26,
+        "y": 273,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #th_dun1_9",
+        "sprite": -1,
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 28,
+        "y": 273,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #th_dun1_10",
+        "sprite": -1,
+        "trigger": [
+          0,
+          1
+        ]
+      },
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 27,
+        "y": 271,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #th_dun1_11",
+        "sprite": -1,
+        "trigger": [
+          1,
+          0
+        ]
+      },
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 25,
+        "y": 271,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #th_dun1_12",
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script| #th_dun1_1_1::AyoTrap1|ayo_dun01:273:26": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.ThDun111Ayotrap1",
+    "output_hash": "ac2806776de8f9f2d9c163a79489b1dfe455dd3d8ba97762a6410d0726c8c512",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/th_dun1_1_1_ayotrap1.ex",
+    "source_hash": "1f0a79e3d0541394ce0ee10ec2d737a63443ededc79b0c871d76fd84c3d14289",
+    "spawns": [
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 273,
+        "y": 26,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": "AyoTrap1",
+        "sprite": 111,
+        "trigger": [
+          0,
+          4
+        ]
+      },
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 273,
+        "y": 27,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #th_dun1_1_2",
+        "sprite": 111
+      },
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 272,
+        "y": 27,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #th_dun1_1_3",
+        "sprite": 111,
+        "trigger": [
+          0,
+          4
+        ]
+      },
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 272,
+        "y": 26,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "unique_name": " #th_dun1_1_4",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|#Annonblood|ayo_dun02:91:263": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Annonblood",
+    "output_hash": "975615a33cfae4cb91a67e241240672b7befd34c2b7e2db0a8ae6ca94cc87d8e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/annonblood.ex",
+    "source_hash": "40523c786b0a1199d4b3bc15c329721716dce25e23c3b6d65b803d441e2fcab4",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 91,
+        "y": 263,
+        "map": "ayo_dun02",
+        "dir": 0,
+        "unique_name": "#Annonblood",
+        "sprite": 111,
+        "trigger": [
+          2,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|Aik#thai|ayo_fild02:25:154": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Aik",
+    "output_hash": "ab6ebeeb102c3c375701b17df815db727210a8b9ea570a42903bee07ecbeaf06",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/aik.ex",
+    "source_hash": "e63415593f0ccbb7bd45d8bdff79874f028891c1b4894afaf92e4ac9654712d3",
+    "spawns": [
+      {
+        "name": "Aik",
+        "scope": "shared",
+        "x": 25,
+        "y": 154,
+        "map": "ayo_fild02",
+        "dir": 0,
+        "unique_name": "Aik#thai",
+        "sprite": 843
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|AyoFootprint1|ayo_dun01:255:62": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Ayofootprint1",
+    "output_hash": "d9f40aa07ca60f07e80cd239c42a11d1acb152d85b513dd893fb373550aab9bc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/ayofootprint1.ex",
+    "source_hash": "954e98208700dcb93a289d0a2a0893bfaf9da0a134f6d0db6b58ef7dfeaea35b",
+    "spawns": [
+      {
+        "name": "AyoFootprint1",
+        "scope": "shared",
+        "x": 255,
+        "y": 62,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "sprite": 139,
+        "trigger": [
+          2,
+          0
+        ]
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|AyoFootprint2|ayo_dun01:74:142": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Ayofootprint2",
+    "output_hash": "dde4fceaeb893c075d544f24425bc9e1ecf1d3fc5dc822372f98308e5981d312",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/ayofootprint2.ex",
+    "source_hash": "e7c9f1d8f3c9894af50a21f5f7401cccf1a08d98605a322905c49a8f03345e19",
+    "spawns": [
+      {
+        "name": "AyoFootprint2",
+        "scope": "shared",
+        "x": 74,
+        "y": 142,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "sprite": 139,
+        "trigger": [
+          2,
+          0
+        ]
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|AyoFootprint3|ayo_dun01:244:256": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Ayofootprint3",
+    "output_hash": "9cc1805bdb17819ff90a04ba812c16fc6cb15716fac5a3bb18c4f49866806adf",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/ayofootprint3.ex",
+    "source_hash": "b2543e87cbc8f6973a58336a5c6ff8783a85e6763f9fa3060a9c5d3aeaa0731f",
+    "spawns": [
+      {
+        "name": "AyoFootprint3",
+        "scope": "shared",
+        "x": 244,
+        "y": 256,
+        "map": "ayo_dun01",
+        "dir": 2,
+        "sprite": 139,
+        "trigger": [
+          2,
+          0
+        ]
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|AyoFootprint4|ayo_dun01:17:257": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Ayofootprint4",
+    "output_hash": "d00c803f11577872cc68a11f6c0e30047983caa402a74cb44629bf4277df875c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/ayofootprint4.ex",
+    "source_hash": "c0214bc849eed7648de594f1424b7ba6f5a7f617674d46f0848d86bc530d9fb2",
+    "spawns": [
+      {
+        "name": "AyoFootprint4",
+        "scope": "shared",
+        "x": 17,
+        "y": 257,
+        "map": "ayo_dun01",
+        "dir": 0,
+        "sprite": 139,
+        "trigger": [
+          2,
+          0
+        ]
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|AyoFootprint5|ayo_dun02:145:120": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Ayofootprint5",
+    "output_hash": "48eda0fb2b046c7bc51902844bbf966bae923fa4c30996308baa79e26abc247c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/ayofootprint5.ex",
+    "source_hash": "86473dca5f90910fce848cc567acf681a9ed6b6459867728fdecdda81537980a",
+    "spawns": [
+      {
+        "name": "AyoFootprint5",
+        "scope": "shared",
+        "x": 145,
+        "y": 120,
+        "map": "ayo_dun02",
+        "dir": 0,
+        "sprite": 139,
+        "trigger": [
+          2,
+          0
+        ]
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|AyoFootprint6|ayo_dun02:135:168": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Ayofootprint6",
+    "output_hash": "fcb45249fcc2e58480cbe376c32d9d5cfcd30072539e353d1ac8569f3b46cb6f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/ayofootprint6.ex",
+    "source_hash": "967b3949bbb6604bb9f65c61e43bb7fe64a74e5d5fd2a0676f877e1aee6f72c5",
+    "spawns": [
+      {
+        "name": "AyoFootprint6",
+        "scope": "shared",
+        "x": 135,
+        "y": 168,
+        "map": "ayo_dun02",
+        "dir": 0,
+        "sprite": 139,
+        "trigger": [
+          0,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|AyoFootprint7|ayo_dun02:77:213": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Ayofootprint7",
+    "output_hash": "af2eb0e0ff14f8baab196b9eb53b40e0dc529c78600e30b07e41e28fff1de159",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/ayofootprint7.ex",
+    "source_hash": "a9ef868c805cb5339987d84c859100153d0046b53927f21a971d019cc6612935",
+    "spawns": [
+      {
+        "name": "AyoFootprint7",
+        "scope": "shared",
+        "x": 77,
+        "y": 213,
+        "map": "ayo_dun02",
+        "dir": 0,
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|AyoFootprint8|ayo_dun02:86:254": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Ayofootprint8",
+    "output_hash": "9a79b45676c8644594bd51b437b03503f031c0b1ff1c5c33469c31d3582bb5de",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/ayofootprint8.ex",
+    "source_hash": "3773b8c4e9c8d0271b7ab7e8d808930c0d4a3f24c6afca35a3ab21fc0f3a22bc",
+    "spawns": [
+      {
+        "name": "AyoFootprint8",
+        "scope": "shared",
+        "x": 86,
+        "y": 254,
+        "map": "ayo_dun02",
+        "dir": 0,
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|Cook#ayo|ayo_in01:145:163": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Cook",
+    "output_hash": "98aa9ff13815faadacbc00a339aafc056421a4ae71b96660c8f53b3020fd6c10",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/cook.ex",
+    "source_hash": "1fba06c1915d2eb5ffe47014d93a03b31814604fc6cfa33d72534dd8a18a79f4",
+    "spawns": [
+      {
+        "name": "Cook",
+        "scope": "shared",
+        "x": 145,
+        "y": 163,
+        "map": "ayo_in01",
+        "dir": 3,
+        "unique_name": "Cook#ayo",
+        "sprite": 839
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|Dusit#thai|ayothaya:83:132": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Dusit",
+    "output_hash": "7d91ddb487da330342713ccdcfe7ed9b5f5f93618385732c6eb753338e971db1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/dusit.ex",
+    "source_hash": "0040ca496d31891c3143e27cefb6bac14a034720fb40795057460551251955d6",
+    "spawns": [
+      {
+        "name": "Dusit",
+        "scope": "shared",
+        "x": 83,
+        "y": 132,
+        "map": "ayothaya",
+        "dir": 0,
+        "unique_name": "Dusit#thai",
+        "sprite": 843
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|Einon#ayo|ayothaya:196:265": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Einon",
+    "output_hash": "db2b29825d54e982f66a7957db8e86938d75754fa0aca9e282c98175dfa5a470",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/einon.ex",
+    "source_hash": "60d46423a1fa9ceda49f7ce9497b43e9b34cbff5f863c00a45b877e6ef660baa",
+    "spawns": [
+      {
+        "name": "Einon",
+        "scope": "shared",
+        "x": 196,
+        "y": 265,
+        "map": "ayothaya",
+        "dir": 3,
+        "unique_name": "Einon#ayo",
+        "sprite": 842
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|Fisherman|ayothaya:253:99": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Fisherman",
+    "output_hash": "961239cd2a64742bb9b80738fafc38bffe12ac34ba2d1f1a3b555782aa2e758b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/fisherman.ex",
+    "source_hash": "8cae6fb2f7f20037d7a2c47ddafa5d4a4eaf2373be24b280bfff3ebb0f0046d0",
+    "spawns": [
+      {
+        "name": "Fisherman",
+        "scope": "shared",
+        "x": 253,
+        "y": 99,
+        "map": "ayothaya",
+        "dir": 3,
+        "sprite": 843
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|Haggard Man|ayo_dun02:91:264": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.HaggardMan",
+    "output_hash": "782b6e5eae9746a5d733a03f178a34a4e2552d883335f4c812894514a1c1c340",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/haggard_man.ex",
+    "source_hash": "dc9b3c24907b6428a750b5c92b0598258c06996ba1887864a5fc580e9774e5ce",
+    "spawns": [
+      {
+        "name": "Haggard Man",
+        "scope": "shared",
+        "x": 91,
+        "y": 264,
+        "map": "ayo_dun02",
+        "dir": 3,
+        "sprite": 841
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|Merchant#ayo|ayothaya:213:94": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Merchant",
+    "output_hash": "12b51a76ecf91518baf7052ec3c8ca4aa75c8aa131159b1698832495ef7b70ec",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/merchant.ex",
+    "source_hash": "a8004c7cc0ef6686fdec245005664fdfca67f38aa396ca0485f04ded922fd0cb",
+    "spawns": [
+      {
+        "name": "Merchant",
+        "scope": "shared",
+        "x": 213,
+        "y": 94,
+        "map": "ayothaya",
+        "dir": 7,
+        "unique_name": "Merchant#ayo",
+        "sprite": 841
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|Mr. Jun#ayo|ayothaya:121:240": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.MrJun",
+    "output_hash": "6105f9eb4aa25cdb56317c6c827efe0d5d016ea47ac7a62c1c933d7f93483600",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/mr_jun.ex",
+    "source_hash": "4bebcb583de6562fe4eb93180e07633f25cc16f74bb46fbfe56b68a521dab42d",
+    "spawns": [
+      {
+        "name": "Mr. Jun",
+        "scope": "shared",
+        "x": 121,
+        "y": 240,
+        "map": "ayothaya",
+        "dir": 7,
+        "unique_name": "Mr. Jun#ayo",
+        "sprite": 842,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|Old Man#02|ayothaya:193:171": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.OldMan",
+    "output_hash": "d73ab2548337de2782096a762853111d3dfc4d361c2da80dbdeeac18b0c3abf0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/old_man.ex",
+    "source_hash": "2e107c3a879edd2af63bcab5accca41449e808617e8ec69b959e3ad3b9e426b5",
+    "spawns": [
+      {
+        "name": "Old Man",
+        "scope": "shared",
+        "x": 193,
+        "y": 171,
+        "map": "ayothaya",
+        "dir": 3,
+        "unique_name": "Old Man#02",
+        "sprite": 842
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|Powerful-Looking Woman|ayothaya:233:105": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.PowerfulLookingWoman",
+    "output_hash": "09a42c816a14b608ee30d58cd1e6aa649e0ae13460a8bda523cab823aa73156b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/powerful_looking_woman.ex",
+    "source_hash": "d50314930299f19529e66f000904f899dc97c236bed72531d8688f76bc554b17",
+    "spawns": [
+      {
+        "name": "Powerful-Looking Woman",
+        "scope": "shared",
+        "x": 233,
+        "y": 105,
+        "map": "ayothaya",
+        "dir": 3,
+        "sprite": 838,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|Puraim#thai1|ayo_fild01:129:197": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Puraim",
+    "output_hash": "d8047304982b49a233685a26b7da5049bf28cfe65b57686091475303a605373a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/puraim.ex",
+    "source_hash": "3bf82eddf851a9265a07d1036dcb6d6fcf6250b4968c318bb8e46a1c0a072df9",
+    "spawns": [
+      {
+        "name": "Puraim",
+        "scope": "shared",
+        "x": 129,
+        "y": 197,
+        "map": "ayo_fild01",
+        "dir": 0,
+        "unique_name": "Puraim#thai1",
+        "sprite": 842
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|Shaman#thai|ayo_in01:181:193": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Shaman",
+    "output_hash": "a8de19acd5c4417b47add85e4e486a0b13639b627aadfb59eb612255f21de30b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/shaman.ex",
+    "source_hash": "7255b8c2c9bb383604285a26eced115ace667835ea61c80f4caa41b634589156",
+    "spawns": [
+      {
+        "name": "Shaman",
+        "scope": "shared",
+        "x": 181,
+        "y": 193,
+        "map": "ayo_in01",
+        "dir": 4,
+        "unique_name": "Shaman#thai",
+        "sprite": 840
+      }
+    ]
+  },
+  "quests/quests_ayothaya.txt|script|Thongpool#ayo|ayothaya:153:86": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Thongpool",
+    "output_hash": "4fab44580851235e6cb4e86ebc0467cb43a3c3c5ae1ad5ee6e579eee413bd347",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_ayothaya/thongpool.ex",
+    "source_hash": "fe386aa99f263105a74a83bb72151d1339d52cc3a15becc603a05de27080b489",
+    "spawns": [
+      {
+        "name": "Thongpool",
+        "scope": "shared",
+        "x": 153,
+        "y": 86,
+        "map": "ayothaya",
+        "dir": 5,
+        "unique_name": "Thongpool#ayo",
+        "sprite": 843
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
