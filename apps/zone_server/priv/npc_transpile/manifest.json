@@ -46218,6 +46218,1436 @@
       }
     ]
   },
+  "quests/quests_gonryun.txt|script|#getitem1-1|gon_dun01:202:25": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Getitem11",
+    "output_hash": "11133c7097db1f8357f41be151a5362b12f20a62c52b426c3cc6d9eead4004b7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/getitem1_1.ex",
+    "source_hash": "8448cbba38aba31e4b253f7da9121ef78c5f5b0742ac05d0479d6850a1f5cbaf",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 202,
+        "y": 25,
+        "map": "gon_dun01",
+        "dir": 0,
+        "unique_name": "#getitem1-1",
+        "sprite": 111,
+        "trigger": [
+          2,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|#getitem1-2|gon_dun01:190:159": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Getitem12",
+    "output_hash": "8e8ba6e08f950c65828bb9d8198534a183bc585ef8fd8b426afb911842ca8659",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/getitem1_2.ex",
+    "source_hash": "be792e5143b8878619b80cff5970604f5811f6aabcb0926110be74c21374a3bc",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 190,
+        "y": 159,
+        "map": "gon_dun01",
+        "dir": 0,
+        "unique_name": "#getitem1-2",
+        "sprite": 111,
+        "trigger": [
+          2,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|#getitem1-3|gon_dun01:164:53": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Getitem13",
+    "output_hash": "48697ac31d7e5fcce5105637b8b2dc47fc9cde7d4857fb4d3687942faa08b6b4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/getitem1_3.ex",
+    "source_hash": "c11e64b1384cceaa3efd3475eb91fbd56073125df193724742512ffaf0d81558",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 164,
+        "y": 53,
+        "map": "gon_dun01",
+        "dir": 0,
+        "unique_name": "#getitem1-3",
+        "sprite": 111,
+        "trigger": [
+          2,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|#getitem1-4|gon_dun01:134:183": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Getitem14",
+    "output_hash": "1a839bb150399ead1a9c614e3329d865d0c292d2c7f86ad4086c05dd659a877d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/getitem1_4.ex",
+    "source_hash": "b83f9874db65ba27fdf958729466f7e819d12fcf000d9afadfadf5787c550d32",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 134,
+        "y": 183,
+        "map": "gon_dun01",
+        "dir": 0,
+        "unique_name": "#getitem1-4",
+        "sprite": 111,
+        "trigger": [
+          2,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|#getitem1-5|gon_dun01:140:257": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Getitem15",
+    "output_hash": "463eb48798314acb39fb281369f023090e86b46a9e3df4e3d45a41db4dd10528",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/getitem1_5.ex",
+    "source_hash": "ed4c61d2d5b29ba93ba93eb05637fb856e7f9ec644a18a493ed9796fcd20969b",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 140,
+        "y": 257,
+        "map": "gon_dun01",
+        "dir": 0,
+        "unique_name": "#getitem1-5",
+        "sprite": 111,
+        "trigger": [
+          2,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|#getitem2-1|gon_dun02:202:25": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Getitem21",
+    "output_hash": "520cbc78e67e6660e87b76ee013b0a093ba721b57e6a92aef7a823c8abf6c59d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/getitem2_1.ex",
+    "source_hash": "c550ca571b68271347c09ade960f71cebed15077f5d14d4acdf48222522e8590",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 202,
+        "y": 25,
+        "map": "gon_dun02",
+        "dir": 0,
+        "unique_name": "#getitem2-1",
+        "sprite": 111,
+        "trigger": [
+          2,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|#getitem2-2|gon_dun02:265:201": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Getitem22",
+    "output_hash": "7cbd0daa1dd07561bc77a4ea954841e1e6e7f89cdefb3adde1f1788e3c9eb51d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/getitem2_2.ex",
+    "source_hash": "e846c105b83a6cab45503145f1f9b40a821e184d8f393c3799fa97477811138f",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 265,
+        "y": 201,
+        "map": "gon_dun02",
+        "dir": 0,
+        "unique_name": "#getitem2-2",
+        "sprite": 111,
+        "trigger": [
+          2,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|#getitem2-3|gon_dun02:247:128": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Getitem23",
+    "output_hash": "582dea245805757c7e116525067352e64f78d466016c6d4262e3b30d55fd40a3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/getitem2_3.ex",
+    "source_hash": "6877ba721604cb5f307a9331c153ad4abb2b457c45806f1bffa3db2013d47dc9",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 247,
+        "y": 128,
+        "map": "gon_dun02",
+        "dir": 0,
+        "unique_name": "#getitem2-3",
+        "sprite": 111,
+        "trigger": [
+          2,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|#getitem2-4|gon_dun02:149:75": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Getitem24",
+    "output_hash": "dc7b7c59c1a7df3d59d2bb8e2a929098f0a3cad0b3983ba79d9310e75e7d7c1b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/getitem2_4.ex",
+    "source_hash": "f9a52d8932cfe06d6ba4b71e5ec7edf8db20cdc46353498f720e2815f37c6d49",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 149,
+        "y": 75,
+        "map": "gon_dun02",
+        "dir": 0,
+        "unique_name": "#getitem2-4",
+        "sprite": 111,
+        "trigger": [
+          2,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|#getitem2-5|gon_dun02:23:106": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Getitem25",
+    "output_hash": "987dfc4b1f5d5192d31ebb585acdfee7cd4cb0788c49cb77614a944cf9e94877",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/getitem2_5.ex",
+    "source_hash": "112feb0720fdab6731059b7fba73e9e1dc1629b014cbec25a4c23edecbfd8c77",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 23,
+        "y": 106,
+        "map": "gon_dun02",
+        "dir": 0,
+        "unique_name": "#getitem2-5",
+        "sprite": 111,
+        "trigger": [
+          2,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|#getitem2-6|gon_dun02:249:40": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Getitem26",
+    "output_hash": "fe5de0905f754ee5c1f521235cf080abb1af6907da179421a55982454ff2a8fb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/getitem2_6.ex",
+    "source_hash": "b88f1ee979ce39b8ec4e5614a75a1bf1c4d022dd83f4f81ae014f17145504c48",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 249,
+        "y": 40,
+        "map": "gon_dun02",
+        "dir": 0,
+        "unique_name": "#getitem2-6",
+        "sprite": 111,
+        "trigger": [
+          2,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|#getitem3-1|gon_dun03:10:74": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Getitem31",
+    "output_hash": "036b79048e765491e79c01c317c124899de6a331c1ca59b613c833171280f044",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/getitem3_1.ex",
+    "source_hash": "8438b7e01e5b7b933b9d08b15d55b754035ad34efbf90d43d4a5e73b21811e98",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 10,
+        "y": 74,
+        "map": "gon_dun03",
+        "dir": 0,
+        "unique_name": "#getitem3-1",
+        "sprite": 111,
+        "trigger": [
+          2,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|#getitem3-2|gon_dun03:199:102": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Getitem32",
+    "output_hash": "35e9526b41b74610fdac9791de172250f5a37ae960b65852aba13f6658b36e2b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/getitem3_2.ex",
+    "source_hash": "c0b31f942e2cc64146144c1a802b7f2fc7a617ad165b2e287a1dd89d82987b52",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 199,
+        "y": 102,
+        "map": "gon_dun03",
+        "dir": 0,
+        "unique_name": "#getitem3-2",
+        "sprite": 111,
+        "trigger": [
+          2,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|#getitem3-3|gon_dun03:14:163": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Getitem33",
+    "output_hash": "64a0fbb2277403df4aa4502e7ef47e04e4b8478fb7a20f7c64ac9f5e76e14505",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/getitem3_3.ex",
+    "source_hash": "ef2bb115d0c5c0cf16730c3119f8a140284a1e4e8a7655d4295d0d5c6b56851b",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 14,
+        "y": 163,
+        "map": "gon_dun03",
+        "dir": 0,
+        "unique_name": "#getitem3-3",
+        "sprite": 111,
+        "trigger": [
+          2,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|#getitem3-4|gon_dun03:156:263": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Getitem34",
+    "output_hash": "ff75480e7554ada3262c0a82e9a69a9d28b7007967e42759258e955d6ac24603",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/getitem3_4.ex",
+    "source_hash": "6a4c49c71a8c2b88dfc4bdf9240f97ccc26e6c0f218bb0951f41eef8ef3a7253",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 156,
+        "y": 263,
+        "map": "gon_dun03",
+        "dir": 0,
+        "unique_name": "#getitem3-4",
+        "sprite": 111,
+        "trigger": [
+          2,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|#getitem3-5|gon_dun03:170:90": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Getitem35",
+    "output_hash": "3efe77915b76cfa74bf5ef7d86a8481e53cb8aff028c33854b7e89f216a803e7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/getitem3_5.ex",
+    "source_hash": "aadaa4c8a106629a62f1bee349648331a4ee9c51a482216362d89e5f6f125663",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 170,
+        "y": 90,
+        "map": "gon_dun03",
+        "dir": 0,
+        "unique_name": "#getitem3-5",
+        "sprite": 111,
+        "trigger": [
+          2,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|#getitem3-6|gon_dun03:68:39": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Getitem36",
+    "output_hash": "aa4945eab8422983248327aa5612adb6676142030d284444342f66cb42973681",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/getitem3_6.ex",
+    "source_hash": "d45ea00c5f1c2e2ae9f653e73c0baec5494d43ec35ca049f1a834a021126c032",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 68,
+        "y": 39,
+        "map": "gon_dun03",
+        "dir": 0,
+        "unique_name": "#getitem3-6",
+        "sprite": 111,
+        "trigger": [
+          1,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|#getitem3-7|gon_dun03:68:213": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Getitem37",
+    "output_hash": "ccf1a25e8d84d4f27ce093ee1dc1cdced7fda944246fef11e9c766cac36e71d7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/getitem3_7.ex",
+    "source_hash": "203aa4ee18eb4e35cbf9e739236f51b686ae00455938585f20107c5f96e9c693",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 68,
+        "y": 213,
+        "map": "gon_dun03",
+        "dir": 0,
+        "unique_name": "#getitem3-7",
+        "sprite": 111,
+        "trigger": [
+          1,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|#gonknife|gon_fild01:245:257": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Gonknife",
+    "output_hash": "0c91756fc40fb4ae0beda8c559c7cbd503aeca63d2326f66e26061fe5d9b5093",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/gonknife.ex",
+    "source_hash": "d36547ed027d54b828a9baccda3493bef0e672244819766981eb837294680cb0",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 245,
+        "y": 257,
+        "map": "gon_fild01",
+        "dir": 0,
+        "unique_name": "#gonknife",
+        "sprite": 111,
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|Active little girl#gnbs|yuno:208:164": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.ActiveLittleGirl",
+    "output_hash": "cade4692c1448d5d8d44dc963a4349b0ea5d52d1506fe627ab44ad2b06f78e57",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/active_little_girl.ex",
+    "source_hash": "b7a92b17be0751417f732310c28d5a0633e3a09b586b7ea693c61524416a358b",
+    "spawns": [
+      {
+        "name": "Active little girl",
+        "scope": "shared",
+        "x": 208,
+        "y": 164,
+        "map": "yuno",
+        "dir": 4,
+        "unique_name": "Active little girl#gnbs",
+        "sprite": 101
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|Blacksmith#SaYumMoon|geffen_in:71:112": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Blacksmith",
+    "output_hash": "a9250b93ce4f5725f15d746d7b351adee40d77cde3e260c5b1cecba48a6eed8b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/blacksmith.ex",
+    "source_hash": "66b54b386c851cab10ae137ac49b48b1aae0335418c6bc1497744c4c029460c8",
+    "spawns": [
+      {
+        "name": "Blacksmith",
+        "scope": "shared",
+        "x": 71,
+        "y": 112,
+        "map": "geffen_in",
+        "dir": 2,
+        "unique_name": "Blacksmith#SaYumMoon",
+        "sprite": 731
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|Chief#gon|gon_in:17:93": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Chief",
+    "output_hash": "3ce8d555861ff420e66eb3804fe2a53bfd715e0ab1105039935e9f19863988e9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/chief.ex",
+    "source_hash": "d31046e524d7116b211453236113a7e6513536b0ccb62eeb5196ec6fb9718625",
+    "spawns": [
+      {
+        "name": "Chief",
+        "scope": "shared",
+        "x": 17,
+        "y": 93,
+        "map": "gon_in",
+        "dir": 5,
+        "unique_name": "Chief#gon",
+        "sprite": 775
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|Doctor#gnbs|yuno_in01:99:101": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Doctor",
+    "output_hash": "62e38b73ee16e632b28ba3d6cb537dfc6c05288e525d3696206d83625ef4990c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/doctor.ex",
+    "source_hash": "e06ec130eb956882aebc0d9093a54a8867a45feee9b7af609b567584d904f11a",
+    "spawns": [
+      {
+        "name": "Doctor",
+        "scope": "shared",
+        "x": 99,
+        "y": 101,
+        "map": "yuno_in01",
+        "dir": 4,
+        "unique_name": "Doctor#gnbs",
+        "sprite": 744
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|Girl##gnbs1|gonryun:139:142": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Girl",
+    "output_hash": "83010f667fb726de8d28c496d3478c00af841a16094bba5a9906d09c5712a627",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/girl.ex",
+    "source_hash": "32542eddf2ec3feac080fe530f02de3e3980139cfcaef61a8f8245808a8faa9d",
+    "spawns": [
+      {
+        "name": "Girl",
+        "scope": "shared",
+        "x": 139,
+        "y": 142,
+        "map": "gonryun",
+        "dir": 7,
+        "unique_name": "Girl##gnbs1",
+        "sprite": 772
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|Girl#gnbs2|geffen_in:106:106": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Girl106106",
+    "output_hash": "740427e7e1abfbbea848a06b8e1ada80d36425fcff10e71cc916caa4abf87d4f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/girl_106_106.ex",
+    "source_hash": "5d1f44bbf90c7b40528442bed4a87f624bce92bd74259a033e717b56ec74d05b",
+    "spawns": [
+      {
+        "name": "Girl",
+        "scope": "shared",
+        "x": 106,
+        "y": 106,
+        "map": "geffen_in",
+        "dir": 7,
+        "unique_name": "Girl#gnbs2",
+        "sprite": 716
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|Han Ran Jiao#gon|gonryun:237:226": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.HanRanJiao",
+    "output_hash": "d434d048a8407e605f95267972dbe69b0c49f62dffd849d230b57a8e4a80137a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/han_ran_jiao.ex",
+    "source_hash": "59534fd75bbe068a2b1b0542cbf5b1d4fed06e281d933ccd67da2b650795d65d",
+    "spawns": [
+      {
+        "name": "Han Ran Jiao",
+        "scope": "shared",
+        "x": 237,
+        "y": 226,
+        "map": "gonryun",
+        "dir": 3,
+        "unique_name": "Han Ran Jiao#gon",
+        "sprite": 776
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|Hostess#gon|gon_in:152:35": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Hostess",
+    "output_hash": "c9cd7e5c2a0218b1fdbad6192f7b941f629e236844ec5f6fe8c53d754166ab09",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/hostess.ex",
+    "source_hash": "3df5b1979d677de8c41cf4b56095052a1b00adc7553b879747bcc99960b1da56",
+    "spawns": [
+      {
+        "name": "Hostess",
+        "scope": "shared",
+        "x": 152,
+        "y": 35,
+        "map": "gon_in",
+        "dir": 4,
+        "unique_name": "Hostess#gon",
+        "sprite": 702
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|Madam#gnbs|gon_in:18:27": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Madam",
+    "output_hash": "25de89252f9af25eaa515e539b40376eefba5bcf3cb2b0618c64aed15f6794d0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/madam.ex",
+    "source_hash": "5512da9114540338726ffb632699718cb81cfa24a704982b74836ced9c48eafe",
+    "spawns": [
+      {
+        "name": "Madam",
+        "scope": "shared",
+        "x": 18,
+        "y": 27,
+        "map": "gon_in",
+        "dir": 5,
+        "unique_name": "Madam#gnbs",
+        "sprite": 771
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|Man in hangover#gon|gon_in:165:16": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.ManInHangover",
+    "output_hash": "31aace9501b79b445e73dd2273678561a2098839a40b10b883d2159d47fa09a2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/man_in_hangover.ex",
+    "source_hash": "6edbb5483a4b94d22f4fb861afb912f203f005c70895ff6358bb990f5a47437c",
+    "spawns": [
+      {
+        "name": "Man in hangover",
+        "scope": "shared",
+        "x": 165,
+        "y": 16,
+        "map": "gon_in",
+        "dir": 4,
+        "unique_name": "Man in hangover#gon",
+        "sprite": 748
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|Strange dead body#gnbs|gon_dun03:62:222": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.StrangeDeadBody",
+    "output_hash": "4d1706f7e75ee874d9f0edb319c6d5d58cc2870c38debfecc877e2153e3cdb0e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/strange_dead_body.ex",
+    "source_hash": "31de1c70333704c99af4f4296bb8862050db238196da8364c332d12e2424d4dc",
+    "spawns": [
+      {
+        "name": "Strange dead body",
+        "scope": "shared",
+        "x": 62,
+        "y": 222,
+        "map": "gon_dun03",
+        "dir": 0,
+        "unique_name": "Strange dead body#gnbs",
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|Stranger#gnbs|gonryun:100:241": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Stranger",
+    "output_hash": "be0485bd6045b2e68d938c2e91347a252c10ea09bc7ae7c4b347039d66e48ec7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/stranger.ex",
+    "source_hash": "50b555bf4a655b6aa2e426b721897203d29616044d1155743221078dabd550dc",
+    "spawns": [
+      {
+        "name": "Stranger",
+        "scope": "shared",
+        "x": 100,
+        "y": 241,
+        "map": "gonryun",
+        "dir": 0,
+        "unique_name": "Stranger#gnbs",
+        "sprite": 733
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|Young man#SaYumMoon|prontera:275:86": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.YoungMan",
+    "output_hash": "f98f1070cf242fe95f9328cc1115313c5d2c955823848dea8e0727cf480be262",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/young_man.ex",
+    "source_hash": "24cb75b529a4538b22cd15fbb8458b8bf67741b03376be8969872b54969cd1ac",
+    "spawns": [
+      {
+        "name": "Young man",
+        "scope": "shared",
+        "x": 275,
+        "y": 86,
+        "map": "prontera",
+        "dir": 2,
+        "unique_name": "Young man#SaYumMoon",
+        "sprite": 97
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|go away#gnbs|yuno_in01:104:94": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.GoAway",
+    "output_hash": "c4f6f80fd44882b6d1ffb6924a0599219ce1654a3566029144f224f2c53e6591",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/go_away.ex",
+    "source_hash": "ded4968774f2d8fdc44a38ae3f712bdc455bbe6c6c6ff15864b4589014222013",
+    "spawns": [
+      {
+        "name": "go away",
+        "scope": "shared",
+        "x": 104,
+        "y": 94,
+        "map": "yuno_in01",
+        "dir": 0,
+        "unique_name": "go away#gnbs",
+        "sprite": 139,
+        "trigger": [
+          2,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|start01#gnbs|gon_dun01:148:156": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Start01",
+    "output_hash": "8fb578dc05539fa9cc710a8e2e236531447bf1f93ed3ecb9442d0551916a967e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/start01.ex",
+    "source_hash": "a548c2c21762e0e5218d859f6da06734865d0691d7ad85c1530723250b33c925",
+    "spawns": [
+      {
+        "name": "start01",
+        "scope": "shared",
+        "x": 148,
+        "y": 156,
+        "map": "gon_dun01",
+        "dir": 0,
+        "unique_name": "start01#gnbs",
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|start02#gnbs|gon_dun02:1:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Start02",
+    "output_hash": "b0c03bb052c75219b9579270f7befa0a1d711bf0c4416f3ce95a34325c30fa7e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/start02.ex",
+    "source_hash": "c7cd16c38e74f27c07230107d5869edd23f2706c02a57b958b2bba883c00d331",
+    "spawns": [
+      {
+        "name": "start02",
+        "scope": "shared",
+        "x": 1,
+        "y": 1,
+        "map": "gon_dun02",
+        "dir": 0,
+        "unique_name": "start02#gnbs",
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|start03#gnbs|gon_dun03:1:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Start03",
+    "output_hash": "1a31dfa75665db26e584017cde18cd11eff7ff370a8ded60fd8b9ea1560400f0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/start03.ex",
+    "source_hash": "e3e4e2b4d2e0074bdae762d54df03a1b04ce55ca7ecfa65ee7c0460b28d08192",
+    "spawns": [
+      {
+        "name": "start03",
+        "scope": "shared",
+        "x": 1,
+        "y": 1,
+        "map": "gon_dun03",
+        "dir": 0,
+        "unique_name": "start03#gnbs",
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|timer1-1|gon_dun01:2:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Timer11",
+    "output_hash": "52811775d490581313aa1c320691e5ea579b49c29ca2c5bec3c1e90bfbebe2ea",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/timer1_1.ex",
+    "source_hash": "c1ef71afca777b06fcc6436d581fadd60ec2fc70722b794b0e1e0aaeaea9a1ba",
+    "spawns": [
+      {
+        "name": "timer1-1",
+        "scope": "shared",
+        "x": 2,
+        "y": 1,
+        "map": "gon_dun01",
+        "dir": 0,
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|timer1-2|gon_dun01:3:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Timer12",
+    "output_hash": "5167db04987af6085484f224f12bba86283f84dccdad26343990c044f9915d8d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/timer1_2.ex",
+    "source_hash": "df1c7cd96ee2ad25a9bc2a76d3225ac98de21a61773d72e70c60db62ee5d954d",
+    "spawns": [
+      {
+        "name": "timer1-2",
+        "scope": "shared",
+        "x": 3,
+        "y": 1,
+        "map": "gon_dun01",
+        "dir": 0,
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|timer1-3|gon_dun01:4:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Timer13",
+    "output_hash": "0d272972cb3595292012d039e803a7209adb577fc8c8a07f97167c8661e5326a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/timer1_3.ex",
+    "source_hash": "addd42234d18b936c13dfccfe7f0ca14bb3117e9231b155c7c4b759f80dbb45d",
+    "spawns": [
+      {
+        "name": "timer1-3",
+        "scope": "shared",
+        "x": 4,
+        "y": 1,
+        "map": "gon_dun01",
+        "dir": 0,
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|timer1-4|gon_dun01:5:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Timer14",
+    "output_hash": "f617655b127ee9dd0784eff4b2cf7e21baf11248073824775856a4e055f430bf",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/timer1_4.ex",
+    "source_hash": "d49125ceeb5754d451087ba9bed3adacf2ee72627592136fcfe59ef11d6147b4",
+    "spawns": [
+      {
+        "name": "timer1-4",
+        "scope": "shared",
+        "x": 5,
+        "y": 1,
+        "map": "gon_dun01",
+        "dir": 0,
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|timer1-5|gon_dun01:6:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Timer15",
+    "output_hash": "57e04beb839e9979e1114b74d55fde0abb2dd158edb484d123bb8158d15a3838",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/timer1_5.ex",
+    "source_hash": "aab5692fe2248cfb0614ea71e437cafb3f5556b1918375255cae4399f0713ee9",
+    "spawns": [
+      {
+        "name": "timer1-5",
+        "scope": "shared",
+        "x": 6,
+        "y": 1,
+        "map": "gon_dun01",
+        "dir": 0,
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|timer2-1|gon_dun02:2:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Timer21",
+    "output_hash": "cb4f340337719e65568464c309d546346875398bab0deb3aed437538f402f9a1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/timer2_1.ex",
+    "source_hash": "8f4368f127819be5c8eed3033c0c6fbbaf351a918aab958f176d6fcef09bba10",
+    "spawns": [
+      {
+        "name": "timer2-1",
+        "scope": "shared",
+        "x": 2,
+        "y": 1,
+        "map": "gon_dun02",
+        "dir": 0,
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|timer2-2|gon_dun02:3:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Timer22",
+    "output_hash": "d1a8fb3eb1cf7886d25635593dc7aa6c474ed257821f1f5c0b796f4fdec38f26",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/timer2_2.ex",
+    "source_hash": "1fc58f75bf159f128d76b3a0fc80904c95737d4fdd0855982e965b2465533ec1",
+    "spawns": [
+      {
+        "name": "timer2-2",
+        "scope": "shared",
+        "x": 3,
+        "y": 1,
+        "map": "gon_dun02",
+        "dir": 0,
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|timer2-3|gon_dun02:4:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Timer23",
+    "output_hash": "19e64bb7f48b75051c460edad8794be02ddea3d588e51d5ae0323f979b0ab185",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/timer2_3.ex",
+    "source_hash": "95564defff71b0d3dac77f08f59d4e1a9eb47649a79b444e235fdb2efd6006e8",
+    "spawns": [
+      {
+        "name": "timer2-3",
+        "scope": "shared",
+        "x": 4,
+        "y": 1,
+        "map": "gon_dun02",
+        "dir": 0,
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|timer2-4|gon_dun02:5:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Timer24",
+    "output_hash": "eca4099be9219518e903d8db718700f0715b5b5707d8f8ad7c1ecde7667b41e8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/timer2_4.ex",
+    "source_hash": "6b28e27743e11254a707274e6f0b8be4d278fe32c8f3dc3b08f7005f7057a6ee",
+    "spawns": [
+      {
+        "name": "timer2-4",
+        "scope": "shared",
+        "x": 5,
+        "y": 1,
+        "map": "gon_dun02",
+        "dir": 0,
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|timer2-5|gon_dun02:6:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Timer25",
+    "output_hash": "13536206fedf3b6d420d5079b189a7ded352a980beb9623736df3849191e6265",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/timer2_5.ex",
+    "source_hash": "0b8b2f3c8233c512cf799f1f1f03e7883da8170d2767fa79f17bd8ef738cc813",
+    "spawns": [
+      {
+        "name": "timer2-5",
+        "scope": "shared",
+        "x": 6,
+        "y": 1,
+        "map": "gon_dun02",
+        "dir": 0,
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|timer2-6|gon_dun02:7:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Timer26",
+    "output_hash": "55b608a9229652da563e258acd56b781941975e4f9033618689517a17958b41b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/timer2_6.ex",
+    "source_hash": "230551fad618d44f7e63b3e874caace270b015bfe5a8928bb0f3109fcef623de",
+    "spawns": [
+      {
+        "name": "timer2-6",
+        "scope": "shared",
+        "x": 7,
+        "y": 1,
+        "map": "gon_dun02",
+        "dir": 0,
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|timer3-1|gon_dun03:2:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Timer31",
+    "output_hash": "3e12d8f147dd4c0d28c3d58d29e47098d504684fc55e813dca7012b75bc99f6b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/timer3_1.ex",
+    "source_hash": "5cf3c8b944a2f2bafdedc2d84642878616083c799e3fbfe95bebeca595295d3c",
+    "spawns": [
+      {
+        "name": "timer3-1",
+        "scope": "shared",
+        "x": 2,
+        "y": 1,
+        "map": "gon_dun03",
+        "dir": 0,
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|timer3-2|gon_dun03:3:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Timer32",
+    "output_hash": "a2d5df76e8957f111f0e54108686f9f4effec07f6f5eecf555a5f61a1ad810c1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/timer3_2.ex",
+    "source_hash": "ca0b2ff5a8216693eaf1b18419e4e086eb9fa69295e1c103fd9f38d0d6ab1a18",
+    "spawns": [
+      {
+        "name": "timer3-2",
+        "scope": "shared",
+        "x": 3,
+        "y": 1,
+        "map": "gon_dun03",
+        "dir": 0,
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|timer3-3|gon_dun03:4:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Timer33",
+    "output_hash": "3a6b0363e6b37b4b3ad4c693c305ffbd936ebec5f52616eaefceff6461a961bd",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/timer3_3.ex",
+    "source_hash": "dab097cf7d4d4addd13e2381cd5d5b646fc910559d3edd16b7bf275bd518fb81",
+    "spawns": [
+      {
+        "name": "timer3-3",
+        "scope": "shared",
+        "x": 4,
+        "y": 1,
+        "map": "gon_dun03",
+        "dir": 0,
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|timer3-4|gon_dun03:5:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Timer34",
+    "output_hash": "5101f47a4d76e2db2d53f616991b3bdc33c0682e061849a019174a3b252d8811",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/timer3_4.ex",
+    "source_hash": "be5eda5c0a75f87dec315ff1b26f64b451173b9ccc560090488e449065d61854",
+    "spawns": [
+      {
+        "name": "timer3-4",
+        "scope": "shared",
+        "x": 5,
+        "y": 1,
+        "map": "gon_dun03",
+        "dir": 0,
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|timer3-5|gon_dun03:6:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Timer35",
+    "output_hash": "1ed4d8c1b52fbd7f8ec3cb80a6d95b204d13863fb0a0621f9bd92070772a38d8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/timer3_5.ex",
+    "source_hash": "548eee4fe353385a6aa210fbc6a4224336513859b8d6b1f311a418358042e8d0",
+    "spawns": [
+      {
+        "name": "timer3-5",
+        "scope": "shared",
+        "x": 6,
+        "y": 1,
+        "map": "gon_dun03",
+        "dir": 0,
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|timer3-6|gon_dun03:7:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Timer36",
+    "output_hash": "3c100a9e1aa70f285dbcb0eeee34a65377bdea8b3938165c151b33a5bb5b75e6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/timer3_6.ex",
+    "source_hash": "92821642a91d23d0d5189cc4a6728d36a60404efabe9259ac99fb3afa70caed7",
+    "spawns": [
+      {
+        "name": "timer3-6",
+        "scope": "shared",
+        "x": 7,
+        "y": 1,
+        "map": "gon_dun03",
+        "dir": 0,
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|timer3-7|gon_dun03:6:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Timer37",
+    "output_hash": "7278c284e277647c4f6bdab02507775a911e77ba07cbc24d66bfe604927d25b8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/timer3_7.ex",
+    "source_hash": "beea9229af43631fe9c17afcf6ff8390a060bcd46d2764fd2ef787164c3e2bc6",
+    "spawns": [
+      {
+        "name": "timer3-7",
+        "scope": "shared",
+        "x": 6,
+        "y": 1,
+        "map": "gon_dun03",
+        "dir": 0,
+        "sprite": -1
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|trace1-1#gnbs|gon_dun01:201:25": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Trace11",
+    "output_hash": "84d40db6b90f6f05a58211f95595f5e18a044254470cae77f018d3c7055770f9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/trace1_1.ex",
+    "source_hash": "4a626216d7ecbcf47145c6aea6a1f014903f3ad68ed898ac0f6598e37663f775",
+    "spawns": [
+      {
+        "name": "trace1-1",
+        "scope": "shared",
+        "x": 201,
+        "y": 25,
+        "map": "gon_dun01",
+        "dir": 0,
+        "unique_name": "trace1-1#gnbs",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|trace1-2#gnbs|gon_dun01:190:160": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Trace12",
+    "output_hash": "bfcb06c2a99c6f3f3ced96719a6db27402fe7289c0dccb869dabc37b8eec3832",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/trace1_2.ex",
+    "source_hash": "104d5d4ae10a048d654b9574ca1e7ba176115fc2c888e7789fadc479c325f62c",
+    "spawns": [
+      {
+        "name": "trace1-2",
+        "scope": "shared",
+        "x": 190,
+        "y": 160,
+        "map": "gon_dun01",
+        "dir": 0,
+        "unique_name": "trace1-2#gnbs",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|trace1-3#gnbs|gon_dun01:163:53": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Trace13",
+    "output_hash": "9667a1fdaa0de04df2e376f14e59936c06c19bb0e21ade25aeaf2a1435f84b36",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/trace1_3.ex",
+    "source_hash": "9f5fe6a1b9cd30b0f94143f79af5f5c4d77fa51234668c2041b1101c1d8f64dc",
+    "spawns": [
+      {
+        "name": "trace1-3",
+        "scope": "shared",
+        "x": 163,
+        "y": 53,
+        "map": "gon_dun01",
+        "dir": 0,
+        "unique_name": "trace1-3#gnbs",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|trace1-4#gnbs|gon_dun01:133:183": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Trace14",
+    "output_hash": "65641e64141bd6df7ff78f2030f87d6c613baffc5589c12a0cb8d11495b4ad86",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/trace1_4.ex",
+    "source_hash": "661a2d9b4379c4fc2ebfdd4f29c42754bb492f8e5728c0954fecdd1d001d0fa1",
+    "spawns": [
+      {
+        "name": "trace1-4",
+        "scope": "shared",
+        "x": 133,
+        "y": 183,
+        "map": "gon_dun01",
+        "dir": 0,
+        "unique_name": "trace1-4#gnbs",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|trace1-5#gnbs|gon_dun01:139:257": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Trace15",
+    "output_hash": "ecc8289f1fdfe80dcc52c6938a1ec82beb3f635e408a5c70b06730d94a26ebc0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/trace1_5.ex",
+    "source_hash": "5e817b68ec4edf7760b2d0a6e17aa8c1416b0bb9c121262dff9f1ac830a31412",
+    "spawns": [
+      {
+        "name": "trace1-5",
+        "scope": "shared",
+        "x": 139,
+        "y": 257,
+        "map": "gon_dun01",
+        "dir": 0,
+        "unique_name": "trace1-5#gnbs",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|trace2-1#gnbs|gon_dun02:65:168": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Trace21",
+    "output_hash": "779c02720d85dddfe87804d250c5fbbe5cac57a1e562bce6d18ecb9041988588",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/trace2_1.ex",
+    "source_hash": "ce199cfd404dde216946a186ef8d549240f5d94b769b8bfe0543d94639712c82",
+    "spawns": [
+      {
+        "name": "trace2-1",
+        "scope": "shared",
+        "x": 65,
+        "y": 168,
+        "map": "gon_dun02",
+        "dir": 0,
+        "unique_name": "trace2-1#gnbs",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|trace2-2#gnbs|gon_dun02:265:200": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Trace22",
+    "output_hash": "7967e62b8ad107246df4a2f4a614574c6483a09758dba400b6f1ffa4d7a2b2d8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/trace2_2.ex",
+    "source_hash": "590f88f5d22189bc1797728db1253895efbc87f55b610df5083b0cd19d532d6b",
+    "spawns": [
+      {
+        "name": "trace2-2",
+        "scope": "shared",
+        "x": 265,
+        "y": 200,
+        "map": "gon_dun02",
+        "dir": 0,
+        "unique_name": "trace2-2#gnbs",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|trace2-3#gnbs|gon_dun02:247:129": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Trace23",
+    "output_hash": "540663d528d2fa0cb5ca4069deba13b35f75727862d7159238c05804a018618a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/trace2_3.ex",
+    "source_hash": "baa575dc2e9c5f21d9b17acf4d6bb33e5bd2cc8d5f903f95273ef153f6916197",
+    "spawns": [
+      {
+        "name": "trace2-3",
+        "scope": "shared",
+        "x": 247,
+        "y": 129,
+        "map": "gon_dun02",
+        "dir": 0,
+        "unique_name": "trace2-3#gnbs",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|trace2-4#gnbs|gon_dun02:149:74": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Trace24",
+    "output_hash": "b1d10be10d868f3763540afcbba4c7c13e0dd3c78810582dfe2102abf848b6dd",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/trace2_4.ex",
+    "source_hash": "d5bf8714a054e3f88f318627a60c4dfc9f36586cf8a5f716c6ab97164611ac52",
+    "spawns": [
+      {
+        "name": "trace2-4",
+        "scope": "shared",
+        "x": 149,
+        "y": 74,
+        "map": "gon_dun02",
+        "dir": 0,
+        "unique_name": "trace2-4#gnbs",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|trace2-5#gnbs|gon_dun02:23:105": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Trace25",
+    "output_hash": "a6318e259a21c35bf88458d6668f2c7fc151700fce09332d7c00d652933c0b3f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/trace2_5.ex",
+    "source_hash": "9390e2e625f4735da3a280df13268ecdaba48b96c5d844a4bdf3dcdcb493beb2",
+    "spawns": [
+      {
+        "name": "trace2-5",
+        "scope": "shared",
+        "x": 23,
+        "y": 105,
+        "map": "gon_dun02",
+        "dir": 0,
+        "unique_name": "trace2-5#gnbs",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|trace2-6#gnbs|gon_dun02:249:39": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Trace26",
+    "output_hash": "28b3bd770d4d3b93f4fad18fc283c99ea8e069aff76e148efeeb25d749f490aa",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/trace2_6.ex",
+    "source_hash": "a2de7856b63cc974dcbdbeee3a16707c7e1ebfd99ac83318c4933d5052b59325",
+    "spawns": [
+      {
+        "name": "trace2-6",
+        "scope": "shared",
+        "x": 249,
+        "y": 39,
+        "map": "gon_dun02",
+        "dir": 0,
+        "unique_name": "trace2-6#gnbs",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|trace3-1#gnbs|gon_dun03:11:75": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Trace31",
+    "output_hash": "cbc32729c4812caa0402a09a0561f2d1c8a2e8b161eef019a908fda89c9bb3dc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/trace3_1.ex",
+    "source_hash": "287c24329233342b2bf72d40433ac9b0d7306922b3de53a0c97477939d17aab4",
+    "spawns": [
+      {
+        "name": "trace3-1",
+        "scope": "shared",
+        "x": 11,
+        "y": 75,
+        "map": "gon_dun03",
+        "dir": 0,
+        "unique_name": "trace3-1#gnbs",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|trace3-2#gnbs|gon_dun03:199:103": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Trace32",
+    "output_hash": "464e406616f19fcf2547cbb37c77103ec8731ead0df4f44e246439b5ee6022f8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/trace3_2.ex",
+    "source_hash": "2f222865acb2961e18c7a670b54a8e718f41d99643e613451978b711b3701bfb",
+    "spawns": [
+      {
+        "name": "trace3-2",
+        "scope": "shared",
+        "x": 199,
+        "y": 103,
+        "map": "gon_dun03",
+        "dir": 0,
+        "unique_name": "trace3-2#gnbs",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|trace3-3#gnbs|gon_dun03:14:162": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Trace33",
+    "output_hash": "e193f1cf90d7d659274ab56210c24fb2a7a1038a40ae4a038f34cbbfacb960e2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/trace3_3.ex",
+    "source_hash": "9163b52b5235893444a0202499477f81effd468d3fe56b63c1888ca951aa57f8",
+    "spawns": [
+      {
+        "name": "trace3-3",
+        "scope": "shared",
+        "x": 14,
+        "y": 162,
+        "map": "gon_dun03",
+        "dir": 0,
+        "unique_name": "trace3-3#gnbs",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|trace3-4#gnbs|gon_dun03:155:263": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Trace34",
+    "output_hash": "fee60ca720972822e67504f75f6cedb349619b378d1257bc6767ca003bd3fdb1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/trace3_4.ex",
+    "source_hash": "3a969c81d9156c4244dfcc2a8d0a2ec509f558beb5174a67ae49b208f654f5b9",
+    "spawns": [
+      {
+        "name": "trace3-4",
+        "scope": "shared",
+        "x": 155,
+        "y": 263,
+        "map": "gon_dun03",
+        "dir": 0,
+        "unique_name": "trace3-4#gnbs",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|trace3-5#gnbs|gon_dun03:169:90": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Trace35",
+    "output_hash": "3e729f8bd53c9cc1b198ca9e9e665fd7fbf9593a2e354029c9eeeaabf7f0f72a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/trace3_5.ex",
+    "source_hash": "da2a375a0e765ac02a75cc02ecc7594882fe88d61499b1ec54d7fc02bf17b751",
+    "spawns": [
+      {
+        "name": "trace3-5",
+        "scope": "shared",
+        "x": 169,
+        "y": 90,
+        "map": "gon_dun03",
+        "dir": 0,
+        "unique_name": "trace3-5#gnbs",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|trace3-6#gnbs|gon_dun03:162:40": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Trace36",
+    "output_hash": "99dbe84b2ab7fa341e1f903494f6dc8056dd3b2d94fde16758ec4aeb02f0300f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/trace3_6.ex",
+    "source_hash": "5755d0e02252517aebd0be959fd8b4ed6dc6a0d1c67cf94e6f210e033bcd1f48",
+    "spawns": [
+      {
+        "name": "trace3-6",
+        "scope": "shared",
+        "x": 162,
+        "y": 40,
+        "map": "gon_dun03",
+        "dir": 0,
+        "unique_name": "trace3-6#gnbs",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_gonryun.txt|script|trace3-7#gnbs|gon_dun03:68:212": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGonryun.Trace37",
+    "output_hash": "89d95851698d3e68265f4fc0e6d4b628ed6ba7a140f7d0694a1f698506c07125",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_gonryun/trace3_7.ex",
+    "source_hash": "dee56840790dc4f7dd76d2a37e168d04fea77c82ec4d55ec5032cda8ba163301",
+    "spawns": [
+      {
+        "name": "trace3-7",
+        "scope": "shared",
+        "x": 68,
+        "y": 212,
+        "map": "gon_dun03",
+        "dir": 0,
+        "unique_name": "trace3-7#gnbs",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
