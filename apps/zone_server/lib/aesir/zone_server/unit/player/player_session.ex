@@ -49,6 +49,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcEventQueue
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcOwnerEventHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.NpcTimerHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler
@@ -89,6 +90,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @natural_heal_interval 500
   @rental_expiry_interval 10_000
   @linger_ms 10_000
+  # How long a logout waits for an `OnTimerQuit` label before killing it, as
+  # boot waits for `OnInit` (`Npc.Events.run_on_init/1`).
+  @timer_quit_timeout_ms 5_000
 
   @doc """
   Starts a player session linked to a connection process.
@@ -265,6 +269,20 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   def run_attached_event(pid, module, gid, label) do
     GenServer.cast(pid, {:npc, {:run_attached_event, module, gid, label}})
   end
+
+  @doc """
+  Arms this player's NPC timer slot for `gid` from the NPC's stored timer
+  value `from_ms` (rAthena `npc_timerevent_start` for an attached timer).
+  Called by the NPC's own `Npc.Session`, whose pid the slot keeps.
+  """
+  @spec npc_timer_start(pid(), non_neg_integer(), integer()) :: :ok
+  def npc_timer_start(pid, gid, from_ms) do
+    GenServer.cast(pid, {:npc, {:timer_start, gid, from_ms, self()}})
+  end
+
+  @doc "Cancels this player's NPC timer slot (rAthena `npc_timerevent_stop`)."
+  @spec npc_timer_stop(pid()) :: :ok
+  def npc_timer_stop(pid), do: GenServer.cast(pid, {:npc, :timer_stop})
 
   @doc """
   Gets the current player state.
@@ -1225,6 +1243,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     {:noreply, NpcEventQueue.run_queued(state, gid, label)}
   end
 
+  @impl true
+  def handle_info({:npc_timer_fire, ref}, state), do: {:noreply, NpcTimerHandler.fire(state, ref)}
+
   # A connection dropped within 10 s of a combat action leaves the character in
   # the world for 10 s, owning its online presence, so the account cannot log in
   # again meanwhile. The decision is taken once, here.
@@ -1620,6 +1641,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     {:noreply, NpcOwnerEventHandler.run(module, gid, label, state)}
   end
 
+  @impl true
+  def handle_cast({:npc, {:timer_start, gid, from_ms, npc_pid}}, state) do
+    {:noreply, NpcTimerHandler.start(state, gid, from_ms, npc_pid)}
+  end
+
+  @impl true
+  def handle_cast({:npc, :timer_stop}, state), do: {:noreply, NpcTimerHandler.stop(state)}
+
   # A Coordinator-broadcast ground-item vanish: forward it like any other packet
   # but also drop the id from `visible_items` so re-entering the cell's range
   # later re-spawns the item via the walk-up diff.
@@ -1807,6 +1836,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         reason,
         %{game_state: _game_state, connection_monitor_ref: connection_monitor_ref} = state
       ) do
+    state = run_timer_quit(state)
     state = SkillTextInputHandler.clear(state)
     state = SkillHandler.cancel_deferred(state)
     state = SpiritSphereHandler.discard(state)
@@ -1865,6 +1895,38 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     UnitRegistry.unregister_player(game_state.character_id, self())
 
     :ok
+  end
+
+  # rAthena's `map_quit` runs `npc_timerevent_quit` first, so an `OnTimerQuit`
+  # label sees the player still in the world and its effects are saved with
+  # it. The label runs in its own interaction, so this session serves its
+  # player commands here until it ends or the wait gives up.
+  defp run_timer_quit(state) do
+    case NpcTimerHandler.quit(state) do
+      {state, nil} -> state
+      {state, pid} -> serve_timer_quit(state, pid, Process.monitor(pid))
+    end
+  end
+
+  defp serve_timer_quit(state, pid, ref) do
+    receive do
+      {:DOWN, ^ref, :process, ^pid, _reason} ->
+        state
+
+      {:"$gen_call", from, {:npc, {:script_apply, op}}} ->
+        {:reply, reply, state} = ScriptEffectHandler.handle_script_apply(op, state)
+        GenServer.reply(from, reply)
+        serve_timer_quit(state, pid, ref)
+
+      {:"$gen_call", from, {:npc, {:detach_script, interaction_pid}}} ->
+        GenServer.reply(from, :ok)
+        serve_timer_quit(NpcInteractionHandler.detach_script(interaction_pid, state), pid, ref)
+    after
+      @timer_quit_timeout_ms ->
+        Process.demonitor(ref, [:flush])
+        Process.exit(pid, :kill)
+        state
+    end
   end
 
   # End logic run during a logout (Berserk's HP penalty) sets this session's

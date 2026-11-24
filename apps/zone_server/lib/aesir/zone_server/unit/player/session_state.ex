@@ -48,6 +48,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   alias Aesir.ZoneServer.Unit.Homunculus.Runtime
   alias Aesir.ZoneServer.Unit.Pet.PetState
   alias Aesir.ZoneServer.Unit.Pet.Runtime, as: PetRuntime
+  alias Aesir.ZoneServer.Unit.Player.Handlers.NpcTimerHandler
   alias Aesir.ZoneServer.Unit.Player.NaturalHeal.Timing
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -135,6 +136,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
     field :canlog_at, integer()
     field :lingering, reference()
     field :npc_event_queue, [{non_neg_integer(), String.t()}], default: []
+    field :npc_timer, NpcTimerHandler.slot()
     field :regen_timing, Timing.t(), default: %Timing{}
     field :castle_regen_map, String.t()
     field :equip_regen_generation, non_neg_integer()

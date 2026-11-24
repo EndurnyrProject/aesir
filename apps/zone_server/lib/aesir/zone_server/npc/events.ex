@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Npc.Events do
   require Logger
 
   alias Aesir.ZoneServer.Npc.Registry
+  alias Aesir.ZoneServer.Npc.Session, as: NpcSession
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Interaction
 
@@ -180,6 +181,49 @@ defmodule Aesir.ZoneServer.Npc.Events do
       Interaction.start(session_pid, module, base_ctx, fn ctx -> module.on_event(label, ctx) end)
     else
       _not_handled -> {:error, :no_handler}
+    end
+  end
+
+  @doc """
+  Runs a player-attached timer label (`npc_timerevent`, or `npc_timerevent_quit`
+  for `OnTimerQuit`) as an attached `Script.Interaction`, the way
+  `trigger_attached/4` does, but inside the reference's swap: for the run the
+  NPC's attached player is the script's player and its timer reads `time_ms`
+  (`Npc.Session.begin_attached_run/3`). Afterwards the previous attached player
+  is restored; for a quit run, a previous attached player that is this very
+  player is cleared instead, as the logged-off player detaches.
+
+  Unlike `trigger_attached/4` the NPC's enabled state is not checked: a timer
+  fires regardless. Returns `{:error, :no_handler}` when `gid` does not resolve
+  or does not declare `label`.
+  """
+  @spec trigger_timer_attached(
+          non_neg_integer(),
+          String.t(),
+          Ctx.t(),
+          pid(),
+          integer(),
+          :fire | :quit
+        ) :: {:ok, pid()} | {:error, term()}
+  def trigger_timer_attached(gid, label, %Ctx{} = base_ctx, session_pid, time_ms, kind) do
+    with {:ok, {module, _placement}} <- Registry.module_for_unit(gid),
+         true <- label in module.events() do
+      Interaction.start(session_pid, module, base_ctx, fn ctx ->
+        run_timer_label(module, gid, label, ctx, time_ms, kind)
+      end)
+    else
+      _not_handled -> {:error, :no_handler}
+    end
+  end
+
+  defp run_timer_label(module, gid, label, ctx, time_ms, kind) do
+    {token, previous} = NpcSession.begin_attached_run(gid, ctx.char_id, time_ms)
+
+    try do
+      module.on_event(label, ctx)
+    after
+      restored = if kind == :quit and previous == ctx.char_id, do: nil, else: previous
+      NpcSession.end_attached_run(gid, token, restored)
     end
   end
 

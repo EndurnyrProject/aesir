@@ -43,7 +43,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.JupeGoto do
 
   @impl true
   def on_event("OnTouch_", ctx) do
-    ctx = todo(ctx, :initnpctimer, ["jupe_goto#1", 1])
+    ctx = initnpctimer(ctx, "jupe_goto#1", 1)
 
     {ctx, choice} =
       ctx

@@ -292,7 +292,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   Arms the calling NPC's own timer, starting its session if needed (rAthena
   `initnpctimer`). Targets `ctx.npc_gid`; valid on both an attached and a
   detached ctx, since it mutates NPC state, not player state. A ctx with no
-  `npc_gid` (e.g. an item script) logs a warning and no-ops.
+  `npc_gid` (e.g. an item script) logs a warning and no-ops. While the NPC has
+  an attached player, the timer runs in that player's slot (`Npc.Session`).
   """
   @spec initnpctimer(Ctx.t()) :: Ctx.t()
   def initnpctimer(%Ctx{status: {:error, _}} = ctx), do: ctx
@@ -304,23 +305,43 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   end
 
   @doc """
-  Arms the timer of every placement registered under `name` (rAthena
-  `initnpctimer("Name")`) — the per-placement timer model applies to every
-  duplicate sharing the name, not just the first. An unresolved name logs a
-  warning and no-ops.
+  `initnpctimer` with one argument, told apart at runtime as the reference
+  does (`script_isstring`): a string arms the timer of every placement
+  registered under that name, the per-placement timer model applying to every
+  duplicate sharing it (an unresolved name logs a warning and no-ops); an
+  integer is the attach flag for the calling NPC (`initnpctimer/3`).
   """
-  @spec initnpctimer(Ctx.t(), String.t()) :: Ctx.t()
-  def initnpctimer(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
+  @spec initnpctimer(Ctx.t(), String.t() | integer()) :: Ctx.t()
+  def initnpctimer(%Ctx{status: {:error, _}} = ctx, _arg), do: ctx
+
+  def initnpctimer(%Ctx{} = ctx, flag) when is_integer(flag) do
+    timer_with_flag(ctx, nil, flag, "initnpctimer", &NpcSession.init_timer/2)
+  end
 
   def initnpctimer(%Ctx{} = ctx, name) do
     each_named(ctx, name, "initnpctimer/2", &NpcSession.init_timer/1)
   end
 
   @doc """
+  `initnpctimer "<name>",<flag>`. A nonzero flag first attaches the script's
+  player to the NPC, so the reset timer runs in the player's own slot and its
+  labels run attached to that player; with no player attached the command
+  does nothing (the reference's `script_rid2sd` failure). A zero flag is the
+  named form.
+  """
+  @spec initnpctimer(Ctx.t(), String.t(), integer()) :: Ctx.t()
+  def initnpctimer(%Ctx{status: {:error, _}} = ctx, _name, _flag), do: ctx
+
+  def initnpctimer(%Ctx{} = ctx, name, flag) do
+    timer_with_flag(ctx, name, flag, "initnpctimer", &NpcSession.init_timer/2)
+  end
+
+  @doc """
   Cancels the calling NPC's own pending timer fire and freezes its elapsed
   time (rAthena `stopnpctimer`). Targets `ctx.npc_gid`; valid on both an
   attached and a detached ctx. A ctx with no `npc_gid` logs a warning and
-  no-ops.
+  no-ops. While the NPC has an attached player, that player's slot is
+  cancelled instead.
   """
   @spec stopnpctimer(Ctx.t()) :: Ctx.t()
   def stopnpctimer(%Ctx{status: {:error, _}} = ctx), do: ctx
@@ -332,22 +353,35 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   end
 
   @doc """
-  Cancels the pending timer fire of every placement registered under `name`
-  (rAthena `stopnpctimer("Name")`). An unresolved name logs a warning and
-  no-ops.
+  `stopnpctimer` with one argument: a string cancels the pending timer fire of
+  every placement registered under that name (an unresolved name logs a
+  warning and no-ops); an integer is the detach flag for the calling NPC
+  (`stopnpctimer/3`).
   """
-  @spec stopnpctimer(Ctx.t(), String.t()) :: Ctx.t()
-  def stopnpctimer(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
+  @spec stopnpctimer(Ctx.t(), String.t() | integer()) :: Ctx.t()
+  def stopnpctimer(%Ctx{status: {:error, _}} = ctx, _arg), do: ctx
+
+  def stopnpctimer(%Ctx{} = ctx, flag) when is_integer(flag), do: stop_with_flag(ctx, nil, flag)
 
   def stopnpctimer(%Ctx{} = ctx, name) do
     each_named(ctx, name, "stopnpctimer/2", &NpcSession.stop_timer/1)
   end
 
   @doc """
+  `stopnpctimer "<name>",<flag>`. A nonzero flag first detaches the NPC's
+  attached player, so the NPC's own timer is the one stopped. A zero flag is
+  the named form.
+  """
+  @spec stopnpctimer(Ctx.t(), String.t(), integer()) :: Ctx.t()
+  def stopnpctimer(%Ctx{status: {:error, _}} = ctx, _name, _flag), do: ctx
+  def stopnpctimer(%Ctx{} = ctx, name, flag), do: stop_with_flag(ctx, name, flag)
+
+  @doc """
   Resumes the calling NPC's stopped timer from its frozen elapsed time; a
   running timer is left alone (rAthena `startnpctimer`, `npc_timerevent_start`).
   Targets `ctx.npc_gid`; valid on both an attached and a detached ctx. A ctx
-  with no `npc_gid` logs a warning and no-ops.
+  with no `npc_gid` logs a warning and no-ops. While the NPC has an attached
+  player, the timer resumes in that player's slot instead.
   """
   @spec startnpctimer(Ctx.t()) :: Ctx.t()
   def startnpctimer(%Ctx{status: {:error, _}} = ctx), do: ctx
@@ -359,14 +393,32 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   end
 
   @doc """
-  Resumes the timer of every placement registered under `name` (rAthena
-  `startnpctimer("Name")`). An unresolved name logs a warning and no-ops.
+  `startnpctimer` with one argument: a string resumes the timer of every
+  placement registered under that name (an unresolved name logs a warning and
+  no-ops); an integer is the attach flag for the calling NPC
+  (`startnpctimer/3`).
   """
-  @spec startnpctimer(Ctx.t(), String.t()) :: Ctx.t()
-  def startnpctimer(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
+  @spec startnpctimer(Ctx.t(), String.t() | integer()) :: Ctx.t()
+  def startnpctimer(%Ctx{status: {:error, _}} = ctx, _arg), do: ctx
+
+  def startnpctimer(%Ctx{} = ctx, flag) when is_integer(flag) do
+    timer_with_flag(ctx, nil, flag, "startnpctimer", &NpcSession.start_timer/2)
+  end
 
   def startnpctimer(%Ctx{} = ctx, name) do
     each_named(ctx, name, "startnpctimer/2", &NpcSession.start_timer/1)
+  end
+
+  @doc """
+  `startnpctimer "<name>",<flag>`. A nonzero flag first attaches the script's
+  player, as `initnpctimer/3` does, so the timer resumes in that player's
+  slot. A zero flag is the named form.
+  """
+  @spec startnpctimer(Ctx.t(), String.t(), integer()) :: Ctx.t()
+  def startnpctimer(%Ctx{status: {:error, _}} = ctx, _name, _flag), do: ctx
+
+  def startnpctimer(%Ctx{} = ctx, name, flag) do
+    timer_with_flag(ctx, name, flag, "startnpctimer", &NpcSession.start_timer/2)
   end
 
   @doc """
@@ -1119,6 +1171,31 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
 
     ctx
   end
+
+  # The attach-flag forms of `initnpctimer`/`startnpctimer`: `name` nil is the
+  # calling NPC. A zero flag is the plain form; a nonzero one needs the
+  # script's player (`script_rid2sd`), without which nothing happens.
+  defp timer_with_flag(ctx, name, 0, op, fun), do: plain_timer(ctx, name, op, &fun.(&1, nil))
+
+  defp timer_with_flag(%Ctx{game_state: nil} = ctx, _name, _flag, op, _fun) do
+    Logger.error("#{op}: player not attached")
+    ctx
+  end
+
+  defp timer_with_flag(%Ctx{char_id: char_id} = ctx, name, _flag, op, fun),
+    do: plain_timer(ctx, name, op, &fun.(&1, char_id))
+
+  defp stop_with_flag(ctx, name, flag),
+    do: plain_timer(ctx, name, "stopnpctimer", &NpcSession.stop_timer(&1, flag != 0))
+
+  defp plain_timer(%Ctx{npc_gid: nil} = ctx, nil, op, _fun), do: warn_no_npc_gid(ctx, op)
+
+  defp plain_timer(%Ctx{npc_gid: gid} = ctx, nil, _op, fun) do
+    fun.(gid)
+    ctx
+  end
+
+  defp plain_timer(ctx, name, op, fun), do: each_named(ctx, name, op, fun)
 
   @spec warn_if_ambiguous([NpcRegistry.entry()], String.t(), String.t()) :: :ok
   defp warn_if_ambiguous([_single], _name, _op), do: :ok

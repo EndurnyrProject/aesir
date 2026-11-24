@@ -156,6 +156,7 @@ homevolution/1
 hp/1
 initnpctimer/1
 initnpctimer/2
+initnpctimer/3
 input/2
 insert_comma/2
 is_equipped/2
@@ -266,8 +267,10 @@ specialeffect/4
 specialeffect2/2
 startnpctimer/1
 startnpctimer/2
+startnpctimer/3
 stopnpctimer/1
 stopnpctimer/2
+stopnpctimer/3
 strnpcinfo/2
 successrefitem/2
 successrefitem/3

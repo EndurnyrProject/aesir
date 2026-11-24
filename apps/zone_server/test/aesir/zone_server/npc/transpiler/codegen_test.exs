@@ -1169,7 +1169,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ "|> close()"
   end
 
-  test "startnpctimer, setnpctimer and sleep map to DSL calls; attach flags stay stubs" do
+  test "startnpctimer, setnpctimer and sleep map to DSL calls, attach flags included" do
     src =
       gen!("""
       startnpctimer;
@@ -1187,8 +1187,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ "setnpctimer(0)"
     assert src =~ ~S{setnpctimer(3000, "Boss")}
     assert src =~ "sleep(10000)"
-    assert src =~ "todo(:startnpctimer, [1])"
-    assert src =~ ~S{todo(:initnpctimer, ["Boss", 1])}
+    assert src =~ "startnpctimer(1)"
+    assert src =~ ~S{initnpctimer("Boss", 1)}
+    refute src =~ "todo("
   end
 
   test "setnpcdisplay emits set_npc_display for its four arities" do

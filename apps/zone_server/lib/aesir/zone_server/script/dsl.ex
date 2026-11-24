@@ -494,11 +494,14 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate donpcevent(ctx, ref), to: NpcControl
   defdelegate doevent(ctx, ref), to: NpcControl
   defdelegate initnpctimer(ctx), to: NpcControl
-  defdelegate initnpctimer(ctx, name), to: NpcControl
+  defdelegate initnpctimer(ctx, name_or_flag), to: NpcControl
+  defdelegate initnpctimer(ctx, name, flag), to: NpcControl
   defdelegate stopnpctimer(ctx), to: NpcControl
-  defdelegate stopnpctimer(ctx, name), to: NpcControl
+  defdelegate stopnpctimer(ctx, name_or_flag), to: NpcControl
+  defdelegate stopnpctimer(ctx, name, flag), to: NpcControl
   defdelegate startnpctimer(ctx), to: NpcControl
-  defdelegate startnpctimer(ctx, name), to: NpcControl
+  defdelegate startnpctimer(ctx, name_or_flag), to: NpcControl
+  defdelegate startnpctimer(ctx, name, flag), to: NpcControl
   defdelegate setnpctimer(ctx, tick), to: NpcControl
   defdelegate setnpctimer(ctx, tick, name), to: NpcControl
   defdelegate getnpctimer(ctx), to: NpcControl

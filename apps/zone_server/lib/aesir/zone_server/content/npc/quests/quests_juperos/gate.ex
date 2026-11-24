@@ -5,6 +5,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Gate do
   ## Behavior
 
   - Lets visitors use or ignore the portal before the timer expires.
+  - A visitor who has not answered after 10 seconds is sent to the second floor, and the
+    portal hands over to its follow-up gate.
 
   ## Credits
 
@@ -44,7 +46,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.Gate do
   def on_event("OnTouch_", ctx) do
     {ctx, choice} =
       ctx
-      |> todo(:initnpctimer, ["gate#start", 1])
+      |> initnpctimer("gate#start", 1)
       |> mes("^3355FFIt's a Warp Portal")
       |> mes("that will teleport you")
       |> mes("to the previous floor.^000000")

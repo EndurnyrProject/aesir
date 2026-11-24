@@ -28,6 +28,26 @@ defmodule Aesir.ZoneServer.Npc.Session do
   freezes elapsed; `get_timer/1` reads it back, monotonic-based while
   running/idle, frozen while stopped.
 
+  ## Player-attached timers
+
+  The NPC also keeps rAthena's attached player (`nd->u.scr.rid`): the attach
+  flag of `initnpctimer`/`startnpctimer` sets it to the script's player, the
+  detach flag of `stopnpctimer` clears it, and it otherwise persists. While it
+  is set, `init_timer`/`start_timer`/`stop_timer` act on that player's own NPC
+  timer slot instead (`npc_timerevent_start`/`npc_timerevent_stop`, the
+  player's `sd->npc_timer_id`), which the player's session owns
+  (`Unit.Player.Handlers.NpcTimerHandler`); an offline player makes them a
+  no-op, as the reference's "Attached player not found". An attached
+  `init_timer` still resets this NPC's own timer the way
+  `npc_settimerevent_tick(nd, 0)` does. A slot starts from the NPC's stored
+  timer value (`nd->u.scr.timer`): the frozen time of a stopped timer, else the
+  start time or the time of the last fired label.
+
+  An attached label run swaps the attached player and the timer value in for
+  its duration (`begin_attached_run/3`, `end_attached_run/3`), as
+  `npc_timerevent` does around `run_script`, so the run's own timer commands
+  target the firing player and `get_timer/1` reads the slot's time.
+
   ## Dispatch decoupling
 
   A fired label invokes the `:on_fire` callback (`(gid, label) -> any()`)
@@ -84,6 +104,8 @@ defmodule Aesir.ZoneServer.Npc.Session do
   use GenServer
   use TypedStruct
 
+  require Logger
+
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Npc.Events
   alias Aesir.ZoneServer.Npc.Packets, as: NpcPackets
@@ -135,6 +157,9 @@ defmodule Aesir.ZoneServer.Npc.Session do
     field :frozen_elapsed, integer(), default: 0
     field :timer_ref, reference() | nil, default: nil
     field :on_fire, timer_callback()
+    field :base_ms, integer(), default: 0
+    field :rid, non_neg_integer() | nil, default: nil
+    field :attached_run, {reference(), integer(), integer()} | nil, default: nil
     field :enabled?, boolean(), default: true
     field :hidden?, boolean(), default: false
     field :cloaked?, boolean(), default: false
@@ -158,19 +183,26 @@ defmodule Aesir.ZoneServer.Npc.Session do
 
   @doc """
   Resets and (re)arms the NPC's timer, starting the session if needed.
+
+  `attach` is the attach flag's player (`initnpctimer ...,1`), which becomes
+  the NPC's attached player first; with an attached player the reset timer
+  runs in that player's slot (see the moduledoc).
   """
-  @spec init_timer(non_neg_integer()) :: :ok
-  def init_timer(gid) do
-    gid |> ensure_started() |> GenServer.call(:init_timer)
+  @spec init_timer(non_neg_integer(), non_neg_integer() | nil) :: :ok
+  def init_timer(gid, attach \\ nil) do
+    gid |> ensure_started() |> GenServer.call({:init_timer, attach})
   end
 
   @doc """
   Resumes a stopped timer from its frozen elapsed time, starting the session
   if needed. A running or idle timer is left unchanged.
+
+  `attach` is the attach flag's player (`startnpctimer ...,1`); with an
+  attached player the timer resumes in that player's slot instead.
   """
-  @spec start_timer(non_neg_integer()) :: :ok
-  def start_timer(gid) do
-    gid |> ensure_started() |> GenServer.call(:start_timer)
+  @spec start_timer(non_neg_integer(), non_neg_integer() | nil) :: :ok
+  def start_timer(gid, attach \\ nil) do
+    gid |> ensure_started() |> GenServer.call({:start_timer, attach})
   end
 
   @doc """
@@ -183,20 +215,24 @@ defmodule Aesir.ZoneServer.Npc.Session do
   end
 
   @doc """
-  Cancels the pending timer fire and freezes elapsed time.
+  Cancels the pending timer fire and freezes elapsed time. With an attached
+  player it cancels that player's slot instead, leaving this timer alone.
 
-  A gid with no running session has nothing to stop.
+  `detach?` is `stopnpctimer`'s detach flag: the attached player is cleared
+  first, so this NPC's own timer stops. A gid with no running session has
+  nothing to stop.
   """
-  @spec stop_timer(non_neg_integer()) :: :ok
-  def stop_timer(gid) do
+  @spec stop_timer(non_neg_integer(), boolean()) :: :ok
+  def stop_timer(gid, detach? \\ false) do
     case whereis(gid) do
       nil -> :ok
-      pid -> GenServer.call(pid, :stop_timer)
+      pid -> GenServer.call(pid, {:stop_timer, detach?})
     end
   end
 
   @doc """
-  Returns the NPC timer's elapsed milliseconds.
+  Returns the NPC timer's elapsed milliseconds; during an attached label run,
+  the running slot's time.
 
   A gid with no running session has never had its timer started, so this
   returns `0` without spawning one.
@@ -206,6 +242,53 @@ defmodule Aesir.ZoneServer.Npc.Session do
     case whereis(gid) do
       nil -> 0
       pid -> GenServer.call(pid, :get_timer)
+    end
+  end
+
+  @doc """
+  Starts an attached label run for `char_id`'s slot fired at `time_ms`: the
+  player becomes the attached player and `get_timer/1` reads `time_ms` plus
+  the time since this call (`npc_timerevent`). Returns the run's token and
+  the previous attached player, for `end_attached_run/3`.
+  """
+  @spec begin_attached_run(non_neg_integer(), non_neg_integer(), integer()) ::
+          {reference(), non_neg_integer() | nil}
+  def begin_attached_run(gid, char_id, time_ms) do
+    gid |> ensure_started() |> GenServer.call({:begin_attached_run, char_id, time_ms})
+  end
+
+  @doc """
+  Ends the attached label run `token`: the attached player becomes `rid` and
+  the timer value stops being overridden.
+  """
+  @spec end_attached_run(non_neg_integer(), reference(), non_neg_integer() | nil) :: :ok
+  def end_attached_run(gid, token, rid) do
+    gid |> ensure_started() |> GenServer.call({:end_attached_run, token, rid})
+  end
+
+  @doc """
+  Returns the NPC's `OnTimer<ms>` schedule, sorted by due time, or `[]` for a
+  gid that does not resolve.
+  """
+  @spec schedule(non_neg_integer()) :: [timer_entry()]
+  def schedule(gid) do
+    case NpcRegistry.module_for_unit(gid) do
+      {:ok, {module, _placement}} ->
+        module.events()
+        |> Enum.flat_map(&parse_on_timer/1)
+        |> Enum.sort_by(fn {due_ms, _label} -> due_ms end)
+
+      :error ->
+        []
+    end
+  end
+
+  @doc "Returns the pid of `gid`'s running session, or `nil`."
+  @spec whereis(non_neg_integer()) :: pid() | nil
+  def whereis(gid) do
+    case Registry.lookup(session_registry(), gid) do
+      [{pid, _value}] -> pid
+      [] -> nil
     end
   end
 
@@ -374,7 +457,7 @@ defmodule Aesir.ZoneServer.Npc.Session do
 
     state = %__MODULE__{
       gid: gid,
-      schedule: timer_schedule(gid),
+      schedule: schedule(gid),
       on_fire: on_fire
     }
 
@@ -382,16 +465,32 @@ defmodule Aesir.ZoneServer.Npc.Session do
   end
 
   @impl GenServer
-  def handle_call(:init_timer, _from, state) do
-    {:reply, :ok, start_at(state, 0)}
+  def handle_call({:init_timer, attach}, _from, state) do
+    case attach_rid(state, attach) do
+      %{rid: nil} = state ->
+        {:reply, :ok, start_at(state, 0)}
+
+      %{rid: rid} = state ->
+        state = reset_for_attached_init(state)
+        start_slot(state, rid, 0)
+        {:reply, :ok, state}
+    end
   end
 
   @impl GenServer
-  def handle_call(:start_timer, _from, %{status: :stopped} = state) do
-    {:reply, :ok, start_at(state, state.frozen_elapsed)}
-  end
+  def handle_call({:start_timer, attach}, _from, state) do
+    case attach_rid(state, attach) do
+      %{rid: nil, status: :stopped} = state ->
+        {:reply, :ok, start_at(state, state.frozen_elapsed)}
 
-  def handle_call(:start_timer, _from, state), do: {:reply, :ok, state}
+      %{rid: nil} = state ->
+        {:reply, :ok, state}
+
+      %{rid: rid} = state ->
+        start_slot(state, rid, stored_timer(state))
+        {:reply, :ok, state}
+    end
+  end
 
   @impl GenServer
   def handle_call({:set_timer, ms}, _from, %{status: :stopped} = state) do
@@ -401,21 +500,44 @@ defmodule Aesir.ZoneServer.Npc.Session do
   def handle_call({:set_timer, ms}, _from, state), do: {:reply, :ok, start_at(state, ms)}
 
   @impl GenServer
-  def handle_call(:stop_timer, _from, state) do
-    new_state = %{
-      state
-      | status: :stopped,
-        timer_ref: nil,
-        frozen_elapsed: elapsed_now(state),
-        start_mono: nil
-    }
+  def handle_call({:stop_timer, detach?}, _from, state) do
+    state = if detach?, do: %{state | rid: nil}, else: state
 
-    {:reply, :ok, new_state}
+    case state.rid do
+      nil ->
+        {:reply, :ok, stop_own(state)}
+
+      rid ->
+        with_player(rid, "npc_timerevent_stop", &PlayerSession.npc_timer_stop/1)
+        {:reply, :ok, state}
+    end
   end
 
   @impl GenServer
+  def handle_call(:get_timer, _from, %{attached_run: {_token, time_ms, fired_mono}} = state) do
+    {:reply, time_ms + now_ms() - fired_mono, state}
+  end
+
   def handle_call(:get_timer, _from, state) do
     {:reply, elapsed_now(state), state}
+  end
+
+  @impl GenServer
+  def handle_call({:begin_attached_run, char_id, time_ms}, _from, state) do
+    token = make_ref()
+    run = {token, time_ms, now_ms()}
+    {:reply, {token, state.rid}, %{state | rid: char_id, attached_run: run}}
+  end
+
+  @impl GenServer
+  def handle_call({:end_attached_run, token, rid}, _from, state) do
+    attached_run =
+      case state.attached_run do
+        {^token, _time_ms, _fired_mono} -> nil
+        other -> other
+      end
+
+    {:reply, :ok, %{state | rid: rid, attached_run: attached_run}}
   end
 
   @impl GenServer
@@ -457,7 +579,8 @@ defmodule Aesir.ZoneServer.Npc.Session do
   @impl GenServer
   def handle_info({:timer_fire, ref, label}, %{status: :running, timer_ref: ref} = state) do
     dispatch(state.gid, label, state.on_fire)
-    {:noreply, arm_next(state, elapsed_now(state))}
+    [{due_ms, ^label}] = parse_on_timer(label)
+    {:noreply, arm_next(%{state | base_ms: due_ms}, elapsed_now(state))}
   end
 
   def handle_info({:timer_fire, _ref, _label}, state), do: {:noreply, state}
@@ -473,14 +596,6 @@ defmodule Aesir.ZoneServer.Npc.Session do
 
   @spec via(non_neg_integer()) :: GenServer.name()
   defp via(gid), do: {:via, Registry, {session_registry(), gid}}
-
-  @spec whereis(non_neg_integer()) :: pid() | nil
-  defp whereis(gid) do
-    case Registry.lookup(session_registry(), gid) do
-      [{pid, _value}] -> pid
-      [] -> nil
-    end
-  end
 
   @spec start_child(non_neg_integer()) :: pid()
   defp start_child(gid) do
@@ -504,8 +619,61 @@ defmodule Aesir.ZoneServer.Npc.Session do
   defp start_at(state, elapsed_ms) do
     pending = Enum.filter(state.schedule, fn {due_ms, _label} -> due_ms > elapsed_ms end)
 
-    %{state | pending: pending, start_mono: now_ms() - elapsed_ms, frozen_elapsed: 0}
+    %{
+      state
+      | pending: pending,
+        start_mono: now_ms() - elapsed_ms,
+        frozen_elapsed: 0,
+        base_ms: elapsed_ms
+    }
     |> arm_next(elapsed_ms)
+  end
+
+  @spec stop_own(t()) :: t()
+  defp stop_own(state) do
+    %{
+      state
+      | status: :stopped,
+        timer_ref: nil,
+        frozen_elapsed: elapsed_now(state),
+        start_mono: nil
+    }
+  end
+
+  defp attach_rid(state, nil), do: state
+  defp attach_rid(state, char_id), do: %{state | rid: char_id}
+
+  # The attached `initnpctimer` first zeroes `timertick` and runs
+  # `npc_settimerevent_tick(nd, 0)` with no attached player: a running timer
+  # (an armed `timerid`) restarts from 0, and an idle or stopped one is left
+  # stopped at 0.
+  @spec reset_for_attached_init(t()) :: t()
+  defp reset_for_attached_init(%{status: :running} = state), do: start_at(state, 0)
+
+  defp reset_for_attached_init(state) do
+    %{state | status: :stopped, timer_ref: nil, start_mono: nil, frozen_elapsed: 0, base_ms: 0}
+  end
+
+  # `nd->u.scr.timer`: the stopped time, otherwise the time the timer last
+  # started from or fired a label at; an attached run swaps in its slot time.
+  @spec stored_timer(t()) :: integer()
+  defp stored_timer(%{attached_run: {_token, time_ms, _fired_mono}}), do: time_ms
+  defp stored_timer(%{status: :stopped, frozen_elapsed: frozen_elapsed}), do: frozen_elapsed
+  defp stored_timer(%{base_ms: base_ms}), do: base_ms
+
+  defp start_slot(state, rid, from_ms) do
+    with_player(rid, "npc_timerevent_start", fn pid ->
+      PlayerSession.npc_timer_start(pid, state.gid, from_ms)
+    end)
+  end
+
+  defp with_player(char_id, op, fun) do
+    case UnitRegistry.get_player_pid(char_id) do
+      {:ok, pid} -> fun.(pid)
+      {:error, :not_found} -> Logger.error("#{op}: Attached player not found!")
+    end
+
+    :ok
   end
 
   # `elapsed_ms` is the caller's authoritative elapsed reading, taken
@@ -541,19 +709,6 @@ defmodule Aesir.ZoneServer.Npc.Session do
 
   defp interaction_supervisor do
     ProcessTree.get({@interaction_supervisor, :server}) || @interaction_supervisor
-  end
-
-  @spec timer_schedule(non_neg_integer()) :: [timer_entry()]
-  defp timer_schedule(gid) do
-    case NpcRegistry.module_for_unit(gid) do
-      {:ok, {module, _placement}} ->
-        module.events()
-        |> Enum.flat_map(&parse_on_timer/1)
-        |> Enum.sort_by(fn {due_ms, _label} -> due_ms end)
-
-      :error ->
-        []
-    end
   end
 
   @spec parse_on_timer(String.t()) :: [timer_entry()]

@@ -1,16 +1,21 @@
 defmodule Aesir.ZoneServer.Npc.SessionTest do
   @moduledoc """
   Covers `Npc.Session`'s rAthena timer model (schedule derivation, ordered
-  fires, idle-after-schedule, stop/freeze/resume), the ETS-mirrored
+  fires, idle-after-schedule, stop/freeze/resume, and the player-attached
+  timer routing and run swap), the ETS-mirrored
   enabled/hidden flags, `ensure_started/1` idempotency, and the blank-state
   restart after a crash.
   """
 
   use ExUnit.Case, async: false
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Session
   alias Aesir.ZoneServer.Npc.SessionDynamicSupervisor
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @flags_table :npc_session_flags
 
@@ -447,6 +452,120 @@ defmodule Aesir.ZoneServer.Npc.SessionTest do
       :ok = Session.init_timer(gid)
 
       assert_receive {:dispatched, ^gid}, 300
+    end
+  end
+
+  # rAthena `initnpctimer`/`startnpctimer`/`stopnpctimer` with an attached
+  # `nd->u.scr.rid` (script.cpp) and `npc_timerevent_start`/`_stop` (npc.cpp).
+  # The player's session is this test process, so its slot commands arrive as
+  # casts.
+  describe "player-attached timers" do
+    setup do
+      char_id = register_player(self())
+      gid = gid_for(TimerNpc)
+      test_pid = self()
+      pid = start_test_session(gid, fn _gid, label -> send(test_pid, {:fired, label}) end)
+      {:ok, char_id: char_id, gid: gid, pid: pid}
+    end
+
+    test "the attach flag arms the player's slot from 0 and leaves a stopped NPC timer stopped",
+         %{char_id: char_id, gid: gid, pid: pid} do
+      :ok = Session.init_timer(gid, char_id)
+
+      assert_receive {:"$gen_cast", {:npc, {:timer_start, ^gid, 0, ^pid}}}
+      refute_receive {:fired, _label}, 100
+      assert Session.get_timer(gid) == 0
+    end
+
+    test "an attached init restarts a running NPC timer from 0", %{char_id: char_id, gid: gid} do
+      :ok = Session.init_timer(gid)
+      assert_receive {:fired, "OnTimer50"}, 300
+
+      :ok = Session.init_timer(gid, char_id)
+
+      assert Session.get_timer(gid) < 50
+      assert_receive {:fired, "OnTimer50"}, 300
+    end
+
+    test "with a player attached, plain commands act on the slot until a detaching stop",
+         %{char_id: char_id, gid: gid, pid: pid} do
+      :ok = Session.init_timer(gid, char_id)
+      assert_receive {:"$gen_cast", {:npc, {:timer_start, ^gid, 0, ^pid}}}
+
+      :ok = Session.stop_timer(gid)
+      assert_receive {:"$gen_cast", {:npc, :timer_stop}}
+
+      :ok = Session.init_timer(gid)
+      assert_receive {:"$gen_cast", {:npc, {:timer_start, ^gid, 0, ^pid}}}
+      refute_receive {:fired, _label}, 100
+
+      :ok = Session.stop_timer(gid, true)
+      refute_received {:"$gen_cast", _}
+
+      :ok = Session.init_timer(gid)
+      assert_receive {:fired, "OnTimer50"}, 300
+      refute_received {:"$gen_cast", _}
+    end
+
+    test "an attached start resumes the slot from the stopped NPC timer's frozen time",
+         %{char_id: char_id, gid: gid, pid: pid} do
+      :ok = Session.init_timer(gid)
+      assert_receive {:fired, "OnTimer50"}, 300
+      :ok = Session.stop_timer(gid)
+      frozen = Session.get_timer(gid)
+
+      :ok = Session.start_timer(gid, char_id)
+
+      assert_receive {:"$gen_cast", {:npc, {:timer_start, ^gid, ^frozen, ^pid}}}
+    end
+
+    @tag :capture_log
+    test "an offline attached player makes the slot commands no-ops", %{gid: gid} do
+      offline_char_id = System.unique_integer([:positive]) + 1_000_000_000
+
+      :ok = Session.init_timer(gid, offline_char_id)
+      :ok = Session.stop_timer(gid)
+
+      refute_receive {:"$gen_cast", _}, 50
+      refute_received {:fired, _label}
+    end
+
+    test "an attached run swaps in its player and slot time, then restores the attached player",
+         %{char_id: char_id, gid: gid} do
+      test_pid = self()
+      other_pid = spawn_link(fn -> forward_casts(test_pid) end)
+      other_char_id = register_player(other_pid)
+      :ok = Session.init_timer(gid, char_id)
+      assert_receive {:"$gen_cast", {:npc, {:timer_start, ^gid, 0, _pid}}}
+
+      {token, previous} = Session.begin_attached_run(gid, other_char_id, 500)
+
+      assert previous == char_id
+      assert Session.get_timer(gid) in 500..600
+      :ok = Session.stop_timer(gid)
+      assert_receive {:other_player, {:npc, :timer_stop}}
+
+      :ok = Session.end_attached_run(gid, token, previous)
+
+      assert Session.get_timer(gid) == 0
+      :ok = Session.stop_timer(gid)
+      assert_receive {:"$gen_cast", {:npc, :timer_stop}}
+    end
+  end
+
+  defp register_player(pid) do
+    char_id = System.unique_integer([:positive]) + 1_000_000_000
+    state = build(:player_state, character_id: char_id)
+    UnitRegistry.register_unit(:player, char_id, PlayerState, state, pid)
+    on_exit(fn -> UnitRegistry.unregister_player(char_id, pid) end)
+    char_id
+  end
+
+  defp forward_casts(test_pid) do
+    receive do
+      {:"$gen_cast", message} ->
+        send(test_pid, {:other_player, message})
+        forward_casts(test_pid)
     end
   end
 end

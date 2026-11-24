@@ -42,8 +42,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     `name(ctx, file, type, map)` or `name(ctx, file, type, map, {x0, y0, x1, y1})`;
     a map with an incomplete rectangle stays a stub.
   - `%{shape: :timer, dsl: name}` — `initnpctimer`/`stopnpctimer`/`startnpctimer`:
-    zero args (self) → `name(ctx)`, one name arg → `name(ctx, arg)`;
-    attach-flag variants stay a stub.
+    zero args (self) → `name(ctx)`, one arg (a name, or the attach/detach flag
+    the DSL tells apart at runtime) → `name(ctx, arg)`, a name and a flag →
+    `name(ctx, name, flag)`; any longer form stays a stub.
   - `%{shape: :timer_tick, dsl: name}` — `setnpctimer <tick>{,"<npc name>"}`:
     `name(ctx, tick)` or `name(ctx, tick, npc)`; any other arity stays a stub.
   - `%{shape: :opt1, dsl: name}` — an effect with one optional argument

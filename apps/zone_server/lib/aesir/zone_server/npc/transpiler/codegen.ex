@@ -1454,15 +1454,22 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
   end
 
-  # `initnpctimer`/`stopnpctimer`/`startnpctimer`: no args targets the calling
-  # NPC, one name arg targets a name; the attach-flag variants (a numeric
-  # first argument, or a name and a flag) have no DSL equivalent yet.
+  # `initnpctimer`/`stopnpctimer`/`startnpctimer {"<npc>"}{,<flag>}`: no args
+  # targets the calling NPC; one arg is a name or the attach/detach flag, which
+  # the DSL tells apart at runtime as the reference does (`script_isstring`);
+  # two args are a name and a flag.
   defp emit_mapped(_name, %{shape: :timer, dsl: dsl}, [], _env),
     do: {["ctx = #{dsl}(ctx)"], :cont}
 
-  defp emit_mapped(_name, %{shape: :timer, dsl: dsl}, [arg], env) when elem(arg, 0) != :int do
+  defp emit_mapped(_name, %{shape: :timer, dsl: dsl}, [arg], env) do
     {pre, [arg]} = hoist_all([arg], env)
     {pre ++ ["ctx = #{dsl}(ctx, #{render(arg, env)})"], :cont}
+  end
+
+  defp emit_mapped(_name, %{shape: :timer, dsl: dsl}, [npc, flag], env) do
+    {pre, [npc, flag]} = hoist_all([npc, flag], env)
+
+    {pre ++ ["ctx = #{dsl}(ctx, #{render_str(npc, env)}, #{typed_arg(flag, :int, env)})"], :cont}
   end
 
   defp emit_mapped(name, %{shape: :timer}, args, env) do
