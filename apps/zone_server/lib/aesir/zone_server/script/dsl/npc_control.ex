@@ -50,7 +50,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   coordinates; a random cell without an attached player). `:at` defaults to the
   player's current position. `:map` spawns on an explicit map instead of the
   player's (rAthena `monster "map",...`; with `:map`, `:at` defaults to
-  `:random` and an unknown map fails the command), `:amount` (spawn
+  `:random`; `"this"` means the player's map, and an unknown map fails the command), `:amount` (spawn
   count, default 1), `:name` (optional display name, rAthena `monster`'s name
   argument: `"--en--"`/`"--ja--"` pick the database Name/JapaneseName, see
   `MobState.set_name/2`; without it the mob shows its database Name), and `:event` (optional, a `"Name::OnLabel"`
@@ -62,11 +62,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   on (a failed instance is skipped and the next one is tried). Returns the
   context unchanged.
 
-  Detached-capable: on a detached ctx, `:map`/`:at` still apply, but the
-  default map and position come from `ctx.npc_gid`'s own placement
-  (`Npc.Registry.module_for_unit/1`) instead of a player. Without `:map`,
-  nothing spawns (and the script goes on) when `ctx.npc_gid` is `nil`, doesn't
-  resolve, or is a floating NPC (on no map) — there is nowhere to spawn.
+  Detached-capable: on a detached ctx an explicit `:map` still spawns, but
+  without one (or with `"this"`) there is no player map, so nothing spawns
+  and the script goes on.
   """
   @spec summon_mob(Ctx.t(), keyword()) :: Ctx.t()
   def summon_mob(%Ctx{status: {:error, _}} = ctx, _opts), do: ctx
@@ -102,8 +100,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   `opts` accepts `:mob_id` or `:mob_name` (one is required; `:mob_name` is the
   AEGIS name, matching `MobManagement.get_mob_by_name/1`), `:area` as a
   `{x1, y1, x2, y2}` rectangle (required), `:map` to spawn on an explicit map
-  (defaults to the player's map; rAthena `areamonster "map",...` with `"this"`
-  meaning the player's map is handled by omitting `:map`), `:amount` (spawn
+  (defaults to the player's map, as does `"this"`; on a detached ctx without
+  an explicit map nothing spawns), `:amount` (spawn
   count, default 1), `:name` (optional display name, as in `summon_mob/2`), and `:event`
   (optional OnMyMobDead ref, validated like `summon_mob/2`). Each instance
   lands on its own random walkable cell inside the rectangle; an unknown mob
@@ -1232,29 +1230,14 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   end
 
   defp spawn_mob_at(%Ctx{} = ctx, mob_id, opts) do
-    case Keyword.get(opts, :map) do
-      nil -> spawn_mob_here(ctx, mob_id, opts)
-      map -> do_summon(ctx, map, Keyword.get(opts, :at, :random), mob_id, opts)
-    end
-  end
+    case summon_map(ctx, opts) do
+      {:here, gs} ->
+        do_summon(ctx, gs.map_name, Keyword.get(opts, :at, {gs.x, gs.y}), mob_id, opts)
 
-  defp spawn_mob_here(%Ctx{game_state: gs} = ctx, mob_id, opts) when not is_nil(gs) do
-    do_summon(ctx, gs.map_name, Keyword.get(opts, :at, {gs.x, gs.y}), mob_id, opts)
-  end
+      {:map, map} ->
+        do_summon(ctx, map, Keyword.get(opts, :at, :random), mob_id, opts)
 
-  defp spawn_mob_here(%Ctx{npc_gid: nil} = ctx, _mob_id, _opts),
-    do: ctx
-
-  defp spawn_mob_here(%Ctx{npc_gid: gid} = ctx, mob_id, opts) do
-    case NpcRegistry.module_for_unit(gid) do
-      {:ok, {_module, %Placement{map: nil}}} ->
-        ctx
-
-      {:ok, {_module, placement}} ->
-        at = Keyword.get(opts, :at, {placement.x, placement.y})
-        do_summon(ctx, placement.map, at, mob_id, opts)
-
-      :error ->
+      :none ->
         ctx
     end
   end
@@ -1270,24 +1253,20 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   end
 
   defp spawn_mob_area(%Ctx{} = ctx, mob_id, opts) do
-    case Keyword.get(opts, :map) do
-      nil -> spawn_mob_area_here(ctx, mob_id, opts)
-      map -> do_summon_area(ctx, map, mob_id, opts)
+    case summon_map(ctx, opts) do
+      {:here, gs} -> do_summon_area(ctx, gs.map_name, mob_id, opts)
+      {:map, map} -> do_summon_area(ctx, map, mob_id, opts)
+      :none -> ctx
     end
   end
 
-  defp spawn_mob_area_here(%Ctx{game_state: gs} = ctx, mob_id, opts) when not is_nil(gs) do
-    do_summon_area(ctx, gs.map_name, mob_id, opts)
-  end
-
-  defp spawn_mob_area_here(%Ctx{npc_gid: nil} = ctx, _mob_id, _opts),
-    do: ctx
-
-  defp spawn_mob_area_here(%Ctx{npc_gid: gid} = ctx, mob_id, opts) do
-    case NpcRegistry.module_for_unit(gid) do
-      {:ok, {_module, %Placement{map: nil}}} -> ctx
-      {:ok, {_module, placement}} -> do_summon_area(ctx, placement.map, mob_id, opts)
-      :error -> ctx
+  # No `:map` or `"this"` means the attached player's map; with no player
+  # attached there is no such map and nothing spawns.
+  defp summon_map(%Ctx{game_state: gs}, opts) do
+    case Keyword.get(opts, :map) do
+      map when map in [nil, "this"] and is_nil(gs) -> :none
+      map when map in [nil, "this"] -> {:here, gs}
+      map -> {:map, map}
     end
   end
 

@@ -117,7 +117,7 @@ defmodule Aesir.ZoneServer.NpcEventsIntegrationTest do
 
     @impl true
     def on_event("OnSummon", ctx) do
-      summon_mob(ctx, mob_id: 1002, event: "Summoner::OnMyMobDead")
+      summon_mob(ctx, mob_id: 1002, map: "prontera", event: "Summoner::OnMyMobDead")
     end
 
     def on_event("OnMyMobDead", ctx) do

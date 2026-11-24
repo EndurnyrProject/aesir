@@ -1647,6 +1647,27 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   end
 
   describe "summon_mob/2" do
+    test "map: \"this\" spawns on the attached player's map" do
+      test_pid = self()
+
+      expect(Coordinator, :summon_mob, fn map, _mob_id, x, y, _opts ->
+        send(test_pid, {:summoned, map, {x, y}})
+        {:ok, 12_345}
+      end)
+
+      Dsl.summon_mob(build_ctx(), mob_id: @poring_id, map: "this", at: {150, 100})
+
+      assert_received {:summoned, "prontera", {150, 100}}
+    end
+
+    test "map: \"this\" spawns nothing on a detached ctx" do
+      stub(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, _opts -> flunk("spawned") end)
+
+      ctx = Dsl.summon_mob(Ctx.detached(DetachedNpc, nil), mob_id: @poring_id, map: "this")
+
+      assert ctx.status == :ok
+    end
+
     test "summons the requested mob on the player's map at the given coords" do
       test_pid = self()
 

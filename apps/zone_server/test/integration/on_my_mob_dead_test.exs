@@ -195,8 +195,8 @@ defmodule Aesir.ZoneServer.Integration.OnMyMobDeadTest do
     end
   end
 
-  describe "summon_mob/2 and summon_random_mob/2 detached-capable spawn position" do
-    test "summon_mob/2 spawns at the calling NPC's own placement on a detached ctx" do
+  describe "summon_mob/2 and summon_random_mob/2 on a detached ctx" do
+    test "summon_mob/2 without :map spawns nothing and the script goes on" do
       NpcRegistry.reload([PlacementNpc])
       {PlacementNpc, placement} = hd(NpcRegistry.entries())
       gid = NpcRegistry.entity_id(placement)
@@ -211,10 +211,10 @@ defmodule Aesir.ZoneServer.Integration.OnMyMobDeadTest do
       result = Dsl.summon_mob(ctx, mob_id: 1002)
 
       assert result.status == :ok
-      assert_received {:summoned, "prontera", 1002, {80, 80}}
+      refute_received {:summoned, _map, _mob_id, _at}
     end
 
-    test "summon_mob/2 :at overrides the NPC's placement on a detached ctx" do
+    test "summon_mob/2 with :at but no :map spawns nothing" do
       NpcRegistry.reload([PlacementNpc])
       {PlacementNpc, placement} = hd(NpcRegistry.entries())
       gid = NpcRegistry.entity_id(placement)
@@ -229,10 +229,10 @@ defmodule Aesir.ZoneServer.Integration.OnMyMobDeadTest do
       result = Dsl.summon_mob(ctx, mob_id: 1002, at: {10, 20})
 
       assert result.status == :ok
-      assert_received {:summoned, "prontera", 1002, {10, 20}}
+      refute_received {:summoned, _map, _mob_id, _at}
     end
 
-    test "summon_random_mob/2 spawns at the calling NPC's own placement on a detached ctx" do
+    test "summon_random_mob/2 without :map spawns nothing" do
       NpcRegistry.reload([PlacementNpc])
       {PlacementNpc, placement} = hd(NpcRegistry.entries())
       gid = NpcRegistry.entity_id(placement)
@@ -247,7 +247,7 @@ defmodule Aesir.ZoneServer.Integration.OnMyMobDeadTest do
       result = Dsl.summon_random_mob(ctx, [])
 
       assert result.status == :ok
-      assert_received {:summoned, "prontera", _mob_id, {80, 80}}
+      refute_received {:summoned, _map, _mob_id, _at}
     end
 
     test "summon_mob/2 with :map spawns cross-map even without a resolvable gid" do
