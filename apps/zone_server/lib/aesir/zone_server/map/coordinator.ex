@@ -233,7 +233,9 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   A non-positive `x` or `y` picks a random walkable cell, mirroring rAthena's
   `mob_once_spawn` (script `monster "map",0,0,...`). `aggressive: true` starts
   the mob under the Dead Branch mode change
-  (`StatsHandler.apply_dead_branch_mode/1`).
+  (`StatsHandler.apply_dead_branch_mode/1`). `name:` is the display name a
+  script gave it (see `MobState.set_name/2`); without it the mob shows its
+  database Name.
 
   Returns `{:ok, instance_id}`, or `{:error, :map_not_found}` when no
   coordinator runs for `map_name`, or `{:error, reason}` from the spawn.
@@ -848,6 +850,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       instance_id
       |> MobState.new(mob_data, spawn_ref, state.map_name, x, y)
       |> MobState.set_owner_event(Keyword.get(opts, :event))
+      |> MobState.set_name(Keyword.get(opts, :name))
       |> MobState.set_master(Keyword.get(opts, :master_id))
       |> MobState.configure_summon(opts)
 

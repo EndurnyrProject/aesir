@@ -56,6 +56,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Crusader.MonsterSummon168150 do
       mob_id: 1036,
       map: "job_cru",
       at: {168, 150},
+      name: char_name(ctx, 0),
       event: "Monster Summon#cr4-a::OnDead"
     )
     |> donpcevent("Monster Summon#cr4::OnEnd")

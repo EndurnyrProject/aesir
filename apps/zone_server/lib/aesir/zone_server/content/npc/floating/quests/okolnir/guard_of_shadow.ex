@@ -521,6 +521,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.GuardOfShadow do
         mob_id: 1752,
         map: castle_map(castle),
         at: {x, y},
+        name: "Guard of Shadow",
         event: "#{name}::OnMyMobDead"
       )
     end)

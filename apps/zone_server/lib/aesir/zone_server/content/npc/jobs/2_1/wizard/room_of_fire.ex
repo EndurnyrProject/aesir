@@ -56,7 +56,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.RoomOfFire do
     |> summon_room_mob(1123, 33, 110)
     |> summon_room_mob(1001, 40, 103)
     |> summon_room_mob(1119, 51, 103)
-    |> summon_room_mob(1019, 40, 92)
+    |> summon_mob(
+      mob_id: 1019,
+      map: "job_wiz",
+      at: {40, 92},
+      name: "PecoPeco",
+      event: "Room of Fire::OnMyMobDead"
+    )
     |> summon_room_mob(1033, 51, 92)
     |> summon_room_mob(1058, 37, 89)
     |> initnpctimer()

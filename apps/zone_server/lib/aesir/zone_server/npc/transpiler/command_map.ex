@@ -64,11 +64,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     `random_options/3`, then the optional account target as given; a call
     missing a fixed argument stays a stub.
   - `%{shape: :monster}` — `monster "map",x,y,"name",id,amount{,"event"...}`
-    → `summon_mob(ctx, mob_id: _, map: _, at: _, ...)`; the display name and
-    the size/ai tail are dropped.
+    → `summon_mob(ctx, mob_id: _, map: _, at: _, ...)`; the display name
+    becomes `name:` (omitted for `"--en--"`) and the size/ai tail is dropped.
   - `%{shape: :areamonster}` — `areamonster "map",x1,y1,x2,y2,"name",id,
     amount{,"event"...}` → `summon_mob_area(ctx, mob_id: _, map: _, area: _,
-    ...)`; the display name and the size/ai tail are dropped like `monster`.
+    ...)`; the display name and the size/ai tail map like `monster`.
   - `%{shape: :getmapxy, dsl: name}` — `getmapxy(<map$>,<x>,<y>{,<type>})`
     writes its three output variables from the position of the attached player
     (`BL_PC`, the reference default) or of the running NPC (`BL_NPC`); see

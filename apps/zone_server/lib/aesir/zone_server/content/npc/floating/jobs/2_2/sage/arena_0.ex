@@ -75,26 +75,26 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M22.Sage.Arena0 do
     |> disablenpc("Arena#1")
     |> set_npc_var("MyMobs", 24)
     |> summon([
-      {{111, 102}, 3},
-      {{120, 102}, 3},
-      {{111, 93}, 3},
-      {{120, 102}, 3},
-      {{111, 93}, 3},
-      {{120, 93}, 3},
-      {{107, 98}, 3},
-      {{124, 98}, 3}
+      {{111, 102}, ["Numerical Value", "Physics", "History"]},
+      {{120, 102}, ["Geography", "Astronomy", "Meteorology"]},
+      {{111, 93}, ["Architecture", "Control", "Instrumentology"]},
+      {{120, 102}, ["Statistics;", "Graphic Method", "Language"]},
+      {{111, 93}, ["Sitology", "Dietetics", "Landscape Architecture"]},
+      {{120, 93}, ["Anthropology", "Biology", "Ethics"]},
+      {{107, 98}, ["Economy", "Politics", "Photography"]},
+      {{124, 98}, ["Dendrology", "Hygiene", "Sociology"]}
     ])
     |> initnpctimer()
   end
 
   defp summon(ctx, waves) do
-    Enum.reduce(waves, ctx, fn {cell, count}, ctx ->
-      Enum.reduce(1..count, ctx, fn _, ctx -> spawn_mob(ctx, cell) end)
+    Enum.reduce(waves, ctx, fn {cell, names}, ctx ->
+      Enum.reduce(names, ctx, fn name, ctx -> spawn_mob(ctx, cell, name) end)
     end)
   end
 
-  defp spawn_mob(ctx, {x, y}) do
-    summon_mob(ctx, mob_id: 1063, map: @arena, at: {x, y}, event: @on_mob_dead)
+  defp spawn_mob(ctx, {x, y}, name) do
+    summon_mob(ctx, mob_id: 1063, map: @arena, at: {x, y}, name: name, event: @on_mob_dead)
   end
 
   defp count_kill(ctx) do

@@ -1118,7 +1118,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         max_hp: mob_state.calculated.max_hp,
         hp: mob_state.hp,
         is_boss: MobState.is_boss?(mob_state),
-        name: mob_state.mob_data.name,
+        name: MobState.display_name(mob_state),
         moving: false
       }
 

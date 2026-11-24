@@ -48,45 +48,45 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Manager do
     ]
 
   @target_mobs [
-    {1015, {67, 80}},
-    {1015, {114, 78}},
-    {1002, {89, 127}},
-    {1041, {53, 73}},
-    {1016, {125, 70}},
-    {1015, {90, 92}}
+    {1015, {67, 80}, "Job Change Monster"},
+    {1015, {114, 78}, "Job Change Monster"},
+    {1002, {89, 127}, "Job Change Monster"},
+    {1041, {53, 73}, "Job Change Monster"},
+    {1016, {125, 70}, "Job Change Monster"},
+    {1015, {90, 92}, "Job Change Monster"}
   ]
 
   @decoy_mobs [
-    {1016, {85, 100}},
-    {1041, {72, 102}},
-    {1015, {108, 103}},
-    {1002, {88, 127}},
-    {1015, {125, 69}},
-    {1016, {77, 112}},
-    {1015, {53, 106}},
-    {1002, {53, 73}},
-    {1015, {125, 70}},
-    {1015, {90, 91}},
-    {1015, {67, 80}},
-    {1016, {77, 112}},
-    {1015, {53, 106}},
-    {1015, {53, 73}},
-    {1015, {125, 70}},
-    {1041, {90, 91}},
-    {1002, {85, 100}},
-    {1015, {72, 102}},
-    {1015, {108, 103}},
-    {1015, {77, 112}},
-    {1015, {112, 139}},
-    {1015, {112, 139}},
-    {1015, {112, 139}},
-    {1015, {112, 139}},
-    {1015, {90, 91}},
-    {1002, {53, 73}},
-    {1015, {53, 106}},
-    {1015, {77, 112}},
-    {1015, {72, 102}},
-    {1015, {108, 103}}
+    {1016, {85, 100}, "Job Test Monster"},
+    {1041, {72, 102}, "Job Test Monster"},
+    {1015, {108, 103}, "Job Test Monster"},
+    {1002, {88, 127}, "Job Test Monster"},
+    {1015, {125, 69}, "Job Test Monster"},
+    {1016, {77, 112}, "Job Tester Monster"},
+    {1015, {53, 106}, "Job Tester Monster"},
+    {1002, {53, 73}, "Job Tester Monster"},
+    {1015, {125, 70}, "Job Tester Monster"},
+    {1015, {90, 91}, "Job Tester Monster"},
+    {1015, {67, 80}, "Hunter Change Monster"},
+    {1016, {77, 112}, "Hunter Change Monster"},
+    {1015, {53, 106}, "Hunter Change Monster"},
+    {1015, {53, 73}, "Hunter Change Monster"},
+    {1015, {125, 70}, "Hunter Change Monster"},
+    {1041, {90, 91}, "Job Transfer Monster"},
+    {1002, {85, 100}, "Job Transfer Monster"},
+    {1015, {72, 102}, "Job Transfer Monster"},
+    {1015, {108, 103}, "Job Transfer Monster"},
+    {1015, {77, 112}, "Job Transfer Monster"},
+    {1015, {112, 139}, "Binnie"},
+    {1015, {112, 139}, "Darrel"},
+    {1015, {112, 139}, "Rex"},
+    {1015, {112, 139}, "Anselmo"},
+    {1015, {90, 91}, "Anolian"},
+    {1002, {53, 73}, "Monster Sample"},
+    {1015, {53, 106}, "Not Me"},
+    {1015, {77, 112}, "Help Me"},
+    {1015, {72, 102}, "Do Not Hit Me"},
+    {1015, {108, 103}, "Attack Speed 184"}
   ]
 
   @impl true
@@ -201,8 +201,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Manager do
   defp announce(ctx, message), do: mapannounce(ctx, "job_hunte", message, 1)
 
   defp summon_all(ctx, mobs, event) do
-    Enum.reduce(mobs, ctx, fn {mob_id, at}, acc ->
-      summon_mob(acc, mob_id: mob_id, map: "job_hunte", at: at, event: event)
+    Enum.reduce(mobs, ctx, fn {mob_id, at, name}, acc ->
+      summon_mob(acc, mob_id: mob_id, map: "job_hunte", at: at, name: name, event: event)
     end)
   end
 end

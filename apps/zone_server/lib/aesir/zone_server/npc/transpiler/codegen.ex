@@ -1525,17 +1525,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   end
 
   # `monster "<map>",<x>,<y>,"<display name>",<mob>,<amount>{,"<event>"{,<size>{,<ai>}}}`
-  # → summon_mob. The display name is cosmetic (the engine renders the db
-  # name) and the size/ai tail has no DSL equivalent; both are dropped.
+  # → summon_mob. The display name becomes `name:` (omitted for `"--en--"`,
+  # the DSL default); the size/ai tail has no DSL equivalent and is dropped.
   # `"this"` targets the attached map (the DSL default) and non-positive
   # literal coordinates mean a random walkable cell, both per rAthena.
-  defp emit_mapped(_name, %{shape: :monster}, [map, x, y, _display, mob, amount | rest], env) do
-    {pre, [map, x, y, mob, amount | rest]} =
-      hoist_all([map, x, y, mob, amount | Enum.take(rest, 1)], env)
+  defp emit_mapped(_name, %{shape: :monster}, [map, x, y, display, mob, amount | rest], env) do
+    {pre, [map, x, y, display, mob, amount | rest]} =
+      hoist_all([map, x, y, display, mob, amount | Enum.take(rest, 1)], env)
 
     parts =
       [monster_mob(mob, env), monster_map(map, env), monster_at(x, y, env)] ++
-        monster_amount(amount, env) ++ monster_event(rest, env)
+        monster_amount(amount, env) ++ monster_name(display, env) ++ monster_event(rest, env)
 
     {pre ++ ["ctx = summon_mob(ctx, #{parts |> List.flatten() |> Enum.join(", ")})"], :cont}
   end
@@ -1547,21 +1547,21 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   end
 
   # `areamonster "<map>",<x1>,<y1>,<x2>,<y2>,"<display name>",<mob>,<amount>{,"<event>"{,...}}}`
-  # → summon_mob_area. Same drops as `monster` (display name, size/ai tail);
+  # → summon_mob_area. The display name and size/ai tail map like `monster`;
   # the four coordinates become the `:area` rectangle and `"this"` still maps to
   # the attached map.
   defp emit_mapped(
          _name,
          %{shape: :areamonster},
-         [map, x1, y1, x2, y2, _display, mob, amount | rest],
+         [map, x1, y1, x2, y2, display, mob, amount | rest],
          env
        ) do
-    {pre, [map, x1, y1, x2, y2, mob, amount | rest]} =
-      hoist_all([map, x1, y1, x2, y2, mob, amount | Enum.take(rest, 1)], env)
+    {pre, [map, x1, y1, x2, y2, display, mob, amount | rest]} =
+      hoist_all([map, x1, y1, x2, y2, display, mob, amount | Enum.take(rest, 1)], env)
 
     parts =
       [monster_mob(mob, env), monster_map(map, env), area_arg(x1, y1, x2, y2, env)] ++
-        monster_amount(amount, env) ++ monster_event(rest, env)
+        monster_amount(amount, env) ++ monster_name(display, env) ++ monster_event(rest, env)
 
     {pre ++
        ["ctx = summon_mob_area(ctx, #{parts |> List.flatten() |> Enum.join(", ")})"], :cont}
@@ -1906,6 +1906,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp monster_amount({:int, 1}, _env), do: []
   defp monster_amount(amount, env), do: ["amount: #{render(amount, env)}"]
+
+  defp monster_name({:str, "--en--"}, _env), do: []
+  defp monster_name(display, env), do: ["name: #{render_str(display, env)}"]
 
   defp monster_event([], _env), do: []
   defp monster_event([{:str, ""}], _env), do: []

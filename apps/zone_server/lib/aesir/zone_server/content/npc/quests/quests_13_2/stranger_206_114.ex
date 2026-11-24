@@ -62,6 +62,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests132.Stranger206114 do
       mob_id: 2026,
       map: "nyd_dun02",
       at: {206, 114},
+      name: "Runway Dandelion",
       event: "Stranger#ep13_2_dan04::OnMyMobDead"
     )
   end

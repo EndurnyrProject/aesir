@@ -74,7 +74,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M21.Knight.Knight3 do
         ctx
         |> set_npc_var("MyMobs", 7)
         |> summon(1258, {147, 167})
-        |> summon(1280, {136, 158})
+        |> summon_mob(
+          mob_id: 1280,
+          map: @room,
+          at: {136, 158},
+          name: "Steam Goblin",
+          event: @on_mob_dead
+        )
       end
 
     ctx

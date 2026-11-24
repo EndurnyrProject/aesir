@@ -59,6 +59,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests132.EggKeeperDraco do
       mob_id: 2013,
       map: "nyd_dun02",
       at: {201, 157},
+      name: "Egg Keeper Draco",
       event: "Egg Keeper Draco#13_3::OnMyMobDead"
     )
   end

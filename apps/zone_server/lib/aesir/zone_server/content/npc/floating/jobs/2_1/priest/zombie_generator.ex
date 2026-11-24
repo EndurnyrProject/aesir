@@ -41,11 +41,26 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M21.Priest.ZombieGenerator 
   @impl true
   def on_event("OnInit", ctx), do: disablenpc(ctx, @name)
   def on_event("OnEnable", ctx), do: start(ctx)
-  def on_event("Onm1", ctx), do: spawn_wave(ctx, 13, [{24, 52}, {18, 52}, {30, 52}])
-  def on_event("Onm2", ctx), do: spawn_wave(ctx, nil, [{21, 62}, {27, 62}])
-  def on_event("Onm3", ctx), do: spawn_wave(ctx, nil, [{24, 72}, {18, 72}, {30, 72}])
-  def on_event("Onm4", ctx), do: spawn_wave(ctx, nil, [{21, 82}, {27, 82}])
-  def on_event("Onm5", ctx), do: spawn_wave(ctx, nil, [{24, 92}, {18, 92}, {30, 92}])
+
+  def on_event("Onm1", ctx),
+    do:
+      spawn_wave(ctx, 13, [
+        {{24, 52}, "Theft"},
+        {{18, 52}, "Want of Virtue"},
+        {{30, 52}, "Jealousy"}
+      ])
+
+  def on_event("Onm2", ctx), do: spawn_wave(ctx, nil, [{{21, 62}, "Fury"}, {{27, 62}, "Envy"}])
+
+  def on_event("Onm3", ctx),
+    do:
+      spawn_wave(ctx, nil, [{{24, 72}, "Arrogance"}, {{18, 72}, "Lewdness"}, {{30, 72}, "Sloth"}])
+
+  def on_event("Onm4", ctx),
+    do: spawn_wave(ctx, nil, [{{21, 82}, "Gluttony"}, {{27, 82}, "Greed"}])
+
+  def on_event("Onm5", ctx),
+    do: spawn_wave(ctx, nil, [{{24, 92}, "Despair"}, {{18, 92}, "Distrust"}, {{30, 92}, "Fear"}])
 
   def on_event("OnDisable", ctx) do
     ctx |> disablenpc(@name) |> killmonsterall(@room)
@@ -81,8 +96,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M21.Priest.ZombieGenerator 
   defp spawn_wave(ctx, total, cells) do
     ctx = if total, do: set_npc_var(ctx, "MyMobs", total), else: ctx
 
-    Enum.reduce(cells, ctx, fn {x, y}, ctx ->
-      summon_mob(ctx, mob_id: 1015, map: @room, at: {x, y}, event: @on_mob_dead)
+    Enum.reduce(cells, ctx, fn {{x, y}, name}, ctx ->
+      summon_mob(ctx, mob_id: 1015, map: @room, at: {x, y}, name: name, event: @on_mob_dead)
     end)
   end
 end

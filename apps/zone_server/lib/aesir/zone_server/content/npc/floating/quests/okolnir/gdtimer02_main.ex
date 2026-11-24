@@ -174,6 +174,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.Gdtimer02Main do
         mob_id: 1905,
         map: "que_q#{sub}",
         at: {x, y},
+        name: "Key Stone",
         event: "#gdtimer02_#{sub}::OnMyMobDead"
       )
       |> set_local(:i, index * 2 + 2)

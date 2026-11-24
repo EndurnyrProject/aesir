@@ -58,6 +58,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.MonsterMaster do
           ctx,
           1986,
           {149, 291},
+          "Escaped Tatacho",
           "Tatacho#alba02",
           "Breeder Taab: Argh! My Tatacho ran away!"
         )
@@ -67,12 +68,20 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.MonsterMaster do
           ctx,
           1989,
           {154, 273},
+          "Escaped Hillsrion",
           "Hillsrion#alba01",
           "Breeder Taab: Argh! My Hillsrion ran away!"
         )
 
       3 ->
-        escaped(ctx, 1992, {184, 246}, "Cornus#alba03", "Breeder Taab: Argh! My Cornus ran away!")
+        escaped(
+          ctx,
+          1992,
+          {184, 246},
+          "Escaped Cornus",
+          "Cornus#alba03",
+          "Breeder Taab: Argh! My Cornus ran away!"
+        )
     end
   end
 
@@ -101,9 +110,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.MonsterMaster do
     if Enum.random(1..3) > 1, do: initnpctimer(ctx), else: ctx
   end
 
-  defp escaped(ctx, mob_id, at, pet, message) do
+  defp escaped(ctx, mob_id, at, name, pet, message) do
     ctx
-    |> summon_mob(mob_id: mob_id, map: @map, at: at, event: @mob_event)
+    |> summon_mob(mob_id: mob_id, map: @map, at: at, name: name, event: @mob_event)
     |> mapannounce(@map, message, 1, "0x00ff00")
     |> donpcevent("#{pet}::OnDisable")
   end

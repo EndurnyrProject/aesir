@@ -33,16 +33,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M22.Sage.Arena2 do
 
   def on_event("OnEnable", ctx) do
     ctx
-    |> summon(1185, {107, 106})
-    |> summon(1185, {124, 106})
-    |> summon(1185, {107, 89})
-    |> summon(1185, {124, 89})
+    |> summon(1185, {107, 106}, "Absent 3 times")
+    |> summon(1185, {124, 106}, "Being Late 5 times")
+    |> summon(1185, {107, 89}, "Cheating 2 times")
+    |> summon(1185, {124, 89}, "Cheating 4 times")
   end
 
   def on_event("OnDisable", ctx), do: killmonsterall(ctx, @arena)
 
-  defp summon(ctx, mob_id, {x, y}) do
-    summon_mob(ctx, mob_id: mob_id, map: @arena, at: {x, y})
+  defp summon(ctx, mob_id, {x, y}, name) do
+    summon_mob(ctx, mob_id: mob_id, map: @arena, at: {x, y}, name: name)
   end
 
   @impl true

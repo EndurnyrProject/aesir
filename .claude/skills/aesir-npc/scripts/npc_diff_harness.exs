@@ -27,6 +27,11 @@
 # - distinct_paths: a quest NPC stuck at 1-2 paths means a gate is never passed;
 #   check which read guards it. Class-quest NPCs are commonly gated on `checkre`,
 #   `eaclass` or `gettime`, which are modelled below.
+# - NPC_HARNESS_IGNORE_OPTS=name drops the listed keys from keyword-list effect arguments,
+#   for a sweep that only adds an option: mismatches=0 with it proves nothing else changed,
+#   and mismatches > 0 without it proves the option reaches the call.
+# - The fake DSL accepts any arity, so a call the real DSL does not export (`char_name(ctx)`
+#   for `char_name/2`) passes here. Always `mix compile` the refactored modules too.
 #
 # How the model works:
 #
@@ -62,10 +67,15 @@ end
 
 # The project's string/array helpers (Rathena) are deterministic and have no I/O, so the
 # unmodelled ones are delegated to the real module instead of being reimplemented here.
+# A scratch copy outside the repo still finds it from the repository root (the cwd).
 rathena_source =
-  Path.expand("../../../../apps/zone_server/lib/aesir/zone_server/script/rathena.ex", __DIR__)
+  [
+    Path.expand("../../../../apps/zone_server/lib/aesir/zone_server/script/rathena.ex", __DIR__),
+    Path.expand("apps/zone_server/lib/aesir/zone_server/script/rathena.ex")
+  ]
+  |> Enum.find(&File.exists?/1)
 
-if File.exists?(rathena_source) do
+if rathena_source do
   # Its callers reference modules this script does not load; only warnings result.
   Code.compiler_options(no_warn_undefined: :all)
   Code.compile_file(rathena_source)
@@ -384,6 +394,15 @@ defmodule H.Core do
   # Renewal/classic switch: 1 in renewal, 0 otherwise.
   def call(:checkre, [_ctx | args]), do: pick({:checkre, args}, [0, 1])
 
+  # The attached account id (`Reads.playerattached`); a fixed id keeps it out of the effect log.
+  def call(:playerattached, [_ctx]), do: 2_000_001
+
+  # `getmonsterinfo(id, MOB_NAME)` (type 1) is a name; every other field is a number.
+  def call(:getmonsterinfo, [_ctx, mob_id, 1]), do: "mob_#{inspect(mob_id)}"
+
+  def call(:getmonsterinfo, [_ctx | args]),
+    do: pick({:getmonsterinfo, args}, [-1, 0, 1, 10, 99])
+
   # Class bitmask; includes the baby flag (2_097_152) and the upper-class bits.
   def call(:eaclass, [_ctx]), do: pick(:eaclass, [0, 1, 768, 1_048_576, 2_097_152, 1_049_344])
 
@@ -493,14 +512,36 @@ defmodule H.Core do
       when name in [:fkafset, :fkafra, :fkafend, :fmerckafra, :fvotekafra, :fcooleventcorp],
       do: {log(ctx, {name, args}), nil}
 
+  # Episode 13.2 jewel/find helpers hand back the `{ctx, value}` pair their callers destructure.
+  def call(name, [ctx | args]) when name in [:jewel132, :find132],
+    do: {log(ctx, {name, args}), nil}
+
   def call(name, [%Ctx{} = ctx | args]) do
     if System.get_env("NPC_HARNESS_STRICT"),
       do: raise("unhandled ctx-first call #{name}/#{length(args) + 1}")
 
-    log(ctx, {name, args})
+    log(ctx, {name, drop_ignored_opts(args)})
   end
 
   def call(name, args), do: raise("unhandled #{name}/#{length(args)} #{inspect(args)}")
+
+  # NPC_HARNESS_IGNORE_OPTS=name,other drops those keys from keyword-list arguments of logged
+  # effects, so a sweep that only adds an option (`summon_mob(..., name: _)`) compares clean.
+  defp drop_ignored_opts(args) do
+    case System.get_env("NPC_HARNESS_IGNORE_OPTS") do
+      nil ->
+        args
+
+      keys ->
+        ignored = keys |> String.split(",", trim: true) |> Enum.map(&String.to_atom/1)
+        Enum.map(args, &drop_keys(&1, ignored))
+    end
+  end
+
+  defp drop_keys([{key, _} | _] = opts, ignored) when is_atom(key),
+    do: Keyword.drop(opts, ignored)
+
+  defp drop_keys(arg, _ignored), do: arg
 
   # A thrown `{:script_end, ctx}` / `{:script_return, {ctx, value}}` carries the whole context,
   # but only its recorded effects are observable: locals are function-scoped and never survive

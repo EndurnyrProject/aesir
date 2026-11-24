@@ -208,7 +208,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     # through from the summoning op's `event:` opt, resolved only at death
     # time. `nil` for every ordinary spawn -- exactly today's behavior.
     field :owner_event, String.t() | nil, default: nil
+
+    # The display name a script spawn gave the monster (rAthena `md->name`);
+    # `nil` shows the current form's database Name.
+    field :name, String.t() | nil, default: nil
   end
+
+  # rAthena copies a spawn name into a `char[NAME_LENGTH]` buffer (23 bytes + NUL).
+  @name_max_bytes 23
 
   @doc """
   Creates a new mob state instance.
@@ -502,6 +509,41 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     %{state | owner_event: owner_event}
   end
 
+  @doc """
+  Sets the display name a script spawn gave the monster (rAthena `monster`'s
+  name argument, resolved by `mob_parse_dataset`).
+
+  `"--en--"` shows the form's database Name and `"--ja--"` its JapaneseName
+  (the Name when it has none). Any other name is capped at 23 bytes, the
+  `NAME_LENGTH` buffer rAthena copies it into. `nil` leaves the name unchanged.
+  """
+  @spec set_name(t(), String.t() | nil) :: t()
+  def set_name(%__MODULE__{} = state, nil), do: state
+  def set_name(%__MODULE__{} = state, "--en--"), do: %{state | name: nil}
+
+  def set_name(%__MODULE__{mob_data: mob_data} = state, "--ja--"),
+    do: %{state | name: mob_data.japanese_name || mob_data.name}
+
+  def set_name(%__MODULE__{} = state, name) when is_binary(name),
+    do: %{state | name: cap_name(name)}
+
+  @doc "The name players see for the monster: its spawn name, else its form's database Name."
+  @spec display_name(t()) :: String.t()
+  def display_name(%__MODULE__{name: nil, mob_data: mob_data}), do: mob_data.name
+  def display_name(%__MODULE__{name: name}), do: name
+
+  # Keeps whole graphemes so a cut never leaves invalid UTF-8 on the wire.
+  defp cap_name(name) when byte_size(name) <= @name_max_bytes, do: name
+
+  defp cap_name(name) do
+    name
+    |> String.graphemes()
+    |> Enum.reduce_while("", fn grapheme, acc ->
+      capped = acc <> grapheme
+      if byte_size(capped) <= @name_max_bytes, do: {:cont, capped}, else: {:halt, acc}
+    end)
+  end
+
   @doc "Advances the generation used to invalidate deferred work."
   @spec advance_deferred_epoch(t()) :: t()
   def advance_deferred_epoch(%__MODULE__{deferred_epoch: epoch} = state) do
@@ -793,13 +835,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @doc """
   Adopts `definition` as the monster's current form: the form identity and data
   change, while the runtime level is kept when it is a level the monster may
-  hold and the replacement's level is adopted otherwise.
+  hold and the replacement's level is adopted otherwise. A spawn name is
+  dropped for the new form's own (rAthena `mob_class_change` rewrites `md->name`).
   """
   @spec change_form(t(), MobDefinition.t()) :: t()
   def change_form(%__MODULE__{} = state, %MobDefinition{} = definition) do
     level = if state.level in 1..275, do: state.level, else: definition.level
 
-    %{state | mob_id: definition.id, mob_data: definition, level: level}
+    %{state | mob_id: definition.id, mob_data: definition, level: level, name: nil}
   end
 
   @doc """

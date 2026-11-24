@@ -95,7 +95,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsAmatsu.Grandma22111 do
       |> mes("who made me like this! Forever!")
       |> mes("You better watch out, human!^000000")
       |> next()
-      |> summon_mob(mob_id: 1180, map: "ama_in01", at: {22, 111})
+      |> summon_mob(mob_id: 1180, map: "ama_in01", at: {22, 111}, name: "Nine Tails")
       |> killmonsterall("ama_in01")
       |> set_char_var(:event_amatsu, 5)
       |> changequest(8134, 8135)

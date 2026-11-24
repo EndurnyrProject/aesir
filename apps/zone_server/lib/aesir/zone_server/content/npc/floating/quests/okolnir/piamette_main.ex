@@ -167,6 +167,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.PiametteMain do
       mob_id: 1930,
       map: "que_q#{sub}",
       at: {131, 135},
+      name: "Angry Piamette",
       event: "#piamette_#{sub}::OnMyMobDead"
     )
     |> stopnpctimer()

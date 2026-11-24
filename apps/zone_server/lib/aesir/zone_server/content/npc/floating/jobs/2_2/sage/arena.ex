@@ -76,16 +76,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M22.Sage.Arena do
     ctx
     |> enablenpc("Arena#1")
     |> set_npc_var("MyMobs", 16)
-    |> summon(1183, [{111, 102}, {120, 102}, {111, 93}, {120, 93}, {107, 98}, {124, 98}])
-    |> summon(1183, [{115, 106}, {115, 90}])
-    |> summon(1184, [{103, 110}, {128, 110}, {103, 85}, {128, 85}])
-    |> summon(1184, [{107, 106}, {124, 106}, {107, 89}, {124, 89}])
+    |> summon(1183, "Grade F", [
+      {111, 102},
+      {120, 102},
+      {111, 93},
+      {120, 93},
+      {107, 98},
+      {124, 98}
+    ])
+    |> summon(1183, "Grade F", [{115, 106}, {115, 90}])
+    |> summon(1184, "Grade D", [{103, 110}, {128, 110}, {103, 85}, {128, 85}])
+    |> summon(1184, "Grade D", [{107, 106}, {124, 106}, {107, 89}, {124, 89}])
     |> initnpctimer()
   end
 
-  defp summon(ctx, mob_id, cells) do
+  defp summon(ctx, mob_id, name, cells) do
     Enum.reduce(cells, ctx, fn {x, y}, ctx ->
-      summon_mob(ctx, mob_id: mob_id, map: @arena, at: {x, y}, event: @on_mob_dead)
+      summon_mob(ctx, mob_id: mob_id, map: @arena, at: {x, y}, name: name, event: @on_mob_dead)
     end)
   end
 

@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NameHandler do
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
@@ -61,7 +62,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NameHandler do
           {:ok, {_module, mob_state, _pid}} ->
             MessageRouter.send_to(connection_pid, %NameResponse{
               gid: entity_id,
-              name: mob_state.mob_data.name
+              name: MobState.display_name(mob_state)
             })
 
           {:error, :not_found} ->

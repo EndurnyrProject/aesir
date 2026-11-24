@@ -53,12 +53,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsHugel.Humspawner do
       mob_id: 1682,
       map: "lhz_in01",
       at: {208, 133},
+      name: "Guard",
       event: "HuMSpawner::OnMonsterDead"
     )
     |> summon_mob(
       mob_id: 1682,
       map: "lhz_in01",
       at: {217, 135},
+      name: "Guard",
       event: "HuMSpawner::OnMonsterDead"
     )
     |> initnpctimer()

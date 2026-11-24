@@ -293,6 +293,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.TempleKeeper do
         mob_id: 1933,
         map: "que_q#{sub}",
         at: {x, y},
+        name: "Keeper Of The Temple",
         event: "#{keeper_name(sub, keeper)}::OnMyMobDead"
       )
     end)

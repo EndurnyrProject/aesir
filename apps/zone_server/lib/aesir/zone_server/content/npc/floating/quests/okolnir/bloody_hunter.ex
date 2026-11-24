@@ -516,6 +516,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.BloodyHunter do
           mob_id: 1753,
           map: castle_map(castle),
           at: {x, y},
+          name: "Bloody Hunter",
           event: "#{name}::OnMyMobDead"
         )
       end)

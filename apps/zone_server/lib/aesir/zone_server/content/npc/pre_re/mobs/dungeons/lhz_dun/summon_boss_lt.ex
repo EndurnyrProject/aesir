@@ -73,20 +73,26 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Mobs.Dungeons.LhzDun.SummonBossLt d
   defp summon_pair(ctx) do
     {x, y} = Enum.at(@mvp_spots, Enum.random(1..6) - 1)
 
+    mob_id = Enum.random(1646..1651)
+
     ctx =
       summon_mob(ctx,
-        mob_id: Enum.random(1646..1651),
+        mob_id: mob_id,
         map: @map,
         at: {x, y},
+        name: to_string(getmonsterinfo(ctx, mob_id, 1)),
         event: @mvp_death_event
       )
 
     {x, y} = Enum.at(@minion_spots, Enum.random(1..6) - 1)
 
+    mob_id = Enum.random(1640..1645)
+
     summon_mob(ctx,
-      mob_id: Enum.random(1640..1645),
+      mob_id: mob_id,
       map: @map,
       at: {x, y},
+      name: to_string(getmonsterinfo(ctx, mob_id, 1)),
       event: @minion_death_event
     )
   end

@@ -65,6 +65,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.Ep13ManFild01MonEdq do
       map: @map,
       at: :random,
       amount: 7,
+      name: "Hillslion",
       event: @event
     )
     |> initnpctimer()

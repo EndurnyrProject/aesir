@@ -49,7 +49,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.SpawnView do
       hp: mob_state.hp,
       is_boss: MobState.is_boss?(mob_state),
       aggressive: MobState.aggressive?(mob_state),
-      name: mob_state.mob_data.name,
+      name: MobState.display_name(mob_state),
       moving: false
     }
   end

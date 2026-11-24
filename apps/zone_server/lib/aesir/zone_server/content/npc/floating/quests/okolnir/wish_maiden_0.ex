@@ -170,6 +170,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.WishMaiden0 do
       mob_id: 1931,
       map: "que_q#{suffix}",
       at: {252, 340},
+      name: "Wish Maiden",
       event: "Wish Maiden##{suffix}_boss::OnMyMobDead"
     )
     |> stopnpctimer()

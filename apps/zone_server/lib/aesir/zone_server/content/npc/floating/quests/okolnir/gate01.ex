@@ -236,6 +236,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.Gate01 do
       mob_id: gate_mob_id(ctx),
       map: castle_map(castle),
       at: {x, y},
+      name: char_name(ctx, 0),
       event: "#Gate_manager_#{castle}::OnMyMobDead"
     )
   end

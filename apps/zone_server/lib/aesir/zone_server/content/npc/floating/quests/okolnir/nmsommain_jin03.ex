@@ -229,6 +229,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.NmsommainJin03 do
         mob_id: 1933,
         map: Rathena.concat("que_q", sub),
         at: at,
+        name: "Keeper Of The Temple",
         event: death_event(sub)
       )
     end)

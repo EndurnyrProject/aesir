@@ -74,6 +74,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jobs.M22.Sage.Arena1 do
       mob_id: 1179,
       map: @arena,
       at: {116, 97},
+      name: "Academic Probation",
       event: "Arena#Doorkeeper::OnMyMobDead"
     )
     |> initnpctimer()

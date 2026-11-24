@@ -1252,7 +1252,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "0xFF0000"
   end
 
-  test "monster maps onto summon_mob with map, coords, amount and event" do
+  test "monster maps onto summon_mob with map, coords, amount, name and event" do
     src =
       gen!("""
       monster "prontera",155,180,"Poring",1002,1;
@@ -1262,15 +1262,15 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       close;
       """)
 
-    assert src =~ ~S|summon_mob(mob_id: 1002, map: "prontera", at: {155, 180})|
+    assert src =~ ~S|summon_mob(mob_id: 1002, map: "prontera", at: {155, 180}, name: "Poring")|
 
     assert src =~
-             ~S|summon_mob(mob_id: 1002, map: "prontera", at: :random, amount: 5, event: "B::OnD")|
+             ~r/summon_mob\(\s*mob_id: 1002,\s*map: "prontera",\s*at: :random,\s*amount: 5,\s*name: "P",\s*event: "B::OnD"\s*\)/
 
-    assert src =~ ~S|summon_mob(mob_id: 1002, at: {10, 20})|
+    assert src =~ ~S|summon_mob(mob_id: 1002, at: {10, 20}, name: "Poring")|
 
     assert src =~
-             ~S|summon_mob(mob_name: "PORING", map: "gefenia", at: :random, amount: 2, event: "B::OnD")|
+             ~r/summon_mob\(\s*mob_name: "PORING",\s*map: "gefenia",\s*at: :random,\s*amount: 2,\s*name: "D",\s*event: "B::OnD"\s*\)/
   end
 
   test "monster case variant and dynamic args render; wrong arity stays a stub" do
@@ -1285,8 +1285,35 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ ~S|map: get_local(ctx, :"map$", "")|
     assert src =~ ~S|at: {get_local(ctx, :x, 0), get_local(ctx, :y, 0)}|
     assert src =~ ~S|amount: get_local(ctx, :n, 0)|
+    assert src =~ ~S|name: " "|
     assert src =~ ~S|event: get_local(ctx, :"label$", "")|
     assert src =~ ~S|todo(:monster, ["prontera", 155, 180])|
+  end
+
+  test "monster renders a dynamic display name as a string" do
+    src =
+      gen!("""
+      monster "prontera",0,0,strcharinfo(0),1002,1;
+      monster "prontera",0,0,.@n,1002,1;
+      close;
+      """)
+
+    assert src =~ ~S|name: char_name(ctx, 0)|
+    assert src =~ ~S|name: to_string(get_local(ctx, :n, 0))|
+  end
+
+  test "monster and areamonster omit the --en-- display name, the DSL default" do
+    src =
+      gen!("""
+      monster "prontera",155,180,"--en--",1002,1;
+      areamonster "prontera",68,105,70,107,"--en--",1002,1;
+      monster "prontera",155,180,"--ja--",1002,1;
+      close;
+      """)
+
+    assert src =~ ~S|summon_mob(mob_id: 1002, map: "prontera", at: {155, 180})|
+    assert src =~ ~S|summon_mob_area(mob_id: 1002, map: "prontera", area: {68, 105, 70, 107})|
+    assert src =~ ~S|summon_mob(mob_id: 1002, map: "prontera", at: {155, 180}, name: "--ja--")|
   end
 
   test "areamonster maps onto summon_mob_area with map, rect, amount and event" do
@@ -1302,9 +1329,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ ~S|map: "job_duncer"|
     assert src =~ ~S|area: {68, 105, 70, 107}|
     assert src =~ ~S|event: "dance#poring::OnMyMobDead"|
+    assert src =~ ~S|name: "Poring"|
 
     assert src =~ ~S|mob_name: "PORING"|
     assert src =~ ~S|amount: 2|
+    assert src =~ ~S|name: "P"|
     refute src =~ ~S|map: "this"|
   end
 

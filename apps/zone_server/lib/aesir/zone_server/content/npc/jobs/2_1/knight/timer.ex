@@ -86,8 +86,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.Timer do
 
   def on_event("OnEnable", ctx) do
     @arena_mobs
-    |> Enum.reduce(enablenpc(ctx, "Timer#knt"), fn {mob_id, at}, ctx ->
-      summon_mob(ctx, mob_id: mob_id, map: "job_knt", at: at, event: @mob_event)
+    |> Enum.reduce(enablenpc(ctx, "Timer#knt"), fn
+      {1182, at}, ctx ->
+        summon_mob(ctx, mob_id: 1182, map: "job_knt", at: at, name: "Mushroom", event: @mob_event)
+
+      {mob_id, at}, ctx ->
+        summon_mob(ctx, mob_id: mob_id, map: "job_knt", at: at, event: @mob_event)
     end)
     |> initnpctimer()
   end

@@ -118,10 +118,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.KielHyreQuest.BeautifulLady do
     |> mes("not taking any chances!")
     |> close()
     |> cutin("", 255)
-    |> summon_mob(mob_id: 1745, map: "kh_school", at: {117, 144})
-    |> summon_mob(mob_id: 1745, map: "kh_school", at: {117, 144})
-    |> summon_mob(mob_id: 1745, map: "kh_school", at: {117, 144})
-    |> summon_mob(mob_id: 1745, map: "kh_school", at: {117, 144})
+    |> summon_mob(mob_id: 1745, map: "kh_school", at: {117, 144}, name: "Bomb")
+    |> summon_mob(mob_id: 1745, map: "kh_school", at: {117, 144}, name: "Bomb")
+    |> summon_mob(mob_id: 1745, map: "kh_school", at: {117, 144}, name: "Bomb")
+    |> summon_mob(mob_id: 1745, map: "kh_school", at: {117, 144}, name: "Bomb")
   end
 
   defp remain_silent(ctx) do

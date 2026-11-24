@@ -49,6 +49,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Dance1010 do
       mob_id: 1002,
       map: "job_duncer",
       area: {68, 105, 70, 107},
+      name: "Poring",
       event: "dance#poring::OnMyMobDead"
     )
   end

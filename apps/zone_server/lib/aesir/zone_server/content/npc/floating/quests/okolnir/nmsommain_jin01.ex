@@ -290,6 +290,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.NmsommainJin01 do
           mob_id: 1752,
           map: Rathena.concat("que_q", sub),
           at: {x, y},
+          name: "Guard of Shadow",
           event: monster_event(sub)
         )
 

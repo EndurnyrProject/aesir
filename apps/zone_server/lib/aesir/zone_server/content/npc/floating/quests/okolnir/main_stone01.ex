@@ -155,6 +155,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.MainStone01 do
           mob_id: 1752,
           map: Rathena.concat("que_q", sub),
           at: at,
+          name: "Western Magic Guardian",
           event: Rathena.concat(Rathena.concat("#", sub), "_stone01::OnMyMobDead")
         )
       end

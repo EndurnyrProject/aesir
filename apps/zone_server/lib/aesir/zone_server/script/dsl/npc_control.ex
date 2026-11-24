@@ -50,7 +50,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   player's current position. `:map` spawns on an explicit map instead of the
   player's (rAthena `monster "map",...`; with `:map`, `:at` defaults to
   `:random` and an unknown map fails the command), `:amount` (spawn
-  count, default 1), and `:event` (optional, a `"Name::OnLabel"`
+  count, default 1), `:name` (optional display name, rAthena `monster`'s name
+  argument: `"--en--"`/`"--ja--"` pick the database Name/JapaneseName, see
+  `MobState.set_name/2`; without it the mob shows its database Name), and `:event` (optional, a `"Name::OnLabel"`
   ref — rAthena OnMyMobDead — run with the killer attached if the mob is
   later killed by a player; a malformed ref logs a warning and is dropped,
   the mob still spawns without it). A random-group monster starts aggressive
@@ -78,7 +80,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   @doc """
   Spawns a random monster from the catalog, like `summon_mob/2` with a rolled id.
 
-  `opts` accepts `:at`, `:map`, `:amount`, and `:event` (see
+  `opts` accepts `:at`, `:map`, `:amount`, `:name`, and `:event` (see
   `summon_mob/2`). Fails the command if the catalog is empty.
   Detached-capable, same reasoning as `summon_mob/2`.
   """
@@ -101,7 +103,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   `{x1, y1, x2, y2}` rectangle (required), `:map` to spawn on an explicit map
   (defaults to the player's map; rAthena `areamonster "map",...` with `"this"`
   meaning the player's map is handled by omitting `:map`), `:amount` (spawn
-  count, default 1), and `:event`
+  count, default 1), `:name` (optional display name, as in `summon_mob/2`), and `:event`
   (optional OnMyMobDead ref, validated like `summon_mob/2`). Each instance
   lands on its own random walkable cell inside the rectangle; an unknown mob
   fails the command; an unknown map or a failed spawn spawns nothing for that
@@ -1233,8 +1235,12 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
 
   defp summon_opts(opts, aggressive?) do
     [aggressive: aggressive?]
+    |> maybe_put_name(Keyword.get(opts, :name))
     |> maybe_put_event(Keyword.get(opts, :event))
   end
+
+  defp maybe_put_name(base_opts, nil), do: base_opts
+  defp maybe_put_name(base_opts, name), do: Keyword.put(base_opts, :name, to_string(name))
 
   defp maybe_put_event(base_opts, nil), do: base_opts
 

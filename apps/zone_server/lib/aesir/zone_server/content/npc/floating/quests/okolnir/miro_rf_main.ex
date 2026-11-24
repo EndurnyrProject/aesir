@@ -339,7 +339,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.MiroRfMain do
     event = "#miro_rf_#{castle}::OnMyMobDead"
 
     Enum.reduce(Enum.chunk_every(@wave_points, 2), ctx, fn [x, y], ctx ->
-      summon_mob(ctx, mob_id: 1935, map: map, at: {x, y}, event: event)
+      summon_mob(ctx, mob_id: 1935, map: map, at: {x, y}, name: " ", event: event)
     end)
   end
 

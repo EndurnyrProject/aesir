@@ -53,9 +53,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.MummyGenerator do
     |> donpcevent("Mummy3_1::OnEnable")
   end
 
-  def on_event("Onm1", ctx), do: summon_pair(ctx, 55)
-  def on_event("Onm2", ctx), do: summon_pair(ctx, 70)
-  def on_event("Onm3", ctx), do: summon_pair(ctx, 85)
+  def on_event("Onm1", ctx), do: summon_pair(ctx, 55, "Khamoz", "Amocsis")
+  def on_event("Onm2", ctx), do: summon_pair(ctx, 70, "Mentuhoteph", "Akenaten")
+  def on_event("Onm3", ctx), do: summon_pair(ctx, 85, "Mehnes", "Snepheru")
 
   def on_event("OnDisable", ctx) do
     ctx |> disablenpc("Mummy_Generator") |> killmonsterall("job_prist")
@@ -65,9 +65,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.MummyGenerator do
   # rAthena starts a click at the first label, so it runs this body too.
   def on_talk(ctx), do: on_event("OnInit", ctx)
 
-  defp summon_pair(ctx, y) do
+  defp summon_pair(ctx, y, first_name, second_name) do
     ctx
-    |> summon_mob(mob_id: @mummy, map: "job_prist", at: {90, y})
-    |> summon_mob(mob_id: @mummy, map: "job_prist", at: {105, y})
+    |> summon_mob(mob_id: @mummy, map: "job_prist", at: {90, y}, name: first_name)
+    |> summon_mob(mob_id: @mummy, map: "job_prist", at: {105, y}, name: second_name)
   end
 end

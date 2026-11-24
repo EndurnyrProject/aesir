@@ -66,7 +66,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.HeadOfTheAlliance do
     |> enablenpc(@npc)
     |> set_server_temp_var("ep13_test", 1)
     |> initnpctimer()
-    |> summon_mob(mob_id: @soldier, map: @map, at: :random, amount: @soldiers, event: @mob_event)
+    |> summon_mob(
+      mob_id: @soldier,
+      map: @map,
+      at: :random,
+      amount: @soldiers,
+      name: "Allied Soldier",
+      event: @mob_event
+    )
   end
 
   def on_event("OnDisable", ctx) do

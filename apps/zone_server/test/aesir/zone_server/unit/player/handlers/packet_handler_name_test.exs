@@ -9,6 +9,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNameTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.Factory
+
   alias Aesir.Net.NameRequest
   alias Aesir.Net.NameResponse
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
@@ -196,7 +198,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNameTest do
     mob_id = 2_001
     s = state(visible_mobs: MapSet.new([mob_id]))
 
-    mob_state = %{mob_data: %{name: "Poring"}}
+    mob_state = build(:mob_state, mob_data: build(:mob_definition, name: "Poring"))
 
     expect(UnitRegistry, :get_unit, fn :mob, ^mob_id -> {:ok, {SomeMod, mob_state, self()}} end)
 

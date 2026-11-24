@@ -226,6 +226,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Airship do
         mob_id: get_local(ctx, :mob_id, 0),
         map: "airplane_01",
         at: {243, 60},
+        name: "--ja--",
         event: "Airship#airplane02::OnMyMobDead"
       )
 
@@ -234,6 +235,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Airship do
         mob_id: get_local(ctx, :mob_id, 0),
         map: "airplane_01",
         at: {228, 54},
+        name: "--ja--",
         event: "Airship#airplane02::OnMyMobDead"
       )
 
@@ -241,6 +243,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Airship do
       mob_id: get_local(ctx, :mob_id, 0),
       map: "airplane_01",
       at: {232, 41},
+      name: "--ja--",
       event: "Airship#airplane02::OnMyMobDead"
     )
   end
@@ -802,13 +805,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsAirship.Airship do
       mob_id = Enum.at([1111, 1392, 1005, 1049, 1042], Enum.random(1..5) - 1)
       index = get_local(ctx, :i, 0)
 
+      name = if mob_id == 1005, do: [name: "Farmiliar"], else: []
+
       ctx
       |> summon_mob(
-        mob_id: mob_id,
-        map: "airplane_01",
-        at:
-          {Enum.at(get_local(ctx, :x, []), index, 0), Enum.at(get_local(ctx, :y, []), index, 0)},
-        event: "Airship#airplane02::OnMyMobDead"
+        [
+          mob_id: mob_id,
+          map: "airplane_01",
+          at:
+            {Enum.at(get_local(ctx, :x, []), index, 0), Enum.at(get_local(ctx, :y, []), index, 0)}
+        ] ++ name ++ [event: "Airship#airplane02::OnMyMobDead"]
       )
       |> set_local(:i, index + 1)
     end)

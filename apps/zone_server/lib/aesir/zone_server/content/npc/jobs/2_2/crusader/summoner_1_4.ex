@@ -82,7 +82,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Crusader.Summoner14 do
 
     @wave
     |> Enum.reduce(ctx, fn {mob_id, at}, ctx ->
-      summon_mob(ctx, mob_id: mob_id, map: "job_cru", at: at, event: "Summoner#cr3::OnDead")
+      opts = [mob_id: mob_id, map: "job_cru", at: at]
+      opts = if mob_id == 1182, do: opts ++ [name: "Mushroom"], else: opts
+      summon_mob(ctx, opts ++ [event: "Summoner#cr3::OnDead"])
     end)
     |> initnpctimer()
   end

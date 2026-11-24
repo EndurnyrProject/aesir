@@ -140,7 +140,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Okolnir.GdMainMobctrl do
 
   # One wave per encounter monster; the coordinates come in x/y pairs.
   @encounter_waves [
-    {1738,
+    {1738, "Ball of Piamette",
      [
        107,
        152,
@@ -177,7 +177,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Okolnir.GdMainMobctrl do
        110,
        130
      ]},
-    {1275,
+    {1275, "Alice",
      [
        130,
        139,
@@ -202,7 +202,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Okolnir.GdMainMobctrl do
        130,
        151
      ]},
-    {1390,
+    {1390, "Violy",
      [
        132,
        139,
@@ -227,7 +227,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Okolnir.GdMainMobctrl do
        132,
        151
      ]},
-    {1699,
+    {1699, "Ancient Mimic",
      [
        133,
        139,
@@ -280,8 +280,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Okolnir.GdMainMobctrl do
   def on_event("OnEnable", ctx) do
     {ctx, castle} = FOkolnir.call(ctx, [])
 
-    Enum.reduce(@encounter_waves, ctx, fn {mob_id, points}, ctx ->
-      summon_points(ctx, castle, mob_id, points)
+    Enum.reduce(@encounter_waves, ctx, fn {mob_id, name, points}, ctx ->
+      summon_points(ctx, castle, mob_id, name, points)
     end)
   end
 
@@ -295,18 +295,19 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Okolnir.GdMainMobctrl do
     {ctx, castle} = FOkolnir.call(ctx, [])
 
     if mobcount(ctx, castle_map(castle), event_label(castle)) < @reinforce_below do
-      summon_points(ctx, castle, 1738, @reinforcement_points)
+      summon_points(ctx, castle, 1738, "Ball of Piamette", @reinforcement_points)
     else
       ctx
     end
   end
 
-  defp summon_points(ctx, castle, mob_id, points) do
+  defp summon_points(ctx, castle, mob_id, name, points) do
     Enum.reduce(Enum.chunk_every(points, 2), ctx, fn [x, y], ctx ->
       summon_mob(ctx,
         mob_id: mob_id,
         map: castle_map(castle),
         at: {x, y},
+        name: name,
         event: event_label(castle)
       )
     end)

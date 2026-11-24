@@ -163,12 +163,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.GqMiromob2Main do
       )
 
     enemies = [
-      {72, 271, 1640},
-      {63, 282, 1645},
-      {59, 294, 1644},
-      {46, 300, 1643},
-      {51, 285, 1641},
-      {51, 262, 1642}
+      {72, 271, 1640, "Seyren Windsor"},
+      {63, 282, 1645, "Kathryne Keyron"},
+      {59, 294, 1644, "Cecil Damon"},
+      {46, 300, 1643, "Margaretha Sorin"},
+      {51, 285, 1641, "Eremes Guile"},
+      {51, 262, 1642, "Howard Alt-Eisen"}
     ]
 
     ctx = Enum.reduce(1..3, ctx, fn _, acc -> summon_wave(acc, sub, enemies) end)
@@ -196,11 +196,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.GqMiromob2Main do
   end
 
   defp summon_wave(ctx, sub, enemies) do
-    Enum.reduce(enemies, ctx, fn {x, y, mob}, acc ->
+    Enum.reduce(enemies, ctx, fn {x, y, mob, name}, acc ->
       summon_mob(acc,
         mob_id: mob,
         map: Rathena.concat("que_q", sub),
         at: {x, y},
+        name: name,
         event: death_event(sub)
       )
     end)

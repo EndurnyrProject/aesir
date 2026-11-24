@@ -285,6 +285,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Quests.Okolnir.NmsommainJin02 do
           mob_id: 1753,
           map: Rathena.concat("que_q", sub),
           at: {x, y},
+          name: "Bloody Hunter",
           event: monster_event(sub)
         )
 

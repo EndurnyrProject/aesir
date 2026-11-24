@@ -55,49 +55,49 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Beholder do
   @decoy_event "Beholder#ASNTEST::OnMyMobDead2"
 
   @targets [
-    {1002, {62, 161}},
-    {1063, {85, 169}},
-    {1002, {88, 152}},
-    {1113, {90, 143}},
-    {1031, {74, 167}},
-    {1002, {77, 173}}
+    {1002, {62, 161}, "Job change target"},
+    {1063, {85, 169}, "Job change target"},
+    {1002, {88, 152}, "Job change target"},
+    {1113, {90, 143}, "Job change target"},
+    {1031, {74, 167}, "Job change target"},
+    {1002, {77, 173}, "Job change target"}
   ]
 
   @decoys [
-    {1063, {62, 161}},
-    {1031, {85, 169}},
-    {1113, {79, 174}},
-    {1063, {85, 156}},
-    {1002, {74, 171}},
-    {1113, {68, 173}},
-    {1002, {65, 158}},
-    {1113, {60, 158}},
-    {1002, {64, 169}},
-    {1063, {71, 173}},
-    {1002, {77, 172}},
-    {1063, {76, 172}},
-    {1113, {75, 172}},
-    {1063, {67, 167}},
-    {1031, {86, 170}},
-    {1002, {86, 171}},
-    {1113, {85, 170}},
-    {1063, {89, 171}},
-    {1031, {85, 170}},
-    {1002, {89, 156}},
-    {1113, {89, 156}},
-    {1063, {89, 156}},
-    {1113, {89, 156}},
-    {1031, {89, 156}},
-    {1002, {83, 169}},
-    {1063, {63, 158}},
-    {1002, {63, 157}},
-    {1002, {64, 159}},
-    {1063, {63, 159}},
-    {1002, {63, 159}},
-    {1002, {63, 159}},
-    {1002, {83, 148}},
-    {1002, {82, 148}},
-    {1002, {84, 148}}
+    {1063, {62, 161}, "Job change creature"},
+    {1031, {85, 169}, "Job change creature"},
+    {1113, {79, 174}, "Job change creature"},
+    {1063, {85, 156}, "Job change creature"},
+    {1002, {74, 171}, "Job change monster"},
+    {1113, {68, 173}, "Job change dummy"},
+    {1002, {65, 158}, "Battle test target"},
+    {1113, {60, 158}, "Warrior test target"},
+    {1002, {64, 169}, "Job change targets"},
+    {1063, {71, 173}, "Jobs change target"},
+    {1002, {77, 172}, "Please don't hit me"},
+    {1063, {76, 172}, "Job change sample"},
+    {1113, {75, 172}, "Not me"},
+    {1063, {67, 167}, "I got yours right here"},
+    {1031, {86, 170}, "Job changes target"},
+    {1002, {86, 171}, "Job quest target"},
+    {1113, {85, 170}, "Job target change"},
+    {1063, {89, 171}, "Hit me"},
+    {1031, {85, 170}, "Battle Monster"},
+    {1002, {89, 156}, "Bouncer"},
+    {1113, {89, 156}, "Mungamorp"},
+    {1063, {89, 156}, "Battle test target"},
+    {1113, {89, 156}, "Dew of the Battle field"},
+    {1031, {89, 156}, "Tear of test"},
+    {1002, {83, 169}, "Evil Druid"},
+    {1063, {63, 158}, "Doppelganger"},
+    {1002, {63, 157}, "Job change dummy"},
+    {1002, {64, 159}, "Job ready dummy"},
+    {1063, {63, 159}, "Job change ready"},
+    {1002, {63, 159}, "Archer test target"},
+    {1002, {63, 159}, "Swordman test target"},
+    {1002, {83, 148}, "Thief test target"},
+    {1002, {82, 148}, "Acolyte test target"},
+    {1002, {84, 148}, "Merchant test target"}
   ]
 
   @impl true
@@ -202,8 +202,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Beholder do
   def on_talk(ctx), do: ctx
 
   defp summon_all(ctx, mobs, event) do
-    Enum.reduce(mobs, ctx, fn {mob_id, at}, ctx ->
-      summon_mob(ctx, mob_id: mob_id, map: "in_moc_16", at: at, event: event)
+    Enum.reduce(mobs, ctx, fn {mob_id, at, name}, ctx ->
+      summon_mob(ctx, mob_id: mob_id, map: "in_moc_16", at: at, name: name, event: event)
     end)
   end
 
