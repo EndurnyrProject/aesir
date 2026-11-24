@@ -4,8 +4,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Annonblood do
 
   ## Behavior
 
-  - Stepping near (or talking while Annon is out) on the blood trail step may reveal the blood
-    stain, advancing the quest to the bushes step.
+  - Stepping near it on the blood trail step may reveal the blood stain, advancing the quest to
+    the bushes step.
   - Lets questing visitors search the bushes and possibly reveal the Haggard Man.
   - Shows different descriptions depending on quest progress.
 
@@ -52,7 +52,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsAyothaya.Annonblood do
   @impl true
   def on_talk(ctx) do
     cond do
-      Rathena.truthy?(get_server_temp_var(ctx, "annonactive", 0)) -> spot_blood(ctx)
+      Rathena.truthy?(get_server_temp_var(ctx, "annonactive", 0)) -> ctx
       get_char_var(ctx, :thai_find, 0) == 13 -> inspect_bushes(ctx)
       get_char_var(ctx, :thai_find, 0) == 14 -> empty_burrow(ctx)
       true -> dead_bushes(ctx)
