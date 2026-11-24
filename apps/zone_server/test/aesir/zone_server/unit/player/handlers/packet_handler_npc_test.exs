@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNpcTest do
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
   alias Aesir.Net.NpcTalk
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Npc.Registry
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -33,7 +34,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNpcTest do
 
   defp state do
     %{
-      game_state: %PlayerState{character_id: 1, account_id: 100},
+      game_state: %PlayerState{
+        character_id: 1,
+        account_id: 100,
+        map_name: "prontera",
+        x: 150,
+        y: 150
+      },
       connection_pid: self(),
       interaction_lock: nil
     }
@@ -189,6 +196,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNpcTest do
       game_state: %PlayerState{
         character_id: 1,
         account_id: 100,
+        map_name: "prontera",
+        x: 150,
+        y: 150,
         visible_players: MapSet.new(),
         visible_mobs: MapSet.new()
       },
@@ -206,5 +216,46 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNpcTest do
                        guild_name: "",
                        position_name: ""
                      }}}
+  end
+
+  describe "NameRequest range" do
+    test "an NPC exactly view range cells away replies with its name", %{gid: gid} do
+      s = name_state("prontera", 150 + Config.view_range(), 150 - Config.view_range())
+
+      {:noreply, ^s} = PacketHandler.handle_message(%NameRequest{entity_id: gid}, s)
+
+      assert_receive {:send, _ch, {:name_response, %NameResponse{gid: ^gid, name: "Talker"}}}
+    end
+
+    test "an NPC one cell past view range is ignored", %{gid: gid} do
+      s = name_state("prontera", 150, 150 + Config.view_range() + 1)
+
+      {:noreply, ^s} = PacketHandler.handle_message(%NameRequest{entity_id: gid}, s)
+
+      refute_receive {:send, _ch, {:name_response, _}}, 50
+    end
+
+    test "an NPC on another map is ignored, even on the same cell", %{gid: gid} do
+      s = name_state("geffen", 150, 150)
+
+      {:noreply, ^s} = PacketHandler.handle_message(%NameRequest{entity_id: gid}, s)
+
+      refute_receive {:send, _ch, {:name_response, _}}, 50
+    end
+  end
+
+  defp name_state(map_name, x, y) do
+    %{
+      game_state: %PlayerState{
+        character_id: 1,
+        account_id: 100,
+        map_name: map_name,
+        x: x,
+        y: y,
+        visible_players: MapSet.new(),
+        visible_mobs: MapSet.new()
+      },
+      connection_pid: self()
+    }
   end
 end

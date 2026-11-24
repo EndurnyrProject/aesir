@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.UnitSpawn
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Npc.Packets, as: NpcPackets
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Session, as: NpcSession
@@ -641,6 +642,37 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
       assert {_pid, _ref, ^gid} = new_state.interaction_lock
       assert_receive :talked, 200
     end
+
+    test "an NPC view range + 1 cells away on the same map starts an Interaction" do
+      gid = gid_for(ToggleNpc)
+      edge = Config.view_range() + 1
+
+      {:noreply, new_state} =
+        NpcInteractionHandler.handle_talk(gid, talk_state(x: 300 - edge, y: 300 + edge))
+
+      assert {_pid, _ref, ^gid} = new_state.interaction_lock
+      assert_receive :talked, 200
+    end
+
+    test "an NPC one cell past view range + 1 starts no Interaction" do
+      gid = gid_for(ToggleNpc)
+      beyond = Config.view_range() + 2
+
+      {:noreply, new_state} = NpcInteractionHandler.handle_talk(gid, talk_state(y: 300 - beyond))
+
+      assert new_state.interaction_lock == nil
+      refute_receive :talked, 100
+    end
+
+    test "an NPC on another map starts no Interaction, even on the same cell" do
+      gid = gid_for(ToggleNpc)
+
+      {:noreply, new_state} =
+        NpcInteractionHandler.handle_talk(gid, talk_state(map_name: "geffen"))
+
+      assert new_state.interaction_lock == nil
+      refute_receive :talked, 100
+    end
   end
 
   defp gid_for(module) do
@@ -665,8 +697,8 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
 
   defp attached(%Ctx{} = ctx), do: %{ctx | game_state: %PlayerState{character_id: 1}}
 
-  defp talk_state do
-    game_state = %{PlayerState.new(character(1)) | map_name: @map}
+  defp talk_state(overrides \\ []) do
+    game_state = struct!(%{PlayerState.new(character(1)) | map_name: @map}, overrides)
     %{game_state: game_state, connection_pid: self(), interaction_lock: nil}
   end
 

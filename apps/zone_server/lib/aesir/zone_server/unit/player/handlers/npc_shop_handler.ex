@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
   alias Aesir.Net.NpcShopSellItem
   alias Aesir.Repo
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
@@ -44,11 +45,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.Shop, as: ShopCore
   alias Aesir.ZoneServer.Unit.Zeny
-
-  # rAthena clicks NPCs within `AREA_SIZE + 1` cells (`npc_checknear`,
-  # src/map/npc.cpp); `AREA_SIZE` defaults to 14, so the talk gate is 15 cells
-  # (Chebyshev). Intentionally separate from `Config.view_range/0`.
-  @talk_range 15
 
   # The shared `Npc*Result.result` enum, in the design §5 order. Buy uses every
   # code; sell only surfaces ok / invalid / out_of_range.
@@ -359,9 +355,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
     MessageRouter.send_to(connection_pid, result)
   end
 
+  # The NPC talk gate: same map and within view range + 1 cells on both axes.
   @spec in_talk_range?(PlayerState.t(), ShopData.t()) :: boolean()
   defp in_talk_range?(%PlayerState{map_name: map, x: x, y: y}, %ShopData{map: map} = shop) do
-    Geometry.in_tile_range?(x, y, shop.x, shop.y, @talk_range)
+    Geometry.in_tile_range?(x, y, shop.x, shop.y, Config.view_range() + 1)
   end
 
   defp in_talk_range?(_gs, _shop), do: false

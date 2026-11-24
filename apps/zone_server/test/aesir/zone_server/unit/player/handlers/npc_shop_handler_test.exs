@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandlerTest do
   alias Aesir.Net.NpcShopOpen
   alias Aesir.Net.NpcShopSellItem
   alias Aesir.Net.NpcTalk
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Shop
   alias Aesir.ZoneServer.Npc.Shops
@@ -122,5 +123,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandlerTest do
 
     assert new_state.interaction_lock == nil
     refute_received {:send, _ch, {:npc_shop_open, _}}
+  end
+
+  test "the talk gate is a view range + 1 square" do
+    shop = shop()
+    gid = Shop.Registry.entity_id(shop)
+    edge = Config.view_range() + 1
+    stub(Shops, :all, fn -> %{"prontera" => [shop]} end)
+    stub(ShopCore, :build_open, fn ^shop, _gs -> {[], []} end)
+
+    PacketHandler.handle_message(%NpcTalk{npc_id: gid}, state(152 + edge + 1, 151))
+    refute_received {:send, _ch, {:npc_shop_open, _}}
+
+    PacketHandler.handle_message(%NpcTalk{npc_id: gid}, state(152 + edge, 151 - edge))
+    assert_received {:send, _ch, {:npc_shop_open, %NpcShopOpen{unit_id: ^gid}}}
   end
 end

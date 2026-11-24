@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NameHandler do
   require Logger
 
   alias Aesir.Net.NameResponse
+  alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -23,7 +25,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NameHandler do
 
   Resolves the id against, in order: the player's own character, the visible
   player set, the visible mob set, and finally static NPC placements. An id
-  that resolves nowhere is ignored (out of view range).
+  that resolves nowhere is ignored (out of view range). An NPC answers only
+  when it is on the player's map and within `Config.view_range/0` cells on
+  both axes.
   """
   @spec handle_name_request(integer(), map()) :: {:noreply, map()}
   def handle_name_request(
@@ -72,7 +76,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NameHandler do
         end
 
       true ->
-        reply_npc_name(connection_pid, entity_id)
+        reply_npc_name(connection_pid, game_state, entity_id)
     end
 
     {:noreply, state}
@@ -120,13 +124,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NameHandler do
 
   # Resolves entity_id to a static NPC placement and replies with its name.
   # Reached only after the own-char/visible_players/visible_mobs branches
-  # decline the id; an id that resolves to no NPC module, or to a floating NPC
-  # (on no map, so never in view), is ignored.
-  defp reply_npc_name(connection_pid, entity_id) do
-    case NpcRegistry.module_for_unit(entity_id) do
-      {:ok, {_module, %{map: map} = placement}} when map != nil ->
-        MessageRouter.send_to(connection_pid, %NameResponse{gid: entity_id, name: placement.name})
-
+  # decline the id; an id that resolves to no NPC module, or to an NPC on
+  # another map (a floating NPC is on none) or past the view range, is ignored.
+  defp reply_npc_name(connection_pid, game_state, entity_id) do
+    with {:ok, {_module, %{map: map} = placement}} when is_binary(map) <-
+           NpcRegistry.module_for_unit(entity_id),
+         %{map_name: ^map, x: x, y: y} <- game_state,
+         true <- Geometry.in_tile_range?(x, y, placement.x, placement.y, Config.view_range()) do
+      MessageRouter.send_to(connection_pid, %NameResponse{gid: entity_id, name: placement.name})
+    else
       _not_in_view ->
         Logger.debug("Ignoring name request for entity #{entity_id} (not in view range)")
     end
