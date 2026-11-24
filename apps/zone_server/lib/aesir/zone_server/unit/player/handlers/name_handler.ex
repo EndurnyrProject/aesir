@@ -2,9 +2,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NameHandler do
   @moduledoc """
   Resolves entity-name requests against the player's visible sets.
 
-  Collapses the legacy player (ZC_ACK_REQNAMEALL) and non-player
-  (ZC_ACK_REQNAME) replies into one `NameResponse`: players fill
-  party/guild/position, mobs/NPCs leave them empty.
+  Answers player, mob and NPC name requests with one `NameResponse`: players
+  fill party/guild/position, mobs/NPCs leave them empty.
   """
 
   require Logger
@@ -21,7 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NameHandler do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
-  Processes a name request (protobuf analogue of CZ_REQNAME2 0x0368).
+  Processes a name request (`NameRequest`).
 
   Resolves the id against, in order: the player's own character, the visible
   player set, the visible mob set, and finally static NPC placements. An id

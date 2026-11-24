@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   alias Aesir.ZoneServer.Unit.Player.SessionState
 
   @doc """
-  Processes an NPC click (protobuf analogue of CZ_CONTACTNPC 0x0090).
+  Processes an NPC click (`NpcTalk`).
 
   A click while the player cannot act answers with the busy notice in renewal
   and is dropped silently in pre-renewal, as the reference does. A gid that
