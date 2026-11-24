@@ -42848,6 +42848,24 @@
       }
     ]
   },
+  "quests/quests_aldebaran.txt|script|Trader#01|aldeba_in:152:166": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsAldebaran.Trader",
+    "output_hash": "9ac6db9d7b95ea3e5a858b381bd42c46be72f4ab462e755b2c023cdcb68e5fac",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_aldebaran/trader.ex",
+    "source_hash": "081148f7bfb3e17b20446e50a8bd62d49d07f74382e9c95db19b5ef1b11c9fc9",
+    "spawns": [
+      {
+        "name": "Trader",
+        "scope": "shared",
+        "x": 152,
+        "y": 166,
+        "map": "aldeba_in",
+        "dir": 4,
+        "unique_name": "Trader#01",
+        "sprite": 86
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
