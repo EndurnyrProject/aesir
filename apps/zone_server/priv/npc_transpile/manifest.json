@@ -46166,6 +46166,58 @@
       }
     ]
   },
+  "quests/quests_geffen.txt|script|Blacksmith|geffen_in:144:166": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGeffen.Blacksmith",
+    "output_hash": "17f5939d0f6909f96958cf212849660a9643c679613eba58a95452e1875327e3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_geffen/blacksmith.ex",
+    "source_hash": "579690f2f8372c23d41c7feb4460224974c83f06069f9d95ea8f933b83ba4e19",
+    "spawns": [
+      {
+        "name": "Blacksmith",
+        "scope": "shared",
+        "x": 144,
+        "y": 166,
+        "map": "geffen_in",
+        "dir": 4,
+        "sprite": 63
+      }
+    ]
+  },
+  "quests/quests_geffen.txt|script|Eric|geffen_in:30:71": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGeffen.Eric",
+    "output_hash": "927e5e74d7cf96cfc723c3c4e78c9f55eeefb24e7ace21fa8b582033f128adcd",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_geffen/eric.ex",
+    "source_hash": "6064083540244c7fb387144abe6014d72e5d4a5651bad99db589182c1d3aa269",
+    "spawns": [
+      {
+        "name": "Eric",
+        "scope": "shared",
+        "x": 30,
+        "y": 71,
+        "map": "geffen_in",
+        "dir": 4,
+        "sprite": 83
+      }
+    ]
+  },
+  "quests/quests_geffen.txt|script|Nia#yagu|geffen:122:77": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsGeffen.Nia",
+    "output_hash": "12d4c4ed525428ac70d806744a1490d7eb603996e8e5e904cd3727740ab2cacf",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_geffen/nia.ex",
+    "source_hash": "0d44d0e337d37fddfefc835d7828b049a13f552b760e31ca4e6dc0499acb79f1",
+    "spawns": [
+      {
+        "name": "Nia",
+        "scope": "shared",
+        "x": 122,
+        "y": 77,
+        "map": "geffen",
+        "dir": 4,
+        "unique_name": "Nia#yagu",
+        "sprite": 700
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
