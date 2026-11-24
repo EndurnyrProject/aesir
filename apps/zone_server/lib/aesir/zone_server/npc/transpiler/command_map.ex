@@ -135,6 +135,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     optional mode argument, so this shape keeps both the 1- and 2-arg forms.
     The mode constant (`HAVEQUEST`/`PLAYTIME`/`HUNTING`) resolves via the
     `:quest_mode` typed arg to `:havequest`/`:playtime`/`:hunting`.
+
+  `@params` lists every rAthena character parameter (`export_parameter` in
+  `src/map/script_constants.hpp`). A parameter without a `@reads` entry is
+  unsupported: reading or writing it stubs instead of falling through to a
+  character variable, which would silently read `0`.
   """
 
   @type rule :: map()
@@ -358,6 +363,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "Zeny" => "zeny"
   }
 
+  @params ~w(Ap BankVault BaseClass BaseExp BaseJob BaseLevel CharMoves CharRename Class Font
+             Hp JobExp JobLevel Karma killedgid killedrid killerrid Manner MaxAp MaxHp MaxSp
+             MaxWeight NextBaseExp NextJobExp Sex Sitting SkillPoint Sp StatusPoint TraitPoint
+             Upper Weight Zeny)
+
   @call_reads %{
     "countitem" => %{dsl: "count_item", args: [:item]},
     "countitem2" => %{
@@ -435,6 +445,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
 
   @spec read(String.t()) :: {:ok, String.t()} | :error
   def read(name) when is_binary(name), do: Map.fetch(@reads, name)
+
+  @doc "Whether `name` is a rAthena character parameter with no `@reads` mapping."
+  @spec unsupported_param?(String.t()) :: boolean()
+  def unsupported_param?(name) when is_binary(name),
+    do: name in @params and not Map.has_key?(@reads, name)
 
   @spec call_read(String.t()) :: {:ok, rule()} | :error
   def call_read(name) when is_binary(name), do: Map.fetch(@call_reads, String.downcase(name))

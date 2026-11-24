@@ -153,8 +153,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Analyzer do
   defp walk_stmt({:break}, acc), do: acc
   defp walk_stmt({:continue}, acc), do: acc
 
-  defp assign_target(acc, {:name, name}),
-    do: %{acc | assigned_names: MapSet.put(acc.assigned_names, name)}
+  defp assign_target(acc, {:name, name}) do
+    acc = count_param(acc, name)
+    %{acc | assigned_names: MapSet.put(acc.assigned_names, name)}
+  end
 
   defp assign_target(acc, {:index, base, index}),
     do: walk_expr(index, assign_target(acc, base))
@@ -180,7 +182,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Analyzer do
   defp walk_expr({:bnot, e}, acc), do: walk_expr(e, acc)
   defp walk_expr({:post_inc, e}, acc), do: assign_target(acc, e)
   defp walk_expr({:post_dec, e}, acc), do: assign_target(acc, e)
+  defp walk_expr({:name, name}, acc), do: count_param(acc, name)
   defp walk_expr(_leaf, acc), do: acc
+
+  defp count_param(acc, name) do
+    if CommandMap.unsupported_param?(name),
+      do: %{acc | stubs: Map.update(acc.stubs, name, 1, &(&1 + 1))},
+      else: acc
+  end
 
   defp count_buildin(acc, name) do
     if name in @native_cmds or CommandMap.supported?(name) or

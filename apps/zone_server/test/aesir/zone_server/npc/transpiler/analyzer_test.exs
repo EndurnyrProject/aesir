@@ -97,6 +97,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.AnalyzerTest do
     assert a.stubs == %{"showscript" => 2, "getgmlevel" => 1}
   end
 
+  test "stubs count unsupported rAthena params by read and write site" do
+    a =
+      analyze!("""
+      if (BaseExp < 100 && Zeny > 0) close;
+      StatusPoint = StatusPoint + 5;
+      killedrid++;
+      """)
+
+    assert a.stubs == %{"BaseExp" => 1, "StatusPoint" => 2, "killedrid" => 2}
+  end
+
   test "local functions are not stubs" do
     a =
       analyze!("""

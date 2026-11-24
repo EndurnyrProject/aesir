@@ -2469,8 +2469,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     "ctx = todo(ctx, :set_var, [#{scope_var_key("'" <> name, type)}, #{value}])"
   end
 
-  defp set_var({:name, name}, value, _env),
-    do: "ctx = set_char_var(ctx, #{inspect(String.to_atom(name))}, #{value})"
+  defp set_var({:name, name}, value, _env) do
+    if CommandMap.unsupported_param?(name) do
+      flag(:todo_fun)
+      "ctx = todo(ctx, :set_param, [#{inspect(name)}, #{value}])"
+    else
+      "ctx = set_char_var(ctx, #{inspect(String.to_atom(name))}, #{value})"
+    end
+  end
 
   defp set_var(other, value, _env),
     do: "ctx = todo(ctx, :dynamic_var, [#{inspect(inspect(other))}, #{value}])"
@@ -2502,8 +2508,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     "Todo.call!(:get_var, [#{scope_var_key("'" <> name, type)}])"
   end
 
-  defp read_var({:name, name}, default, _env),
-    do: "get_char_var(ctx, #{inspect(String.to_atom(name))}, #{default})"
+  defp read_var({:name, name}, default, _env) do
+    if CommandMap.unsupported_param?(name) do
+      flag(:todo_mod)
+      "Todo.call!(:param, [#{inspect(name)}])"
+    else
+      "get_char_var(ctx, #{inspect(String.to_atom(name))}, #{default})"
+    end
+  end
 
   # Dynamic variable references (getd/setd and friends) have no static name.
   defp read_var(other, _default, _env) do

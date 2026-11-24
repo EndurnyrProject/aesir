@@ -406,6 +406,23 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ "alias Aesir.ZoneServer.Script.Todo"
   end
 
+  test "unsupported rAthena params become stubs, not char vars" do
+    src =
+      gen!("""
+      if (BaseExp < 100) close;
+      StatusPoint += 5;
+      close;
+      """)
+
+    assert src =~ ~S|Todo.call!(:param, ["BaseExp"]) < 100|
+
+    assert src =~
+             ~S|todo(:set_param, ["StatusPoint", Todo.call!(:param, ["StatusPoint"]) + 5])|
+
+    refute src =~ "get_char_var"
+    refute src =~ "set_char_var"
+  end
+
   test "goto labels become never-returning functions with fall-through" do
     src =
       gen!("""
