@@ -96,6 +96,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.TreasureLeverTest do
 
     send(pid, {:npc_interact, %NpcInteract{npc_id: gid, response: {:choice, 1}}})
 
+    send(pid, {:npc_interact, %NpcInteract{npc_id: gid, response: {:close, true}}})
     assert_receive {:DOWN, ^ref, :process, ^pid, reason}
     assert reason in [:normal, :noproc]
 
@@ -123,6 +124,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.TreasureLeverTest do
     assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :MENU}}}
     send(pid, {:npc_interact, %NpcInteract{npc_id: gid, response: {:choice, 2}}})
 
+    send(pid, {:npc_interact, %NpcInteract{npc_id: gid, response: {:close, true}}})
     assert_receive {:DOWN, ^ref, :process, ^pid, reason}
     assert reason in [:normal, :noproc]
 

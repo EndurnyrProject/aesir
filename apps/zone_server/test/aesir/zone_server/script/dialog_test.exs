@@ -94,13 +94,31 @@ defmodule Aesir.ZoneServer.Script.DialogTest do
   end
 
   describe "close/1" do
-    test "flushes the remaining page as a CLOSE frame and does not block" do
+    test "after a mes, flushes the page as a CLOSE frame and waits for the player to close it" do
       ctx = build_ctx() |> Dsl.mes("bye")
 
-      result = Dsl.close(ctx)
+      result = assert_waits_for_close(fn -> Dsl.close(ctx) end)
 
       assert_received {:send, _ch, {:npc_dialog, %NpcDialog{expect: :CLOSE, text: "bye"}}}
+      assert %{page: [], mes_active: false} = result
+    end
+
+    test "with no mes box open, sends the CLOSE frame and goes on without waiting" do
+      result = Dsl.close(build_ctx())
+
+      assert_received {:send, _ch, {:npc_dialog, %NpcDialog{expect: :CLOSE}}}
       assert result.page == []
+    end
+  end
+
+  describe "close2/1" do
+    test "waits for the player to close the window even with no mes box open" do
+      ctx = build_ctx()
+
+      result = assert_waits_for_close(fn -> Dsl.close2(ctx) end)
+
+      assert_received {:send, _ch, {:npc_dialog, %NpcDialog{expect: :CLOSE}}}
+      assert result.mes_active == false
     end
   end
 
@@ -164,6 +182,19 @@ defmodule Aesir.ZoneServer.Script.DialogTest do
     after
       1_000 -> flunk("blocking DSL primitive did not return")
     end
+  end
+
+  # Runs a closing DSL primitive in a spawned process, checks it has not
+  # returned before the player closes the window, then routes the close.
+  defp assert_waits_for_close(fun) do
+    parent = self()
+    pid = spawn(fn -> send(parent, {:result, fun.()}) end)
+
+    refute_receive {:result, _ctx}, 100
+
+    send(pid, {:npc_interact, %NpcInteract{npc_id: @gid, response: {:close, true}}})
+    assert_receive {:result, result}, 500
+    result
   end
 
   # Runs a blocking DSL primitive in a spawned, monitored process, routes a

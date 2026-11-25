@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Npc.EventsTest do
   import ExUnit.CaptureLog
 
   alias Aesir.Net.NpcDialog
+  alias Aesir.Net.NpcInteract
   alias Aesir.ZoneServer.Npc.Events
   alias Aesir.ZoneServer.Npc.Registry
   alias Aesir.ZoneServer.Script.Ctx
@@ -177,6 +178,7 @@ defmodule Aesir.ZoneServer.Npc.EventsTest do
       ref = Process.monitor(pid)
 
       assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :CLOSE, text: "touched"}}}
+      send(pid, {:npc_interact, %NpcInteract{npc_id: gid, response: {:close, true}}})
       assert_receive {:DOWN, ^ref, :process, ^pid, reason}
       assert reason in [:normal, :noproc]
     end

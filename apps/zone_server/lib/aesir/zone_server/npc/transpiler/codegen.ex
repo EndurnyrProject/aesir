@@ -14,8 +14,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     honors its `Ctx.t()` contract; a global function's `call/2` does not
     catch, so its `close`/`end` still ends the calling script. Tail-position
     throws are rewritten back into plain returns. `close2` flushes the
-    CLOSE frame and continues; `close3` flushes it, clears the displayed
-    cutin and ends the script like `close`.
+    CLOSE frame, waits for the player to close it and continues; `close3`
+    flushes it, clears the displayed cutin and ends the script like `close`.
   - Top-level labels split the body into segments. `goto`/`menu` targets
     become private functions that end by throwing `{:script_end, ctx}` or
     fall through by tail-calling the next segment, which makes `goto` safe
@@ -709,7 +709,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp terminates?(stmts) do
     case List.last(stmts) do
-      {:cmd, name, _} when name in ["close", "end", "close2", "close3"] -> true
+      {:cmd, name, _} when name in ["close", "end", "close3"] -> true
       {:goto, _} -> true
       {:menu, pairs} -> not next_line?(pairs)
       {:return, _} -> true
@@ -1066,7 +1066,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp emit_stmt({:cmd, "close", _}, _env), do: {["ctx = close(ctx)", @script_end], :stop}
   defp emit_stmt({:cmd, "end", _}, _env), do: {[@script_end], :stop}
 
-  defp emit_stmt({:cmd, "close2", _}, _env), do: {["ctx = close(ctx)"], :cont}
+  defp emit_stmt({:cmd, "close2", _}, _env), do: {["ctx = close2(ctx)"], :cont}
 
   # `close3` closes like `close` and also clears any displayed cutin, so the
   # script ends here too.

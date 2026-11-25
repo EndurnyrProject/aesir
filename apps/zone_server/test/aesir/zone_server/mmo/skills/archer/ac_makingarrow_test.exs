@@ -119,6 +119,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcMakingarrowTest do
       assert_receive {:script_op, {:give_item, @product_id, 40}}
       assert_receive {:send, _, {:npc_dialog, %NpcDialog{expect: :CLOSE, text: text}}}
       assert text =~ "40x"
+      interact(pid, {:close, true})
       assert_receive {:DOWN, ^ref, :process, ^pid, :normal}
     end
 
@@ -133,6 +134,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcMakingarrowTest do
       assert_receive {:script_op, {:give_item, @product_id, 40}}
       assert_receive {:send, _, {:npc_dialog, %NpcDialog{expect: :CLOSE, text: text}}}
       assert text =~ "fail to craft"
+      interact(pid, {:close, true})
       assert_receive {:DOWN, ^ref, :process, ^pid, :normal}
     end
 
@@ -142,8 +144,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcMakingarrowTest do
       assert_receive {:send, _, {:npc_dialog, %NpcDialog{expect: :CLOSE, text: text}}}
       assert text =~ "no materials"
       refute_received {:script_op, _}
-      # The dialog closes without ever suspending, so the process may already
-      # be gone when the monitor attaches (:noproc instead of :normal).
+      interact(pid, {:close, true})
       assert_receive {:DOWN, ^ref, :process, ^pid, _reason}
     end
 

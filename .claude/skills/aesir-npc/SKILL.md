@@ -169,8 +169,9 @@ All ops thread a `Script.Ctx` (fields: `char_id`, `account_id`, `game_state`, `s
 
 - **Dialog primitives**: `mes/2` buffers text without blocking. `next/1`, `select/2`, and
   `input/2` flush a page and suspend the `Script.Interaction` Task until the client responds.
-  `close/1` flushes a `CLOSE` frame and returns the context without blocking or throwing;
-  subsequent pipeline effects still run.
+  `close/1` flushes a `CLOSE` frame and, after a `mes`, suspends until the client answers
+  `close` (rAthena `close`/`close2`); it never throws, so subsequent pipeline effects still
+  run once the player closes the window. `close2/1` waits even with no `mes` open.
 - **Effect ops** `(ctx, args) -> ctx`: `heal`, `sc_start`, `sc_end`, `warp`, `give_item`,
   `delitem`, `pay_zeny`, `set_char_var`, `jobchange`, `savepoint`, `summon_mob`, `npctalk`,
   `emotion`, `specialeffect`, `cutin`, timer ops, `enablenpc`/`disablenpc`, ... Player-state

@@ -5,9 +5,10 @@ defmodule Aesir.ZoneServer.Script.Interaction do
   Started by the player session with an NPC callback or an item's helper
   entry function, it runs straight-line and lets the blocking dialog primitives
   (`Aesir.ZoneServer.Script.Dsl.next/1`/`select/2`/`input/2`) suspend on the
-  client by `receive`-ing the routed `NpcInteract`. `close/1` (or any normal
-  return with un-flushed `mes` text) flushes a terminal `CLOSE` frame, and the
-  process exits `:normal`.
+  client by `receive`-ing the routed `NpcInteract`. `close/1` after a `mes`
+  waits the same way for the player to close the window; any normal return
+  with un-flushed `mes` text flushes a terminal `CLOSE` frame without waiting.
+  Then the process exits `:normal`.
 
   This is a straight-line coroutine, not a `GenServer`: the sequential
   `mes; next; select` authoring style only works because the script *is* the
@@ -113,7 +114,7 @@ defmodule Aesir.ZoneServer.Script.Interaction do
   defp auto_close(%Ctx{page: []}), do: :ok
 
   # The script has ended, so this frame is no wait for the player: the
-  # dialog it took over comes back (`mes_active` off skips the pause).
+  # dialog it took over comes back (`mes_active` off skips the wait).
   defp auto_close(%Ctx{} = ctx), do: _ = Dsl.close(%{ctx | mes_active: false})
 
   defp auto_close({%Ctx{} = ctx, _value}), do: auto_close(ctx)

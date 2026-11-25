@@ -86,6 +86,7 @@ defmodule Aesir.ZoneServer.Script.InteractionTest do
     ref = Process.monitor(pid)
 
     assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :CLOSE, text: "bye"}}}
+    send(pid, {:npc_interact, %NpcInteract{npc_id: @gid, response: {:close, true}}})
     assert_clean_exit(ref, pid)
   end
 
@@ -111,6 +112,7 @@ defmodule Aesir.ZoneServer.Script.InteractionTest do
 
     assert_receive {:chose, 2}
     assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :CLOSE}}}
+    send(pid, {:npc_interact, %NpcInteract{npc_id: @gid, response: {:close, true}}})
     assert_receive {:DOWN, ^ref, :process, ^pid, :normal}, 500
   end
 

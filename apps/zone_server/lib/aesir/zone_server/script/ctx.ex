@@ -14,8 +14,8 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   echoes (`npc_gid` — stamped on outgoing `NpcDialog` frames and matched against
   incoming `NpcInteract`), `page` (the accumulated `mes/2` lines awaiting a
   flush at the next dialog suspension point), `mes_active` (a `mes` box is
-  open: set by `mes/2`, cleared by `close/1`, so a `close` pauses for the
-  player only after a `mes`), `timer_run` (the NPC gid whose label run this
+  open: set by `mes/2`, cleared by `close/1`/`close2/1`, so a `close` waits
+  for the player only after a `mes`), `timer_run` (the NPC gid whose label run this
   script is in, see `Npc.Session`; its first wait closes the run), and
   `session_ref`, the monitor
   the interaction holds on its session so a blocking primitive can exit cleanly

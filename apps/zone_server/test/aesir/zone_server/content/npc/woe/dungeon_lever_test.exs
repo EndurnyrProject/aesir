@@ -110,7 +110,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.DungeonLeverTest do
 
     assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :CLOSE, text: text}}}
     assert text =~ "another ordeal"
-    assert_clean_exit(ref, pid)
+    assert_clean_exit(ref, pid, gid)
   end
 
   test "an owning member's pull warps to the dungeon map and cell" do
@@ -130,7 +130,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.DungeonLeverTest do
 
     send(pid, {:npc_interact, %NpcInteract{npc_id: gid, response: {:choice, 1}}})
 
-    assert_clean_exit(ref, pid)
+    assert_clean_exit(ref, pid, gid)
 
     {dungeon_map, x, y} = Map.fetch!(@dungeons, castle.map)
     assert_received {:script_apply, {:warp, ^dungeon_map, ^x, ^y}}
@@ -153,7 +153,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.DungeonLeverTest do
 
     assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :CLOSE, text: text}}}
     assert text =~ "Nothing happened."
-    assert_clean_exit(ref, pid)
+    assert_clean_exit(ref, pid, gid)
 
     refute_received {:script_apply, {:warp, _map, _x, _y}}
   end
@@ -173,7 +173,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.DungeonLeverTest do
     assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :MENU}}}
     send(pid, {:npc_interact, %NpcInteract{npc_id: gid, response: {:choice, 2}}})
 
-    assert_clean_exit(ref, pid)
+    assert_clean_exit(ref, pid, gid)
     refute_received {:script_apply, {:warp, _map, _x, _y}}
   end
 
@@ -203,7 +203,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.DungeonLeverTest do
     )
   end
 
-  defp assert_clean_exit(ref, pid) do
+  defp assert_clean_exit(ref, pid, gid) do
+    send(pid, {:npc_interact, %NpcInteract{npc_id: gid, response: {:close, true}}})
     assert_receive {:DOWN, ^ref, :process, ^pid, reason}, 500
     assert reason in [:normal, :noproc]
   end

@@ -165,8 +165,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       end;
       """)
 
-    assert src =~ ~S{ctx |> close() |> warp("prontera", 155, 180)}
-    refute src =~ "ctx = ctx |> close()"
+    assert src =~ ~S{ctx |> close2() |> warp("prontera", 155, 180)}
+    refute src =~ "ctx = ctx |> close2()"
   end
 
   test "switch(select) with supported commands, char vars and zeny" do

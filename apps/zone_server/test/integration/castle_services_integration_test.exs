@@ -218,8 +218,8 @@ defmodule Aesir.ZoneServer.Integration.CastleServicesIntegrationTest do
       1
     )
 
-    assert_receive {:packet_sent, %StorageOpened{}, _}, 1_000
     expect_close(ipid)
+    assert_receive {:packet_sent, %StorageOpened{}, _}, 1_000
   end
 
   defp talk_to_kafra(player, gid) do
@@ -283,7 +283,8 @@ defmodule Aesir.ZoneServer.Integration.CastleServicesIntegrationTest do
   end
 
   defp expect_close(ipid) do
-    assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE, text: text}, _}, 1_000
+    assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE, text: text, npc_id: gid}, _}, 1_000
+    send(ipid, {:npc_interact, %NpcInteract{npc_id: gid, response: {:close, true}}})
     ref = Process.monitor(ipid)
     assert_receive {:DOWN, ^ref, :process, ^ipid, _reason}, 1_000
     text

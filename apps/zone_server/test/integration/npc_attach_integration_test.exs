@@ -107,9 +107,30 @@ defmodule Aesir.ZoneServer.Integration.NpcAttachIntegrationTest do
     refute_received :bell_resumed
   end
 
+  test "two scripts forcing their way onto each other's players both attach", context do
+    %{caller: caller, target: target, script: script, bell: bell} = context
+    simulate_incoming_message(target.pid, answer(bell))
+    assert_receive :bell_resumed, 1_000
+    assert_eventually(fn -> PlayerSession.get_state(target.pid).interaction_lock == nil end)
+
+    simulate_incoming_message(target.pid, %NpcTalk{npc_id: gid_for(CallerNpc)})
+    assert_receive {:caller, other_script}, 1_000
+
+    send(script, {:attach, target.character.account_id, 1})
+    send(other_script, {:attach, caller.character.account_id, 1})
+
+    assert_receive {:attached, 1}, 1_000
+    assert_receive {:attached, 1}, 1_000
+  end
+
   defp player(name, position) do
     session =
-      start_player_session(id: System.unique_integer([:positive]), name: name, position: position)
+      start_player_session(
+        id: System.unique_integer([:positive]),
+        account_id: System.unique_integer([:positive]),
+        name: name,
+        position: position
+      )
 
     on_exit(fn -> end_player_session(session) end)
     session

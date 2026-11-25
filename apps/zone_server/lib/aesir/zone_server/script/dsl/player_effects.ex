@@ -399,18 +399,22 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   Attaches the script to the online player with `account_id` (rAthena
   `attachrid`), so subsequent commands, reads and dialog target that player.
 
-  The target's session attaches the script the way the reference's
-  `script_attach_state` does, taking over the dialog holding them, if any
-  (`PlayerSession.attach_script/4`); without `force` (default on) a player
-  held by a script refuses. Then the player the script was attached to before
-  is let go, as `script_detach_rid` does: the dialog the script took over
-  there holds them again, or they are free. Re-attaching to that same player
-  changes nothing.
+  The player the script is attached to is let go, as `script_detach_rid`
+  does (the dialog the script took over there holds them again, or they are
+  free), then the target's session attaches the script the way the
+  reference's `script_attach_state` does, taking over the dialog holding
+  them, if any (`PlayerSession.attach_script/4`). Without `force` (default
+  on) a player held by a script refuses at once, and the script stays with
+  its player. A forced attach waits while the target's script runs between
+  two waits, so letting the old player go first keeps two scripts forcing
+  their way onto each other's players from waiting on each other.
+  Re-attaching to that same player changes nothing.
 
   Returns `{ctx, 1}` with the ctx re-pointed at the target (its session,
   snapshot, connection and the monitor the script's waits watch), or
   `{ctx, 0}` when the account is offline, has no character in this zone, or
-  refused. An item script running inline in its player session cannot hand
+  refused. A target gone while a forced attach waits leaves the script with
+  no player. An item script running inline in its player session cannot hand
   that session to another, so the command fails there (no item script uses
   it).
   """
@@ -425,22 +429,43 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   def attachrid(%Ctx{} = ctx, account_id, force) do
     with {:ok, char_id} <- UnitRegistry.get_char_id_by_account(account_id),
          {:ok, {_module, _game_state, pid}} when is_pid(pid) <-
-           UnitRegistry.get_unit(:player, char_id),
-         {:ok, target} <-
-           PlayerSession.attach_script(pid, self(), ctx.npc_gid, Rathena.truthy?(force)) do
-      {repoint(ctx, char_id, account_id, pid, target), 1}
+           UnitRegistry.get_unit(:player, char_id) do
+      attach_to(ctx, {char_id, account_id, pid}, Rathena.truthy?(force))
     else
-      _offline_or_busy -> {ctx, 0}
+      _offline -> {ctx, 0}
     end
   end
 
-  defp repoint(%Ctx{session_pid: pid} = ctx, _char_id, _account_id, pid, target),
-    do: %{ctx | game_state: target.game_state}
+  defp attach_to(%Ctx{session_pid: pid} = ctx, {_char_id, _account_id, pid}, force?) do
+    case PlayerSession.attach_script(pid, self(), ctx.npc_gid, force?) do
+      {:ok, target} -> {%{ctx | game_state: target.game_state}, 1}
+      _busy_or_gone -> {ctx, 0}
+    end
+  end
 
-  defp repoint(ctx, char_id, account_id, pid, target) do
+  defp attach_to(ctx, {_char_id, _account_id, pid} = player, true) do
+    ctx = release_player(ctx)
+
+    case PlayerSession.attach_script(pid, self(), ctx.npc_gid, true) do
+      {:ok, target} -> {repoint(ctx, player, target), 1}
+      _gone -> {Ctx.detach(ctx), 0}
+    end
+  end
+
+  defp attach_to(ctx, {_char_id, _account_id, pid} = player, false) do
+    case PlayerSession.attach_script(pid, self(), ctx.npc_gid, false) do
+      {:ok, target} -> {ctx |> release_player() |> repoint(player, target), 1}
+      _busy_or_gone -> {ctx, 0}
+    end
+  end
+
+  defp release_player(ctx) do
     if ctx.session_pid, do: PlayerSession.detach_script(ctx.session_pid, self())
     if ctx.session_ref, do: Process.demonitor(ctx.session_ref, [:flush])
+    ctx
+  end
 
+  defp repoint(ctx, {char_id, account_id, pid}, target) do
     %{
       ctx
       | char_id: char_id,

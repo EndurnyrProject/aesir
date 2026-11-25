@@ -103,6 +103,8 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
       assert_receive {:packet_sent, %QuestAdded{quest: %QuestEntry{quest_id: @hunt_quest}}, _},
                      500
 
+      assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE}, _}, 500
+      send(ipid, {:npc_interact, %NpcInteract{npc_id: gid, response: {:close, true}}})
       await_interaction_end(ipid)
 
       assert %Entry{state: :active, counts: [0]} =

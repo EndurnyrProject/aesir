@@ -2,8 +2,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   @moduledoc """
   Blocking dialog buildins for the script DSL: the page buffer (`mes/2`), the
   suspending primitives (`next/1`, `select/2`, `input/2`, `progressbar/3`,
-  `sleep/2`, `sleep2/2`), and the terminal `close/1`, plus the shared
-  suspension plumbing (`flush`/`await`) and the dialog idle deadline.
+  `sleep/2`, `sleep2/2`), and the close button (`close/1`, `close2/1`), plus
+  the shared suspension plumbing (`flush`/`await`) and the dialog idle
+  deadline.
 
   Imported into scripts via the `Aesir.ZoneServer.Script.Dsl` facade.
   """
@@ -119,22 +120,46 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   end
 
   @doc """
-  Flushes any remaining buffered page as a `CLOSE` frame and returns the context.
+  Shows the close button: flushes any remaining buffered page as a `CLOSE`
+  frame, then, after a `mes`, waits until the player closes the window and
+  returns the context.
 
-  Does not block. The transpiler maps `close2`/`close3` (which keep the script
-  running) to this too, so ending the script after a `close` is the caller's
-  job: a transpiled `close` throws `{:script_end, ctx}` itself and a
-  hand-written script returns. After a `mes` it still counts as waiting for
-  the player, as the reference's `close` does, so the dialogs the script took
-  over are lost (`PlayerSession.script_paused/2`). Halts `:no_player` on a
-  detached ctx without flushing.
+  This is the reference's `close` and `close2` alike once a `mes` box is
+  open (`Ctx.mes_active`): the script waits for the player (so the dialogs
+  it took over are lost, `PlayerSession.script_paused/2`) and the player
+  stays in the dialog until they close it. Ending the script after a
+  `close` is the caller's job: a transpiled `close` throws
+  `{:script_end, ctx}` itself and a hand-written script returns. With no
+  `mes` box open it sends the frame and returns at once, as the reference's
+  `close` ends the script without waiting; use `close2/1` to wait anyway.
+  Halts `:no_player` on a detached ctx without flushing.
   """
   @spec close(Ctx.t()) :: Ctx.t()
   def close(%Ctx{game_state: nil} = ctx), do: Ctx.halt(ctx, :no_player)
 
-  def close(%Ctx{} = ctx) do
-    ctx = if ctx.mes_active, do: pause(ctx), else: end_timer_run(ctx)
+  def close(%Ctx{mes_active: false} = ctx) do
+    ctx = end_timer_run(ctx)
     flush(ctx, :CLOSE, [])
+    %{ctx | page: []}
+  end
+
+  def close(%Ctx{} = ctx), do: close2(ctx)
+
+  @doc """
+  Flushes any remaining buffered page as a `CLOSE` frame, waits until the
+  player closes the window, and returns the context so the script goes on
+  (rAthena `close2`).
+
+  Unlike `close/1` it waits even with no `mes` box open. Halts `:no_player`
+  on a detached ctx without flushing.
+  """
+  @spec close2(Ctx.t()) :: Ctx.t()
+  def close2(%Ctx{game_state: nil} = ctx), do: Ctx.halt(ctx, :no_player)
+
+  def close2(%Ctx{} = ctx) do
+    ctx = pause(ctx)
+    flush(ctx, :CLOSE, [])
+    await(ctx, :close)
     %{ctx | page: [], mes_active: false}
   end
 
@@ -187,7 +212,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   # `:choice`, not an ESC, so uniform exit-on-cancel does not lose any flow.)
   # Cancel and idle timeout clear any displayed cutin first (rAthena
   # `pc_close_npc`), since the script's own `cutin "", 255` never runs.
-  @spec await(Ctx.t(), :continue | :choice | :number | :input | :progress) ::
+  @spec await(Ctx.t(), :continue | :choice | :number | :input | :progress | :close) ::
           boolean() | integer() | String.t()
   defp await(%Ctx{npc_gid: gid, session_ref: session_ref} = ctx, expected) do
     receive do

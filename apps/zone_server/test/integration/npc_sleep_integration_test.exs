@@ -80,9 +80,11 @@ defmodule Aesir.ZoneServer.Integration.NpcSleepIntegrationTest do
     flush_packets()
 
     {:ok, {SleeperNpc, placement}} = NpcRegistry.module_at("prontera", 170, 160)
-    simulate_incoming_message(session.pid, %NpcTalk{npc_id: NpcRegistry.entity_id(placement)})
+    gid = NpcRegistry.entity_id(placement)
+    simulate_incoming_message(session.pid, %NpcTalk{npc_id: gid})
 
     assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE}, _}, 1_000
+    simulate_incoming_message(session.pid, %NpcInteract{npc_id: gid, response: {:close, true}})
     assert_eventually(fn -> PlayerSession.get_state(session.pid).interaction_lock == nil end)
     refute_received {:resumed, _attached?}
 

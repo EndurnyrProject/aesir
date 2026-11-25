@@ -96,6 +96,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate select(ctx, options), to: Dialog
   defdelegate input(ctx, kind), to: Dialog
   defdelegate close(ctx), to: Dialog
+  defdelegate close2(ctx), to: Dialog
   defdelegate sleep(ctx, ms), to: Dialog
   defdelegate sleep2(ctx, ms), to: Dialog
   defdelegate progressbar(ctx, color, seconds), to: Dialog

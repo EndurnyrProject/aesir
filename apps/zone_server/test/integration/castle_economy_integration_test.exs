@@ -283,7 +283,8 @@ defmodule Aesir.ZoneServer.Integration.CastleEconomyIntegrationTest do
   end
 
   defp close_text(ipid) do
-    assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE, text: text}, _}, 500
+    assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE, text: text, npc_id: gid}, _}, 500
+    send(ipid, {:npc_interact, %NpcInteract{npc_id: gid, response: {:close, true}}})
     await_interaction_end(ipid)
     text
   end

@@ -141,7 +141,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.OutsideFlagTest do
 
     assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :CLOSE, text: text}}}
     assert text =~ "no formal master of this castle"
-    assert_clean_exit(ref, pid)
+    assert_clean_exit(ref, pid, gid)
   end
 
   test "another guild's castle names the guild and master then closes" do
@@ -166,7 +166,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.OutsideFlagTest do
     assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :CLOSE, text: text}}}
     assert text =~ "Baldur Guard"
     assert text =~ "Someone"
-    assert_clean_exit(ref, pid)
+    assert_clean_exit(ref, pid, gid)
   end
 
   test "an owner member choosing to return warps to the flag entry cell" do
@@ -185,7 +185,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.OutsideFlagTest do
 
     send(pid, {:npc_interact, %NpcInteract{npc_id: gid, response: {:choice, 1}}})
 
-    assert_clean_exit(ref, pid)
+    assert_clean_exit(ref, pid, gid)
 
     map = castle.map
     {x, y} = Map.fetch!(@entries, castle.map)
@@ -206,7 +206,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.OutsideFlagTest do
     assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :MENU}}}
     send(pid, {:npc_interact, %NpcInteract{npc_id: gid, response: {:choice, 2}}})
 
-    assert_clean_exit(ref, pid)
+    assert_clean_exit(ref, pid, gid)
     refute_received {:script_apply, {:warp, _map, _x, _y}}
   end
 
@@ -225,7 +225,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.OutsideFlagTest do
     :ok = CastleStore.hydrate(%{castle.id => row(6)})
     send(pid, {:npc_interact, %NpcInteract{npc_id: gid, response: {:choice, 1}}})
 
-    assert_clean_exit(ref, pid)
+    assert_clean_exit(ref, pid, gid)
     refute_received {:script_apply, {:warp, _map, _x, _y}}
   end
 
@@ -258,7 +258,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.OutsideFlagTest do
     )
   end
 
-  defp assert_clean_exit(ref, pid) do
+  defp assert_clean_exit(ref, pid, gid) do
+    send(pid, {:npc_interact, %NpcInteract{npc_id: gid, response: {:close, true}}})
     assert_receive {:DOWN, ^ref, :process, ^pid, reason}, 500
     assert reason in [:normal, :noproc]
   end

@@ -35,6 +35,7 @@ cloakoffnpcself/2
 cloakonnpc/1
 cloakonnpc/2
 close/1
+close2/1
 commit_grants/2
 completequest/2
 consumeitem/2

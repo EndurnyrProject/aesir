@@ -39,8 +39,10 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
     :ok = ScriptCompiler.compile_all!()
     :ok = NpcVerifier.verify!(NpcRegistry.reload().entries)
     :ok = NpcQuestInfo.reload()
-    :ok = NpcEvents.run_on_init()
+    # Every NPC, warps included, is loaded before `OnInit` runs: its scripts
+    # look warps up, and an unwarmed cache makes each of them load the files.
     :ok = Warps.reload()
+    :ok = NpcEvents.run_on_init()
     :ok = Shops.reload()
     :ok = MobSkillDb.reload()
     :ok = LevelPenalty.reload()
