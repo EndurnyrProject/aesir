@@ -38,6 +38,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcMakingarrowTest do
       send(test_pid, {:script_op, op})
       {:reply, {:ok, game_state}, state}
     end
+
+    @impl true
+    def handle_cast(_message, state), do: {:noreply, state}
   end
 
   # Accepts the material's removal and refuses the arrows.
@@ -59,6 +62,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcMakingarrowTest do
       send(test_pid, {:script_op, op})
       {:reply, {:ok, game_state}, state}
     end
+
+    @impl true
+    def handle_cast(_message, state), do: {:noreply, state}
   end
 
   setup do

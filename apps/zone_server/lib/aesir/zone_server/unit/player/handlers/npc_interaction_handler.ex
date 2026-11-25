@@ -20,6 +20,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   A click also needs the player on the NPC's map and within
   `Config.view_range/0` + 1 cells of it on both axes. A floating NPC is on no
   map, so it always fails.
+
+  A script attaching to the player over an open dialog (an attached `OnTimer`
+  label) takes the lock and keeps the open dialog beneath it
+  (`SessionState.take_over_npc_dialog/2`, rAthena `script_attach_state`). The
+  dialog beneath comes back when the taker ends or detaches the player, and
+  is lost when the taker pauses for the player (`script_paused/2`).
   """
 
   alias Aesir.Commons.GameMode
@@ -34,6 +40,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   alias Aesir.ZoneServer.Npc.Shop.Registry, as: ShopRegistry
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Interaction
+  alias Aesir.ZoneServer.Unit.Player.Handlers.NpcEventQueue
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler
   alias Aesir.ZoneServer.Unit.Player.SessionState
 
@@ -109,19 +116,83 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
 
   @doc """
   Frees the player from the script `pid` runs when that script detaches it
-  (the `sleep` and `detachrid` script commands): the dialog lock clears so the player
-  can act again while the script goes on without it. Events queued behind the
-  script stay queued, as the reference detaches without dequeuing them;
-  the next script to end releases them. A
-  `pid` that no longer holds the lock changes nothing.
+  (the `sleep` and `detachrid` script commands): the script goes on without the
+  player, and the dialog it held beneath it, if any, holds the player again
+  (`SessionState.end_npc_dialog/1`); otherwise the player can act again.
+  Events queued behind the script stay queued, as the reference detaches
+  without dequeuing them; the next script to end releases them. A backed-up
+  script detaching only leaves the stack; any other `pid` changes nothing.
   """
   @spec detach_script(pid(), SessionState.t()) :: SessionState.t()
   def detach_script(pid, %{interaction_lock: {pid, ref, _gid}} = state) do
     Process.demonitor(ref, [:flush])
-    %{state | interaction_lock: nil, npc_item_flag: nil}
+    {_restored_or_released, state} = SessionState.end_npc_dialog(state)
+    state
   end
 
-  def detach_script(_pid, state), do: state
+  def detach_script(pid, state) do
+    {lost, kept} = Enum.split_with(backups(state), &match?({{^pid, _ref, _gid}, _flag}, &1))
+    Enum.each(lost, fn {{_pid, ref, _gid}, _flag} -> Process.demonitor(ref, [:flush]) end)
+    Map.put(state, :dialog_backups, kept)
+  end
+
+  @doc """
+  Ends the running dialog when its script process exits (close, idle timeout,
+  crash): the progress bar it started is released, then the dialog it held
+  beneath it takes the player back, or, with none, the player is free and the
+  first NPC event queued meanwhile is released (rAthena `script_detach_state`,
+  which dequeues only when it restores no previous script).
+  """
+  @spec script_ended(SessionState.t()) :: SessionState.t()
+  def script_ended(%{interaction_lock: {_pid, _ref, gid}} = state) do
+    state =
+      case Map.get(state, :progress_bar) do
+        %{npc_gid: ^gid} -> SessionState.release_progress_bar(state)
+        _not_its_bar -> state
+      end
+
+    case SessionState.end_npc_dialog(state) do
+      {:restored, state} -> state
+      {:released, state} -> NpcEventQueue.release(state)
+    end
+  end
+
+  @doc """
+  The running script `pid` paused for the player (a dialog page, menu, input,
+  progress bar or close): the dialogs it took over are lost for good, as
+  rAthena frees the backed-up script of a script that stops to wait
+  ("Double continuation"), and their scripts end. A skill-staged dialog is no
+  script and stays beneath. A pause from any other script changes nothing.
+  """
+  @spec script_paused(pid(), SessionState.t()) :: SessionState.t()
+  def script_paused(pid, %{interaction_lock: {pid, _ref, _gid}} = state) do
+    system_gid = SessionState.system_dialog_gid()
+
+    {kept, lost} =
+      Enum.split_with(backups(state), &match?({{_pid, _ref, ^system_gid}, _flag}, &1))
+
+    Enum.each(lost, fn {{lost_pid, ref, _gid}, _flag} ->
+      Process.demonitor(ref, [:flush])
+      Process.exit(lost_pid, :shutdown)
+    end)
+
+    Map.put(state, :dialog_backups, kept)
+  end
+
+  def script_paused(_pid, state), do: state
+
+  @doc """
+  Drops the backed-up dialog whose script monitor `ref` fired (it timed out
+  or crashed while beneath another). `:error` when `ref` is no backed-up
+  dialog's.
+  """
+  @spec backup_ended(reference(), SessionState.t()) :: {:ok, SessionState.t()} | :error
+  def backup_ended(ref, state) do
+    case Enum.split_with(backups(state), &match?({{_pid, ^ref, _gid}, _flag}, &1)) do
+      {[], _kept} -> :error
+      {_ended, kept} -> {:ok, Map.put(state, :dialog_backups, kept)}
+    end
+  end
 
   @doc """
   Forwards the player's response to the pending NpcDialog to the locked
@@ -162,10 +233,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
          %{interaction_lock: {pid, _ref, gid}} = state
        ) do
     send(pid, {:npc_interact, msg})
+    {:noreply, SessionState.resume_npc_dialog(state)}
+  end
+
+  # A skill-staged dialog beneath a script's is no script state in the
+  # reference (its menu answers on its own), so it still gets its answer.
+  defp forward(%NpcInteract{npc_id: gid} = msg, state) do
+    if gid == SessionState.system_dialog_gid() do
+      Enum.each(backups(state), fn
+        {{pid, _ref, ^gid}, _flag} -> send(pid, {:npc_interact, msg})
+        _script_dialog -> :ok
+      end)
+    end
+
     {:noreply, state}
   end
 
-  defp forward(%NpcInteract{}, state) do
-    {:noreply, state}
-  end
+  defp backups(state), do: Map.get(state, :dialog_backups, [])
 end

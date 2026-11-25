@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcTimerHandlerTest do
   Covers the player's NPC timer slot (rAthena `sd->npc_timer_id`): arming from
   the NPC's stored timer value and the one-slot rule (`npc_timerevent_start`),
   firing in schedule order with the next label armed first (`npc_timerevent`),
-  running a label at once whether or not the player is in a dialog, dropping a
+  running a label at once, taking over an open dialog, dropping a
   slot whose NPC was reloaded, and the logout `OnTimerQuit` run
   (`npc_timerevent_quit`).
   """
@@ -96,15 +96,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcTimerHandlerTest do
       assert state.npc_timer == nil
     end
 
-    test "runs the label beside an open dialog without taking the dialog lock", context do
+    test "takes the dialog lock over an open dialog, keeping it beneath", %{gid: gid} = context do
       lock = {spawn(fn -> :ok end), make_ref(), 0x5000_0001}
       state = %{context.state | interaction_lock: lock}
-      state = NpcTimerHandler.start(state, context.gid, 0, context.npc_pid)
+      state = NpcTimerHandler.start(state, gid, 0, context.npc_pid)
 
       state = NpcTimerHandler.fire(state, state.npc_timer.ref)
 
       assert_received {:ran, "OnTimer100", _gid, _session_pid, 100, :fire}
-      assert state.interaction_lock == lock
+      assert {_pid, _ref, ^gid} = state.interaction_lock
+      assert state.dialog_backups == [{lock, nil}]
     end
 
     test "ignores a stale ref", context do

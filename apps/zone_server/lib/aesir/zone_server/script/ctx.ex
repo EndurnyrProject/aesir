@@ -13,7 +13,9 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   `{:script_apply, op}` calls to), the dialog correlation id the client
   echoes (`npc_gid` — stamped on outgoing `NpcDialog` frames and matched against
   incoming `NpcInteract`), `page` (the accumulated `mes/2` lines awaiting a
-  flush at the next dialog suspension point), and `session_ref`, the monitor
+  flush at the next dialog suspension point), `mes_active` (a `mes` box is
+  open: set by `mes/2`, cleared by `close/1`, so a `close` pauses for the
+  player only after a `mes`), and `session_ref`, the monitor
   the interaction holds on its session so a blocking primitive can exit cleanly
   if the session dies.
 
@@ -108,6 +110,7 @@ defmodule Aesir.ZoneServer.Script.Ctx do
     field :session_state, inline_session() | nil, default: nil
     field :npc_gid, non_neg_integer() | nil, default: nil
     field :page, [String.t()], default: []
+    field :mes_active, boolean(), default: false
     field :session_ref, reference() | nil, default: nil
     field :vars, %{optional(atom()) => term()}, default: %{}
     field :session_effects, [session_effect()], default: []

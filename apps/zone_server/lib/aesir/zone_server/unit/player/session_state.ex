@@ -58,6 +58,12 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   @typedoc "The pending NPC-dialog interaction lock: `{interaction_pid, monitor_ref, npc_gid}`."
   @type interaction_lock :: {pid(), reference(), non_neg_integer()}
 
+  @typedoc """
+  A dialog held beneath the running one (rAthena's `st->bk_st`): its lock and
+  the item-use flag its script had (`st->npc_item_flag`).
+  """
+  @type dialog_backup :: {interaction_lock(), boolean() | nil}
+
   # Synthetic gid stamped on skill-triggered dialogs (AC_MAKINGARROW's crafting
   # menu). Outside every real unit-id range (warps 0x4000_0000.., NPCs
   # 0x5000_0000..0x57FF_FFFF) so it can never collide with a spawned unit; the
@@ -75,7 +81,9 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
       default: %{}
 
     field :interaction_lock, interaction_lock()
+    field :dialog_backups, [dialog_backup()], default: []
     field :npc_item_flag, boolean()
+    field :npc_item_flag_on_resume, {:resume, boolean() | nil}
     field :work_in_progress, boolean(), default: false
     field :progress_bar, progress_bar()
     field :npc_shop, non_neg_integer()
@@ -211,7 +219,79 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   """
   @spec hold_npc_dialog(map(), interaction_lock()) :: map()
   def hold_npc_dialog(state, lock),
-    do: Map.merge(state, %{interaction_lock: lock, npc_item_flag: nil})
+    do:
+      Map.merge(state, %{interaction_lock: lock, npc_item_flag: nil, npc_item_flag_on_resume: nil})
+
+  @doc """
+  Holds the player in the script dialog `lock` even when another script holds
+  it already, as rAthena's `script_attach_state` does for a script attaching
+  over an open dialog: the open one is kept beneath (`dialog_backups`, top
+  first) with its script's item-use flag, and the new script starts with the
+  default flag. A free player is simply held (`hold_npc_dialog/2`).
+  """
+  @spec take_over_npc_dialog(map(), interaction_lock()) :: map()
+  def take_over_npc_dialog(state, lock) do
+    case Map.get(state, :interaction_lock) do
+      nil ->
+        hold_npc_dialog(state, lock)
+
+      current ->
+        backups = [{current, script_item_flag(state)} | Map.get(state, :dialog_backups, [])]
+        state |> hold_npc_dialog(lock) |> Map.put(:dialog_backups, backups)
+    end
+  end
+
+  @doc """
+  Ends the running dialog's hold on the player (its script ended or detached,
+  rAthena's `script_detach_state`). The dialog beneath it, if any, holds the
+  player again (`:restored`); its script's item-use flag only comes back when
+  that dialog resumes on the player's next answer (`resume_npc_dialog/1`), the
+  flag the ended script left applying until then. With nothing beneath, the
+  player is free (`:released`).
+  """
+  @spec end_npc_dialog(map()) :: {:restored | :released, map()}
+  def end_npc_dialog(state) do
+    case Map.get(state, :dialog_backups, []) do
+      [{lock, flag} | rest] ->
+        {:restored,
+         Map.merge(state, %{
+           interaction_lock: lock,
+           dialog_backups: rest,
+           npc_item_flag_on_resume: {:resume, flag}
+         })}
+
+      [] ->
+        {:released,
+         Map.merge(state, %{
+           interaction_lock: nil,
+           npc_item_flag: nil,
+           npc_item_flag_on_resume: nil
+         })}
+    end
+  end
+
+  @doc """
+  Resumes the running dialog on the player's answer: a dialog restored from
+  beneath another takes its own script's item-use flag back, as the reference
+  reloads `st->npc_item_flag` each time a script attaches.
+  """
+  @spec resume_npc_dialog(map()) :: map()
+  def resume_npc_dialog(state) do
+    case Map.get(state, :npc_item_flag_on_resume) do
+      {:resume, flag} -> Map.merge(state, %{npc_item_flag: flag, npc_item_flag_on_resume: nil})
+      nil -> state
+    end
+  end
+
+  # The item-use flag of the script holding the player: one restored but not
+  # resumed yet still owns the flag it is waiting to take back.
+  @spec script_item_flag(map()) :: boolean() | nil
+  defp script_item_flag(state) do
+    case Map.get(state, :npc_item_flag_on_resume) do
+      {:resume, flag} -> flag
+      nil -> Map.get(state, :npc_item_flag)
+    end
+  end
 
   @doc "Whether a skill-staged dialog (the skill's own menu) is open."
   @spec system_dialog?(map()) :: boolean()

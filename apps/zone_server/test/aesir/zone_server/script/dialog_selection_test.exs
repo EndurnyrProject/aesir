@@ -1,13 +1,17 @@
 defmodule Aesir.ZoneServer.Script.DialogSelectionTest do
   use ExUnit.Case, async: true
+  use Mimic
 
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @gid 0x6000_0011
+
+  setup :set_mimic_from_context
 
   test "visible choices skip empty labels but return and persist the original logical index" do
     parent = self()
@@ -36,6 +40,10 @@ defmodule Aesir.ZoneServer.Script.DialogSelectionTest do
   end
 
   test "out-of-range and zero choices disconnect instead of reaching a helper branch" do
+    # The Agent standing in for the session takes no casts.
+    stub(PlayerSession, :script_paused, fn _session, _interaction -> :ok end)
+    test_pid = self()
+
     for choice <- [0, 3] do
       owner =
         start_supervised!(
@@ -54,7 +62,12 @@ defmodule Aesir.ZoneServer.Script.DialogSelectionTest do
         npc_gid: @gid
       }
 
-      {pid, ref} = spawn_monitor(fn -> Dsl.select(ctx, ["A", "B"]) end)
+      {pid, ref} =
+        spawn_monitor(fn ->
+          Process.put(:"$callers", [test_pid])
+          Dsl.select(ctx, ["A", "B"])
+        end)
+
       assert_receive {:send, _, {:npc_dialog, %NpcDialog{expect: :MENU}}}
       send(pid, {:npc_interact, %NpcInteract{npc_id: @gid, response: {:choice, choice}}})
       assert_receive {:DOWN, ^owner_ref, :process, ^owner, :normal}

@@ -8,6 +8,9 @@ defmodule Aesir.ZoneServer.NpcAttachedTimerIntegrationTest do
      and warps them, as `jupe_goto#1` and `gate#start` do.
   2. A player logging out with an armed slot runs the NPC's `OnTimerQuit`
      label attached to them, and its player commands still reach the session.
+  3. A label firing while the player is in another NPC's dialog takes the
+     player over (rAthena `script_attach_state`): the open dialog comes back
+     when the label ends, and is lost when the label waits for the player.
   """
 
   use Aesir.ZoneServer.IntegrationCase
@@ -15,8 +18,59 @@ defmodule Aesir.ZoneServer.NpcAttachedTimerIntegrationTest do
   @moduletag :capture_log
 
   alias Aesir.Net.MoveRequest
+  alias Aesir.Net.NpcDialog
+  alias Aesir.Net.NpcInteract
+  alias Aesir.Net.NpcTalk
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Warps
+
+  defmodule TalkerNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [
+        %{map: "prontera", x: 118, y: 60, sprite: 58, name: "Talker", unique_name: "Talker#stack"}
+      ]
+
+    @impl true
+    def on_talk(ctx) do
+      ctx = ctx |> initnpctimer("Clock#stack", 1) |> mes("first") |> next()
+      send(:npc_attached_timer_probe, :talker_resumed)
+      ctx
+    end
+  end
+
+  defmodule QuietClockNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [
+        %{map: "prontera", x: 130, y: 70, sprite: 58, name: "Clock", unique_name: "Clock#stack"}
+      ]
+
+    @impl true
+    def on_talk(ctx), do: ctx
+
+    @impl true
+    def on_event("OnTimer500", ctx) do
+      send(:npc_attached_timer_probe, :clock_ran)
+      ctx
+    end
+  end
+
+  defmodule TalkingClockNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [
+        %{map: "prontera", x: 130, y: 70, sprite: 58, name: "Clock", unique_name: "Clock#stack"}
+      ]
+
+    @impl true
+    def on_talk(ctx), do: ctx
+
+    @impl true
+    def on_event("OnTimer500", ctx) do
+      send(:npc_attached_timer_probe, :clock_waiting)
+      ctx = ctx |> mes("tick") |> next()
+      send(:npc_attached_timer_probe, :clock_answered)
+      ctx
+    end
+  end
 
   defmodule PortalNpc do
     use Aesir.ZoneServer.Npc,
@@ -130,5 +184,81 @@ defmodule Aesir.ZoneServer.NpcAttachedTimerIntegrationTest do
     end_player_session(player)
 
     assert_receive {:quit_ran, ^char_id, []}, 1_000
+  end
+
+  describe "a label firing over another NPC's open dialog" do
+    test "takes the player and gives the dialog back when it ends" do
+      NpcRegistry.reload([TalkerNpc, QuietClockNpc])
+      {player, talker_gid} = open_talker_dialog()
+      {talker_pid, _ref, ^talker_gid} = :sys.get_state(player.pid).interaction_lock
+
+      assert_receive :clock_ran, 1_000
+
+      assert_eventually(fn ->
+        match?(
+          %{interaction_lock: {^talker_pid, _ref, ^talker_gid}, dialog_backups: []},
+          :sys.get_state(player.pid)
+        )
+      end)
+
+      answer(player, talker_gid)
+      assert_receive :talker_resumed, 1_000
+    end
+
+    test "loses the dialog for good once the label waits for the player" do
+      NpcRegistry.reload([TalkerNpc, TalkingClockNpc])
+      clock_gid = gid_for(TalkingClockNpc)
+      {player, talker_gid} = open_talker_dialog()
+      {talker_pid, _ref, ^talker_gid} = :sys.get_state(player.pid).interaction_lock
+      talker_ref = Process.monitor(talker_pid)
+
+      assert_receive :clock_waiting, 1_000
+
+      assert Enum.any?(
+               collect_packets_of_type(NpcDialog),
+               &match?(%{npc_id: ^clock_gid, text: "tick"}, &1)
+             )
+
+      assert_receive {:DOWN, ^talker_ref, :process, ^talker_pid, _reason}, 1_000
+
+      state = :sys.get_state(player.pid)
+      assert {_clock_pid, _ref, ^clock_gid} = state.interaction_lock
+      assert state.dialog_backups == []
+
+      answer(player, talker_gid)
+      answer(player, clock_gid)
+      assert_receive :clock_answered, 1_000
+      assert_eventually(fn -> :sys.get_state(player.pid).interaction_lock == nil end)
+      refute_received :talker_resumed
+    end
+  end
+
+  defp open_talker_dialog do
+    player =
+      start_player_session(
+        id: System.unique_integer([:positive]),
+        name: "Listener",
+        position: {117, 60}
+      )
+
+    on_exit(fn -> end_player_session(player) end)
+    talker_gid = gid_for(TalkerNpc)
+    simulate_incoming_message(player.pid, %NpcTalk{npc_id: talker_gid})
+
+    assert Enum.any?(
+             collect_packets_of_type(NpcDialog),
+             &match?(%{npc_id: ^talker_gid, text: "first"}, &1)
+           )
+
+    {player, talker_gid}
+  end
+
+  defp answer(player, gid),
+    do:
+      simulate_incoming_message(player.pid, %NpcInteract{npc_id: gid, response: {:continue, true}})
+
+  defp gid_for(module) do
+    {^module, placement} = Enum.find(NpcRegistry.entries(), fn {mod, _} -> mod == module end)
+    NpcRegistry.entity_id(placement)
   end
 end

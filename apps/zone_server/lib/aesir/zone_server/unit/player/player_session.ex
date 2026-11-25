@@ -726,6 +726,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @doc """
+  Tells this player's session that the script `interaction_pid` runs is about
+  to wait for the player, so the dialogs that script took over are lost (see
+  `Handlers.NpcInteractionHandler.script_paused/2`).
+  """
+  @spec script_paused(pid(), pid()) :: :ok
+  def script_paused(pid, interaction_pid) do
+    GenServer.cast(pid, {:npc, {:script_paused, interaction_pid}})
+  end
+
+  @doc """
   Settles a checkout in this higher-id seller session while the calling buyer
   stays parked with its `buyer` snapshot; replies with the buyer's delta. A
   seller session that is gone answers `{:error, :not_open}`.
@@ -1215,26 +1225,18 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     VendingHandler.handle_seller_down(state)
   end
 
-  # The active NPC interaction ended (close / idle-timeout / crash). Clearing the
-  # lock frees the player to talk to NPCs again, and the next script starts with
-  # the default item-use flag; the session always survives
-  # (this monitor never propagates the interaction's exit). Matched ahead of the
-  # connection :DOWN below so a finished dialog isn't mistaken for a dropped
-  # connection. An NPC event queued while the dialog was open is released.
+  # The active NPC interaction ended (close / idle-timeout / crash). The dialog
+  # it took over, if any, holds the player again; otherwise the lock clears,
+  # freeing the player to talk to NPCs again, and an NPC event queued while the
+  # dialog was open is released. The session always survives (this monitor
+  # never propagates the interaction's exit). Matched ahead of the connection
+  # :DOWN below so a finished dialog isn't mistaken for a dropped connection.
   @impl true
   def handle_info(
         {:DOWN, ref, :process, _pid, _reason},
         %{interaction_lock: {_lock_pid, ref, _gid}} = state
       ) do
-    state =
-      if Map.get(state, :progress_bar), do: SessionState.release_progress_bar(state), else: state
-
-    state =
-      state
-      |> Map.merge(%{interaction_lock: nil, npc_item_flag: nil})
-      |> NpcEventQueue.release()
-
-    {:noreply, state}
+    {:noreply, NpcInteractionHandler.script_ended(state)}
   end
 
   # A queued NPC event's dequeue delay elapsed.
@@ -1265,9 +1267,17 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     end
   end
 
-  def handle_info({:DOWN, _ref, :process, _pid, _reason}, %{game_state: game_state} = state) do
-    Logger.info("Player #{game_state.character_id} connection process died")
-    {:stop, :normal, state}
+  # A dialog held beneath another ended on its own (idle timeout, crash); any
+  # other monitor reaching here is the connection's.
+  def handle_info({:DOWN, ref, :process, _pid, _reason}, %{game_state: game_state} = state) do
+    case NpcInteractionHandler.backup_ended(ref, state) do
+      {:ok, state} ->
+        {:noreply, state}
+
+      :error ->
+        Logger.info("Player #{game_state.character_id} connection process died")
+        {:stop, :normal, state}
+    end
   end
 
   def handle_info({:timeout, timer, {:logout, :linger_expired}}, %{lingering: timer} = state),
@@ -1648,6 +1658,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def handle_cast({:npc, :timer_stop}, state), do: {:noreply, NpcTimerHandler.stop(state)}
+
+  def handle_cast({:npc, {:script_paused, interaction_pid}}, state),
+    do: {:noreply, NpcInteractionHandler.script_paused(interaction_pid, state)}
 
   # A Coordinator-broadcast ground-item vanish: forward it like any other packet
   # but also drop the id from `visible_items` so re-entering the cell's range

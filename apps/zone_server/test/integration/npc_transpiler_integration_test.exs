@@ -91,6 +91,9 @@ defmodule Aesir.ZoneServer.NpcTranspilerIntegrationTest do
 
     @impl true
     def handle_call(:game_state, _from, state), do: {:reply, state.game_state, state}
+
+    @impl true
+    def handle_cast(_message, state), do: {:noreply, state}
   end
 
   setup {Aesir.MimicMode, :global}

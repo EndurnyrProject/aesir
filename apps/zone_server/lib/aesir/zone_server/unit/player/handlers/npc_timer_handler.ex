@@ -10,9 +10,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcTimerHandler do
   cancels whatever slot is armed (`npc_timerevent_stop`). When a label fires
   (`fire/2`, `npc_timerevent`) the next label is armed first, then the label
   runs attached to this player at once, never queued behind an open dialog:
-  it takes the dialog lock when the player is free and otherwise runs beside
-  the open dialog. A slot whose NPC session has since been replaced (a script
-  reload) is dropped, as the reference's NPC unload deletes it.
+  it takes the dialog lock, and an open dialog is kept beneath it until it
+  ends, detaches the player or pauses for them
+  (`SessionState.take_over_npc_dialog/2`, rAthena `script_attach_state`). A
+  slot whose NPC session has since been replaced (a script reload) is
+  dropped, as the reference's NPC unload deletes it.
 
   On logout `quit/1` (`npc_timerevent_quit`) drops the slot and runs the NPC's
   `OnTimerQuit` label attached to this player, if it declares one.
@@ -107,9 +109,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcTimerHandler do
   defp run(state, gid, label, due_ms) do
     case start_label(state, gid, label, due_ms, :fire) do
       {:ok, pid} ->
-        if SessionState.in_script?(state),
-          do: state,
-          else: SessionState.hold_npc_dialog(state, {pid, Process.monitor(pid), gid})
+        SessionState.take_over_npc_dialog(state, {pid, Process.monitor(pid), gid})
 
       {:error, _no_handler} ->
         state

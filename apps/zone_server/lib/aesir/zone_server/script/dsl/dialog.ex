@@ -42,7 +42,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   """
   @spec mes(Ctx.t(), String.t()) :: Ctx.t()
   def mes(%Ctx{game_state: nil} = ctx, _text), do: Ctx.halt(ctx, :no_player)
-  def mes(%Ctx{page: page} = ctx, text), do: %{ctx | page: page ++ [text]}
+  def mes(%Ctx{page: page} = ctx, text), do: %{ctx | page: page ++ [text], mes_active: true}
 
   @doc """
   Flushes the buffered page as a `NEXT` frame, blocks for the client's
@@ -54,6 +54,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   def next(%Ctx{game_state: nil} = ctx), do: Ctx.halt(ctx, :no_player)
 
   def next(%Ctx{} = ctx) do
+    pause(ctx)
     flush(ctx, :NEXT, [])
     await(ctx, :continue)
     %{ctx | page: []}
@@ -73,6 +74,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
 
   def select(%Ctx{} = ctx, options) do
     visible = options |> Enum.with_index(1) |> Enum.reject(fn {label, _} -> label == "" end)
+    pause(ctx)
     flush(ctx, :MENU, Enum.map(visible, &elem(&1, 0)))
     choice = await(ctx, :choice)
 
@@ -100,11 +102,13 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   def input(%Ctx{game_state: nil} = ctx, _kind), do: {Ctx.halt(ctx, :no_player), nil}
 
   def input(%Ctx{} = ctx, :int) do
+    pause(ctx)
     flush(ctx, :INPUT_INT, [])
     {%{ctx | page: []}, await(ctx, :number)}
   end
 
   def input(%Ctx{} = ctx, :string) do
+    pause(ctx)
     flush(ctx, :INPUT_STR, [])
     {%{ctx | page: []}, await(ctx, :input)}
   end
@@ -115,16 +119,27 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   Does not block. The transpiler maps `close2`/`close3` (which keep the script
   running) to this too, so ending the script after a `close` is the caller's
   job: a transpiled `close` throws `{:script_end, ctx}` itself and a
-  hand-written script returns. Halts `:no_player` on a detached ctx without
-  flushing.
+  hand-written script returns. After a `mes` it still counts as waiting for
+  the player, as the reference's `close` does, so the dialogs the script took
+  over are lost (`PlayerSession.script_paused/2`). Halts `:no_player` on a
+  detached ctx without flushing.
   """
   @spec close(Ctx.t()) :: Ctx.t()
   def close(%Ctx{game_state: nil} = ctx), do: Ctx.halt(ctx, :no_player)
 
   def close(%Ctx{} = ctx) do
+    if ctx.mes_active, do: pause(ctx)
     flush(ctx, :CLOSE, [])
-    %{ctx | page: []}
+    %{ctx | page: [], mes_active: false}
   end
+
+  # The script is about to wait for the player, so its session drops the
+  # dialogs it took over (`PlayerSession.script_paused/2`). Sent before the
+  # frame, so it reaches the session ahead of the player's answer. An item
+  # script running inline in its session never waits.
+  @spec pause(Ctx.t()) :: :ok
+  defp pause(%Ctx{session_pid: nil}), do: :ok
+  defp pause(%Ctx{session_pid: session_pid}), do: PlayerSession.script_paused(session_pid, self())
 
   @spec flush(Ctx.t(), expect(), [String.t()]) :: :ok
   defp flush(%Ctx{} = ctx, expect, options) do
@@ -275,6 +290,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
 
     case PlayerSession.script_apply(ctx.session_pid, op) do
       {:ok, _game_state} ->
+        pause(ctx)
         await(ctx, :progress)
         ctx
 

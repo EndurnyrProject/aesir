@@ -112,7 +112,9 @@ defmodule Aesir.ZoneServer.Script.Interaction do
   @spec auto_close(term()) :: :ok | Ctx.t()
   defp auto_close(%Ctx{page: []}), do: :ok
 
-  defp auto_close(%Ctx{} = ctx), do: _ = Dsl.close(ctx)
+  # The script has ended, so this frame is no wait for the player: the
+  # dialog it took over comes back (`mes_active` off skips the pause).
+  defp auto_close(%Ctx{} = ctx), do: _ = Dsl.close(%{ctx | mes_active: false})
 
   defp auto_close({%Ctx{} = ctx, _value}), do: auto_close(ctx)
   defp auto_close(_other), do: :ok
