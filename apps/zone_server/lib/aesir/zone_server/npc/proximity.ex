@@ -20,8 +20,9 @@ defmodule Aesir.ZoneServer.Npc.Proximity do
   square: a script NPC that is not hidden, a warp portal or a shop. No vending
   stall or chat room may be opened there.
 
-  Only `hidden` excludes a script NPC, as in rAthena's `npc_isnear_sub`
-  (`OPTION_HIDE`, which `disablenpc` also sets): a cloaked NPC still counts.
+  Only `hidden` excludes a script NPC or a warp, as in rAthena's
+  `npc_isnear_sub` (`OPTION_HIDE`, which `disablenpc` also sets): a cloaked
+  one still counts.
   """
   @spec npc_near?(String.t(), integer(), integer()) :: boolean()
   def npc_near?(map, x, y) do
@@ -33,7 +34,7 @@ defmodule Aesir.ZoneServer.Npc.Proximity do
       placement.map == map and near?.(placement.x, placement.y) and
         not Session.hidden?(Registry.entity_id(placement))
     end) or
-      Enum.any?(on_map(Warps.for_map(map)), &near?.(&1.x, &1.y)) or
+      Enum.any?(on_map(Warps.for_map(map)), &(near?.(&1.x, &1.y) and not Session.hidden?(&1))) or
       Enum.any?(on_map(Shops.for_map(map)), &near?.(&1.x, &1.y))
   end
 

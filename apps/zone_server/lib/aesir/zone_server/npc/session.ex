@@ -77,9 +77,9 @@ defmodule Aesir.ZoneServer.Npc.Session do
   `set_enabled/2`, `set_hidden/2` and `set_cloaked/2` write this process's
   state and mirror it to the public `:npc_session_flags` ETS table as
   `{gid, enabled?, hidden?, cloaked?}`, so the reads are lock-free with no
-  GenServer call; a missing row means the placement's starting state
-  (`Placement.state`: none, the usual case, is enabled, not hidden and not
-  cloaked, so visible). The table is owned by
+  GenServer call; a missing row means the NPC's starting state
+  (`Placement.state`, or `Warp.state` for a warp portal: none, the usual case,
+  is enabled, not hidden and not cloaked, so visible). The table is owned by
   `Aesir.ZoneServer.Npc.SessionSupervisor`, not by any one session, so it
   survives a session crash. A session clears its own row on init and on
   terminate, so a crashed (and, under the dynamic supervisor, restarted)
@@ -100,6 +100,15 @@ defmodule Aesir.ZoneServer.Npc.Session do
   time it runs, so it always catches up — at worst re-sending one redundant
   spawn or vanish for the gid this broadcast already covered, never leaving
   the player's state stuck out of sync with the flag.
+
+  ## Warp portals
+
+  A warp portal (`Npc.Warp`) has the same three flags, keyed by its
+  `Warp.Registry.entity_id/1`, as the reference keeps them on every NPC: its
+  starting state is its `warp(<STATE>)` flag, a flip broadcasts its spawn or
+  vanish, and enabling, unhiding or uncloaking it re-runs the touch check of
+  the players standing in its area. The reads take the `%Warp{}` itself on
+  the per-movement paths, so its starting state needs no lookup by gid.
   """
 
   use GenServer
@@ -112,6 +121,8 @@ defmodule Aesir.ZoneServer.Npc.Session do
   alias Aesir.ZoneServer.Npc.Packets, as: NpcPackets
   alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
+  alias Aesir.ZoneServer.Npc.Warp
+  alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -146,6 +157,12 @@ defmodule Aesir.ZoneServer.Npc.Session do
         }
 
   @typep timer_callback :: (non_neg_integer(), String.t() -> term())
+
+  @typedoc """
+  The NPC a flag read is about: its gid, or a warp portal itself, whose
+  starting state then needs no lookup.
+  """
+  @type view_target :: non_neg_integer() | Warp.t()
   @typep start_options :: [gid: non_neg_integer(), on_fire: timer_callback()]
 
   @typedoc "Per-NPC timer, visibility, and appearance state."
@@ -322,9 +339,9 @@ defmodule Aesir.ZoneServer.Npc.Session do
   A gid with no row (no session, or a session that never toggled it) reads
   its placement's starting state, enabled unless it starts `:disabled`.
   """
-  @spec enabled?(non_neg_integer()) :: boolean()
-  def enabled?(gid) do
-    {enabled?, _hidden?, _cloaked?} = flags(gid)
+  @spec enabled?(view_target()) :: boolean()
+  def enabled?(target) do
+    {enabled?, _hidden?, _cloaked?} = flags(target)
     enabled?
   end
 
@@ -334,9 +351,9 @@ defmodule Aesir.ZoneServer.Npc.Session do
   A gid with no row reads its placement's starting state, hidden only when
   it starts `:hidden` or `:disabled`.
   """
-  @spec hidden?(non_neg_integer()) :: boolean()
-  def hidden?(gid) do
-    {_enabled?, hidden?, _cloaked?} = flags(gid)
+  @spec hidden?(view_target()) :: boolean()
+  def hidden?(target) do
+    {_enabled?, hidden?, _cloaked?} = flags(target)
     hidden?
   end
 
@@ -346,9 +363,9 @@ defmodule Aesir.ZoneServer.Npc.Session do
   A gid with no row reads its placement's starting state, cloaked only when
   it starts `:cloaked`.
   """
-  @spec cloaked?(non_neg_integer()) :: boolean()
-  def cloaked?(gid) do
-    {_enabled?, _hidden?, cloaked?} = flags(gid)
+  @spec cloaked?(view_target()) :: boolean()
+  def cloaked?(target) do
+    {_enabled?, _hidden?, cloaked?} = flags(target)
     cloaked?
   end
 
@@ -359,9 +376,9 @@ defmodule Aesir.ZoneServer.Npc.Session do
   A single lookup rather than one per flag, so the per-player movement diff
   pays one ETS read per NPC.
   """
-  @spec visible?(non_neg_integer()) :: boolean()
-  def visible?(gid) do
-    {enabled?, hidden?, cloaked?} = flags(gid)
+  @spec visible?(view_target()) :: boolean()
+  def visible?(target) do
+    {enabled?, hidden?, cloaked?} = flags(target)
     enabled? and not hidden? and not cloaked?
   end
 
@@ -371,9 +388,9 @@ defmodule Aesir.ZoneServer.Npc.Session do
   `npc_touch_areanpc` (`is_invisible`, `npc_is_cloaked`) and
   `npc_touch_areanpc2` (`is_invisible || option&OPTION_CLOAK`).
   """
-  @spec touchable?(non_neg_integer()) :: boolean()
-  def touchable?(gid) do
-    {enabled?, _hidden?, cloaked?} = flags(gid)
+  @spec touchable?(view_target()) :: boolean()
+  def touchable?(target) do
+    {enabled?, _hidden?, cloaked?} = flags(target)
     enabled? and not cloaked?
   end
 
@@ -725,7 +742,16 @@ defmodule Aesir.ZoneServer.Npc.Session do
 
   @typep flags :: {enabled? :: boolean(), hidden? :: boolean(), cloaked? :: boolean()}
 
-  @spec flags(non_neg_integer()) :: flags()
+  @spec flags(view_target()) :: flags()
+  defp flags(%Warp{} = warp) do
+    gid = Warp.Registry.entity_id(warp)
+
+    case :ets.lookup(@flags_table, gid) do
+      [{^gid, enabled?, hidden?, cloaked?}] -> {enabled?, hidden?, cloaked?}
+      [] -> state_flags(warp.state)
+    end
+  end
+
   defp flags(gid) do
     case :ets.lookup(@flags_table, gid) do
       [{^gid, enabled?, hidden?, cloaked?}] -> {enabled?, hidden?, cloaked?}
@@ -733,17 +759,22 @@ defmodule Aesir.ZoneServer.Npc.Session do
     end
   end
 
-  # The flags a placement starts with, as the reference applies a script's
-  # `(<STATE>)` flag at load: disabling also hides, as `disablenpc` does.
   @spec initial_flags(non_neg_integer()) :: flags()
   defp initial_flags(gid) do
-    case NpcRegistry.module_for_unit(gid) do
-      {:ok, {_module, %Placement{state: :disabled}}} -> {false, true, false}
-      {:ok, {_module, %Placement{state: :hidden}}} -> {true, true, false}
-      {:ok, {_module, %Placement{state: :cloaked}}} -> {true, false, true}
-      _not_flagged -> {true, false, false}
+    case resolve(gid) do
+      {:npc, {_module, %Placement{state: state}}} -> state_flags(state)
+      {:warp, %Warp{state: state}} -> state_flags(state)
+      :error -> state_flags(nil)
     end
   end
+
+  # The flags a starting state sets, as the reference applies a script's or a
+  # warp's `(<STATE>)` flag at load: disabling also hides, as `disablenpc` does.
+  @spec state_flags(Placement.state() | nil) :: flags()
+  defp state_flags(:disabled), do: {false, true, false}
+  defp state_flags(:hidden), do: {true, true, false}
+  defp state_flags(:cloaked), do: {true, false, true}
+  defp state_flags(nil), do: {true, false, false}
 
   @spec merge_display(display_override(), display_update()) :: display_override()
   defp merge_display(current, overrides) do
@@ -792,20 +823,22 @@ defmodule Aesir.ZoneServer.Npc.Session do
   # flags again (`npc_enable_sub`).
   @spec recheck_touch_area(non_neg_integer()) :: :ok
   defp recheck_touch_area(gid) do
-    with_entry(gid, fn
-      {_module, %Placement{trigger: {xs, ys}} = placement} ->
-        placement.map
-        |> SpatialIndex.get_players_in_area(
-          placement.x - xs,
-          placement.y - ys,
-          placement.x + xs,
-          placement.y + ys
-        )
-        |> Enum.each(&recheck_player_touch/1)
+    case resolve(gid) do
+      {:npc, {_module, %Placement{trigger: {xs, ys}} = placement}} ->
+        recheck_area(placement.map, placement.x, placement.y, xs, ys)
+
+      {:warp, %Warp{} = warp} ->
+        recheck_area(warp.map, warp.x, warp.y, warp.xs, warp.ys)
 
       _no_area ->
         :ok
-    end)
+    end
+  end
+
+  defp recheck_area(map, x, y, xs, ys) do
+    map
+    |> SpatialIndex.get_players_in_area(x - xs, y - ys, x + xs, y + ys)
+    |> Enum.each(&recheck_player_touch/1)
   end
 
   defp recheck_player_touch(char_id) do
@@ -820,33 +853,46 @@ defmodule Aesir.ZoneServer.Npc.Session do
 
   @spec broadcast_spawn(non_neg_integer()) :: :ok
   defp broadcast_spawn(gid) do
-    with_entry(gid, fn {_module, placement} = entry ->
-      case NpcPackets.spawn_packet(entry) do
-        :invisible -> :ok
-        packet -> broadcast_to_range(placement, packet)
-      end
-    end)
+    case resolve(gid) do
+      {:npc, {_module, placement} = entry} ->
+        case NpcPackets.spawn_packet(entry) do
+          :invisible -> :ok
+          packet -> broadcast_to_range(placement, packet)
+        end
+
+      {:warp, %Warp{} = warp} ->
+        broadcast_to_range(warp, NpcPackets.warp_spawn_packet(warp))
+
+      :error ->
+        :ok
+    end
   end
 
   @spec broadcast_vanish(non_neg_integer()) :: :ok
   defp broadcast_vanish(gid) do
-    with_entry(gid, fn {_module, placement} ->
-      broadcast_to_range(placement, NpcPackets.vanish_packet(gid))
-    end)
+    case resolve(gid) do
+      {:npc, {_module, placement}} -> broadcast_to_range(placement, NpcPackets.vanish_packet(gid))
+      {:warp, %Warp{} = warp} -> broadcast_to_range(warp, NpcPackets.vanish_packet(gid))
+      :error -> :ok
+    end
   end
 
-  @spec broadcast_to_range(Placement.t(), struct()) :: :ok
+  @spec broadcast_to_range(Placement.t() | Warp.t(), struct()) :: :ok
   defp broadcast_to_range(%Placement{map: nil}, _packet), do: :ok
 
-  defp broadcast_to_range(placement, packet) do
-    Broadcast.to_in_range(placement.map, placement.x, placement.y, Config.view_range(), packet)
+  defp broadcast_to_range(%{map: map, x: x, y: y}, packet) do
+    Broadcast.to_in_range(map, x, y, Config.view_range(), packet)
   end
 
-  @spec with_entry(non_neg_integer(), (NpcRegistry.entry() -> :ok)) :: :ok
-  defp with_entry(gid, fun) do
-    case NpcRegistry.module_for_unit(gid) do
-      {:ok, entry} -> fun.(entry)
-      :error -> :ok
+  # A gid is a script placement's or, failing that, a warp portal's.
+  @spec resolve(non_neg_integer()) :: {:npc, NpcRegistry.entry()} | {:warp, Warp.t()} | :error
+  defp resolve(gid) do
+    with :error <- NpcRegistry.module_for_unit(gid),
+         :error <- Warps.fetch(gid) do
+      :error
+    else
+      {:ok, %Warp{} = warp} -> {:warp, warp}
+      {:ok, entry} -> {:npc, entry}
     end
   end
 end

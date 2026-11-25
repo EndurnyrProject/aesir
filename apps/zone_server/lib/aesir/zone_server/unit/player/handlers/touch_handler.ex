@@ -44,16 +44,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.TouchHandler do
 
   @doc """
   The warp whose area contains the player's cell, or `nil`. A dead player
-  triggers no warp; a concealed player triggers only warps that fire for
-  hidden players, so an ordinary warp underfoot yields to a hidden-trigger
-  warp sharing the cell. Concealment is read only when an ordinary warp is
-  underfoot.
+  triggers no warp, nor does a disabled or cloaked one
+  (`Npc.Session.touchable?/1`; a hidden warp still fires); a concealed player
+  triggers only warps that fire for hidden players, so an ordinary warp
+  underfoot yields to a hidden-trigger warp sharing the cell. Concealment is
+  read only when an ordinary warp is underfoot.
   """
   @spec warp_underfoot(PlayerState.t()) :: Warp.t() | nil
   def warp_underfoot(%{action_state: :dead}), do: nil
 
   def warp_underfoot(%{map_name: map, x: x, y: y, character_id: char_id}) do
-    warps = warps_for_map(map)
+    warps = map |> warps_for_map() |> Enum.filter(&NpcSession.touchable?/1)
 
     case Warp.Registry.hit?(warps, x, y) do
       %Warp{trigger_on_hidden: false} = warp ->

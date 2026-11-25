@@ -50,7 +50,9 @@ A placement cannot activate an inactive body. `scope:` accepts only `:shared`, `
   deterministic synthetic gids from `{map, x, y, unique_name}`. `Npc.Verifier` reports active
   same-cell/same-name collisions without blocking boot.
 - Warp portals are data, not modules: `apps/zone_server/priv/db/<mode>/warps/*.yml`
-  (mode dir `re/` or `pre-re/` per `AESIR_DB_MODE`; see `aesir-game-modes`).
+  (mode dir `re/` or `pre-re/` per `AESIR_DB_MODE`; see `aesir-game-modes`). A
+  `warp(<STATE>)` line carries `state: disabled|hidden|cloaked`; the warp's view flags live in
+  `Npc.Session` under its `Warp.Registry.entity_id/1`, and `enablenpc` & co. reach it by name.
 
 ## Testing: NPCs get no tests
 

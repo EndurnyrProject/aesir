@@ -2,7 +2,8 @@ defmodule Aesir.ZoneServer.Npc.Packets do
   @moduledoc """
   Pure builders for the wire packets that make a static NPC placement appear
   or disappear on a client (`UnitSpawn`/`UnitDespawn`), keyed by the
-  placement's synthetic `Npc.Registry.entity_id/1`.
+  placement's synthetic `Npc.Registry.entity_id/1`, and the spawn packet of a
+  warp portal (`warp_spawn_packet/1`).
 
   Shared by the per-player visibility diff (`MovementHandler`, which sends to
   one player at a time) and `Npc.Session`'s enable/disable/hide transition
@@ -23,6 +24,7 @@ defmodule Aesir.ZoneServer.Npc.Packets do
   alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Session, as: NpcSession
+  alias Aesir.ZoneServer.Npc.Warp
 
   @doc """
   Whether `entry` renders on a client.
@@ -89,6 +91,47 @@ defmodule Aesir.ZoneServer.Npc.Packets do
         moving: false
       }
     end
+  end
+
+  @doc """
+  Builds the spawn packet for a warp portal, keyed by its
+  `Warp.Registry.entity_id/1`.
+  """
+  @spec warp_spawn_packet(Warp.t()) :: UnitSpawn.t()
+  def warp_spawn_packet(%Warp{} = warp) do
+    entity_id = Warp.Registry.entity_id(warp)
+
+    %UnitSpawn{
+      object_type: ObjectType.npc(),
+      aid: entity_id,
+      gid: entity_id,
+      speed: 0,
+      body_state: 0,
+      health_state: 0,
+      effect_state: 0,
+      job: warp.sprite,
+      head: 0,
+      weapon: 0,
+      shield: 0,
+      accessory: 0,
+      accessory2: 0,
+      accessory3: 0,
+      head_palette: 0,
+      body_palette: 0,
+      head_dir: 0,
+      robe: 0,
+      guild_id: 0,
+      sex: 0,
+      x: warp.x,
+      y: warp.y,
+      dir: 0,
+      clevel: 0,
+      max_hp: 0,
+      hp: 0,
+      is_boss: false,
+      name: warp.name,
+      moving: false
+    }
   end
 
   # The appearance a client would receive: the placement's own view unless a

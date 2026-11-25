@@ -899,6 +899,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     # Handle warp visibility — static NPC warp entities are not spatial-indexed
     # (few per map; held per-map in `Npc.Warps`). Diff against `visible_warps`
     # using the same view square as the mob path (`SpatialIndex.get_units_in_range`).
+    # A disabled, hidden or cloaked warp (`Npc.Session.visible?/1`) is left out,
+    # as for script NPCs below.
     warps_on_map =
       case Warps.for_map(game_state.map_name) do
         {:ok, list} -> list
@@ -908,7 +910,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     warps_in_range =
       Enum.filter(warps_on_map, fn warp ->
         Geometry.chebyshev_distance(game_state.x, game_state.y, warp.x, warp.y) <=
-          game_state.view_range
+          game_state.view_range and NpcSession.visible?(warp)
       end)
 
     warps_by_id = Map.new(warps_in_range, &{Warp.Registry.entity_id(&1), &1})
@@ -1165,41 +1167,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   defp send_warp_spawn_packet_to(to_char_id, %Warp{} = warp) do
     case UnitRegistry.get_player_pid(to_char_id) do
       {:ok, to_pid} ->
-        warp_entity_id = Warp.Registry.entity_id(warp)
-
-        packet = %UnitSpawn{
-          object_type: ObjectType.npc(),
-          aid: warp_entity_id,
-          gid: warp_entity_id,
-          speed: 0,
-          body_state: 0,
-          health_state: 0,
-          effect_state: 0,
-          job: warp.sprite,
-          head: 0,
-          weapon: 0,
-          shield: 0,
-          accessory: 0,
-          accessory2: 0,
-          accessory3: 0,
-          head_palette: 0,
-          body_palette: 0,
-          head_dir: 0,
-          robe: 0,
-          guild_id: 0,
-          sex: 0,
-          x: warp.x,
-          y: warp.y,
-          dir: 0,
-          clevel: 0,
-          max_hp: 0,
-          hp: 0,
-          is_boss: false,
-          name: warp.name,
-          moving: false
-        }
-
-        GenServer.cast(to_pid, {:send_packet, packet})
+        GenServer.cast(to_pid, {:send_packet, NpcPackets.warp_spawn_packet(warp)})
 
       {:error, :not_found} ->
         :ok

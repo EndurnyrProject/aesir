@@ -48,6 +48,24 @@ defmodule Aesir.ZoneServer.Npc.Warps.ImporterTest do
       assert {:ok, %{"id" => "prt01"}} = Importer.parse_line(line)
     end
 
+    test "carries the (<STATE>) flag as the warp's starting state, any case; an unknown flag starts it visible" do
+      for {type, state} <- [
+            {"warp2(DISABLED)", "disabled"},
+            {"warp(Hidden)", "hidden"},
+            {"warp2(cloaked)", "cloaked"}
+          ] do
+        line = "1@adv,63,142,0\t#{type}\t#left_room_in\t1,1,1@adv,56,142"
+        assert {:ok, %{"state" => ^state}} = Importer.parse_line(line), type
+      end
+
+      for type <- ["warp", "warp2", "warp(INVISIBLE)"] do
+        {:ok, warp} =
+          Importer.parse_line("1@adv,63,142,0\t#{type}\t#left_room_in\t1,1,1@adv,56,142")
+
+        refute Map.has_key?(warp, "state"), type
+      end
+    end
+
     test "tolerates space-separated columns" do
       line = "geffen,119,213,0   warp   gef001   3,2,gef_fild04,187,42"
 

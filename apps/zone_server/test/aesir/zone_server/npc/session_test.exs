@@ -422,6 +422,21 @@ defmodule Aesir.ZoneServer.Npc.SessionTest do
       end
     end
 
+    test "a warp portal reads its own warp(<STATE>) flag while no session holds its flags" do
+      for {state, visible?, touchable?, hidden?} <- [
+            {nil, true, true, false},
+            {:disabled, false, false, true},
+            {:hidden, false, true, true},
+            {:cloaked, false, false, false}
+          ] do
+        warp = build(:warp, state: state)
+
+        assert {Session.visible?(warp), Session.touchable?(warp), Session.hidden?(warp)} ==
+                 {visible?, touchable?, hidden?},
+               inspect(state)
+      end
+    end
+
     test "is where a started session begins, so script commands change it from there" do
       hidden = gid_for(HiddenNpc)
       start_via_dynamic_supervisor(hidden)

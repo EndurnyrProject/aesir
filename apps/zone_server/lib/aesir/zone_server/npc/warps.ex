@@ -35,6 +35,30 @@ defmodule Aesir.ZoneServer.Npc.Warps do
   def all, do: index().by_map
 
   @doc """
+  Returns the warp whose gid (`Warp.Registry.entity_id/1`) is `gid`.
+
+  A scan over every warp: for the rare paths that start from a gid (an
+  `Npc.Session` starting or broadcasting a view change), never per movement.
+  """
+  @spec fetch(non_neg_integer()) :: {:ok, Warp.t()} | :error
+  def fetch(gid) do
+    case Enum.find(all_warps(), &(Warp.Registry.entity_id(&1) == gid)) do
+      nil -> :error
+      warp -> {:ok, warp}
+    end
+  end
+
+  @doc """
+  Returns every warp whose unique name (its `id`, the script line's name
+  column) is `name`, for the script commands that target an NPC by name.
+  """
+  @spec by_name(String.t()) :: [Warp.t()]
+  def by_name(name), do: Enum.filter(all_warps(), &(&1.id == name))
+
+  @spec all_warps() :: [Warp.t()]
+  defp all_warps, do: Enum.flat_map(all(), fn {_map, warps} -> warps end)
+
+  @doc """
   Rebuilds the cached index after editing the data files in a running session.
   """
   @spec reload() :: :ok

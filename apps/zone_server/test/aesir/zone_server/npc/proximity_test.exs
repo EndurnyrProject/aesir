@@ -90,6 +90,17 @@ defmodule Aesir.ZoneServer.Npc.ProximityTest do
       assert Proximity.npc_near?("prox_map", 17, 23)
       refute Proximity.npc_near?("prox_map", 14, 14)
     end
+
+    test "a warp starting hidden or disabled is not near; one starting cloaked is" do
+      stub_placements([])
+
+      for {state, near?} <- [disabled: false, hidden: false, cloaked: true] do
+        warp = build(:warp, map: "prox_map", x: 11, y: 10, state: state)
+        stub(Warps, :for_map, fn "prox_map" -> {:ok, [warp]} end)
+
+        assert Proximity.npc_near?("prox_map", 10, 10) == near?, inspect(state)
+      end
+    end
   end
 
   defp placement(x, y, name),

@@ -72,6 +72,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgHermodeTest do
   end
 
   @tag game_mode: :pre_renewal
+  test "a disabled warp portal does not let the cast begin; a hidden or cloaked one does", %{
+    caster: caster
+  } do
+    definition = CgHermode.definition()
+
+    stub(Warps, :for_map, fn "prontera" -> {:ok, [%{warp(2, 0) | state: :disabled}]} end)
+    assert {:error, :no_npc_nearby} = CgHermode.begin_attempt(caster, :self, 3, definition)
+
+    for state <- [:hidden, :cloaked] do
+      stub(Warps, :for_map, fn "prontera" -> {:ok, [%{warp(2, 0) | state: state}]} end)
+      assert {:ok, ^caster} = CgHermode.begin_attempt(caster, :self, 3, definition)
+    end
+  end
+
+  @tag game_mode: :pre_renewal
   test "a script NPC's touch area does not let the cast begin", %{caster: caster} do
     stub(Warps, :for_map, fn "prontera" -> :error end)
     stub(Proximity, :touch_area_within?, fn _map, _x, _y, _range -> true end)

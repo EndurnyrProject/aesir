@@ -21,11 +21,15 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
   alias Aesir.ZoneServer.Npc.Packets, as: NpcPackets
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Session, as: NpcSession
+  alias Aesir.ZoneServer.Npc.SessionDynamicSupervisor
+  alias Aesir.ZoneServer.Npc.Warp
+  alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.TouchHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -600,6 +604,80 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
                          name: "New Toggle",
                          size: :DISPLAY_SIZE_BIG
                        }}}
+    end
+  end
+
+  describe "warp portals" do
+    setup do
+      previous = :persistent_term.get(Warps, nil)
+
+      warp = %Warp{
+        id: "#left_room_in",
+        map: @map,
+        x: 300,
+        y: 300,
+        xs: 1,
+        ys: 1,
+        to_map: @map,
+        to_x: 310,
+        to_y: 310,
+        sprite: 45,
+        state: :disabled
+      }
+
+      gid = Warp.Registry.entity_id(warp)
+      :persistent_term.put(Warps, %{by_map: %{@map => [warp]}})
+
+      on_exit(fn ->
+        with pid when is_pid(pid) <- NpcSession.whereis(gid),
+             do: DynamicSupervisor.terminate_child(SessionDynamicSupervisor, pid)
+
+        :ets.delete(:npc_session_flags, gid)
+        :persistent_term.put(Warps, previous)
+      end)
+
+      %{warp: warp, gid: gid}
+    end
+
+    test "a DISABLED warp is neither shown nor fired until enablenpc names it", %{
+      warp: warp,
+      gid: gid
+    } do
+      stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
+      stub(SpatialIndex, :get_units_in_range, fn _, _, _, _, _ -> [] end)
+      stub(SpatialIndex, :update_visibility, fn _, _, _ -> :ok end)
+      stub(Broadcast, :to_players, fn _, _, _ -> :ok end)
+
+      game_state = %{PlayerState.new(character(1)) | x: 300, y: 300, map_name: @map}
+      UnitRegistry.register_unit(:player, 1, PlayerState, game_state, self())
+
+      unseen = MovementHandler.handle_visibility_update(game_state)
+      refute MapSet.member?(unseen.visible_warps, gid)
+      refute_received {:"$gen_cast", {:send_packet, %UnitSpawn{gid: ^gid}}}
+      assert TouchHandler.warp_underfoot(game_state) == nil
+
+      ctx = npc_ctx(nil)
+      assert Dsl.enablenpc(ctx, "#left_room_in") == ctx
+
+      seen = MovementHandler.handle_visibility_update(game_state)
+      assert MapSet.member?(seen.visible_warps, gid)
+      assert_received {:"$gen_cast", {:send_packet, %UnitSpawn{gid: ^gid, job: 45}}}
+      assert TouchHandler.warp_underfoot(game_state) == warp
+    end
+
+    test "a flip broadcasts the warp's spawn and vanish to a standing player", %{gid: gid} do
+      register_player(1, x: 302, y: 300)
+      disabled = %{session_state(gid) | enabled?: false, hidden?: true}
+
+      {:reply, :ok, enabled} =
+        NpcSession.handle_call({:set_enabled, true}, {self(), make_ref()}, disabled)
+
+      assert_receive {:"$gen_cast", {:send_packet, %UnitSpawn{gid: ^gid, job: 45}}}
+
+      {:reply, :ok, _state} =
+        NpcSession.handle_call({:set_enabled, false}, {self(), make_ref()}, enabled)
+
+      assert_receive {:"$gen_cast", {:send_packet, %UnitDespawn{gid: ^gid}}}
     end
   end
 

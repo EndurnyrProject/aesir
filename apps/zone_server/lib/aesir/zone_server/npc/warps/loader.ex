@@ -8,11 +8,12 @@ defmodule Aesir.ZoneServer.Npc.Warps.Loader do
   """
 
   alias Aesir.ZoneServer.Mmo.DataLoader
+  alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Warp
 
   @type index :: %{by_map: %{String.t() => [Warp.t()]}}
 
-  @cache_file "warps_v2.etf"
+  @cache_file "warps_v3.etf"
 
   @spec load() :: index()
   def load, do: "warps" |> DataLoader.load(@cache_file, &build/1) |> index()
@@ -42,9 +43,16 @@ defmodule Aesir.ZoneServer.Npc.Warps.Loader do
       sprite: Map.fetch!(entry, "sprite"),
       name: Map.get(entry, "name", ""),
       trigger_on_hidden: Map.get(entry, "trigger_on_hidden", false),
+      state: entry |> Map.get("state") |> to_state!(),
       to_map: Map.fetch!(to, "map"),
       to_x: Map.fetch!(to, "x"),
       to_y: Map.fetch!(to, "y")
     }
   end
+
+  @spec to_state!(String.t() | nil) :: Placement.state() | nil
+  defp to_state!(nil), do: nil
+  defp to_state!("disabled"), do: :disabled
+  defp to_state!("hidden"), do: :hidden
+  defp to_state!("cloaked"), do: :cloaked
 end

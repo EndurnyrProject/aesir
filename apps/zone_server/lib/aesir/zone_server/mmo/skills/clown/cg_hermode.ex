@@ -39,14 +39,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgHermode do
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Field
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.StatusEffect.ClearBuffs
+  alias Aesir.ZoneServer.Npc.Session, as: NpcSession
   alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @doc """
   Pre-renewal starts the cast only beside a warp portal, one whose area comes
-  within a cell of the caster; other NPCs do not count. The refusal is the
-  generic failure. Renewal has no such condition.
+  within a cell of the caster; other NPCs and a disabled warp do not count.
+  The refusal is the generic failure. Renewal has no such condition.
   """
   @impl Active
   @spec begin_attempt(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
@@ -61,8 +62,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgHermode do
   defp warp_within?(map_name, x, y, range) do
     case Warps.for_map(map_name) do
       {:ok, warps} ->
-        Enum.any?(warps, fn %Warp{x: wx, y: wy, xs: xs, ys: ys} ->
-          abs(wx - x) <= xs + range and abs(wy - y) <= ys + range
+        Enum.any?(warps, fn %Warp{x: wx, y: wy, xs: xs, ys: ys} = warp ->
+          abs(wx - x) <= xs + range and abs(wy - y) <= ys + range and NpcSession.enabled?(warp)
         end)
 
       :error ->

@@ -30,6 +30,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Session, as: NpcSession
+  alias Aesir.ZoneServer.Npc.Warp
+  alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Vars
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -676,7 +678,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   def enablenpc(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
 
   def enablenpc(%Ctx{} = ctx, name) do
-    each_named(ctx, name, "enablenpc/2", &NpcSession.set_enabled(&1, true))
+    each_view_named(ctx, name, "enablenpc/2", &NpcSession.set_enabled(&1, true))
   end
 
   @doc """
@@ -704,7 +706,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   def disablenpc(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
 
   def disablenpc(%Ctx{} = ctx, name) do
-    each_named(ctx, name, "disablenpc/2", &NpcSession.set_enabled(&1, false))
+    each_view_named(ctx, name, "disablenpc/2", &NpcSession.set_enabled(&1, false))
   end
 
   @doc """
@@ -971,7 +973,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   def hideonnpc(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
 
   def hideonnpc(%Ctx{} = ctx, name) do
-    each_named(ctx, name, "hideonnpc/2", &NpcSession.set_hidden(&1, true))
+    each_view_named(ctx, name, "hideonnpc/2", &NpcSession.set_hidden(&1, true))
   end
 
   @doc """
@@ -999,7 +1001,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   def hideoffnpc(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
 
   def hideoffnpc(%Ctx{} = ctx, name) do
-    each_named(ctx, name, "hideoffnpc/2", &NpcSession.set_hidden(&1, false))
+    each_view_named(ctx, name, "hideoffnpc/2", &NpcSession.set_hidden(&1, false))
   end
 
   @doc """
@@ -1026,7 +1028,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   def cloakonnpc(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
 
   def cloakonnpc(%Ctx{} = ctx, name) do
-    each_named(ctx, name, "cloakonnpc/2", &NpcSession.set_cloaked(&1, true))
+    each_view_named(ctx, name, "cloakonnpc/2", &NpcSession.set_cloaked(&1, true))
   end
 
   @doc """
@@ -1057,7 +1059,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   def cloakoffnpcself(%Ctx{game_state: nil} = ctx, _name), do: Ctx.halt(ctx, :no_player)
 
   def cloakoffnpcself(%Ctx{} = ctx, name) do
-    each_named(ctx, name, "cloakoffnpcself/2", &NpcSession.set_cloaked(&1, false))
+    each_view_named(ctx, name, "cloakoffnpcself/2", &NpcSession.set_cloaked(&1, false))
   end
 
   @spec dispatch_doevent(Ctx.t(), String.t(), String.t()) :: Ctx.t()
@@ -1175,6 +1177,25 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
 
       entries ->
         Enum.each(entries, fn {_module, placement} -> fun.(NpcRegistry.entity_id(placement)) end)
+    end
+
+    ctx
+  end
+
+  # The view-state commands also reach a warp portal by its name, as the
+  # reference resolves any NPC by name; a warp has no timer or display
+  # override, so the other named commands stay on script placements.
+  @spec each_view_named(Ctx.t(), String.t(), String.t(), (non_neg_integer() -> any())) ::
+          Ctx.t()
+  defp each_view_named(ctx, name, op, fun) do
+    npc_gids =
+      Enum.map(NpcRegistry.by_name(name), fn {_module, p} -> NpcRegistry.entity_id(p) end)
+
+    warp_gids = Enum.map(Warps.by_name(name), &Warp.Registry.entity_id/1)
+
+    case npc_gids ++ warp_gids do
+      [] -> Logger.warning("npc #{op}: unknown name #{inspect(name)}")
+      gids -> Enum.each(gids, fun)
     end
 
     ctx

@@ -9,11 +9,18 @@ defmodule Aesir.ZoneServer.Npc.Warp do
 
   A concealed player (Hiding, Cloaking, Chase Walk) only triggers a warp whose
   `trigger_on_hidden` is set (a `warp2` portal).
+
+  `state` is the view state the warp starts in, its `warp(<STATE>)` flag, or
+  `nil` for a visible warp (see `t:Aesir.ZoneServer.Npc.Placement.state/0`).
+  Script commands change it from there through `Aesir.ZoneServer.Npc.Session`,
+  keyed by the warp's gid (`Warp.Registry.entity_id/1`).
   """
 
   use TypedStruct
 
-  @typedoc "A warp's trigger area, landing cell, display, and concealment policy."
+  alias Aesir.ZoneServer.Npc.Placement
+
+  @typedoc "A warp's trigger area, landing cell, display, concealment policy and starting state."
   typedstruct enforce: true do
     field :id, String.t()
     field :map, String.t()
@@ -27,6 +34,7 @@ defmodule Aesir.ZoneServer.Npc.Warp do
     field :sprite, non_neg_integer(), default: 0
     field :name, String.t(), default: ""
     field :trigger_on_hidden, boolean(), default: false
+    field :state, Placement.state() | nil, default: nil
   end
 end
 
