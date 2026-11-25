@@ -168,10 +168,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Manifest do
   defp decode_scope(scope),
     do: raise(ArgumentError, "unknown NPC manifest placement scope #{inspect(scope)}")
 
+  # Spawns are atom-keyed maps, whose iteration order follows the atom table and
+  # so varies between VM runs; sorting the fields keeps the file byte-stable.
   defp encode_spawn(spawn) do
     spawn
     |> encode_trigger()
     |> encode_spawn_scope()
+    |> Enum.sort()
+    |> Jason.OrderedObject.new()
   end
 
   defp encode_trigger(%{trigger: {tx, ty}} = spawn), do: %{spawn | trigger: [tx, ty]}

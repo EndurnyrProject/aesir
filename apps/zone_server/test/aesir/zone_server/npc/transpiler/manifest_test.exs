@@ -177,6 +177,39 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ManifestTest do
     assert File.read!(path) == first
   end
 
+  test "writes placement fields in sorted key order" do
+    path =
+      Path.join(System.tmp_dir!(), "manifest_test_#{System.unique_integer([:positive])}.json")
+
+    on_exit(fn -> File.rm(path) end)
+
+    spawn = %{
+      unique_name: "Gate#1",
+      trigger: {1, 1},
+      state: :hidden,
+      sprite: 45,
+      scope: :shared,
+      name: "Gate",
+      map: "izlude",
+      hidden_name: "1",
+      dir: 0,
+      x: 7,
+      y: 8
+    }
+
+    key = "npc/test.txt|script|Gate|izlude:7:8"
+    Manifest.save(%{key => %{@record | spawns: [spawn]}}, path)
+
+    %Jason.OrderedObject{values: [{^key, record}]} =
+      path |> File.read!() |> Jason.decode!(objects: :ordered_objects)
+
+    [%Jason.OrderedObject{values: fields}] = record["spawns"]
+
+    field_names = Enum.map(fields, &elem(&1, 0))
+    assert field_names == Enum.sort(field_names)
+    assert length(field_names) == map_size(spawn)
+  end
+
   test "keys distinguish placements, hash is stable" do
     placed = %{file: "f.txt", kind: :script, name: "Guard", map: "payon", x: 1, y: 2}
     floating = %{file: "f.txt", kind: :floating, name: "Guard"}
