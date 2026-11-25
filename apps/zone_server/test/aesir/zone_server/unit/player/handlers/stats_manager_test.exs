@@ -74,6 +74,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManagerTest do
   defp assert_member_resources(member) do
     assert member == %Member{
              char_id: 1000,
+             account_id: 2000,
              name: "Stat Tester",
              job_id: 0,
              base_level: 1,

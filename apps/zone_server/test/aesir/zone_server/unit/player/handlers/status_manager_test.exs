@@ -248,6 +248,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManagerTest do
 
       assert member == %Member{
                char_id: game_state.character_id,
+               account_id: 100,
                name: "Status Tester",
                job_id: recalculated.progression.job_id,
                base_level: recalculated.progression.base_level,

@@ -422,6 +422,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
       expect(Manager, :sync_member, fn 7, 1000, member ->
         assert member == %Member{
                  char_id: 1000,
+                 account_id: 2000,
                  name: "Gm",
                  job_id: 4054,
                  base_level: 175,

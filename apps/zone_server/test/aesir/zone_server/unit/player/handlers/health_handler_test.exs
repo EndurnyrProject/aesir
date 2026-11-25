@@ -116,6 +116,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       expect(Manager, :sync_member, fn 7, 1, member ->
         assert member == %Member{
                  char_id: 1,
+                 account_id: 100,
                  name: "Aesir",
                  job_id: 0,
                  base_level: 1,

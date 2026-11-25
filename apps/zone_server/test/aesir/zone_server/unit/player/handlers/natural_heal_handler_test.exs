@@ -75,6 +75,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
 
       assert member == %Member{
                char_id: 1,
+               account_id: 100,
                name: "Aesir",
                job_id: 0,
                base_level: 1,

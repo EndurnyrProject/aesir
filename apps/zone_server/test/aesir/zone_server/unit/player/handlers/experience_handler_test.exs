@@ -334,6 +334,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandlerTest do
       expect(Manager, :sync_member, fn 7, 1000, member ->
         assert member == %Member{
                  char_id: 1000,
+                 account_id: 2000,
                  name: "Grinder",
                  job_id: 1,
                  base_level: 51,
