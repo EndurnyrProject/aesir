@@ -64,6 +64,16 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   """
   @type dialog_backup :: {interaction_lock(), boolean() | nil}
 
+  @typedoc """
+  A script waiting to attach to the player while the script holding them is
+  between two waits (rAthena only ever attaches over a script that waits):
+  a timer label to start, or a running script asking through
+  `PlayerSession.attach_script/4`, answered once it attaches.
+  """
+  @type dialog_attach ::
+          {:start, (-> {:ok, pid()} | {:error, term()}), non_neg_integer()}
+          | {:reply, GenServer.from(), pid(), non_neg_integer()}
+
   # Synthetic gid stamped on skill-triggered dialogs (AC_MAKINGARROW's crafting
   # menu). Outside every real unit-id range (warps 0x4000_0000.., NPCs
   # 0x5000_0000..0x57FF_FFFF) so it can never collide with a spawned unit; the
@@ -82,6 +92,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
 
     field :interaction_lock, interaction_lock()
     field :dialog_backups, [dialog_backup()], default: []
+    field :dialog_running?, boolean(), default: false
+    field :dialog_attaches, [dialog_attach()], default: []
     field :npc_item_flag, boolean()
     field :npc_item_flag_on_resume, {:resume, boolean() | nil}
     field :work_in_progress, boolean(), default: false
@@ -215,12 +227,18 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
 
   @doc """
   Holds the player in the NPC script dialog `lock`. The script starts with the
-  mode's default item-use flag, whatever an earlier script set.
+  mode's default item-use flag, whatever an earlier script set, and runs
+  until it first waits for the player (`dialog_running?`).
   """
   @spec hold_npc_dialog(map(), interaction_lock()) :: map()
   def hold_npc_dialog(state, lock),
     do:
-      Map.merge(state, %{interaction_lock: lock, npc_item_flag: nil, npc_item_flag_on_resume: nil})
+      Map.merge(state, %{
+        interaction_lock: lock,
+        npc_item_flag: nil,
+        npc_item_flag_on_resume: nil,
+        dialog_running?: true
+      })
 
   @doc """
   Holds the player in the script dialog `lock` even when another script holds
@@ -244,7 +262,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   @doc """
   Ends the running dialog's hold on the player (its script ended or detached,
   rAthena's `script_detach_state`). The dialog beneath it, if any, holds the
-  player again (`:restored`); its script's item-use flag only comes back when
+  player again (`:restored`), waiting for the player as it was; its script's
+  item-use flag only comes back when
   that dialog resumes on the player's next answer (`resume_npc_dialog/1`), the
   flag the ended script left applying until then. With nothing beneath, the
   player is free (`:released`).
@@ -257,6 +276,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
          Map.merge(state, %{
            interaction_lock: lock,
            dialog_backups: rest,
+           dialog_running?: false,
            npc_item_flag_on_resume: {:resume, flag}
          })}
 
@@ -264,6 +284,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
         {:released,
          Map.merge(state, %{
            interaction_lock: nil,
+           dialog_running?: false,
            npc_item_flag: nil,
            npc_item_flag_on_resume: nil
          })}
@@ -271,12 +292,15 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   end
 
   @doc """
-  Resumes the running dialog on the player's answer: a dialog restored from
-  beneath another takes its own script's item-use flag back, as the reference
-  reloads `st->npc_item_flag` each time a script attaches.
+  Resumes the running dialog on the player's answer: its script runs again
+  until its next wait, and a dialog restored from beneath another takes its
+  own script's item-use flag back, as the reference reloads
+  `st->npc_item_flag` each time a script attaches.
   """
   @spec resume_npc_dialog(map()) :: map()
   def resume_npc_dialog(state) do
+    state = Map.put(state, :dialog_running?, true)
+
     case Map.get(state, :npc_item_flag_on_resume) do
       {:resume, flag} -> Map.merge(state, %{npc_item_flag: flag, npc_item_flag_on_resume: nil})
       nil -> state

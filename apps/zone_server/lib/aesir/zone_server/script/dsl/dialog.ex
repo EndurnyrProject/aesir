@@ -14,9 +14,11 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Npc.Session, as: NpcSession
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl.Variables
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @typedoc "The dialog frame kind, mirroring the `NpcDialog.Expect` proto enum."
   @type expect :: :NEXT | :MENU | :INPUT_INT | :INPUT_STR | :CLOSE
@@ -48,13 +50,16 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   Flushes the buffered page as a `NEXT` frame, blocks for the client's
   acknowledgement, clears the buffer, and returns the context.
 
-  Halts `:no_player` on a detached ctx without flushing or blocking.
+  With no `mes` box open (`Ctx.mes_active`) it fails and the script goes on
+  without waiting, as the reference's `next` does. Halts `:no_player` on a
+  detached ctx without flushing or blocking.
   """
   @spec next(Ctx.t()) :: Ctx.t()
+  def next(%Ctx{mes_active: false} = ctx), do: Ctx.fail(ctx, :next, :no_mes)
   def next(%Ctx{game_state: nil} = ctx), do: Ctx.halt(ctx, :no_player)
 
   def next(%Ctx{} = ctx) do
-    pause(ctx)
+    ctx = pause(ctx)
     flush(ctx, :NEXT, [])
     await(ctx, :continue)
     %{ctx | page: []}
@@ -74,7 +79,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
 
   def select(%Ctx{} = ctx, options) do
     visible = options |> Enum.with_index(1) |> Enum.reject(fn {label, _} -> label == "" end)
-    pause(ctx)
+    ctx = pause(ctx)
     flush(ctx, :MENU, Enum.map(visible, &elem(&1, 0)))
     choice = await(ctx, :choice)
 
@@ -102,13 +107,13 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   def input(%Ctx{game_state: nil} = ctx, _kind), do: {Ctx.halt(ctx, :no_player), nil}
 
   def input(%Ctx{} = ctx, :int) do
-    pause(ctx)
+    ctx = pause(ctx)
     flush(ctx, :INPUT_INT, [])
     {%{ctx | page: []}, await(ctx, :number)}
   end
 
   def input(%Ctx{} = ctx, :string) do
-    pause(ctx)
+    ctx = pause(ctx)
     flush(ctx, :INPUT_STR, [])
     {%{ctx | page: []}, await(ctx, :input)}
   end
@@ -128,18 +133,33 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   def close(%Ctx{game_state: nil} = ctx), do: Ctx.halt(ctx, :no_player)
 
   def close(%Ctx{} = ctx) do
-    if ctx.mes_active, do: pause(ctx)
+    ctx = if ctx.mes_active, do: pause(ctx), else: end_timer_run(ctx)
     flush(ctx, :CLOSE, [])
     %{ctx | page: [], mes_active: false}
   end
 
-  # The script is about to wait for the player, so its session drops the
-  # dialogs it took over (`PlayerSession.script_paused/2`). Sent before the
-  # frame, so it reaches the session ahead of the player's answer. An item
-  # script running inline in its session never waits.
-  @spec pause(Ctx.t()) :: :ok
-  defp pause(%Ctx{session_pid: nil}), do: :ok
-  defp pause(%Ctx{session_pid: session_pid}), do: PlayerSession.script_paused(session_pid, self())
+  # The script is about to wait for the player: its timer label run closes,
+  # and its session drops the dialogs it took over
+  # (`PlayerSession.script_paused/2`). Sent before the frame, so it reaches the
+  # session ahead of the player's answer. An item script running inline in
+  # its session never waits.
+  @spec pause(Ctx.t()) :: Ctx.t()
+  defp pause(ctx) do
+    ctx = end_timer_run(ctx)
+    if ctx.session_pid, do: PlayerSession.script_paused(ctx.session_pid, self())
+    ctx
+  end
+
+  # The script stops running for now, so its timer label run (`Npc.Session`)
+  # closes, as the reference restores the NPC's timer fields once
+  # `run_script` returns.
+  @spec end_timer_run(Ctx.t()) :: Ctx.t()
+  defp end_timer_run(%Ctx{timer_run: nil} = ctx), do: ctx
+
+  defp end_timer_run(%Ctx{timer_run: gid} = ctx) do
+    NpcSession.end_run(gid)
+    %{ctx | timer_run: nil}
+  end
 
   @spec flush(Ctx.t(), expect(), [String.t()]) :: :ok
   defp flush(%Ctx{} = ctx, expect, options) do
@@ -218,7 +238,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
     do: Ctx.fail(ctx, :sleep, :inline_script)
 
   def sleep(%Ctx{} = ctx, ms) when is_integer(ms) and ms > 0 do
-    ctx = ctx |> release_player() |> release_awaiter()
+    ctx = ctx |> end_timer_run() |> release_player() |> release_awaiter()
     Process.sleep(ms)
     ctx
   end
@@ -243,30 +263,57 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   end
 
   @doc """
-  Pauses the running script for `ms` milliseconds while keeping the player
-  attached (rAthena `sleep2`), then resumes. Runs inside the interaction
-  coroutine, so only this script waits - the player session is untouched. If
-  the player session died while sleeping, halts `{:error, :no_player}` instead
-  of resuming. A non-positive duration, or no unit attached (a detached ctx),
-  fails the command and the script goes on without pausing.
+  Pauses the running script for `ms` milliseconds while keeping its unit
+  attached (rAthena `sleep2`), then resumes.
+
+  The player is let go for the pause, as the reference detaches the script
+  state when the script sleeps: the dialog the script took over holds them
+  again, or they are free to act (`PlayerSession.detach_script/2`). On waking
+  the script attaches again (`PlayerSession.attach_script/4`), taking over
+  whatever dialog holds the player then, and reads their current snapshot;
+  a player gone meanwhile halts `{:error, :no_player}`. A monster attached
+  instead (`Ctx.attached_unit`) only has to still exist, else the script
+  ends `{:error, :no_unit}`.
+
+  A non-positive duration, or no unit attached, fails the command and the
+  script goes on without pausing. An item script running inline in its
+  player session sleeps inside that session.
   """
   @spec sleep2(Ctx.t(), integer()) :: Ctx.t()
   def sleep2(%Ctx{status: {:error, _}} = ctx, _ms), do: ctx
-  def sleep2(%Ctx{game_state: nil} = ctx, _ms), do: Ctx.fail(ctx, :sleep2, :no_player)
 
-  def sleep2(%Ctx{} = ctx, ms) when is_integer(ms) and ms > 0 do
+  def sleep2(%Ctx{} = ctx, ms) when not is_integer(ms) or ms <= 0 do
+    Logger.warning("sleep2: non-positive duration #{inspect(ms)}, skipping")
+    ctx
+  end
+
+  def sleep2(%Ctx{game_state: nil, attached_unit: nil} = ctx, _ms),
+    do: Ctx.fail(ctx, :sleep2, :no_player)
+
+  def sleep2(%Ctx{game_state: nil, attached_unit: {:mob, instance_id}} = ctx, ms) do
+    ctx = end_timer_run(ctx)
     Process.sleep(ms)
 
-    if ctx.session_pid == nil or Process.alive?(ctx.session_pid) do
-      ctx
-    else
-      Ctx.halt(ctx, :no_player)
+    case UnitRegistry.get_unit(:mob, instance_id) do
+      {:ok, _unit} -> ctx
+      {:error, :not_found} -> Ctx.halt(ctx, :no_unit)
     end
   end
 
-  def sleep2(%Ctx{} = ctx, ms) do
-    Logger.warning("sleep2: non-positive duration #{inspect(ms)}, skipping")
+  def sleep2(%Ctx{session_pid: nil} = ctx, ms) do
+    Process.sleep(ms)
     ctx
+  end
+
+  def sleep2(%Ctx{session_pid: session_pid} = ctx, ms) do
+    ctx = end_timer_run(ctx)
+    _ = PlayerSession.detach_script(session_pid, self())
+    Process.sleep(ms)
+
+    case PlayerSession.attach_script(session_pid, self(), ctx.npc_gid, true) do
+      {:ok, %{game_state: game_state}} -> %{ctx | game_state: game_state}
+      _gone -> Ctx.halt(ctx, :no_player)
+    end
   end
 
   @doc """
@@ -290,7 +337,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
 
     case PlayerSession.script_apply(ctx.session_pid, op) do
       {:ok, _game_state} ->
-        pause(ctx)
+        ctx = pause(ctx)
         await(ctx, :progress)
         ctx
 

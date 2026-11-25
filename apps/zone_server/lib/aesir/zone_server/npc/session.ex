@@ -11,42 +11,63 @@ defmodule Aesir.ZoneServer.Npc.Session do
 
   rAthena gives each NPC a single timer, not one per label: the schedule is
   the module's `OnTimer<ms>` labels (from `events/0`), parsed and sorted
-  ascending. Starting the timer at an elapsed time arms a single
-  `Process.send_after/3` for the first label due strictly after it, as
-  `npc_timerevent_start` does — never a polling tick. When it fires, the
-  label's callback runs and the next label is armed immediately, computing
-  its delay from the current elapsed time (a monotonic-based read) rather
-  than accumulating drift off the previous delay.
+  ascending. The state is the reference's own three fields: `timer`, the
+  elapsed time when the timer last started, stopped or fired a label
+  (`nd->u.scr.timer`); `timertick`, the monotonic time it started ticking
+  from, `nil` when it is not ticking (`nd->u.scr.timertick`); and `armed`,
+  the one pending fire (`nd->u.scr.timerid`). Each command is a direct
+  transcription of its reference function:
 
-  After the last label fires the timer goes idle: elapsed keeps counting
-  (scripts loop by calling `init_timer/1` again, typically from the last
-  label). `init_timer/1` (rAthena `initnpctimer`) starts it from zero;
-  `start_timer/1` (`startnpctimer`) resumes a stopped timer from its frozen
-  elapsed time and leaves a running one alone; `set_timer/2`
-  (`setnpctimer`, `npc_settimerevent_tick`) sets the elapsed time, restarting
-  from it when the timer runs. `stop_timer/1` cancels the pending fire and
-  freezes elapsed; `get_timer/1` reads it back, monotonic-based while
-  running/idle, frozen while stopped.
+  - starting (`npc_timerevent_start`) does nothing when already armed or
+    ticking; otherwise it arms a single `Process.send_after/3` for the first
+    label due strictly after `timer` (never a polling tick) and starts
+    ticking. With no label left it only ticks (idle).
+  - stopping (`npc_timerevent_stop`) disarms, and when ticking folds the
+    ticked time into `timer` and stops ticking.
+  - setting (`npc_settimerevent_tick`) stops a started timer, sets `timer`,
+    and starts it again if it was started.
+  - reading (`npc_gettimerevent_tick`) is `timer` plus the time ticked since
+    `timertick`.
+
+  `init_timer/2` (`initnpctimer`) clears `timertick`, sets the timer to 0 and
+  starts it; `start_timer/2` (`startnpctimer`), `stop_timer/2`
+  (`stopnpctimer`), `set_timer/2` (`setnpctimer`) and `get_timer/1`
+  (`getnpctimer`) are the plain ones. A fire sets `timer` to the label's due
+  time and `timertick` to the fire's scheduled time (the current time when
+  more than a second late, as the reference's timer loop does), arms the next
+  label from that scheduled time, and runs the label. After the last label
+  the timer keeps ticking (scripts loop by calling `init_timer` again).
 
   ## Player-attached timers
 
   The NPC also keeps rAthena's attached player (`nd->u.scr.rid`): the attach
   flag of `initnpctimer`/`startnpctimer` sets it to the script's player, the
   detach flag of `stopnpctimer` clears it, and it otherwise persists. While it
-  is set, `init_timer`/`start_timer`/`stop_timer` act on that player's own NPC
-  timer slot instead (`npc_timerevent_start`/`npc_timerevent_stop`, the
-  player's `sd->npc_timer_id`), which the player's session owns
+  is set, starting and stopping act on that player's own NPC timer slot
+  instead (the player's `sd->npc_timer_id`), which the player's session owns
   (`Unit.Player.Handlers.NpcTimerHandler`); an offline player makes them a
-  no-op, as the reference's "Attached player not found". An attached
-  `init_timer` still resets this NPC's own timer the way
-  `npc_settimerevent_tick(nd, 0)` does. A slot starts from the NPC's stored
-  timer value (`nd->u.scr.timer`): the frozen time of a stopped timer, else the
-  start time or the time of the last fired label.
+  no-op, as the reference's "Attached player not found". Setting the timer
+  always acts on this NPC's own timer. A slot starts from `timer`.
 
-  An attached label run swaps the attached player and the timer value in for
-  its duration (`begin_attached_run/3`, `end_attached_run/3`), as
-  `npc_timerevent` does around `run_script`, so the run's own timer commands
-  target the firing player and `get_timer/1` reads the slot's time.
+  ## Label runs
+
+  A label run is the reference's `run_script` call around a fired label: it
+  lasts until the label first stops to wait (a dialog page, a menu, `sleep`,
+  `sleep2`) or ends. The running script's process opens it with
+  `begin_run/2` and closes it with `end_run/1`; its own timer commands see
+  the run's view meanwhile, and every other process sees the real state:
+
+  - a run of this NPC's own timer sees no attached player, as
+    `npc_timerevent` clears `rid` for it.
+  - a run of a player's slot (or of `OnTimerQuit` on logout) sees that
+    player attached, `timer` at the label's time and `timertick` at the
+    run's start, as `npc_timerevent` and `npc_timerevent_quit` swap them in.
+
+  What the run writes to its view is dropped when it closes, as the
+  reference restores the swapped fields after `run_script`; what it does to
+  the armed fire and to player slots stays. A quit run of the attached
+  player itself also detaches it (`npc_timerevent_quit`). The session
+  monitors the run's process, so a run that dies closes too.
 
   ## Dispatch decoupling
 
@@ -54,7 +75,7 @@ defmodule Aesir.ZoneServer.Npc.Session do
   handed to `start_link/1`, always in a detached task under
   `Aesir.ZoneServer.Npc.InteractionSupervisor` — never inside this process.
   `ensure_started/1` spawns sessions defaulting `:on_fire` to
-  `Aesir.ZoneServer.Npc.Events.trigger_gid/2`, the real event dispatcher;
+  `Aesir.ZoneServer.Npc.Events.trigger_timer/2`, the real event dispatcher;
   tests inject their own callback through `start_link/1`'s opts.
 
   ## Flags
@@ -139,8 +160,21 @@ defmodule Aesir.ZoneServer.Npc.Session do
   @typedoc "An `OnTimer<ms>` schedule entry."
   @type timer_entry :: {non_neg_integer(), String.t()}
 
-  @typedoc "The timer's run state: idle before/after its schedule, running mid-schedule, or stopped."
-  @type status :: :stopped | :running | :idle
+  @typedoc """
+  A label run's view of the timer fields it swaps (see "Label runs"): the
+  attached player, and for a slot or quit run the timer value and tick.
+  """
+  @type run_view :: %{
+          required(:rid) => non_neg_integer() | nil,
+          optional(:timer) => integer(),
+          optional(:timertick) => integer() | nil
+        }
+
+  @typedoc """
+  What a label run is about: this NPC's own timer, or `char_id`'s slot (or
+  logout) firing the label due at `time_ms`.
+  """
+  @type run_kind :: :own | {:fire | :quit, non_neg_integer(), integer()}
 
   @typedoc "A per-NPC display override: `sprite`/`name` are `nil` when not overridden."
   @type display_override() :: %{
@@ -170,14 +204,12 @@ defmodule Aesir.ZoneServer.Npc.Session do
     field :gid, non_neg_integer()
     field :schedule, [timer_entry()], default: []
     field :pending, [timer_entry()], default: []
-    field :status, status(), default: :stopped
-    field :start_mono, integer() | nil, default: nil
-    field :frozen_elapsed, integer(), default: 0
-    field :timer_ref, reference() | nil, default: nil
+    field :timer, integer(), default: 0
+    field :timertick, integer() | nil, default: nil
+    field :armed, {reference(), integer(), non_neg_integer()} | nil, default: nil
     field :on_fire, timer_callback()
-    field :base_ms, integer(), default: 0
     field :rid, non_neg_integer() | nil, default: nil
-    field :attached_run, {reference(), integer(), integer()} | nil, default: nil
+    field :runs, %{optional(pid()) => {reference(), run_view()}}, default: %{}
     field :enabled?, boolean(), default: true
     field :hidden?, boolean(), default: false
     field :cloaked?, boolean(), default: false
@@ -200,11 +232,12 @@ defmodule Aesir.ZoneServer.Npc.Session do
   end
 
   @doc """
-  Resets and (re)arms the NPC's timer, starting the session if needed.
+  Resets the NPC's timer to 0 and starts it (`initnpctimer`), starting the
+  session if needed.
 
   `attach` is the attach flag's player (`initnpctimer ...,1`), which becomes
-  the NPC's attached player first; with an attached player the reset timer
-  runs in that player's slot (see the moduledoc).
+  the NPC's attached player first; with an attached player the timer starts
+  in that player's slot from 0 (see the moduledoc).
   """
   @spec init_timer(non_neg_integer(), non_neg_integer() | nil) :: :ok
   def init_timer(gid, attach \\ nil) do
@@ -212,8 +245,8 @@ defmodule Aesir.ZoneServer.Npc.Session do
   end
 
   @doc """
-  Resumes a stopped timer from its frozen elapsed time, starting the session
-  if needed. A running or idle timer is left unchanged.
+  Starts the timer from its stored value (`startnpctimer`), starting the
+  session if needed. A timer already armed or ticking is left unchanged.
 
   `attach` is the attach flag's player (`startnpctimer ...,1`); with an
   attached player the timer resumes in that player's slot instead.
@@ -224,8 +257,9 @@ defmodule Aesir.ZoneServer.Npc.Session do
   end
 
   @doc """
-  Sets the timer's elapsed milliseconds, starting the session if needed. A
-  stopped timer stays stopped at `ms`; a running or idle one restarts from it.
+  Sets the timer's elapsed milliseconds (`setnpctimer`), starting the session
+  if needed. A stopped timer stays stopped at `ms`; a started one restarts
+  from it.
   """
   @spec set_timer(non_neg_integer(), integer()) :: :ok
   def set_timer(gid, ms) do
@@ -233,8 +267,9 @@ defmodule Aesir.ZoneServer.Npc.Session do
   end
 
   @doc """
-  Cancels the pending timer fire and freezes elapsed time. With an attached
-  player it cancels that player's slot instead, leaving this timer alone.
+  Stops the timer (`stopnpctimer`): disarms it and freezes its elapsed time.
+  With an attached player it cancels that player's slot instead, leaving this
+  timer alone.
 
   `detach?` is `stopnpctimer`'s detach flag: the attached player is cleared
   first, so this NPC's own timer stops. A gid with no running session has
@@ -249,8 +284,8 @@ defmodule Aesir.ZoneServer.Npc.Session do
   end
 
   @doc """
-  Returns the NPC timer's elapsed milliseconds; during an attached label run,
-  the running slot's time.
+  Returns the NPC timer's elapsed milliseconds (`getnpctimer`); inside a slot
+  run, the running slot's time.
 
   A gid with no running session has never had its timer started, so this
   returns `0` without spawning one.
@@ -264,24 +299,25 @@ defmodule Aesir.ZoneServer.Npc.Session do
   end
 
   @doc """
-  Starts an attached label run for `char_id`'s slot fired at `time_ms`: the
-  player becomes the attached player and `get_timer/1` reads `time_ms` plus
-  the time since this call (`npc_timerevent`). Returns the run's token and
-  the previous attached player, for `end_attached_run/3`.
+  Opens a label run for the calling process, starting the session if
+  needed: until `end_run/1`, its timer commands on this NPC see the run's
+  view (see "Label runs" in the moduledoc).
   """
-  @spec begin_attached_run(non_neg_integer(), non_neg_integer(), integer()) ::
-          {reference(), non_neg_integer() | nil}
-  def begin_attached_run(gid, char_id, time_ms) do
-    gid |> ensure_started() |> GenServer.call({:begin_attached_run, char_id, time_ms})
+  @spec begin_run(non_neg_integer(), run_kind()) :: :ok
+  def begin_run(gid, kind) do
+    gid |> ensure_started() |> GenServer.call({:begin_run, kind})
   end
 
   @doc """
-  Ends the attached label run `token`: the attached player becomes `rid` and
-  the timer value stops being overridden.
+  Closes the calling process's label run on this NPC, dropping what it wrote
+  to its view. Without an open run, or a running session, nothing changes.
   """
-  @spec end_attached_run(non_neg_integer(), reference(), non_neg_integer() | nil) :: :ok
-  def end_attached_run(gid, token, rid) do
-    gid |> ensure_started() |> GenServer.call({:end_attached_run, token, rid})
+  @spec end_run(non_neg_integer()) :: :ok
+  def end_run(gid) do
+    case whereis(gid) do
+      nil -> :ok
+      pid -> GenServer.cast(pid, {:end_run, self()})
+    end
   end
 
   @doc """
@@ -426,7 +462,7 @@ defmodule Aesir.ZoneServer.Npc.Session do
   @doc """
   Starts a session for `gid`.
 
-  Accepts `:on_fire` (defaults to `Aesir.ZoneServer.Npc.Events.trigger_gid/2`,
+  Accepts `:on_fire` (defaults to `Aesir.ZoneServer.Npc.Events.trigger_timer/2`,
   the real event dispatcher) as the callback invoked, detached, when a
   scheduled `OnTimer<ms>` label fires. Intended to be started through
   `ensure_started/1`; exposed directly for tests that need to inject a
@@ -452,7 +488,7 @@ defmodule Aesir.ZoneServer.Npc.Session do
   @impl GenServer
   def init(opts) do
     gid = Keyword.fetch!(opts, :gid)
-    on_fire = Keyword.get(opts, :on_fire, &Events.trigger_gid/2)
+    on_fire = Keyword.get(opts, :on_fire, &Events.trigger_timer/2)
 
     # A supervisor's terminate_child/2 sends an untrapped :shutdown exit
     # signal, which would kill this process before terminate/2 runs. Trapping
@@ -477,79 +513,40 @@ defmodule Aesir.ZoneServer.Npc.Session do
   end
 
   @impl GenServer
-  def handle_call({:init_timer, attach}, _from, state) do
-    case attach_rid(state, attach) do
-      %{rid: nil} = state ->
-        {:reply, :ok, start_at(state, 0)}
-
-      %{rid: rid} = state ->
-        state = reset_for_attached_init(state)
-        start_slot(state, rid, 0)
-        {:reply, :ok, state}
-    end
+  def handle_call({:init_timer, attach}, {caller, _tag}, state) do
+    in_run(state, caller, fn state ->
+      state
+      |> attach_rid(attach)
+      |> Map.put(:timertick, nil)
+      |> set_tick(0)
+      |> timer_start()
+    end)
   end
 
-  @impl GenServer
-  def handle_call({:start_timer, attach}, _from, state) do
-    case attach_rid(state, attach) do
-      %{rid: nil, status: :stopped} = state ->
-        {:reply, :ok, start_at(state, state.frozen_elapsed)}
-
-      %{rid: nil} = state ->
-        {:reply, :ok, state}
-
-      %{rid: rid} = state ->
-        start_slot(state, rid, stored_timer(state))
-        {:reply, :ok, state}
-    end
+  def handle_call({:start_timer, attach}, {caller, _tag}, state) do
+    in_run(state, caller, &(&1 |> attach_rid(attach) |> timer_start()))
   end
 
-  @impl GenServer
-  def handle_call({:set_timer, ms}, _from, %{status: :stopped} = state) do
-    {:reply, :ok, %{state | frozen_elapsed: ms}}
+  def handle_call({:set_timer, ms}, {caller, _tag}, state) do
+    in_run(state, caller, &set_tick(&1, ms))
   end
 
-  def handle_call({:set_timer, ms}, _from, state), do: {:reply, :ok, start_at(state, ms)}
-
-  @impl GenServer
-  def handle_call({:stop_timer, detach?}, _from, state) do
-    state = if detach?, do: %{state | rid: nil}, else: state
-
-    case state.rid do
-      nil ->
-        {:reply, :ok, stop_own(state)}
-
-      rid ->
-        with_player(rid, "npc_timerevent_stop", &PlayerSession.npc_timer_stop/1)
-        {:reply, :ok, state}
-    end
+  def handle_call({:stop_timer, detach?}, {caller, _tag}, state) do
+    in_run(state, caller, fn state ->
+      state = if detach?, do: %{state | rid: nil}, else: state
+      timer_stop(state)
+    end)
   end
 
-  @impl GenServer
-  def handle_call(:get_timer, _from, %{attached_run: {_token, time_ms, fired_mono}} = state) do
-    {:reply, time_ms + now_ms() - fired_mono, state}
+  def handle_call(:get_timer, {caller, _tag}, state) do
+    {:reply, state |> view(caller) |> elapsed(), state}
   end
 
-  def handle_call(:get_timer, _from, state) do
-    {:reply, elapsed_now(state), state}
-  end
-
-  @impl GenServer
-  def handle_call({:begin_attached_run, char_id, time_ms}, _from, state) do
-    token = make_ref()
-    run = {token, time_ms, now_ms()}
-    {:reply, {token, state.rid}, %{state | rid: char_id, attached_run: run}}
-  end
-
-  @impl GenServer
-  def handle_call({:end_attached_run, token, rid}, _from, state) do
-    attached_run =
-      case state.attached_run do
-        {^token, _time_ms, _fired_mono} -> nil
-        other -> other
-      end
-
-    {:reply, :ok, %{state | rid: rid, attached_run: attached_run}}
+  def handle_call({:begin_run, kind}, {caller, _tag}, state) do
+    state = drop_run(state, caller)
+    {view, state} = open_view(kind, state)
+    runs = Map.put(state.runs, caller, {Process.monitor(caller), view})
+    {:reply, :ok, %{state | runs: runs}}
   end
 
   @impl GenServer
@@ -583,19 +580,38 @@ defmodule Aesir.ZoneServer.Npc.Session do
     {:reply, :ok, new_state}
   end
 
-  # Only a fire whose ref still matches the currently-armed one, on a timer
-  # that's still running, is honored. `Process.cancel_timer/1` cannot
-  # guarantee an in-flight message isn't already in the process mailbox, so
-  # a fire scheduled by a since-stopped or since-reset timer must be
-  # recognizable and dropped rather than relied on to never arrive.
   @impl GenServer
-  def handle_info({:timer_fire, ref, label}, %{status: :running, timer_ref: ref} = state) do
+  def handle_cast({:end_run, caller}, state), do: {:noreply, drop_run(state, caller)}
+
+  # Only a fire whose ref still matches the armed one is honored: a fire
+  # already in the mailbox when its timer was stopped or reset must be
+  # recognizable and dropped rather than relied on to never arrive. The fire
+  # writes the real fields, whatever runs are open (`npc_timerevent` with no
+  # attached player).
+  @impl GenServer
+  def handle_info({:timer_fire, ref, label}, %{armed: {ref, deadline, due_ms}} = state) do
+    now = now_ms()
+    tick = if (now - deadline) in 0..1000, do: deadline, else: now
+    state = %{state | timer: due_ms, timertick: tick, armed: nil}
+
+    state =
+      case state.pending do
+        [] -> state
+        [{next_ms, next_label} | rest] -> arm(%{state | pending: rest}, next_ms, next_label, tick)
+      end
+
     dispatch(state.gid, label, state.on_fire)
-    [{due_ms, ^label}] = parse_on_timer(label)
-    {:noreply, arm_next(%{state | base_ms: due_ms}, elapsed_now(state))}
+    {:noreply, state}
   end
 
   def handle_info({:timer_fire, _ref, _label}, state), do: {:noreply, state}
+
+  def handle_info({:DOWN, mref, :process, caller, _reason}, state) do
+    case state.runs do
+      %{^caller => {^mref, _view}} -> {:noreply, %{state | runs: Map.delete(state.runs, caller)}}
+      _not_a_run -> {:noreply, state}
+    end
+  end
 
   @impl GenServer
   def terminate(_reason, state) do
@@ -625,53 +641,121 @@ defmodule Aesir.ZoneServer.Npc.Session do
     ProcessTree.get({@session_dynamic_supervisor, :server}) || @session_dynamic_supervisor
   end
 
-  # Runs the timer from `elapsed_ms`: only labels due strictly after it are
-  # pending, as `npc_timerevent_start` picks the first `timer > nd->u.scr.timer`.
-  @spec start_at(t(), integer()) :: t()
-  defp start_at(state, elapsed_ms) do
-    pending = Enum.filter(state.schedule, fn {due_ms, _label} -> due_ms > elapsed_ms end)
-
-    %{
-      state
-      | pending: pending,
-        start_mono: now_ms() - elapsed_ms,
-        frozen_elapsed: 0,
-        base_ms: elapsed_ms
-    }
-    |> arm_next(elapsed_ms)
-  end
-
-  @spec stop_own(t()) :: t()
-  defp stop_own(state) do
-    %{
-      state
-      | status: :stopped,
-        timer_ref: nil,
-        frozen_elapsed: elapsed_now(state),
-        start_mono: nil
-    }
-  end
-
   defp attach_rid(state, nil), do: state
   defp attach_rid(state, char_id), do: %{state | rid: char_id}
 
-  # The attached `initnpctimer` first zeroes `timertick` and runs
-  # `npc_settimerevent_tick(nd, 0)` with no attached player: a running timer
-  # (an armed `timerid`) restarts from 0, and an idle or stopped one is left
-  # stopped at 0.
-  @spec reset_for_attached_init(t()) :: t()
-  defp reset_for_attached_init(%{status: :running} = state), do: start_at(state, 0)
+  # `npc_timerevent_start`: an attached player's slot starts from `timer`;
+  # this NPC's own timer arms the first label due after `timer` and ticks,
+  # unless already armed or ticking.
+  @spec timer_start(t()) :: t()
+  defp timer_start(%{rid: nil, armed: nil, timertick: nil} = state) do
+    now = now_ms()
 
-  defp reset_for_attached_init(state) do
-    %{state | status: :stopped, timer_ref: nil, start_mono: nil, frozen_elapsed: 0, base_ms: 0}
+    case Enum.filter(state.schedule, fn {due_ms, _label} -> due_ms > state.timer end) do
+      [] ->
+        %{state | timertick: now}
+
+      [{due_ms, label} | rest] ->
+        arm(%{state | timertick: now, pending: rest}, due_ms, label, now)
+    end
   end
 
-  # `nd->u.scr.timer`: the stopped time, otherwise the time the timer last
-  # started from or fired a label at; an attached run swaps in its slot time.
-  @spec stored_timer(t()) :: integer()
-  defp stored_timer(%{attached_run: {_token, time_ms, _fired_mono}}), do: time_ms
-  defp stored_timer(%{status: :stopped, frozen_elapsed: frozen_elapsed}), do: frozen_elapsed
-  defp stored_timer(%{base_ms: base_ms}), do: base_ms
+  defp timer_start(%{rid: nil} = state), do: state
+
+  defp timer_start(%{rid: rid} = state) do
+    start_slot(state, rid, state.timer)
+    state
+  end
+
+  # `npc_timerevent_stop`: an attached player's slot is cancelled; this
+  # NPC's own timer disarms, and folds its ticked time into `timer`.
+  @spec timer_stop(t()) :: t()
+  defp timer_stop(%{rid: nil} = state) do
+    state = %{state | armed: nil, pending: []}
+
+    case state.timertick do
+      nil -> state
+      tick -> %{state | timer: state.timer + now_ms() - tick, timertick: nil}
+    end
+  end
+
+  defp timer_stop(%{rid: rid} = state) do
+    with_player(rid, "npc_timerevent_stop", &PlayerSession.npc_timer_stop/1)
+    state
+  end
+
+  # `npc_settimerevent_tick`: always this NPC's own timer, whatever player is
+  # attached.
+  @spec set_tick(t(), integer()) :: t()
+  defp set_tick(state, ms) do
+    started? = state.armed != nil or state.timertick != nil
+    own = %{state | rid: nil}
+    own = if started?, do: timer_stop(own), else: own
+    own = %{own | timer: ms}
+    own = if started?, do: timer_start(own), else: own
+    %{own | rid: state.rid}
+  end
+
+  # `npc_gettimerevent_tick`.
+  @spec elapsed(t()) :: integer()
+  defp elapsed(%{timer: timer, timertick: nil}), do: timer
+  defp elapsed(%{timer: timer, timertick: tick}), do: timer + now_ms() - tick
+
+  # Arms the fire of the label due at `due_ms`, from the time `from_tick` at
+  # which the timer stood at `timer`.
+  @spec arm(t(), non_neg_integer(), String.t(), integer()) :: t()
+  defp arm(state, due_ms, label, from_tick) do
+    ref = make_ref()
+    deadline = from_tick + due_ms - state.timer
+    Process.send_after(self(), {:timer_fire, ref, label}, max(deadline - now_ms(), 0))
+    %{state | armed: {ref, deadline, due_ms}}
+  end
+
+  # A command from `caller` runs against its run's view when it has one:
+  # the swapped fields are read from and written back to the view, the rest
+  # of the state is the real one.
+  @spec in_run(t(), pid(), (t() -> t())) :: {:reply, :ok, t()}
+  defp in_run(state, caller, fun) do
+    case Map.fetch(state.runs, caller) do
+      {:ok, {mref, run_view}} ->
+        keys = Map.keys(run_view)
+        done = state |> Map.merge(run_view) |> fun.()
+        runs = Map.put(state.runs, caller, {mref, Map.take(done, keys)})
+        {:reply, :ok, %{Map.merge(done, Map.take(state, keys)) | runs: runs}}
+
+      :error ->
+        {:reply, :ok, fun.(state)}
+    end
+  end
+
+  @spec view(t(), pid()) :: t()
+  defp view(state, caller) do
+    case Map.fetch(state.runs, caller) do
+      {:ok, {_mref, run_view}} -> Map.merge(state, run_view)
+      :error -> state
+    end
+  end
+
+  @spec open_view(run_kind(), t()) :: {run_view(), t()}
+  defp open_view(:own, state), do: {%{rid: nil}, state}
+
+  defp open_view({kind, char_id, time_ms}, state) do
+    run_view = %{rid: char_id, timer: time_ms, timertick: now_ms()}
+    state = if kind == :quit and state.rid == char_id, do: %{state | rid: nil}, else: state
+    {run_view, state}
+  end
+
+  @spec drop_run(t(), pid()) :: t()
+  defp drop_run(state, caller) do
+    case Map.pop(state.runs, caller) do
+      {{mref, _view}, runs} ->
+        Process.demonitor(mref, [:flush])
+        %{state | runs: runs}
+
+      {nil, _runs} ->
+        state
+    end
+  end
 
   defp start_slot(state, rid, from_ms) do
     with_player(rid, "npc_timerevent_start", fn pid ->
@@ -687,26 +771,6 @@ defmodule Aesir.ZoneServer.Npc.Session do
 
     :ok
   end
-
-  # `elapsed_ms` is the caller's authoritative elapsed reading, taken
-  # explicitly rather than re-derived from `state` here: at the init_timer
-  # call site `status` hasn't yet flipped away from :stopped when this runs,
-  # so `elapsed_now/1`'s :stopped clause would silently answer from
-  # whatever `frozen_elapsed` happens to hold instead of the just-reset 0.
-  @spec arm_next(t(), integer()) :: t()
-  defp arm_next(%{pending: []} = state, _elapsed_ms), do: %{state | status: :idle, timer_ref: nil}
-
-  defp arm_next(%{pending: [{due_ms, label} | rest]} = state, elapsed_ms) do
-    ref = make_ref()
-    delay = max(due_ms - elapsed_ms, 0)
-    Process.send_after(self(), {:timer_fire, ref, label}, delay)
-    %{state | status: :running, timer_ref: ref, pending: rest}
-  end
-
-  @spec elapsed_now(t()) :: integer()
-  defp elapsed_now(%{status: :stopped, frozen_elapsed: frozen_elapsed}), do: frozen_elapsed
-  defp elapsed_now(%{start_mono: nil}), do: 0
-  defp elapsed_now(%{start_mono: start_mono}), do: now_ms() - start_mono
 
   @spec now_ms() :: integer()
   defp now_ms, do: System.monotonic_time(:millisecond)

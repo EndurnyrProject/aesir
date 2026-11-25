@@ -40,8 +40,14 @@ defmodule Aesir.ZoneServer.Script.DialogTest do
     end
 
     test "a cancel during a NEXT ends the dialog promptly (interaction exits :normal)" do
-      ctx = build_ctx()
+      ctx = build_ctx() |> Dsl.mes("line")
       assert_cancel_exits(fn -> Dsl.next(ctx) end)
+    end
+
+    @tag :capture_log
+    test "with no mes box open it fails and the script goes on without a frame" do
+      assert %{failures: [next: :no_mes], page: []} = Dsl.next(build_ctx())
+      refute_received {:send, _ch, {:npc_dialog, _dialog}}
     end
   end
 
@@ -109,7 +115,7 @@ defmodule Aesir.ZoneServer.Script.DialogTest do
 
   describe "npc_id validation" do
     test "next/1 drops an NpcInteract whose npc_id does not match the ctx gid" do
-      ctx = build_ctx()
+      ctx = %{build_ctx() | mes_active: true}
       parent = self()
 
       pid =

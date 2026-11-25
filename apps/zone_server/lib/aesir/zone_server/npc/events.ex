@@ -87,8 +87,7 @@ defmodule Aesir.ZoneServer.Npc.Events do
   end
 
   @doc """
-  Targeted, detached event dispatch for an already-known gid — what
-  `Npc.Session`'s timer fire invokes.
+  Targeted, detached event dispatch for an already-known gid.
 
   Resolves `gid` to its module and spawns a detached `on_event/2` task when
   the module declares `label` in `events/0`. An unresolved gid or an
@@ -96,10 +95,22 @@ defmodule Aesir.ZoneServer.Npc.Events do
   fire-and-forget contract.
   """
   @spec trigger_gid(non_neg_integer(), String.t()) :: :ok
-  def trigger_gid(gid, label) do
+  def trigger_gid(gid, label), do: trigger_gid(gid, label, nil)
+
+  @doc """
+  Runs a label of the NPC's own timer (`npc_timerevent` with no attached
+  player): what `Npc.Session`'s timer fire invokes. Dispatched like
+  `trigger_gid/2`, but the label runs inside an `:own` label run
+  (`Npc.Session.begin_run/2`), so until it first waits or ends its timer
+  commands see no attached player.
+  """
+  @spec trigger_timer(non_neg_integer(), String.t()) :: :ok
+  def trigger_timer(gid, label), do: trigger_gid(gid, label, :own)
+
+  defp trigger_gid(gid, label, run) do
     with {:ok, {module, _placement}} <- Registry.module_for_unit(gid),
          true <- label in module.events() do
-      spawn_detached(module, gid, label)
+      spawn_detached(module, gid, label, nil, run)
     else
       :error ->
         Logger.warning("npc event trigger: unresolved gid #{inspect(gid)}")
@@ -187,11 +198,10 @@ defmodule Aesir.ZoneServer.Npc.Events do
   @doc """
   Runs a player-attached timer label (`npc_timerevent`, or `npc_timerevent_quit`
   for `OnTimerQuit`) as an attached `Script.Interaction`, the way
-  `trigger_attached/4` does, but inside the reference's swap: for the run the
-  NPC's attached player is the script's player and its timer reads `time_ms`
-  (`Npc.Session.begin_attached_run/3`). Afterwards the previous attached player
-  is restored; for a quit run, a previous attached player that is this very
-  player is cleared instead, as the logged-off player detaches.
+  `trigger_attached/4` does, but inside a label run (`Npc.Session.begin_run/2`):
+  until the label first waits or ends, the NPC's attached player is the
+  script's player and its timer reads `time_ms`; then the NPC's own values
+  are back. A quit run of the attached player itself detaches it.
 
   Unlike `trigger_attached/4` the NPC's enabled state is not checked: a timer
   fires regardless. Returns `{:error, :no_handler}` when `gid` does not resolve
@@ -209,21 +219,26 @@ defmodule Aesir.ZoneServer.Npc.Events do
     with {:ok, {module, _placement}} <- Registry.module_for_unit(gid),
          true <- label in module.events() do
       Interaction.start(session_pid, module, base_ctx, fn ctx ->
-        run_timer_label(module, gid, label, ctx, time_ms, kind)
+        in_label_run(gid, {kind, ctx.char_id, time_ms}, ctx, &module.on_event(label, &1))
       end)
     else
       _not_handled -> {:error, :no_handler}
     end
   end
 
-  defp run_timer_label(module, gid, label, ctx, time_ms, kind) do
-    {token, previous} = NpcSession.begin_attached_run(gid, ctx.char_id, time_ms)
+  # Runs `fun` inside a label run of `gid` (none for `nil`). The ctx carries
+  # the run so the script's first wait closes it; the end closes it otherwise.
+  @spec in_label_run(non_neg_integer(), NpcSession.run_kind() | nil, Ctx.t(), (Ctx.t() -> term())) ::
+          term()
+  defp in_label_run(_gid, nil, ctx, fun), do: fun.(ctx)
+
+  defp in_label_run(gid, kind, ctx, fun) do
+    :ok = NpcSession.begin_run(gid, kind)
 
     try do
-      module.on_event(label, ctx)
+      fun.(%{ctx | timer_run: gid})
     after
-      restored = if kind == :quit and previous == ctx.char_id, do: nil, else: previous
-      NpcSession.end_attached_run(gid, token, restored)
+      NpcSession.end_run(gid)
     end
   end
 
@@ -244,10 +259,16 @@ defmodule Aesir.ZoneServer.Npc.Events do
     :ok
   end
 
-  @spec spawn_detached(module(), non_neg_integer(), String.t(), Ctx.attached_unit()) :: :ok
-  defp spawn_detached(module, gid, label, unit \\ nil) do
+  @spec spawn_detached(
+          module(),
+          non_neg_integer(),
+          String.t(),
+          Ctx.attached_unit(),
+          NpcSession.run_kind() | nil
+        ) :: :ok
+  defp spawn_detached(module, gid, label, unit \\ nil, timer_run \\ nil) do
     ctx = %{Ctx.detached(module, gid) | attached_unit: unit}
-    run = fn -> run_detached(module, label, ctx) end
+    run = fn -> in_label_run(gid, timer_run, ctx, &run_detached(module, label, &1)) end
 
     case Task.Supervisor.start_child(supervisor(), run) do
       {:ok, _pid} ->

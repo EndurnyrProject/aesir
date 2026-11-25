@@ -87,7 +87,8 @@ defmodule Aesir.ZoneServer.Script.DetachedCtxTest do
     end
 
     test "next/1 ends the script with :no_player without flushing or blocking" do
-      assert ended(fn -> Dsl.next(detached()) end).status == {:error, :no_player}
+      assert ended(fn -> Dsl.next(%{detached() | mes_active: true}) end).status ==
+               {:error, :no_player}
     end
 
     test "close/1 ends the script with :no_player without flushing" do

@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Npc.SessionTest do
 
   use ExUnit.Case, async: false
 
+  import Aesir.TestWait
   import Aesir.ZoneServer.Factory
 
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
@@ -508,13 +509,13 @@ defmodule Aesir.ZoneServer.Npc.SessionTest do
       send(pid, {:timer_fire, make_ref(), "OnTimer1000"})
       refute_receive {:fired, ^gid, _label}, 50
 
-      real_ref = :sys.get_state(pid).timer_ref
+      {real_ref, _deadline, _due_ms} = :sys.get_state(pid).armed
       :ok = Session.stop_timer(gid)
 
       send(pid, {:timer_fire, real_ref, "OnTimer1000"})
       refute_receive {:fired, ^gid, _label}, 50
 
-      assert Session.get_timer(gid) == :sys.get_state(pid).frozen_elapsed
+      assert Session.get_timer(gid) == :sys.get_state(pid).timer
     end
   end
 
@@ -617,18 +618,100 @@ defmodule Aesir.ZoneServer.Npc.SessionTest do
       :ok = Session.init_timer(gid, char_id)
       assert_receive {:"$gen_cast", {:npc, {:timer_start, ^gid, 0, _pid}}}
 
-      {token, previous} = Session.begin_attached_run(gid, other_char_id, 500)
+      run =
+        run_process(gid, fn ->
+          :ok = Session.begin_run(gid, {:fire, other_char_id, 500})
+          send(test_pid, {:run_timer, Session.get_timer(gid)})
+          :ok = Session.stop_timer(gid)
+        end)
 
-      assert previous == char_id
-      assert Session.get_timer(gid) in 500..600
-      :ok = Session.stop_timer(gid)
+      assert_receive {:run_timer, run_timer} when run_timer in 500..600
       assert_receive {:other_player, {:npc, :timer_stop}}
+      assert Session.get_timer(gid) == 0, "other processes see the real timer during the run"
 
-      :ok = Session.end_attached_run(gid, token, previous)
+      finish_run(run, gid)
 
       assert Session.get_timer(gid) == 0
       :ok = Session.stop_timer(gid)
       assert_receive {:"$gen_cast", {:npc, :timer_stop}}
+    end
+
+    test "a timer write inside a slot run is dropped when it closes, but the fire it armed stays",
+         %{char_id: char_id, gid: gid, pid: pid} do
+      run =
+        run_process(gid, fn ->
+          :ok = Session.begin_run(gid, {:fire, char_id, 500})
+          :ok = Session.set_timer(gid, 60)
+        end)
+
+      assert {_ref, _deadline, 120} = :sys.get_state(pid).armed
+      finish_run(run, gid)
+
+      assert %{timer: 0, timertick: nil, armed: {_ref, _deadline, 120}} = :sys.get_state(pid)
+      assert Session.get_timer(gid) == 0
+      assert_receive {:fired, "OnTimer120"}, 300
+    end
+
+    test "the NPC's own label run sees no attached player", %{char_id: char_id, gid: gid} do
+      :ok = Session.init_timer(gid, char_id)
+      assert_receive {:"$gen_cast", {:npc, {:timer_start, ^gid, 0, _pid}}}
+
+      run =
+        run_process(gid, fn ->
+          :ok = Session.begin_run(gid, :own)
+          :ok = Session.start_timer(gid)
+        end)
+
+      refute_received {:"$gen_cast", {:npc, {:timer_start, _gid, _from, _pid}}}
+      assert_receive {:fired, "OnTimer50"}, 300
+      finish_run(run, gid)
+
+      :ok = Session.stop_timer(gid)
+      assert_receive {:"$gen_cast", {:npc, :timer_stop}}
+    end
+
+    test "concurrent slot runs each see their own player and leave the real one",
+         %{char_id: char_id, gid: gid} do
+      test_pid = self()
+      other_pid = spawn_link(fn -> forward_casts(test_pid) end)
+      other_char_id = register_player(other_pid)
+      :ok = Session.init_timer(gid, char_id)
+      assert_receive {:"$gen_cast", {:npc, {:timer_start, ^gid, 0, _pid}}}
+
+      mine = run_process(gid, fn -> :ok = Session.begin_run(gid, {:fire, char_id, 50}) end)
+
+      theirs =
+        run_process(gid, fn ->
+          :ok = Session.begin_run(gid, {:fire, other_char_id, 50})
+          :ok = Session.stop_timer(gid)
+        end)
+
+      assert_receive {:other_player, {:npc, :timer_stop}}
+      finish_run(mine, gid)
+      finish_run(theirs, gid)
+
+      :ok = Session.stop_timer(gid)
+      assert_receive {:"$gen_cast", {:npc, :timer_stop}}
+      refute_received {:other_player, _message}
+    end
+
+    test "a quit run of the attached player detaches it", %{char_id: char_id, gid: gid} do
+      :ok = Session.init_timer(gid, char_id)
+      assert_receive {:"$gen_cast", {:npc, {:timer_start, ^gid, 0, _pid}}}
+
+      run = run_process(gid, fn -> :ok = Session.begin_run(gid, {:quit, char_id, 50}) end)
+      finish_run(run, gid)
+
+      :ok = Session.start_timer(gid)
+      refute_received {:"$gen_cast", {:npc, {:timer_start, _gid, _from, _pid}}}
+      assert_receive {:fired, "OnTimer50"}, 300
+    end
+
+    test "a run whose process dies closes", %{char_id: char_id, gid: gid, pid: pid} do
+      {run, ref} = spawn_monitor(fn -> :ok = Session.begin_run(gid, {:fire, char_id, 500}) end)
+      assert_receive {:DOWN, ^ref, :process, ^run, :normal}
+
+      assert_eventually(fn -> :sys.get_state(pid).runs == %{} end)
     end
   end
 
@@ -638,6 +721,33 @@ defmodule Aesir.ZoneServer.Npc.SessionTest do
     UnitRegistry.register_unit(:player, char_id, PlayerState, state, pid)
     on_exit(fn -> UnitRegistry.unregister_player(char_id, pid) end)
     char_id
+  end
+
+  # A label run's process: runs `fun`, then on `finish_run/1` closes its run
+  # (and waits until the session has) and exits.
+  defp run_process(gid, fun) do
+    test_pid = self()
+
+    pid =
+      spawn_link(fn ->
+        fun.()
+        send(test_pid, {:run_ready, self()})
+
+        receive do
+          :finish ->
+            :ok = Session.end_run(gid)
+            _synced = Session.get_timer(gid)
+        end
+      end)
+
+    assert_receive {:run_ready, ^pid}
+    pid
+  end
+
+  defp finish_run(pid, _gid) do
+    ref = Process.monitor(pid)
+    send(pid, :finish)
+    assert_receive {:DOWN, ^ref, :process, ^pid, _reason}
   end
 
   defp forward_casts(test_pid) do

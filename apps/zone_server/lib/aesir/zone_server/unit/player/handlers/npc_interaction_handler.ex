@@ -127,7 +127,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   def detach_script(pid, %{interaction_lock: {pid, ref, _gid}} = state) do
     Process.demonitor(ref, [:flush])
     {_restored_or_released, state} = SessionState.end_npc_dialog(state)
-    state
+    grant_attaches(state)
   end
 
   def detach_script(pid, state) do
@@ -152,8 +152,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
       end
 
     case SessionState.end_npc_dialog(state) do
-      {:restored, state} -> state
-      {:released, state} -> NpcEventQueue.release(state)
+      {:restored, state} -> grant_attaches(state)
+      {:released, state} -> state |> NpcEventQueue.release() |> grant_attaches()
     end
   end
 
@@ -162,7 +162,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   progress bar or close): the dialogs it took over are lost for good, as
   rAthena frees the backed-up script of a script that stops to wait
   ("Double continuation"), and their scripts end. A skill-staged dialog is no
-  script and stays beneath. A pause from any other script changes nothing.
+  script and stays beneath. Now that the script waits, the scripts waiting to
+  attach take the player over (`attach/2`). A pause from any other script
+  changes nothing.
   """
   @spec script_paused(pid(), SessionState.t()) :: SessionState.t()
   def script_paused(pid, %{interaction_lock: {pid, _ref, _gid}} = state) do
@@ -176,10 +178,50 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
       Process.exit(lost_pid, :shutdown)
     end)
 
-    Map.put(state, :dialog_backups, kept)
+    state
+    |> Map.merge(%{dialog_backups: kept, dialog_running?: false})
+    |> grant_attaches()
   end
 
   def script_paused(_pid, state), do: state
+
+  @doc """
+  Attaches a script to the player (rAthena `script_attach_state`), taking
+  over the dialog holding them, if any (`SessionState.take_over_npc_dialog/2`).
+  The reference only ever attaches over a script that waits, so while the
+  holding script runs between two waits the request waits its turn, in
+  order, until that script waits, detaches the player or ends. A request is
+  a timer label to start or a script process asking through
+  `handle_attach_script/5`, which is answered when it attaches.
+  """
+  @spec attach(SessionState.t(), SessionState.dialog_attach()) :: SessionState.t()
+  def attach(state, request) do
+    queued = Map.update(state, :dialog_attaches, [request], &(&1 ++ [request]))
+    grant_attaches(queued)
+  end
+
+  @doc """
+  Handles a script asking to attach to this player (`attachrid`, or a
+  `sleep2` waking up). Without `force` a player held by a script refuses it
+  (`buildin_attachrid`'s `!sd->npc_id || force`); the script already holding
+  the player is attached already. Otherwise it attaches (`attach/2`) and is
+  answered `{:ok, %{game_state, connection_pid}}` once it has.
+  """
+  @spec handle_attach_script(
+          SessionState.t(),
+          GenServer.from(),
+          pid(),
+          non_neg_integer(),
+          boolean()
+        ) ::
+          {:reply, term(), SessionState.t()} | {:noreply, SessionState.t()}
+  def handle_attach_script(state, from, pid, gid, force?) do
+    case Map.get(state, :interaction_lock) do
+      {^pid, _ref, _gid} when force? -> {:reply, {:ok, attach_info(state)}, state}
+      lock when lock != nil and not force? -> {:reply, :busy, state}
+      _free_or_forced -> {:noreply, attach(state, {:reply, from, pid, gid})}
+    end
+  end
 
   @doc """
   Drops the backed-up dialog whose script monitor `ref` fired (it timed out
@@ -250,4 +292,40 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   end
 
   defp backups(state), do: Map.get(state, :dialog_backups, [])
+
+  # Hands the player to the first waiting script while the holder waits (or
+  # there is none), then stops: the new holder runs until its own wait.
+  defp grant_attaches(state) do
+    case Map.get(state, :dialog_attaches, []) do
+      [] ->
+        state
+
+      [request | rest] ->
+        state = Map.put(state, :dialog_attaches, rest)
+
+        if Map.get(state, :interaction_lock) != nil and Map.get(state, :dialog_running?),
+          do: Map.put(state, :dialog_attaches, [request | rest]),
+          else: state |> grant(request) |> grant_attaches()
+    end
+  end
+
+  defp grant(state, {:start, start, gid}) do
+    case start.() do
+      {:ok, pid} -> SessionState.take_over_npc_dialog(state, {pid, Process.monitor(pid), gid})
+      {:error, _no_handler} -> state
+    end
+  end
+
+  defp grant(state, {:reply, from, pid, gid}) do
+    if Process.alive?(pid) do
+      state = SessionState.take_over_npc_dialog(state, {pid, Process.monitor(pid), gid})
+      GenServer.reply(from, {:ok, attach_info(state)})
+      state
+    else
+      state
+    end
+  end
+
+  defp attach_info(state),
+    do: %{game_state: state.game_state, connection_pid: state.connection_pid}
 end

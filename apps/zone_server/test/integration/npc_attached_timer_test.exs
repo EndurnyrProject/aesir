@@ -11,6 +11,10 @@ defmodule Aesir.ZoneServer.NpcAttachedTimerIntegrationTest do
   3. A label firing while the player is in another NPC's dialog takes the
      player over (rAthena `script_attach_state`): the open dialog comes back
      when the label ends, and is lost when the label waits for the player.
+     While the open dialog's script runs between two waits, the label starts
+     only once it waits.
+  4. The label's view of the NPC timer lasts until its first wait: before it,
+     `getnpctimer` reads the slot's time, after it the NPC's own timer.
   """
 
   use Aesir.ZoneServer.IntegrationCase
@@ -34,6 +38,41 @@ defmodule Aesir.ZoneServer.NpcAttachedTimerIntegrationTest do
     def on_talk(ctx) do
       ctx = ctx |> initnpctimer("Clock#stack", 1) |> mes("first") |> next()
       send(:npc_attached_timer_probe, :talker_resumed)
+      ctx
+    end
+  end
+
+  defmodule SlowTalkerNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [
+        %{map: "prontera", x: 118, y: 60, sprite: 58, name: "Talker", unique_name: "Talker#stack"}
+      ]
+
+    @impl true
+    def on_talk(ctx) do
+      ctx = initnpctimer(ctx, "Clock#stack", 1)
+      send(:npc_attached_timer_probe, :talker_running)
+      Process.sleep(900)
+      ctx = ctx |> mes("first") |> next()
+      send(:npc_attached_timer_probe, :talker_resumed)
+      ctx
+    end
+  end
+
+  defmodule ReaderNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [
+        %{map: "prontera", x: 118, y: 60, sprite: 58, name: "Reader", unique_name: "Reader#stack"}
+      ]
+
+    @impl true
+    def on_talk(ctx), do: initnpctimer(ctx, "Reader#stack", 1)
+
+    @impl true
+    def on_event("OnTimer300", ctx) do
+      send(:npc_attached_timer_probe, {:before_wait, getnpctimer(ctx)})
+      ctx = ctx |> mes("read") |> next()
+      send(:npc_attached_timer_probe, {:after_wait, getnpctimer(ctx)})
       ctx
     end
   end
@@ -233,7 +272,41 @@ defmodule Aesir.ZoneServer.NpcAttachedTimerIntegrationTest do
     end
   end
 
-  defp open_talker_dialog do
+  test "a label firing while the open dialog's script runs starts once that script waits" do
+    NpcRegistry.reload([SlowTalkerNpc, QuietClockNpc])
+    player = start_listener()
+    talker_gid = gid_for(SlowTalkerNpc)
+    simulate_incoming_message(player.pid, %NpcTalk{npc_id: talker_gid})
+
+    assert_receive :talker_running, 1_000
+    refute_receive :clock_ran, 700
+
+    assert_receive :clock_ran, 1_000
+    assert Enum.any?(collect_packets_of_type(NpcDialog), &match?(%{npc_id: ^talker_gid}, &1))
+
+    assert_eventually(fn ->
+      match?(%{interaction_lock: {_pid, _ref, ^talker_gid}}, :sys.get_state(player.pid))
+    end)
+
+    answer(player, talker_gid)
+    assert_receive :talker_resumed, 1_000
+  end
+
+  test "a label reads the slot's time until its first wait, then the NPC's own timer" do
+    NpcRegistry.reload([ReaderNpc])
+    player = start_listener()
+    reader_gid = gid_for(ReaderNpc)
+    simulate_incoming_message(player.pid, %NpcTalk{npc_id: reader_gid})
+
+    assert_receive {:before_wait, before}, 1_000
+    assert before in 300..400
+    assert Enum.any?(collect_packets_of_type(NpcDialog), &match?(%{npc_id: ^reader_gid}, &1))
+
+    answer(player, reader_gid)
+    assert_receive {:after_wait, 0}, 1_000
+  end
+
+  defp start_listener do
     player =
       start_player_session(
         id: System.unique_integer([:positive]),
@@ -242,6 +315,11 @@ defmodule Aesir.ZoneServer.NpcAttachedTimerIntegrationTest do
       )
 
     on_exit(fn -> end_player_session(player) end)
+    player
+  end
+
+  defp open_talker_dialog do
+    player = start_listener()
     talker_gid = gid_for(TalkerNpc)
     simulate_incoming_message(player.pid, %NpcTalk{npc_id: talker_gid})
 

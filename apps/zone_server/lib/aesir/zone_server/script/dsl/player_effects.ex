@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.ScriptVitals
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -395,48 +396,60 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   def setfalcon(%Ctx{} = ctx, flag), do: apply_op(ctx, {:set_falcon, Rathena.truthy?(flag)})
 
   @doc """
-  Re-attaches the script to a different online player by account id (rAthena
-  `attachrid`), so subsequent commands and reads target that player.
+  Attaches the script to the online player with `account_id` (rAthena
+  `attachrid`), so subsequent commands, reads and dialog target that player.
 
-  Returns `{ctx, 1}` on success — ctx re-pointed at the target's session and
-  game state — or `{ctx, 0}` when the account is offline or has no character
-  in this zone. `force` is accepted for rAthena compatibility but has no
-  effect: Aesir has no notion of a player being attached to another script,
-  so an online target can always be re-attached.
+  The target's session attaches the script the way the reference's
+  `script_attach_state` does, taking over the dialog holding them, if any
+  (`PlayerSession.attach_script/4`); without `force` (default on) a player
+  held by a script refuses. Then the player the script was attached to before
+  is let go, as `script_detach_rid` does: the dialog the script took over
+  there holds them again, or they are free. Re-attaching to that same player
+  changes nothing.
 
-  The interaction coroutine still monitors its original session (its
-  `session_ref` is untouched), and `connection_pid` is left `nil` since the
-  target's connection is not tracked in the unit registry. `attachrid` is
-  intended for server-side state mutations (`give_item`, `set_char_var`,
-  `warp`, …) routed through `apply_op` on the re-pointed `session_pid`, not
-  for dialog or direct client sends to the target.
+  Returns `{ctx, 1}` with the ctx re-pointed at the target (its session,
+  snapshot, connection and the monitor the script's waits watch), or
+  `{ctx, 0}` when the account is offline, has no character in this zone, or
+  refused. An item script running inline in its player session cannot hand
+  that session to another, so the command fails there (no item script uses
+  it).
   """
-  @spec attachrid(Ctx.t(), integer(), boolean()) :: {Ctx.t(), 0 | 1}
+  @spec attachrid(Ctx.t(), integer(), boolean() | integer()) :: {Ctx.t(), 0 | 1}
   def attachrid(%Ctx{} = ctx, account_id), do: attachrid(ctx, account_id, true)
 
   def attachrid(%Ctx{status: {:error, _}} = ctx, _account_id, _force), do: {ctx, 0}
 
-  def attachrid(%Ctx{} = ctx, account_id, _force) do
-    case UnitRegistry.get_char_id_by_account(account_id) do
-      {:ok, char_id} ->
-        case UnitRegistry.get_unit(:player, char_id) do
-          {:ok, {_module, game_state, pid}} when is_pid(pid) ->
-            {%{
-               ctx
-               | char_id: char_id,
-                 account_id: account_id,
-                 game_state: game_state,
-                 session_pid: pid,
-                 connection_pid: nil
-             }, 1}
+  def attachrid(%Ctx{session_state: state} = ctx, _account_id, _force) when state != nil,
+    do: {Ctx.fail(ctx, :attachrid, :inline_script), 0}
 
-          _ ->
-            {ctx, 0}
-        end
-
-      {:error, _} ->
-        {ctx, 0}
+  def attachrid(%Ctx{} = ctx, account_id, force) do
+    with {:ok, char_id} <- UnitRegistry.get_char_id_by_account(account_id),
+         {:ok, {_module, _game_state, pid}} when is_pid(pid) <-
+           UnitRegistry.get_unit(:player, char_id),
+         {:ok, target} <-
+           PlayerSession.attach_script(pid, self(), ctx.npc_gid, Rathena.truthy?(force)) do
+      {repoint(ctx, char_id, account_id, pid, target), 1}
+    else
+      _offline_or_busy -> {ctx, 0}
     end
+  end
+
+  defp repoint(%Ctx{session_pid: pid} = ctx, _char_id, _account_id, pid, target),
+    do: %{ctx | game_state: target.game_state}
+
+  defp repoint(ctx, char_id, account_id, pid, target) do
+    if ctx.session_pid, do: PlayerSession.detach_script(ctx.session_pid, self())
+    if ctx.session_ref, do: Process.demonitor(ctx.session_ref, [:flush])
+
+    %{
+      ctx
+      | char_id: char_id,
+        account_id: account_id,
+        game_state: target.game_state,
+        session_pid: pid,
+        connection_pid: target.connection_pid,
+        session_ref: Process.monitor(pid)
+    }
   end
 
   defp roll(lo..hi//_step), do: lo + :rand.uniform(hi - lo + 1) - 1

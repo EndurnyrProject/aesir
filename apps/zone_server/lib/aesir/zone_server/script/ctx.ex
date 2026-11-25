@@ -15,7 +15,9 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   incoming `NpcInteract`), `page` (the accumulated `mes/2` lines awaiting a
   flush at the next dialog suspension point), `mes_active` (a `mes` box is
   open: set by `mes/2`, cleared by `close/1`, so a `close` pauses for the
-  player only after a `mes`), and `session_ref`, the monitor
+  player only after a `mes`), `timer_run` (the NPC gid whose label run this
+  script is in, see `Npc.Session`; its first wait closes the run), and
+  `session_ref`, the monitor
   the interaction holds on its session so a blocking primitive can exit cleanly
   if the session dies.
 
@@ -117,6 +119,7 @@ defmodule Aesir.ZoneServer.Script.Ctx do
     field :failures, [failure()], default: []
     field :attached_unit, attached_unit(), default: nil
     field :awaiter, pid() | nil, default: nil
+    field :timer_run, non_neg_integer() | nil, default: nil
   end
 
   @doc """

@@ -726,6 +726,25 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @doc """
+  Attaches the script `interaction_pid` runs (its dialogs keyed by `gid`) to
+  this player, taking over the dialog holding them (`attachrid`, a `sleep2`
+  waking up). Without `force?` a player held by a script refuses with
+  `:busy`. Answers once attached, which waits while the holding script runs
+  between two waits (`Handlers.NpcInteractionHandler.handle_attach_script/5`),
+  with the player's snapshot and connection. A session that is gone answers
+  `{:error, :target_unavailable}`.
+  """
+  @spec attach_script(pid(), pid(), non_neg_integer(), boolean()) ::
+          {:ok, %{game_state: PlayerState.t(), connection_pid: pid()}}
+          | :busy
+          | {:error, :target_unavailable}
+  def attach_script(pid, interaction_pid, gid, force?) do
+    GenServer.call(pid, {:npc, {:attach_script, interaction_pid, gid, force?}}, :infinity)
+  catch
+    :exit, _reason -> {:error, :target_unavailable}
+  end
+
+  @doc """
   Tells this player's session that the script `interaction_pid` runs is about
   to wait for the player, so the dialogs that script took over are lost (see
   `Handlers.NpcInteractionHandler.script_paused/2`).
@@ -1267,16 +1286,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     end
   end
 
-  # A dialog held beneath another ended on its own (idle timeout, crash); any
+  # A dialog held beneath another ended on its own (idle timeout, crash), or
+  # the NPC session an armed timer slot belongs to stopped (a reload); any
   # other monitor reaching here is the connection's.
   def handle_info({:DOWN, ref, :process, _pid, _reason}, %{game_state: game_state} = state) do
-    case NpcInteractionHandler.backup_ended(ref, state) do
-      {:ok, state} ->
-        {:noreply, state}
-
-      :error ->
-        Logger.info("Player #{game_state.character_id} connection process died")
-        {:stop, :normal, state}
+    with :error <- NpcInteractionHandler.backup_ended(ref, state),
+         :error <- NpcTimerHandler.npc_down(state, ref) do
+      Logger.info("Player #{game_state.character_id} connection process died")
+      {:stop, :normal, state}
+    else
+      {:ok, state} -> {:noreply, state}
     end
   end
 
@@ -1842,6 +1861,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   def handle_call({:npc, {:detach_script, interaction_pid}}, _from, state) do
     {:reply, :ok, NpcInteractionHandler.detach_script(interaction_pid, state)}
+  end
+
+  def handle_call({:npc, {:attach_script, interaction_pid, gid, force?}}, from, state) do
+    NpcInteractionHandler.handle_attach_script(state, from, interaction_pid, gid, force?)
   end
 
   @impl true

@@ -2340,7 +2340,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     {:ok, pid} = Interaction.start(self(), module, base_ctx)
     ref = Process.monitor(pid)
 
-    %{state | game_state: clean_game_state, interaction_lock: {pid, ref, gid}}
+    state
+    |> Map.merge(%{game_state: clean_game_state, interaction_lock: {pid, ref, gid}})
+    |> Map.put(:dialog_running?, true)
   end
 
   @doc """

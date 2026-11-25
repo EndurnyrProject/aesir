@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcTimerHandlerTest do
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Session, as: NpcSession
   alias Aesir.ZoneServer.Npc.SessionDynamicSupervisor
+  alias Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcTimerHandler
 
   setup :set_mimic_from_context
@@ -108,6 +109,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcTimerHandlerTest do
       assert state.dialog_backups == [{lock, nil}]
     end
 
+    test "waits while the open dialog's script runs, and takes over once it waits", context do
+      holder = spawn(fn -> Process.sleep(:infinity) end)
+      lock = {holder, make_ref(), 0x5000_0001}
+      state = %{context.state | interaction_lock: lock, dialog_running?: true}
+      state = NpcTimerHandler.start(state, context.gid, 0, context.npc_pid)
+
+      state = NpcTimerHandler.fire(state, state.npc_timer.ref)
+      refute_received {:ran, _, _, _, _, _}
+      assert state.interaction_lock == lock
+
+      state = NpcInteractionHandler.script_paused(holder, state)
+
+      assert_received {:ran, "OnTimer100", _gid, _session_pid, 100, :fire}
+      assert state.dialog_backups == [{lock, nil}]
+      assert state.dialog_attaches == []
+    end
+
     test "ignores a stale ref", context do
       state = NpcTimerHandler.start(context.state, context.gid, 0, context.npc_pid)
 
@@ -131,6 +149,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcTimerHandlerTest do
       timer = state.npc_timer.timer
 
       assert NpcTimerHandler.stop(state).npc_timer == nil
+      assert Process.read_timer(timer) == false
+    end
+  end
+
+  describe "npc_down/2" do
+    test "drops the slot when the NPC session it watches stops, at once", context do
+      state = NpcTimerHandler.start(context.state, context.gid, 0, context.npc_pid)
+      %{monitor: monitor, timer: timer} = state.npc_timer
+
+      assert NpcTimerHandler.npc_down(state, make_ref()) == :error
+      assert {:ok, %{npc_timer: nil}} = NpcTimerHandler.npc_down(state, monitor)
       assert Process.read_timer(timer) == false
     end
   end

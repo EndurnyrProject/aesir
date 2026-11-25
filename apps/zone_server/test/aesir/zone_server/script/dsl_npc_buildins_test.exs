@@ -40,10 +40,15 @@ defmodule Aesir.ZoneServer.Script.DslNpcBuildinsTest do
   defmodule StubSession do
     use GenServer
 
-    def start_link(_opts), do: GenServer.start_link(__MODULE__, nil)
+    def start_link(game_state), do: GenServer.start_link(__MODULE__, game_state)
 
     @impl true
-    def init(_), do: {:ok, nil}
+    def init(game_state), do: {:ok, game_state}
+
+    # A free player: the attaching script is let in at once.
+    @impl true
+    def handle_call({:npc, {:attach_script, _pid, _gid, _force?}}, _from, game_state),
+      do: {:reply, {:ok, %{game_state: game_state, connection_pid: nil}}, game_state}
   end
 
   setup :setup_ets_tables
@@ -106,7 +111,7 @@ defmodule Aesir.ZoneServer.Script.DslNpcBuildinsTest do
   describe "attachrid" do
     test "re-points ctx at the target online player" do
       target_gs = %PlayerState{character_id: 7, account_id: 777}
-      target_pid = start_supervised!({StubSession, nil})
+      target_pid = start_supervised!({StubSession, target_gs})
       UnitRegistry.register_player(target_gs, target_pid)
 
       {attached, ok} = Dsl.attachrid(ctx(), 777)
@@ -131,7 +136,7 @@ defmodule Aesir.ZoneServer.Script.DslNpcBuildinsTest do
 
     test "defaults force to true via attachrid/2" do
       target_gs = %PlayerState{character_id: 8, account_id: 888}
-      target_pid = start_supervised!({StubSession, nil})
+      target_pid = start_supervised!({StubSession, target_gs})
       UnitRegistry.register_player(target_gs, target_pid)
 
       {attached, ok} = Dsl.attachrid(ctx(), 888)

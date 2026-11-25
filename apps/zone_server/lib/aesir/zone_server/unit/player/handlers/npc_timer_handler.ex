@@ -12,9 +12,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcTimerHandler do
   runs attached to this player at once, never queued behind an open dialog:
   it takes the dialog lock, and an open dialog is kept beneath it until it
   ends, detaches the player or pauses for them
-  (`SessionState.take_over_npc_dialog/2`, rAthena `script_attach_state`). A
-  slot whose NPC session has since been replaced (a script reload) is
-  dropped, as the reference's NPC unload deletes it.
+  (`NpcInteractionHandler.attach/2`, rAthena `script_attach_state`); while
+  the open dialog's script runs between two waits, the label starts once it
+  waits. The
+  slot watches the NPC session it was started from: when that session stops
+  (a script reload) the slot is dropped at once (`npc_down/2`), as the
+  reference's NPC unload deletes every player's slot of the NPC. Labels are
+  armed from the scheduled time of the one before, as the reference's timer
+  loop passes the scheduled tick to the fire.
 
   On logout `quit/1` (`npc_timerevent_quit`) drops the slot and runs the NPC's
   `OnTimerQuit` label attached to this player, if it declares one.
@@ -24,20 +29,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcTimerHandler do
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Session, as: NpcSession
   alias Aesir.ZoneServer.Script.Ctx
+  alias Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler
   alias Aesir.ZoneServer.Unit.Player.SessionState
 
   @quit_label "OnTimerQuit"
 
   @typedoc """
-  An armed slot: the fire `ref`, its `Process.send_after/3` `timer`, the NPC
-  `gid` and the session pid it was started from, and the labels still to fire,
+  An armed slot: the fire `ref`, its `Process.send_after/3` `timer` and the
+  monotonic `deadline` it is scheduled for, the NPC `gid`, the session pid it
+  was started from and the `monitor` on it, and the labels still to fire,
   the armed one first.
   """
   @type slot :: %{
           ref: reference(),
           timer: reference(),
+          deadline: integer(),
           gid: non_neg_integer(),
           npc_pid: pid() | nil,
+          monitor: reference() | nil,
           pending: [NpcSession.timer_entry(), ...]
         }
 
@@ -50,19 +59,38 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcTimerHandler do
 
   def start(state, gid, from_ms, npc_pid) do
     case Enum.filter(NpcSession.schedule(gid), fn {due_ms, _label} -> due_ms > from_ms end) do
-      [] -> state
-      [{due_ms, _label} | _rest] = pending -> arm(state, gid, npc_pid, pending, due_ms - from_ms)
+      [] ->
+        state
+
+      [{due_ms, _label} | _rest] = pending ->
+        monitor = if npc_pid, do: Process.monitor(npc_pid)
+        slot = %{gid: gid, npc_pid: npc_pid, monitor: monitor}
+        arm(state, slot, pending, now_ms() + due_ms - from_ms)
     end
   end
 
   @doc "Cancels the armed slot, whichever NPC it belongs to."
   @spec stop(SessionState.t()) :: SessionState.t()
-  def stop(%{npc_timer: %{timer: timer}} = state) do
+  def stop(%{npc_timer: %{timer: timer} = slot} = state) do
     Process.cancel_timer(timer)
+    if slot.monitor, do: Process.demonitor(slot.monitor, [:flush])
     %{state | npc_timer: nil}
   end
 
   def stop(state), do: state
+
+  @doc """
+  Drops the slot when `monitor` is its watch on the NPC session, which has
+  stopped (`npc_unload`). `:error` when it is not.
+  """
+  @spec npc_down(SessionState.t(), reference()) :: {:ok, SessionState.t()} | :error
+  def npc_down(%{npc_timer: %{monitor: monitor, timer: timer}} = state, monitor)
+      when is_reference(monitor) do
+    Process.cancel_timer(timer)
+    {:ok, %{state | npc_timer: nil}}
+  end
+
+  def npc_down(_state, _monitor), do: :error
 
   @doc """
   Fires the armed label when `ref` is the armed slot's: arms the next label,
@@ -70,12 +98,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcTimerHandler do
   """
   @spec fire(SessionState.t(), reference()) :: SessionState.t()
   def fire(%{npc_timer: %{ref: ref} = slot} = state, ref) do
-    %{gid: gid, npc_pid: npc_pid, pending: [{due_ms, label} | rest]} = slot
+    %{gid: gid, npc_pid: npc_pid, deadline: deadline, pending: [{due_ms, label} | rest]} = slot
+    now = now_ms()
+    tick = if (now - deadline) in 0..1000, do: deadline, else: now
 
     state =
       case rest do
-        [] -> %{state | npc_timer: nil}
-        [{next_ms, _label} | _more] -> arm(state, gid, npc_pid, rest, next_ms - due_ms)
+        [] ->
+          if slot.monitor, do: Process.demonitor(slot.monitor, [:flush])
+          %{state | npc_timer: nil}
+
+        [{next_ms, _label} | _more] ->
+          arm(state, slot, rest, tick + next_ms - due_ms)
       end
 
     if NpcSession.whereis(gid) == npc_pid, do: run(state, gid, label, due_ms), else: state
@@ -100,20 +134,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcTimerHandler do
 
   def quit(state), do: {state, nil}
 
-  defp arm(state, gid, npc_pid, [{_due_ms, _label} | _rest] = pending, delay) do
+  defp arm(state, slot, [{_due_ms, _label} | _rest] = pending, deadline) do
     ref = make_ref()
-    timer = Process.send_after(self(), {:npc_timer_fire, ref}, max(delay, 0))
-    %{state | npc_timer: %{ref: ref, timer: timer, gid: gid, npc_pid: npc_pid, pending: pending}}
+    timer = Process.send_after(self(), {:npc_timer_fire, ref}, max(deadline - now_ms(), 0))
+
+    slot =
+      slot
+      |> Map.take([:gid, :npc_pid, :monitor])
+      |> Map.merge(%{ref: ref, timer: timer, deadline: deadline, pending: pending})
+
+    %{state | npc_timer: slot}
   end
 
-  defp run(state, gid, label, due_ms) do
-    case start_label(state, gid, label, due_ms, :fire) do
-      {:ok, pid} ->
-        SessionState.take_over_npc_dialog(state, {pid, Process.monitor(pid), gid})
+  defp now_ms, do: System.monotonic_time(:millisecond)
 
-      {:error, _no_handler} ->
-        state
-    end
+  defp run(state, gid, label, due_ms) do
+    start = fn -> start_label(state, gid, label, due_ms, :fire) end
+    NpcInteractionHandler.attach(state, {:start, start, gid})
   end
 
   defp start_label(state, gid, label, due_ms, kind) do

@@ -70,6 +70,63 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandlerTest do
     assert_receive {:relayed, {:npc_interact, ^answer}}
   end
 
+  describe "handle_attach_script/5" do
+    setup %{state: state} do
+      holder = waiting_process()
+      %{state: %{state | interaction_lock: {holder, make_ref(), 0x5000_0003}}, holder: holder}
+    end
+
+    test "without force a player held by a script refuses", %{state: state} do
+      from = {self(), make_ref()}
+
+      assert {:reply, :busy, ^state} =
+               NpcInteractionHandler.handle_attach_script(
+                 state,
+                 from,
+                 waiting_process(),
+                 7,
+                 false
+               )
+    end
+
+    test "the script already holding the player is attached already", %{
+      state: state,
+      holder: holder
+    } do
+      assert {:reply, {:ok, %{game_state: game_state}}, ^state} =
+               NpcInteractionHandler.handle_attach_script(
+                 state,
+                 {self(), make_ref()},
+                 holder,
+                 7,
+                 true
+               )
+
+      assert game_state == state.game_state
+    end
+
+    test "with force it waits while the holder runs, then takes over when it waits",
+         %{state: state, holder: holder} do
+      lock = state.interaction_lock
+      script = waiting_process()
+      tag = make_ref()
+      state = %{state | dialog_running?: true}
+
+      {:noreply, waiting} =
+        NpcInteractionHandler.handle_attach_script(state, {self(), tag}, script, 7, true)
+
+      refute_received {^tag, _reply}
+      assert waiting.interaction_lock == lock
+
+      attached = NpcInteractionHandler.script_paused(holder, waiting)
+
+      assert_received {^tag, {:ok, %{connection_pid: _connection}}}
+      assert {^script, _ref, 7} = attached.interaction_lock
+      assert hd(attached.dialog_backups) == {lock, nil}
+      assert attached.dialog_running?
+    end
+  end
+
   defp waiting_process, do: spawn(fn -> Process.sleep(:infinity) end)
 
   defp relay(to), do: spawn(fn -> receive do: (msg -> send(to, {:relayed, msg})) end)

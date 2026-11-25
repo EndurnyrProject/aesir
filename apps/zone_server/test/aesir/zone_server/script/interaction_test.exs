@@ -44,7 +44,7 @@ defmodule Aesir.ZoneServer.Script.InteractionTest do
     use Aesir.ZoneServer.Npc, spawn: []
 
     @impl true
-    def on_talk(ctx), do: next(ctx)
+    def on_talk(ctx), do: ctx |> mes("Wait.") |> next()
   end
 
   defmodule EndNpc do
