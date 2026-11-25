@@ -66,12 +66,27 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
 
   defp statements(tokens, acc) do
     cond do
-      tokens == [] -> {:ok, Enum.reverse(acc), []}
-      match?([{:punct, :rbrace} | _], tokens) -> {:ok, Enum.reverse(acc), tokens}
-      switch_kw?(tokens) -> {:ok, Enum.reverse(acc), tokens}
-      true -> with {:ok, stmt, rest} <- statement(tokens), do: statements(rest, add(stmt, acc))
+      tokens == [] ->
+        {:ok, Enum.reverse(acc), []}
+
+      match?([{:punct, :rbrace} | _], tokens) ->
+        {:ok, Enum.reverse(acc), tokens}
+
+      switch_kw?(tokens) ->
+        {:ok, Enum.reverse(acc), tokens}
+
+      true ->
+        with {:ok, stmt, rest} <- statement(tokens),
+             do: statements(stray(stmt, rest), add(stmt, acc))
     end
   end
+
+  # rAthena consumes the single character after an assignment as its terminator
+  # without checking it is `;`, so `.@a = (x));` assigns and the extra `)` is
+  # swallowed. `terminated/2` leaves `)` for `for` step clauses, which do not
+  # come through here.
+  defp stray({:assign, _, _}, [{:punct, :rparen} | rest]), do: rest
+  defp stray(_stmt, rest), do: rest
 
   # rAthena keywords are case-insensitive; the corpus spells `Default:` etc.
   defp switch_kw?([{:ident, kw} | _]), do: String.downcase(kw) in ~w(case default)

@@ -42,6 +42,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ParserTest do
               ]} = Parser.parse_body("sphmask_q = 1; .@list[0] = 5;")
     end
 
+    test "a stray ) after an assignment is swallowed as its terminator" do
+      assert {:ok,
+              [
+                {:assign, {:var, :local, "a", :int}, {:int, 1}},
+                {:assign, {:var, :local, "b", :int}, {:int, 2}}
+              ]} = Parser.parse_body(".@a = (1)); .@b = 2;")
+    end
+
     test "precedence matches C" do
       assert {:ok, [{:cmd, "x", [expr]}]} = Parser.parse_body("x 1 + 2 * 3;")
       assert expr == {:bin, :+, {:int, 1}, {:bin, :*, {:int, 2}, {:int, 3}}}
