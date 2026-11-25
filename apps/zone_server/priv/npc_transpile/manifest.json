@@ -52623,6 +52623,871 @@
       }
     ]
   },
+  "quests/quests_louyang.txt|script| #fire|lou_fild01:225:350": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Fire",
+    "output_hash": "ac7ec6932ecb7c9e53a50f031fed26ef93abf9d52af937e291b99122108584a4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/fire.ex",
+    "source_hash": "f685812702d0c75dc4f42c794cbcb26860b48906bd744e6274d7fbbe2f89101f",
+    "spawns": [
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 225,
+        "y": 350,
+        "map": "lou_fild01",
+        "dir": 0,
+        "sprite": 139,
+        "unique_name": " #fire"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script| #lou_drink1|lou_in01:107:163": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.LouDrink1",
+    "output_hash": "237bbf8b02e58c1bf5cea5b369c80415cd8533f09cd4965a98161336eaca4a54",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/lou_drink1.ex",
+    "source_hash": "5c45b5e18531632424887abb8c14097a480995e62e471bf29123a2f9aed79dba",
+    "spawns": [
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 107,
+        "y": 163,
+        "map": "lou_in01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": " #lou_drink1"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script| #lou_drink2|lou_in01:118:167": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.LouDrink2",
+    "output_hash": "bc04736cafe0f177f973ab73b63346242efb03d7148377f6498c1ecf8f9663d5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/lou_drink2.ex",
+    "source_hash": "8221f94a551e4fddcbe046643cfc0cc70152182cad16a93662a0f14bfb021955",
+    "spawns": [
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 118,
+        "y": 167,
+        "map": "lou_in01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": " #lou_drink2"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script| #lou_path|louyang:217:278": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.LouPath",
+    "output_hash": "a4aa54693a50e5d7d7eefee6a6040864ffeadc4647b733eee421c7d5351f42d2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/lou_path.ex",
+    "source_hash": "cb77d989aa9c378ec299396ebe0a995a4164ce26f5d0cfab6edc6cfd0b56aff4",
+    "spawns": [
+      {
+        "name": " ",
+        "scope": "shared",
+        "x": 217,
+        "y": 278,
+        "map": "louyang",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": " #lou_path"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Chef Assistant#lou1|lou_in02:58:183": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.ChefAssistant",
+    "output_hash": "dec07cb669149b129121e7dc438a503f6482d361c2335ffb82a72a8a9711436c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/chef_assistant.ex",
+    "source_hash": "b5e8d00d0bb4c9b20366fec4187a35f205af6aa50078041ab41c3a6e43396338",
+    "spawns": [
+      {
+        "name": "Chef Assistant",
+        "scope": "shared",
+        "x": 58,
+        "y": 183,
+        "map": "lou_in02",
+        "dir": 5,
+        "sprite": 823,
+        "unique_name": "Chef Assistant#lou1",
+        "trigger": [
+          5,
+          5
+        ]
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Chef#1-2|lou_in02:62:183": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Chef",
+    "output_hash": "18b14e744ae9baedda05236a69ec7a01ecccc7d4d2d6e22aabe5d3f05e261e20",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/chef.ex",
+    "source_hash": "2b45153a3c3308b265f2b9715700e64e24eb3ec99bb383bf16ce1f9987bb7336",
+    "spawns": [
+      {
+        "name": "Chef",
+        "scope": "shared",
+        "x": 62,
+        "y": 183,
+        "map": "lou_in02",
+        "dir": 3,
+        "sprite": 820,
+        "unique_name": "Chef#1-2",
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Chi Wu Ping#lou|louyang:261:123": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.ChiWuPing",
+    "output_hash": "b6ebebfe423274b8014345135cec4a927e81ae3062df39704bd7e77fd40cf968",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/chi_wu_ping.ex",
+    "source_hash": "5b31ac7f9e92a6defc33ef318c30e04efb507422afd5374a8d6d7a39e60ff414",
+    "spawns": [
+      {
+        "name": "Chi Wu Ping",
+        "scope": "shared",
+        "x": 261,
+        "y": 123,
+        "map": "louyang",
+        "dir": 3,
+        "sprite": 824,
+        "unique_name": "Chi Wu Ping#lou"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|City Hall Officer#lou|lou_in02:210:47": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.CityHallOfficer",
+    "output_hash": "0d9775d31d4750207cc09355051585c4bd20664752d75cdeba96851f2bac0a3d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/city_hall_officer.ex",
+    "source_hash": "e9e55a7a64697d00ef0b5e150df956a3046ec22533b83d501ae815c5a6dae97c",
+    "spawns": [
+      {
+        "name": "City Hall Officer",
+        "scope": "shared",
+        "x": 210,
+        "y": 47,
+        "map": "lou_in02",
+        "dir": 0,
+        "sprite": 825,
+        "unique_name": "City Hall Officer#lou"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Doctor#lyang|lou_in02:265:69": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Doctor",
+    "output_hash": "41d82787299ae0d3a81548c9be72d691b721973c8b3bece696759c6ec675bb65",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/doctor.ex",
+    "source_hash": "33b25647943075c122ff31818e8ec9f811799ba36e9b5d65ba8bf2517458b9e3",
+    "spawns": [
+      {
+        "name": "Doctor",
+        "scope": "shared",
+        "x": 265,
+        "y": 69,
+        "map": "lou_in02",
+        "dir": 5,
+        "sprite": 814,
+        "unique_name": "Doctor#lyang"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Employee#1|lou_in02:53:174": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Employee",
+    "output_hash": "06df7be0197ce518ca6f069e879b8442bb13d599593d6e1a209437a7ca307f14",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/employee.ex",
+    "source_hash": "46b7055628e97762de92ce2d392340879f1d6ba6c487673c271f14de8a6dc847",
+    "spawns": [
+      {
+        "name": "Employee",
+        "scope": "shared",
+        "x": 53,
+        "y": 174,
+        "map": "lou_in02",
+        "dir": 7,
+        "sprite": 822,
+        "unique_name": "Employee#1",
+        "trigger": [
+          6,
+          62
+        ]
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Employee#2|lou_in02:76:181": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Employee76181",
+    "output_hash": "4c23bbd2d25ff6072639cc58077b1cea249420abe8145dcbcc1ed8e364d2976b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/employee_76_181.ex",
+    "source_hash": "60704c59407c6d0dcdaa37befe8e11c7e94d6cc3c104922b5128c096bb6f59f8",
+    "spawns": [
+      {
+        "name": "Employee",
+        "scope": "shared",
+        "x": 76,
+        "y": 181,
+        "map": "lou_in02",
+        "dir": 3,
+        "sprite": 822,
+        "unique_name": "Employee#2",
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Employee#3|lou_in02:61:175": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Employee61175",
+    "output_hash": "006735ca50c519c542a465c250f3cd4bf344766ff8c47a45e507379691032023",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/employee_61_175.ex",
+    "source_hash": "f8ee30be68ed7824ba3fa8de5b1e7819bd1a8a0a41c7634abdc32a360158b3e6",
+    "spawns": [
+      {
+        "name": "Employee",
+        "scope": "shared",
+        "x": 61,
+        "y": 175,
+        "map": "lou_in02",
+        "dir": 3,
+        "sprite": 818,
+        "unique_name": "Employee#3",
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Employee#poison|lou_in02:253:45": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Employee25345",
+    "output_hash": "7fdae05717bca1f8ce9ae395e7b371dfa1271fa9cde2f90115d902d03ab3f35d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/employee_253_45.ex",
+    "source_hash": "6ba85cb54289248a95f7e9d78015c5d1752d48ffe291f0cfe99388d38fdd1c59",
+    "spawns": [
+      {
+        "name": "Employee",
+        "scope": "shared",
+        "x": 253,
+        "y": 45,
+        "map": "lou_in02",
+        "dir": 0,
+        "sprite": 822,
+        "unique_name": "Employee#poison"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Familiar-Looking Patient|lou_in02:272:55": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.FamiliarLookingPatient",
+    "output_hash": "0036237e212f584f2ac0aa8acdb0a0d0c89054a0b3ab541ec58d5bd286c6226b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/familiar_looking_patient.ex",
+    "source_hash": "659d0e0a3d20efe652810bfbb71bc43af33e04a409e556f3b0a2afc38a7effa7",
+    "spawns": [
+      {
+        "name": "Familiar-Looking Patient",
+        "scope": "shared",
+        "x": 272,
+        "y": 55,
+        "map": "lou_in02",
+        "dir": 0,
+        "sprite": 798
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Gunpowder Expert|lou_in01:43:147": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.GunpowderExpert",
+    "output_hash": "c0616552a0d3e5a2b6173dabf4ad666d078337d35a9c2e08b2dba725f5d0bc82",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/gunpowder_expert.ex",
+    "source_hash": "137091e9686518cba6d209738e0d9a2f9abf488c3ab327689e9592d6a2589953",
+    "spawns": [
+      {
+        "name": "Gunpowder Expert",
+        "scope": "shared",
+        "x": 43,
+        "y": 147,
+        "map": "lou_in01",
+        "dir": 3,
+        "sprite": 750
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Hermit|lou_in02:77:37": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Hermit",
+    "output_hash": "fbeb6b835f1b85f2e3e024f0e62f6f272a1b15e44078d06efde4916d0f8d3221",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/hermit.ex",
+    "source_hash": "5e20630ddcb3501188ebc076df6ffae51a62b26f83f7f1adb441eb3db4c635d5",
+    "spawns": [
+      {
+        "name": "Hermit",
+        "scope": "shared",
+        "x": 77,
+        "y": 37,
+        "map": "lou_in02",
+        "dir": 7,
+        "sprite": 824
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Jiang Rong#lou|lou_in02:43:169": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.JiangRong",
+    "output_hash": "494de95f66140937060007a8488b69c3a9bd9b51a5269d5e8e88c91fbe4abf7b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/jiang_rong.ex",
+    "source_hash": "5dc846cdd02a62fbc9c9a32f89c621a983cae4d14a8821cf12e90aa95c9b4ed7",
+    "spawns": [
+      {
+        "name": "Jiang Rong",
+        "scope": "shared",
+        "x": 43,
+        "y": 169,
+        "map": "lou_in02",
+        "dir": 1,
+        "sprite": 827,
+        "unique_name": "Jiang Rong#lou"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Jiu Chi Ling#lou|louyang:174:150": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.JiuChiLing",
+    "output_hash": "9218f954fd23f304cda2d5d65046dc4ee296bfd1fa25dda63094c9495c513b77",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/jiu_chi_ling.ex",
+    "source_hash": "d5d1b8b1558078eaaa16e75c07d3e7519590e57b3759acc3b42724a984c4e383",
+    "spawns": [
+      {
+        "name": "Jiu Chi Ling",
+        "scope": "shared",
+        "x": 174,
+        "y": 150,
+        "map": "louyang",
+        "dir": 5,
+        "sprite": 815,
+        "unique_name": "Jiu Chi Ling#lou"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Jiu Lian Bu#1-1|lou_fild01:195:177": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.JiuLianBu",
+    "output_hash": "4c60fb4289eb24688f04c1d26acb55c120a989855b4664264be801fa557e3513",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/jiu_lian_bu.ex",
+    "source_hash": "98a9c526c6863f217e3eca99f6ce3ca97f439713f5cc0b50de397bb3b4c1ab6f",
+    "spawns": [
+      {
+        "name": "Jiu Lian Bu",
+        "scope": "shared",
+        "x": 195,
+        "y": 177,
+        "map": "lou_fild01",
+        "dir": 5,
+        "sprite": 819,
+        "unique_name": "Jiu Lian Bu#1-1"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Jiu Lian Bu#1-2|lou_fild01:175:173": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.JiuLianBu175173",
+    "output_hash": "9f941b63b5fb27bbcf10729a863a3509714f8800f56829b38d0395fccc0a36e7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/jiu_lian_bu_175_173.ex",
+    "source_hash": "15430a10fb58db2708037a320d162085ee7608dac16a0ccd7f392eb86cb2ba50",
+    "spawns": [
+      {
+        "name": "Jiu Lian Bu",
+        "scope": "shared",
+        "x": 175,
+        "y": 173,
+        "map": "lou_fild01",
+        "dir": 3,
+        "sprite": 819,
+        "unique_name": "Jiu Lian Bu#1-2"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Lady#delivery|lou_fild01:224:348": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Lady",
+    "output_hash": "e848a9f5c509310c79b438baad1216602baf706ca6d267ca08d6c6ea0aaba3c0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/lady.ex",
+    "source_hash": "c9ff3c4788f84e1e57d82f1bd17358ca4ea14cd9fa17769ac8542fabce23d620",
+    "spawns": [
+      {
+        "name": "Lady",
+        "scope": "shared",
+        "x": 224,
+        "y": 348,
+        "map": "lou_fild01",
+        "dir": 0,
+        "sprite": 817,
+        "unique_name": "Lady#delivery"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Li Min#lou|lou_in02:80:173": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.LiMin",
+    "output_hash": "cae2ef564d3e5a76a4b025cf893025647f570cdf9c9d27366e5709a5f6b7a6e5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/li_min.ex",
+    "source_hash": "14bb7e13a3a3bdb7874513b3e318ca226ff269fe8a08dad0f3056995669622a8",
+    "spawns": [
+      {
+        "name": "Li Min",
+        "scope": "shared",
+        "x": 80,
+        "y": 173,
+        "map": "lou_in02",
+        "dir": 3,
+        "sprite": 746,
+        "unique_name": "Li Min#lou"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Liu Jia Lim#lou|lou_in02:42:186": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.LiuJiaLim",
+    "output_hash": "2404731c2442245a75c304b63601c10a3b131265dabccf9f3592ca9b05ceaba2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/liu_jia_lim.ex",
+    "source_hash": "4aba14576cd90db57f6f47deb7b434d96d91bbe1280aa10347af4338000574f7",
+    "spawns": [
+      {
+        "name": "Liu Jia Lim",
+        "scope": "shared",
+        "x": 42,
+        "y": 186,
+        "map": "lou_in02",
+        "dir": 5,
+        "sprite": 816,
+        "unique_name": "Liu Jia Lim#lou"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Lord#bailong|lou_in01:99:158": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Lord",
+    "output_hash": "733a9f87f69ca8f1dbf0cf6e9b5c72096ee8ee5c44497f929d0e42586d298296",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/lord.ex",
+    "source_hash": "de080445c089a5717a0d713802e5f75fdfce05608fa23b5638d9640c8ffef8d3",
+    "spawns": [
+      {
+        "name": "Lord",
+        "scope": "shared",
+        "x": 99,
+        "y": 158,
+        "map": "lou_in01",
+        "dir": 4,
+        "sprite": 821,
+        "unique_name": "Lord#bailong"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Poison King#lou|lou_in02:123:39": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.PoisonKing",
+    "output_hash": "f2bfaf3b426c79533d7194ce59f38f6548f4089b87b4e165ee3dfa1b724c8d02",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/poison_king.ex",
+    "source_hash": "a34063a1034d1a6390199bb9d867ef50aa31f1ab44ffcbac9b5d8a0828d617c3",
+    "spawns": [
+      {
+        "name": "Poison King",
+        "scope": "shared",
+        "x": 123,
+        "y": 39,
+        "map": "lou_in02",
+        "dir": 4,
+        "sprite": 824,
+        "unique_name": "Poison King#lou"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Pot#1|lou_in02:50:185": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Pot",
+    "output_hash": "ca7e81f89ca115841ab9941237767f450b3851745fd8b9a8a649acc5d5a5dd26",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/pot.ex",
+    "source_hash": "92fe3f8c26848251d5d4551ad9340e263bec09f1bd9d7823f40f8b93b7f64db8",
+    "spawns": [
+      {
+        "name": "Pot",
+        "scope": "shared",
+        "x": 50,
+        "y": 185,
+        "map": "lou_in02",
+        "dir": 5,
+        "sprite": 111,
+        "unique_name": "Pot#1"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Pot#2|lou_in02:49:185": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Pot49185",
+    "output_hash": "f6d5643b8ac7406e401498b69929de652ed039609766169194ef96b83bcf8961",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/pot_49_185.ex",
+    "source_hash": "c70c0af51a7cf792f78b902621f4af9c1f9b6a7cb3894cfaf99dd25d0546b8d9",
+    "spawns": [
+      {
+        "name": "Pot",
+        "scope": "shared",
+        "x": 49,
+        "y": 185,
+        "map": "lou_in02",
+        "dir": 5,
+        "sprite": 111,
+        "unique_name": "Pot#2"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Soldier#1|lou_in01:45:138": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Soldier45138",
+    "output_hash": "deea39242caca457f6fe0f5734326e14b38ad57e54a0e402becfeb15bf91954e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/soldier_45_138.ex",
+    "source_hash": "52d7f2b584cedfa0ae08fd8f466d1f9236ef41eaac449b2d1cb3b03791f54d1a",
+    "spawns": [
+      {
+        "name": "Soldier",
+        "scope": "shared",
+        "x": 45,
+        "y": 138,
+        "map": "lou_in01",
+        "dir": 3,
+        "sprite": 825,
+        "unique_name": "Soldier#1"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Soldier#2|lou_in01:82:139": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Soldier82139",
+    "output_hash": "58f4904deb2d7f08558b3041f8d3d77e2ff52fe24bf185a028f4ed939b82e4ee",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/soldier_82_139.ex",
+    "source_hash": "30633a99c619d9650b7627a51451a1c12201925e080544ae80aca2ac3cc650f7",
+    "spawns": [
+      {
+        "name": "Soldier",
+        "scope": "shared",
+        "x": 82,
+        "y": 139,
+        "map": "lou_in01",
+        "dir": 7,
+        "sprite": 825,
+        "unique_name": "Soldier#2"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Soldier#bailong1|lou_in01:111:151": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Soldier",
+    "output_hash": "255b36a77d8466370dc81e7f6de31bed52bc78e27f6a487519893ffa678f2afc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/soldier.ex",
+    "source_hash": "c09baf747f20eed6adb39f6df2398b41cb4f7c11f4a9f3b7aec5bbd5156a2aa6",
+    "spawns": [
+      {
+        "name": "Soldier",
+        "scope": "shared",
+        "x": 111,
+        "y": 151,
+        "map": "lou_in01",
+        "dir": 4,
+        "sprite": 825,
+        "unique_name": "Soldier#bailong1"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Soldier#bailong2|lou_in01:91:151": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Soldier91151",
+    "output_hash": "93b81ea382804714109ea0ae5c3cecd5cf619462cce86ba1c6811302e3085fe4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/soldier_91_151.ex",
+    "source_hash": "1b0c6939ebf89cc93834cf53dd8c4fb49f793ff46767d9fb0845725329eb2ac8",
+    "spawns": [
+      {
+        "name": "Soldier",
+        "scope": "shared",
+        "x": 91,
+        "y": 151,
+        "map": "lou_in01",
+        "dir": 4,
+        "sprite": 825,
+        "unique_name": "Soldier#bailong2"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Soldier#bailong3|lou_in01:102:144": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Soldier102144",
+    "output_hash": "5764b0c870bffd58ae7fedb23f8a01e71f0b96e6e9325107f7f9bc2b106cfab5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/soldier_102_144.ex",
+    "source_hash": "bb0318da43b5936e87e88420b81540e074ec41af6b0bd5a32fd15e75237e50c0",
+    "spawns": [
+      {
+        "name": "Soldier",
+        "scope": "shared",
+        "x": 102,
+        "y": 144,
+        "map": "lou_in01",
+        "dir": 4,
+        "sprite": 825,
+        "unique_name": "Soldier#bailong3"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Soldier#bailong4|lou_in01:99:144": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Soldier99144",
+    "output_hash": "af925d68ba29a260812028ce4d11dcd0b8a524bb7f5c2f8866d6f2f08d8092f7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/soldier_99_144.ex",
+    "source_hash": "7391f748966f6458655f8d64aa8838f1dbbb3b4979cd63a383e728f058260cae",
+    "spawns": [
+      {
+        "name": "Soldier",
+        "scope": "shared",
+        "x": 99,
+        "y": 144,
+        "map": "lou_in01",
+        "dir": 4,
+        "sprite": 825,
+        "unique_name": "Soldier#bailong4"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Storage Keeper#lou|lou_in02:201:166": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.StorageKeeper",
+    "output_hash": "d5f22a625d505b55c9b7a50f80f8af5b18da41e688b28cae535140bf77b6fb9d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/storage_keeper.ex",
+    "source_hash": "6a63dd4ea10920ec06837cd7059640a278293c5caf1497ee3f72b40dd9aea81b",
+    "spawns": [
+      {
+        "name": "Storage Keeper",
+        "scope": "shared",
+        "x": 201,
+        "y": 166,
+        "map": "lou_in02",
+        "dir": 4,
+        "sprite": 819,
+        "unique_name": "Storage Keeper#lou"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Studying Officer#lou|lou_in02:156:38": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.StudyingOfficer",
+    "output_hash": "efd339d393fb2ecc032707036fa5e6cb8b7c866b5fe638cfb35784a1fcac81e3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/studying_officer.ex",
+    "source_hash": "e948616a511bf55308f6b895708bed06dd964477dc6bd749daf096448fbd323a",
+    "spawns": [
+      {
+        "name": "Studying Officer",
+        "scope": "shared",
+        "x": 156,
+        "y": 38,
+        "map": "lou_in02",
+        "dir": 0,
+        "sprite": 822,
+        "unique_name": "Studying Officer#lou"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Supply Stack#1lou|lou_in02:204:169": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.SupplyStack",
+    "output_hash": "514d251c1fdf8d51156567e4efb1787acad4a42653055835a0d8efeb95795f18",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/supply_stack.ex",
+    "source_hash": "882edf57bdd01b20058efcba0fb0ce0bc3e3559ddae0be112dbcf31d07675b8d",
+    "spawns": [
+      {
+        "name": "Supply Stack",
+        "scope": "shared",
+        "x": 204,
+        "y": 169,
+        "map": "lou_in02",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Supply Stack#1lou"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Supply Stack#2|lou_in02:192:170": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.SupplyStack192170",
+    "output_hash": "a0fcd543f5590710fbe1ecdfbfc3306972a872e10c77ce1520c95c357b137d2c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/supply_stack_192_170.ex",
+    "source_hash": "c53fecb18e133ea37e1d45bbafa7501e9fa4b111aad0468527f043ab932a2931",
+    "spawns": [
+      {
+        "name": "Supply Stack",
+        "scope": "shared",
+        "x": 192,
+        "y": 170,
+        "map": "lou_in02",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Supply Stack#2"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Supply Stack#3lou|lou_in02:198:170": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.SupplyStack198170",
+    "output_hash": "0f602a0d42a13c27857a0be2c9a652c84689ba3214e27c89a8fb28487346a93c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/supply_stack_198_170.ex",
+    "source_hash": "224b82f8a9d9817101910106add3e869b75bfbe97826c8cb3d9f17481a912eee",
+    "spawns": [
+      {
+        "name": "Supply Stack",
+        "scope": "shared",
+        "x": 198,
+        "y": 170,
+        "map": "lou_in02",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Supply Stack#3lou"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Supply Stack#4lou|lou_in02:206:163": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.SupplyStack206163",
+    "output_hash": "928a07cf35c8839b2a6e0f8320bbee190f455287050918e44815b491dd85409f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/supply_stack_206_163.ex",
+    "source_hash": "00bb58a2be78298f761ea12b7a2a95ca90f4df687d637fc8d423dbe3782fb3fc",
+    "spawns": [
+      {
+        "name": "Supply Stack",
+        "scope": "shared",
+        "x": 206,
+        "y": 163,
+        "map": "lou_in02",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Supply Stack#4lou"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Supply Stack#5lou|lou_in02:207:168": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.SupplyStack207168",
+    "output_hash": "dc3ae26d57d58d3ef67cf45509bb915bc62825783b52099f6b53d39496f69465",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/supply_stack_207_168.ex",
+    "source_hash": "081229372f64426916f2c9200350448c1d761f02fe60ffb99e8d6e77dde0d786",
+    "spawns": [
+      {
+        "name": "Supply Stack",
+        "scope": "shared",
+        "x": 207,
+        "y": 168,
+        "map": "lou_in02",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Supply Stack#5lou"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Tool Shop Master#lou|lou_in02:248:166": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.ToolShopMaster",
+    "output_hash": "44f83fcc6843e97595894ebcaa5be147a2e4ae7960127f50fc905c78085eb6af",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/tool_shop_master.ex",
+    "source_hash": "872e2a452527150095503e2d3762171cfa51697ef28c0d314dd814394c090d01",
+    "spawns": [
+      {
+        "name": "Tool Shop Master",
+        "scope": "shared",
+        "x": 248,
+        "y": 166,
+        "map": "lou_in02",
+        "dir": 2,
+        "sprite": 824,
+        "unique_name": "Tool Shop Master#lou"
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Trap#lou_in1|lou_in01:101:125": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Trap",
+    "output_hash": "9d0a3d56418e9be61975f9a0cd794fa05bd18aa5e5a9f1b5ee26d1b25fd04b93",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/trap.ex",
+    "source_hash": "88c2555e71d3ecc1256e47d6e79d041db3828d881708986b388cd4701fcfcdd3",
+    "spawns": [
+      {
+        "name": "Trap",
+        "scope": "shared",
+        "x": 101,
+        "y": 125,
+        "map": "lou_in01",
+        "dir": 0,
+        "sprite": -1,
+        "unique_name": "Trap#lou_in1",
+        "trigger": [
+          20,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Trap#lou_in2|lou_in01:101:129": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Trap101129",
+    "output_hash": "758d32487aa92270a380ad651fbc5bb7112135d06df5859d3d6bca967dd59c9c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/trap_101_129.ex",
+    "source_hash": "95b020ce1d99b824e663295384c20fc196f975b1bf6f7605958065401260fa99",
+    "spawns": [
+      {
+        "name": "Trap",
+        "scope": "shared",
+        "x": 101,
+        "y": 129,
+        "map": "lou_in01",
+        "dir": 0,
+        "sprite": -1,
+        "unique_name": "Trap#lou_in2",
+        "trigger": [
+          20,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Trap#lou_in3|lou_in01:101:134": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Trap101134",
+    "output_hash": "8c36f8af0d09170bbe81e4438cd7db4c54c151bfe54ee95af0d5720d43d8b9f8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/trap_101_134.ex",
+    "source_hash": "826a960222bf4593206a01dbdca518304ee36996e8ddecff61b07390e2eb71b6",
+    "spawns": [
+      {
+        "name": "Trap",
+        "scope": "shared",
+        "x": 101,
+        "y": 134,
+        "map": "lou_in01",
+        "dir": 0,
+        "sprite": -1,
+        "unique_name": "Trap#lou_in3",
+        "trigger": [
+          20,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Trap#lou_in4|lou_in01:114:163": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Trap114163",
+    "output_hash": "8b39daded4ae17d28f63eee527e404e18e0c962f10eb75e5b7023825604c2a79",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/trap_114_163.ex",
+    "source_hash": "cb17e4499c24b7a654ddf53032ec4e1c5fe39f5550334044d09b58e2c51e5c02",
+    "spawns": [
+      {
+        "name": "Trap",
+        "scope": "shared",
+        "x": 114,
+        "y": 163,
+        "map": "lou_in01",
+        "dir": 0,
+        "sprite": -1,
+        "unique_name": "Trap#lou_in4",
+        "trigger": [
+          6,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_louyang.txt|script|Trap#lou_in5|lou_in01:114:165": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLouyang.Trap114165",
+    "output_hash": "4786873786293964a20eeddb5089593c3588a9830cb6d35f27bdb0e60947eb22",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_louyang/trap_114_165.ex",
+    "source_hash": "395c180aa266c16db88620ee002d00bbc3c7516bd2760b7bb87368865d865f0a",
+    "spawns": [
+      {
+        "name": "Trap",
+        "scope": "shared",
+        "x": 114,
+        "y": 165,
+        "map": "lou_in01",
+        "dir": 0,
+        "sprite": -1,
+        "unique_name": "Trap#lou_in5",
+        "trigger": [
+          1,
+          0
+        ]
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
