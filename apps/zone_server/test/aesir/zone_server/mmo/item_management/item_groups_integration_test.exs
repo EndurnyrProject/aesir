@@ -43,6 +43,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsIntegrationTest do
     end
 
     def handle_call(:game_state, _from, state), do: {:reply, state.game_state, state}
+
+    # Every dialog wait tells the session the script paused; nothing to take over here.
+    @impl true
+    def handle_cast({:npc, {:script_paused, _pid}}, state), do: {:noreply, state}
   end
 
   setup_all do

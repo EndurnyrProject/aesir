@@ -84,6 +84,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemEffectsIntegrationTest do
   end
 
   describe "Dead Branch" do
+    # Prontera is a `nobranch` map, where the branch is refused; a field map is not.
     test "summons a mob at the player's cell and consumes one unit" do
       {:ok, definition} = Items.by_id(@dead_branch_id)
       stub(Items, :by_id, fn @dead_branch_id -> {:ok, definition} end)
@@ -91,7 +92,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemEffectsIntegrationTest do
       stub(SummonGroups, :pick, fn 0 -> 1002 end)
       stub(SummonGroups, :pick, fn 0, _rng -> 1002 end)
 
-      expect(Coordinator, :summon_mob, fn "prontera", 1002, 50, 50, opts ->
+      expect(Coordinator, :summon_mob, fn "prt_fild08", 1002, 50, 50, opts ->
         assert Keyword.get(opts, :aggressive) == true
         {:ok, 7777}
       end)
@@ -100,7 +101,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemEffectsIntegrationTest do
         {:ok, %{@slot => %{inventory[@slot] | amount: 4}}, {:reduced, @slot, 4}}
       end)
 
-      state = state_with(@dead_branch_id)
+      state = put_in(state_with(@dead_branch_id).game_state.map_name, "prt_fild08")
 
       assert {:noreply, committed} = ItemHandler.handle_use_item(@client_index, state)
 
