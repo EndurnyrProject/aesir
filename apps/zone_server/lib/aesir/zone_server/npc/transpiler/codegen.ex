@@ -2190,12 +2190,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   # -- switch ------------------------------------------------------------------
 
   defp emit_switch(expr, clauses, prelude, env) do
-    menu? = menu_subject?(expr)
+    subject = expr
     {pre, expr} = hoist(expr, env)
     id = next_id()
 
     {value_pre, effective} =
       clauses |> effective_clauses(env) |> default_last() |> bind_clause_values(env)
+
+    menu? = exhaustive_menu?(subject, effective)
 
     nested_break? =
       nested_break?(prelude) or Enum.any?(effective, fn {_, stmts} -> nested_break?(stmts) end)
@@ -2272,13 +2274,51 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     if stringy?(expr), do: "Rathena.atoi(#{value})", else: value
   end
 
-  # rAthena ends the script when a menu is answered with its cancel code instead
-  # of one of the offered options (script.cpp, `buildin_select`), so a switch on a
-  # menu never falls through to the code after it the way a switch on a plain
-  # value does: an unmatched menu ends the script, an unmatched value continues.
-  defp menu_subject?({:call, name, _args}) when name in ["select", "prompt"], do: true
-  defp menu_subject?({:cmd, name, _args}) when name in ["select", "prompt"], do: true
-  defp menu_subject?(_expr), do: false
+  # rAthena's `select` ends the script on cancel, so the only unmatched answers are
+  # offered options with no case, and those fall past the switch like any unmatched
+  # value. A `select` whose literal options all have a case therefore never falls
+  # through. `prompt` returns 255 on cancel and goes on, so it never qualifies.
+  defp exhaustive_menu?({kind, "select", args}, clauses) when kind in [:call, :cmd] do
+    case literal_option_count(args) do
+      {:ok, count} ->
+        covered = for {values, _} <- clauses, {:int, n} <- values, into: MapSet.new(), do: n
+        Enum.all?(1..count//1, &MapSet.member?(covered, &1))
+
+      :error ->
+        false
+    end
+  end
+
+  defp exhaustive_menu?(_expr, _clauses), do: false
+
+  defp literal_option_count([_ | _] = args) do
+    Enum.reduce_while(args, {:ok, 0}, fn arg, {:ok, total} ->
+      case option_count(arg) do
+        {:ok, n} -> {:cont, {:ok, total + n}}
+        :error -> {:halt, :error}
+      end
+    end)
+  end
+
+  defp literal_option_count([]), do: :error
+
+  # A menu string's option count when it is static: concatenation joins the last
+  # option of the left side with the first of the right, and a ternary counts when
+  # both branches offer the same number (`cond ? "Ask" : ""` is one option either way).
+  defp option_count({:str, s}), do: {:ok, length(String.split(s, ":"))}
+
+  defp option_count({:bin, :+, left, right}) do
+    with {:ok, l} <- option_count(left), {:ok, r} <- option_count(right), do: {:ok, l + r - 1}
+  end
+
+  defp option_count({:ternary, _cond, then_expr, else_expr}) do
+    case {option_count(then_expr), option_count(else_expr)} do
+      {{:ok, n}, {:ok, n}} -> {:ok, n}
+      _ -> :error
+    end
+  end
+
+  defp option_count(_expr), do: :error
 
   defp no_match_clause(true, _menu?), do: []
   defp no_match_clause(false, true), do: ["_ -> #{@script_end}"]

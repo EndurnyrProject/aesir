@@ -81,6 +81,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
   def constant("SEX_FEMALE"), do: {:ok, "0"}
   def constant("SEX_MALE"), do: {:ok, "1"}
 
+  # The server's compile-time base level cap, the same in both modes.
+  def constant("MAX_LEVEL"), do: {:ok, "275"}
+
   # `convertpcinfo` value selectors.
   def constant("CPC_NAME"), do: {:ok, "0"}
   def constant("CPC_CHAR"), do: {:ok, "1"}
@@ -113,17 +116,23 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
   defp job_mapid_constant(symbol), do: JobMapid.constant(symbol)
 
   defp constant_fallback(symbol) do
-    case flag_constant(symbol) do
-      {:ok, _} = ok ->
-        ok
+    with :error <- flag_constant(symbol),
+         :error <- emotion_constant(symbol) do
+      [
+        &ItemResolver.resolve_class/1,
+        &ItemResolver.resolve_status/1,
+        &ItemResolver.resolve_element/1
+      ]
+      |> Enum.find_value(:error, &atom_constant(&1, symbol))
+    end
+  end
 
-      :error ->
-        [
-          &ItemResolver.resolve_class/1,
-          &ItemResolver.resolve_status/1,
-          &ItemResolver.resolve_element/1
-        ]
-        |> Enum.find_value(:error, &atom_constant(&1, symbol))
+  # An `ET_*` constant in value position (`setarray .@emo[1], ET_DICE1, ...`)
+  # is its integer emotion id, as rAthena stores it.
+  defp emotion_constant(symbol) do
+    case emote(symbol) do
+      {:ok, atom} when is_atom(atom) -> {:ok, Integer.to_string(Emotion.id(atom))}
+      _ -> :error
     end
   end
 

@@ -215,6 +215,43 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "After the menu"
   end
 
+  # An offered option with no case is a real answer, not a cancel, so it falls past
+  # the switch like an unmatched plain value.
+  test "a switch on a menu falls through for an option with no case" do
+    src =
+      gen!("""
+      switch (select("On:Under", "Sheet")) {
+      case 1:
+        close;
+      case 2:
+        close;
+      }
+      mes "After the menu";
+      close;
+      """)
+
+    assert src =~ "case v1 do"
+    assert src =~ ~r/\n\s+_ ->\n\s+ctx\n/
+    assert src =~ "After the menu"
+  end
+
+  test "a computed menu with a static option count still ends the script when every option has a case" do
+    src =
+      gen!("""
+      switch (select("A:" + (.@x ? "B" : "") + ":C", (.@y ? "D" : ""))) {
+      case 1: close;
+      case 2: close;
+      case 3: close;
+      case 4: close;
+      }
+      mes "Unreachable";
+      close;
+      """)
+
+    assert src =~ ~r/\n\s+_ ->\n\s+throw\(\{:script_end, ctx\}\)/
+    refute src =~ "Unreachable"
+  end
+
   test "a switch on a plain value falls through when no case matches" do
     src =
       gen!("""

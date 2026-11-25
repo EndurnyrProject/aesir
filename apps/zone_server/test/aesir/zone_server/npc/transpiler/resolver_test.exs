@@ -19,6 +19,16 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ResolverTest do
     end
   end
 
+  describe "value-position constants" do
+    test "MAX_LEVEL is the base level cap and ET_* are their emotion ids" do
+      assert Resolver.constant("MAX_LEVEL") == {:ok, "275"}
+      assert Resolver.constant("ET_SURPRISE") == {:ok, "0"}
+      assert Resolver.constant("ET_DICE1") == {:ok, "58"}
+      assert Resolver.constant("ET_DICE6") == {:ok, "63"}
+      assert Resolver.constant("ET_NOT_AN_EMOTION") == :error
+    end
+  end
+
   describe "refine cost constants" do
     test "resolve REFINE_COST_* to cost-type atoms" do
       assert Resolver.constant("REFINE_COST_NORMAL") == {:ok, ":normal"}
