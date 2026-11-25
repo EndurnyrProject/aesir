@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   import Aesir.ZoneServer.Script.Dsl.Internal,
     only: [no_player!: 2]
 
+  alias Aesir.Commons.Auth
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
@@ -36,10 +37,12 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl.Internal
+  alias Aesir.ZoneServer.Script.Dsl.Variables
   alias Aesir.ZoneServer.Script.Rathena
   alias Aesir.ZoneServer.Script.Vars
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @baby_job_id 4023
@@ -809,26 +812,41 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   defp npc_position(%{map: map, x: x, y: y}), do: {map || "", x, y}
 
   @typedoc """
-  Which `$@partymember*` array `getpartymember` fills: `:name` the member
-  names (`$@partymembername$`), `:char_id` the character ids
-  (`$@partymembercid`).
+  Which member value `getpartymember` writes: `:name` the member names (type
+  `0`, `$@partymembername$`), `:char_id` the character ids (type `1`,
+  `$@partymembercid`) or `:account_id` the account ids (type `2`,
+  `$@partymemberaid`).
   """
-  @type party_member_field :: :name | :char_id
+  @type party_member_field :: :name | :char_id | :account_id
 
   @doc """
-  Publishes `party_id`'s members into the server temp variables (rAthena
-  `getpartymember`) and returns the member count. `$@partymembercount` always
-  carries the count; `field` selects the array `:name` (default) or
-  `:char_id`, which an unknown party leaves untouched (as the reference does)
-  and a known one overwrites in character-id order, so the array is
-  deterministic across calls.
+  Writes `party_id`'s members into the `$@partymember*` array `field` selects
+  (rAthena `getpartymember`), sets `$@partymembercount` and returns the count.
+  See `getpartymember/4`.
   """
   @spec getpartymember(Ctx.t(), non_neg_integer(), party_member_field()) ::
           {Ctx.t(), non_neg_integer()}
-  def getpartymember(%Ctx{} = ctx, party_id, field \\ :name) do
+  def getpartymember(%Ctx{} = ctx, party_id, field \\ :name),
+    do: getpartymember(ctx, party_id, field, partymember_var(field))
+
+  @doc """
+  Writes `party_id`'s members into the array named `var` (rAthena
+  `getpartymember <party id>,<type>,<array>`), sets `$@partymembercount` and
+  returns the count.
+
+  `var` is the array's full script name with its scope sigil (`.@cids`,
+  `$@partymembername$`). Members are written from element `0` and later
+  elements are kept, as the reference writes element by element. An unknown
+  party writes no element and counts `0`. For a known party the command fails
+  (`Ctx.fail/3`, nothing written, count unset, `0` returned) when names go to a
+  number array, or a player-scoped array is named with no player attached.
+  """
+  @spec getpartymember(Ctx.t(), non_neg_integer(), party_member_field(), String.t()) ::
+          {Ctx.t(), non_neg_integer()}
+  def getpartymember(%Ctx{} = ctx, party_id, field, var) do
     case PartyManager.get(party_id) do
       {:ok, %PartyState{members: members}} ->
-        publish_partymembers(ctx, members, field)
+        write_partymembers(ctx, members, field, var)
 
       {:error, _reason} ->
         Vars.put_server_temp("partymembercount", 0)
@@ -836,16 +854,33 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
     end
   end
 
-  defp publish_partymembers(ctx, members, field) do
-    members = members |> Map.values() |> Enum.sort_by(& &1.char_id)
-    Vars.put_server_temp(partymember_key(field), Enum.map(members, &Map.fetch!(&1, field)))
-    Vars.put_server_temp("partymembercount", length(members))
+  defp write_partymembers(ctx, members, field, var) do
+    {scope, key, _index} = Vars.parse_name(var)
 
-    {ctx, length(members)}
+    cond do
+      field == :name and not String.ends_with?(key, "$") ->
+        {Ctx.fail(ctx, :getpartymember, {:not_string_array, var}), 0}
+
+      scope in [:char, :temp, :account, :account_global] and ctx.game_state == nil ->
+        {Ctx.fail(ctx, :getpartymember, {:no_player, var}), 0}
+
+      true ->
+        values =
+          members
+          |> Map.values()
+          |> Enum.sort_by(& &1.char_id)
+          |> Enum.map(&Map.fetch!(&1, field))
+
+        base = var |> String.split("[", parts: 2) |> hd()
+        ctx = Variables.setd(ctx, base <> "[0]", values)
+        Vars.put_server_temp("partymembercount", length(values))
+        {ctx, length(values)}
+    end
   end
 
-  defp partymember_key(:name), do: "partymembername$"
-  defp partymember_key(:char_id), do: "partymembercid"
+  defp partymember_var(:name), do: "$@partymembername$"
+  defp partymember_var(:char_id), do: "$@partymembercid"
+  defp partymember_var(:account_id), do: "$@partymemberaid"
 
   @doc """
   The unit id (gid) of the NPC running the script (rAthena `getnpcid`, type-0
@@ -893,6 +928,67 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   def getcharid(%Ctx{game_state: gs}, 2), do: gs.guild_id || 0
   def getcharid(%Ctx{account_id: account_id}, 3), do: account_id
   def getcharid(%Ctx{}, _type), do: 0
+
+  @doc """
+  The attached player's GM level (rAthena `getgmlevel`), Aesir's account
+  `gm_level`. Ends the script on a detached ctx.
+  """
+  @spec getgmlevel(Ctx.t()) :: non_neg_integer()
+  def getgmlevel(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "getgmlevel/1")
+  def getgmlevel(%Ctx{account_id: account_id}), do: Auth.get_account!(account_id).gm_level
+
+  @doc """
+  Converts an online player's identity (rAthena `convertpcinfo`): `player` is a
+  character name (matched case-insensitively), an account id or a character id
+  (an account id is tried first), and `type` picks the value, `0` the name
+  (`CPC_NAME`), `1` the character id (`CPC_CHAR`) or `2` the account id
+  (`CPC_ACCOUNT`). An offline or unknown player gives `""` for the name and `0`
+  otherwise. Any other `type` ends the script.
+  """
+  @spec convertpcinfo(Ctx.t(), String.t() | integer(), integer()) :: String.t() | integer()
+  def convertpcinfo(%Ctx{} = ctx, _player, type) when type not in 0..2,
+    do: Ctx.halt(ctx, {:convertpcinfo, {:unknown_type, type}})
+
+  def convertpcinfo(%Ctx{}, player, type) do
+    case online_player(player) do
+      {:ok, %PlayerState{} = state} -> cpc_value(state, type)
+      :error when type == 0 -> ""
+      :error -> 0
+    end
+  end
+
+  defp online_player(name) when is_binary(name) do
+    name = String.downcase(name, :ascii)
+
+    UnitRegistry.list_players()
+    |> Stream.map(&player_state/1)
+    |> Enum.find(:error, &named?(&1, name))
+  end
+
+  defp online_player(id) when is_integer(id) and id > 0 do
+    case UnitRegistry.get_char_id_by_account(id) do
+      {:ok, char_id} -> player_state(char_id)
+      {:error, :not_found} -> player_state(id)
+    end
+  end
+
+  defp online_player(_id), do: :error
+
+  defp named?({:ok, %PlayerState{character_name: character_name}}, name),
+    do: String.downcase(character_name, :ascii) == name
+
+  defp named?(:error, _name), do: false
+
+  defp player_state(char_id) do
+    case UnitRegistry.get_unit(:player, char_id) do
+      {:ok, {_module, %PlayerState{} = state, _pid}} -> {:ok, state}
+      _ -> :error
+    end
+  end
+
+  defp cpc_value(%PlayerState{character_name: name}, 0), do: name
+  defp cpc_value(%PlayerState{character_id: char_id}, 1), do: char_id
+  defp cpc_value(%PlayerState{account_id: account_id}, 2), do: account_id
 
   @doc "Returns the guild name for `guild_id`, or `\"null\"` when no guild exists."
   @spec getguildname(Ctx.t(), integer()) :: String.t()

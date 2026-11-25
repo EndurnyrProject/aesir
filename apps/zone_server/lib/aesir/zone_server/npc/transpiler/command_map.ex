@@ -78,9 +78,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     writes its three output variables from the position of the attached player
     (`BL_PC`, the reference default) or of the running NPC (`BL_NPC`); see
     "Output-variable buildins" below.
-  - `%{shape: :getpartymember, dsl: name}` — `getpartymember(<party id>{,<type>})`
-    publishes the `$@partymember*` snapshot and returns the member count;
-    see "Output-variable buildins" below.
+  - `%{shape: :getpartymember, dsl: name}` — `getpartymember(<party id>{,<type>{,<array>}})`
+    writes the members into the `$@partymember*` array or the named one and
+    returns the member count; see "Output-variable buildins" below.
   - `%{shape: :questinfo, dsl: name}` — `questinfo <Icon>{,<Mark Color>{,"<cond>"}}`
     (OnInit-only): the `QTYPE_*`/`QMARK_*` constants resolve to their client
     ints and a string-literal condition transpiles into a `(ctx -> boolean)`
@@ -117,10 +117,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     (the NPC's unique name or gid); an NPC that does not resolve leaves the
     three references untouched, as the reference does. A named `BL_PC` form
     stays a stub.
-  - `:getpartymember` supports the self-array forms: one argument (names) and a
-    literal type `0` (names) or `1` (character ids). Type `2` (account ids),
-    which Aesir's party snapshot does not carry, and the explicit destination
-    array argument stay stubs.
+  - `:getpartymember` takes a literal type: `1` character ids, `2` account ids,
+    any other value names. The optional array is passed to the DSL by its
+    script name. A type above `2` into a number array stays a stub.
 
   ## Reads
 
@@ -441,6 +440,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "basicskillcheck" => %{dsl: "basicskillcheck", args: []},
     "getskilllv" => %{dsl: "getskilllv", args: [:skill]},
     "getcharid" => %{dsl: "getcharid", args: [:int]},
+    "convertpcinfo" => %{dsl: "convertpcinfo", args: [:int, :int]},
+    "getgmlevel" => %{dsl: "getgmlevel", args: []},
     "getguildname" => %{dsl: "getguildname", args: [:int]},
     "getlook" => %{dsl: "getlook", args: [:look]},
     "getmapusers" => %{dsl: "getmapusers", args: [:string]},

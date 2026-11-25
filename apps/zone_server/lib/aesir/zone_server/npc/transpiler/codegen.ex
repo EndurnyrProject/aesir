@@ -1355,11 +1355,56 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     end
   end
 
+  # The array is written by name from element 0, whatever index the reference
+  # names. A type above 2 writes names with no string-array check, which the DSL
+  # does not model, so it stays a stub for a number array.
+  defp getpartymember_args([party_id, type, array], env) do
+    with {:ok, field} <- party_member_field(type),
+         {:ok, name} <- ref_name(array),
+         :ok <- check_name_type(type, array) do
+      {:ok, "#{render(party_id, env)}, #{field}, #{inspect(name)}"}
+    end
+  end
+
   defp getpartymember_args(_args, _env), do: :error
 
-  defp party_member_field({:int, 0}), do: {:ok, ":name"}
+  defp check_name_type({:int, n}, array) when n > 2,
+    do: if(str_target?(array_base(array)), do: :ok, else: :error)
+
+  defp check_name_type(_type, _array), do: :ok
+
   defp party_member_field({:int, 1}), do: {:ok, ":char_id"}
+  defp party_member_field({:int, 2}), do: {:ok, ":account_id"}
+  defp party_member_field({:int, _other}), do: {:ok, ":name"}
   defp party_member_field(_other), do: :error
+
+  @ref_sigils %{
+    local: ".@",
+    session: "@",
+    account: "#",
+    account_global: "##",
+    server: "$",
+    server_temp: "$@",
+    npc: ".",
+    instance: "'"
+  }
+
+  # The script name of a variable reference (`.@cids`, `$@names$`), for buildins
+  # the DSL hands a variable by name.
+  defp ref_name({:index, base, _index}), do: ref_name(base)
+  defp ref_name({:var, scope, name, :str}), do: {:ok, @ref_sigils[scope] <> name <> "$"}
+  defp ref_name({:var, scope, name, _type}), do: {:ok, @ref_sigils[scope] <> name}
+
+  defp ref_name({:name, name}) do
+    if match?({:ok, _}, CommandMap.read(name)) or CommandMap.unsupported_param?(name),
+      do: :error,
+      else: {:ok, name}
+  end
+
+  defp ref_name(_other), do: :error
+
+  defp array_base({:index, base, _index}), do: base
+  defp array_base(base), do: base
 
   defp atom_lit(name), do: inspect(String.to_atom(name))
 
@@ -1748,10 +1793,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     end
   end
 
-  # `getpartymember(<party id>{,<type>})` publishes the `$@partymember*`
-  # snapshot and pushes the member count. Type 2 (account ids) and the explicit
-  # destination array argument stay stubs, as the party snapshot carries
-  # neither.
+  # `getpartymember(<party id>{,<type>{,<array>}})` writes the members' names,
+  # character ids or account ids into the `$@partymember*` array or the named
+  # one, and pushes the member count.
   defp emit_mapped(name, %{shape: :getpartymember, dsl: dsl}, args, env) do
     {pre, args} = hoist_all(args, env)
 

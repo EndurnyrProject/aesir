@@ -40,12 +40,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsEin.FactoryQuestTest do
       }
     ]
 
+  alias Aesir.ZoneServer.Content.Npc.Functions.FGmNpc
   alias Aesir.ZoneServer.Script.Rathena
-  alias Aesir.ZoneServer.Script.Todo
 
   @impl true
   def on_talk(ctx) do
-    result = Todo.call!(:callfunc, ["F_GM_NPC", 8028, 0, 0, 9000])
+    {ctx, result} = FGmNpc.call(ctx, [8028, 0, 0, 9000])
     ctx = set_local(ctx, :i, result)
 
     case get_local(ctx, :i, 0) do

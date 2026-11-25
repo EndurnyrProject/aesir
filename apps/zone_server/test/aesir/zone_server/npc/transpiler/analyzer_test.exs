@@ -90,11 +90,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.AnalyzerTest do
       getitem 501, 1;
       showscript "hi";
       showscript "again";
-      if (getgmlevel() == 0) close;
+      if (getgroupid() == 0) close;
       mes "item " + getitemname(501);
       """)
 
-    assert a.stubs == %{"showscript" => 2, "getgmlevel" => 1}
+    assert a.stubs == %{"showscript" => 2, "getgroupid" => 1}
   end
 
   test "stubs count unsupported rAthena params by read and write site" do

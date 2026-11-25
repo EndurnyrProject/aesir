@@ -7,8 +7,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.PieceOfCrack do
 
   - Runs the GM NPC gate and asks for a number on the 1 to 3000 range.
   - Stores the number in `ep13_yong1`, or rejects it with the range it accepts.
-  - `F_GM_NPC` comes from `npc/other/gm_npcs.txt`, which is outside the enabled graphs, so the
-    gate is still a `todo` stub.
 
   ## Credits
 
@@ -41,11 +39,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.PieceOfCrack do
 
   @cat_trading_points 3000
 
+  alias Aesir.ZoneServer.Content.Npc.Functions.FGmNpc
+
   @impl true
   def on_talk(ctx) do
+    {ctx, _} = FGmNpc.call(ctx, [])
+
     {ctx, points} =
       ctx
-      |> todo(:callfunc, ["F_GM_NPC"])
       |> mes("1~3000")
       |> input(:int)
 

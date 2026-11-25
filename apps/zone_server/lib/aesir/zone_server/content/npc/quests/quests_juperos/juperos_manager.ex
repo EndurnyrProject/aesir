@@ -36,14 +36,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.JuperosManager do
       }
     ]
 
+  alias Aesir.ZoneServer.Content.Npc.Functions.FGmNpc
   alias Aesir.ZoneServer.Script.Rathena
-  alias Aesir.ZoneServer.Script.Todo
 
   @impl true
   def on_talk(ctx) do
+    {ctx, _} = FGmNpc.call(ctx, [])
+
     ctx =
       ctx
-      |> todo(:callfunc, ["F_GM_NPC"])
       |> mes("[Juperos Manager]")
       |> mes("I'm the NPC in")
       |> mes("charge of managing")
@@ -53,7 +54,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsJuperos.JuperosManager do
       |> mes("enter the password.")
       |> next()
 
-    if Todo.call!(:callfunc, ["F_GM_NPC", 1854, 0]) < 1 do
+    {ctx, password} = FGmNpc.call(ctx, [1854, 0])
+
+    if password < 1 do
       ctx |> mes("[Juperos Manager]") |> mes("Incorrect password.") |> close()
     else
       choose_map(ctx)

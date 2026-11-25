@@ -18472,6 +18472,13 @@
     "source_hash": "0172cc8d8318240a27b7fcefe862dbc33756b390817687ee74ad2b8f9f11a3b0",
     "spawns": []
   },
+  "other/gm_npcs.txt|function|F_GM_NPC|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Functions.FGmNpc",
+    "output_hash": "519d92b389dab14c485a0902da0dc38ff6e150709dd0b7887d76120e41374583",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_gm_npc.ex",
+    "source_hash": "fb264df0d85b6e6ed1b82ff90de1204567d60f9a6abe045657f2f8a59ec82d6b",
+    "spawns": []
+  },
   "pre-re/guides/guides_alberta.txt|script|Guide#alb::AlbGuide|alberta:23:238": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Guides.GuidesAlberta.Guide",
     "output_hash": "79f0b7f99af7da460b6238322dae13d28f93984e6e5bae4b6c84b4618e5ed633",

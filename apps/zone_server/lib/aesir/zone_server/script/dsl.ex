@@ -451,10 +451,13 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate getmapxy(ctx, type, ref), to: Reads
   defdelegate getpartymember(ctx, party_id), to: Reads
   defdelegate getpartymember(ctx, party_id, field), to: Reads
+  defdelegate getpartymember(ctx, party_id, field, var), to: Reads
   defdelegate getnpcid(ctx), to: Reads
   defdelegate getnpcid(ctx, name), to: Reads
   defdelegate playerattached(ctx), to: Reads
   defdelegate getcharid(ctx, type), to: Reads
+  defdelegate convertpcinfo(ctx, player, type), to: Reads
+  defdelegate getgmlevel(ctx), to: Reads
   defdelegate getguildname(ctx, guild_id), to: Reads
   defdelegate getguildmaster(ctx, guild_id), to: Reads
   defdelegate party_leader?(ctx), to: Reads

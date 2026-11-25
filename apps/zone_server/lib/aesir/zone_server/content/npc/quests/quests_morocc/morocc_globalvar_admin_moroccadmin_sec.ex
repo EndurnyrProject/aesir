@@ -49,19 +49,22 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.MoroccGlobalvarAdminM
       }
     ]
 
+  alias Aesir.ZoneServer.Content.Npc.Functions.FGmNpc
   alias Aesir.ZoneServer.Script.Rathena
-  alias Aesir.ZoneServer.Script.Todo
 
   @impl true
   def on_talk(ctx) do
+    {ctx, _} = FGmNpc.call(ctx, [])
+
     ctx =
       ctx
-      |> todo(:callfunc, ["F_GM_NPC"])
       |> mes("[Helper]")
       |> mes("Please enter the password and # button.")
       |> next()
 
-    if Todo.call!(:callfunc, ["F_GM_NPC", 1854, 0]) < 1 do
+    {ctx, password} = FGmNpc.call(ctx, [1854, 0])
+
+    if password < 1 do
       ctx |> mes("[Helper]") |> mes("Please press the numbers we always sing about.") |> close()
     else
       show_status(ctx)

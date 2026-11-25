@@ -81,6 +81,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
   def constant("SEX_FEMALE"), do: {:ok, "0"}
   def constant("SEX_MALE"), do: {:ok, "1"}
 
+  # `convertpcinfo` value selectors.
+  def constant("CPC_NAME"), do: {:ok, "0"}
+  def constant("CPC_CHAR"), do: {:ok, "1"}
+  def constant("CPC_ACCOUNT"), do: {:ok, "2"}
+
   # The only monster-info selector currently used by the imported corpus.
   def constant("MOB_NAME"), do: {:ok, "1"}
 

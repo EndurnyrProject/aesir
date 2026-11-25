@@ -34,22 +34,25 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.AlliedManager do
 
   import Aesir.ZoneServer.Script.Dsl
 
+  alias Aesir.ZoneServer.Content.Npc.Functions.FGmNpc
   alias Aesir.ZoneServer.Script.Ctx
-  alias Aesir.ZoneServer.Script.Todo
 
   @head_of_the_alliance "Head of the Alliance#moo"
 
   @doc false
   @spec on_talk(Ctx.t()) :: Ctx.t()
   def on_talk(ctx) do
+    {ctx, _} = FGmNpc.call(ctx, [])
+
     ctx =
       ctx
-      |> todo(:callfunc, ["F_GM_NPC"])
       |> mes("[Manager]")
       |> mes("Please enter the password.")
       |> next()
 
-    case Todo.call!(:callfunc, ["F_GM_NPC", 8028, 0, 0, 9000]) do
+    {ctx, password} = FGmNpc.call(ctx, [8028, 0, 0, 9000])
+
+    case password do
       -2 -> incorrect_password(ctx)
       -1 -> zero_password(ctx)
       0 -> nevermind(ctx)

@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PartySync do
   defp member(%PlayerState{stats: stats} = state, online) do
     %Member{
       char_id: state.character_id,
+      account_id: state.account_id,
       name: state.character_name,
       job_id: stats.progression.job_id,
       base_level: stats.progression.base_level,

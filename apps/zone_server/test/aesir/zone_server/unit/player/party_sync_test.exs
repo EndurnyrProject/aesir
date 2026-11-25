@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PartySyncTest do
     expect(Manager, :sync_member, fn 7, 12, member ->
       assert member == %Member{
                char_id: 12,
+               account_id: 2_000_012,
                name: "Aesir",
                job_id: 4054,
                base_level: 175,
@@ -73,6 +74,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PartySyncTest do
     expect(Manager, :sync_member, fn 7, 12, member ->
       assert member == %Member{
                char_id: 12,
+               account_id: 2_000_012,
                name: "Aesir",
                job_id: 4054,
                base_level: 175,
@@ -98,6 +100,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PartySyncTest do
     expect(Manager, :sync_member, fn 7, 12, member ->
       assert member == %Member{
                char_id: 12,
+               account_id: 2_000_012,
                name: "Aesir",
                job_id: 4054,
                base_level: 175,
@@ -122,6 +125,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PartySyncTest do
 
     %PlayerState{
       character_id: 12,
+      account_id: 2_000_012,
       character_name: "Aesir",
       party_id: Keyword.get(overrides, :party_id, 7),
       map_name: "prontera",

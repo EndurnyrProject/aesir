@@ -846,6 +846,102 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
   end
 
+  describe "getpartymember/4" do
+    setup :setup_ets_tables
+
+    setup do
+      members = [
+        build(:party_member, char_id: 2, account_id: 202, name: "Bob"),
+        build(:party_member, char_id: 1, account_id: 201, name: "Alice")
+      ]
+
+      stub(PartyManager, :get, fn
+        7 -> {:ok, build(:party_state, party_id: 7, members: members)}
+        other -> {:error, {:not_found, other}}
+      end)
+
+      :ok
+    end
+
+    test "writes the account ids into the named array from element 0 and keeps later elements" do
+      ctx = Dsl.set_local(build_ctx(), :aids, [9, 9, 9])
+
+      {ctx, count} = Dsl.getpartymember(ctx, 7, :account_id, ".@aids")
+
+      assert count == 2
+      assert Dsl.get_local(ctx, :aids) == [201, 202, 9]
+      assert Dsl.get_server_temp_var(ctx, "partymembercount") == 2
+    end
+
+    test "the self-array form also keeps the elements past the member count" do
+      ctx = Dsl.set_server_temp_var(build_ctx(), "partymemberaid", [7, 8, 9])
+
+      {ctx, 2} = Dsl.getpartymember(ctx, 7, :account_id)
+
+      assert Dsl.get_server_temp_var(ctx, "partymemberaid") == [201, 202, 9]
+    end
+
+    test "names into a number array fail without writing or counting" do
+      ctx = Dsl.set_server_temp_var(build_ctx(), "partymembercount", 5)
+
+      {ctx, 0} =
+        with_log(fn -> Dsl.getpartymember(ctx, 7, :name, ".@names") end) |> elem(0)
+
+      assert [{:getpartymember, {:not_string_array, ".@names"}}] = ctx.failures
+      assert Dsl.get_local(ctx, :names, nil) == nil
+      assert Dsl.get_server_temp_var(ctx, "partymembercount") == 5
+    end
+
+    test "a player-scoped array with no player attached fails" do
+      ctx = %{build_ctx() | game_state: nil}
+
+      {ctx, 0} = with_log(fn -> Dsl.getpartymember(ctx, 7, :char_id, "@cids") end) |> elem(0)
+
+      assert [{:getpartymember, {:no_player, "@cids"}}] = ctx.failures
+    end
+
+    test "an unknown party counts 0 without checking the array" do
+      {ctx, 0} = Dsl.getpartymember(build_ctx(), 999, :name, ".@names")
+
+      assert ctx.failures == []
+      assert Dsl.get_local(ctx, :names, nil) == nil
+      assert Dsl.get_server_temp_var(ctx, "partymembercount") == 0
+    end
+  end
+
+  describe "convertpcinfo/3" do
+    setup :setup_ets_tables
+
+    setup do
+      player = build(:player_state, character_name: "Alice", account_id: 2_000_001)
+      :ok = UnitRegistry.register_player(player, self())
+      %{player: player}
+    end
+
+    test "finds an online player by name, ignoring case", %{player: player} do
+      assert Dsl.convertpcinfo(build_ctx(), "aLICE", 1) == player.character_id
+      assert Dsl.convertpcinfo(build_ctx(), "ALICE", 2) == player.account_id
+    end
+
+    test "finds an online player by account id or character id", %{player: player} do
+      assert Dsl.convertpcinfo(build_ctx(), player.account_id, 0) == "Alice"
+      assert Dsl.convertpcinfo(build_ctx(), player.character_id, 0) == "Alice"
+    end
+
+    test "an offline player gives an empty name or 0", %{player: player} do
+      offline = player.account_id + 1
+
+      assert Dsl.convertpcinfo(build_ctx(), offline, 0) == ""
+      assert Dsl.convertpcinfo(build_ctx(), "Nobody", 1) == 0
+      assert Dsl.convertpcinfo(build_ctx(), 0, 2) == 0
+    end
+
+    test "an unknown type ends the script", %{player: player} do
+      assert {:script_end, %Ctx{status: {:error, _}}} =
+               catch_throw(Dsl.convertpcinfo(build_ctx(), player.account_id, 3))
+    end
+  end
+
   describe "getmapxy/2" do
     test "reads the attached player's map and coordinates" do
       ctx = build_ctx()

@@ -52,13 +52,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.BossLghtBossAdmi
       }
     ]
 
+  alias Aesir.ZoneServer.Content.Npc.Functions.FGmNpc
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
   def on_talk(ctx) do
+    {ctx, _} = FGmNpc.call(ctx, [])
+
     {ctx, choice} =
       ctx
-      |> todo(:callfunc, ["F_GM_NPC"])
       |> mes("[Patch]")
       |> mes("Tell me what you want.")
       |> next()

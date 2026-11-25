@@ -397,12 +397,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     src =
       gen!("""
       showscript "hi";
-      if (getgmlevel() == 0) close;
+      if (getgroupid() == 0) close;
       close;
       """)
 
     assert src =~ ~S|ctx = todo(ctx, :showscript, ["hi"])|
-    assert src =~ "Todo.call!(:getgmlevel, []) == 0"
+    assert src =~ "Todo.call!(:getgroupid, []) == 0"
     assert src =~ "alias Aesir.ZoneServer.Script.Todo"
   end
 
@@ -2631,16 +2631,43 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "todo(:getpartymember"
   end
 
-  test "getpartymember stubs the account-id array and the explicit array argument" do
-    assert gen!("""
-           getpartymember getcharid(1), 2;
-           close;
-           """) =~ "todo(:getpartymember"
+  test "getpartymember writes account ids and the named destination array" do
+    src =
+      gen!("""
+      getpartymember getcharid(1), 2;
+      getpartymember getcharid(1), 1, .@partymembercid;
+      getpartymember .party_id, 0, .@player_name$;
+      close;
+      """)
 
+    assert src =~ ~S|{ctx, _} = getpartymember(ctx, getcharid(ctx, 1), :account_id)|
+
+    assert src =~
+             ~S|{ctx, _} = getpartymember(ctx, getcharid(ctx, 1), :char_id, ".@partymembercid")|
+
+    assert src =~
+             ~S|getpartymember(ctx, get_npc_var(ctx, "party_id", 0), :name, ".@player_name$")|
+
+    refute src =~ "todo(:getpartymember"
+  end
+
+  test "getpartymember stubs names of a type above 2 into a number array" do
     assert gen!("""
-           getpartymember getcharid(1), 0, .@names$;
+           getpartymember getcharid(1), 3, .@ids;
            close;
            """) =~ "todo(:getpartymember"
+  end
+
+  test "convertpcinfo is a call read and its CPC_* selector resolves" do
+    src =
+      gen!("""
+      if (convertpcinfo(.@cid, CPC_ACCOUNT))
+        mes "online";
+      close;
+      """)
+
+    assert src =~ ~S|convertpcinfo(ctx, get_local(ctx, :cid, 0), 2)|
+    refute src =~ "Todo.call!(:convertpcinfo"
   end
 
   test "getcastledata, gettimestr and is_guild_leader are call reads" do

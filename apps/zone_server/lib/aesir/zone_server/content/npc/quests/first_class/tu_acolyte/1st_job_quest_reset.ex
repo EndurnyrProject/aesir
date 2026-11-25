@@ -40,11 +40,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.M1stJobQuestR
       }
     ]
 
+  alias Aesir.ZoneServer.Content.Npc.Functions.FGmNpc
+
   @impl true
   def on_talk(ctx) do
+    {ctx, _} = FGmNpc.call(ctx, [])
+
     {ctx, quest} =
       ctx
-      |> todo(:callfunc, ["F_GM_NPC"])
       |> mes("[1st Job Quest]")
       |> mes("Which would you like to reset?")
       |> next()

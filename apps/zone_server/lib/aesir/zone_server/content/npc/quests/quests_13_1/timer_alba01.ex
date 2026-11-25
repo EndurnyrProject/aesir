@@ -42,7 +42,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.TimerAlba01 do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Todo
+  alias Aesir.ZoneServer.Content.Npc.Functions.FGmNpc
 
   @npc "#timer_alba01"
   @map "mid_camp"
@@ -55,9 +55,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.Quests131.TimerAlba01 do
 
   @impl true
   def on_talk(ctx) do
-    ctx = ctx |> todo(:callfunc, ["F_GM_NPC"]) |> mes("Please enter the password") |> next()
+    {ctx, _} = FGmNpc.call(ctx, [])
+    ctx = ctx |> mes("Please enter the password") |> next()
+    {ctx, password} = FGmNpc.call(ctx, [1854, 0])
 
-    if Todo.call!(:callfunc, ["F_GM_NPC", 1854, 0]) < 1 do
+    if password < 1 do
       ctx |> mes("Wrong password.") |> close()
     else
       admin_menu(ctx)

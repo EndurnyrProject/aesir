@@ -123,7 +123,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.ContinentalGuard do
     ]
 
   alias Aesir.ZoneServer.Script.Rathena
-  alias Aesir.ZoneServer.Script.Todo
+
+  @cpc_account 2
 
   @impl true
   def on_event("OnTouch", ctx) do
@@ -287,12 +288,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.ContinentalGuard do
   end
 
   defp prepare_party(ctx) do
-    ctx = todo(ctx, :getpartymember, [getcharid(ctx, 1), 1, get_local(ctx, :partymembercid, 0)])
+    {ctx, count} = getpartymember(ctx, getcharid(ctx, 1), :char_id, ".@partymembercid")
 
-    ctx
-    |> set_local(:partymembercount, get_server_temp_var(ctx, "partymembercount", 0))
-    |> set_local(:i, 0)
-    |> count_online_members()
+    online =
+      ctx
+      |> get_local(:partymembercid, [])
+      |> Enum.take(count)
+      |> Enum.count(&Rathena.truthy?(convertpcinfo(ctx, &1, @cpc_account)))
+
+    set_local(ctx, :onlinemembers, get_local(ctx, :onlinemembers, 0) + online)
   end
 
   defp enter_field(ctx, map) do
@@ -365,25 +369,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.ContinentalGuard do
     |> mes("[Continental Guard]")
     |> mes("No commoners are allowed in the area beyond this point.")
     |> mes("This place is extremely dangerous so you are restricted from entering.")
-  end
-
-  defp count_online_members(ctx) do
-    if get_local(ctx, :i, 0) < get_local(ctx, :partymembercount, 0) do
-      ctx =
-        if Rathena.truthy?(
-             Todo.call!(:convertpcinfo, [
-               Enum.at(get_local(ctx, :partymembercid, []), get_local(ctx, :i, 0), 0),
-               get_char_var(ctx, :CPC_ACCOUNT, 0)
-             ])
-           ) do
-          set_local(ctx, :onlinemembers, get_local(ctx, :onlinemembers, 0) + 1)
-        else
-          ctx
-        end
-
-      ctx |> set_local(:i, get_local(ctx, :i, 0) + 1) |> count_online_members()
-    else
-      ctx
-    end
   end
 end

@@ -46,20 +46,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Lyozienswitch do
       }
     ]
 
+  alias Aesir.ZoneServer.Content.Npc.Functions.FGmNpc
   alias Aesir.ZoneServer.Script.Rathena
-  alias Aesir.ZoneServer.Script.Todo
 
   @impl true
   def on_talk(ctx) do
+    {ctx, _} = FGmNpc.call(ctx, [])
+
     ctx =
       ctx
-      |> todo(:callfunc, ["F_GM_NPC"])
       |> mes("[Lyozien Switch]")
       |> mes("Input password.")
       |> mes("Enter 0 to cancel.")
       |> next()
 
-    password_result = Todo.call!(:callfunc, ["F_GM_NPC", 1028, 0, 0, 4000])
+    {ctx, password_result} = FGmNpc.call(ctx, [1028, 0, 0, 4000])
     ctx = set_local(ctx, :i, password_result)
 
     case get_local(ctx, :i, 0) do

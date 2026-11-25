@@ -36,13 +36,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.SoulLinkerVar do
       }
     ]
 
-  alias Aesir.ZoneServer.Script.Todo
+  alias Aesir.ZoneServer.Content.Npc.Functions.FGmNpc
 
   @impl true
   def on_talk(ctx) do
+    {ctx, _} = FGmNpc.call(ctx, [])
+
     ctx =
       ctx
-      |> todo(:callfunc, ["F_GM_NPC"])
       |> mes("[Soul Linker Var]")
       |> mes("I can reset the Soul Linker")
       |> mes("NPCs if a Soul Linker candidate")
@@ -51,7 +52,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.SoulLinkerVar do
       |> mes("not use this function if players are still in the Quest Map.")
       |> next()
 
-    if Todo.call!(:callfunc, ["F_GM_NPC", 1854, 0]) < 1 do
+    {ctx, password} = FGmNpc.call(ctx, [1854, 0])
+
+    if password < 1 do
       ctx |> mes("[Soul Linker Var]") |> mes("Password") |> mes("is incorrect.") |> close()
     else
       offer_reset(ctx)

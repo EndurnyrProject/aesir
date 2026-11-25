@@ -11,9 +11,13 @@ defmodule Aesir.ZoneServer.Party.Member do
 
   alias Aesir.Commons.Models.Character
 
-  @typedoc "A member's identity, job, current resources, and presence."
+  @typedoc """
+  A member's identity, job, current resources, and presence. `account_id` is `0` only for a
+  snapshot built without it (`new/5`).
+  """
   typedstruct enforce: true do
     field :char_id, non_neg_integer()
+    field :account_id, non_neg_integer(), default: 0
     field :name, String.t()
     field :job_id, non_neg_integer(), default: 0
     field :base_level, non_neg_integer()
@@ -49,6 +53,7 @@ defmodule Aesir.ZoneServer.Party.Member do
   def from_character(%Character{} = character, online \\ false) do
     %__MODULE__{
       char_id: character.id,
+      account_id: character.account_id,
       name: character.name,
       job_id: character.class || 0,
       base_level: character.base_level || 1,
