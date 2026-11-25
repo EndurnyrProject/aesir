@@ -54628,6 +54628,1720 @@
       }
     ]
   },
+  "quests/quests_moscovia.txt|floating|Baehideun#main|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsMoscovia.Baehideun",
+    "output_hash": "6fc55c5777be28aba0c4ac6a45eb0ceaa98932e849db81e91f8f79c0a69311db",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_moscovia/baehideun.ex",
+    "source_hash": "6eb90d03046dc58968f92566762d26f4ac5b073166f50f700adeca13b31275ab",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "mosk_ship",
+        "name": "Baehideun1",
+        "scope": "shared",
+        "sprite": -1,
+        "unique_name": "Baehideun1#ship",
+        "x": 2,
+        "y": 2
+      },
+      {
+        "dir": 4,
+        "map": "mosk_ship",
+        "name": "Baehideun3",
+        "scope": "shared",
+        "sprite": -1,
+        "unique_name": "Baehideun3#ship",
+        "x": 5,
+        "y": 5
+      },
+      {
+        "dir": 4,
+        "map": "mosk_ship",
+        "name": "Baehideun4",
+        "scope": "shared",
+        "sprite": -1,
+        "unique_name": "Baehideun4#ship",
+        "x": 15,
+        "y": 15
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|floating|Caution#07rus::NoSwim|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsMoscovia.Caution",
+    "output_hash": "2a920245c92f22110222a6109a1ed729c335de148ba657ca9d9232950a5e7f4e",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_moscovia/caution.ex",
+    "source_hash": "3af646bce179a191820f56010ddfcd1d1f396db529e4ab41daad04d00cd9e178",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mosk_fild02",
+        "name": "Caution",
+        "scope": "shared",
+        "sprite": 837,
+        "unique_name": "Caution#rus01",
+        "x": 101,
+        "y": 204
+      },
+      {
+        "dir": 0,
+        "map": "mosk_fild02",
+        "name": "Caution",
+        "scope": "shared",
+        "sprite": 837,
+        "unique_name": "Caution#rus02",
+        "x": 101,
+        "y": 200
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|floating|PTree#rusmain|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsMoscovia.Ptree",
+    "output_hash": "7c3758a8d4ce465a8a13b36ec7b6af5a507a18594cc080cf5ae4dbc4777eca8a",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_moscovia/ptree.ex",
+    "source_hash": "8b27125ec72418e94a8c82416c3de7fa9d0003c03f159ef68f7d8217db9ab675",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mosk_fild02",
+        "name": "Pointed Tree",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Pointed Tree#rus11",
+        "x": 151,
+        "y": 188
+      },
+      {
+        "dir": 0,
+        "map": "mosk_fild02",
+        "name": "Pointed Tree",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Pointed Tree#rus12",
+        "x": 160,
+        "y": 227
+      },
+      {
+        "dir": 0,
+        "map": "mosk_fild02",
+        "name": "Pointed Tree",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Pointed Tree#rus13",
+        "x": 160,
+        "y": 179
+      },
+      {
+        "dir": 0,
+        "map": "mosk_fild02",
+        "name": "Pointed Tree",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Pointed Tree#rus14",
+        "x": 142,
+        "y": 247
+      },
+      {
+        "dir": 0,
+        "map": "mosk_fild02",
+        "name": "Pointed Tree",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Pointed Tree#rus15",
+        "x": 149,
+        "y": 223
+      },
+      {
+        "dir": 0,
+        "map": "mosk_fild02",
+        "name": "Pointed Tree",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Pointed Tree#rus16",
+        "x": 114,
+        "y": 223
+      },
+      {
+        "dir": 0,
+        "map": "mosk_fild02",
+        "name": "Pointed Tree",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Pointed Tree#rus17",
+        "x": 101,
+        "y": 197
+      },
+      {
+        "dir": 0,
+        "map": "mosk_fild02",
+        "name": "Pointed Tree",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Pointed Tree#rus18",
+        "x": 125,
+        "y": 182
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|floating|mos_rus#main|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsMoscovia.MosRus",
+    "output_hash": "db4cae0d04462ada06406d12118288720e1a2cbf480475ef01bf938c00e91a41",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_moscovia/mos_rus.ex",
+    "source_hash": "20469c3af82c06d35762b6c34e6ecfafa46fe725f428db2c04e8fe5328698f6a",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mosk_dun01",
+        "name": "Gray Wolf",
+        "scope": "shared",
+        "sprite": 972,
+        "unique_name": "Gray Wolf#rus05",
+        "x": 50,
+        "y": 256
+      },
+      {
+        "dir": 3,
+        "map": "mosk_dun01",
+        "name": "Maria Morebna",
+        "scope": "shared",
+        "sprite": 958,
+        "unique_name": "Maria Morebna#rus46",
+        "x": 46,
+        "y": 256
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|function|F_MOS_1|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Functions.FMos1",
+    "output_hash": "dd000164f95addc4e31eab587742d7a4631926ba23f664951448864007b4be65",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_mos_1.ex",
+    "source_hash": "b215743561fc7806bc0fdfaaa89c450fabb235f46f757bdc199bb27214b276f0",
+    "spawns": []
+  },
+  "quests/quests_moscovia.txt|script|#book_russia|mosk_in:217:45": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.BookRussia",
+    "output_hash": "8bf601006e1630bc0e29cb7f63497a8b51f377da44b24f730e3e0ecafd197ac8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/book_russia.ex",
+    "source_hash": "64e6b08ecdbdab1afff8901bf8171113ec089627b7df414d6a1355c19c67d6bb",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mosk_in",
+        "name": "",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "#book_russia",
+        "x": 217,
+        "y": 45
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|#bowl|mosk_in:221:43": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Bowl",
+    "output_hash": "d29ff437cf915d526cd8605abcb36e138f8fea2683a716ea1a7d8a2a2c4d6523",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/bowl.ex",
+    "source_hash": "4038956166844de5a6be72fef88565d7c195e5748758eff3836e6aa311102420",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mosk_in",
+        "name": "",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "#bowl",
+        "x": 221,
+        "y": 43
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|#findship|mosk_ship:81:110": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Findship",
+    "output_hash": "536cf2e4a63eca0e9bde66bd373167bff3b3557752d6064ab3b9e8885aa516ac",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/findship.ex",
+    "source_hash": "d8e59fc8d1dc0a9698dc45af5b6c79a8a2aec5c7b363c5e53fc9f65b12991424",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mosk_ship",
+        "name": "",
+        "scope": "shared",
+        "sprite": 844,
+        "trigger": [
+          5,
+          5
+        ],
+        "unique_name": "#findship",
+        "x": 81,
+        "y": 110
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|#mos_sq|mosk_fild01:113:108": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.MosSq",
+    "output_hash": "1d8299d33403961f3e5f8f4f2c1ba1928bb620c8bf016af8b0ccb735acd63669",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/mos_sq.ex",
+    "source_hash": "730ccd619c824232c1f524eceab4c75e94e3669e49297be04970abb7383c5336",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "mosk_fild01",
+        "name": "",
+        "scope": "shared",
+        "sprite": 1104,
+        "unique_name": "#mos_sq",
+        "x": 113,
+        "y": 108
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|#nowinterplz|moscovia:224:190": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Nowinterplz",
+    "output_hash": "abdd11119a5604265f981fc3101d3cd0b027101ef2d863e717b7fdd50c90a106",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/nowinterplz.ex",
+    "source_hash": "d17da37ce1500dadc0ed27974add8d545fcee893cfa6161b723ece152975da9f",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "moscovia",
+        "name": "",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "#nowinterplz",
+        "x": 224,
+        "y": 190
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|#rus27|mosk_que:49:22": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Rus27",
+    "output_hash": "2995f3219d7f1c190d0a6ebc9a8fffb09cec3232a04abddcce08a6a2f7d74259",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/rus27.ex",
+    "source_hash": "97b8b7b3d4b77f3c3c82db8a8cf03696badff0ed9c47a74af0fcdccb3cb90953",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mosk_que",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "#rus27",
+        "x": 49,
+        "y": 22
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|#swan_inn|mosk_in:215:181": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.SwanInn",
+    "output_hash": "a6d6de5544884af8cd8b717f5e120dbffbb86c70ad359e1558e88dbc3fbac29c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/swan_inn.ex",
+    "source_hash": "9dda739f1cecfcf3182cb99b653b47c96cf8640728f871b39b217ca8767e833a",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mosk_in",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "#swan_inn",
+        "x": 215,
+        "y": 181
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|1#rus27|mosk_dun01:45:250": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.M1",
+    "output_hash": "1e2e8cc3b23d8ccb62b867e3b73b54170b9c5df7aa28ad5a9f6c34ab4899970e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/1.ex",
+    "source_hash": "92c01b9930b6bb21c95150c2bfc5c3b0d0f5d32c2eb1dd374fd8d10a0ce1aea6",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mosk_dun01",
+        "name": "1",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "1#rus27",
+        "x": 45,
+        "y": 250
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|A Lady#mos10|moscovia:168:135": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.ALady168135",
+    "output_hash": "daa73ae16f63a484143de25e80bcc2e3677c39f6fb9ca0be2a5fbc4f058faf23",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/a_lady_168_135.ex",
+    "source_hash": "7cba5559e645127dfd73883c1143d32bbf3f236d23f60c0b6cbbcd25428ceb42",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "moscovia",
+        "name": "A Lady",
+        "scope": "shared",
+        "sprite": 961,
+        "unique_name": "A Lady#mos10",
+        "x": 168,
+        "y": 135
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|A Lady#mos11|moscovia:192:80": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.ALady19280",
+    "output_hash": "8c943d9ec767c3ceec761fbb875de2c10d0aa8e06bdef450f7465e51b4277c75",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/a_lady_192_80.ex",
+    "source_hash": "e3e05ecad74c381c11047cd2920764097c66be08be4775fd4da5c6a2010cac71",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "moscovia",
+        "name": "A Lady",
+        "scope": "shared",
+        "sprite": 959,
+        "unique_name": "A Lady#mos11",
+        "x": 192,
+        "y": 80
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|A Lady#mos5|moscovia:204:188": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.ALady",
+    "output_hash": "00ec2d597a9ac7597b17eb0b66700ba6cbe62e35a088be86e8b4d5b3a4fa51d9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/a_lady.ex",
+    "source_hash": "635ffd697cc7bd78e3a18d071f105c3671e3bdad7380561053d987676c763c86",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "moscovia",
+        "name": "A Lady",
+        "scope": "shared",
+        "sprite": 959,
+        "unique_name": "A Lady#mos5",
+        "x": 204,
+        "y": 188
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|A Lady#mos6|moscovia:167:97": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.ALady16797",
+    "output_hash": "6c688475fec4e9bc2a2fbb5a1c096f1ad26ab8993c72e0bf2055ed82413edc7c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/a_lady_167_97.ex",
+    "source_hash": "1c4109629347fa9465f1d9db9cb8cb3a0798be3cebddc0820818b83e1f35bc17",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "moscovia",
+        "name": "A Lady",
+        "scope": "shared",
+        "sprite": 961,
+        "unique_name": "A Lady#mos6",
+        "x": 167,
+        "y": 97
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|A Little Boy#mos16|moscovia:228:80": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.ALittleBoy22880",
+    "output_hash": "fec6e07c46f7e293eb3d43aad4bfb65395b61816d3106dc0d0c364a6f60689d9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/a_little_boy_228_80.ex",
+    "source_hash": "320c5f1ba8dde585dc7b7f84c03fed34bc889bc671d225395de83c177eaafe26",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "moscovia",
+        "name": "A Little Boy",
+        "scope": "shared",
+        "sprite": 962,
+        "unique_name": "A Little Boy#mos16",
+        "x": 228,
+        "y": 80
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|A Little Boy#mos4|moscovia:255:203": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.ALittleBoy",
+    "output_hash": "274d24d3f19e3b16fc8e83b3f9098cda6dd31a1ca1f3161d6fc7ffbf26277470",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/a_little_boy.ex",
+    "source_hash": "6c3bac7c9f7b654e18da46b2d50df09b69b9bc46db584f81bbbaadca45b52caa",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "moscovia",
+        "name": "A Little Boy",
+        "scope": "shared",
+        "sprite": 962,
+        "unique_name": "A Little Boy#mos4",
+        "x": 255,
+        "y": 203
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|A Little Boy#mos7|moscovia:202:102": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.ALittleBoy202102",
+    "output_hash": "1a3dd84dfd7d78fff61712dc3f3f6183b1b303074a8810e9e5d609448a67ff3a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/a_little_boy_202_102.ex",
+    "source_hash": "3680c71dbd9e36dccb2240fe14972dd936a3496b62a3751133cc2759b5da54e1",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "moscovia",
+        "name": "A Little Boy",
+        "scope": "shared",
+        "sprite": 962,
+        "unique_name": "A Little Boy#mos7",
+        "x": 202,
+        "y": 102
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|A Little Girl#mos1|moscovia:252:203": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.ALittleGirl",
+    "output_hash": "42c60b70389b950afb9b5bab8dd3c51c29f3c686a4b635b43d4367bdf9de6c1c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/a_little_girl.ex",
+    "source_hash": "409eae161edc5c23e247cb63ad0902d1eeeda3701269d8840b74b95d1ce7e34d",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "moscovia",
+        "name": "A Little Girl",
+        "scope": "shared",
+        "sprite": 958,
+        "unique_name": "A Little Girl#mos1",
+        "x": 252,
+        "y": 203
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|A Man#mos13|moscovia:149:112": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.AMan149112",
+    "output_hash": "a75d8eecb5cf6521f818f77e15204c11a38a0d04840cef17dd0041c3b685e189",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/a_man_149_112.ex",
+    "source_hash": "eb9706b9c50927e80c087e038252b2b7d031d05c11d5da6c2ee6334602ef672b",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "moscovia",
+        "name": "A Man",
+        "scope": "shared",
+        "sprite": 964,
+        "unique_name": "A Man#mos13",
+        "x": 149,
+        "y": 112
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|A Man#mos15|moscovia:234:168": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.AMan234168",
+    "output_hash": "1cc43a5f1a758f372635711769cfce821264967ca858ef8c68ae4cc7ddde9f79",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/a_man_234_168.ex",
+    "source_hash": "a1fea59a1dfc92b4af3efb750dcab50573dcc6881d8eaac379b9525a61454e35",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "moscovia",
+        "name": "A Man",
+        "scope": "shared",
+        "sprite": 964,
+        "unique_name": "A Man#mos15",
+        "x": 234,
+        "y": 168
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|A Man#mos9|moscovia:253:175": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.AMan",
+    "output_hash": "cb5f27815e3544228179bbe1c83f41b23edea653715f6ab247df08aa8c72d140",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/a_man.ex",
+    "source_hash": "da33b40999cae5b3ee9394611d8b429a12efef9c94defb4273cdfcc4fe0b24d1",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "moscovia",
+        "name": "A Man",
+        "scope": "shared",
+        "sprite": 964,
+        "unique_name": "A Man#mos9",
+        "x": 253,
+        "y": 175
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|A Middle-Aged Man#mos3|moscovia:219:229": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.AMiddleAgedMan",
+    "output_hash": "7f7f092e17ba307d5e94db7658a4d7f46b3326d51fff64966a41464c2563453a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/a_middle_aged_man.ex",
+    "source_hash": "cd1c7531bdf448692dbdb56e729693d58239bb979d0d358c59e0949cf9508869",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "moscovia",
+        "name": "A Middle-Aged Man",
+        "scope": "shared",
+        "sprite": 964,
+        "unique_name": "A Middle-Aged Man#mos3",
+        "x": 219,
+        "y": 229
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|A Young Man#mos12|moscovia:211:215": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.AYoungMan211215",
+    "output_hash": "7a34aa85f369847d5a40ff9f6d56dfc9e64633994da4c3577e0f1d8116ce73e5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/a_young_man_211_215.ex",
+    "source_hash": "bc9b144540c1f54283b5c40fadcfaaa139aa53323b321d46c70c0c13b9c10ffb",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "moscovia",
+        "name": "A Young Man",
+        "scope": "shared",
+        "sprite": 967,
+        "unique_name": "A Young Man#mos12",
+        "x": 211,
+        "y": 215
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|A Young Man#mos14|moscovia:196:71": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.AYoungMan19671",
+    "output_hash": "71220e55534221d516024038e762bee185e8980efe59b4dc557fb196771b822f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/a_young_man_196_71.ex",
+    "source_hash": "1113e645c094e32669d2c6f8daf5bb405abc51a557682c44c8980ad3c7e1ec6d",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "moscovia",
+        "name": "A Young Man",
+        "scope": "shared",
+        "sprite": 968,
+        "unique_name": "A Young Man#mos14",
+        "x": 196,
+        "y": 71
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|A Young Man#mos2|moscovia:233:204": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.AYoungMan",
+    "output_hash": "b26b6c2efaaddcdd3f054dee8102547ac55b0ee7c2783907cdbcd946ef7a92b3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/a_young_man.ex",
+    "source_hash": "24436e3a407009337567f931f0db5f0d4cc6bc657a3ab0af11d3a2e5a1361ab0",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "moscovia",
+        "name": "A Young Man",
+        "scope": "shared",
+        "sprite": 968,
+        "unique_name": "A Young Man#mos2",
+        "x": 233,
+        "y": 204
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|A Young Man#mos8|moscovia:220:172": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.AYoungMan220172",
+    "output_hash": "184637cd4bccac7cc27f661184d05c9fb2e9c544530dc65d2ad60d3f6cc5d729",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/a_young_man_220_172.ex",
+    "source_hash": "7587382150a752606136adc8f835edb479f04d277fb59c3def9c937f208c0d61",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "moscovia",
+        "name": "A Young Man",
+        "scope": "shared",
+        "sprite": 968,
+        "unique_name": "A Young Man#mos8",
+        "x": 220,
+        "y": 172
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Acorn Dealer#mos|moscovia:208:182": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.AcornDealer",
+    "output_hash": "c6e2aac268f387566c3db10ffdc4bbd53eb89e9d50b52307fa893e231f286f3c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/acorn_dealer.ex",
+    "source_hash": "2a85bacecb758c89662fb7c77dfcc4aa7ac287e86593dd743f25d4b65a9e28b9",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "moscovia",
+        "name": "Acorn Dealer",
+        "scope": "shared",
+        "sprite": 967,
+        "unique_name": "Acorn Dealer#mos",
+        "x": 208,
+        "y": 182
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Aged Stranger#npc|mosk_fild01:86:104": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.AgedStranger",
+    "output_hash": "418d0573f3ad14e8f3bbeab5d19ea10c9d542697d01afb945ce32ab8cc87b7d6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/aged_stranger.ex",
+    "source_hash": "3405f9147ad6e45a33cc3f6ae3ba39096eeca5d6d4fc766448a59c1ff44cba8b",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mosk_fild01",
+        "name": "Aged Stranger",
+        "scope": "shared",
+        "sprite": 963,
+        "unique_name": "Aged Stranger#npc",
+        "x": 86,
+        "y": 104
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Anna#mos|mosk_in:148:274": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Anna",
+    "output_hash": "ee4cb87819ad7f99c08ce9317db438480566c7300cee47695f74f5980da7f01e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/anna.ex",
+    "source_hash": "90882fbc02b3285d446fd2d8661c977bff8a6d53f454d8f0f15275b830bf24ac",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "mosk_in",
+        "name": "Anna",
+        "scope": "shared",
+        "sprite": 958,
+        "unique_name": "Anna#mos",
+        "x": 148,
+        "y": 274
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Baba Yaga#rus32|mosk_dun02:48:214": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.BabaYaga",
+    "output_hash": "c67587d06d883d805f03897f79ff0fb6eb66b530de28c75e88199b836fc4523f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/baba_yaga.ex",
+    "source_hash": "80755cb6df89eab71a9116a58a5f0cb8246561762309a945d39c35f8ab3d09f7",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "mosk_dun02",
+        "name": "Baba Yaga",
+        "scope": "shared",
+        "sprite": 970,
+        "unique_name": "Baba Yaga#rus32",
+        "x": 48,
+        "y": 214
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Baba Yaga, the Horrible|mosk_in:215:46": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.BabaYagaTheHorrible",
+    "output_hash": "de8a6666ae88a253f52e4ceceb0fc8462fafc7ee3475f04651deae82fa3c2550",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/baba_yaga_the_horrible.ex",
+    "source_hash": "a3b9560f6fb9b1e0129fa4dd63f0ac74f3be1336a6cadfdcb1ba68a13fe556ee",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "mosk_in",
+        "name": "Baba Yaga, the Horrible",
+        "scope": "shared",
+        "sprite": 970,
+        "trigger": [
+          7,
+          7
+        ],
+        "x": 215,
+        "y": 46
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Bed#mos1|mosk_in:136:279": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Bed",
+    "output_hash": "4c88ca4de6a16993ee0cb29a67545043ef25389096cf5521a8a2c23f19f7b901",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/bed.ex",
+    "source_hash": "d6bbfa7b7349c95474333cb5daaab6aa8d0f10bb704d8bcb4b36e9a6ebb9ec7c",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mosk_in",
+        "name": "Bed",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Bed#mos1",
+        "x": 136,
+        "y": 279
+      },
+      {
+        "dir": 3,
+        "map": "mosk_in",
+        "name": "Bed",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Bed#mos2",
+        "x": 161,
+        "y": 279
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Berbayeff#npc|moscovia:171:71": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Berbayeff",
+    "output_hash": "25481dc83b58d0de9a36e49627536964c611593dbb5f29b04177054848c478a5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/berbayeff.ex",
+    "source_hash": "69754f69967f8dd2da60f3085e0fdf4f289ea25e11c38fc09df5bf418246445a",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "moscovia",
+        "name": "Berbayeff",
+        "scope": "shared",
+        "sprite": 968,
+        "unique_name": "Berbayeff#npc",
+        "x": 171,
+        "y": 71
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Big Squirrel#mos|mosk_fild01:113:108": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.BigSquirrel",
+    "output_hash": "48f4c1b8e6f4c09c83480ef08023d55ba826fe9b43933b637fcd0392f5c801ef",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/big_squirrel.ex",
+    "source_hash": "d6ed71233fc74a3fe60e74572b0d89eb73a9fb9b15dd75619241daa47aafc926",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mosk_fild01",
+        "name": "Big Squirrel",
+        "scope": "shared",
+        "sprite": 111,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "Big Squirrel#mos",
+        "x": 113,
+        "y": 108
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Broom Grandma#rus44|payon:65:119": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.BroomGrandma",
+    "output_hash": "b3ec8474d8e72dc65d818931a4bd509d057ff65c5bc99c591c54eecbaf364380",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/broom_grandma.ex",
+    "source_hash": "61c5fb55fc2bc15a3aa6eb61cad9d76d5a67ee10b8e6fa03a469549501966e29",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "payon",
+        "name": "Broom Grandma",
+        "scope": "shared",
+        "sprite": 78,
+        "unique_name": "Broom Grandma#rus44",
+        "x": 65,
+        "y": 119
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Bubbling Swamp#mos1|mosk_dun03:153:90": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.BubblingSwamp",
+    "output_hash": "0a69d600298dd3a86247a34d76ac24767bef42059b1a7fd1d45f3edebc9cd2c1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/bubbling_swamp.ex",
+    "source_hash": "8bca2834e0f34e7d42f0b9d945671b037026bd98bc22f299c39e2863c79a4b77",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mosk_dun03",
+        "name": "Bubbling Swamp",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "Bubbling Swamp#mos1",
+        "x": 153,
+        "y": 90
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Bulletin Board#npc|moscovia:135:52": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.BulletinBoard",
+    "output_hash": "bc0db0b86eae542df33c4f2ac9bf176f947e450028567c466e2b9a8c6f5d5243",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/bulletin_board.ex",
+    "source_hash": "b875dca582fb42f9d513ef57f4b88caba4cd42aa05ea18cf501717e6954739ee",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "moscovia",
+        "name": "Bulletin Board",
+        "scope": "shared",
+        "sprite": 837,
+        "unique_name": "Bulletin Board#npc",
+        "x": 135,
+        "y": 52
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Cow#rus33|mosk_dun02:257:193": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Cow",
+    "output_hash": "90b02fa472244e3ae3cffaf9c5647855bc4ee8435c533cf5dc70d75dd9683fd0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/cow.ex",
+    "source_hash": "30b55bf1cabc773279e14d2a7d989017a798fd61b2dba52a5418c61acbb2ea00",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mosk_dun02",
+        "name": "Cow",
+        "scope": "shared",
+        "sprite": 889,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Cow#rus33",
+        "x": 257,
+        "y": 193
+      },
+      {
+        "dir": 4,
+        "map": "mosk_dun02",
+        "name": "Cow",
+        "scope": "shared",
+        "sprite": 889,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Cow#rus34",
+        "x": 146,
+        "y": 247
+      },
+      {
+        "dir": 4,
+        "map": "mosk_dun02",
+        "name": "Cow",
+        "scope": "shared",
+        "sprite": 889,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Cow#rus35",
+        "x": 102,
+        "y": 107
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Csar Alexsay III#npc|mosk_in:131:92": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.CsarAlexsayIii",
+    "output_hash": "38dc68b61896556eb4ad1e7102ec229b301ccb74fd38dc1a39ce31bffa3ea123",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/csar_alexsay_iii.ex",
+    "source_hash": "628b1be623438380849d7ff258d688f1d65c60dc1acbb843a52c50162e20b21d",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mosk_in",
+        "name": "Csar Alexsay III",
+        "scope": "shared",
+        "sprite": 965,
+        "trigger": [
+          7,
+          7
+        ],
+        "unique_name": "Csar Alexsay III#npc",
+        "x": 131,
+        "y": 92
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Dirty Wall#rus39|treasure01:98:119": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.DirtyWall",
+    "output_hash": "5cfa924f4791edc9df6e5b344ddec910578dd16d3934287a0b6f201233c70dff",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/dirty_wall.ex",
+    "source_hash": "7e3e6ce92dbdbeb15db07317e00689900c49177cc577dd8af81228c5bf1cdc56",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "treasure01",
+        "name": "Dirty Wall",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Dirty Wall#rus39",
+        "x": 98,
+        "y": 119
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Find#ship|moscovia:136:46": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Find",
+    "output_hash": "69ebc5734e524f215b28b753cea95315a4b5ed3437a87bcbfd201afb8fda8686",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/find.ex",
+    "source_hash": "a9209eefae089cd3e909076c8e657571cce150941f4888553fbf4f2cd8083bc3",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "moscovia",
+        "name": "Find",
+        "scope": "shared",
+        "sprite": 844,
+        "trigger": [
+          4,
+          4
+        ],
+        "unique_name": "Find#ship",
+        "x": 136,
+        "y": 46
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Fire pot#mos|mosk_in:205:268": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.FirePot",
+    "output_hash": "5357b1b2c3e5bd1181a6cfa7d1124058123ac1267878cebe3ce8765e83822954",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/fire_pot.ex",
+    "source_hash": "c1f976d8c42d07feac92bf69ad7a0fd997075765ce56d20584a2a8955b94af21",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mosk_in",
+        "name": "Fire pot",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Fire pot#mos",
+        "x": 205,
+        "y": 268
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Gallina#mos|mosk_in:144:279": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Gallina",
+    "output_hash": "89502d04e5f7f2f6c3d8f2a47d2c949c8ec6a7b5ea2bd0ba3eb346ceda314ce5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/gallina.ex",
+    "source_hash": "b5c5b2fb33122d91b306e859959eaceaf1799c914d1509aabb70ed50766deae7",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "mosk_in",
+        "name": "Gallina",
+        "scope": "shared",
+        "sprite": 959,
+        "unique_name": "Gallina#mos",
+        "x": 144,
+        "y": 279
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Ghost Tree#rus45|pay_dun04:163:186": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.GhostTree",
+    "output_hash": "334e779f725e2ef900bdb426690556bc86cfc5c5df8bf0021b42eeca24fce358",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/ghost_tree.ex",
+    "source_hash": "5fff93dd8e7b913cf1d2670abac65e6de529abd31236697df37bc46c1fd011d8",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "pay_dun04",
+        "name": "Ghost Tree",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Ghost Tree#rus45",
+        "x": 163,
+        "y": 186
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Gray Wolf#rus03|mosk_dun01:167:160": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.GrayWolf",
+    "output_hash": "12b069ff62d50e67b818cfd28f22a11a9593144bd0b1594ede77dcca663c027c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/gray_wolf.ex",
+    "source_hash": "2fa461ddcda49b51f0cd8b11f75587700e988da30b8541b3d3ffa94e495e694b",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mosk_dun01",
+        "name": "Gray Wolf",
+        "scope": "shared",
+        "sprite": 972,
+        "unique_name": "Gray Wolf#rus03",
+        "x": 167,
+        "y": 160
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|House Ghost Jar#rus43|mosk_dun02:57:220": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.HouseGhostJar",
+    "output_hash": "eedf5f7504ae70b9a650b693846190a1664296f4eff1f139663fcf588ce89cc4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/house_ghost_jar.ex",
+    "source_hash": "049ad2de06649b1b40278bc85e8bd404822465b7f266a658d5c2e7cd758632a7",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mosk_dun02",
+        "name": "House Ghost Jar",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "House Ghost Jar#rus43",
+        "x": 57,
+        "y": 220
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Irina#edq|moscovia:211:93": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Irina",
+    "output_hash": "b6b759d9c6a23e7ff40136d52d4c06e2b7878f4671299e02ead06d16b3425f0b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/irina.ex",
+    "source_hash": "ec42a338a0202d0b1850d022fa8fa43fbd4640ca8faf79edc1aa0e795acb105e",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "moscovia",
+        "name": "Irina",
+        "scope": "shared",
+        "sprite": 958,
+        "unique_name": "Irina#edq",
+        "x": 211,
+        "y": 93
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Koshei GlobalVar#admin|mosk_dun01:3:3": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.KosheiGlobalvar",
+    "output_hash": "b0c92b9160d42b4dbfff8b01f6549d7ab4909340c0191c773ef0afe307a7738c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/koshei_globalvar.ex",
+    "source_hash": "83b0ad912677b4094d61f547cffe820e35d87544ee3172b9bce392387adceb75",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mosk_dun01",
+        "name": "Koshei GlobalVar",
+        "scope": "shared",
+        "sprite": 958,
+        "unique_name": "Koshei GlobalVar#admin",
+        "x": 3,
+        "y": 3
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Koshei#rus47|mosk_dun01:5:5": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Koshei",
+    "output_hash": "4f7d462b38dc2fd24bc1140c6194cf26236d11b15b8fa7b0d8d194eb86276ec1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/koshei.ex",
+    "source_hash": "8641a7cad1ea66ac7fc2d8bbff4c15613fd7f6c46d28f6e877ced31cca5afce2",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mosk_dun01",
+        "name": "Koshei",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          0,
+          0
+        ],
+        "unique_name": "Koshei#rus47",
+        "x": 5,
+        "y": 5
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Landlord#mos|mosk_in:135:191": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Landlord",
+    "output_hash": "cafc25f9db015263f9ea4888f36ca9699508411980626ef46dc0a508181f742d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/landlord.ex",
+    "source_hash": "21ba73c1512311ef02c8357da536763afa91cc30371627f3362fb325e75e3181",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "mosk_in",
+        "name": "Landlord",
+        "scope": "shared",
+        "sprite": 961,
+        "unique_name": "Landlord#mos",
+        "x": 135,
+        "y": 191
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Larissa#mos_01|mosk_in:211:259": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Larissa",
+    "output_hash": "bf35cd30541d40614a4ae512ac123e0f611b52035e41f1ce6f7b0f8d679a13e2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/larissa.ex",
+    "source_hash": "deda4a43c0edfe9207db4e54d13ea77da4ef5cbf326e480cd129e43f11ce5535",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "mosk_in",
+        "name": "Larissa",
+        "scope": "shared",
+        "sprite": 960,
+        "unique_name": "Larissa#mos_01",
+        "x": 211,
+        "y": 259
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Little Boy#rus09|moscovia:223:210": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.LittleBoy",
+    "output_hash": "e98a15011952709efd847158f6cf866ed654223f4f8729a6f6ea9cab5bdc3404",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/little_boy.ex",
+    "source_hash": "042bd0eab9342a4ca5ec74dfca3d00b201979cdac66bafaf953ec06b6ab5c243",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "moscovia",
+        "name": "Little Boy",
+        "scope": "shared",
+        "sprite": 962,
+        "unique_name": "Little Boy#rus09",
+        "x": 223,
+        "y": 210
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Lusalka#07russai_22|mosk_fild02:116:202": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Lusalka",
+    "output_hash": "89b34c48f5224e4189e50b7779736ccc09e57a535cc3175054d95c5758152d64",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/lusalka.ex",
+    "source_hash": "a3ae1f12bf543a94d0a9a516f3a739a7aa71e9acb8cf7b61e3cfc1c0c0537f99",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mosk_fild02",
+        "name": "Lusalka",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Lusalka#07russai_22",
+        "x": 116,
+        "y": 202
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Lusalka#rus23|mosk_fild02:124:202": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Lusalka124202",
+    "output_hash": "6224496012ec7c691bf058fa6873c9491e4be4bc48decd3de112a327a3813248",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/lusalka_124_202.ex",
+    "source_hash": "d5a06ceb576dea45bd62784d4c07919c9d3d0ea383f628e976259e455aeb993d",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mosk_fild02",
+        "name": "Lusalka",
+        "scope": "shared",
+        "sprite": 971,
+        "unique_name": "Lusalka#rus23",
+        "x": 124,
+        "y": 202
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Marozka#rus31|mosk_fild02:243:270": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Marozka",
+    "output_hash": "0fc8c04dbe3e55bed0eb9592b8f8e80c03b2ceaa597bbdd9781b58d1861e3ebb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/marozka.ex",
+    "source_hash": "fedc64407a6ca285d2a04839b99212aa2ff78b0fc1468ea36ba6b903a12d7851",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mosk_fild02",
+        "name": "Marozka",
+        "scope": "shared",
+        "sprite": 866,
+        "unique_name": "Marozka#rus31",
+        "x": 243,
+        "y": 270
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Mikhail#mos|mosk_in:202:269": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Mikhail",
+    "output_hash": "48fa67e69dc99ca7ceab1a94c7342f8651425171242ade77258320d008a25fdf",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/mikhail.ex",
+    "source_hash": "184ba946da7afc5bf79ef21a9ee09dc9a84e419c617dcefee9d32bc17b5dab1e",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "mosk_in",
+        "name": "Mikhail",
+        "scope": "shared",
+        "sprite": 962,
+        "unique_name": "Mikhail#mos",
+        "x": 202,
+        "y": 269
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Momotoro Publisher#rus42|amatsu:233:234": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.MomotoroPublisher",
+    "output_hash": "77873d52985736782985b20f5dbad9a8242e0acd9d8ba242f7fc55d375032063",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/momotoro_publisher.ex",
+    "source_hash": "bd16d306567d490ddd2ced11a670bac1e41f4877c56b38d16613364ba86581d2",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "amatsu",
+        "name": "Momotoro Publisher",
+        "scope": "shared",
+        "sprite": 758,
+        "unique_name": "Momotoro Publisher#rus42",
+        "x": 233,
+        "y": 234
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Morocc Villager#rus25|morocc:165:82": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.MoroccVillager",
+    "output_hash": "b8118621f27f175b10053ac82dee1152f7294b0610c6bac6e0d092fcbdb81450",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/morocc_villager.ex",
+    "source_hash": "50f8d600417b265e4f7147827092595105cafe8f26cadc6a258833238c54cb83",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "morocc",
+        "name": "Morocc Villager",
+        "scope": "shared",
+        "sprite": 48,
+        "unique_name": "Morocc Villager#rus25",
+        "x": 165,
+        "y": 82
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Mr. Ibanoff#npc2|mosk_ship:98:110": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.MrIbanoff98110",
+    "output_hash": "c836bfb4dbebc33b0ac24e553ed95a547a9c3753c67af9b2af1665d41ea8c5db",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/mr_ibanoff_98_110.ex",
+    "source_hash": "e7230901644cd26192fa4142670217fd8e8f274c3e439b20a3021bb11ff5d332",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mosk_ship",
+        "name": "Mr. Ibanoff",
+        "scope": "shared",
+        "sprite": 964,
+        "unique_name": "Mr. Ibanoff#npc2",
+        "x": 98,
+        "y": 110
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Mr. Ibanoff#npc|moscovia:135:49": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.MrIbanoff",
+    "output_hash": "2e93671a782dd09d55d60e31dec51d5bc1c6982c2ec83c921c0ac18ae43da8df",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/mr_ibanoff.ex",
+    "source_hash": "0d4a4baf65de1e473938d08c609e84adc85f30f4e781a71d55188cda049e4e0a",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "moscovia",
+        "name": "Mr. Ibanoff",
+        "scope": "shared",
+        "sprite": 964,
+        "unique_name": "Mr. Ibanoff#npc",
+        "x": 135,
+        "y": 49
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Mysterious Stone#rus02|mosk_dun01:169:162": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.MysteriousStone",
+    "output_hash": "09de5092af0adf4d4a9f00e8996a8cd46231f46997f4b0b6dacef6f69b9df9f9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/mysterious_stone.ex",
+    "source_hash": "1d2c324a8806a9ac9c1531631d51e37ed7d97f9a197c3ec2dd502e9a0ced14f2",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mosk_dun01",
+        "name": "Mysterious Stone",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Mysterious Stone#rus02",
+        "x": 169,
+        "y": 162
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Noisy Coffin#rus36|mosk_dun02:65:232": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.NoisyCoffin",
+    "output_hash": "f6ea82629d20914ab421c1797eb3bfc5c6893c9a89d2c644335246a5d8a2ac75",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/noisy_coffin.ex",
+    "source_hash": "4e49cbc3970af9d018d74ab434cceb29dbc9ea9139cab4ccba14ba91bab90831",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mosk_dun02",
+        "name": "Noisy Coffin",
+        "scope": "shared",
+        "sprite": 801,
+        "unique_name": "Noisy Coffin#rus36",
+        "x": 65,
+        "y": 232
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Occult Apple Tree#rus29|mosk_que:56:202": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.OccultAppleTree",
+    "output_hash": "d14ab15464b0d0bd95b17fa222f3fc830878564ffa6790b29f4f6151d437402e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/occult_apple_tree.ex",
+    "source_hash": "34d8500c1dacb2bec6f9423504618edb67c9ba3e458bc472b4f516e6ff133946",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mosk_que",
+        "name": "Occult Apple Tree",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Occult Apple Tree#rus29",
+        "x": 56,
+        "y": 202
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Old Bed#rus38|treasure01:24:39": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.OldBed",
+    "output_hash": "db0845ac26c505c9217f0910f27463e0b33dfca6d77a3a7384895fcb607c37da",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/old_bed.ex",
+    "source_hash": "3210e2a26a54cba192952208028b6ad37c7876b8f284d23f2ce2503906936cee",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "treasure01",
+        "name": "Old Bed",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Old Bed#rus38",
+        "x": 24,
+        "y": 39
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Old Treasure Box#rus37|treasure01:165:58": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.OldTreasureBox",
+    "output_hash": "e19b0037377f3ea5ea526cd7ce60bf54ea5428db2ed13f4e54f255c7e924ec17",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/old_treasure_box.ex",
+    "source_hash": "987f0ed011609045d0feace24ee48b37f43398e7d5f0a63c6c97fefb789e6064",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "treasure01",
+        "name": "Old Treasure Box",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Old Treasure Box#rus37",
+        "x": 165,
+        "y": 58
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Old_Wooden_Box#rus40|treasure01:61:183": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.OldWoodenBox",
+    "output_hash": "f1d9e47fe41a6236ee0ab963ecfd2d1710bc8fec9b378f06fd094c91a752f8c1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/old_wooden_box.ex",
+    "source_hash": "c144cee19b068da9bc5600c7d884b79ff61dd944cb93cddc55df9fd525aca8f8",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "treasure01",
+        "name": "Old_Wooden_Box",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Old_Wooden_Box#rus40",
+        "x": 61,
+        "y": 183
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Opened Treasure Chest#41|treasure01:27:115": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.OpenedTreasureChest",
+    "output_hash": "fc54ccb9b3e107fa15a4e899cd5214e0fa0759ddf4a272d1775c87ca8a0efd8a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/opened_treasure_chest.ex",
+    "source_hash": "41250d79502a8575f9ff8ef2fe21b06b0746fbdc6ba62ee083fd85b8c8218a78",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "treasure01",
+        "name": "Opened Treasure Chest",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Opened Treasure Chest#41",
+        "x": 27,
+        "y": 115
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Pile of skeletons#Magic|mosk_dun03:225:233": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.PileOfSkeletons",
+    "output_hash": "40159dccfbe88801f82994c7407598edafd5e0636783130a0ef194c8a10b3686",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/pile_of_skeletons.ex",
+    "source_hash": "e358537272145a681c6de7e3de0abd552cfd05795f73572893ca045d7cd62cc6",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mosk_dun03",
+        "name": "Pile of skeletons",
+        "scope": "shared",
+        "sprite": 111,
+        "trigger": [
+          5,
+          5
+        ],
+        "unique_name": "Pile of skeletons#Magic",
+        "x": 225,
+        "y": 233
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Prime Minister Dmitree#m|mosk_in:127:89": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.PrimeMinisterDmitree",
+    "output_hash": "d5db562c89100da381a58921bd0e0087d3bc4f7d31b4230bb0c15e28ae663b33",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/prime_minister_dmitree.ex",
+    "source_hash": "5d24d8ae52354b5179c0beb8ddb05063e4b471d312383cde774fcec7d7e79c86",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mosk_in",
+        "name": "Prime Minister Dmitree",
+        "scope": "shared",
+        "sprite": 967,
+        "unique_name": "Prime Minister Dmitree#m",
+        "x": 127,
+        "y": 89
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Pub Owner#mos|mosk_in:141:212": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.PubOwner",
+    "output_hash": "b7d212a97b3760541474988652cbaa868d4e4be706f0432260e4b8426e6f85c4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/pub_owner.ex",
+    "source_hash": "9618fc05877af1cbc04df2e3e0121867b9e03f6ac349ea5bac0882786529f4e1",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mosk_in",
+        "name": "Pub Owner",
+        "scope": "shared",
+        "sprite": 964,
+        "unique_name": "Pub Owner#mos",
+        "x": 141,
+        "y": 212
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Ryubaba#rus08|moscovia:213:216": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Ryubaba",
+    "output_hash": "4ece6f57629171bdd4db6cafdd44c44fff1c58307c26d7873f7e56367767342a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/ryubaba.ex",
+    "source_hash": "f82654b97bfc0883f20080a2c8647671669f87b5bf59e2337f953c3ae3f98702",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "moscovia",
+        "name": "Ryubaba",
+        "scope": "shared",
+        "sprite": 960,
+        "unique_name": "Ryubaba#rus08",
+        "x": 213,
+        "y": 216
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Sage#rus01|mosk_fild02:198:252": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Sage",
+    "output_hash": "c960cec0ddf41489531d6383b5aaaff0a579b285b70b2f6c21a418bff83bc1b2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/sage.ex",
+    "source_hash": "5391beff140a65cd4063a1f3156096259509f2063f13cdf1c1a0442e4ada6d57",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mosk_fild02",
+        "name": "Sage",
+        "scope": "shared",
+        "sprite": 755,
+        "unique_name": "Sage#rus01",
+        "x": 198,
+        "y": 252
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Shepherdess#rus10|mosk_fild02:157:233": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Shepherdess",
+    "output_hash": "85299ad3f163d914b2ada1383b7437d73e0de448277492a3b9b47ba97f6ea03e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/shepherdess.ex",
+    "source_hash": "e67f1ec7de0eb395e072edcabefdc0e728cadfd0a01c993dcb458cb7ca97dc27",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mosk_fild02",
+        "name": "Shepherdess",
+        "scope": "shared",
+        "sprite": 69,
+        "unique_name": "Shepherdess#rus10",
+        "x": 157,
+        "y": 233
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Soldier#rus26|moc_pryd04:126:120": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Soldier",
+    "output_hash": "4d010d6064f3f53981a61beab204444389b4d479159b099fa472d117f93f697a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/soldier.ex",
+    "source_hash": "9f1a6722b8a5a6712f76f63884716fe959013bf217904f9a74bdf42887f9a8a9",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "moc_pryd04",
+        "name": "Soldier",
+        "scope": "shared",
+        "sprite": 967,
+        "unique_name": "Soldier#rus26",
+        "x": 126,
+        "y": 120
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Stone Furnace#rus28|mosk_que:45:131": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.StoneFurnace",
+    "output_hash": "d73618d3887d95cf4fb66326a837a4ca0a5cd4bc2328b9b5f8f45ee55024ac71",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/stone_furnace.ex",
+    "source_hash": "ad332f242b315e360be24ea6fcf3ffa20d4bd6c8b601f3bfd389e83b0b47d2c9",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mosk_que",
+        "name": "Stone Furnace",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Stone Furnace#rus28",
+        "x": 45,
+        "y": 131
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|The Blacksmith#rus06|moscovia:178:127": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.TheBlacksmith",
+    "output_hash": "f36cce73891cfd804e46439e920af5a4a2886cec41e376290192641d25d75fa9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/the_blacksmith.ex",
+    "source_hash": "de3975d3988fdf56678a4f89c92c24f9184a058ecc5c4c345c0e2e7d9a9d88f3",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "moscovia",
+        "name": "The Blacksmith",
+        "scope": "shared",
+        "sprite": 63,
+        "unique_name": "The Blacksmith#rus06",
+        "x": 178,
+        "y": 127
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Vassili Grandpapa#rus07|moscovia:206:81": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.VassiliGrandpapa",
+    "output_hash": "98564ffb330b9f7f1b88a4fb362c367fdd974f8b86a57d09faf7d5b9c0ed1377",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/vassili_grandpapa.ex",
+    "source_hash": "eafd463af2be1bdfc3cbab4e1a0b556a74c66f7e618f6ecdc837fce04d70bc2b",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "moscovia",
+        "name": "Vassili Grandpapa",
+        "scope": "shared",
+        "sprite": 712,
+        "unique_name": "Vassili Grandpapa#rus07",
+        "x": 206,
+        "y": 81
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Victor#mos|mosk_in:147:202": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Victor",
+    "output_hash": "379fcbd82c38d671710c9e88e658fe14f7b327f466226908903cb8eeba63f0ea",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/victor.ex",
+    "source_hash": "5f35483b8675f0e5aa55f98ccbc406037fdd51b9df66269a72859aa458e11351",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mosk_in",
+        "name": "Victor",
+        "scope": "shared",
+        "sprite": 968,
+        "unique_name": "Victor#mos",
+        "x": 147,
+        "y": 202
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Wall#rus04|mosk_dun01:45:259": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Wall",
+    "output_hash": "4a1b1f542167e0d7e54b9e0b3be706147130936d59c063b29faa94116a6158be",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/wall.ex",
+    "source_hash": "bffe8e844bb86cda115b51573e39e41997bdc00736f05ec725455ebe0189867a",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mosk_dun01",
+        "name": "Wall",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Wall#rus04",
+        "x": 45,
+        "y": 259
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Wanderer#rus24|prontera:228:279": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Wanderer",
+    "output_hash": "f48703aedb3751cc652ec05045e3ae2c10ab94280785f8d7b12eb2892684efff",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/wanderer.ex",
+    "source_hash": "55ec9c1bcde30fa5efb20b6dc87e34acd8916961fbe36453fe405a2e7364956d",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "prontera",
+        "name": "Wanderer",
+        "scope": "shared",
+        "sprite": 968,
+        "unique_name": "Wanderer#rus24",
+        "x": 228,
+        "y": 279
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|Worried Mother#rus19|moscovia:166:145": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.WorriedMother",
+    "output_hash": "bad99c7f507d4b751bb4642d9b8a83d1706855289842d97ea387fe3cfd18e492",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/worried_mother.ex",
+    "source_hash": "adfa0830b1ff465dc6474fbad15dab46144b65e8243b10efa39caad3a7de54ca",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "moscovia",
+        "name": "Worried Mother",
+        "scope": "shared",
+        "sprite": 961,
+        "unique_name": "Worried Mother#rus19",
+        "x": 166,
+        "y": 145
+      }
+    ]
+  },
+  "quests/quests_moscovia.txt|script|rudder#ship|mosk_ship:101:111": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMoscovia.Rudder",
+    "output_hash": "dbc88e5b694d7cd9ff5e014e082a22baed97dc9caf97210b67b8512e6b94c8f4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_moscovia/rudder.ex",
+    "source_hash": "922b90149d9d6d58f3a58c33a10a49c68772bfa2c85f30fcec307db7b42f9493",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "mosk_ship",
+        "name": "rudder",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "rudder#ship",
+        "x": 101,
+        "y": 111
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
