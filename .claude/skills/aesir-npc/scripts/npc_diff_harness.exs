@@ -295,6 +295,11 @@ defmodule H.Core do
   def call(:set_local, [ctx, key, value]), do: %{ctx | locals: Map.put(ctx.locals, key, value)}
   def call(:set_local, [ctx, key]), do: %{ctx | locals: Map.put(ctx.locals, key, 0)}
 
+  def call(:scoped_call, [ctx, args, fun]) do
+    {callee, value} = fun.(%{ctx | locals: %{}}, args)
+    {%{callee | locals: ctx.locals}, value}
+  end
+
   def call(:select, [ctx, options]) do
     choice = pick({:select, counter(:select)}, Enum.to_list(1..length(options)) ++ [255])
     {log(ctx, {:select, options, choice}), choice}

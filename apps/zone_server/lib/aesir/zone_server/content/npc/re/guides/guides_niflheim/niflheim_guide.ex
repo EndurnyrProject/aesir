@@ -80,23 +80,41 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesNiflheim.NiflheimGuide do
       case v1 do
         1 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Tool Shop", "niflheim,218,196", "^0000FF"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Tool Shop", "niflheim,218,196", "^0000FF"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 218, 196, 0, 688_895)
 
         2 ->
-          {ctx, _} = s_l_mark(ctx, [Todo.call!(:F_Navi, ["Pub", "niflheim,189,208", "^006400"])])
+          {ctx, _} =
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Pub", "niflheim,189,208", "^006400"])],
+              &s_l_mark/2
+            )
+
           viewpoint(ctx, 1, 189, 208, 1, 11_206_400)
 
         3 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Weapon Shop", "niflheim,218,170", "^800080"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Weapon Shop", "niflheim,218,170", "^800080"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 218, 170, 2, 14_315_734)
 
         4 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Witch's Castle", "niflheim,255,195", "^FF1493"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Witch's Castle", "niflheim,255,195", "^FF1493"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 255, 195, 3, 16_716_947)
 

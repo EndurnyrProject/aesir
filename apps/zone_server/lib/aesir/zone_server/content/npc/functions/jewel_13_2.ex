@@ -28,7 +28,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.Jewel132 do
   alias Aesir.ZoneServer.Script.Rathena
 
   @doc "Runs the gem interaction and ends the current script."
-  def call(ctx, args) do
+  def call(ctx, args), do: scoped_call(ctx, args, &run/2)
+
+  defp run(ctx, args) do
     ctx = set_local(ctx, :"color$", Enum.at(args, 0, 0))
     progress = get_char_var(ctx, :ep13_2_rhea, 0)
 

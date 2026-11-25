@@ -255,6 +255,12 @@ Rules that repeatedly bite:
   approved cleanup, remove only files whose current hash still matches the recorded generated
   `output_hash`; preserve edited files and their records. Do not delete the directory or discard
   the manifest to work around conflicts. Corpus regeneration is separate from NPC refactoring.
+- `callfunc`, `callsub` and script-local function calls each run in their own `.@` scope, as in
+  the reference: codegen emits `scoped_call(ctx, [args], &s_label/2)` at every `callsub` and
+  local-function call, and a global function's `call/2` is
+  `scoped_call(ctx, args, &run/2)`. A fall-through or `goto` into the same label shares the
+  caller's scope. A hand-written helper module that touches `.@` locals keeps that `call/2`
+  wrapper; a refactor must not pass values back through shared locals.
 - Script-local functions (`function Cell;` + `function Cell { … }`) are declarations, so they are
   hoisted out of the body before flow emission and become private `fn_cell/2` helpers even when they
   sit after a label's `end`. A value stored into a variable whose name has no `$`, and a `switch`

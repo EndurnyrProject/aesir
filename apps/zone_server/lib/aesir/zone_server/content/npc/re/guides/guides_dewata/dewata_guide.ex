@@ -86,42 +86,66 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesDewata.DewataGuide do
     ctx =
       case v1 do
         1 ->
-          {ctx, _} = s_l_mark(ctx, ["^0000FFKafra Employee^000000"])
+          {ctx, _} = scoped_call(ctx, ["^0000FFKafra Employee^000000"], &s_l_mark/2)
           viewpoint(ctx, 1, 202, 184, 0, 4095)
 
         2 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Weapon Dealer", "dewata,218,164", "^008080"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Weapon Dealer", "dewata,218,164", "^008080"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 218, 163, 1, 32896)
 
         3 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Armor Dealer", "dewata,158,182", "^008080"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Armor Dealer", "dewata,158,182", "^008080"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 158, 182, 2, 32896)
 
         4 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Tool Dealer", "dewata,182,164", "^FF1493"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Tool Dealer", "dewata,182,164", "^FF1493"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 182, 164, 3, 16_716_947)
 
         5 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Restauranteur", "dewata,146,109", "^FF1493"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Restauranteur", "dewata,146,109", "^FF1493"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 146, 109, 4, 16_716_947)
 
         6 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Krakau Gatekeeper", "dewata,235,56", "^8A2BE2"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Krakau Gatekeeper", "dewata,235,56", "^8A2BE2"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 235, 56, 5, 9_055_202)
 
         7 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Alberta Sailor", "dewata,229,49", "^00BFFF"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Alberta Sailor", "dewata,229,49", "^00BFFF"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 229, 49, 6, 49151)
 

@@ -11,7 +11,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Functions.FIzludechannel do
   alias Aesir.ZoneServer.Script.Rathena
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
-  def call(ctx, args) do
+  def call(ctx, args), do: scoped_call(ctx, args, &run/2)
+
+  defp run(ctx, args) do
     {ctx, v1} =
       ctx
       |> mes("[Channel Warp Official]")

@@ -387,7 +387,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
     """
     @doc "Callable rAthena global function; returns `{ctx, return_value}`."
-    def call(#{param(body_lines)}, #{args}) do
+    def call(ctx, args), do: scoped_call(ctx, args, &run/2)
+
+    defp run(#{param(body_lines)}, #{args}) do
       #{wrap_return_catch(body, catch_return?)}
     end
     """
@@ -1186,7 +1188,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp emit_stmt({:cmd, "callsub", [{:name, label} | args]}, env) do
     {pre, args} = hoist_all(args, env)
     rendered = Enum.map_join(args, ", ", &render(&1, env))
-    {pre ++ ["{ctx, _} = #{fn_name(env, label)}(ctx, [#{rendered}])"], :cont}
+    {pre ++ ["{ctx, _} = #{scoped_call(fn_name(env, label), rendered)}"], :cont}
   end
 
   # `attachrid <account_id>{,<force>}` re-attaches the script to another player.
@@ -1238,7 +1240,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       MapSet.member?(env.a.local_functions, name) ->
         {pre, args} = hoist_all(args, env)
         rendered = Enum.map_join(args, ", ", &render(&1, env))
-        {pre ++ ["{ctx, _} = #{local_fn_name(name)}(ctx, [#{rendered}])"], :cont}
+        {pre ++ ["{ctx, _} = #{scoped_call(local_fn_name(name), rendered)}"], :cont}
 
       match?({:ok, _}, CommandMap.command(name)) ->
         {:ok, rule} = CommandMap.command(name)
@@ -2803,7 +2805,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {args, pre} = hoist_list(args, env, pre)
     rendered = Enum.map_join(args, ", ", &render(&1, env))
     tmp = tmp_var()
-    {{:temp, tmp}, ["{ctx, #{tmp}} = #{fn_name(env, label)}(ctx, [#{rendered}])" | pre]}
+    {{:temp, tmp}, ["{ctx, #{tmp}} = #{scoped_call(fn_name(env, label), rendered)}" | pre]}
   end
 
   # `input(<var>{,<min>{,<max>}})` in expression position: rAthena returns a
@@ -2911,7 +2913,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       {args, pre} = hoist_list(args, env, pre)
       rendered = Enum.map_join(args, ", ", &render(&1, env))
       tmp = tmp_var()
-      {{:temp, tmp}, ["{ctx, #{tmp}} = #{local_fn_name(name)}(ctx, [#{rendered}])" | pre]}
+      {{:temp, tmp}, ["{ctx, #{tmp}} = #{scoped_call(local_fn_name(name), rendered)}" | pre]}
     else
       {args, pre} = hoist_list(args, env, pre)
       {{:call, name, args}, pre}
@@ -3503,6 +3505,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   end
 
   defp local_fn_name(name), do: "fn_" <> ModuleName.slug(name)
+
+  # `callsub` and script-local function calls run the target in its own `.@` scope, as the
+  # reference opens one per call; a fall-through or `goto` into the same label does not.
+  defp scoped_call(target, rendered), do: "scoped_call(ctx, [#{rendered}], &#{target}/2)"
 
   # -- emitter state (process dictionary; reset per generate/2) ----------------
 

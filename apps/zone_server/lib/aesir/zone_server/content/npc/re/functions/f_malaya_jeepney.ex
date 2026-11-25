@@ -11,7 +11,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Functions.FMalayaJeepney do
   alias Aesir.ZoneServer.Script.Rathena
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
-  def call(ctx, args) do
+  def call(ctx, args), do: scoped_call(ctx, args, &run/2)
+
+  defp run(ctx, args) do
     ctx =
       ctx
       |> set_local(:"mapName$", Enum.at(args, 0, 0))
@@ -69,7 +71,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Functions.FMalayaJeepney do
 
             throw({:script_end, ctx})
           else
-            ctx = ctx |> mes("[Jeepney Driver]") |> mes("Have a nice day.") |> close()
+            ctx = ctx |> mes("[Jeepney Driver]") |> mes("Have a nice day.") |> close2()
             ctx = warp(ctx, get_local(ctx, :"mapName$", ""), 29, 24)
             throw({:script_end, ctx})
           end

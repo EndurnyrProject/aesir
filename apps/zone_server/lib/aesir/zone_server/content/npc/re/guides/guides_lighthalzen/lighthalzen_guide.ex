@@ -130,75 +130,103 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesLighthalzen.LighthalzenGu
         case v2 do
           1 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Hotel", "lighthalzen,159,133", "^FF0000"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Hotel", "lighthalzen,159,133", "^FF0000"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 160, 217, 0, 16_711_680) |> next()
 
           2 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Bank", "lighthalzen,203,257", "^FF4500"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Bank", "lighthalzen,203,257", "^FF4500"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 203, 257, 1, 16_729_344) |> next()
 
           3 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Airport", "lighthalzen,262,75", "^DAA520"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Airport", "lighthalzen,262,75", "^DAA520"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 262, 75, 2, 14_329_120) |> next()
 
           4 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Weapon Shop", "lighthalzen,194,35", "^7B68EE"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Weapon Shop", "lighthalzen,194,35", "^7B68EE"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 194, 35, 3, 8_087_790) |> next()
 
           5 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Department Store", "lighthalzen,199,164", "^B91A4D"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Department Store", "lighthalzen,199,164", "^B91A4D"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 202, 106, 4, 12_130_893) |> next()
 
           6 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Police Station", "lighthalzen,234,276", "^008000"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Police Station", "lighthalzen,234,276", "^008000"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 234, 276, 5, 32768) |> next()
 
           7 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Jewelry Store", "lighthalzen,96,110", "^0000FF"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Jewelry Store", "lighthalzen,96,110", "^0000FF"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 96, 110, 6, 255) |> next()
 
           8 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Cool Event Corp.", "lighthalzen,238,217", "^000080"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Cool Event Corp.", "lighthalzen,238,217", "^000080"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 238, 217, 7, 128) |> next()
 
           9 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Somatology Laboratory", "lighthalzen,101,243", "^800080"])
-              ])
+              scoped_call(
+                ctx,
+                [
+                  Todo.call!(:F_Navi, ["Somatology Laboratory", "lighthalzen,101,243", "^800080"])
+                ],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 101, 243, 8, 8_388_736) |> next()
 
           10 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Alchemist Association", "lighthalzen,54,132", "^0A9696"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Alchemist Association", "lighthalzen,54,132", "^0A9696"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 54, 132, 9, 693_910) |> next()
 
@@ -239,7 +267,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesLighthalzen.LighthalzenGu
               |> mes("on the 1st floor of the Weapon Shop.")
               |> viewpoint(1, 194, 35, 10, 693_910)
               |> next()
-              |> s_l_mark(["^0A9696Armsmith^000000"])
+              |> scoped_call(["^0A9696Armsmith^000000"], &s_l_mark/2)
 
             next(ctx)
 
@@ -253,27 +281,33 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesLighthalzen.LighthalzenGu
               |> mes("of the Weapon Shop.")
               |> viewpoint(1, 194, 35, 11, 4_915_330)
               |> next()
-              |> s_l_mark(["^4B0082Seiyablem^000000", 1])
+              |> scoped_call(["^4B0082Seiyablem^000000", 1], &s_l_mark/2)
 
             next(ctx)
 
           3 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Pet Groomer", "lighthalzen,222,191", "^FF4500"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Pet Groomer", "lighthalzen,222,191", "^FF4500"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 222, 191, 12, 16_729_344) |> next()
 
           4 ->
-            {ctx, _} = s_l_mark(ctx, ["^008080Kafra Employees^000000"])
+            {ctx, _} = scoped_call(ctx, ["^008080Kafra Employees^000000"], &s_l_mark/2)
             ctx |> viewpoint(1, 164, 99, 13, 32896) |> viewpoint(1, 164, 99, 14, 32896) |> next()
 
           5 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Cool Event Corp. Staff", "lighthalzen,94,247", "^FF1493"])
-              ])
+              scoped_call(
+                ctx,
+                [
+                  Todo.call!(:F_Navi, ["Cool Event Corp. Staff", "lighthalzen,94,247", "^FF1493"])
+                ],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 94, 247, 15, 16_716_947) |> next()
 
@@ -336,7 +370,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesLighthalzen.LighthalzenGu
             ctx
             |> mes("[Lighthalzen Guide]")
             |> mes("Enjoy your adventures!")
-            |> close()
+            |> close2()
             |> cutin("ein_soldier", 255)
 
           throw({:script_end, ctx})

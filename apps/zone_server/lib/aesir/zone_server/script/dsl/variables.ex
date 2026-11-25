@@ -390,4 +390,16 @@ defmodule Aesir.ZoneServer.Script.Dsl.Variables do
   """
   @spec get_local(Ctx.t(), atom(), term()) :: term()
   def get_local(%Ctx{vars: vars}, key, default \\ 0), do: Map.get(vars, key, default)
+
+  @doc """
+  Runs `fun` with `args` in its own script-local scope (rAthena `callfunc` and
+  `callsub`): the callee starts with no `.@` variables, and the caller's are
+  restored once it returns. Returns the callee's `{ctx, value}`.
+  """
+  @spec scoped_call(Ctx.t(), [term()], (Ctx.t(), [term()] -> {Ctx.t(), term()})) ::
+          {Ctx.t(), term()}
+  def scoped_call(%Ctx{vars: caller_vars} = ctx, args, fun) do
+    {ctx, value} = fun.(%{ctx | vars: %{}}, args)
+    {%{ctx | vars: caller_vars}, value}
+  end
 end

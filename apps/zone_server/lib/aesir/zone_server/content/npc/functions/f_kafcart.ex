@@ -33,7 +33,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafcart do
   and `0` when the player cancelled.
   """
   @spec call(Ctx.t(), [term()]) :: {Ctx.t(), 0 | 1}
-  def call(ctx, args) do
+  def call(ctx, args), do: scoped_call(ctx, args, &run/2)
+
+  defp run(ctx, args) do
     if base_class(ctx) == :merchant do
       rent(ctx, args)
     else

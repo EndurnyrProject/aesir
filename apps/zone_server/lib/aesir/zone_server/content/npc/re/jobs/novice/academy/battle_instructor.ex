@@ -163,17 +163,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
                     end
 
                   {ctx, _} =
-                    s_l_quest(ctx, [
-                      11339,
-                      90,
-                      50,
-                      909,
-                      5,
-                      "Poring",
-                      "can easily be found",
-                      "Hunt",
-                      "Jellopies"
-                    ])
+                    scoped_call(
+                      ctx,
+                      [
+                        11339,
+                        90,
+                        50,
+                        909,
+                        5,
+                        "Poring",
+                        "can easily be found",
+                        "Hunt",
+                        "Jellopies"
+                      ],
+                      &s_l_quest/2
+                    )
 
                   ctx =
                     if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
@@ -206,17 +210,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
                     end
 
                   {ctx, _} =
-                    s_l_quest(ctx, [
-                      11340,
-                      90,
-                      50,
-                      515,
-                      1,
-                      "Lunatic",
-                      "is easily found",
-                      "Catch",
-                      "Carrot"
-                    ])
+                    scoped_call(
+                      ctx,
+                      [11340, 90, 50, 515, 1, "Lunatic", "is easily found", "Catch", "Carrot"],
+                      &s_l_quest/2
+                    )
 
                   ctx =
                     if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
@@ -244,17 +242,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
                     end
 
                   {ctx, _} =
-                    s_l_quest(ctx, [
-                      11341,
-                      135,
-                      100,
-                      914,
-                      3,
-                      "Fabre",
-                      "is easily found",
-                      "Hunt",
-                      "Fluffs"
-                    ])
+                    scoped_call(
+                      ctx,
+                      [11341, 135, 100, 914, 3, "Fabre", "is easily found", "Hunt", "Fluffs"],
+                      &s_l_quest/2
+                    )
 
                   ctx =
                     if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
@@ -282,17 +274,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
                     end
 
                   {ctx, _} =
-                    s_l_quest(ctx, [
-                      11344,
-                      120,
-                      90,
-                      915,
-                      2,
-                      "Pupa",
-                      "is easily found",
-                      "Hunt",
-                      "Chrysalises"
-                    ])
+                    scoped_call(
+                      ctx,
+                      [11344, 120, 90, 915, 2, "Pupa", "is easily found", "Hunt", "Chrysalises"],
+                      &s_l_quest/2
+                    )
 
                   ctx =
                     if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
@@ -322,17 +308,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
                     end
 
                   {ctx, _} =
-                    s_l_quest(ctx, [
-                      11342,
-                      200,
-                      175,
-                      939,
-                      3,
-                      "Hornet",
-                      "are found",
-                      "Hunt",
-                      "Bee Stings"
-                    ])
+                    scoped_call(
+                      ctx,
+                      [11342, 200, 175, 939, 3, "Hornet", "are found", "Hunt", "Bee Stings"],
+                      &s_l_quest/2
+                    )
 
                   ctx =
                     ctx
@@ -375,17 +355,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
                     end
 
                   {ctx, _} =
-                    s_l_quest(ctx, [
-                      11340,
-                      90,
-                      50,
-                      515,
-                      1,
-                      "Lunatic",
-                      "is easily found",
-                      "Catch",
-                      "Carrot"
-                    ])
+                    scoped_call(
+                      ctx,
+                      [11340, 90, 50, 515, 1, "Lunatic", "is easily found", "Catch", "Carrot"],
+                      &s_l_quest/2
+                    )
 
                   ctx =
                     if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
@@ -413,17 +387,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
                     end
 
                   {ctx, _} =
-                    s_l_quest(ctx, [
-                      11341,
-                      135,
-                      100,
-                      914,
-                      3,
-                      "Fabre",
-                      "is easily found",
-                      "Hunt",
-                      "Fluffs"
-                    ])
+                    scoped_call(
+                      ctx,
+                      [11341, 135, 100, 914, 3, "Fabre", "is easily found", "Hunt", "Fluffs"],
+                      &s_l_quest/2
+                    )
 
                   ctx =
                     if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
@@ -451,17 +419,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
                     end
 
                   {ctx, _} =
-                    s_l_quest(ctx, [
-                      11344,
-                      120,
-                      90,
-                      915,
-                      2,
-                      "Pupa",
-                      "is easily found",
-                      "Hunt",
-                      "Chrysalises"
-                    ])
+                    scoped_call(
+                      ctx,
+                      [11344, 120, 90, 915, 2, "Pupa", "is easily found", "Hunt", "Chrysalises"],
+                      &s_l_quest/2
+                    )
 
                   ctx =
                     if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
@@ -491,17 +453,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
                     end
 
                   {ctx, _} =
-                    s_l_quest(ctx, [
-                      11342,
-                      200,
-                      175,
-                      939,
-                      3,
-                      "Hornet",
-                      "are found",
-                      "Hunt",
-                      "Bee Stings"
-                    ])
+                    scoped_call(
+                      ctx,
+                      [11342, 200, 175, 939, 3, "Hornet", "are found", "Hunt", "Bee Stings"],
+                      &s_l_quest/2
+                    )
 
                   ctx =
                     ctx
@@ -539,17 +495,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
                     end
 
                   {ctx, _} =
-                    s_l_quest(ctx, [
-                      11341,
-                      135,
-                      100,
-                      914,
-                      3,
-                      "Fabre",
-                      "is easily found",
-                      "Hunt",
-                      "Fluffs"
-                    ])
+                    scoped_call(
+                      ctx,
+                      [11341, 135, 100, 914, 3, "Fabre", "is easily found", "Hunt", "Fluffs"],
+                      &s_l_quest/2
+                    )
 
                   ctx =
                     if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
@@ -577,17 +527,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
                     end
 
                   {ctx, _} =
-                    s_l_quest(ctx, [
-                      11344,
-                      120,
-                      90,
-                      915,
-                      2,
-                      "Pupa",
-                      "is easily found",
-                      "Hunt",
-                      "Chrysalises"
-                    ])
+                    scoped_call(
+                      ctx,
+                      [11344, 120, 90, 915, 2, "Pupa", "is easily found", "Hunt", "Chrysalises"],
+                      &s_l_quest/2
+                    )
 
                   ctx =
                     if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
@@ -617,17 +561,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
                     end
 
                   {ctx, _} =
-                    s_l_quest(ctx, [
-                      11342,
-                      200,
-                      175,
-                      939,
-                      3,
-                      "Hornet",
-                      "are found",
-                      "Hunt",
-                      "Bee Stings"
-                    ])
+                    scoped_call(
+                      ctx,
+                      [11342, 200, 175, 939, 3, "Hornet", "are found", "Hunt", "Bee Stings"],
+                      &s_l_quest/2
+                    )
 
                   ctx =
                     ctx
@@ -665,17 +603,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
                     end
 
                   {ctx, _} =
-                    s_l_quest(ctx, [
-                      11344,
-                      120,
-                      90,
-                      915,
-                      2,
-                      "Pupa",
-                      "is easily found",
-                      "Hunt",
-                      "Chrysalises"
-                    ])
+                    scoped_call(
+                      ctx,
+                      [11344, 120, 90, 915, 2, "Pupa", "is easily found", "Hunt", "Chrysalises"],
+                      &s_l_quest/2
+                    )
 
                   ctx =
                     if not Rathena.truthy?(isbegin_quest(ctx, 11338)) do
@@ -705,17 +637,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
                     end
 
                   {ctx, _} =
-                    s_l_quest(ctx, [
-                      11342,
-                      200,
-                      175,
-                      939,
-                      3,
-                      "Hornet",
-                      "are found",
-                      "Hunt",
-                      "Bee Stings"
-                    ])
+                    scoped_call(
+                      ctx,
+                      [11342, 200, 175, 939, 3, "Hornet", "are found", "Hunt", "Bee Stings"],
+                      &s_l_quest/2
+                    )
 
                   ctx =
                     ctx
@@ -755,17 +681,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
                     end
 
                   {ctx, _} =
-                    s_l_quest(ctx, [
-                      11342,
-                      200,
-                      175,
-                      939,
-                      3,
-                      "Hornet",
-                      "are found",
-                      "Hunt",
-                      "Bee Stings"
-                    ])
+                    scoped_call(
+                      ctx,
+                      [11342, 200, 175, 939, 3, "Hornet", "are found", "Hunt", "Bee Stings"],
+                      &s_l_quest/2
+                    )
 
                   ctx =
                     ctx
@@ -796,7 +716,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
                 |> mes("[Battle Instructor Subino]")
                 |> mes("Ok, I'll send you to the West field of Izlude.")
                 |> mes("Be sure you know how to get back.")
-                |> close()
+                |> close2()
 
               ctx = warp(ctx, Rathena.concat("prt_fild", strnpcinfo(ctx, 2)), 344, 213)
               throw({:script_end, ctx})

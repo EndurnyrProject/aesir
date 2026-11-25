@@ -95,39 +95,67 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMalaya.PortMalayaGuide do
     ctx =
       case v1 do
         1 ->
-          {ctx, _} = s_l_mark(ctx, ["^0000FFKafra Employees^000000", 1])
+          {ctx, _} = scoped_call(ctx, ["^0000FFKafra Employees^000000", 1], &s_l_mark/2)
           ctx |> viewpoint(1, 71, 79, 0, 688_895) |> viewpoint(1, 234, 204, 1, 688_895)
 
         2 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Inn & Tavern", "malaya,193,215", "^006400"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Inn & Tavern", "malaya,193,215", "^006400"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 193, 215, 2, 11_206_400)
 
         3 ->
           {ctx, _} =
-            s_l_mark(ctx, [
-              Todo.call!(:F_Navi, ["Weapon & Armor Shop", "malaya,114,212", "^008080"])
-            ])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Weapon & Armor Shop", "malaya,114,212", "^008080"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 114, 212, 3, 5_198_908)
 
         4 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Tool Shop", "malaya,297,167", "^FF1493"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Tool Shop", "malaya,297,167", "^FF1493"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 297, 167, 4, 16_716_947)
 
         5 ->
-          {ctx, _} = s_l_mark(ctx, [Todo.call!(:F_Navi, ["Hospital", "malaya,50,75", "^8B4513"])])
+          {ctx, _} =
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Hospital", "malaya,50,75", "^8B4513"])],
+              &s_l_mark/2
+            )
+
           viewpoint(ctx, 1, 50, 75, 5, 9_127_187)
 
         6 ->
-          {ctx, _} = s_l_mark(ctx, [Todo.call!(:F_Navi, ["Park", "malaya,280,371", "^8B4513"])])
+          {ctx, _} =
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Park", "malaya,280,371", "^8B4513"])],
+              &s_l_mark/2
+            )
+
           viewpoint(ctx, 1, 280, 371, 6, 9_127_187)
 
         7 ->
-          {ctx, _} = s_l_mark(ctx, [Todo.call!(:F_Navi, ["Harbor", "malaya,276,55", "^8A2BE2"])])
+          {ctx, _} =
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Harbor", "malaya,276,55", "^8A2BE2"])],
+              &s_l_mark/2
+            )
+
           viewpoint(ctx, 1, 276, 55, 7, 9_055_202)
 
         8 ->

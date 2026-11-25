@@ -27,7 +27,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FOkolnir do
 
   @doc "Returns the current Okolnir instance suffix with the updated context."
   @spec call(Ctx.t(), list()) :: {Ctx.t(), String.t()}
-  def call(ctx, _args) do
+  def call(ctx, args), do: scoped_call(ctx, args, &run/2)
+
+  defp run(ctx, _args) do
     if Rathena.truthy?(Rathena.compare(strnpcinfo(ctx, 0), "main")) do
       throw({:script_end, ctx})
     end

@@ -32,7 +32,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FEntkafcode do
   Callable rAthena global function `F_EntKafCode`; returns the entered storage password or `0`.
   """
   @spec call(Ctx.t(), [term()]) :: {Ctx.t(), non_neg_integer()}
-  def call(ctx, _args) do
+  def call(ctx, args), do: scoped_call(ctx, args, &run/2)
+
+  defp run(ctx, _args) do
     ctx = mes(ctx, "Enter a number 1000~10000000:")
     attempts = get_temp_var(ctx, :kafcode_try, 0) + 1
     ctx = set_temp_var(ctx, :kafcode_try, attempts)

@@ -76,59 +76,101 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesHugel.GuideRichKing do
         case v2 do
           1 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Church", "hugel,159,113", "^FF0000"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Church", "hugel,159,113", "^FF0000"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 159, 113, 0, 16_711_680) |> next()
 
           2 ->
-            {ctx, _} = s_l_mark(ctx, [Todo.call!(:F_Navi, ["Inn", "hugel,101,77", "^8B4513"])])
+            {ctx, _} =
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Inn", "hugel,101,77", "^8B4513"])],
+                &s_l_mark/2
+              )
+
             ctx |> viewpoint(1, 101, 77, 1, 9_127_187) |> next()
 
           3 ->
-            {ctx, _} = s_l_mark(ctx, [Todo.call!(:F_Navi, ["Pub", "hugel,126,65", "^DAA520"])])
+            {ctx, _} =
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Pub", "hugel,126,65", "^DAA520"])],
+                &s_l_mark/2
+              )
+
             ctx |> viewpoint(1, 126, 65, 2, 14_329_120) |> next()
 
           4 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Airport", "hugel,178,146", "^D7567F"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Airport", "hugel,178,146", "^D7567F"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 178, 146, 3, 14_112_383) |> next()
 
           5 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Weapon Shop", "hugel,88,167", "^CD5C5C"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Weapon Shop", "hugel,88,167", "^CD5C5C"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 88, 167, 4, 13_458_524) |> next()
 
           6 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Tool Shop", "hugel,92,163", "^000080"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Tool Shop", "hugel,92,163", "^000080"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 92, 163, 5, 128) |> next()
 
           7 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Bingo Game Room", "hugel,58,206", "^800080"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Bingo Game Room", "hugel,58,206", "^800080"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 58, 206, 6, 8_388_736) |> next()
 
           8 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Hunter Guild", "hugel,209,224", "^FF1493"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Hunter Guild", "hugel,209,224", "^FF1493"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 209, 224, 7, 16_716_947) |> next()
 
           9 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Party Supplies Shop", "hugel,95,103", "^483D8B"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Party Supplies Shop", "hugel,95,103", "^483D8B"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 95, 103, 8, 4_734_347) |> next()
 
           10 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Shrine Expedition", "hugel,52,95", "^834683"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Shrine Expedition", "hugel,52,95", "^834683"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 52, 95, 9, 8_603_267) |> next()
 
@@ -154,11 +196,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesHugel.GuideRichKing do
       ctx =
         case v3 do
           1 ->
-            {ctx, _} = s_l_mark(ctx, ["^FF1493Monster Race Arena^000000"])
+            {ctx, _} = scoped_call(ctx, ["^FF1493Monster Race Arena^000000"], &s_l_mark/2)
             ctx |> viewpoint(1, 60, 71, 10, 16_716_947) |> next()
 
           2 ->
-            {ctx, _} = s_l_mark(ctx, ["^DA70D6Cool Event Corp. Staff^000000"])
+            {ctx, _} = scoped_call(ctx, ["^DA70D6Cool Event Corp. Staff^000000"], &s_l_mark/2)
             ctx |> viewpoint(1, 88, 168, 11, 14_315_734) |> next()
 
           3 ->

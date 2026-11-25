@@ -111,7 +111,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
 
             throw({:script_end, ctx})
           else
-            {ctx, _} = s_l_cutin(ctx, [get_local(ctx, :style, 0)])
+            {ctx, _} = scoped_call(ctx, [get_local(ctx, :style, 0)], &s_l_cutin/2)
             ctx = mes(ctx, "[Otter Samssoon]")
             v3 = get_local(ctx, :style, 0)
 
@@ -401,7 +401,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
                   ctx
               end
 
-            ctx = ctx |> close() |> cutin("", 255)
+            ctx = ctx |> close2() |> cutin("", 255)
             throw({:script_end, ctx})
           end
         end
@@ -469,7 +469,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
             ctx
           end
 
-        {ctx, _} = s_l_cutin(ctx, [get_local(ctx, :style, 0)])
+        {ctx, _} = scoped_call(ctx, [get_local(ctx, :style, 0)], &s_l_cutin/2)
         ctx = mes(ctx, "[Otter Samssoon]")
 
         {ctx, v5} =
@@ -536,7 +536,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon do
                         |> mes(
                           "Do you need more time? If you want to keep the same color, then select the same one."
                         )
-                        |> close()
+                        |> close2()
                         |> cutin("", 255)
 
                       throw({:script_end, ctx})

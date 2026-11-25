@@ -66,31 +66,41 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMalangdo.MalangdoGuide do
         case v2 do
           1 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Cat Gamers Director", "malangdo,119,137", "FF0000"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Cat Gamers Director", "malangdo,119,137", "FF0000"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 119, 137, 0, 16_711_680) |> next()
 
           2 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Special Vending Machine", "malangdo,216,165", "FF4500"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Special Vending Machine", "malangdo,216,165", "FF4500"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 216, 165, 1, 16_729_344) |> next()
 
           3 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Coin Exchanger", "malangdo,216,165", "DAA520"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Coin Exchanger", "malangdo,216,165", "DAA520"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 216, 165, 2, 14_329_120) |> next()
 
           4 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Starry Coral", "malangdo,73,238", "7B68EE"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Starry Coral", "malangdo,73,238", "7B68EE"])],
+                &s_l_mark/2
+              )
 
             ctx |> next() |> viewpoint(1, 73, 238, 3, 8_087_790)
 
@@ -129,67 +139,101 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMalangdo.MalangdoGuide do
         case v3 do
           1 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Chief Thomas", "malangdo,164,163", "0A9696"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Chief Thomas", "malangdo,164,163", "0A9696"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 164, 163, 4, 693_910) |> next()
 
           2 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Stinky Merchant", "malangdo,173,145", "4B0082"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Stinky Merchant", "malangdo,173,145", "4B0082"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 173, 145, 5, 4_915_330) |> next()
 
           3 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Wandering Merchant", "malangdo,162,145", "FF4500"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Wandering Merchant", "malangdo,162,145", "FF4500"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 162, 145, 6, 8_087_790) |> next()
 
           4 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Inn Owner", "malangdo,147,120", "FF6A00"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Inn Owner", "malangdo,147,120", "FF6A00"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 147, 120, 7, get_char_var(ctx, :FF6A00, 0)) |> next()
 
           5 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Storekeeper", "malangdo,184,138", "7F3300"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Storekeeper", "malangdo,184,138", "7F3300"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 184, 138, 8, 8_336_128) |> next()
 
           6 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Tool Dealer", "malangdo,232,160", "7B68EE"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Tool Dealer", "malangdo,232,160", "7B68EE"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 232, 160, 9, 8_087_790) |> next()
 
           7 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Portali", "malangdo,190,167", "FF4500"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Portali", "malangdo,190,167", "FF4500"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 190, 167, 10, 8_087_790) |> next()
 
           8 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Clink", "malangdo,225,174", "0A9696"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Clink", "malangdo,225,174", "0A9696"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 225, 174, 11, 693_910) |> next()
 
           9 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Holink", "malangdo,221,176", "DA70D6"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Holink", "malangdo,221,176", "DA70D6"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 221, 176, 12, 14_315_734) |> next()
 
           10 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Roving Merchant", "malangdo,150,132", "3131FF"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Roving Merchant", "malangdo,150,132", "3131FF"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 150, 132, 13, 3_224_063) |> next()
 

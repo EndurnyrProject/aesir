@@ -2100,6 +2100,28 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
   end
 
+  describe "scoped_call/3" do
+    test "the callee starts with no locals and the caller's come back unchanged" do
+      ctx = Dsl.set_local(build_ctx(), :i, 3)
+
+      {ctx, value} =
+        Dsl.scoped_call(ctx, [10], fn callee, [n] ->
+          seen = Dsl.get_local(callee, :i)
+          {Dsl.set_local(callee, :i, 99), {seen, n}}
+        end)
+
+      assert value == {0, 10}
+      assert Dsl.get_local(ctx, :i) == 3
+    end
+
+    test "other ctx changes made by the callee are kept" do
+      {ctx, nil} =
+        Dsl.scoped_call(build_ctx(), [], fn callee, [] -> {Dsl.mes(callee, "hi"), nil} end)
+
+      assert ctx.page == ["hi"]
+    end
+  end
+
   describe "job-change reads" do
     setup :setup_ets_tables
 

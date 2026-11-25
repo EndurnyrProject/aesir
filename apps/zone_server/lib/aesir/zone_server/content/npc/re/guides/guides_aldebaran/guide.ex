@@ -100,9 +100,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesAldebaran.Guide do
         case v2 do
           1 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Kafra Headquarters", "aldebaran,61,229", "^B9062F"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Kafra Headquarters", "aldebaran,61,229", "^B9062F"])],
+                &s_l_mark/2
+              )
 
             ctx
             |> mes(get_local(ctx, :"str$", ""))
@@ -111,15 +113,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesAldebaran.Guide do
 
           2 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Alchemist Guild", "aldebaran,60,60", "^0000FF"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Alchemist Guild", "aldebaran,60,60", "^0000FF"])],
+                &s_l_mark/2
+              )
 
             ctx |> mes(get_local(ctx, :"str$", "")) |> viewpoint(1, 60, 60, 1, 688_895) |> next()
 
           3 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Clock Tower", "aldebaran,139,133", "^FF5400"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Clock Tower", "aldebaran,139,133", "^FF5400"])],
+                &s_l_mark/2
+              )
 
             ctx
             |> mes(get_local(ctx, :"str$", ""))
@@ -164,7 +172,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesAldebaran.Guide do
 
           6 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Tavern", "aldebaran,231,106", "^800080"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Tavern", "aldebaran,231,106", "^800080"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 231, 106, 5, 14_315_734) |> next()
 
@@ -197,9 +209,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesAldebaran.Guide do
         case v3 do
           1 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Eden Teleport Officer", "aldebaran,133,119", "^B9062F"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Eden Teleport Officer", "aldebaran,133,119", "^B9062F"])],
+                &s_l_mark/2
+              )
 
             ctx
             |> mes(get_local(ctx, :"str$", ""))
@@ -207,7 +221,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesAldebaran.Guide do
             |> next()
 
           2 ->
-            {ctx, _} = s_l_mark(ctx, ["^0000FFKafra Employee^000000"])
+            {ctx, _} = scoped_call(ctx, ["^0000FFKafra Employee^000000"], &s_l_mark/2)
             ctx |> viewpoint(1, 143, 119, 7, 688_895) |> next()
 
           3 ->
@@ -234,9 +248,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesAldebaran.Guide do
 
           4 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Chef Assistant", "aldebaran,165,107", "^7F3300"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Chef Assistant", "aldebaran,165,107", "^7F3300"])],
+                &s_l_mark/2
+              )
 
             ctx
             |> mes(get_local(ctx, :"str$", ""))
@@ -297,7 +313,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesAldebaran.Guide do
             |> mes("[Al De Baran Guide]")
             |> mes("Alright then,")
             |> mes("enjoy your stay!")
-            |> close()
+            |> close2()
             |> cutin("prt_soldier", 255)
 
           throw({:script_end, ctx})

@@ -119,19 +119,31 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesGeffen.Guide do
 
           2 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Geffen Tower", "geffen,120,114", "^0000FF"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Geffen Tower", "geffen,120,114", "^0000FF"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 120, 114, 1, 255) |> next()
 
           3 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Fountain", "geffen,126,48", "^FF5400"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Fountain", "geffen,126,48", "^FF5400"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 126, 48, 2, 16_757_760) |> next()
 
           4 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Tool Shop", "geffen,44,86", "^006400"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Tool Shop", "geffen,44,86", "^006400"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 44, 86, 3, 11_206_400) |> next()
 
@@ -152,12 +164,22 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesGeffen.Guide do
             |> next()
 
           6 ->
-            {ctx, _} = s_l_mark(ctx, [Todo.call!(:F_Navi, ["Inn", "geffen,172,174", "^800080"])])
+            {ctx, _} =
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Inn", "geffen,172,174", "^800080"])],
+                &s_l_mark/2
+              )
+
             ctx |> viewpoint(1, 172, 174, 5, 14_315_734) |> next()
 
           7 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Tavern", "geffen,138,138", "^B9062F"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Tavern", "geffen,138,138", "^B9062F"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 138, 138, 6, 16_711_680) |> next()
 
@@ -206,9 +228,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesGeffen.Guide do
         case v3 do
           1 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Eden Teleport Officers", "geffen,132,66", "^B9062F"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Eden Teleport Officers", "geffen,132,66", "^B9062F"])],
+                &s_l_mark/2
+              )
 
             ctx
             |> viewpoint(1, 61, 180, 7, 16_711_680)
@@ -216,7 +240,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesGeffen.Guide do
             |> next()
 
           2 ->
-            {ctx, _} = s_l_mark(ctx, ["^FF5400Kafra Employees^000000"])
+            {ctx, _} = scoped_call(ctx, ["^FF5400Kafra Employees^000000"], &s_l_mark/2)
 
             ctx
             |> viewpoint(1, 203, 123, 10, 16_757_760)
@@ -225,21 +249,33 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesGeffen.Guide do
 
           3 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Pet Groomer", "geffen,193,152", "^006400"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Pet Groomer", "geffen,193,152", "^006400"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 193, 152, 12, 11_206_400) |> next()
 
           4 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Chef Assistant", "geffen,196,111", "^7F3300"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Chef Assistant", "geffen,196,111", "^7F3300"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 196, 111, 13, 13_789_470) |> next()
 
           5 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Dimensional Arcanist Guide", "geffen,140,196", "^800080"])
-              ])
+              scoped_call(
+                ctx,
+                [
+                  Todo.call!(:F_Navi, ["Dimensional Arcanist Guide", "geffen,140,196", "^800080"])
+                ],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 140, 196, 14, 14_315_734) |> next()
 
@@ -301,7 +337,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesGeffen.Guide do
             ctx
             |> mes("[Geffen Guide]")
             |> mes("Enjoy your stay.")
-            |> close()
+            |> close2()
             |> cutin("gef_soldier", 255)
 
           throw({:script_end, ctx})

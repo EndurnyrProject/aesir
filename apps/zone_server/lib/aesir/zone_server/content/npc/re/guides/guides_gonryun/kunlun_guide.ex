@@ -76,44 +76,66 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesGonryun.KunlunGuide do
     ctx =
       case v1 do
         1 ->
-          {ctx, _} = s_l_mark(ctx, ["^0000FFKafra Employee^000000"])
+          {ctx, _} = scoped_call(ctx, ["^0000FFKafra Employee^000000"], &s_l_mark/2)
           viewpoint(ctx, 1, 159, 122, 0, 688_895)
 
         2 ->
           {ctx, _} =
-            s_l_mark(ctx, [
-              Todo.call!(:F_Navi, ["Chief's Residence", "gonryun,110,131", "^006400"])
-            ])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Chief's Residence", "gonryun,110,131", "^006400"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 110, 131, 1, 11_206_400)
 
         3 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Tool Dealer", "gonryun,147,84", "^D8BFD8"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Tool Dealer", "gonryun,147,84", "^D8BFD8"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 147, 84, 2, 14_204_888)
 
         4 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Weapon Dealer", "gonryun,174,101", "^FF1493"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Weapon Dealer", "gonryun,174,101", "^FF1493"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 174, 101, 3, 16_716_947)
 
         5 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Armor Dealer", "gonryun,173,84", "^8B4513"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Armor Dealer", "gonryun,173,84", "^8B4513"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 173, 84, 4, 9_127_187)
 
         6 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Wine Maker", "gonryun,213,115", "^9400D3"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Wine Maker", "gonryun,213,115", "^9400D3"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 213, 115, 5, 9_699_539)
 
         7 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Kunlun Envoy", "gonryun,161,11", "^00BFFF"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Kunlun Envoy", "gonryun,161,11", "^00BFFF"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 161, 11, 6, 49151)
 

@@ -104,69 +104,101 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesComodo.ComodoGuide do
         case v2 do
           1 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Tavern", "comodo,161,315", "^FF0000"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Tavern", "comodo,161,315", "^FF0000"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 166, 298, 0, 16_711_680) |> next()
 
           2 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Casino", "comodo,140,111", "^FFA500"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Casino", "comodo,140,111", "^FFA500"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 140, 98, 1, 16_753_920) |> next()
 
           3 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Weapon & Armor Shop", "comodo,266,74", "^FF4500"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Weapon & Armor Shop", "comodo,266,74", "^FF4500"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 266, 70, 2, 16_729_344) |> next()
 
           4 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Tool Shop", "comodo,92,128", "^B8860B"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Tool Shop", "comodo,92,128", "^B8860B"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 86, 128, 3, 12_092_939) |> next()
 
           5 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Campsite", "comodo,209,308", "^32CD32"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Campsite", "comodo,209,308", "^32CD32"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 210, 308, 4, 3_329_330) |> next()
 
           6 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Souvenir Vendor", "comodo,293,125", "^6B8E23"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Souvenir Vendor", "comodo,293,125", "^6B8E23"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 298, 124, 5, 7_048_739) |> next()
 
           7 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["East Cave Mao", "comodo,333,175", "^008B8B"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["East Cave Mao", "comodo,333,175", "^008B8B"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 333, 175, 6, 35723) |> next()
 
           8 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["West Cave Karu", "comodo,24,214", "^1E90FF"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["West Cave Karu", "comodo,24,214", "^1E90FF"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 24, 214, 7, 2_003_199) |> next()
 
           9 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["North Cave Ruanda", "comodo,176,358", "^0000CD"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["North Cave Ruanda", "comodo,176,358", "^0000CD"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 176, 358, 8, 205) |> next()
 
           10 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Hula Dance Stage", "comodo,188,168", "^C71585"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Hula Dance Stage", "comodo,188,168", "^C71585"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 188, 168, 9, 13_047_173) |> next()
 
@@ -217,7 +249,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesComodo.ComodoGuide do
         case v3 do
           1 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Chief's House", "comodo,115,290", "^6495ED"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Chief's House", "comodo,115,290", "^6495ED"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 114, 294, 11, 6_591_981) |> next()
 
@@ -231,7 +267,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesComodo.ComodoGuide do
             |> next()
 
           3 ->
-            {ctx, _} = s_l_mark(ctx, ["^1E90FFKafra Employee^000000"])
+            {ctx, _} = scoped_call(ctx, ["^1E90FFKafra Employee^000000"], &s_l_mark/2)
             ctx |> viewpoint(1, 195, 149, 13, 2_003_199) |> next()
 
           4 ->

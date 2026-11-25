@@ -183,7 +183,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SmallShrine do
             )
           )
           |> next()
-          |> s_l_wish([])
+          |> scoped_call([], &s_l_wish/2)
 
         ctx = pay_zeny(ctx, get_local(ctx, :input, 0))
 
@@ -304,7 +304,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SmallShrine do
             )
           )
           |> next()
-          |> s_l_wish([])
+          |> scoped_call([], &s_l_wish/2)
 
         ctx = ctx |> mes("It feels like this wish could come true.") |> close()
         throw({:script_end, ctx})

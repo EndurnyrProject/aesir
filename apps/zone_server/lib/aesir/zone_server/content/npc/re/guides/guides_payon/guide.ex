@@ -116,39 +116,61 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesPayon.Guide do
 
           2 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Tool Shop", "payon,144,85", "^0000FF"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Tool Shop", "payon,144,85", "^0000FF"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 144, 85, 1, 688_895) |> next()
 
           3 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Weapon & Armor Shop", "payon,139,159", "^FF5400"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Weapon & Armor Shop", "payon,139,159", "^FF5400"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 139, 159, 2, 16_757_760) |> next()
 
           4 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Inn & Tavern", "payon,220,117", "^006400"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Inn & Tavern", "payon,220,117", "^006400"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 220, 117, 3, 11_206_400) |> next()
 
           5 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Central Palace", "payon,155,245", "^7F3300"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Central Palace", "payon,155,245", "^7F3300"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 155, 245, 4, 13_789_470) |> next()
 
           6 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Palace Court", "payon,107,325", "^800080"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Palace Court", "payon,107,325", "^800080"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 107, 325, 5, 14_315_734) |> next()
 
           7 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Royal Kitchen", "payon,154,325", "^B9062F"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Royal Kitchen", "payon,154,325", "^B9062F"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 154, 325, 6, 16_711_680) |> next()
 
@@ -187,30 +209,36 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesPayon.Guide do
         case v3 do
           1 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Eden Teleport Officer", "payon,177,111", "^0000FF"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Eden Teleport Officer", "payon,177,111", "^0000FF"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 177, 111, 7, 688_895) |> next()
 
           2 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Kafra Shop Girls", "payon,164,157", "^FF5400"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Kafra Shop Girls", "payon,164,157", "^FF5400"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 164, 157, 8, 16_757_760) |> next()
 
           3 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Repairman & Armsmith", "payon,144,170", "^006400"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Repairman & Armsmith", "payon,144,170", "^006400"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 144, 170, 9, 11_206_400) |> next()
 
           4 ->
-            {ctx, _} = s_l_mark(ctx, ["^7F3300Kafra Employees^000000"])
+            {ctx, _} = scoped_call(ctx, ["^7F3300Kafra Employees^000000"], &s_l_mark/2)
 
             ctx
             |> viewpoint(1, 181, 104, 10, 13_789_470)
@@ -219,7 +247,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesPayon.Guide do
 
           5 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Trap Specialist", "payon,123,109", "^800080"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Trap Specialist", "payon,123,109", "^800080"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 123, 109, 12, 14_315_734) |> next()
 
@@ -259,13 +291,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesPayon.Guide do
 
           9 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Pet Groomer", "payon,177,131", "^006400"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Pet Groomer", "payon,177,131", "^006400"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 177, 131, 16, 11_206_400) |> next()
 
           10 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Chef Assistant", "payon,206,119", "^7F3300"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Chef Assistant", "payon,206,119", "^7F3300"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 206, 119, 17, 13_789_470) |> next()
 
@@ -327,7 +367,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesPayon.Guide do
 
         4 ->
           ctx =
-            ctx |> mes("[Payon Guide]") |> mes("Enjoy your stay.") |> close() |> cutin("", 255)
+            ctx |> mes("[Payon Guide]") |> mes("Enjoy your stay.") |> close2() |> cutin("", 255)
 
           throw({:script_end, ctx})
 

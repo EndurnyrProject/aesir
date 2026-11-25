@@ -28,7 +28,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.Find132 do
   alias Aesir.ZoneServer.Script.Rathena
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
-  def call(ctx, args) do
+  def call(ctx, args), do: scoped_call(ctx, args, &run/2)
+
+  defp run(ctx, args) do
     ctx =
       case Enum.at(args, 0, 0) do
         0 -> ctx |> set_local(:Check, [2, 10]) |> set_local(:"str$", "Mt. Mjolnir")

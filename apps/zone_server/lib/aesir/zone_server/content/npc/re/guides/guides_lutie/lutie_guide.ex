@@ -74,37 +74,61 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesLutie.LutieGuide do
       case v1 do
         1 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Gift Shop", "xmas,172,131", "^008080"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Gift Shop", "xmas,172,131", "^008080"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 172, 131, 2, 32896)
 
         2 ->
-          {ctx, _} = s_l_mark(ctx, [Todo.call!(:F_Navi, ["Church", "xmas,104,287", "^006400"])])
+          {ctx, _} =
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Church", "xmas,104,287", "^006400"])],
+              &s_l_mark/2
+            )
+
           viewpoint(ctx, 1, 104, 287, 1, 11_206_400)
 
         3 ->
           {ctx, _} =
-            s_l_mark(ctx, [
-              Todo.call!(:F_Navi, ["Weapon & Armor Shop", "xmas,171,158", "^FF1493"])
-            ])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Weapon & Armor Shop", "xmas,171,158", "^FF1493"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 171, 158, 3, 16_716_947)
 
         4 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Tool Shop", "xmas,122,131", "^8B4513"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Tool Shop", "xmas,122,131", "^8B4513"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 122, 131, 4, 9_127_187)
 
         5 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Santa's House", "xmas,149,237", "^B9062F"]), 1])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Santa's House", "xmas,149,237", "^B9062F"]), 1],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 149, 237, 5, 9_699_539)
 
         6 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Toy Factory", "xmas,143,312", "^9400D3"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Toy Factory", "xmas,143,312", "^9400D3"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 143, 312, 6, 16_711_680)
 

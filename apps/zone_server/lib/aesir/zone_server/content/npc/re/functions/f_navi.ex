@@ -11,7 +11,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Functions.FNavi do
   alias Aesir.ZoneServer.Script.Rathena
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
-  def call(ctx, args) do
+  def call(ctx, args), do: scoped_call(ctx, args, &run/2)
+
+  defp run(ctx, args) do
     try do
       ctx =
         if get_char_var(ctx, :PACKETVER, 0) < 20_111_010 do

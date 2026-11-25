@@ -166,9 +166,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMorroc.Guide15953 do
         case v3 do
           1 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Eden Teleport Officer", "moc_ruins,68,164", "^006400"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Eden Teleport Officer", "moc_ruins,68,164", "^006400"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 68, 164, 3, 11_206_400) |> next()
 
@@ -194,26 +196,36 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMorroc.Guide15953 do
             |> next()
 
           3 ->
-            {ctx, _} = s_l_mark(ctx, ["^B9062FKafra Employee^000000"])
+            {ctx, _} = scoped_call(ctx, ["^B9062FKafra Employee^000000"], &s_l_mark/2)
             ctx |> viewpoint(1, 59, 157, 7, 16_711_680) |> next()
 
           4 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Repairman", "moc_ruins,107,94", "^0000FF"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Repairman", "moc_ruins,107,94", "^0000FF"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 107, 94, 8, 688_895) |> next()
 
           5 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Pet Groomer", "moc_ruins,118,170", "^FF5400"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Pet Groomer", "moc_ruins,118,170", "^FF5400"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 118, 170, 9, 16_757_760) |> next()
 
           6 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Chef Assistant", "moc_ruins,115,123", "^006400"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Chef Assistant", "moc_ruins,115,123", "^006400"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 115, 123, 10, 11_206_400) |> next()
 
@@ -284,7 +296,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMorroc.Guide15953 do
             ctx
             |> mes("[Morocc Guide]")
             |> mes("Be safe on your travels.")
-            |> close()
+            |> close2()
             |> cutin("moc_soldier", 255)
 
           throw({:script_end, ctx})

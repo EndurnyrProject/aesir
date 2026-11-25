@@ -377,6 +377,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate set_local(ctx, key, value), to: Variables
   defdelegate get_local(ctx, key), to: Variables
   defdelegate get_local(ctx, key, default), to: Variables
+  defdelegate scoped_call(ctx, args, fun), to: Variables
 
   @doc """
   Stub for an rAthena buildin with no Aesir implementation yet.

@@ -10,7 +10,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Functions.EsserayEx do
   import Aesir.ZoneServer.Script.Dsl, warn: false
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
-  def call(ctx, _args) do
+  def call(ctx, args), do: scoped_call(ctx, args, &run/2)
+
+  defp run(ctx, _args) do
     try do
       if base_level(ctx) > 98 and job_level(ctx) > 98 do
         ctx =

@@ -87,75 +87,121 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesJuno.JunoGuide do
         case v2 do
           1 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Tool Shop", "yuno,194,140", "^FF0000"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Tool Shop", "yuno,194,140", "^FF0000"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 194, 140, 0, 16_711_680) |> next()
 
           2 ->
-            {ctx, _} = s_l_mark(ctx, [Todo.call!(:F_Navi, ["Forge", "yuno,120,137", "^FF4500"])])
+            {ctx, _} =
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Forge", "yuno,120,137", "^FF4500"])],
+                &s_l_mark/2
+              )
+
             ctx |> viewpoint(1, 120, 137, 1, 16_729_344) |> next()
 
           3 ->
-            {ctx, _} = s_l_mark(ctx, [Todo.call!(:F_Navi, ["Airport", "yuno,16,261", "^DAA520"])])
+            {ctx, _} =
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Airport", "yuno,16,261", "^DAA520"])],
+                &s_l_mark/2
+              )
+
             ctx |> viewpoint(1, 16, 261, 2, 14_329_120) |> next()
 
           4 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Government Building", "yuno,157,317", "^008000"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Government Building", "yuno,157,317", "^008000"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 157, 317, 3, 32768) |> next()
 
           5 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Street of Book Stores", "yuno,172,100", "^0000FF"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Street of Book Stores", "yuno,172,100", "^0000FF"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 172, 100, 4, 255) |> next()
 
           6 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Inn & Pub", "yuno,51,105", "^000080"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Inn & Pub", "yuno,51,105", "^000080"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 51, 105, 5, 128) |> next()
 
           7 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Sage Castle", "yuno,90,318", "^800080"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Sage Castle", "yuno,90,318", "^800080"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 90, 318, 6, 8_388_736) |> next()
 
           8 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Monster Academy", "yuno,95,184", "^834683"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Monster Academy", "yuno,95,184", "^834683"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 95, 184, 7, 8_603_267) |> next()
 
           9 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Juno Library", "yuno,338,203", "^4B0082"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Juno Library", "yuno,338,203", "^4B0082"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 338, 203, 8, 4_915_330) |> next()
 
           10 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Weapon & Armor Shop", "yuno,120,137", "^008080"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Weapon & Armor Shop", "yuno,120,137", "^008080"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 120, 137, 9, 32896) |> next()
 
           11 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Juphero Plaza", "yuno,115,57", "^FF1493"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Juphero Plaza", "yuno,115,57", "^FF1493"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 115, 157, 10, 16_716_947) |> next()
 
           12 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Monster Museum", "yuno,278,290", "^DA70D6"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Monster Museum", "yuno,278,290", "^DA70D6"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 278, 290, 11, 14_315_734) |> next()
 
@@ -195,7 +241,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesJuno.JunoGuide do
       ctx =
         case v3 do
           1 ->
-            {ctx, _} = s_l_mark(ctx, ["^FA8072Kafra Employees^000000"])
+            {ctx, _} = scoped_call(ctx, ["^FA8072Kafra Employees^000000"], &s_l_mark/2)
 
             ctx
             |> viewpoint(1, 152, 187, 13, 16_416_882)
@@ -205,9 +251,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesJuno.JunoGuide do
 
           2 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Eden Teleport Officer", "yuno,144,189", "^803232"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Eden Teleport Officer", "yuno,144,189", "^803232"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 144, 189, 16, 8_401_458) |> next()
 

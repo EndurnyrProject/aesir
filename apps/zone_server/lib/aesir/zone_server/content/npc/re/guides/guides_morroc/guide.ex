@@ -149,14 +149,22 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMorroc.Guide do
             |> next()
 
           4 ->
-            {ctx, _} = s_l_mark(ctx, [Todo.call!(:F_Navi, ["Forge", "morocc,47,47", "^006400"])])
+            {ctx, _} =
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Forge", "morocc,47,47", "^006400"])],
+                &s_l_mark/2
+              )
+
             ctx |> viewpoint(1, 47, 47, 3, 11_206_400) |> next()
 
           5 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Weapon & Armor Shop", "morocc,253,56", "^7F3300"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Weapon & Armor Shop", "morocc,253,56", "^7F3300"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 253, 56, 4, 13_789_470) |> next()
 
@@ -178,7 +186,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMorroc.Guide do
 
           7 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Tavern", "morocc,52,259", "^B9062F"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Tavern", "morocc,52,259", "^B9062F"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 52, 259, 6, 16_711_680) |> next()
 
@@ -210,7 +222,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMorroc.Guide do
       ctx =
         case v3 do
           1 ->
-            {ctx, _} = s_l_mark(ctx, ["^0000FFKafra Employees^000000"])
+            {ctx, _} = scoped_call(ctx, ["^0000FFKafra Employees^000000"], &s_l_mark/2)
 
             ctx
             |> viewpoint(1, 156, 97, 7, 688_895)
@@ -219,9 +231,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMorroc.Guide do
 
           2 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Poison Herb Salesman", "morocc,191,94", "^006400"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Poison Herb Salesman", "morocc,191,94", "^006400"])],
+                &s_l_mark/2
+              )
 
             ctx |> viewpoint(1, 190, 96, 9, 11_206_400) |> next()
 
@@ -312,7 +326,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesMorroc.Guide do
             ctx
             |> mes("[Morocc Guide]")
             |> mes("Be safe on your travels.")
-            |> close()
+            |> close2()
             |> cutin("moc_soldier", 255)
 
           throw({:script_end, ctx})

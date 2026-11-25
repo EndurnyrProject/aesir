@@ -119,7 +119,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesProntera.Guide do
         case v2 do
           1 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Tool Shop", "prontera,134,221", "^B9062F"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Tool Shop", "prontera,134,221", "^B9062F"])],
+                &s_l_mark/2
+              )
 
             ctx
             |> mes(get_local(ctx, :"str$", ""))
@@ -128,9 +132,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesProntera.Guide do
 
           2 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Weapon & Armor Shop", "prontera,175,220", "^0000FF"])
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Weapon & Armor Shop", "prontera,175,220", "^0000FF"])],
+                &s_l_mark/2
+              )
 
             ctx
             |> mes(get_local(ctx, :"str$", ""))
@@ -139,7 +145,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesProntera.Guide do
 
           3 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Forge", "prontera,179,184", "^FF5400"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Forge", "prontera,179,184", "^FF5400"])],
+                &s_l_mark/2
+              )
 
             ctx
             |> mes(get_local(ctx, :"str$", ""))
@@ -191,7 +201,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesProntera.Guide do
 
           6 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Inn", "prontera,203,191", "^800080"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Inn", "prontera,203,191", "^800080"])],
+                &s_l_mark/2
+              )
 
             ctx
             |> mes(get_local(ctx, :"str$", ""))
@@ -199,7 +213,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesProntera.Guide do
             |> next()
 
           7 ->
-            {ctx, _} = s_l_mark(ctx, ["^B9062FTaverns^000000"])
+            {ctx, _} = scoped_call(ctx, ["^B9062FTaverns^000000"], &s_l_mark/2)
 
             ctx =
               ctx
@@ -273,7 +287,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesProntera.Guide do
 
           10 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Job Agency", "prontera,133,183", "^006400"])])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Job Agency", "prontera,133,183", "^006400"])],
+                &s_l_mark/2
+              )
 
             ctx
             |> mes(get_local(ctx, :"str$", ""))
@@ -336,10 +354,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesProntera.Guide do
         case v3 do
           1 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Eden Teleport Officer", "prontera,124,76", "^800080"]),
-                1
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Eden Teleport Officer", "prontera,124,76", "^800080"]), 1],
+                &s_l_mark/2
+              )
 
             ctx
             |> mes(get_local(ctx, :"str$", ""))
@@ -450,10 +469,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesProntera.Guide do
 
           7 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Mercenary Guildsman", "prontera,35,337", "^0000FF"]),
-                1
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Mercenary Guildsman", "prontera,35,337", "^0000FF"]), 1],
+                &s_l_mark/2
+              )
 
             ctx
             |> mes(get_local(ctx, :"str$", ""))
@@ -473,7 +493,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesProntera.Guide do
             ctx |> mes(get_local(ctx, :"str$", "")) |> next()
 
           9 ->
-            {ctx, _} = s_l_mark(ctx, ["^006400Kafra Employees^000000", 1])
+            {ctx, _} = scoped_call(ctx, ["^006400Kafra Employees^000000", 1], &s_l_mark/2)
 
             ctx
             |> mes(get_local(ctx, :"str$", ""))
@@ -501,10 +521,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesProntera.Guide do
 
           11 ->
             {ctx, _} =
-              s_l_mark(ctx, [
-                Todo.call!(:F_Navi, ["Apprentice Craftsman", "prontera,165,60", "^800080"]),
-                1
-              ])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Apprentice Craftsman", "prontera,165,60", "^800080"]), 1],
+                &s_l_mark/2
+              )
 
             ctx
             |> mes(get_local(ctx, :"str$", ""))
@@ -513,7 +534,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesProntera.Guide do
 
           12 ->
             {ctx, _} =
-              s_l_mark(ctx, [Todo.call!(:F_Navi, ["Pet Groomer", "prontera,218,211"]), 1])
+              scoped_call(
+                ctx,
+                [Todo.call!(:F_Navi, ["Pet Groomer", "prontera,218,211"]), 1],
+                &s_l_mark/2
+              )
 
             ctx
             |> mes(get_local(ctx, :"str$", ""))
@@ -592,7 +617,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesProntera.Guide do
             ctx
             |> mes("[Prontera Guide]")
             |> mes("Enjoy your stay.")
-            |> close()
+            |> close2()
             |> cutin("prt_soldier", 255)
 
           throw({:script_end, ctx})

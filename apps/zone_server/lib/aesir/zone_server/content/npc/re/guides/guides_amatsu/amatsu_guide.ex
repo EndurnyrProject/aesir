@@ -77,48 +77,76 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Guides.GuidesAmatsu.AmatsuGuide do
     ctx =
       case v1 do
         1 ->
-          {ctx, _} = s_l_mark(ctx, ["^0000FFKafra Employee^000000"])
+          {ctx, _} = scoped_call(ctx, ["^0000FFKafra Employee^000000"], &s_l_mark/2)
           viewpoint(ctx, 1, 102, 149, 0, 688_895)
 
         2 ->
-          {ctx, _} = s_l_mark(ctx, [Todo.call!(:F_Navi, ["Bar", "amatsu,215,116", "^006400"])])
+          {ctx, _} =
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Bar", "amatsu,215,116", "^006400"])],
+              &s_l_mark/2
+            )
+
           viewpoint(ctx, 1, 215, 116, 1, 11_206_400)
 
         3 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Weapon Dealer", "amatsu,129,117", "^008080"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Weapon Dealer", "amatsu,129,117", "^008080"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 129, 117, 2, 32896)
 
         4 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Tool Dealer", "amatsu,97,117", "^FF1493"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Tool Dealer", "amatsu,97,117", "^FF1493"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 97, 117, 3, 16_716_947)
 
         5 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Amatsu Palace", "amatsu,87,235", "^8B4513"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Amatsu Palace", "amatsu,87,235", "^8B4513"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 87, 235, 4, 9_127_187)
 
         6 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Chef Assistant", "amatsu,206,150", "^8A2BE2"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Chef Assistant", "amatsu,206,150", "^8A2BE2"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 206, 150, 5, 9_055_202)
 
         7 ->
           {ctx, _} =
-            s_l_mark(ctx, [
-              Todo.call!(:F_Navi, ["Ninja Guild Building", "amatsu,148,137", "^4B0082"])
-            ])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Ninja Guild Building", "amatsu,148,137", "^4B0082"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 148, 137, 6, 4_915_330)
 
         8 ->
           {ctx, _} =
-            s_l_mark(ctx, [Todo.call!(:F_Navi, ["Sea Captain", "amatsu,195,79", "^00BFFF"])])
+            scoped_call(
+              ctx,
+              [Todo.call!(:F_Navi, ["Sea Captain", "amatsu,195,79", "^00BFFF"])],
+              &s_l_mark/2
+            )
 
           viewpoint(ctx, 1, 195, 79, 7, 49151)
 

@@ -18,6 +18,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Jawaii.Bartender do
 
   - Transpiled by mix aesir.import.npcs from rAthena script
   - LLM-assisted Elixir refactor reviewed by Cλstor
+  - Ordered drinks count toward passing out. Upstream adds the drink to `.@roof_jaw` inside the
+    `S_KillChar` subroutine, whose scope is dropped on return, so the count never rose; the
+    drink step here hands the new count back to the round loop.
   """
 
   use Aesir.ZoneServer.Npc,
@@ -79,7 +82,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Jawaii.Bartender do
       |> next()
       |> mes("[#{char_name(ctx, 0)}]")
       |> mes("Thank you.")
-      |> close()
+      |> close2()
       |> percent_heal(hp: -100, sp: 0)
     end
   end
@@ -94,7 +97,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Jawaii.Bartender do
         |> mes("[#{char_name(ctx, 0)}]")
         |> mes("Thank you...")
         |> mes("Mr. Bartender...")
-        |> close()
+        |> close2()
         |> percent_heal(hp: -100, sp: 0)
 
       {:stop, ctx}
@@ -158,7 +161,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Jawaii.Bartender do
               |> mes("[#{char_name(ctx, 0)}]")
               |> mes("Thank you...")
               |> mes("So much...")
-              |> close()
+              |> close2()
               |> percent_heal(hp: -100, sp: 0)
 
             {:stop, ctx}

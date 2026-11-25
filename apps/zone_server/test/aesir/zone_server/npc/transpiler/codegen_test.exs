@@ -242,7 +242,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       """)
 
     assert src =~ "defp fn_cell(ctx, args) do"
-    assert src =~ "{ctx, _} = fn_cell(ctx, [get_local(ctx, :\"sub$\", \"\"), 0])"
+    assert src =~ "{ctx, _} = scoped_call(ctx, [get_local(ctx, :\"sub$\", \"\"), 0], &fn_cell/2)"
   end
 
   # rAthena stores into a variable without a `$` as a number (`set_reg_num`), and keeps a switch
@@ -452,7 +452,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       return;
       """)
 
-    assert src =~ "{ctx, _} = s_s_warpchar(ctx, [1])"
+    assert src =~ "{ctx, _} = scoped_call(ctx, [1], &s_s_warpchar/2)"
     assert src =~ "defp s_s_warpchar"
     assert src =~ "l_l_end(ctx)"
     assert src =~ "defp l_l_end(ctx) do"
@@ -499,7 +499,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       return getarg(0) + 1;
       """)
 
-    assert src =~ "{ctx, _} = s_s_give(ctx, [5])"
+    assert src =~ "{ctx, _} = scoped_call(ctx, [5], &s_s_give/2)"
     assert src =~ "defp s_s_give(ctx, args) do"
     assert src =~ "{ctx, Enum.at(args, 0, 0) + 1}"
   end
@@ -1475,7 +1475,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
         spawns: []
       )
 
-    assert src =~ "def call(ctx, args) do"
+    assert src =~ "def call(ctx, args), do: scoped_call(ctx, args, &run/2)"
+    assert src =~ "defp run(ctx, args) do"
     assert src =~ "{ctx, 1}"
     assert src =~ "{ctx, 0}"
     refute src =~ "use Aesir.ZoneServer.Npc"
@@ -1497,7 +1498,16 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "def ev_ontouch("
 
     [{module, _}] = Code.compile_string(src)
-    assert module.call(:ctx, [7]) == {:ctx, 7}
+
+    ctx = %Ctx{
+      char_id: nil,
+      account_id: nil,
+      connection_pid: nil,
+      game_state: nil,
+      source: {:npc, :test_npc}
+    }
+
+    assert module.call(ctx, [7]) == {ctx, 7}
   end
 
   test "a global function ending in close/end throws so the calling script ends too" do
@@ -1571,7 +1581,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
         spawns: []
       )
 
-    assert src =~ "def call(ctx, _args) do"
+    assert src =~ "def call(ctx, args), do: scoped_call(ctx, args, &run/2)"
+    assert src =~ "defp run(ctx, _args) do"
     # Callers bind `{ctx, _} = FEnd.call(...)`, so the tail must be a tuple even
     # when the function has no explicit `return`.
     assert src =~ ~r/\{ctx, nil\}\n\s*end/
@@ -2420,7 +2431,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
         spawns: []
       )
 
-    assert src =~ "def call(ctx, args) do"
+    assert src =~ "def call(ctx, args), do: scoped_call(ctx, args, &run/2)"
+    assert src =~ "defp run(ctx, args) do"
     assert src =~ "{ctx, length(args)}"
     refute src =~ "Todo.call!(:getargcount"
   end
