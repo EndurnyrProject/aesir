@@ -50709,6 +50709,1920 @@
       }
     ]
   },
+  "quests/quests_lighthalzen.txt|floating|#bully1|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsLighthalzen.Bully1",
+    "output_hash": "5941eb1321b8d74e1817d0afba9cc9fd81b96c4cab898ba2bd9561a1914a5c94",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_lighthalzen/bully1.ex",
+    "source_hash": "10209e21e81a54a01c5be8bc2fc957715687a70a0e68c25f82962d2f3ff5bcea",
+    "spawns": []
+  },
+  "quests/quests_lighthalzen.txt|floating|#bully2|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsLighthalzen.Bully2",
+    "output_hash": "66e6a5f50d83f6c14cfc1af390c279ca2b02f79e246229b8b65969250c2a2677",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_lighthalzen/bully2.ex",
+    "source_hash": "5dfedc6557dc9188fea67b3c118379bcc70ed84fe4144a287143e06b9b447198",
+    "spawns": []
+  },
+  "quests/quests_lighthalzen.txt|floating|::Scamp|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsLighthalzen.Scamp",
+    "output_hash": "c084b75e41b8837f481b594de12dbffe3de2b9322f27333779f93629e09ddc6d",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_lighthalzen/scamp.ex",
+    "source_hash": "aee208b17f92805121a8fda985cf7138409584af937707795f4e893fef4b840f",
+    "spawns": []
+  },
+  "quests/quests_lighthalzen.txt|script|#LyozienSwitch|airplane_01:10:10": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Lyozienswitch",
+    "output_hash": "205d0b69a7939fd49aabb34ccea0d9df8f2340b93ca2fba0c0bbcb6c5070e676",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/lyozienswitch.ex",
+    "source_hash": "817ce78eaf8bf855c86ab4d403b4d294cda88f01209a2b8a6e5a8975d9597ea2",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 10,
+        "y": 10,
+        "map": "airplane_01",
+        "dir": 3,
+        "sprite": 111,
+        "unique_name": "#LyozienSwitch"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#Sneak|lhz_in01:187:31": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Sneak",
+    "output_hash": "e32e8f6e2e2f3c0e22a3c939ff862e0aeccaeb7a74d1349c88c94ea343fa0951",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/sneak.ex",
+    "source_hash": "77d1d522cebb3209aacd3aae785539b671fb699fdc247227180a7624eb59c8e7",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 187,
+        "y": 31,
+        "map": "lhz_in01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#Sneak",
+        "trigger": [
+          4,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#flashback1|lhz_in01:187:247": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Flashback1",
+    "output_hash": "a0471bf70d3e19f09070d853b0865c695f05a96555c6ff4ac3355f6528262204",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/flashback1.ex",
+    "source_hash": "93990d63860da07e7253966b17a7440381c22608f83f2aa6112f768fb2b264c2",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 187,
+        "y": 247,
+        "map": "lhz_in01",
+        "dir": 3,
+        "sprite": 139,
+        "unique_name": "#flashback1",
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#flashback2|lhz_in01:75:248": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Flashback2",
+    "output_hash": "6f06ea4206b74834ea954bf3484072680cef8874843f71664014d7877bf416d5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/flashback2.ex",
+    "source_hash": "a5210a7e12778654b86d0a3eb88aed431e91b1e65bd83e590e7644dc56485a17",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 75,
+        "y": 248,
+        "map": "lhz_in01",
+        "dir": 3,
+        "sprite": 139,
+        "unique_name": "#flashback2",
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#kiz01-1|lhz_dun01:147:106": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Kiz011",
+    "output_hash": "fb20619afef154f8afb92aea0e63f584ab934d19f8327f73247348138f156b18",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/kiz01_1.ex",
+    "source_hash": "75eadc28f91d8f77a3728c292a241b4e3e11037d98cf3935e685cce85860d7aa",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 147,
+        "y": 106,
+        "map": "lhz_dun01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#kiz01-1",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 239,
+        "y": 135,
+        "map": "lhz_dun01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#kiz01-2",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 66,
+        "y": 213,
+        "map": "lhz_dun01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#kiz01-3",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 225,
+        "y": 198,
+        "map": "lhz_dun01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#kiz01-4",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#kiz02-1|lhz_dun02:244:229": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Kiz021",
+    "output_hash": "56963f3adffb98ba8f0ec55bb42704875a26941c77046cb9c120d5fde31f657f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/kiz02_1.ex",
+    "source_hash": "5dc6e7a0cdd22e475eee52470bcece270142d159e55ede11944ac3df0ac07ea8",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 244,
+        "y": 229,
+        "map": "lhz_dun02",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#kiz02-1",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 60,
+        "y": 293,
+        "map": "lhz_dun02",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#kiz02-2",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 267,
+        "y": 278,
+        "map": "lhz_dun02",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#kiz02-3",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 94,
+        "y": 199,
+        "map": "lhz_dun02",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#kiz02-4",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#kiz03-1|lhz_dun03:244:51": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Kiz031",
+    "output_hash": "3feb0354f1d3060958c374f0a4533e97089c7231d61f74296491d66d99aa9888",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/kiz03_1.ex",
+    "source_hash": "e313224c1ed8ddcb6885e42eaec09585081e939498aa7c8f599c97039d2545a1",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 244,
+        "y": 51,
+        "map": "lhz_dun03",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#kiz03-1",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 123,
+        "y": 191,
+        "map": "lhz_dun03",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#kiz03-2",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 74,
+        "y": 140,
+        "map": "lhz_dun03",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#kiz03-3",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#kiz03|lighthalzen:344:278": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Kiz03",
+    "output_hash": "1548f2de6e86a7c97fd7e4bff7f87f07fb2b68c3e4dd6af8f89c8af9509b44a7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/kiz03.ex",
+    "source_hash": "f471fb9011513a67e245a50511f437cdc45ce96f33dba5664d4df80ecb133962",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 344,
+        "y": 278,
+        "map": "lighthalzen",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#kiz03",
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#kiz04|lhz_in03:178:22": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Kiz04",
+    "output_hash": "4dccd4dff1b4dc92616f379d9409ffc12d26e5c0c0ad1dc924620d42477addbe",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/kiz04.ex",
+    "source_hash": "0bfa497099952ad5978d168666db6498f2fcae05317f5cc3c6b2a7d4384ff495",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 178,
+        "y": 22,
+        "map": "lhz_in03",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#kiz04",
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#kiz05|lighthalzen:295:227": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Kiz05",
+    "output_hash": "3c39114d3f29828b11f1ff3bd05f35f80dab8890d3440d85634cb2bf5f076b09",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/kiz05.ex",
+    "source_hash": "bea99c94fb29e9cd3f5169985e7b4cc3404f76ce22a43cec3f88ed1eae93f102",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 295,
+        "y": 227,
+        "map": "lighthalzen",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#kiz05",
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#kiz06|lighthalzen:364:315": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Kiz06",
+    "output_hash": "8ca4fa6c098906a888eac8fab1e0f1e11179321630957b5f30951cd66dabd7a0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/kiz06.ex",
+    "source_hash": "434ddbaad20b2fe9b1010de8351627159d8bf033de6cff237e7ab2e3a0534aa1",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 364,
+        "y": 315,
+        "map": "lighthalzen",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#kiz06",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#kiz07|lhz_in01:113:150": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Kiz07",
+    "output_hash": "cb81b2b5bb68b2eca637814e51eb4c3cb82ff5ab87e26867b14975a4b7b2f3fb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/kiz07.ex",
+    "source_hash": "333e27ea909df1692b1762e6f82d1b82227a2b889a01add9bd659ad28180e34f",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 113,
+        "y": 150,
+        "map": "lhz_in01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#kiz07",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#kiz08|lhz_in01:272:227": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Kiz08",
+    "output_hash": "e9addeeec030e728ffe2619aca4c78c168a823198682b6fb19cbe851a210a9a6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/kiz08.ex",
+    "source_hash": "0cc3b92ffada5132a33ed170311dcae6f7e0e827be39361003bfd0570ac1d7f5",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 272,
+        "y": 227,
+        "map": "lhz_in01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#kiz08",
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#kiz09|lhz_in01:206:129": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Kiz09",
+    "output_hash": "057eeaac694ad47df02f2a6d757f68b472e978be3abe6e72d23804725f0f7a72",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/kiz09.ex",
+    "source_hash": "8b61192fe8d5dfdb0f3604c7278cf77359b1dc66985a6e2e116d524751c46d46",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 206,
+        "y": 129,
+        "map": "lhz_in01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#kiz09",
+        "trigger": [
+          5,
+          5
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#kiz10|lhz_in01:282:166": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Kiz10",
+    "output_hash": "4d3742cc3b9d1c0327b4f3f826f1f93d64596bd774f2df143225c4f77ca80109",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/kiz10.ex",
+    "source_hash": "92051d2b31462b789ce21a0f9436ffb1930d35739cd7ded593e15824bcbd66a8",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 282,
+        "y": 166,
+        "map": "lhz_in01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#kiz10",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#li_Man|lhz_que01:99:74": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.LiMan",
+    "output_hash": "e91c8b03158fc53e36138a52f6ce6ff712834112b9e274fdd6b7a1223b4e268f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/li_man.ex",
+    "source_hash": "9eec3e95f4107dc085b95c51a83e5e66421f0109b28bf4334187aa0d41fb3464",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 99,
+        "y": 74,
+        "map": "lhz_que01",
+        "dir": 5,
+        "sprite": 48,
+        "unique_name": "#li_Man"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#li_Varmunt|lhz_que01:21:31": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.LiVarmunt",
+    "output_hash": "43c2adecdd81919ac3cfe90fbe767b4974186926c2286b53b23ffcc9a225ef83",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/li_varmunt.ex",
+    "source_hash": "09d903120132833ebc604e3c0a5a27c5382f00a1af73c2fcc8af0eceb9beafa6",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 21,
+        "y": 31,
+        "map": "lhz_que01",
+        "dir": 5,
+        "sprite": 755,
+        "unique_name": "#li_Varmunt"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#li_bird|lhz_que01:90:71": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.LiBird",
+    "output_hash": "60f5684837626141e170b74ac161828de0ec0df233d88f5eab8dae37b6bc5a03",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/li_bird.ex",
+    "source_hash": "a4d7438aede78e7f90e6d1059b505434bafe485942bc53cebe126ca563c82770",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 90,
+        "y": 71,
+        "map": "lhz_que01",
+        "dir": 5,
+        "sprite": 1019,
+        "unique_name": "#li_bird",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#li_bother|lighthalzen:319:321": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.LiBother",
+    "output_hash": "4a9e8b0cc6e3be73eb1d5a7b0b4ee5d4ff1a188ca9801c57798540c81b8110f2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/li_bother.ex",
+    "source_hash": "d42375a2759b5737ff47811124188d98d9de59fae9b78156d5d8f882286a2825",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 319,
+        "y": 321,
+        "map": "lighthalzen",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#li_bother",
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#li_door|lighthalzen:324:322": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.LiDoor",
+    "output_hash": "31469f05b8e534a108b44c972afd3fa8f4fecd6a310ec845363d92e4bc4a02ad",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/li_door.ex",
+    "source_hash": "7c83362bde473a23500f2e50d9a67dd7d8a61ae951e305b29d87e64a5016a065",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 324,
+        "y": 322,
+        "map": "lighthalzen",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#li_door",
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#li_end|lhz_que01:94:24": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.LiEnd",
+    "output_hash": "da87c7520c21bd6ce08ef39017ad039fc4a5e56321e5c949d77489853412aca3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/li_end.ex",
+    "source_hash": "6180f3cad3cbf02c93f3aef6cd72695caf6e2dac0fd1693bfdb7e4ce6a538c63",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 94,
+        "y": 24,
+        "map": "lhz_que01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#li_end",
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#li_researcher|lhz_que01:29:24": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.LiResearcher",
+    "output_hash": "368c5da0894d276a9c92460755396623f5e15025f1d3b7b7fe67fe6959d07601",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/li_researcher.ex",
+    "source_hash": "f83bb3f71749a192c035ff7e925a56b3035eec3aee3f23c3ab1547bc0751d3d5",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 29,
+        "y": 24,
+        "map": "lhz_que01",
+        "dir": 3,
+        "sprite": 754,
+        "unique_name": "#li_researcher"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#li_toend|lhz_in01:43:114": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.LiToend",
+    "output_hash": "57552a1a356d3588efabb57fc3d34474e7aa8610151231e7e64e3a4ff6cc9ac5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/li_toend.ex",
+    "source_hash": "41b948d76f6a7709474f839cb0cadfd8d9cb10d6bc0a229e869280cdf1ba923d",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 43,
+        "y": 114,
+        "map": "lhz_in01",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#li_toend",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|#packidentity|airplane_01:99:47": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Packidentity",
+    "output_hash": "47877c1de5d2ab2ac4e6b479ed43eadbd5a92612a54f76bb1538db11849f8450",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/packidentity.ex",
+    "source_hash": "816363ce64879d03b055389fdd6485b87d81566bfe5d38d58514e32785ec2a82",
+    "spawns": [
+      {
+        "name": "",
+        "scope": "shared",
+        "x": 99,
+        "y": 47,
+        "map": "airplane_01",
+        "dir": 3,
+        "sprite": 139,
+        "unique_name": "#packidentity",
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|A File#li-1|lhz_in01:269:114": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.AFile",
+    "output_hash": "f01ef45e2d310c3f3b367ced17309c5e6b2dd60172114f1d38525786db73011c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/a_file.ex",
+    "source_hash": "d08f9c8d7e844b45f5c271076389f508284e33677c3f150dd31e78ac4382d23b",
+    "spawns": [
+      {
+        "name": "A File",
+        "scope": "shared",
+        "x": 269,
+        "y": 114,
+        "map": "lhz_in01",
+        "dir": 3,
+        "sprite": 111,
+        "unique_name": "A File#li-1"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|A Fine Gentleman|yuno_pre:96:69": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.AFineGentleman",
+    "output_hash": "1ce793e62bc9bc369e7c9a748e210ddb4ceb5c3ec8708f138b86771f170ab5ac",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/a_fine_gentleman.ex",
+    "source_hash": "bf86f3838b300fda1aeb0174dfede959ff6d3ee3e57e02d46a485e3f98b4faae",
+    "spawns": [
+      {
+        "name": "A Fine Gentleman",
+        "scope": "shared",
+        "x": 96,
+        "y": 69,
+        "map": "yuno_pre",
+        "dir": 2,
+        "sprite": 754
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|A Neat Gentleman|yuno_pre:75:73": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.ANeatGentleman",
+    "output_hash": "38d5455b00e8a09d8a2ef3feb948bc69856d4a548161141ec0964a697d85b8f9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/a_neat_gentleman.ex",
+    "source_hash": "269e0a1834fe6fa8285f65970fd3f9446daf802deb41cc1b734b9125e5b6e456",
+    "spawns": [
+      {
+        "name": "A Neat Gentleman",
+        "scope": "shared",
+        "x": 75,
+        "y": 73,
+        "map": "yuno_pre",
+        "dir": 0,
+        "sprite": 109
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Area 1-5|lhz_in01:184:40": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Area15",
+    "output_hash": "22c1601989defe437d362120883819c6aff8e6565e7b025fe3095c070220d032",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/area_1_5.ex",
+    "source_hash": "4284c7f415c63aadfbb394c929bfb31749ad73ab2c18865a95b32a01407b6d12",
+    "spawns": [
+      {
+        "name": "Area 1-5",
+        "scope": "shared",
+        "x": 184,
+        "y": 40,
+        "map": "lhz_in01",
+        "dir": 0,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Area 1-7|lhz_in01:184:52": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Area17",
+    "output_hash": "513316b329fdbc0503dcaf13d765bb83bf1796d826cea85a1ee1012666a6e342",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/area_1_7.ex",
+    "source_hash": "1b5c01c5bed98723e52ad32be2d9feab06d2d78ad854bf468922cf20147635de",
+    "spawns": [
+      {
+        "name": "Area 1-7",
+        "scope": "shared",
+        "x": 184,
+        "y": 52,
+        "map": "lhz_in01",
+        "dir": 0,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Area 3-2|lhz_in01:184:46": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Area32",
+    "output_hash": "94856b1e95304e71aedb155e22ced14d254c8985635be89ba810e00c7c1fac19",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/area_3_2.ex",
+    "source_hash": "3a4e57adeb643ff4f4df1d694ac4d9058f80ed5673eae476c145a64be1a365aa",
+    "spawns": [
+      {
+        "name": "Area 3-2",
+        "scope": "shared",
+        "x": 184,
+        "y": 46,
+        "map": "lhz_in01",
+        "dir": 0,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Area 3-3|lhz_in01:184:48": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Area33",
+    "output_hash": "401ae93a4fca00a5fb364d51a1bdd9f062d20d4c900dd935d32584948beb99a0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/area_3_3.ex",
+    "source_hash": "9a6a01a709984173a42a71acb3869a9f32605310c2081421988e7209139d1412",
+    "spawns": [
+      {
+        "name": "Area 3-3",
+        "scope": "shared",
+        "x": 184,
+        "y": 48,
+        "map": "lhz_in01",
+        "dir": 0,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Area 6-1|lhz_in01:177:56": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Area61",
+    "output_hash": "7d5ed0883a1128272f25200a13de5eb36b4282e3323d4a55f6cafa9b3a1c12d0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/area_6_1.ex",
+    "source_hash": "bdc0f7316fd96f29f104b43b18f84a630a8855559f3b6ff9e81ea22b239d79fa",
+    "spawns": [
+      {
+        "name": "Area 6-1",
+        "scope": "shared",
+        "x": 177,
+        "y": 56,
+        "map": "lhz_in01",
+        "dir": 0,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Barrel#cube|lhz_cube:237:183": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Barrel",
+    "output_hash": "2328ba1dd99d19bb39b5692414a9c9319a96d89b3c2f0b9a4343b0ea11e438ef",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/barrel.ex",
+    "source_hash": "66f101a308490b613ce393780786e439e12697648df36b9baea92bd64f2cc0f4",
+    "spawns": [
+      {
+        "name": "Barrel",
+        "scope": "shared",
+        "x": 237,
+        "y": 183,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Barrel#cube"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Bed#cube|lhz_cube:247:198": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Bed",
+    "output_hash": "f630e6b073d83d3144b5faaab94a54ac59707cea31e943951bbc48604b0a4607",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/bed.ex",
+    "source_hash": "b9398f6c3854a7c4ad76acb8544c18092f511039c9353a3f6c7ac12c2a88e0bc",
+    "spawns": [
+      {
+        "name": "Bed",
+        "scope": "shared",
+        "x": 247,
+        "y": 198,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Bed#cube"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Book#lhz|yuno_in04:168:117": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Book",
+    "output_hash": "e0c7139f93ec51b405319797427d1a1d00c2d5bced531399b9dd00277cffbf62",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/book.ex",
+    "source_hash": "6fc51624b2dabc7053cea48a7c191d43c8878b955f6ccdb4528b0e018d743381",
+    "spawns": [
+      {
+        "name": "Book",
+        "scope": "shared",
+        "x": 168,
+        "y": 117,
+        "map": "yuno_in04",
+        "dir": 3,
+        "sprite": 111,
+        "unique_name": "Book#lhz"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Box#cube1|lhz_cube:248:193": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Box",
+    "output_hash": "524a5239f42d1289d030a6f1a74c9d98b52ca70befd7110b32a02b22bdf2ce13",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/box.ex",
+    "source_hash": "c077a13a6b7e7d550a327f3cb3b75ac17c5a5d0bc73e044ef7f1bc0c40e50860",
+    "spawns": [
+      {
+        "name": "Box",
+        "scope": "shared",
+        "x": 248,
+        "y": 193,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Box#cube1"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Broken Machine|lhz_dun02:282:278": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.BrokenMachine",
+    "output_hash": "8a19dbfa90ffa6c80def87160d84796ca1dd64ccfb8c8f4fefb48fadc2608581",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/broken_machine.ex",
+    "source_hash": "cbd5877c8df09c8448db189e5aa824a751d6d520d78791a680b7294eb50a5bc9",
+    "spawns": [
+      {
+        "name": "Broken Machine",
+        "scope": "shared",
+        "x": 282,
+        "y": 278,
+        "map": "lhz_dun02",
+        "dir": 0,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Bundle of Files#cube|lhz_cube:237:198": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.BundleOfFiles",
+    "output_hash": "a41fbfa855e5b13f90cfd2c3b8326d7594899a8727c8c4c3f27ef3ff9da4ca35",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/bundle_of_files.ex",
+    "source_hash": "64e441c56fbf0356adb26dfc57302fd21cf3ac2b3fb7c1bfc9878bdf1f3e3b62",
+    "spawns": [
+      {
+        "name": "Bundle of Files",
+        "scope": "shared",
+        "x": 237,
+        "y": 198,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Bundle of Files#cube"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Cabinet#cube|lhz_cube:249:191": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Cabinet",
+    "output_hash": "92e50d60f2ddd1c4b1457f73bb6db1580bf0ea2698ff6ee4aa82d6af61ed68bb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/cabinet.ex",
+    "source_hash": "67291795292403523e42b849b065fbbe791e744722a72719a8ed0f5f3a1e3159",
+    "spawns": [
+      {
+        "name": "Cabinet",
+        "scope": "shared",
+        "x": 249,
+        "y": 191,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Cabinet#cube"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Chemicals#cube|lhz_cube:231:202": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Chemicals",
+    "output_hash": "1350271e9e6d761fe90f67768321087959d8f15f4bd02cd7c2f0960f54a78164",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/chemicals.ex",
+    "source_hash": "4f4e78cfc862337ebd5082b572d680f408cddad059fa71aa1b00830b44e06876",
+    "spawns": [
+      {
+        "name": "Chemicals",
+        "scope": "shared",
+        "x": 231,
+        "y": 202,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Chemicals#cube"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Chest#cube|lhz_cube:248:179": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Chest",
+    "output_hash": "9f973de31252bfed25c2ac641b3cf42387b8c7a036a18c7c74f3f562a09f86c1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/chest.ex",
+    "source_hash": "5158fe36ab117740d15e3890d5430af1981ec5eefe81ecb23d921e46c544e7dd",
+    "spawns": [
+      {
+        "name": "Chest",
+        "scope": "shared",
+        "x": 248,
+        "y": 179,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Chest#cube"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Crippled Girl#li_tre|lhz_in03:32:162": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.CrippledGirl",
+    "output_hash": "960fe58aa7cae0657873bf157da7691e963dfb75281c08d35422521eb65c26c1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/crippled_girl.ex",
+    "source_hash": "93d2ba8ccc50dda7de68ee71075d0ec4815516a4f7630c3c89b704602a474bea",
+    "spawns": [
+      {
+        "name": "Crippled Girl",
+        "scope": "shared",
+        "x": 32,
+        "y": 162,
+        "map": "lhz_in03",
+        "dir": 3,
+        "sprite": 53,
+        "unique_name": "Crippled Girl#li_tre"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Desk#cube|lhz_cube:234:200": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Desk",
+    "output_hash": "cc448e1f625312bbf1812728199c6783795d9464668ff65011f8f328db67e573",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/desk.ex",
+    "source_hash": "6cc6cd47ac0e77fa1adbb8d094d5e9ccadb1cd98260627d31bc1ae26fda15178",
+    "spawns": [
+      {
+        "name": "Desk",
+        "scope": "shared",
+        "x": 234,
+        "y": 200,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Desk#cube"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Digotz|lhz_in02:201:210": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Digotz",
+    "output_hash": "92354f68c4766dae70d32d53951a669fb55d5404a9369124cfc7f6d07a809f59",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/digotz.ex",
+    "source_hash": "dff13647f8824a8da5846ece2572fba3ddb8bab1ca7c5ddab6ea45b7f67e05d5",
+    "spawns": [
+      {
+        "name": "Digotz",
+        "scope": "shared",
+        "x": 201,
+        "y": 210,
+        "map": "lhz_in02",
+        "dir": 5,
+        "sprite": 869
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Dismal Guy|yuno_fild04:165:245": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.DismalGuy",
+    "output_hash": "a3202bc1be1ed0ea0dd0f5b1313ac5a0cbaebab9d6c2fb43a3fc49c6c10e23f9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/dismal_guy.ex",
+    "source_hash": "f0c314b7a044de28f953e9ea5880a08d5164fdc0bbe1cb8569cf9fde94baddbe",
+    "spawns": [
+      {
+        "name": "Dismal Guy",
+        "scope": "shared",
+        "x": 165,
+        "y": 245,
+        "map": "yuno_fild04",
+        "dir": 4,
+        "sprite": 89
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Door#cube|lhz_cube:250:184": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Door",
+    "output_hash": "00da76920dac39e81f1485327c97e5291f205eb5340cb631c4276e4a6841fb9f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/door.ex",
+    "source_hash": "62421f5cb2ee862bcf5845b979561b4b7829f8363f04c7e2e587e60355af6160",
+    "spawns": [
+      {
+        "name": "Door",
+        "scope": "shared",
+        "x": 250,
+        "y": 184,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Door#cube"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Door#sneak|lhz_in01:177:31": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Door17731",
+    "output_hash": "88028370e537c8ef835c94517d73c35884c348aa52ad86b1957216a0373e5157",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/door_177_31.ex",
+    "source_hash": "bf8688d9404ae0e35623b95fb27215736992b4126bff3c704b3a17beeacb840d",
+    "spawns": [
+      {
+        "name": "Door",
+        "scope": "shared",
+        "x": 177,
+        "y": 31,
+        "map": "lhz_in01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Door#sneak"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Drawer#cube|lhz_cube:242:201": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Drawer",
+    "output_hash": "ae81f564442a2ecec5502acb36ee93c186f0cf6f12c5cfd27d73c093513cff6d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/drawer.ex",
+    "source_hash": "da8bd7339dd9d778a56918c9e113632cc7a400525becfe497fea0df90fb37aba",
+    "spawns": [
+      {
+        "name": "Drawer",
+        "scope": "shared",
+        "x": 242,
+        "y": 201,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Drawer#cube"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Eavesdrop|yuno_pre:117:60": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Eavesdrop",
+    "output_hash": "49580803a71dc498bb60b96414e1ab1b1bab7ed108078868a31366535c5ea753",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/eavesdrop.ex",
+    "source_hash": "e18fec6905ea783c308f42b95c4136d1a17b8f5c8a679fce598bfec48689a9dd",
+    "spawns": [
+      {
+        "name": "Eavesdrop",
+        "scope": "shared",
+        "x": 117,
+        "y": 60,
+        "map": "yuno_pre",
+        "dir": 0,
+        "sprite": 111,
+        "trigger": [
+          10,
+          5
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Elder#lhz|lighthalzen:346:263": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Elder",
+    "output_hash": "7c957aa023ac90490321e14bd54a226b96dd8d52328b125c26f013c349cc9883",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/elder.ex",
+    "source_hash": "eb855a656d3339c82f78daa51d1e1096b772508be7d987dda372e470af2feb53",
+    "spawns": [
+      {
+        "name": "Elder",
+        "scope": "shared",
+        "x": 346,
+        "y": 263,
+        "map": "lighthalzen",
+        "dir": 3,
+        "sprite": 846,
+        "unique_name": "Elder#lhz"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Esuna Trigger|lhz_fild01:76:214": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.EsunaTrigger",
+    "output_hash": "4bd01c29e4f9483ed47a39bfec11f947fc34d7ff2c6ad505d34bf1f2b25f26f2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/esuna_trigger.ex",
+    "source_hash": "762817627223392e0677e4a3293899ce4c331ff764ae9b24186c65b07d3cf475",
+    "spawns": [
+      {
+        "name": "Esuna Trigger",
+        "scope": "shared",
+        "x": 76,
+        "y": 214,
+        "map": "lhz_fild01",
+        "dir": 0,
+        "sprite": 111,
+        "trigger": [
+          5,
+          5
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Exit1#lt|lhz_dun02:224:6": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Exit1",
+    "output_hash": "5f036c140964edc7069f5f205568b67177e69362255ea35cfda4850e69f2c060",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/exit1.ex",
+    "source_hash": "9000345a7401187895ebd40386565ae34d1171627ca5064c43e324c5c6cc5a3d",
+    "spawns": [
+      {
+        "name": "Exit1",
+        "scope": "shared",
+        "x": 224,
+        "y": 6,
+        "map": "lhz_dun02",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Exit1#lt",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Experiment Tube#cube|lhz_cube:224:197": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.ExperimentTube",
+    "output_hash": "77c807cc5188d75698a33e4910cf69df1216e6018b48f14d9a433dfd9585ac1d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/experiment_tube.ex",
+    "source_hash": "8abfd2388a3724ecf05f072c46f3fc3f911b93d19c5e76c91c9f24af7f6e5c1f",
+    "spawns": [
+      {
+        "name": "Experiment Tube",
+        "scope": "shared",
+        "x": 224,
+        "y": 197,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Experiment Tube#cube"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|File Search Engine|lhz_in01:182:35": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.FileSearchEngine",
+    "output_hash": "5ef4571bff76c22f7b6d2ee3b7d8665eda09f0fca5c1ec3c45f6d4e44082ae0a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/file_search_engine.ex",
+    "source_hash": "d0830ec4b33b3e9d8db85edadaaa12354113eefc815f8a14874d1c0b1d927d86",
+    "spawns": [
+      {
+        "name": "File Search Engine",
+        "scope": "shared",
+        "x": 182,
+        "y": 35,
+        "map": "lhz_in01",
+        "dir": 0,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|File#li|lhz_que01:89:15": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.File",
+    "output_hash": "98abb5d7a2d8cbc4b7e4017c1eb7e6317d8e89696d06c9cecdf070c729542cdc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/file.ex",
+    "source_hash": "08f6554df2aa41701e10980b45a0badb51454ccdaacc61ce5e8b2a5763950b78",
+    "spawns": [
+      {
+        "name": "File",
+        "scope": "shared",
+        "x": 89,
+        "y": 15,
+        "map": "lhz_que01",
+        "dir": 3,
+        "sprite": 111,
+        "unique_name": "File#li"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Fishbone|lighthalzen:341:224": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Fishbone",
+    "output_hash": "f8cb795edd553faa5800d893094fe228b21c977f772817cceb1515d685a6da99",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/fishbone.ex",
+    "source_hash": "94bd338e353ff71ccbc5079268a284ac7f5b26eb42b4f98235acf18a0b507139",
+    "spawns": [
+      {
+        "name": "Fishbone",
+        "scope": "shared",
+        "x": 341,
+        "y": 224,
+        "map": "lighthalzen",
+        "dir": 3,
+        "sprite": 868
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Goblet#cube|lhz_cube:229:184": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Goblet",
+    "output_hash": "50a417c19d87c74d9a643c442ac59eea5fc732a09fa887b0b8b0b4377d219930",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/goblet.ex",
+    "source_hash": "063b143d6011722844e289a1a23471072f4c7435966ab8122b14acdae5c9d854",
+    "spawns": [
+      {
+        "name": "Goblet",
+        "scope": "shared",
+        "x": 229,
+        "y": 184,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Goblet#cube"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Guard#lhz01|lighthalzen:267:200": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Guard",
+    "output_hash": "4e3d9e56e52b2de0fd2e7b7d5ac26fa57f7b369758d7d8d3c9e5c4f477ca7993",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/guard.ex",
+    "source_hash": "f33c7b8c2d2610f1188449dafd2e50178650348b4c83e23be7b99ad3cb5b26c4",
+    "spawns": [
+      {
+        "name": "Guard",
+        "scope": "shared",
+        "x": 267,
+        "y": 200,
+        "map": "lighthalzen",
+        "dir": 3,
+        "sprite": 868,
+        "unique_name": "Guard#lhz01"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Guard#lhz02|lighthalzen:294:223": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Guard294223",
+    "output_hash": "db98645e09794e82064e35932a160acb2caf73d94acac5b5d16cc9ef14988312",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/guard_294_223.ex",
+    "source_hash": "301115312f250c61f446315bd1b4a2046196c11359064697701f4b29f9bedb35",
+    "spawns": [
+      {
+        "name": "Guard",
+        "scope": "shared",
+        "x": 294,
+        "y": 223,
+        "map": "lighthalzen",
+        "dir": 7,
+        "sprite": 868,
+        "unique_name": "Guard#lhz02"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Guard|yuno_pre:95:71": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Guard9571",
+    "output_hash": "28b490e08c53213b9a08e1f91b0175eaa1c45c0e3e32ec8e807244e78744f83d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/guard_95_71.ex",
+    "source_hash": "a543079abb4aedb353829cd2988aa2c23c0e7ad205157bd6671642d87fb629d8",
+    "spawns": [
+      {
+        "name": "Guard",
+        "scope": "shared",
+        "x": 95,
+        "y": 71,
+        "map": "yuno_pre",
+        "dir": 5,
+        "sprite": 852
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Kafra Employee#l1|aldebaran:58:225": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.KafraEmployee",
+    "output_hash": "f6a21d795a4b026bf5d6feb29493cda22f97490cbc105e8769274aab964380c7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/kafra_employee.ex",
+    "source_hash": "e84036ce8340ba06eb3bfc6d4a91f80d7d76f1c3ffc533d597649cc259329b05",
+    "spawns": [
+      {
+        "name": "Kafra Employee",
+        "scope": "shared",
+        "x": 58,
+        "y": 225,
+        "map": "aldebaran",
+        "dir": 4,
+        "sprite": 116,
+        "unique_name": "Kafra Employee#l1"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Kafra Employee#l2|aldeba_in:155:240": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.KafraEmployee155240",
+    "output_hash": "46027d5d309378569776d43161df9a2a725dd3447ff48eba68e9af1e4f8ff5c2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/kafra_employee_155_240.ex",
+    "source_hash": "bdbcd44ca4b12f80a98e212d4f0c88b475c7aa6395561c933653855ee8aa3c75",
+    "spawns": [
+      {
+        "name": "Kafra Employee",
+        "scope": "shared",
+        "x": 155,
+        "y": 240,
+        "map": "aldeba_in",
+        "dir": 5,
+        "sprite": 859,
+        "unique_name": "Kafra Employee#l2"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Laboratory Guard#reken|einbroch:55:52": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.LaboratoryGuard",
+    "output_hash": "317a51abb47f79a4f2f50ed93e1943469a4e5f655290e4f609bc85bc134417ce",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/laboratory_guard.ex",
+    "source_hash": "0b8ab49f8c0eb2dfccc009a321a11bad3b57c3dc38ff2eeb74322afd20780175",
+    "spawns": [
+      {
+        "name": "Laboratory Guard",
+        "scope": "shared",
+        "x": 55,
+        "y": 52,
+        "map": "einbroch",
+        "dir": 3,
+        "sprite": 852,
+        "unique_name": "Laboratory Guard#reken"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Law Enforcement|lighthalzen:1:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.LawEnforcement",
+    "output_hash": "e65b0e62a2f47f2e681033e6dec778531e227e4011dedf2e88a4288319d2d982",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/law_enforcement.ex",
+    "source_hash": "01b127152b223a0da1cc4fa6d9860cde35e08c8b48467ad2427a9323bcbe375f",
+    "spawns": [
+      {
+        "name": "Law Enforcement",
+        "scope": "shared",
+        "x": 1,
+        "y": 1,
+        "map": "lighthalzen",
+        "dir": 0,
+        "sprite": 111
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Mad Scientist#li|lhz_in01:273:121": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.MadScientist",
+    "output_hash": "c06935ad870e1e6c91f50658628d1b9ed0613790f3cb00e07624faa07ae0bdf6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/mad_scientist.ex",
+    "source_hash": "f60d16a60d08922c5b42869fc76aba980d72ccd7c0898726871fe90c15fd884a",
+    "spawns": [
+      {
+        "name": "Mad Scientist",
+        "scope": "shared",
+        "x": 273,
+        "y": 121,
+        "map": "lhz_in01",
+        "dir": 1,
+        "sprite": 865,
+        "unique_name": "Mad Scientist#li"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Maintenance Guy|lhz_in02:19:274": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.MaintenanceGuy",
+    "output_hash": "88ef50feec1175aa5c99edb7e00d3532c1639598c77c7331bad801ce3dba44e5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/maintenance_guy.ex",
+    "source_hash": "53ca187c3e25e4993c70cc16fc0615cf4629b9c7edd85e7dee89916c7e49f626",
+    "spawns": [
+      {
+        "name": "Maintenance Guy",
+        "scope": "shared",
+        "x": 19,
+        "y": 274,
+        "map": "lhz_in02",
+        "dir": 2,
+        "sprite": 851
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Maku|lighthalzen:337:232": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Maku",
+    "output_hash": "27412a433a00a489bac327711c68d9a5b45ffbfaeca4c0b404c0fd93ebc5ad49",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/maku.ex",
+    "source_hash": "29f000e1c71f73b8f434ac6423c4ef7907fb2bc81714dd84f3508f34908223b7",
+    "spawns": [
+      {
+        "name": "Maku",
+        "scope": "shared",
+        "x": 337,
+        "y": 232,
+        "map": "lighthalzen",
+        "dir": 3,
+        "sprite": 870
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Man#Lyozien|airplane_01:96:48": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Man",
+    "output_hash": "1367c95809f72e5126b138fd5a182d915609aaa79cfd70888e8c5fa5a7713a15",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/man.ex",
+    "source_hash": "d1f53e57a1e79eace7deb0452a3b663383c0a5ff91abe11338c3f9c69d721b37",
+    "spawns": [
+      {
+        "name": "Man",
+        "scope": "shared",
+        "x": 96,
+        "y": 48,
+        "map": "airplane_01",
+        "dir": 3,
+        "sprite": 869,
+        "unique_name": "Man#Lyozien"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Mr. President|yuno_pre:69:79": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.MrPresident",
+    "output_hash": "8c599877ef7b9d6604fa5f22b3dd7ab68d9878acecd084c0faf7a00fad770cf8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/mr_president.ex",
+    "source_hash": "c19bc1d0347fa8708d643c014ccfafd1825d77aa5340f898043514c8fab79043",
+    "spawns": [
+      {
+        "name": "Mr. President",
+        "scope": "shared",
+        "x": 69,
+        "y": 79,
+        "map": "yuno_pre",
+        "dir": 4,
+        "sprite": 872
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Mysterious Woman|lhz_fild01:66:219": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.MysteriousWoman",
+    "output_hash": "708a3a3dfdbf66b142f1cecff0a33139284c1a282eb200737de173d919c698ba",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/mysterious_woman.ex",
+    "source_hash": "fbff7e857309689a1068c39cd5ec8c4d8bff05ea57a322c1e899b19f39d1c38c",
+    "spawns": [
+      {
+        "name": "Mysterious Woman",
+        "scope": "shared",
+        "x": 66,
+        "y": 219,
+        "map": "lhz_fild01",
+        "dir": 4,
+        "sprite": 859
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Old Man#reken|lighthalzen:141:162": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.OldMan",
+    "output_hash": "5e52e93dba2b59f20eda9282a286dd9076b1107b86fc792f0bba3e7a919a0f23",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/old_man.ex",
+    "source_hash": "a3f66dd2ff6883947cffdd8fd0f04a8421ddf4af75f030fe1bf6fa2fc5702f87",
+    "spawns": [
+      {
+        "name": "Old Man",
+        "scope": "shared",
+        "x": 141,
+        "y": 162,
+        "map": "lighthalzen",
+        "dir": 3,
+        "sprite": 85,
+        "unique_name": "Old Man#reken"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Ordinary Man|lighthalzen:179:170": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.OrdinaryMan",
+    "output_hash": "a82a4ecfb18d4f5cb5f0661ee811760353308634164b195d8ee78ba38b68bfba",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/ordinary_man.ex",
+    "source_hash": "cf3055540b0ddf2affc4e14f0eb45e315f30ccc1ec9786425069c60e3c2a4c1d",
+    "spawns": [
+      {
+        "name": "Ordinary Man",
+        "scope": "shared",
+        "x": 179,
+        "y": 170,
+        "map": "lighthalzen",
+        "dir": 4,
+        "sprite": 98
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Passionate Student|yuno_in04:96:106": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.PassionateStudent",
+    "output_hash": "7fcc2871c55052780455c20401d2719c412cb157204e6023002393d980e12f4a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/passionate_student.ex",
+    "source_hash": "eb1c9f74aca15366979107a28b8cad85823b9948905c457b8444d89277d281be",
+    "spawns": [
+      {
+        "name": "Passionate Student",
+        "scope": "shared",
+        "x": 96,
+        "y": 106,
+        "map": "yuno_in04",
+        "dir": 5,
+        "sprite": 754
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Picture#cube|lhz_cube:234:202": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Picture",
+    "output_hash": "82f24c31586611f7bd348a0feae67d2eb88bc4a9e0a98ff43194ab1c69f22cc4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/picture.ex",
+    "source_hash": "3c3ce78b608a8ba8e61bfa6a8c458b846c859d1463a958474b080c4022d1883c",
+    "spawns": [
+      {
+        "name": "Picture",
+        "scope": "shared",
+        "x": 234,
+        "y": 202,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Picture#cube"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Power Generator#cube|lhz_cube:224:192": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.PowerGenerator",
+    "output_hash": "0fc95c7f217fa621068a40eff2fb90969372daef063379d787ea0a048e9b4787",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/power_generator.ex",
+    "source_hash": "852f70166eee3cd4ae2441f695acf65b9bf5fe966b2f1784ee69970c16fc312c",
+    "spawns": [
+      {
+        "name": "Power Generator",
+        "scope": "shared",
+        "x": 224,
+        "y": 192,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Power Generator#cube"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Rekenber Guidebook#li|lhz_in01:25:251": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.RekenberGuidebook",
+    "output_hash": "572ddaa8821cc6e5269131483ec3c6a1faebebf75a566515005a751e83b682f1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/rekenber_guidebook.ex",
+    "source_hash": "31e4c9eccd0ece2887a199d2449b97b4d295503f2debb550b61f0eccda94f67d",
+    "spawns": [
+      {
+        "name": "Rekenber Guidebook",
+        "scope": "shared",
+        "x": 25,
+        "y": 251,
+        "map": "lhz_in01",
+        "dir": 3,
+        "sprite": 111,
+        "unique_name": "Rekenber Guidebook#li"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Representative#li_01|lhz_in01:114:181": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Representative",
+    "output_hash": "b2f3791b7aebb3ffbf1586beef35f08fe359fd5ef41a2f47df09c3f0345e7aea",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/representative.ex",
+    "source_hash": "f80f0926e668be1c72dc9cb8c4bcd86f3df94943fab3a6ac60db35a3b8ee1043",
+    "spawns": [
+      {
+        "name": "Representative",
+        "scope": "shared",
+        "x": 114,
+        "y": 181,
+        "map": "lhz_in01",
+        "dir": 5,
+        "sprite": 71,
+        "unique_name": "Representative#li_01"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Representative#li_02|lhz_in01:27:247": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Representative27247",
+    "output_hash": "e13062ef044dc9ca5eeaebbcf2020dafaee3687850fb4214ca5ba14bae1d0186",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/representative_27_247.ex",
+    "source_hash": "e6aae08564373c9b414907da48381c9cffb0e30d3d3eeef7190e46d6b5e7dbf4",
+    "spawns": [
+      {
+        "name": "Representative",
+        "scope": "shared",
+        "x": 27,
+        "y": 247,
+        "map": "lhz_in01",
+        "dir": 5,
+        "sprite": 71,
+        "unique_name": "Representative#li_02"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Researcher#1|lhz_in01:93:45": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Researcher",
+    "output_hash": "2e339acbe9d721c6bf16daafa69f9e9850031de1e27f9a1542f0be0bebb0b856",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/researcher.ex",
+    "source_hash": "7e318b726a9f1d7e5716063fb43bde7feb9c44a6025258addae4d6e63af73676",
+    "spawns": [
+      {
+        "name": "Researcher",
+        "scope": "shared",
+        "x": 93,
+        "y": 45,
+        "map": "lhz_in01",
+        "dir": 4,
+        "sprite": 865,
+        "unique_name": "Researcher#1"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Researcher#2|lhz_in01:285:169": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Researcher285169",
+    "output_hash": "c881234124cce3efeb324f107cad06b97e2068a7fb0a66610db98446d224a8bd",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/researcher_285_169.ex",
+    "source_hash": "207dcb8f2d7236751c5fc246bf4f865018d8e30e88eae3760aecef9e9d5bcaa2",
+    "spawns": [
+      {
+        "name": "Researcher",
+        "scope": "shared",
+        "x": 285,
+        "y": 169,
+        "map": "lhz_in01",
+        "dir": 3,
+        "sprite": 865,
+        "unique_name": "Researcher#2"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Secretary Slierre#li|lhz_in01:286:226": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.SecretarySlierre",
+    "output_hash": "fc4351309577e0572e6349e4e08aec8d34492457e5e1a79825fd1db343550cad",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/secretary_slierre.ex",
+    "source_hash": "cbb28c82e96bea71863e09e98fdbe48a71d893d036e4194e9a8e49ee9c930361",
+    "spawns": [
+      {
+        "name": "Secretary Slierre",
+        "scope": "shared",
+        "x": 286,
+        "y": 226,
+        "map": "lhz_in01",
+        "dir": 3,
+        "sprite": 831,
+        "unique_name": "Secretary Slierre#li"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Secretary#1|yuno_pre:69:20": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Secretary",
+    "output_hash": "91328eaa5c32bd543d0f0945dbdba5ab85f07dd297edf572d9ddd09c8d0dc740",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/secretary.ex",
+    "source_hash": "a35fadcfbc286699e4317082ec47a1c870dcfbe5c15cbd79be4bf14f9f35abd5",
+    "spawns": [
+      {
+        "name": "Secretary",
+        "scope": "shared",
+        "x": 69,
+        "y": 20,
+        "map": "yuno_pre",
+        "dir": 4,
+        "sprite": 862,
+        "unique_name": "Secretary#1"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Secretary#2|yuno_pre:77:68": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Secretary7768",
+    "output_hash": "714ba3424e325757af1d51e1e4dd75d63e9d0da46af136e5fc4d9cfb516eb168",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/secretary_77_68.ex",
+    "source_hash": "0ed974ec57a64506f1c4450815cf79d043d610e6841ca407a0e7753c543f8a62",
+    "spawns": [
+      {
+        "name": "Secretary",
+        "scope": "shared",
+        "x": 77,
+        "y": 68,
+        "map": "yuno_pre",
+        "dir": 0,
+        "sprite": 862,
+        "unique_name": "Secretary#2"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Status Light#cube|lhz_cube:244:201": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.StatusLight",
+    "output_hash": "99a87e93489da9bdf3480862eeab005a9f6eb4c0bdcfc1cd241fcae238ccac13",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/status_light.ex",
+    "source_hash": "9f66787432fde11bf038a089f2d6ed962e623d57546ec79229503b1240e917d0",
+    "spawns": [
+      {
+        "name": "Status Light",
+        "scope": "shared",
+        "x": 244,
+        "y": 201,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Status Light#cube"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Student|yuno_in04:107:14": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Student",
+    "output_hash": "05ce138e8e185f1b90bbe7e170598ff4f59abc5049c52d1dbb7cf2cdbf19c07f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/student.ex",
+    "source_hash": "b2026162d959865014489536cc582b0442569f11bf2b326d617fcfe853264ae3",
+    "spawns": [
+      {
+        "name": "Student",
+        "scope": "shared",
+        "x": 107,
+        "y": 14,
+        "map": "yuno_in04",
+        "dir": 5,
+        "sprite": 754
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Suspicious Guy#lhz_01|lighthalzen:240:216": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.SuspiciousGuy",
+    "output_hash": "89a688e18303c3ca1614a6749141a57bb1bbcd88126e0a0ee1bd97d65299a4da",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/suspicious_guy.ex",
+    "source_hash": "b0a1097b7a10f21291c45835900df4e82d43eb1c2cbc935559b5d72b515dcc9b",
+    "spawns": [
+      {
+        "name": "Suspicious Guy",
+        "scope": "shared",
+        "x": 240,
+        "y": 216,
+        "map": "lighthalzen",
+        "dir": 4,
+        "sprite": 870,
+        "unique_name": "Suspicious Guy#lhz_01",
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Suspicious Guy#lhz_02|lighthalzen:220:169": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.SuspiciousGuy220169",
+    "output_hash": "b742961781699daa28618a5c9b0f9019f6bd2015db91f8b3180743fbd0121236",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/suspicious_guy_220_169.ex",
+    "source_hash": "0bf1ee86aad4603d32c23d5ad8617b7ec3910bd3a4fe419314c3bdff6db0e1c4",
+    "spawns": [
+      {
+        "name": "Suspicious Guy",
+        "scope": "shared",
+        "x": 220,
+        "y": 169,
+        "map": "lighthalzen",
+        "dir": 3,
+        "sprite": 870,
+        "unique_name": "Suspicious Guy#lhz_02",
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Suspicious Guy#lhz_03|lighthalzen:164:127": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.SuspiciousGuy164127",
+    "output_hash": "2a8f960dc730776863eb04d68e81f40f520754c4db33d76962d49ad5826b5bad",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/suspicious_guy_164_127.ex",
+    "source_hash": "648672bd0a2689cfd5155358688c24e38df869d07bf45fb60d554bb6bd3ad1c1",
+    "spawns": [
+      {
+        "name": "Suspicious Guy",
+        "scope": "shared",
+        "x": 164,
+        "y": 127,
+        "map": "lighthalzen",
+        "dir": 4,
+        "sprite": 870,
+        "unique_name": "Suspicious Guy#lhz_03",
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Switch|lighthalzen:173:167": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.Switch",
+    "output_hash": "b0011db08ba015f04cd300118b0cdbc9806d79a4a10cc0f293f4b8632fd5e01d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/switch.ex",
+    "source_hash": "c8b216f13ec822cccd0343fff37dea8caf3924949aeff6aeaecfafedb31c4f88",
+    "spawns": [
+      {
+        "name": "Switch",
+        "scope": "shared",
+        "x": 173,
+        "y": 167,
+        "map": "lighthalzen",
+        "dir": 1,
+        "sprite": 111,
+        "trigger": [
+          2,
+          4
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Timer_Sneak|lhz_in01:177:44": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.TimerSneak",
+    "output_hash": "45db54ca766404ff75d0610e9a70fe64918f113c71893b4372ba521634148d3a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/timer_sneak.ex",
+    "source_hash": "9cbc829cf37bc16eefa77cd36044d377d8ac98966ad6c7574925853b482bc238",
+    "spawns": [
+      {
+        "name": "Timer_Sneak",
+        "scope": "shared",
+        "x": 177,
+        "y": 44,
+        "map": "lhz_in01",
+        "dir": 0,
+        "sprite": 111,
+        "trigger": [
+          8,
+          12
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Wounded Man Switch|lhz_fild02:224:220": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.WoundedManSwitch",
+    "output_hash": "32d11aa3d68921efc9ff3344d050cb373949b1b06074ebce77966eedadc8b480",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/wounded_man_switch.ex",
+    "source_hash": "929460c00701f45257a34a8dd58f7dece6ac72f2fe68ad79ca46bcc9e4efab05",
+    "spawns": [
+      {
+        "name": "Wounded Man Switch",
+        "scope": "shared",
+        "x": 224,
+        "y": 220,
+        "map": "lhz_fild02",
+        "dir": 0,
+        "sprite": 111,
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Wounded Man|lhz_fild02:228:214": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.WoundedMan",
+    "output_hash": "d20c3b1b7de7738fefb924e31a33b8bb5cedb440510228871734c8f6ab55c591",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/wounded_man.ex",
+    "source_hash": "3e5cbee471ee2be2423c8e9de14abcb28f338581f779a0ed8b95978436742997",
+    "spawns": [
+      {
+        "name": "Wounded Man",
+        "scope": "shared",
+        "x": 228,
+        "y": 214,
+        "map": "lhz_fild02",
+        "dir": 0,
+        "sprite": 849
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|Young Man#reken|lhz_in01:174:258": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.YoungMan",
+    "output_hash": "b041df7094c1259ee77754007061c79205c1384825c29d2faf064781fb5d51e8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/young_man.ex",
+    "source_hash": "5b386d12c011a73f667c725ab716d71b0f1359da5e74417fc77f8be8797a02aa",
+    "spawns": [
+      {
+        "name": "Young Man",
+        "scope": "shared",
+        "x": 174,
+        "y": 258,
+        "map": "lhz_in01",
+        "dir": 3,
+        "sprite": 868,
+        "unique_name": "Young Man#reken"
+      }
+    ]
+  },
+  "quests/quests_lighthalzen.txt|script|boss::lght_boss_admin|sec_in02:17:170": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLighthalzen.BossLghtBossAdmin",
+    "output_hash": "d42629276070597aac6397b7d79bc288ccc33fec78d38265b2ff4d6424c530b8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lighthalzen/boss_lght_boss_admin.ex",
+    "source_hash": "1e2dd9669fe02d43d7702c1689b96f1965b82a53b693159249b228ca641497eb",
+    "spawns": [
+      {
+        "name": "boss",
+        "scope": "shared",
+        "x": 17,
+        "y": 170,
+        "map": "sec_in02",
+        "dir": 4,
+        "sprite": 809,
+        "unique_name": "lght_boss_admin"
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
