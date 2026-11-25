@@ -1682,6 +1682,43 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
                  new_state.game_state.state_context.started_at
     end
 
+    test "cast bar on a homunculus carries its id, not the typed target ref" do
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:cast_bar, packet}) end)
+      stub(UnitRegistry, :unit_exists?, fn :homunculus, 2001 -> true end)
+
+      state = knowing(casting_state(45), 479, 1)
+      game_state = state.game_state
+
+      stub(SkillRequest, :targeted, fn _state, 479, 1, 2001, _now ->
+        {:use,
+         %{
+           level: 1,
+           target: 2001,
+           origin: :normal,
+           ends_invincibility?: false,
+           clears_item_skill?: false
+         }}
+      end)
+
+      stub(Interpreter, :begin_cast, fn ^game_state, 479, 1, {:unit, {:homunculus, 2001}} ->
+        {:casting, game_state,
+         %{
+           skill_id: 479,
+           level: 1,
+           target: {:unit, {:homunculus, 2001}},
+           element: :neutral,
+           fixed: 0,
+           total: 2_000
+         }}
+      end)
+
+      assert {:noreply, _state} = SkillHandler.handle_use_skill(state, 479, 1, 2001)
+
+      assert_received {:cast_bar, %SkillCasting{target_id: 2001, x: 0, y: 0}}
+    end
+
     test "completing a matching token runs the behavior, deducts SP and returns to idle" do
       stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)

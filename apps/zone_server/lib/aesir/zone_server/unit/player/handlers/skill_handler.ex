@@ -1933,6 +1933,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   defp cast_bar_target(%{character_id: caster_id}, :self), do: {caster_id, 0, 0}
+  defp cast_bar_target(_game_state, {:unit, {_type, id}}), do: {id, 0, 0}
   defp cast_bar_target(_game_state, {:unit, id}), do: {id, 0, 0}
   defp cast_bar_target(_game_state, {:ground, x, y}), do: {0, x, y}
 
