@@ -53488,6 +53488,40 @@
       }
     ]
   },
+  "quests/quests_lutie.txt|script|Vending Machine Man|xmas:117:295": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLutie.VendingMachineMan",
+    "output_hash": "bd6e65fcc40564c7bf0722999eab8e8a7cda8142a475912249747f310bb87de7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lutie/vending_machine_man.ex",
+    "source_hash": "c2c5eb67a5d35c5fce3cd25d33a12e1de9b8d03588d04a256282908757d570bc",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "xmas",
+        "name": "Vending Machine Man",
+        "scope": "shared",
+        "sprite": 704,
+        "x": 117,
+        "y": 295
+      }
+    ]
+  },
+  "quests/quests_lutie.txt|script|Vending Machine|xmas:115:297": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsLutie.VendingMachine",
+    "output_hash": "1346da863d06d5402475518a3847636924226888f223d8cefc91107fe950cd55",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_lutie/vending_machine.ex",
+    "source_hash": "5d637bcc583b0f8b242875f613cbe9699ecb39b033318eacb73c39a6ac3c0968",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "xmas",
+        "name": "Vending Machine",
+        "scope": "shared",
+        "sprite": 111,
+        "x": 115,
+        "y": 297
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
