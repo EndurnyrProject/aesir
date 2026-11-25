@@ -53522,6 +53522,1105 @@
       }
     ]
   },
+  "quests/quests_morocc.txt|floating|Alchemist|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsMorocc.Alchemist",
+    "output_hash": "821539715f90d29079047a37a1a63850624cea61f6026bf643fed60e1bf3403a",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_morocc/alchemist.ex",
+    "source_hash": "83ed5f294d7d03c07068163aaecce62074af84541062885dd007cf9ef1590819",
+    "spawns": []
+  },
+  "quests/quests_morocc.txt|floating|Continental Messenger#00::ConMessenger|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsMorocc.ContinentalMessenger",
+    "output_hash": "48c916793f9e65e5662ba455d7b576a4935bdfc40b67af63b6db9b90238405f6",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_morocc/continental_messenger.ex",
+    "source_hash": "c91e83903426c3f585d7a7d38034a3a1d664da6fa1ee4336c1c49a68aedae47f",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "prontera",
+        "name": "Continental Messenger",
+        "scope": "shared",
+        "sprite": 997,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Continental Messenger#01",
+        "x": 164,
+        "y": 304
+      },
+      {
+        "dir": 3,
+        "map": "geffen",
+        "name": "Continental Messenger",
+        "scope": "shared",
+        "sprite": 997,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Continental Messenger#02",
+        "x": 128,
+        "y": 90
+      },
+      {
+        "dir": 3,
+        "map": "payon",
+        "name": "Continental Messenger",
+        "scope": "shared",
+        "sprite": 997,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Continental Messenger#03",
+        "x": 200,
+        "y": 113
+      },
+      {
+        "dir": 3,
+        "map": "alberta",
+        "name": "Continental Messenger",
+        "scope": "shared",
+        "sprite": 998,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Continental Messenger#04",
+        "x": 127,
+        "y": 64
+      },
+      {
+        "dir": 3,
+        "map": "aldebaran",
+        "name": "Continental Messenger",
+        "scope": "shared",
+        "sprite": 998,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Continental Messenger#05",
+        "x": 135,
+        "y": 128
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|floating|Continental Official|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsMorocc.ContinentalOfficial",
+    "output_hash": "fefdcdf7b246fdc1d2152e53cad52885668bd360e839ac6279e236b9049fd126",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_morocc/continental_official.ex",
+    "source_hash": "2f45c7bf2448168422a62d2cb136692615e1818dbacb4f7df78129eef132bed9",
+    "spawns": []
+  },
+  "quests/quests_morocc.txt|floating|William|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsMorocc.William",
+    "output_hash": "af73bc3bc0c44ede44b5c2cb2fb80555c685e05e159aff7924ce8b0dd7aef92a",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_morocc/william.ex",
+    "source_hash": "8c14675b1d67eed0c8bc278344582d445dfdb86f4535b886ab4dfeb91754afd4",
+    "spawns": []
+  },
+  "quests/quests_morocc.txt|script|#3room_barmunt|que_ba:102:56": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.M3roomBarmunt",
+    "output_hash": "0aacf8ccafcf6bb4fc63dd53c71b30430053f8f596eba7831edddf87d0915eca",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/3room_barmunt.ex",
+    "source_hash": "16bf7cb310bfe5c6ec9e2c06617caedb9de05727b81d6051d3a19a5498c25b14",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_ba",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "#3room_barmunt",
+        "x": 102,
+        "y": 56
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|#barmunt_fire|que_ba:270:181": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.BarmuntFire",
+    "output_hash": "18a316da6b1b352614e60397cd893733d30d18a2c4c571c161bf5ba5bb36b5a1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/barmunt_fire.ex",
+    "source_hash": "3740c69fbabe6faae4d7c4af90ccfd167a7c32a155bf434d30329e1623c6fee8",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "que_ba",
+        "name": "",
+        "scope": "shared",
+        "sprite": 755,
+        "unique_name": "#barmunt_fire",
+        "x": 270,
+        "y": 181
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|#barmunt_living|que_ba:270:270": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.BarmuntLiving",
+    "output_hash": "413d8ea88b197c00168539977a6f15aabec2c90fcb7d37fb1cb98372941b3d00",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/barmunt_living.ex",
+    "source_hash": "e24ef8bfaa50d53a9f7eb82ae0b7867d0926dfaf2e8534abea405f9f4413a1c2",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_ba",
+        "name": "",
+        "scope": "shared",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "#barmunt_living",
+        "x": 270,
+        "y": 270
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|#barmut_onna|que_ba:266:268": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.BarmutOnna",
+    "output_hash": "db77e5264fe7b10613cf9b3f37073598295ce351f0e133b0b560f36e90047e45",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/barmut_onna.ex",
+    "source_hash": "6fe408d820c31005db0247f1870e41bcc0161c9f1e1febdcaca20e9d6c0ee990",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "que_ba",
+        "name": "",
+        "scope": "shared",
+        "sprite": 982,
+        "unique_name": "#barmut_onna",
+        "x": 266,
+        "y": 268
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|#barmut_room1|que_ba:264:186": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.BarmutRoom1",
+    "output_hash": "f64bdd70d1d3931ee8f7e0d8cc7c722a31275b9f2bab18de93c4899baf2bbb2c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/barmut_room1.ex",
+    "source_hash": "63e9d3f372565cd2958157a356b92932d07627e024ab60cf28dbaa1188e474fa",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_ba",
+        "name": "",
+        "scope": "shared",
+        "sprite": 139,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "#barmut_room1",
+        "x": 264,
+        "y": 186
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|#barmut_room2|que_ba:263:276": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.BarmutRoom2",
+    "output_hash": "86425ee0867ff727a54b0c81dd5b2c48d7bc89085db03217019db5a17fcaeb9b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/barmut_room2.ex",
+    "source_hash": "ee8948bb47d8dac7a1ff2076ef91988e795fbb79496fe08b5cd657ea2c0b3072",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "que_ba",
+        "name": "",
+        "scope": "shared",
+        "sprite": 755,
+        "unique_name": "#barmut_room2",
+        "x": 263,
+        "y": 276
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|#bpast_1_1|que_ba:247:33": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.Bpast11",
+    "output_hash": "c383110f0a5155e5b0fe893d88034949e1eb8719e3475f5f5771cd34f57c0dc1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/bpast_1_1.ex",
+    "source_hash": "c5b61860b266ee285fe8a798e2efc41ba8c1e00f5973a3f11e1f5abe5330b7ae",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_ba",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "#bpast_1_1",
+        "x": 247,
+        "y": 33
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|#garas_catch|yuno:336:203": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.GarasCatch",
+    "output_hash": "7813697eadb1503faee1b8e7a027e8fee8543e1df1022dcfd8505c68ba2298b7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/garas_catch.ex",
+    "source_hash": "166c5620ce0c07ffa6826f51ef73b2de69217c4239233462d4b02f17f41b6774",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "yuno",
+        "name": "",
+        "scope": "shared",
+        "sprite": 139,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "#garas_catch",
+        "x": 336,
+        "y": 203
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|#garas_eff|yuno:343:204": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.GarasEff",
+    "output_hash": "b866a4d7d9d0cf7e5263b9f21cef5817d8c9551fb12973c3d4eb9154ab3ee53b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/garas_eff.ex",
+    "source_hash": "3089ac9c971b95c834fb545b87840260f0d9c70ccc92ffc7b1b6fb33869a6819",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "yuno",
+        "name": "",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "#garas_eff",
+        "x": 343,
+        "y": 204
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|#garas_f_yume|que_ba:53:232": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.GarasFYume",
+    "output_hash": "1496a59b396fca28331c825d14662286083b0a2c145be5e5112e7e2ac675113b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/garas_f_yume.ex",
+    "source_hash": "1b65571c6f9577a462af314e2e29a8a76e63c3e5d6dcb42118250102650669e7",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_ba",
+        "name": "",
+        "scope": "shared",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "#garas_f_yume",
+        "x": 53,
+        "y": 232
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|#garas_path|yuno_in04:100:3": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.GarasPath",
+    "output_hash": "4d29bb9711745baa1a1d74532ba9e96aaead637af7801eedfeed8e2e8e758a67",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/garas_path.ex",
+    "source_hash": "76b1b9dd5c250e3e703cd06e794d12fb570ab91b8f27d2a6a209f9b1e90ced67",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "yuno_in04",
+        "name": "",
+        "scope": "shared",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "#garas_path",
+        "x": 100,
+        "y": 3
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Assistant#moc_ex1|morocc_in:46:125": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.Assistant",
+    "output_hash": "f15deb73d38408595ad1b82dc7ce077c10adaeb5c4d77bb3ffb1324d9300b74c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/assistant.ex",
+    "source_hash": "a54a1db49ef0189e9a336eee83f43ad9b398c3d2b3c1e3d9800282f2b90275c3",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "morocc_in",
+        "name": "Assistant",
+        "scope": "shared",
+        "sprite": 729,
+        "unique_name": "Assistant#moc_ex1",
+        "x": 46,
+        "y": 125
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Book-Touching Man#garas|moc_ruins:137:70": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.BookTouchingMan",
+    "output_hash": "9250b052fa27f0e6120a87d277e6c301eeddea00b5c2361f01ec02bb1631870c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/book_touching_man.ex",
+    "source_hash": "3a306307990ca9cbf3a82226752ddf13d4bc0c57f54e87a2591d330e23a6e90b",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "moc_ruins",
+        "name": "Book-Touching Man",
+        "scope": "shared",
+        "sprite": 48,
+        "unique_name": "Book-Touching Man#garas",
+        "x": 137,
+        "y": 70
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Cave Settler#f_cave1|cave:91:43": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.CaveSettler9143",
+    "output_hash": "b7c47e27ae0c0d89eb1fa4609584e03cb1b33786faddea39403eea3f5895ebc1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/cave_settler_91_43.ex",
+    "source_hash": "4e5a3e4b053817323ed636d2d71cad8345e83ad467160fe87ab62cae5af2ff55",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "cave",
+        "name": "Cave Settler",
+        "scope": "shared",
+        "sprite": 870,
+        "unique_name": "Cave Settler#f_cave1",
+        "x": 91,
+        "y": 43
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Cave Settler#f_cave4|cave:113:74": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.CaveSettler11374",
+    "output_hash": "10419d535e52bd53d1b68fc7e0bd88e01a2a6ef66d4682dfde6d393740d220b5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/cave_settler_113_74.ex",
+    "source_hash": "ea81ebe3da255efd195e1c53cffe68b9c7574bad53b3a78a8568ef6478d471ad",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "cave",
+        "name": "Cave Settler",
+        "scope": "shared",
+        "sprite": 401,
+        "unique_name": "Cave Settler#f_cave4",
+        "x": 113,
+        "y": 74
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Cave Settler#f_cave6|cave:108:34": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.CaveSettler10834",
+    "output_hash": "3a1930e1f8708d7414b14b55cd31cf4dfb630bd73f7cdc90376087afb3ff2d36",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/cave_settler_108_34.ex",
+    "source_hash": "20071c04311c1e3f1eba80ce57470a98dfdcdd882fbac649d88f91fa05765af4",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "cave",
+        "name": "Cave Settler",
+        "scope": "shared",
+        "sprite": 979,
+        "unique_name": "Cave Settler#f_cave6",
+        "x": 108,
+        "y": 34
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Cave Settler#f_cave7|cave:105:32": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.CaveSettler10532",
+    "output_hash": "a74ff6e53af6aa2633d0121eb312364a7d6cf9362d67f6c53a302f25223f4b58",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/cave_settler_105_32.ex",
+    "source_hash": "27b7331adbcba1d1e13d77941317ca17b0b0b23d8e360712ccf08967ce9615fd",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "cave",
+        "name": "Cave Settler",
+        "scope": "shared",
+        "sprite": 979,
+        "unique_name": "Cave Settler#f_cave7",
+        "x": 105,
+        "y": 32
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Cave Settler#g1|cave:82:97": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.CaveSettler",
+    "output_hash": "3ae3f305eca290a43b2f44fbb5bfc9d55e45355111c63389c7be61197ae78af6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/cave_settler.ex",
+    "source_hash": "b74ef42000732438e4e7a59533f8d62a4d4ba6af9d2819668a41e6d39d1cfcf6",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "cave",
+        "name": "Cave Settler",
+        "scope": "shared",
+        "sprite": 996,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Cave Settler#g1",
+        "x": 82,
+        "y": 97
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Cave Settler#m_cave2|cave:72:71": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.CaveSettler7271",
+    "output_hash": "8f47a09d04d97d35bebdc4cb359dd13d802cece9ab3fc141df98960f4a66aec8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/cave_settler_72_71.ex",
+    "source_hash": "6f1477bda1f3358018d5832b2cf9fc0fcc333bcc1647bc4fb41cda0b884a88ad",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "cave",
+        "name": "Cave Settler",
+        "scope": "shared",
+        "sprite": 981,
+        "unique_name": "Cave Settler#m_cave2",
+        "x": 72,
+        "y": 71
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Cave Settler#m_cave3|cave:134:62": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.CaveSettler13462",
+    "output_hash": "56ebdbab4283c82eaa88cbef0635554264e9493bd14a60557db923c640dcfde5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/cave_settler_134_62.ex",
+    "source_hash": "51796a835043ebf50e87569de57f39c0f7d6c1c843dae3bd4caa6ea98ce2824a",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "cave",
+        "name": "Cave Settler",
+        "scope": "shared",
+        "sprite": 981,
+        "unique_name": "Cave Settler#m_cave3",
+        "x": 134,
+        "y": 62
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Chief Balrog|morocc:159:113": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.ChiefBalrog",
+    "output_hash": "17a12e8bd0553585b9a0d4354873362b63ceef476d31b9dc861e85b932755e13",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/chief_balrog.ex",
+    "source_hash": "c9081d6b1e73f17d23cbfa34f01850b246924d7696036fb5d3fcd95d949749ba",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "morocc",
+        "name": "Chief Balrog",
+        "scope": "shared",
+        "sprite": 752,
+        "x": 159,
+        "y": 113
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Continental Guard#01::MocConGuard|moc_fild20:354:183": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.ContinentalGuard",
+    "output_hash": "4fd0cb8a906af3c8b87c307c7954f7749c4aa83ba3eb588be94927c6181cae32",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/continental_guard.ex",
+    "source_hash": "a5a3884f3e97f8ef141df645e3c64f7019e2986d3e9e4bac02f413a9f8a18455",
+    "spawns": [
+      {
+        "dir": 3,
+        "hidden_name": "01",
+        "map": "moc_fild20",
+        "name": "Continental Guard",
+        "scope": "shared",
+        "sprite": 707,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "MocConGuard",
+        "x": 354,
+        "y": 183
+      },
+      {
+        "dir": 3,
+        "map": "moc_fild20",
+        "name": "Continental Guard",
+        "scope": "shared",
+        "sprite": 707,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Continental Guard#02",
+        "x": 354,
+        "y": 174
+      },
+      {
+        "dir": 5,
+        "map": "moc_fild20",
+        "name": "Continental Guard",
+        "scope": "shared",
+        "sprite": 707,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Continental Guard#03",
+        "x": 38,
+        "y": 174
+      },
+      {
+        "dir": 5,
+        "map": "moc_fild20",
+        "name": "Continental Guard",
+        "scope": "shared",
+        "sprite": 707,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Continental Guard#04",
+        "x": 38,
+        "y": 183
+      },
+      {
+        "dir": 7,
+        "map": "moc_fild20",
+        "name": "Continental Guard",
+        "scope": "shared",
+        "sprite": 707,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Continental Guard#05",
+        "x": 189,
+        "y": 21
+      },
+      {
+        "dir": 7,
+        "map": "moc_fild20",
+        "name": "Continental Guard",
+        "scope": "shared",
+        "sprite": 707,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Continental Guard#06",
+        "x": 200,
+        "y": 21
+      },
+      {
+        "dir": 5,
+        "map": "moc_fild20",
+        "name": "Continental Guard",
+        "scope": "shared",
+        "sprite": 707,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Continental Guard#07",
+        "x": 203,
+        "y": 336
+      },
+      {
+        "dir": 3,
+        "map": "moc_fild20",
+        "name": "Continental Guard",
+        "scope": "shared",
+        "sprite": 707,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Continental Guard#08",
+        "x": 215,
+        "y": 336
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Dog#garas|yuno:335:208": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.Dog",
+    "output_hash": "7b3de5275ae4e4a931aaa7797b99466af4963f5042da066872ad11f279553692",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/dog.ex",
+    "source_hash": "bf51659521af37ba89c36c831e5d5ae087fe6283ed7c75182dfca2412e701702",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "yuno",
+        "name": "Dog",
+        "scope": "shared",
+        "sprite": 81,
+        "unique_name": "Dog#garas",
+        "x": 335,
+        "y": 208
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Female Researcher#bpast|que_ba:257:39": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.FemaleResearcher",
+    "output_hash": "0cbe3b59ea8dba09323bab03f5dc9f0b250fe0bb85fd71a4b54134a9c8c0a366",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/female_researcher.ex",
+    "source_hash": "1f466f2589d98a6a720642029030413e66be69128c8387d04e3596ec2044ae46",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "que_ba",
+        "name": "Female Researcher",
+        "scope": "shared",
+        "sprite": 744,
+        "unique_name": "Female Researcher#bpast",
+        "x": 257,
+        "y": 39
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Girl#moc_ex002|que_job01:70:84": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.Girl",
+    "output_hash": "5f228d228a778ed32d354953410849527a8d0ba5c80077b710fce86afedcf070",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/girl.ex",
+    "source_hash": "85f75129ce9d0dfe8e31944dbc4587cd4aad46ee767405e5e9a43b63eba50c88",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "que_job01",
+        "name": "Girl",
+        "scope": "shared",
+        "sprite": 882,
+        "unique_name": "Girl#moc_ex002",
+        "x": 70,
+        "y": 84
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Grotesque Man#zid1|que_ba:99:51": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.GrotesqueMan",
+    "output_hash": "ca15babac05aa4fddd2e67961ef8c62444a32e611c0c3e5f4dd6e136758fb095",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/grotesque_man.ex",
+    "source_hash": "d0a9df56394ebd200435f8a5351926d5f1d5ad3f81bbf7f7973ce86ebe53a3e1",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "que_ba",
+        "name": "Grotesque Man",
+        "scope": "shared",
+        "sprite": 999,
+        "unique_name": "Grotesque Man#zid1",
+        "x": 99,
+        "y": 51
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Grotesque Man#zid2|que_ba:48:227": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.GrotesqueMan48227",
+    "output_hash": "658822e376237657cc99fe57cbb92e1eb4a7cb273e776825f6799745b9409aaf",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/grotesque_man_48_227.ex",
+    "source_hash": "cd2d0c2609bdee965c4fb60a836c51d490d09b2eaa3fe3a5a6e00b52153a0455",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "que_ba",
+        "name": "Grotesque Man",
+        "scope": "shared",
+        "sprite": 999,
+        "unique_name": "Grotesque Man#zid2",
+        "x": 48,
+        "y": 227
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Grotesque Woman#eva1|que_ba:104:55": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.GrotesqueWoman",
+    "output_hash": "cf837bafee681c4aa887789446ea80f28d4b27815221437831cd7cee4141fc39",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/grotesque_woman.ex",
+    "source_hash": "07317e5de7d3051689ab35a3316195a91bebbd41424ba1ec3fb0ad5601f4301a",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "que_ba",
+        "name": "Grotesque Woman",
+        "scope": "shared",
+        "sprite": 980,
+        "unique_name": "Grotesque Woman#eva1",
+        "x": 104,
+        "y": 55
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Grotesque Woman#eva2|que_ba:50:238": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.GrotesqueWoman50238",
+    "output_hash": "7baa42564c1410b0f9ae04647ab32333be555c0914ffb91e2eb5e5e12bfd2933",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/grotesque_woman_50_238.ex",
+    "source_hash": "c6a03648e9c32578b3bad73115c5d4fba52bac724e1f14b69c9ff084216d7c08",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "que_ba",
+        "name": "Grotesque Woman",
+        "scope": "shared",
+        "sprite": 980,
+        "unique_name": "Grotesque Woman#eva2",
+        "x": 50,
+        "y": 238
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Group of Evil#edq|moc_fild21:178:239": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.GroupOfEvil",
+    "output_hash": "5eb9cb048c616073221ab16a2565806c5f7b112b9a19c208a47bbffd16360365",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/group_of_evil.ex",
+    "source_hash": "ae552402db471aad37873841e6d65248769f154c0757bdda1886c8e6a80c478f",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "moc_fild21",
+        "name": "Group of Evil",
+        "scope": "shared",
+        "sprite": 844,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "Group of Evil#edq",
+        "x": 178,
+        "y": 239
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Hot Bestseller Corner|yuno_in04:100:5": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.HotBestsellerCorner",
+    "output_hash": "c9cbf839974b1535c4731d183bba16b7f34c56ff0b262833b42430366b8bc3e3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/hot_bestseller_corner.ex",
+    "source_hash": "08a486146a9d77e5c4b1fd233d39d3ff753de9fc1281690e13e91426a7218cbd",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "yuno_in04",
+        "name": "Hot Bestseller Corner",
+        "scope": "shared",
+        "sprite": 111,
+        "x": 100,
+        "y": 5
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Jaeda#garas1|cave:85:101": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.Jaeda",
+    "output_hash": "a4633d0fb7c95222abad6a0409ae2360881342e091d86cfecf1796b5fbdc9b58",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/jaeda.ex",
+    "source_hash": "084753036f5fb1d1874397cb424c7723c4106278b3bd3f3065687864f479d864",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "cave",
+        "name": "Jaeda",
+        "scope": "shared",
+        "sprite": 401,
+        "unique_name": "Jaeda#garas1",
+        "x": 85,
+        "y": 101
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Library Curator#garas|prt_in:179:92": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.LibraryCurator",
+    "output_hash": "c77b044f8b764bea9d78831849f172737cd9061489b2b91b7d8d5d6f6cde8bbe",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/library_curator.ex",
+    "source_hash": "b162549f5d5282c3c6fae9202bab3dc0e96380663af3f5f508f81fc298322207",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "prt_in",
+        "name": "Library Curator",
+        "scope": "shared",
+        "sprite": 57,
+        "unique_name": "Library Curator#garas",
+        "x": 179,
+        "y": 92
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Library Master#garas|yuno:333:210": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.LibraryMaster",
+    "output_hash": "f54bd783f55385041ad726166705c963038fcb6727025fb4d3eea57282f14eda",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/library_master.ex",
+    "source_hash": "0a095423a83c055112e499871b51ad99a0033d8550f91e6118c1f302ae3c8dff",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "yuno",
+        "name": "Library Master",
+        "scope": "shared",
+        "sprite": 57,
+        "unique_name": "Library Master#garas",
+        "x": 333,
+        "y": 210
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Library Part-Timer#garas|yuno_in04:111:57": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.LibraryPartTimer",
+    "output_hash": "dec054ec9c291505fed456d8886c892a19c701d6f7add86d401b9ed9092d1f4c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/library_part_timer.ex",
+    "source_hash": "f57bee6a5915b632db2ca487d0c693fd080db429ba3a5435a6527659563aa955",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "yuno_in04",
+        "name": "Library Part-Timer",
+        "scope": "shared",
+        "sprite": 862,
+        "unique_name": "Library Part-Timer#garas",
+        "x": 111,
+        "y": 57
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Monsterous Man#zid|cave:22:186": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.MonsterousMan",
+    "output_hash": "3f3df6a97767423945f02dc4b843168f0f4a2f6af7295bde7efe1ba0275f7464",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/monsterous_man.ex",
+    "source_hash": "37dd8ed6d948786d535e12d2f9e961ca739819ca2910c958e54efda4a985208e",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "cave",
+        "name": "Monsterous Man",
+        "scope": "shared",
+        "sprite": 999,
+        "unique_name": "Monsterous Man#zid",
+        "x": 22,
+        "y": 186
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Morocc GlobalVar Admin::MoroccAdmin_sec|sec_in02:14:43": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.MoroccGlobalvarAdminMoroccadminSec",
+    "output_hash": "3e2556dcd0e745cbde456a5f4cc84d9a72363923798858a3b76ba04b8ac3c6b1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/morocc_globalvar_admin_moroccadmin_sec.ex",
+    "source_hash": "2f168a1b3edea4b3669db324d053b795b7a76895d831020ad0366cdf004d85e1",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "sec_in02",
+        "name": "Morocc GlobalVar Admin",
+        "scope": "shared",
+        "sprite": 971,
+        "unique_name": "MoroccAdmin_sec",
+        "x": 14,
+        "y": 43
+      },
+      {
+        "dir": 5,
+        "map": "moc_fild21",
+        "name": "Morocc GlobalVar Admin",
+        "scope": "shared",
+        "sprite": 971,
+        "unique_name": "MoroccAdmin_moc",
+        "x": 5,
+        "y": 5
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Morocc Timer#edq|moc_fild21:38:193": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.MoroccTimer",
+    "output_hash": "85b8ab4b342e2a2748273d784c344d35a661ce25aecfddad403a211cc4435d8e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/morocc_timer.ex",
+    "source_hash": "c869677254ebea9d35a3ad6cb65f7d76c7923ba833a5980184f5234ac2f52f6d",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "moc_fild21",
+        "name": "Morocc Timer",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          6,
+          6
+        ],
+        "unique_name": "Morocc Timer#edq",
+        "x": 38,
+        "y": 193
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Old News Scrapbook|yuno_in04:117:102": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.OldNewsScrapbook",
+    "output_hash": "511f911354542fef7c407badd8e3fabd83472012b7d1873047988d9de1dda2c2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/old_news_scrapbook.ex",
+    "source_hash": "9791d274345e5a15a60311ce4da7bf962bddc3272bb48865c75b77be120e4b7b",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "yuno_in04",
+        "name": "Old News Scrapbook",
+        "scope": "shared",
+        "sprite": 844,
+        "x": 117,
+        "y": 102
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Reading Girl#moc_girl1|yuno_in04:180:106": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.ReadingGirl",
+    "output_hash": "ca3eb1b236a64dd0691ba3bb3c1c27c107949bf720291af38dd354de0a46de99",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/reading_girl.ex",
+    "source_hash": "f1cad155a61ee6ce9bfd9dd2c0ca8b5cc86b48e7e6ee192f98aa12575d561fd8",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "yuno_in04",
+        "name": "Reading Girl",
+        "scope": "shared",
+        "sprite": 73,
+        "unique_name": "Reading Girl#moc_girl1",
+        "x": 180,
+        "y": 106
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Researcher#bpast_2_1|que_ba:176:43": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.Researcher",
+    "output_hash": "c01060aa37c25443d3be9c012776940435e79e4dee8299f60637d60fd629a420",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/researcher.ex",
+    "source_hash": "c74a5a4fc684eaf4589906c708657b88625b834edd6a1d08343df776be0dd670",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "que_ba",
+        "name": "Researcher",
+        "scope": "shared",
+        "sprite": 402,
+        "unique_name": "Researcher#bpast_2_1",
+        "x": 176,
+        "y": 43
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Researcher#bpast_2_2|que_ba:181:14": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.Researcher18114",
+    "output_hash": "74e41fd8d90981fe3bffd5b5d0417aa56a8b05e6f1156ec272bc9a3a31adb668",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/researcher_181_14.ex",
+    "source_hash": "6ebfc2bb1bef5610c6c5cdbbd4bb99e4d6cd52d2a0e705a82e376290757ae5c7",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "que_ba",
+        "name": "Researcher",
+        "scope": "shared",
+        "sprite": 865,
+        "unique_name": "Researcher#bpast_2_2",
+        "x": 181,
+        "y": 14
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Satan Broadcast#edq|moc_fild21:1:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.SatanBroadcast",
+    "output_hash": "eacc0784b668152272b08e0850cd74d0385129d77e3c4b1d0a5f9a842ddd5b9d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/satan_broadcast.ex",
+    "source_hash": "f85b70f25a930613bc61629472fcf015ec16522827d1d251075f25f0393a82b9",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "moc_fild21",
+        "name": "Satan Broadcast",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "Satan Broadcast#edq",
+        "x": 1,
+        "y": 1
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Satan Summon#edq|moc_fild21:3:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.SatanSummon",
+    "output_hash": "16c0a9050432e731479cc2be52855f61f24dfa6c9aaa8e39fc5561c0dc64a7d4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/satan_summon.ex",
+    "source_hash": "c6b6511ae6515f7e1d7ddad6a6d11a91c1ec446fb7a4800bd873a700a80222df",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "moc_fild21",
+        "name": "Satan Summon",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "Satan Summon#edq",
+        "x": 3,
+        "y": 1
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Suspicious Man#oliver_h|yuno_in04:169:123": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.SuspiciousMan",
+    "output_hash": "94eb1a596954aa4ed283a60dc8bebab1994e1c4b3b233f5b842f2ffc47f16be0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/suspicious_man.ex",
+    "source_hash": "4407625921f7239a97a2357d60e807e617e833e01c020448c71a3f8fe8a9d476",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "yuno_in04",
+        "name": "Suspicious Man",
+        "scope": "shared",
+        "sprite": 407,
+        "unique_name": "Suspicious Man#oliver_h",
+        "x": 169,
+        "y": 123
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Time-Space Gap#edq|moc_fild21:177:239": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.TimeSpaceGap",
+    "output_hash": "7600a610e1495bacd5d9ddc31145fccdf74809015703a5d71d2b719142287664",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/time_space_gap.ex",
+    "source_hash": "70151c47099e7e7bb5fcb18a09d8f89404b3f3c88ee9f8e4b1a90345d4d8bb2a",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "moc_fild21",
+        "name": "Time-Space Gap",
+        "scope": "shared",
+        "sprite": 844,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "Time-Space Gap#edq",
+        "x": 177,
+        "y": 239
+      }
+    ]
+  },
+  "quests/quests_morocc.txt|script|Worn-out Book#garas|yuno_in04:167:120": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsMorocc.WornOutBook",
+    "output_hash": "3e51197f1513080dc6670799e3ef230a602d161cafe85e578848fb55ef0c2054",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_morocc/worn_out_book.ex",
+    "source_hash": "606ec8f0a7375b3701e14aadded04c7ed12eb9dc95f64111e7d1e35376c3d1f1",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "yuno_in04",
+        "name": "Worn-out Book",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Worn-out Book#garas",
+        "x": 167,
+        "y": 120
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
