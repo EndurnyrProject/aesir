@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     savepoint, storage, attachrid
   - `Dsl.Skills` — npcskill, skilleffect, itemskill, produce, skill grants/reset
   - `Dsl.Visuals` — looks, effects, viewpoint, questinfo, cutin, sound,
-    navigation, emotes, nude
+    readbook, navigation, emotes, nude
   - `Dsl.Announce` — announce/broadcast family, dispbottom, logmes
   - `Dsl.Movement` — warp, areawarp, warpchar
   - `Dsl.Items` — zeny, item grants/removal, groups, repair, refine,
@@ -125,6 +125,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate questinfo(ctx, icon, color), to: Visuals
   defdelegate questinfo(ctx, icon, color, condition), to: Visuals
   defdelegate cutin(ctx, image, type), to: Visuals
+  defdelegate readbook(ctx, book_id, page), to: Visuals
   defdelegate soundeffect(ctx, name, type), to: Visuals
   defdelegate soundeffectall(ctx, name, type), to: Visuals
   defdelegate soundeffectall(ctx, name, type, map), to: Visuals

@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
   @moduledoc """
   Appearance and client-effect buildins for the script DSL: look reads/writes,
   special effects, viewpoint markers, quest-info icons, cutins, sound effects,
-  client navigation, NPC emotes, and full unequip.
+  the book reader, client navigation, NPC emotes, and full unequip.
 
   Imported into scripts via the `Aesir.ZoneServer.Script.Dsl` facade.
   """
@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
   require Logger
 
   alias Aesir.Net.Cutin
+  alias Aesir.Net.ReadBook
   alias Aesir.Net.SoundEffect
   alias Aesir.Net.Viewpoint
   alias Aesir.ZoneServer.Config
@@ -268,6 +269,24 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
 
   def cutin(%Ctx{char_id: char_id} = ctx, image, type) do
     Broadcast.to_player(char_id, %Cutin{image: image, type: type})
+    ctx
+  end
+
+  @doc """
+  Opens the book reader window on the invoking player's screen (script
+  `readbook <book id>,<page>`, packet `ZC_READ_BOOK`). `book_id` is the book
+  item's id and `page` the page it opens at; the player does not need to own
+  the book.
+
+  Sent only to the invoking player. Without one the command does nothing and
+  the script goes on, as in the reference.
+  """
+  @spec readbook(Ctx.t(), non_neg_integer(), non_neg_integer()) :: Ctx.t()
+  def readbook(%Ctx{status: {:error, _}} = ctx, _book_id, _page), do: ctx
+  def readbook(%Ctx{char_id: nil} = ctx, _book_id, _page), do: ctx
+
+  def readbook(%Ctx{char_id: char_id} = ctx, book_id, page) do
+    Broadcast.to_player(char_id, %ReadBook{book_id: book_id, page: page})
     ctx
   end
 

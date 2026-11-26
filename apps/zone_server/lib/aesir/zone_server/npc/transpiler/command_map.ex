@@ -262,6 +262,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "specialeffect" => %{shape: :specialeffect, dsl: "specialeffect"},
     "specialeffect2" => %{dsl: "specialeffect2", args: [:effect]},
     "cutin" => %{dsl: "cutin", args: [:string, :int]},
+    "readbook" => %{dsl: "readbook", args: [:int, :int]},
     "soundeffect" => %{dsl: "soundeffect", args: [:string, :int]},
     "soundeffectall" => %{shape: :soundeffectall, dsl: "soundeffectall"},
     "progressbar" => %{dsl: "progressbar", args: [:string, :int]},

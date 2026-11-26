@@ -311,6 +311,8 @@ message Envelope {
     PetEmotion pet_emotion = 241;  // s2c zone world
     PetFoodResult pet_food_result = 242;  // s2c zone gameplay
     QuestActiveRequest quest_active_request = 243;  // c2s zone
+    // 244: open a book item's reader window (script readbook buildin)
+    ReadBook read_book = 244;  // s2c zone world
   }
 }
 
@@ -782,6 +784,13 @@ message Viewpoint {
 message Cutin {
   string image = 1;   // illustration bitmap name; empty with type 255 clears all cutins
   uint32 type = 2;    // position: 0 bottom-left / 1 bottom-mid / 2 bottom-right / 3-4 center / 255 clear
+}
+
+// Server -> client, opens the book reader window for a book item at a page
+// (replaces RO ZC_READ_BOOK). Sent only to the invoking player (script `readbook`).
+message ReadBook {
+  uint32 book_id = 1;  // item id of the book; the client looks its text up by this id
+  uint32 page = 2;     // page to open the book at
 }
 
 // Server -> client, a one-shot sound effect (replaces RO ZC_SOUND).

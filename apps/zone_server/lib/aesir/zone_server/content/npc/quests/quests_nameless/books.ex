@@ -67,7 +67,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Books do
           ctx
           |> set_char_var(:aru_monas, 22)
           |> give_item(7755, 1)
-          |> todo(:readbook, [7755, 1])
+          |> readbook(7755, 1)
           |> close()
         else
           ctx

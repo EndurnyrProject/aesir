@@ -322,6 +322,11 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
       assert Dsl.cutin(c, "kafra_01", 2) == c
     end
 
+    test "readbook/3 returns the ctx unchanged when there is no char to send to" do
+      c = %{ctx() | char_id: nil}
+      assert Dsl.readbook(c, 7755, 1) == c
+    end
+
     test "soundeffect/3 returns the ctx unchanged when there is no char to send to" do
       c = %{ctx() | char_id: nil}
       assert Dsl.soundeffect(c, "bragis_poem.wav", 0) == c
@@ -335,6 +340,7 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
     test "both are no-ops on an errored ctx" do
       c = %{ctx() | status: {:error, :boom}}
       assert Dsl.cutin(c, "img", 1) == c
+      assert Dsl.readbook(c, 7755, 1) == c
       assert Dsl.soundeffect(c, "s.wav", 0) == c
       assert Dsl.soundeffectall(c, "s.wav", 0) == c
     end
