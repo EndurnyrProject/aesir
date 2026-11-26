@@ -64161,6 +64161,784 @@
       }
     ]
   },
+  "quests/thana_quest.txt|script|#Charm Stone Admintt01|tha_t08:1:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.CharmStoneAdmintt01",
+    "output_hash": "193797558a24446cfcb8c499a8a52aa845556ec52adbeb1efaf00032995ceaf2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/charm_stone_admintt01.ex",
+    "source_hash": "2ae61854acb5e70528d9b7d8c854c4589b8d2b75073c8e926725486a2885f640",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t08",
+        "name": "",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "#Charm Stone Admintt01",
+        "x": 1,
+        "y": 1
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|#cooltime_thana|thana_boss:1:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.CooltimeThana",
+    "output_hash": "dd1df92b1deb1abf4e1e38a3488ad1caece2aceb26d45641de422c9b3e7beabf",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/cooltime_thana.ex",
+    "source_hash": "60570448ef08144eb6f9e4923e02050a7f6b5e9008f012a1cbd336a72b96b0d7",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "thana_boss",
+        "name": "",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "#cooltime_thana",
+        "x": 1,
+        "y": 1
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|#gateto_thanatos|tha_t12:130:52": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.GatetoThanatos",
+    "output_hash": "5d6e96ec3abad2c87904628147246d39ec978e0f7f1c001e2527bfea754a22df",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/gateto_thanatos.ex",
+    "source_hash": "3ff9d157987f049fbd55d9855c0cf9473706f53cec8962c224ddec310939e849",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t12",
+        "name": "",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "#gateto_thanatos",
+        "x": 130,
+        "y": 52
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|#sommon_thanatos|thana_boss:141:218": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.SommonThanatos",
+    "output_hash": "b27c0732d28e67ba24e83034bc6637060cf3425f9a4e4197729f0e84749d8750",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/sommon_thanatos.ex",
+    "source_hash": "afcd1f181a71fdf24ef8b02e4c4706beac1ef9c6bef5322a517a174751e49e2d",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "thana_boss",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "unique_name": "#sommon_thanatos",
+        "x": 141,
+        "y": 218
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|#thanatos_seal|thana_boss:141:228": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.ThanatosSeal",
+    "output_hash": "600343cf40d5a6077ab7f75b65523d2dff4887233e6bb2c847f19f7ebad7721e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/thanatos_seal.ex",
+    "source_hash": "1a863fcf2f1fa7319bd8e2fe565b2938281293ab7c63ff60abe29531e55a37a0",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "thana_boss",
+        "name": "",
+        "scope": "shared",
+        "sprite": 139,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "#thanatos_seal",
+        "x": 141,
+        "y": 228
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|#tteffect01|tha_t12:134:52": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.Tteffect01",
+    "output_hash": "38bd9e01af67a174b16ac57cab8c2fd3a0280cfddf19b20333a5122280e1e19f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/tteffect01.ex",
+    "source_hash": "97be81a0ec9307fbaac8ae0af22779b5e3134e51b11c3821032bb1dd9768526b",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t12",
+        "name": "",
+        "scope": "shared",
+        "sprite": 139,
+        "unique_name": "#tteffect01",
+        "x": 134,
+        "y": 52
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|#tteffect02|tha_t12:132:47": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.Tteffect02",
+    "output_hash": "cc7f34a88b6da3b7be787cdc0e60a3d760658846905f275b8b842cf589ab1b80",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/tteffect02.ex",
+    "source_hash": "1a6e69972be591516ef895abb12e0954fe1e07738e827f8f929913d9fb5cc729",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t12",
+        "name": "",
+        "scope": "shared",
+        "sprite": 139,
+        "unique_name": "#tteffect02",
+        "x": 132,
+        "y": 47
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|#tteffect03|tha_t12:127:47": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.Tteffect03",
+    "output_hash": "6b32f25e14123eebc526699ad7b90dc353e427005acce15bfeba34c252bd9d96",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/tteffect03.ex",
+    "source_hash": "e25d219e0ac7175104c21710625f6c5d8f9ceaa00ed5351fe2adc5a1a2a60418",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t12",
+        "name": "",
+        "scope": "shared",
+        "sprite": 139,
+        "unique_name": "#tteffect03",
+        "x": 127,
+        "y": 47
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|#tteffect04|tha_t12:125:52": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.Tteffect04",
+    "output_hash": "b937797bb58880d6243c3f1fdcf60f55ae7050732a4e52331b86110848df3c7d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/tteffect04.ex",
+    "source_hash": "8449e1ae7d8610b07cb756be46c5536e619120964053b82fa35c07eb642e605f",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t12",
+        "name": "",
+        "scope": "shared",
+        "sprite": 139,
+        "unique_name": "#tteffect04",
+        "x": 125,
+        "y": 52
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|#tteffect05|tha_t12:129:56": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.Tteffect05",
+    "output_hash": "d41a64c0c541cdfceae271a1ed128ff84f03e756f957a90702eb4aa671a7d740",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/tteffect05.ex",
+    "source_hash": "fd0db6e7d3784076c0d34a01585c8f90ece2f7b8b4d85b023f63efd978912c93",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t12",
+        "name": "",
+        "scope": "shared",
+        "sprite": 139,
+        "unique_name": "#tteffect05",
+        "x": 129,
+        "y": 56
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|3rdf_warp#tt|tha_t02:227:163": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.M3rdfWarp",
+    "output_hash": "86c2b522313b031fb3aa2bb320839104140478fb97d314e963dcf1685053ffd9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/3rdf_warp.ex",
+    "source_hash": "78804ecaef2e620e770ff08510e56081e29769fa70e6d549a741d86f372b1325",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t02",
+        "name": "3rdf_warp",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "3rdf_warp#tt",
+        "x": 227,
+        "y": 163
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|Bloody Knight Statue#tt|tha_t12:96:57": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.BloodyKnightStatue",
+    "output_hash": "c04cec0771d8aa4115603d0abd61f9df67635955bcdcdb16811bee62214182cb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/bloody_knight_statue.ex",
+    "source_hash": "7ad66775c0cb193144046ecbb2220b893bb515dad6aa93299ecdcf548f5f45aa",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t12",
+        "name": "Bloody Knight Statue",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Bloody Knight Statue#tt",
+        "x": 96,
+        "y": 57
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|Blue Angel Statue#tt|tha_t12:103:17": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.BlueAngelStatue",
+    "output_hash": "44862029f261c0715e6525bb069b9091e8e61a63ab31f4604cff9187ebb3cb95",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/blue_angel_statue.ex",
+    "source_hash": "9b5b1eb5bb8620022265998dfd2fe3807206e5b1f90a5d59b211a86a76aad306",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t12",
+        "name": "Blue Angel Statue",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Blue Angel Statue#tt",
+        "x": 103,
+        "y": 17
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|Brilliant Statue#tt3|tha_t05:62:179": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.BrilliantStatue",
+    "output_hash": "3b1b56f1ca8fc80005d3bb45d4c484d0d11a6e12f3cb214d732c877951587cbc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/brilliant_statue.ex",
+    "source_hash": "7bec33dbfd854731d2e53d9e032dc454c67c9cc57ae9ab00aea04bba8948b2c7",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t05",
+        "name": "Brilliant Statue",
+        "scope": "shared",
+        "sprite": 111,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Brilliant Statue#tt3",
+        "x": 62,
+        "y": 179
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|Brilliant Statue#tt4|tha_t06:226:230": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.BrilliantStatue226230",
+    "output_hash": "b3432fe56ee5566211a3f049cb7a180f8d51b1b5fd01631dfefc00f3596cafce",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/brilliant_statue_226_230.ex",
+    "source_hash": "e0dfe453ca97ff4e2cc004c2b35c36b18ff5e8652d4e47481894c88480f80164",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t06",
+        "name": "Brilliant Statue",
+        "scope": "shared",
+        "sprite": 111,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Brilliant Statue#tt4",
+        "x": 226,
+        "y": 230
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|Dark Devil Statue#tt|tha_t12:129:86": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.DarkDevilStatue",
+    "output_hash": "db6d688d2626a7d5f7c19ab212912d28cd60655516eab404e4dbc4569e214cb0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/dark_devil_statue.ex",
+    "source_hash": "c6f1dd1a2a4b057df14be0aabe78d5ccf6ba0ec17c09e02db179f24d1684c9aa",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t12",
+        "name": "Dark Devil Statue",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Dark Devil Statue#tt",
+        "x": 129,
+        "y": 86
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|Entrance Guide|tha_t02:231:161": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.EntranceGuide",
+    "output_hash": "00662dde56974b97e105480261f44907d09842a628383892a4174e16599fc916",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/entrance_guide.ex",
+    "source_hash": "697b56ce599cd03743e5e311a1fd542f81268daad0e4cb27097788ee6ef04b71",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "tha_t02",
+        "name": "Entrance Guide",
+        "scope": "shared",
+        "sprite": 874,
+        "x": 231,
+        "y": 161
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|Gold Religious Statue#tt|tha_t12:161:57": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.GoldReligiousStatue",
+    "output_hash": "fb90e92363736c758a66f373259c892e39e802c646e231b71922b30dfccd6c11",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/gold_religious_statue.ex",
+    "source_hash": "e1b4da3ad008ab29a3f15f7695a14f2b7a58fb85f8a27ee5cb25dac4231d2fc0",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t12",
+        "name": "Gold Religious Statue",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Gold Religious Statue#tt",
+        "x": 161,
+        "y": 57
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|Green Wiseman Statue#tt|tha_t12:154:17": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.GreenWisemanStatue",
+    "output_hash": "03b7e3c890f4f96a0b06037acfbc882ab119ce50ebadd3b3592fcbfc9a4161c7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/green_wiseman_statue.ex",
+    "source_hash": "d57d994f3788e3323cba7b9bf3d857c3e0af4e26424f807c21133e929e35ef95",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t12",
+        "name": "Green Wiseman Statue",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Green Wiseman Statue#tt",
+        "x": 154,
+        "y": 17
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|Guide#reward|tha_t01:140:78": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.Guide14078",
+    "output_hash": "a8fc6d58dc876be545658de92e0ac18f1421c9f0de6b67973c4d1c9d74ede271",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/guide_140_78.ex",
+    "source_hash": "d398a075d32a86914e8e725c6df493c264a81d22f3ec550aef40db0dd1b9ae75",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "tha_t01",
+        "name": "Guide",
+        "scope": "shared",
+        "sprite": 831,
+        "unique_name": "Guide#reward",
+        "x": 140,
+        "y": 78
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|Guide|tha_t01:149:78": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.Guide",
+    "output_hash": "294c868fe81c1e5e4b706e190c21b1f03166a99afdb447e299117d5907eb16eb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/guide.ex",
+    "source_hash": "e40ea6b0ac25a87f280f8764b16cb973c8f2ce2bfc37a70cb20b00fa9ae5c085",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "tha_t01",
+        "name": "Guide",
+        "scope": "shared",
+        "sprite": 90,
+        "x": 149,
+        "y": 78
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|Memory Seal#tt1|thana_boss:217:167": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.MemorySeal",
+    "output_hash": "154af7f7bbe0ac1f92ef8b959689e89c9bc22b47dc6ec023e0f7b78d9625bea4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/memory_seal.ex",
+    "source_hash": "0ea9e191bc232ccf8fa9fa167df8871f82b2746bbdc378490d85dccd885cd166",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "thana_boss",
+        "name": "Memory Seal",
+        "scope": "shared",
+        "sprite": 1711,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Memory Seal#tt1",
+        "x": 217,
+        "y": 167
+      },
+      {
+        "dir": 3,
+        "map": "thana_boss",
+        "name": "Memory Seal",
+        "scope": "shared",
+        "sprite": 1712,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Memory Seal#tt2",
+        "x": 202,
+        "y": 75
+      },
+      {
+        "dir": 7,
+        "map": "thana_boss",
+        "name": "Memory Seal",
+        "scope": "shared",
+        "sprite": 1709,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Memory Seal#tt3",
+        "x": 80,
+        "y": 76
+      },
+      {
+        "dir": 5,
+        "map": "thana_boss",
+        "name": "Memory Seal",
+        "scope": "shared",
+        "sprite": 1710,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Memory Seal#tt4",
+        "x": 62,
+        "y": 171
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|Memory Seal#tt5|thana_boss:141:235": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.MemorySeal141235",
+    "output_hash": "61acdcc85d1680c27c8037591be85b4ba22951b0241aa4ae92f6976ed135a742",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/memory_seal_141_235.ex",
+    "source_hash": "4a54cb8527d06ff841a05ec06851e1e89056fbbe8a5246baa4a67c89358d1819",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "thana_boss",
+        "name": "Memory Seal",
+        "scope": "shared",
+        "sprite": 1708,
+        "unique_name": "Memory Seal#tt5",
+        "x": 141,
+        "y": 235
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|Rune Device#tt1|tha_t03:67:70": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.RuneDevice",
+    "output_hash": "ba7825b1326d5d6f2ef08dbc05606b5b08ac25b1284410709a0354c4a39cbf6c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/rune_device.ex",
+    "source_hash": "6662e1b2849fb2953b6efdac53480fe2ac88a8b2b8877c3b27f692b5f61bdbf1",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t03",
+        "name": "Rune Device",
+        "scope": "shared",
+        "sprite": 111,
+        "trigger": [
+          4,
+          4
+        ],
+        "unique_name": "Rune Device#tt1",
+        "x": 67,
+        "y": 70
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|Rune Device#tt2|tha_t04:195:195": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.RuneDevice195195",
+    "output_hash": "a95d8964f5ee3e0648521d1cf9d6e786ed1ade6a38707a95e1977d99290b96ba",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/rune_device_195_195.ex",
+    "source_hash": "73916a3403eb8dac56f0a5ee0276bcafb9efe5b04d529b8ac26832c6c346bcc1",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t04",
+        "name": "Rune Device",
+        "scope": "shared",
+        "sprite": 111,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Rune Device#tt2",
+        "x": 195,
+        "y": 195
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|Shining Crystal#tt_b1|tha_t08:49:65": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.ShiningCrystal4965",
+    "output_hash": "48cfef96064355fff8eef73fdc9b5a3678c463afb38734e9aed550664e04f327",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/shining_crystal_49_65.ex",
+    "source_hash": "830e2d41800f10a3ae2e14f5b03facca78d8f4eaccad6d30b3f4d1838f1add98",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t08",
+        "name": "Shining Crystal",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "Shining Crystal#tt_b1",
+        "x": 49,
+        "y": 65
+      },
+      {
+        "dir": 0,
+        "map": "tha_t08",
+        "name": "Shining Crystal",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "Shining Crystal#tt_b2",
+        "x": 49,
+        "y": 150
+      },
+      {
+        "dir": 0,
+        "map": "tha_t08",
+        "name": "Shining Crystal",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "Shining Crystal#tt_b3",
+        "x": 90,
+        "y": 147
+      },
+      {
+        "dir": 0,
+        "map": "tha_t08",
+        "name": "Shining Crystal",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "Shining Crystal#tt_b4",
+        "x": 90,
+        "y": 56
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|Shining Crystal#tt_g1|tha_t08:90:65": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.ShiningCrystal9065",
+    "output_hash": "566fd3b1b86708c11a136f96a805070545aed9bc78fd6ee9e147c2cb02ef6172",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/shining_crystal_90_65.ex",
+    "source_hash": "ef028738493d6bbc1efc9830c812b9e75db46762d2d3a855b2f6ad5d54b0b13b",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t08",
+        "name": "Shining Crystal",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "Shining Crystal#tt_g1",
+        "x": 90,
+        "y": 65
+      },
+      {
+        "dir": 0,
+        "map": "tha_t08",
+        "name": "Shining Crystal",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "Shining Crystal#tt_g2",
+        "x": 49,
+        "y": 62
+      },
+      {
+        "dir": 0,
+        "map": "tha_t08",
+        "name": "Shining Crystal",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "Shining Crystal#tt_g3",
+        "x": 49,
+        "y": 147
+      },
+      {
+        "dir": 0,
+        "map": "tha_t08",
+        "name": "Shining Crystal",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "Shining Crystal#tt_g4",
+        "x": 90,
+        "y": 144
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|Shining Crystal#tt_r1|tha_t08:90:153": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.ShiningCrystal",
+    "output_hash": "0d3dfcfa2ad6802952846b2db65c507aa803546d3f1bbc6533d0b849b88c8fd3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/shining_crystal.ex",
+    "source_hash": "7f5ff8ba85efaa813eaf1377faa49528d9f4f72b1851fe94b18b1289e127b9c4",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t08",
+        "name": "Shining Crystal",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "Shining Crystal#tt_r1",
+        "x": 90,
+        "y": 153
+      },
+      {
+        "dir": 0,
+        "map": "tha_t08",
+        "name": "Shining Crystal",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "Shining Crystal#tt_r2",
+        "x": 90,
+        "y": 62
+      },
+      {
+        "dir": 0,
+        "map": "tha_t08",
+        "name": "Shining Crystal",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "Shining Crystal#tt_r3",
+        "x": 49,
+        "y": 59
+      },
+      {
+        "dir": 0,
+        "map": "tha_t08",
+        "name": "Shining Crystal",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "Shining Crystal#tt_r4",
+        "x": 49,
+        "y": 144
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|Shining Crystal#tt_y1|tha_t08:49:153": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.ShiningCrystal49153",
+    "output_hash": "e89c7a02eab8790a8853392df23897c4e19371391c9ff57f21235cb20b870855",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/shining_crystal_49_153.ex",
+    "source_hash": "2bf510c2b306155b8397231533795debb708bc23aa3a57e16bbd9e76c7632ab3",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t08",
+        "name": "Shining Crystal",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "Shining Crystal#tt_y1",
+        "x": 49,
+        "y": 153
+      },
+      {
+        "dir": 0,
+        "map": "tha_t08",
+        "name": "Shining Crystal",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "Shining Crystal#tt_y2",
+        "x": 90,
+        "y": 150
+      },
+      {
+        "dir": 0,
+        "map": "tha_t08",
+        "name": "Shining Crystal",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "Shining Crystal#tt_y3",
+        "x": 90,
+        "y": 59
+      },
+      {
+        "dir": 0,
+        "map": "tha_t08",
+        "name": "Shining Crystal",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "Shining Crystal#tt_y4",
+        "x": 49,
+        "y": 56
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|Splendid Sword#tt5|tha_t06:204:181": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.SplendidSword",
+    "output_hash": "156404693f2e72f288b15926c293ddfec2fef16076f53f3b882dc70e382c579f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/splendid_sword.ex",
+    "source_hash": "e68ca62854fc3cf7ef632eac175df55b503b461f7bafd3f07c6ed9f03e01eae9",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t06",
+        "name": "Splendid Sword",
+        "scope": "shared",
+        "sprite": 111,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Splendid Sword#tt5",
+        "x": 204,
+        "y": 181
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|Tower Keeper|hu_fild01:140:163": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.TowerKeeper",
+    "output_hash": "655e5eaa1cb82138b840435fa2e1175efb7a66306e63b6cbdd7543bbffe5a4dc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/tower_keeper.ex",
+    "source_hash": "3add35f29f087a776dda0e528264f5e4c26261d37010f79ece6f500408edd257",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "hu_fild01",
+        "name": "Tower Keeper",
+        "scope": "shared",
+        "sprite": 852,
+        "trigger": [
+          3,
+          3
+        ],
+        "x": 140,
+        "y": 163
+      }
+    ]
+  },
+  "quests/thana_quest.txt|script|to 7th Floor|tha_t06:119:120": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.ThanaQuest.To7thFloor",
+    "output_hash": "6aa53bae77e0dd61395ff0628ca06da8803225164b222115c3cc2ee88b47ec43",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/thana_quest/to_7th_floor.ex",
+    "source_hash": "1466881ed5efd55b14fa01227a3bedd975891ecd7fa02065cfd8eebc80bd046f",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "tha_t06",
+        "name": "to 7th Floor",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ],
+        "x": 119,
+        "y": 120
+      }
+    ]
+  },
   "re/cities/comodo.txt|script|Adventurer#pa0829_01|cmd_fild07:50:271": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Comodo.Adventurer",
     "output_hash": "5213a5fee700c495335ae96ef6ca1596bce22f3a73e1c4d838ddd49e0b198ab3",
