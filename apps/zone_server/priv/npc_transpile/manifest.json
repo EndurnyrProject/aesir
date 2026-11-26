@@ -63365,6 +63365,1002 @@
       }
     ]
   },
+  "quests/seals/god_global.txt|script|Golbal var|sec_in02:15:170": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.GodGlobal.GolbalVar",
+    "output_hash": "65a3227c3bff432600a1e224889d5fb40e76d7bcea46a3e2fa57735e478ba0e5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/god_global/golbal_var.ex",
+    "source_hash": "d5ca9deb7c0c740f7f27b60c8b9406460557752bd4c53abcd1be1cf4683de476",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "sec_in02",
+        "name": "Golbal var",
+        "scope": "shared",
+        "sprite": 817,
+        "x": 15,
+        "y": 170
+      }
+    ]
+  },
+  "quests/seals/god_weapon_creation.txt|script| #que_godnpc1::GodEntrance|que_god01:214:128": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.GodWeaponCreation.QueGodnpc1Godentrance",
+    "output_hash": "cc319e08c6a7af073a8bf63d0fb55c8a3f2d90b8120169b6aa85b52eca9edf99",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/god_weapon_creation/que_godnpc1_godentrance.ex",
+    "source_hash": "799ed22fcfc55a6a469174e88394a558d4a66e35da26ae83f29f2818682f5471",
+    "spawns": [
+      {
+        "dir": 0,
+        "hidden_name": "que_godnpc1",
+        "map": "que_god01",
+        "name": " ",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "GodEntrance",
+        "x": 214,
+        "y": 128
+      },
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": " ",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": " #que_godnpc2",
+        "x": 215,
+        "y": 128
+      },
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": " ",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": " #que_godnpc3",
+        "x": 213,
+        "y": 128
+      }
+    ]
+  },
+  "quests/seals/god_weapon_creation.txt|script|#god_hopewarp1|que_god01:215:127": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.GodWeaponCreation.GodHopewarp1",
+    "output_hash": "f1cf3edd83718f47770ecc6886422592fa1e58d912b2c380e6f0c78930f3bd90",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/god_weapon_creation/god_hopewarp1.ex",
+    "source_hash": "ca487abbc93a1ebc34a242e23173ea896cbef02cb9111e46d3ee7b959ea7d0ee",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": "",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "#god_hopewarp1",
+        "x": 215,
+        "y": 127
+      }
+    ]
+  },
+  "quests/seals/god_weapon_creation.txt|script|Godly Item Quests#god|que_god01:293:3": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.GodWeaponCreation.GodlyItemQuests",
+    "output_hash": "b2f65ab0f30e65670130386b138d0f3bf378cb434195e5b7e5faadfbf1f89845",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/god_weapon_creation/godly_item_quests.ex",
+    "source_hash": "97d53b308c5d75e881c7c223447ff02d9f8b05c90f8c0fda9db65c8f82045088",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": "Godly Item Quests",
+        "scope": "shared",
+        "sprite": 90,
+        "unique_name": "Godly Item Quests#god",
+        "x": 293,
+        "y": 3
+      }
+    ]
+  },
+  "quests/seals/god_weapon_creation.txt|script|Grunburti#1::GodDwarf|gld_dun01:28:85": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.GodWeaponCreation.Grunburti",
+    "output_hash": "2998683e30b3d4fec796ffac6a530098a6441072177ed2bc375d5570c24e1b57",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/god_weapon_creation/grunburti.ex",
+    "source_hash": "881e1f06b268642aaf5ea2baf519b50c60e9f9824c032d22f5bfd95008b5cda8",
+    "spawns": [
+      {
+        "dir": 0,
+        "hidden_name": "1",
+        "map": "gld_dun01",
+        "name": "Grunburti",
+        "scope": "shared",
+        "sprite": 826,
+        "unique_name": "GodDwarf",
+        "x": 28,
+        "y": 85
+      },
+      {
+        "dir": 0,
+        "map": "gld_dun02",
+        "name": "Grunburti",
+        "scope": "shared",
+        "sprite": 826,
+        "unique_name": "Grunburti#2",
+        "x": 85,
+        "y": 84
+      },
+      {
+        "dir": 0,
+        "map": "gld_dun03",
+        "name": "Grunburti",
+        "scope": "shared",
+        "sprite": 826,
+        "unique_name": "Grunburti#3",
+        "x": 92,
+        "y": 105
+      },
+      {
+        "dir": 0,
+        "map": "gld_dun04",
+        "name": "Grunburti",
+        "scope": "shared",
+        "sprite": 826,
+        "unique_name": "Grunburti#4",
+        "x": 268,
+        "y": 230
+      }
+    ]
+  },
+  "quests/seals/god_weapon_creation.txt|script|Grunburti#god|que_god01:154:112": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.GodWeaponCreation.Grunburti154112",
+    "output_hash": "dd5f0daaf8e51cee5cb3b1289a4daca76fc4c5582146b407220293ccca3df8df",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/god_weapon_creation/grunburti_154_112.ex",
+    "source_hash": "7c23423c05eb4569a12ad9d5426de941f65f0e4f7f499c276ea2708ac8bc94e4",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "que_god01",
+        "name": "Grunburti",
+        "scope": "shared",
+        "sprite": 826,
+        "unique_name": "Grunburti#god",
+        "x": 154,
+        "y": 112
+      }
+    ]
+  },
+  "quests/seals/god_weapon_creation.txt|script|god_failwarp#1|que_god01:154:67": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.GodWeaponCreation.GodFailwarp",
+    "output_hash": "a62743f1260121c767638a820c57f7f55f327c0ebae66050dc6bf4991e95c17d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/god_weapon_creation/god_failwarp.ex",
+    "source_hash": "63d859f7c3765c449637fbdf0984d380747b18d248902dc2af397651a33d26f9",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": "god_failwarp",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          4,
+          7
+        ],
+        "unique_name": "god_failwarp#1",
+        "x": 154,
+        "y": 67
+      },
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": "god_failwarp",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          4,
+          7
+        ],
+        "unique_name": "god_failwarp#2",
+        "x": 154,
+        "y": 82
+      },
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": "god_failwarp",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          9,
+          9
+        ],
+        "unique_name": "god_failwarp#3",
+        "x": 145,
+        "y": 99
+      },
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": "god_failwarp",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          9,
+          9
+        ],
+        "unique_name": "god_failwarp#4",
+        "x": 164,
+        "y": 99
+      },
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": "god_failwarp",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          9,
+          9
+        ],
+        "unique_name": "god_failwarp#5",
+        "x": 145,
+        "y": 118
+      },
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": "god_failwarp",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          9,
+          9
+        ],
+        "unique_name": "god_failwarp#6",
+        "x": 164,
+        "y": 118
+      }
+    ]
+  },
+  "quests/seals/god_weapon_creation.txt|script|god_wep_warpmaster|que_god01:169:82": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.GodWeaponCreation.GodWepWarpmaster",
+    "output_hash": "21096477b249e5eca74ec70242d06308eb248f3183d03df36664da8d2270e895",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/god_weapon_creation/god_wep_warpmaster.ex",
+    "source_hash": "d890a3d77ca314e70b1879d6734099713f05b02193d2b587b4bb5891b8dbf70c",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": "god_wep_warpmaster",
+        "scope": "shared",
+        "sprite": -1,
+        "x": 169,
+        "y": 82
+      }
+    ]
+  },
+  "quests/seals/megingard_seal.txt|floating|Crusader#God_|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.Seals.MegingardSeal.Crusader",
+    "output_hash": "80503208d592c66a242dc6015177c8b0f9b77183d4815ee2c535e094529a8b61",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/seals/megingard_seal/crusader.ex",
+    "source_hash": "195b915f3d8044f7272ada59f6671534b7df88232e8e46e88819621bedd358cc",
+    "spawns": []
+  },
+  "quests/seals/megingard_seal.txt|floating|Rebarev Doug_|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.Seals.MegingardSeal.RebarevDoug",
+    "output_hash": "ea7c32988c3576b0128201d612803ebea6aba8b3aa2235d299004cce54dfac5d",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/seals/megingard_seal/rebarev_doug.ex",
+    "source_hash": "d0c48c18712c1fc5bc7a58a692edb43cd1ce0c400904ba34a629454e956fdb0b",
+    "spawns": []
+  },
+  "quests/seals/megingard_seal.txt|script|A File#megin1|prt_in:172:109": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.MegingardSeal.AFile",
+    "output_hash": "c79bbe95d1af70fb1ec1d59e04e34000d30e902b29c233ad4cac7272975bef42",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/megingard_seal/a_file.ex",
+    "source_hash": "f9008818da4e3c12520faed952d139cae6c482d571e19d53ba3d41df33eface8",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "prt_in",
+        "name": "A File",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "A File#megin1",
+        "x": 172,
+        "y": 109
+      }
+    ]
+  },
+  "quests/seals/megingard_seal.txt|script|A File#megin2|prt_in:170:109": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.MegingardSeal.AFile170109",
+    "output_hash": "86d943752d1a3def8de07c627ff4d0decc4fd78d5590a73b1b19c4a088a3d7dc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/megingard_seal/a_file_170_109.ex",
+    "source_hash": "5daf49475872c58782cf41bba6e4f18282b1aaf20608fd447e570b2a04e418f2",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "prt_in",
+        "name": "A File",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "A File#megin2",
+        "x": 170,
+        "y": 109
+      }
+    ]
+  },
+  "quests/seals/megingard_seal.txt|script|A File#megin3|prt_in:168:109": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.MegingardSeal.AFile168109",
+    "output_hash": "c660da126a8f2a556dcd149578502a752c4e8f9396992cbfb8aa139b1bd67285",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/megingard_seal/a_file_168_109.ex",
+    "source_hash": "93b5408a7f1f1870c350fa6dda3fff88b0f6bdce64aa19d80e14e48d21674db9",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "prt_in",
+        "name": "A File",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "A File#megin3",
+        "x": 168,
+        "y": 109
+      }
+    ]
+  },
+  "quests/seals/megingard_seal.txt|script|A File#megin4|prt_in:169:109": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.MegingardSeal.AFile169109",
+    "output_hash": "52101010a0c17b92641c732383c38652b3ab382deec536ad0a7924c71dc70b54",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/megingard_seal/a_file_169_109.ex",
+    "source_hash": "c156b2c94411e1363cb5a4b551f5769c1d35975df2cf6b27d62a63aef38ca664",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "prt_in",
+        "name": "A File",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "A File#megin4",
+        "x": 169,
+        "y": 109
+      }
+    ]
+  },
+  "quests/seals/megingard_seal.txt|script|A File#megin5|prt_in:166:109": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.MegingardSeal.AFile166109",
+    "output_hash": "cfb955ec57334d22b8ec67a27ceb8027d584375654a042ac1fe1b2d06d5cc1c1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/megingard_seal/a_file_166_109.ex",
+    "source_hash": "2d278c460f576e07c1f0fff35ba6e8dec2776274471bc24188b3ac056df63169",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "prt_in",
+        "name": "A File",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "A File#megin5",
+        "x": 166,
+        "y": 109
+      }
+    ]
+  },
+  "quests/seals/megingard_seal.txt|script|Crusader#God1|geffen_in:109:161": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.MegingardSeal.Crusader",
+    "output_hash": "682ef457359182858f248c4f02433a78f5f6d1dd88f64c90017213de4dd3c255",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/megingard_seal/crusader.ex",
+    "source_hash": "f15ddd270e9720d36f349ae1a1889deaaea6b93bd6a85356627e8e2fec4e4361",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "geffen_in",
+        "name": "Crusader",
+        "scope": "shared",
+        "sprite": 751,
+        "unique_name": "Crusader#God1",
+        "x": 109,
+        "y": 161
+      }
+    ]
+  },
+  "quests/seals/megingard_seal.txt|script|Crusader#megin2|alberta:196:146": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.MegingardSeal.Crusader196146",
+    "output_hash": "3cb712d7ee59f51ea5355e441779cebc7c56d3c48b4aecf2aa6991182a9d8882",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/megingard_seal/crusader_196_146.ex",
+    "source_hash": "7b0f790afe2e766cbc644562a6f8727e5ef9a531dc0c785bfa02628aa8985535",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "alberta",
+        "name": "Crusader",
+        "scope": "shared",
+        "sprite": 751,
+        "unique_name": "Crusader#megin2",
+        "x": 196,
+        "y": 146
+      }
+    ]
+  },
+  "quests/seals/megingard_seal.txt|script|Egnigem|niflheim:109:254": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.MegingardSeal.Egnigem",
+    "output_hash": "fec37a23b8da0dbd2f135dc3ec509c7d280c0236e2408b3cd4855c7bdf888f4b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/megingard_seal/egnigem.ex",
+    "source_hash": "46e1759d36798c04b7b95e12bcc36c8bbf3dc7f40edc36adda7b9f1b69a5d72a",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "niflheim",
+        "name": "Egnigem",
+        "scope": "shared",
+        "sprite": 796,
+        "x": 109,
+        "y": 254
+      }
+    ]
+  },
+  "quests/seals/megingard_seal.txt|script|Employee#megin1|morocc_in:146:179": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.MegingardSeal.Employee",
+    "output_hash": "76728c39526165dbda01cba05b8cf8c63fce70ac27ddadfb518bde315a286dec",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/megingard_seal/employee.ex",
+    "source_hash": "008e2c729f1b6578087cbc57dd639d8dc65271fa44e220f14148086fa65cec2d",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "morocc_in",
+        "name": "Employee",
+        "scope": "shared",
+        "sprite": 66,
+        "unique_name": "Employee#megin1",
+        "x": 146,
+        "y": 179
+      }
+    ]
+  },
+  "quests/seals/megingard_seal.txt|script|Lady#megin|aldebaran:66:213": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.MegingardSeal.Lady",
+    "output_hash": "4f3c264e823503cb3d9a37fd1637c784583bc49cda096729c2aa98fee5be742d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/megingard_seal/lady.ex",
+    "source_hash": "26958aebf61bd5529e26e52da2603636f58e99c1bb40fe1216965f990a47504e",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "aldebaran",
+        "name": "Lady",
+        "scope": "shared",
+        "sprite": 69,
+        "unique_name": "Lady#megin",
+        "x": 66,
+        "y": 213
+      }
+    ]
+  },
+  "quests/seals/megingard_seal.txt|script|Librarian#megin|prt_in:172:106": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.MegingardSeal.Librarian",
+    "output_hash": "28f684de4bd231ba9a6eb9d7a243e5f8ee8e32c127cb2f5be6b826ebad42d490",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/megingard_seal/librarian.ex",
+    "source_hash": "487bd7cd2b3742d3e6ef1af2d265a38bdaf2edd174a09d9df9ff6ad108344f22",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "prt_in",
+        "name": "Librarian",
+        "scope": "shared",
+        "sprite": 833,
+        "unique_name": "Librarian#megin",
+        "x": 172,
+        "y": 106
+      }
+    ]
+  },
+  "quests/seals/megingard_seal.txt|script|Man#megin|cmd_in02:190:94": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.MegingardSeal.Man",
+    "output_hash": "e2599cb2932d19f279cc26761f32cb400a374ba7f3c7d282fb24deefb7b9d28c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/megingard_seal/man.ex",
+    "source_hash": "e2abf15c24a7f272769d5a8717db703d4a329b2d7b539a7c60cb24d27496bdb9",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "cmd_in02",
+        "name": "Man",
+        "scope": "shared",
+        "sprite": 828,
+        "unique_name": "Man#megin",
+        "x": 190,
+        "y": 94
+      }
+    ]
+  },
+  "quests/seals/megingard_seal.txt|script|Security Officer#megin|jawaii_in:44:110": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.MegingardSeal.SecurityOfficer",
+    "output_hash": "94e2c57445b429249491a449523d6b719c6d3747d9ffa8f159f0bd1849760384",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/megingard_seal/security_officer.ex",
+    "source_hash": "f6065ce8ed9bc3be92e09d3cc566ae58c1164d95a2a558abab7a80f875333403",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "jawaii_in",
+        "name": "Security Officer",
+        "scope": "shared",
+        "sprite": 734,
+        "unique_name": "Security Officer#megin",
+        "x": 44,
+        "y": 110
+      }
+    ]
+  },
+  "quests/seals/megingard_seal.txt|script|Suspicious Man#megin|in_rogue:243:61": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.MegingardSeal.SuspiciousMan",
+    "output_hash": "02dd7ee11a6e5a0f653ca6740e57d0738701b78ec457c92cb4f7f67e4fe2865b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/megingard_seal/suspicious_man.ex",
+    "source_hash": "de4943c6e87c482998ea14ef988637ed1f2025793a6de1cb56937c9ed8fa8c45",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "in_rogue",
+        "name": "Suspicious Man",
+        "scope": "shared",
+        "sprite": 748,
+        "unique_name": "Suspicious Man#megin",
+        "x": 243,
+        "y": 61
+      }
+    ]
+  },
+  "quests/seals/mjolnir_seal.txt|script|Dwarf Blacksmith#east|mjolnir_11:149:247": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.MjolnirSeal.DwarfBlacksmith",
+    "output_hash": "d9c0aba09b85d4c61b58f56ca19f98e055af2e9a4723db45ad61c5cf785961b3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/mjolnir_seal/dwarf_blacksmith.ex",
+    "source_hash": "8b73485495e98fe4839f49d3b0edcfc00a6ed817a9679c270ba5b8b31b44e684",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "mjolnir_11",
+        "name": "Dwarf Blacksmith",
+        "scope": "shared",
+        "sprite": 826,
+        "unique_name": "Dwarf Blacksmith#east",
+        "x": 149,
+        "y": 247
+      }
+    ]
+  },
+  "quests/seals/mjolnir_seal.txt|script|Dwarf Blacksmith#north|mjolnir_12:18:18": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.MjolnirSeal.DwarfBlacksmith1818",
+    "output_hash": "34d66cb8477358a4f3ea56659caa07860a35e8673c73a2f90a87ae04eca9a9d0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/mjolnir_seal/dwarf_blacksmith_18_18.ex",
+    "source_hash": "5d9d8a8161c7d9bf62be9742239dfbeab6e953cf59a0ccb95bc5464ecf9c9766",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "mjolnir_12",
+        "name": "Dwarf Blacksmith",
+        "scope": "shared",
+        "sprite": 826,
+        "unique_name": "Dwarf Blacksmith#north",
+        "x": 18,
+        "y": 18
+      }
+    ]
+  },
+  "quests/seals/mjolnir_seal.txt|script|Dwarf Blacksmith#south|mjolnir_09:209:341": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.MjolnirSeal.DwarfBlacksmith209341",
+    "output_hash": "0d7ca9c99a276dc1a09bf65567e1a3cf1e689811b428aca1352b6dbe57e43778",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/mjolnir_seal/dwarf_blacksmith_209_341.ex",
+    "source_hash": "aacda1279386cf316ae5b12ab9629447798ff3b4dca8b9518699114416cacb26",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mjolnir_09",
+        "name": "Dwarf Blacksmith",
+        "scope": "shared",
+        "sprite": 826,
+        "unique_name": "Dwarf Blacksmith#south",
+        "x": 209,
+        "y": 341
+      }
+    ]
+  },
+  "quests/seals/mjolnir_seal.txt|script|Dwarf Blacksmith#west|mjolnir_01:35:136": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.MjolnirSeal.DwarfBlacksmith35136",
+    "output_hash": "7ac279930935c7bf843e8ddb260df9234c408c9913fc783db14dd206d5bc16b7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/mjolnir_seal/dwarf_blacksmith_35_136.ex",
+    "source_hash": "c23a6f23051d7b648edf1923218bcba6f07befebd37c759fe45b1399ee8b2c20",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "mjolnir_01",
+        "name": "Dwarf Blacksmith",
+        "scope": "shared",
+        "sprite": 826,
+        "unique_name": "Dwarf Blacksmith#west",
+        "x": 35,
+        "y": 136
+      }
+    ]
+  },
+  "quests/seals/mjolnir_seal.txt|script|Roskva|prt_fild01:196:47": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.MjolnirSeal.Roskva",
+    "output_hash": "b533155ece3194bd5bde077f87ac3cdd836580fcb39494e89c86ee2a9736626d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/mjolnir_seal/roskva.ex",
+    "source_hash": "84fe0eb64e68252d79a86f6912b09760b1be0d317b6d28038a3d1dbc278a2db3",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "prt_fild01",
+        "name": "Roskva",
+        "scope": "shared",
+        "sprite": 703,
+        "x": 196,
+        "y": 47
+      }
+    ]
+  },
+  "quests/seals/mjolnir_seal.txt|script|Tialfi|prontera:124:297": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.MjolnirSeal.Tialfi",
+    "output_hash": "da275dd0d800cc71ed63484a38f393490f83e0e90651b6d1edefc3156d79866a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/mjolnir_seal/tialfi.ex",
+    "source_hash": "5d0c961e14d17a084c93954a5d06858c82da0d4b04e05bd6fa34ffbeb66756c4",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "prontera",
+        "name": "Tialfi",
+        "scope": "shared",
+        "sprite": 706,
+        "x": 124,
+        "y": 297
+      }
+    ]
+  },
+  "quests/seals/seal_status.txt|script|Sign Post#god|prontera:113:294": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.SealStatus.SignPost",
+    "output_hash": "65a9fc9dea3a9be8a74156abb8de0df729483c500e829a1e507456d2e5be0c10",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/seal_status/sign_post.ex",
+    "source_hash": "5a538bafbca083a735ab411b0bd49afc99faf939103ea773cee4efccc5dfdfaa",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "prontera",
+        "name": "Sign Post",
+        "scope": "shared",
+        "sprite": 837,
+        "unique_name": "Sign Post#god",
+        "x": 113,
+        "y": 294
+      }
+    ]
+  },
+  "quests/seals/sleipnir_seal.txt|script|Friar#G5|payon:79:171": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.SleipnirSeal.Friar",
+    "output_hash": "ea641319f8a1ced614000d9abd8999e6c66c65deb826fdf93dc52f6ce28c4e29",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/sleipnir_seal/friar.ex",
+    "source_hash": "b41667c1e6832bd7dabdfd2e01a4fe7f86fcd9743c358fb6617ad173cb6ff526",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "payon",
+        "name": "Friar",
+        "scope": "shared",
+        "sprite": 95,
+        "unique_name": "Friar#G5",
+        "x": 79,
+        "y": 171
+      }
+    ]
+  },
+  "quests/seals/sleipnir_seal.txt|script|Manager#G|que_god01:98:98": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.SleipnirSeal.Manager",
+    "output_hash": "4abd88ad9ffb1ba044585ad3ee9fda0319539c363e581b0ca5aa5bdf6f4b6951",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/sleipnir_seal/manager.ex",
+    "source_hash": "b404668292cd601c4bb1a4af744e8046460cbc47b3d9c35f403e2a80c1d1548d",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "que_god01",
+        "name": "Manager",
+        "scope": "shared",
+        "sprite": 69,
+        "unique_name": "Manager#G",
+        "x": 98,
+        "y": 98
+      }
+    ]
+  },
+  "quests/seals/sleipnir_seal.txt|script|Noyee#G|yuno:164:200": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.SleipnirSeal.Noyee",
+    "output_hash": "cb6eaf55b40d491d989d69a510365e3c8dffcb40c1f911132eb2ca273f215a2c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/sleipnir_seal/noyee.ex",
+    "source_hash": "68857527da669058824e6b0ea8e4fbf5918c9bdfc69b1363fa9225ba750cb53e",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "yuno",
+        "name": "Noyee",
+        "scope": "shared",
+        "sprite": 101,
+        "unique_name": "Noyee#G",
+        "x": 164,
+        "y": 200
+      }
+    ]
+  },
+  "quests/seals/sleipnir_seal.txt|script|Researcher#G1|que_god01:66:125": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.SleipnirSeal.Researcher",
+    "output_hash": "9ccd1096dad6cbd6a28dc0ce6b72dfd9e4e69c4c3551aca4fc5d9ed226ba543a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/sleipnir_seal/researcher.ex",
+    "source_hash": "e2301ff484ee2e455968b19df40471e48de7feb28fd29ef929e8a05f31ff752f",
+    "spawns": [
+      {
+        "dir": 6,
+        "map": "que_god01",
+        "name": "Researcher",
+        "scope": "shared",
+        "sprite": 89,
+        "unique_name": "Researcher#G1",
+        "x": 66,
+        "y": 125
+      }
+    ]
+  },
+  "quests/seals/sleipnir_seal.txt|script|Researcher#G2|que_god01:11:136": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.SleipnirSeal.Researcher11136",
+    "output_hash": "3a901febf5440ecf26fe5b4f1659bdc38eaaebc95af9dc2fdc20a5b60f99619d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/sleipnir_seal/researcher_11_136.ex",
+    "source_hash": "3205f1da5ee8bed31ee5aacd5d3e037d3560e145b6c5de1c4c084ae91e0a35c2",
+    "spawns": [
+      {
+        "dir": 6,
+        "map": "que_god01",
+        "name": "Researcher",
+        "scope": "shared",
+        "sprite": 742,
+        "unique_name": "Researcher#G2",
+        "x": 11,
+        "y": 136
+      }
+    ]
+  },
+  "quests/seals/sleipnir_seal.txt|script|Researcher#G3|que_god01:55:47": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.SleipnirSeal.Researcher5547",
+    "output_hash": "0c954d97b5cd3a4c16401c10fc40087e89a62711852247567d4c65fadc780f2a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/sleipnir_seal/researcher_55_47.ex",
+    "source_hash": "087f10b25707614578135453637fcf2d99a86d8159f396b21a3bb630c48ac33e",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "que_god01",
+        "name": "Researcher",
+        "scope": "shared",
+        "sprite": 803,
+        "unique_name": "Researcher#G3",
+        "x": 55,
+        "y": 47
+      }
+    ]
+  },
+  "quests/seals/sleipnir_seal.txt|script|Researcher#G4|que_god01:14:47": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.SleipnirSeal.Researcher1447",
+    "output_hash": "185efdad17d1e7f88e63da73005a505776a44ca4b16cf66d6f7a4adfa0a1f7bd",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/sleipnir_seal/researcher_14_47.ex",
+    "source_hash": "79b395531db7a4dd732d065cca37f962d1ad0d3aac726ef3e441e2098ef4f65b",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "que_god01",
+        "name": "Researcher",
+        "scope": "shared",
+        "sprite": 713,
+        "unique_name": "Researcher#G4",
+        "x": 14,
+        "y": 47
+      }
+    ]
+  },
+  "quests/seals/sleipnir_seal.txt|script|Slab#G|que_god01:20:48": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.SleipnirSeal.Slab",
+    "output_hash": "581962715047eea6ac6b45d60a9237ebe65cfcacc5c70d12454a143335b72e90",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/sleipnir_seal/slab.ex",
+    "source_hash": "7dbb1e650a69a06310b34934535a92163b41bc417a25fc42b72b660c2645557b",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": "Slab",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Slab#G",
+        "x": 20,
+        "y": 48
+      }
+    ]
+  },
+  "quests/seals/sleipnir_seal.txt|script|Switch#God0|que_god01:84:95": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.SleipnirSeal.Switch",
+    "output_hash": "c0a3588fb9e7c9b3a3db9f5b0da3a88055cd54c8b7005e5e321e799bad587eda",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/sleipnir_seal/switch.ex",
+    "source_hash": "a78927673d5bef471ce3caf71045dd6385d5eaba27b4bc65530464a726bbd94e",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": "Switch",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Switch#God0",
+        "x": 84,
+        "y": 95
+      }
+    ]
+  },
+  "quests/seals/sleipnir_seal.txt|script|Switch#God1|que_god01:49:97": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.SleipnirSeal.Switch4997",
+    "output_hash": "d7e3903f6bebe7df5d0d99761a847b736848eb23c9010570bf9200f8ea49c157",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/sleipnir_seal/switch_49_97.ex",
+    "source_hash": "5bdbfdccc831b4d7bcc3784256d3d1c4d7b6d6d3f848cf8a3850f31845e961f9",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": "Switch",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Switch#God1",
+        "x": 49,
+        "y": 97
+      }
+    ]
+  },
+  "quests/seals/sleipnir_seal.txt|script|Switch#God2|que_god01:19:97": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.SleipnirSeal.Switch1997",
+    "output_hash": "9dcdc03715475ee4a7adab552abc05884808ad2cdb9003bd4df2bde9dc063a3a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/sleipnir_seal/switch_19_97.ex",
+    "source_hash": "6542862a0014386a2a2facf1b4eff7dea4e6c241c8b63d47a1df8821320aaa6c",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": "Switch",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Switch#God2",
+        "x": 19,
+        "y": 97
+      }
+    ]
+  },
+  "quests/seals/sleipnir_seal.txt|script|Switch#God3|que_god01:14:80": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.SleipnirSeal.Switch1480",
+    "output_hash": "756bfc60f0cd59be9150f6f738d6c92acb44979d0aee521f8ee270dfba3d2b8a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/sleipnir_seal/switch_14_80.ex",
+    "source_hash": "332021d229bbacd268148ec7d3404e4b716c8fddd134dc6bd1ddfe8d4e0c6810",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": "Switch",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Switch#God3",
+        "x": 14,
+        "y": 80
+      }
+    ]
+  },
+  "quests/seals/sleipnir_seal.txt|script|Switch#God4|que_god01:44:80": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.SleipnirSeal.Switch4480",
+    "output_hash": "682041e6388dd69e463c7bb0754c445f476a25fb6d4f07c0da39d737a0a8f8f0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/sleipnir_seal/switch_44_80.ex",
+    "source_hash": "951e29c2eac5a101d42f9a0cbc7473420945bf2f92a895103ba376b0d1f26889",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": "Switch",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Switch#God4",
+        "x": 44,
+        "y": 80
+      }
+    ]
+  },
+  "quests/seals/sleipnir_seal.txt|script|god_sl_w0|que_god01:84:92": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.SleipnirSeal.GodSlW0",
+    "output_hash": "419f07446f5f26235d49446c8e91ea298ed6aea2b16c94978911f0926e025005",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/sleipnir_seal/god_sl_w0.ex",
+    "source_hash": "711eedbf452d3e0c7e4dac4860b96e85933944776d2a2af35945273dfcd4f378",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": "god_sl_w0",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ],
+        "x": 84,
+        "y": 92
+      }
+    ]
+  },
+  "quests/seals/sleipnir_seal.txt|script|god_sl_w1|que_god01:46:97": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.SleipnirSeal.GodSlW1",
+    "output_hash": "41fc657930700209906725a6c9a23e9d2c4f999cf4bd31d52655bf614718da33",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/sleipnir_seal/god_sl_w1.ex",
+    "source_hash": "21412582c0a9634a68577e499aade60d6b644066ec29fccd8c0da5a1d321424a",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": "god_sl_w1",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ],
+        "x": 46,
+        "y": 97
+      }
+    ]
+  },
+  "quests/seals/sleipnir_seal.txt|script|god_sl_w2|que_god01:16:97": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.SleipnirSeal.GodSlW2",
+    "output_hash": "63d516c5754c1a061a5961463a0e49107316bcf683735cb0e3e417952fb8ae4a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/sleipnir_seal/god_sl_w2.ex",
+    "source_hash": "b82a71274dd2c2fea2536a0ec1000bb9e3cebc9a9009348e28f87d2e9f65a15d",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": "god_sl_w2",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ],
+        "x": 16,
+        "y": 97
+      }
+    ]
+  },
+  "quests/seals/sleipnir_seal.txt|script|god_sl_w3|que_god01:17:80": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.SleipnirSeal.GodSlW3",
+    "output_hash": "b5fe9a77953e828c0c08cb57da2ba512fb0425599fa9bba0a62db70f8b0130c5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/sleipnir_seal/god_sl_w3.ex",
+    "source_hash": "cd145fad5c80a1aa00b6d6c8fe563e4d9abdf178b330fe184d89d0b956f6bf3f",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": "god_sl_w3",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ],
+        "x": 17,
+        "y": 80
+      }
+    ]
+  },
+  "quests/seals/sleipnir_seal.txt|script|god_sl_w4|que_god01:47:80": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.SleipnirSeal.GodSlW4",
+    "output_hash": "39d4adf8693a595ae5161038e9cc53868e34cdeb7f54d5ac911ae18e58456fed",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/sleipnir_seal/god_sl_w4.ex",
+    "source_hash": "90cd95b77b37ee70d62b9d4cf8a901816024c97669f23adbffeef394ad02fa02",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_god01",
+        "name": "god_sl_w4",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ],
+        "x": 47,
+        "y": 80
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
