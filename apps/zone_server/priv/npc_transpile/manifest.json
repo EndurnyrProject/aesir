@@ -58304,6 +58304,64 @@
       }
     ]
   },
+  "quests/quests_payon.txt|floating|Young man#12|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsPayon.YoungMan",
+    "output_hash": "358a5b23880fe0966243f2c652ab9aee1e9aa3faa711da47c720d17fa926ceb9",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_payon/young_man.ex",
+    "source_hash": "752db9e50aafecdc1c83baf7efcc137ffbfd25545b2a6acea6ddd6bc0a4a2f6a",
+    "spawns": []
+  },
+  "quests/quests_payon.txt|script|Boy|payon_in02:25:71": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsPayon.Boy",
+    "output_hash": "e0a470546de99ca3663df9dcaf6857ff93e1af18d21613f7526c5dc4afc50374",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_payon/boy.ex",
+    "source_hash": "d587105d1b73142b0de6f242edb3a896173972303a0617e5b4ef3b01c9c99f87",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "payon_in02",
+        "name": "Boy",
+        "scope": "shared",
+        "sprite": 86,
+        "x": 25,
+        "y": 71
+      }
+    ]
+  },
+  "quests/quests_payon.txt|script|Granny|payon_in01:99:72": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsPayon.Granny",
+    "output_hash": "db732e17108e0a4580af4ad866a3c6e4d3ac956462941e67ea2a71e9fc5851ea",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_payon/granny.ex",
+    "source_hash": "1bbf7410226f12a0b5f8274d577af60eca914f918057aaa31312d8bcca04067c",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "payon_in01",
+        "name": "Granny",
+        "scope": "shared",
+        "sprite": 103,
+        "x": 99,
+        "y": 72
+      }
+    ]
+  },
+  "quests/quests_payon.txt|script|Mystic Lady|payon_in01:18:10": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsPayon.MysticLady",
+    "output_hash": "da82c9bb332f0efd0eb4ac5777f418aa3b028c6301e36ef801d02960bf0e0d04",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_payon/mystic_lady.ex",
+    "source_hash": "1e46a9e122b1e40506d4955d22fea0749f4b3c1c8d7ba25baa33893cca253f35",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "payon_in01",
+        "name": "Mystic Lady",
+        "scope": "shared",
+        "sprite": 76,
+        "x": 18,
+        "y": 10
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
