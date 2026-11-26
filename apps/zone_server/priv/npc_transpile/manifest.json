@@ -62763,6 +62763,608 @@
       }
     ]
   },
+  "quests/seals/brisingamen_seal.txt|floating|Librarian#2_|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.Seals.BrisingamenSeal.Librarian",
+    "output_hash": "d7705cc893c88903c86f5bd260275bbc70ae03f1926643588f3740f24c54c4aa",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/seals/brisingamen_seal/librarian.ex",
+    "source_hash": "b78c07bca9703176a978a87882d3133edbe8eb6e2cae2c3b225b3f0c296c58bd",
+    "spawns": []
+  },
+  "quests/seals/brisingamen_seal.txt|script|#brisindwarf1|xmas:38:105": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Brisindwarf1",
+    "output_hash": "655ec3a325048a7e3dc6593dffb729a9c591dc522998207320b65295e54cd169",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/brisindwarf1.ex",
+    "source_hash": "329368963cf7ac9a20f658f6586152b7aab44cd5c8b01f36a204a85df78a4775",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "xmas",
+        "name": "",
+        "scope": "shared",
+        "sprite": 111,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "#brisindwarf1",
+        "x": 38,
+        "y": 105
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|#brisindwarf2|prt_fild02:185:269": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Brisindwarf2",
+    "output_hash": "c70b78b3b08d9c537a170db19675bc0ad920305eeb0d1382c1921c367773974e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/brisindwarf2.ex",
+    "source_hash": "7b088852d028c7b0ae1919ccb59bce1fe2b9e199066dc5e707e8dadc0188672d",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "prt_fild02",
+        "name": "",
+        "scope": "shared",
+        "sprite": 111,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "#brisindwarf2",
+        "x": 185,
+        "y": 269
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|#brisindwarf3|mjolnir_09:85:129": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Brisindwarf3",
+    "output_hash": "bdd4b3ab93fe9d63e46c1d6722c8d02b3266e06c5f00c5d192b284fe4cd04a63",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/brisindwarf3.ex",
+    "source_hash": "fd3e228d300d768b10b85e501a6a6dd9c02885e81bb6362419f0e4364269812c",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mjolnir_09",
+        "name": "",
+        "scope": "shared",
+        "sprite": 111,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "#brisindwarf3",
+        "x": 85,
+        "y": 129
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|#brisindwarf4|mjo_dun02:126:36": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Brisindwarf4",
+    "output_hash": "94024b40e7152036e6f23d832a981c29712f2bb103053890cb7fc31091e978a9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/brisindwarf4.ex",
+    "source_hash": "edf0c7fcd37529bd67e13083969ac8ff05889a43ee4e1a9de40076eb5cc26d19",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mjo_dun02",
+        "name": "",
+        "scope": "shared",
+        "sprite": 111,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "#brisindwarf4",
+        "x": 126,
+        "y": 36
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|#brisinsold2|que_god02:1:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Brisinsold2",
+    "output_hash": "f8c58242defde09a69b312cb9a75851c615f870ebb06f2b349d4e2a89ac078b7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/brisinsold2.ex",
+    "source_hash": "444e0dbd0062877ac77e96ab7991a9402713d34ef7fe96093d3253efc0f2ea58",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "que_god02",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "unique_name": "#brisinsold2",
+        "x": 1,
+        "y": 1
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|#brisinsummon|que_god02:1:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Brisinsummon",
+    "output_hash": "8e573e4f32abe13ae9b1d3bf37afc1f0e666eaafec7aeadb726d199a07eb837d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/brisinsummon.ex",
+    "source_hash": "6ebd7be77935fcc8284566cdc1c85573d31c48e3ade5be2d79b81efa843ac9dc",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "que_god02",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "unique_name": "#brisinsummon",
+        "x": 1,
+        "y": 1
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|#doppelganger1|que_god02:173:58": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Doppelganger1",
+    "output_hash": "5903b9a26ce59ec06c716c9fdb4f6fb37bf8d9226a5a9a244434e24bade68b92",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/doppelganger1.ex",
+    "source_hash": "a9e70286e41ed6520cd14ba4fe8cc168b2f57bcc101ae8d40f8c4fee0a642641",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "que_god02",
+        "name": "",
+        "scope": "shared",
+        "sprite": 739,
+        "unique_name": "#doppelganger1",
+        "x": 173,
+        "y": 58
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|#doppelganger2|que_god02:175:55": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Doppelganger2",
+    "output_hash": "3d65e1ba1ef854589f8473e5896ddcd782da4e668e2deb78ce5b1c3fe23aad03",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/doppelganger2.ex",
+    "source_hash": "7f95706beda247eaba3d70d7caec350db4189945fd9ca72b7e7d98f684cea811",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "que_god02",
+        "name": "",
+        "scope": "shared",
+        "sprite": 739,
+        "unique_name": "#doppelganger2",
+        "x": 175,
+        "y": 55
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|#hermite|que_god02:124:59": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Hermite",
+    "output_hash": "5c3562113e6806e13103805ef34ddc441ce7a000120944fa29f7323123c63f82",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/hermite.ex",
+    "source_hash": "6b265abc0d0739d13eb80086f942a58529ea76b335b1a26d73b5618864583fec",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "que_god02",
+        "name": "",
+        "scope": "shared",
+        "sprite": 798,
+        "unique_name": "#hermite",
+        "x": 124,
+        "y": 59
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|#knight1|que_god02:178:49": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Knight1",
+    "output_hash": "806bbb972afb2949d4af4de646d82d75036e74a07646745fe92b7c38b6c15f63",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/knight1.ex",
+    "source_hash": "72fc49a26490c21eab77fbea572f5658a1f182ebdee0783ea1f60c32a23fa8f8",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "que_god02",
+        "name": "",
+        "scope": "shared",
+        "sprite": 751,
+        "unique_name": "#knight1",
+        "x": 178,
+        "y": 49
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|#knight2|que_god02:168:53": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Knight2",
+    "output_hash": "9bd22669ad4b3b540ed701c0f44c072ee5bd5e323201bb6ddc5e51c1027e3507",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/knight2.ex",
+    "source_hash": "89ccc2b6c0f3378fdc0bca750e91a35da95ded52e03eeb4a71e24d1eede1817b",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "que_god02",
+        "name": "",
+        "scope": "shared",
+        "sprite": 734,
+        "unique_name": "#knight2",
+        "x": 168,
+        "y": 53
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|#knight3|que_god02:167:58": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Knight3",
+    "output_hash": "f6403dd5a8d8c95baba482e26a60e75c17d68615b15c09dbf87c784bc9bf51e6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/knight3.ex",
+    "source_hash": "d09862270b489714960553dbfe4cbcee03d636227074ca3900833cfc5f5fe389",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "que_god02",
+        "name": "",
+        "scope": "shared",
+        "sprite": 752,
+        "unique_name": "#knight3",
+        "x": 167,
+        "y": 58
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|#lowenone|que_god02:174:49": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Lowenone",
+    "output_hash": "3dbb096f40ec73604502b263005d5c63f98acb7adc54aa2eb3f93d50ec74dcf7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/lowenone.ex",
+    "source_hash": "23e862ab0644a47d2a2d60a1da76a5c69f2be1d19b29027b852baf3edc1da718",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_god02",
+        "name": "",
+        "scope": "shared",
+        "sprite": 139,
+        "trigger": [
+          0,
+          0
+        ],
+        "unique_name": "#lowenone",
+        "x": 174,
+        "y": 49
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|#lowentrace1|gef_dun01:203:48": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Lowentrace1",
+    "output_hash": "5c1cb9e3fc71bb184253b2a9c621b69e9b8ec494bdcf879f7f69e2037c7ee399",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/lowentrace1.ex",
+    "source_hash": "74d341ed4bf1f314585d66e28d2d2a70140f5852011ca4d19f452f871533fd9b",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "gef_dun01",
+        "name": "",
+        "scope": "shared",
+        "sprite": 111,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "#lowentrace1",
+        "x": 203,
+        "y": 48
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|#lowentrace|gef_dun01:89:192": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Lowentrace",
+    "output_hash": "39dcd22bbc71e7ae6dbcc9b28737df007892a1abb2b2d0d1333d03977830b5a2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/lowentrace.ex",
+    "source_hash": "fb1d8deb9437004d0fdbe24fe13e14f76decffe81af4c4cb750a9dcce176866e",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "gef_dun01",
+        "name": "",
+        "scope": "shared",
+        "sprite": 111,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "#lowentrace",
+        "x": 89,
+        "y": 192
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|#lowen|que_god02:175:54": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Lowen",
+    "output_hash": "269025144f12bff01fde448ea0d85a74c5dd406f5bddaa860756140e163fb829",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/lowen.ex",
+    "source_hash": "b2207e46906dfbd9a28ba336ae4c4c39c2728f9a645c7049d29e0f6f8b112a35",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "que_god02",
+        "name": "",
+        "scope": "shared",
+        "sprite": 745,
+        "unique_name": "#lowen",
+        "x": 175,
+        "y": 54
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|#monologue|que_god02:120:52": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Monologue",
+    "output_hash": "612fc314bc3994d1817c4526c2c8dc9735a0d7f2402bfbb297d1c7611f7453ac",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/monologue.ex",
+    "source_hash": "c79bdbcb85ab9c533504ea1996d5c619a44b464398dcbc512164303d74697b7a",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_god02",
+        "name": "",
+        "scope": "shared",
+        "sprite": 139,
+        "trigger": [
+          0,
+          0
+        ],
+        "unique_name": "#monologue",
+        "x": 120,
+        "y": 52
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|Alfrik#1|xmas:36:103": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Alfrik",
+    "output_hash": "f4cc5125c27e64b14ab175d5e2c36155a017e0672648ca292808af79f1029a90",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/alfrik.ex",
+    "source_hash": "587c42fc86401c2ef085184d1b1bd3668d83c0ed833a0e296297c809957721b9",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "xmas",
+        "name": "Alfrik",
+        "scope": "shared",
+        "sprite": 826,
+        "unique_name": "Alfrik#1",
+        "x": 36,
+        "y": 103
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|Bard#brising|prt_fild08:175:374": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Bard",
+    "output_hash": "65f18632d4ba36c58a3a00b6cbe1e8b98ef7d91d43aba61f58f48408805f584f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/bard.ex",
+    "source_hash": "4395d9e6e659945680b12fe5fcd00ecf92450abb0fd4f2ec236f7e9ce1f8313c",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "prt_fild08",
+        "name": "Bard",
+        "scope": "shared",
+        "sprite": 51,
+        "unique_name": "Bard#brising",
+        "x": 175,
+        "y": 374
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|Berling#1|mjolnir_09:87:129": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Berling",
+    "output_hash": "0943bc490a6104d0e3a133bd3045f76b371174a777547e0ad899fdfaafbc6f5d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/berling.ex",
+    "source_hash": "ee0c3bfe7cfccd717859f1e29fd09fe193cf822cee4d5a31fcbb763fecc098ba",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mjolnir_09",
+        "name": "Berling",
+        "scope": "shared",
+        "sprite": 826,
+        "unique_name": "Berling#1",
+        "x": 87,
+        "y": 129
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|Dvalin#1|prt_fild02:185:270": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Dvalin",
+    "output_hash": "ed98af8592c5cc9891cfb6cc2330f9d5a942fd815bd2c90cd1a3f2902b823a89",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/dvalin.ex",
+    "source_hash": "6034841bbd41240b208f101959b3d025ec178854f8898977d25faf408c373ced",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "prt_fild02",
+        "name": "Dvalin",
+        "scope": "shared",
+        "sprite": 826,
+        "unique_name": "Dvalin#1",
+        "x": 185,
+        "y": 270
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|Gravestone|prontera:262:353": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Gravestone",
+    "output_hash": "6ef077f8fc6c32dbafdca0cf5c308789c2f654dc24ba151da3030665bae72e32",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/gravestone.ex",
+    "source_hash": "4ea88aed765e585b6f92a1e20b2ad2e33439e1c0efe6c624e81a25597d55f8d7",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "prontera",
+        "name": "Gravestone",
+        "scope": "shared",
+        "sprite": 111,
+        "x": 262,
+        "y": 353
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|Grer#1|mjo_dun02:126:34": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Grer",
+    "output_hash": "c799487f2e77d5eb3d909f75fd3bcb78ac80d8e8f6c42dd6d67077586eece829",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/grer.ex",
+    "source_hash": "b7f52eadcf859f3aeb83505f31c6930705c7c2485db48ee21ca84963ad1f9a45",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "mjo_dun02",
+        "name": "Grer",
+        "scope": "shared",
+        "sprite": 826,
+        "unique_name": "Grer#1",
+        "x": 126,
+        "y": 34
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|Lowen Ellenen#2|que_god02:21:127": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.LowenEllenen21127",
+    "output_hash": "fc86fc6ed76ec86b25b621d4654b107d2c23e24f3fc2e56c559d3ec856d1a777",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/lowen_ellenen_21_127.ex",
+    "source_hash": "97419d74470bdb2e8f98ddcc52657e1e4a5bcf8d56882ec6e854599c6868ffa8",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "que_god02",
+        "name": "Lowen Ellenen",
+        "scope": "shared",
+        "sprite": 745,
+        "unique_name": "Lowen Ellenen#2",
+        "x": 21,
+        "y": 127
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|Lowen Ellenen|que_god02:48:55": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.LowenEllenen",
+    "output_hash": "7bef9cfdec6421048884b9bac649fdd0ec424ebb23f824675f3626aa0b645a62",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/lowen_ellenen.ex",
+    "source_hash": "50bb3cb0122c9fccf1433c788a9d4094ddaa19d52c8502d74a5c3042fc8e5769",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "que_god02",
+        "name": "Lowen Ellenen",
+        "scope": "shared",
+        "sprite": 745,
+        "x": 48,
+        "y": 55
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|Praying Man|prt_church:113:103": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.PrayingMan",
+    "output_hash": "8abbdab40daf42ecd03729425c45856e571d344ce81c5c4006cb99caba1b30df",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/praying_man.ex",
+    "source_hash": "51dc3ec44b3962e6f30d4b8e04b77e4c21ee5caad97efa92f10890d18a4ffb64",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "prt_church",
+        "name": "Praying Man",
+        "scope": "shared",
+        "sprite": 798,
+        "x": 113,
+        "y": 103
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|Soldier#1_brising|que_god02:54:64": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Soldier",
+    "output_hash": "8473e4e03452e7fd31edf25d64f509f413cd17183cb5387fc4804de2e62a0ac9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/soldier.ex",
+    "source_hash": "fc619ee2ae0cb1175e869ccf86746c7fac774cd2646be25921fab192fd206f21",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "que_god02",
+        "name": "Soldier",
+        "scope": "shared",
+        "sprite": 105,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "Soldier#1_brising",
+        "x": 54,
+        "y": 64
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|Soldier#2_brising|que_god02:55:64": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Soldier5564",
+    "output_hash": "4e1ad9f1122ec5080284f554cc2644f60c20451488424db5f23b6c9cf0c29cee",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/soldier_55_64.ex",
+    "source_hash": "bba87b5d0b029f5a13cbcbd96a02e25a3c4bfa1e58f68556cf5883ac03eef542",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "que_god02",
+        "name": "Soldier",
+        "scope": "shared",
+        "sprite": 105,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "Soldier#2_brising",
+        "x": 55,
+        "y": 64
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|Studying Scholar#1|yuno_in04:47:113": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.StudyingScholar",
+    "output_hash": "d51f756bc24862b7f47711e5244310de722d8ce80b84044b50af2b0e114c7d52",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/studying_scholar.ex",
+    "source_hash": "890bde1d7513e9de53711700e06763bb0bb43bc82fbe0ecb4564efb55b5daaba",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "yuno_in04",
+        "name": "Studying Scholar",
+        "scope": "shared",
+        "sprite": 749,
+        "unique_name": "Studying Scholar#1",
+        "x": 47,
+        "y": 113
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|Valkyrie#1|que_god02:178:127": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Valkyrie",
+    "output_hash": "bdfc50e7fc64c41105e7440a57f6cfd4fe8a3948e843f1fbbe62ffefc94523d8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/valkyrie.ex",
+    "source_hash": "c8ab41713915ed79d7438ca28fe65e936578401a705f57a20715c57439dd1d6c",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "que_god02",
+        "name": "Valkyrie",
+        "scope": "shared",
+        "sprite": 811,
+        "unique_name": "Valkyrie#1",
+        "x": 178,
+        "y": 127
+      }
+    ]
+  },
+  "quests/seals/brisingamen_seal.txt|script|Woman#Rosa Ellenen|prontera:260:354": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.Seals.BrisingamenSeal.Woman",
+    "output_hash": "84b1bf7a6f35b5998c9c8299a31b53b3fae2a9f6a7fa3e9638873cf20f55dea3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/seals/brisingamen_seal/woman.ex",
+    "source_hash": "0cea2cc042f8db89ef60ad4880c500aa6d796ad2f0b5bb603046a97f9dc6b40a",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "prontera",
+        "name": "Woman",
+        "scope": "shared",
+        "sprite": 101,
+        "unique_name": "Woman#Rosa Ellenen",
+        "x": 260,
+        "y": 354
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
