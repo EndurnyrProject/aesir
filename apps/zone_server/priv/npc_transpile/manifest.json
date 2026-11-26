@@ -58107,6 +58107,203 @@
       }
     ]
   },
+  "quests/quests_niflheim.txt|floating|Piano3|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsNiflheim.Piano3",
+    "output_hash": "a29a37e5b353a797b4487cd4a7f7e2579a0cb63dcbc00ee64c8617b9c44eae9c",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_niflheim/piano3.ex",
+    "source_hash": "a6285c151f48b14fb58efedaf2dbcf101836323afe2e9b9616eefcb24a759e14",
+    "spawns": []
+  },
+  "quests/quests_niflheim.txt|script|#Graveyard1|niflheim:208:103": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNiflheim.Graveyard1",
+    "output_hash": "441e3c7a1bb95007ffde893343a2420c4ea88d309d410684b19c252d3d864c1a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_niflheim/graveyard1.ex",
+    "source_hash": "9a30940dc520be820065a1df813312c2307a51d4b5ab3af48fa7d85542e4a3c0",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "niflheim",
+        "name": "",
+        "scope": "shared",
+        "sprite": 111,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "#Graveyard1",
+        "x": 208,
+        "y": 103
+      }
+    ]
+  },
+  "quests/quests_niflheim.txt|script|#Graveyard2|niflheim:169:71": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNiflheim.Graveyard2",
+    "output_hash": "8f75f6c74f8fdcb0394c68790115bfe3f88a2f66bf69108a78c538dcefd8d13a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_niflheim/graveyard2.ex",
+    "source_hash": "53b8a402005b8f94fc10e6d4e41e4bcd44d5dbd46513f951678f638d7a279f72",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "niflheim",
+        "name": "",
+        "scope": "shared",
+        "sprite": 111,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "#Graveyard2",
+        "x": 169,
+        "y": 71
+      }
+    ]
+  },
+  "quests/quests_niflheim.txt|script|#Piano|nif_in:115:181": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNiflheim.Piano",
+    "output_hash": "12bd34a794eca985f4b305a242b97a73e54098a558a22dd66648369fbd4acd19",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_niflheim/piano.ex",
+    "source_hash": "7975909f1dc6e6a389ce25de4a941669eede9257dca6fa2ad64073b313ee7802",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "nif_in",
+        "name": "",
+        "scope": "shared",
+        "sprite": 111,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "#Piano",
+        "x": 115,
+        "y": 181
+      }
+    ]
+  },
+  "quests/quests_niflheim.txt|script|Alreg#nif|niflheim:224:243": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNiflheim.Alreg",
+    "output_hash": "6fd6eaf16aaecbfb056620c6abeb650a32a446f4add0e8a501853da19044c253",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_niflheim/alreg.ex",
+    "source_hash": "ddbac90cdd53d8ca56e0ab2249c7cead304c58a82ba54091b8dcfadc7446575c",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "niflheim",
+        "name": "Alreg",
+        "scope": "shared",
+        "sprite": 795,
+        "unique_name": "Alreg#nif",
+        "x": 224,
+        "y": 243
+      }
+    ]
+  },
+  "quests/quests_niflheim.txt|script|Billik|umbala:215:181": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNiflheim.Billik",
+    "output_hash": "0099c81b66c1d21c391f3e83808d91b710714df32d240d7a606275e8caec0187",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_niflheim/billik.ex",
+    "source_hash": "d0d5e9c8a6a6e59ba0218116a49a70be9330a147cfc962af241c3d77dd69c399",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "umbala",
+        "name": "Billik",
+        "scope": "shared",
+        "sprite": 733,
+        "x": 215,
+        "y": 181
+      }
+    ]
+  },
+  "quests/quests_niflheim.txt|script|Crayu#nif|nif_in:105:81": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNiflheim.Crayu",
+    "output_hash": "641d958f0719c9079112476ba3005aa8026174a1e4d13e7c53dfe9ea98f70adb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_niflheim/crayu.ex",
+    "source_hash": "6e69483412049ac376623f5541d2b51a335bea10a3df76398075c5abb9b268fa",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "nif_in",
+        "name": "Crayu",
+        "scope": "shared",
+        "sprite": 794,
+        "unique_name": "Crayu#nif",
+        "x": 105,
+        "y": 81
+      }
+    ]
+  },
+  "quests/quests_niflheim.txt|script|Erious#nif|prt_in:161:20": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNiflheim.Erious",
+    "output_hash": "154ff9a37b48b655141d9721831a65bc4170c44969dffb8678e7a9c5119b10ca",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_niflheim/erious.ex",
+    "source_hash": "45fabfe06e23bde7d22dc155e56c09b00d4af6b5e260377e8f12b0cb8f53a82a",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "prt_in",
+        "name": "Erious",
+        "scope": "shared",
+        "sprite": 92,
+        "unique_name": "Erious#nif",
+        "x": 161,
+        "y": 20
+      }
+    ]
+  },
+  "quests/quests_niflheim.txt|script|Feylin|niflheim:153:215": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNiflheim.Feylin",
+    "output_hash": "70a3f18c7f83021b808457c809529bd4f08a0f8faef18623ff8f51fbb48ce102",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_niflheim/feylin.ex",
+    "source_hash": "1e193241071533d15d7b05494f3589ad03fba74123b4544502b505ed5372d22d",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "niflheim",
+        "name": "Feylin",
+        "scope": "shared",
+        "sprite": 794,
+        "x": 153,
+        "y": 215
+      }
+    ]
+  },
+  "quests/quests_niflheim.txt|script|Kuzkahina#nif|nif_in:31:20": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNiflheim.Kuzkahina",
+    "output_hash": "34931e96dd68190666bdb303e6ad1aa8f0cec5fa10c49717cb8db01672bac795",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_niflheim/kuzkahina.ex",
+    "source_hash": "9bfc98a12c7be3809beb7cec50615d7cbd401b62791d8beae987810f60bb3e01",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "nif_in",
+        "name": "Kuzkahina",
+        "scope": "shared",
+        "sprite": 794,
+        "unique_name": "Kuzkahina#nif",
+        "x": 31,
+        "y": 20
+      }
+    ]
+  },
+  "quests/quests_niflheim.txt|script|Witch#nif|nif_in:188:168": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNiflheim.Witch",
+    "output_hash": "2956a4799a5aa5539e8e4f11b6ef9cbea40f432861407b3c48d7f96f97d168e9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_niflheim/witch.ex",
+    "source_hash": "df1edd8d61ed51df9c8597d3451c279ae2a99f130e9127a5c72f10b6033b9db2",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "nif_in",
+        "name": "Witch",
+        "scope": "shared",
+        "sprite": 792,
+        "unique_name": "Witch#nif",
+        "x": 188,
+        "y": 168
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
