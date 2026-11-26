@@ -62544,6 +62544,225 @@
       }
     ]
   },
+  "quests/quests_yuno.txt|script|A Citizen of Juno#juno|yuno:157:87": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsYuno.ACitizenOfJuno",
+    "output_hash": "0368481cd46a478e511f6a0996a17635eaa06645ef92dc8047ce47f0535bfe51",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_yuno/a_citizen_of_juno.ex",
+    "source_hash": "27e999dd768ec8023f38ef15e532aeb865d1561fe3a55582c4a71e59576d0441",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "yuno",
+        "name": "A Citizen of Juno",
+        "scope": "shared",
+        "sprite": 102,
+        "unique_name": "A Citizen of Juno#juno",
+        "x": 157,
+        "y": 87
+      }
+    ]
+  },
+  "quests/quests_yuno.txt|script|Bain#juno|yuno_in01:103:157": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsYuno.Bain",
+    "output_hash": "7ba5b2cd00c25b3de0356f386654d195528ee908b738e2d59267c79d2eecead5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_yuno/bain.ex",
+    "source_hash": "af330a12b929f8a86b784f7589aaf814f5a350120d437a373914fb2b1ffebebe",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "yuno_in01",
+        "name": "Bain",
+        "scope": "shared",
+        "sprite": 98,
+        "unique_name": "Bain#juno",
+        "x": 103,
+        "y": 157
+      }
+    ]
+  },
+  "quests/quests_yuno.txt|script|Bajin|yuno_in01:100:153": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsYuno.Bajin",
+    "output_hash": "08ae1d4f4b7c1b7213e184b407187c2a3fd4707fd50738dd9fe771d2330cb3c7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_yuno/bajin.ex",
+    "source_hash": "090e49fa58ec3dccad919ca87921f71578b88f29badb3819e7a67242ed4d76c1",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "yuno_in01",
+        "name": "Bajin",
+        "scope": "shared",
+        "sprite": 47,
+        "trigger": [
+          0,
+          0
+        ],
+        "x": 100,
+        "y": 153
+      }
+    ]
+  },
+  "quests/quests_yuno.txt|script|CiCi#juno|yuno_in03:178:43": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsYuno.Cici",
+    "output_hash": "10b33463878ae9864e7a7799a6892ffc275e7a22f322f6b38ca5eca0dad927cf",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_yuno/cici.ex",
+    "source_hash": "3cef0f2238a24800870d4ac160c95a759b8241a8dc54ee2f021f7147c2fc1b25",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "yuno_in03",
+        "name": "CiCi",
+        "scope": "shared",
+        "sprite": 121,
+        "unique_name": "CiCi#juno",
+        "x": 178,
+        "y": 43
+      }
+    ]
+  },
+  "quests/quests_yuno.txt|script|Kato#juno|yuno_in01:19:183": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsYuno.Kato",
+    "output_hash": "0bb522cc5ba6b3cbf4a30477c18d02c7c663791f2c810d8c19cfa38050d1efab",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_yuno/kato.ex",
+    "source_hash": "76326a0199d8fc996b278368a1c8ec3704b9724a07e53998b3d0321f7edce2c0",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "yuno_in01",
+        "name": "Kato",
+        "scope": "shared",
+        "sprite": 55,
+        "unique_name": "Kato#juno",
+        "x": 19,
+        "y": 183
+      }
+    ]
+  },
+  "quests/quests_yuno.txt|script|Metto#juno|yuno_in03:26:39": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsYuno.Metto",
+    "output_hash": "5110f1feb293b1d99a253defcdb0a83ef104d8ff978b7b758f1ca717617369a0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_yuno/metto.ex",
+    "source_hash": "4b73e11453e0a18503789d28e52129340e1251c6a6c8907fa8c8bf9354b53049",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "yuno_in03",
+        "name": "Metto",
+        "scope": "shared",
+        "sprite": 709,
+        "unique_name": "Metto#juno",
+        "x": 26,
+        "y": 39
+      }
+    ]
+  },
+  "quests/quests_yuno.txt|script|Muriniel's Cottage#juno|mjolnir_02:170:193": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsYuno.MurinielSCottage",
+    "output_hash": "958587e11ae8fa81d222f869fa0c62989b643d1b4c68bd38131a77c081f9514a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_yuno/muriniel_s_cottage.ex",
+    "source_hash": "f319e8b9fd1896bd0390f3078086765ef20630137a11afc70ea2d10146abb81c",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "mjolnir_02",
+        "name": "Muriniel's Cottage",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Muriniel's Cottage#juno",
+        "x": 170,
+        "y": 193
+      }
+    ]
+  },
+  "quests/quests_yuno.txt|script|Sage Esklah#juno|yuno:213:298": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsYuno.SageEsklah",
+    "output_hash": "a697c7ee07708f46f7268067443aa986a64e72ce952f6a35e2f130ca0230a5d1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_yuno/sage_esklah.ex",
+    "source_hash": "8f8c8a022c3153caaa97dddfc628736ffc503d10d0ef75b84abdcf2d070e410d",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "yuno",
+        "name": "Sage Esklah",
+        "scope": "shared",
+        "sprite": 735,
+        "unique_name": "Sage Esklah#juno",
+        "x": 213,
+        "y": 298
+      }
+    ]
+  },
+  "quests/quests_yuno.txt|script|Sage Syklah#juno|yuno:305:207": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsYuno.SageSyklah",
+    "output_hash": "e49c9e815af997aa7e42926fb83b0c19827bad83e8e14995d9f16b59d65a58c3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_yuno/sage_syklah.ex",
+    "source_hash": "537829a808cb83e5767cee257f3471436cda1d84ef7875134f572a93b5ec3d98",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "yuno",
+        "name": "Sage Syklah",
+        "scope": "shared",
+        "sprite": 735,
+        "unique_name": "Sage Syklah#juno",
+        "x": 305,
+        "y": 207
+      }
+    ]
+  },
+  "quests/quests_yuno.txt|script|Sage Yklah#juno|yuno:261:99": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsYuno.SageYklah",
+    "output_hash": "978d6e149d33c0211d5a2fce24864309863ee6a1189b95e91a3ec4d58d038d5c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_yuno/sage_yklah.ex",
+    "source_hash": "eb450b202aa29572e73e8864f4e7acb06a2dd3e551f84b44bc5916ae9ce5dd09",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "yuno",
+        "name": "Sage Yklah",
+        "scope": "shared",
+        "sprite": 735,
+        "unique_name": "Sage Yklah#juno",
+        "x": 261,
+        "y": 99
+      }
+    ]
+  },
+  "quests/quests_yuno.txt|script|Stangckle#juno|yuno_in01:17:95": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsYuno.Stangckle",
+    "output_hash": "cd7f50b79ff0a0a3ab2e068687cdf70f0bcf7bfb140fdcaf0be3de1ca1f7b06c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_yuno/stangckle.ex",
+    "source_hash": "bd48a013a30b385d27da827d07a78d3d87dcf0798d03446697303e15cbf891df",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "yuno_in01",
+        "name": "Stangckle",
+        "scope": "shared",
+        "sprite": 99,
+        "unique_name": "Stangckle#juno",
+        "x": 17,
+        "y": 95
+      }
+    ]
+  },
+  "quests/quests_yuno.txt|script|Wagan#juno|yuno_in01:17:30": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsYuno.Wagan",
+    "output_hash": "520a22f27d8dcf89f93419d8bdffab75c02a77f839b5005422d32990dd4964df",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_yuno/wagan.ex",
+    "source_hash": "aefe80488303a8d3a278dc8390a03701ddb643cac4c83d6e306756eab74deb60",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "yuno_in01",
+        "name": "Wagan",
+        "scope": "shared",
+        "sprite": 85,
+        "unique_name": "Wagan#juno",
+        "x": 17,
+        "y": 30
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
