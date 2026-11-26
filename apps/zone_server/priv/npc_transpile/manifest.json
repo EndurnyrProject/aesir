@@ -56342,6 +56342,1771 @@
       }
     ]
   },
+  "quests/quests_nameless.txt|floating|#ZGuard|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsNameless.Zguard",
+    "output_hash": "802b21f20f9c5ca5a726c71fba37c038042328652a5ac73dc2b82c1bd60adb05",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_nameless/zguard.ex",
+    "source_hash": "6f05f7d3e8c4a80eb832a61bf9e1d84221d08de97ed961855d415cc3b02a5b96",
+    "spawns": []
+  },
+  "quests/quests_nameless.txt|floating|::Dorian_izlude|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsNameless.DorianIzlude",
+    "output_hash": "76fbf89595e4cb7782cf67493e2da2662f694be753d7c05362ede620f1c6ce17",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_nameless/dorian_izlude.ex",
+    "source_hash": "c015640f5b36bd05a18b4ae189566918b3e0c89a401ea66c9aeb1a1518bc6c5d",
+    "spawns": []
+  },
+  "quests/quests_nameless.txt|floating|::StrangeMachine_izlude|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsNameless.StrangemachineIzlude",
+    "output_hash": "759f65ff9889884fbb964598deb4ebac83b8ef82a3b63bdc6d4b2cde3a30a409",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_nameless/strangemachine_izlude.ex",
+    "source_hash": "98e33b6d59804799bd924fa34035662748e00c6208b0cdfe2a72d64a1aeceb5a",
+    "spawns": []
+  },
+  "quests/quests_nameless.txt|script|#CallGhost|gef_fild08:182:182": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Callghost",
+    "output_hash": "088e03ae15255b4a6a006c6df5db2836a746fb2cb03aad3dee5668387ebddbc4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/callghost.ex",
+    "source_hash": "3ca77ceb07605a7644201f781f4c6510384f2bb0d06c2acd4f155957536c7717",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "gef_fild08",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "#CallGhost",
+        "x": 182,
+        "y": 182
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|#ForeignMerchant1|moc_ruins:86:149": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Foreignmerchant1",
+    "output_hash": "0e00c179249ba229d9c03d6d010f3e3c445d0f5ec7f02fbf63f6af3c0901a95d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/foreignmerchant1.ex",
+    "source_hash": "c10a6a5c3089c31f7ae49bb7ea949e7c2a7102bb6425cc43a4e84b59b964871c",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "moc_ruins",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "#ForeignMerchant1",
+        "x": 86,
+        "y": 149
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|#ForeignMerchant2|moc_ruins:88:136": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Foreignmerchant2",
+    "output_hash": "9d2c3220d80bca5733d85de88ceb2f541bbba8d5058873b15b2fd441d172002e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/foreignmerchant2.ex",
+    "source_hash": "25d7bb8a64c119e369246aa74ee25255ceb52762f7d44c8666ef744f7ee91cec",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "moc_ruins",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "#ForeignMerchant2",
+        "x": 88,
+        "y": 136
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|#ForeignMerchant3|moc_ruins:106:133": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Foreignmerchant3",
+    "output_hash": "09d340b6ce22a30abab7069f985e8d6d7f48eef299c678cdc040ef31fe077971",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/foreignmerchant3.ex",
+    "source_hash": "60e8d2d32dfbacc9baa9a212d3bb09d5b48817a7898fe79ca5fdbcce1440c132",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "moc_ruins",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "#ForeignMerchant3",
+        "x": 106,
+        "y": 133
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|#ForeignMerchant4|moc_ruins:115:147": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Foreignmerchant4",
+    "output_hash": "2d33d50a0ddf14bbb048ce38f331091533a1d8d2dde982c639d007d778492115",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/foreignmerchant4.ex",
+    "source_hash": "36bd8ff10239e135d62e7fe6c44f5b1e4e770ed6f21b443ae533284817b8b405",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "moc_ruins",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "#ForeignMerchant4",
+        "x": 115,
+        "y": 147
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|#em_end|rachel:142:136": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.EmEnd",
+    "output_hash": "70a7e5b34b3c37a9295996bdeae81d09679153297497e2c93ecdd44802958263",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/em_end.ex",
+    "source_hash": "46eabefe3be4bdc942549c6501ce52ffe07bb1e072b55958f8f088da2e72e532",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "rachel",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          5,
+          5
+        ],
+        "unique_name": "#em_end",
+        "x": 142,
+        "y": 136
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|#em_sky_s|que_temsky:100:93": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.EmSkyS",
+    "output_hash": "23c0d403d821b39d75652cb9de9f7267575072e7a06d33dfbb3c1af436de2d8e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/em_sky_s.ex",
+    "source_hash": "8dcae31dc649cb1f71718afb305e641446f7c5275af70f18f2c900aad222a780",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_temsky",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          5,
+          2
+        ],
+        "unique_name": "#em_sky_s",
+        "x": 100,
+        "y": 93
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|#treasure|moc_fild18:108:116": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Treasure",
+    "output_hash": "099f006db840f42b2c3e757f4e2513f07d8873a62c4ee318782daab8541a3c9a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/treasure.ex",
+    "source_hash": "2e3c15a1ef57ca6008ab02369e284d0fe2c855d876703c0bbfbacb65aab3cf14",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "moc_fild18",
+        "name": "",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "#treasure",
+        "x": 108,
+        "y": 116
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|#zdan_broad|z_agit:1:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.ZdanBroad",
+    "output_hash": "a5281e51cee39192dbd53274ff29d28cdfd4f97504a95d6433ae53472dd63646",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/zdan_broad.ex",
+    "source_hash": "7a14268307374b343674cd503c126a6ea7b904f9b2a2b5d5fe7da36ca1a0c297",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "z_agit",
+        "name": "",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "#zdan_broad",
+        "x": 1,
+        "y": 1
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Agent#pc1|airplane_01:95:61": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Agent",
+    "output_hash": "8f40d31ff6c9f591764fcff1551ec6dabbee7c7d5f531219b26e581aabf9187d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/agent.ex",
+    "source_hash": "b7b85b79110bf68132e9489c87f8b69c38a1e9ce6fa1bfdd9fc345a880a68d77",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "airplane_01",
+        "name": "Agent",
+        "scope": "shared",
+        "sprite": 899,
+        "unique_name": "Agent#pc1",
+        "x": 95,
+        "y": 61
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|AideAmi#Aru|nameless_n:145:162": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Aideami",
+    "output_hash": "7f08da239ea2d77e39b2155fd6448171ac651a9c35d489286f5f19191195dbb0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/aideami.ex",
+    "source_hash": "c4c156f26b1ebae3b3fdec47bbc769c7c801a93aba5878af11896db2a9aec04a",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "nameless_n",
+        "name": "AideAmi",
+        "scope": "shared",
+        "sprite": 139,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "AideAmi#Aru",
+        "x": 145,
+        "y": 162
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Archeologist|yuno_in04:38:48": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Archeologist",
+    "output_hash": "71781f41bc00880e58b33bc3742323423c326dcd0ddc0dd1f5e4b9fef1b042b7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/archeologist.ex",
+    "source_hash": "10cd85fba9d51b7efae3429d543208ff51d1595163d0446b6e95c876a3a39fb6",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "yuno_in04",
+        "name": "Archeologist",
+        "scope": "shared",
+        "sprite": 55,
+        "x": 38,
+        "y": 48
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Belder|alberta:127:143": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Belder",
+    "output_hash": "32ae0cfeea07613853b3f2b833b8df3ca354ab51821ba0cbb16bd914435f2c01",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/belder.ex",
+    "source_hash": "a9627e045da9da1ce2275a699b75747c2c1a648828bacfce4a2b2d3c40fbc859",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "alberta",
+        "name": "Belder",
+        "scope": "shared",
+        "sprite": 85,
+        "x": 127,
+        "y": 143
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Boat#Aru|ve_fild07:125:128": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Boat",
+    "output_hash": "0fc9d9a78fa099bd1c5c35d85eacda2cd431b3585467c675a2d2ee6af97dc195",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/boat.ex",
+    "source_hash": "a004938e5fbbade81f61ddbaaded6e27ece63a430d194644761ddbf55d2621fd",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ve_fild07",
+        "name": "Boat",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Boat#Aru",
+        "x": 125,
+        "y": 128
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Books#Mona1|abbey02:224:70": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Books",
+    "output_hash": "1c997c63237cde5d9b3063db1e282df21f33cd948c37ec630cdaa245a4710963",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/books.ex",
+    "source_hash": "7d9ae6977b83a89c4a652645baf731406a2f470613e40c4551b9e3966dcc8bbe",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "abbey02",
+        "name": "Books",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Books#Mona1",
+        "x": 224,
+        "y": 70
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Catfoii|z_agit:95:101": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Catfoii",
+    "output_hash": "1d83cd0f8620bce4d11c38dfa0b2c934f62a6d2a9ad485308e8c037d5c5051a2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/catfoii.ex",
+    "source_hash": "b6c79cfc98a286a24f7e8913eff32122e304a69e0580ee54d8d4196226dbc19a",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "z_agit",
+        "name": "Catfoii",
+        "scope": "shared",
+        "sprite": 876,
+        "x": 95,
+        "y": 101
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Chief Officer#edq|prontera:148:326": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.ChiefOfficer",
+    "output_hash": "95317933e24c5efee751b845df5bc5f617ad086ec79d3dbaa3274d328dcd942a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/chief_officer.ex",
+    "source_hash": "4826f57d91a47f7eaea1f913e297a696fed2c1b909ec76171cd418a823709275",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "prontera",
+        "name": "Chief Officer",
+        "scope": "shared",
+        "sprite": 734,
+        "unique_name": "Chief Officer#edq",
+        "x": 148,
+        "y": 326
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Common-Looking Man|ra_in01:301:52": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.CommonLookingMan",
+    "output_hash": "413f2d2263598313019e19c516216f6d46935945cff7d8470219084c01d73212",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/common_looking_man.ex",
+    "source_hash": "e101e046b3664f84e11f1e56e418d46058138226873982958f8a2adb68dfb598",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ra_in01",
+        "name": "Common-Looking Man",
+        "scope": "shared",
+        "sprite": 927,
+        "x": 301,
+        "y": 52
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Creature#Monas|nameless_in:13:53": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Creature",
+    "output_hash": "888e47f6c953962648a5b1326acfff6a4af61a201d05aa8960ddd30a54413950",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/creature.ex",
+    "source_hash": "07273e8f3367fcf4f62198708ac52497f3bba82cf7234a78388dba3bdcb708fc",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "nameless_in",
+        "name": "Creature",
+        "scope": "shared",
+        "sprite": 1864,
+        "trigger": [
+          3,
+          1
+        ],
+        "unique_name": "Creature#Monas",
+        "x": 13,
+        "y": 53
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Dead Crow#Aru|nameless_i:127:207": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.DeadCrow",
+    "output_hash": "b907b2a61b9d3b44aa7cf05a2749c0815e0d05919adcbd005f57ce76b5bb1a18",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/dead_crow.ex",
+    "source_hash": "96c59fb96665fe1fb7746d6f8c434fa294ecf36ef2a8764e2510eb1287e53d86",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "nameless_i",
+        "name": "Dead Crow",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Dead Crow#Aru",
+        "x": 127,
+        "y": 207
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Dead Man#King|abbey03:232:232": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.DeadMan",
+    "output_hash": "9ff6ca1e67f6778d71cda4cd46021dee117814547efa8683177baf08e5ccfd11",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/dead_man.ex",
+    "source_hash": "53636ced24003b7b115a9c938ea94d568d88f15ee2f10d6be570abf199085018",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "abbey03",
+        "name": "Dead Man",
+        "scope": "shared",
+        "sprite": 956,
+        "unique_name": "Dead Man#King",
+        "x": 232,
+        "y": 232
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Drunkard#Aru1|ve_in:238:120": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Drunkard238120",
+    "output_hash": "043c194db56adc5a54af2aab95fb39f43957fed19d980af8fa7e0957bffe4196",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/drunkard_238_120.ex",
+    "source_hash": "a56b19591d08213bd27e301ca3d324d6fcf0403785a4d95fa0960fcbeb8b77b7",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "ve_in",
+        "name": "Drunkard",
+        "scope": "shared",
+        "sprite": 940,
+        "unique_name": "Drunkard#Aru1",
+        "x": 238,
+        "y": 120
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Drunkard#Aru|ve_in:239:115": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Drunkard",
+    "output_hash": "12b5894ec41050d98e66aa19d6055c1e6bac5991e9db2cba93b9ee7e19bd323c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/drunkard.ex",
+    "source_hash": "5cec83d82fd38d22f2de9d30852a65edd7955101f59faf2b292f23aa1786b3ad",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ve_in",
+        "name": "Drunkard",
+        "scope": "shared",
+        "sprite": 943,
+        "unique_name": "Drunkard#Aru",
+        "x": 239,
+        "y": 115
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|EntranceCheck#1|z_agit:98:44": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Entrancecheck",
+    "output_hash": "90ec51f404084d5517f6b6926b7285b5465949e7f2908d96d2a2fab053e1dc1e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/entrancecheck.ex",
+    "source_hash": "aeec7b68522852c0e4e60e18855c7f250a4796e4adf9576a3b0aacdbfe1957e0",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "z_agit",
+        "name": "EntranceCheck",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          10,
+          10
+        ],
+        "unique_name": "EntranceCheck#1",
+        "x": 98,
+        "y": 44
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|EntranceCheck#2|z_agit:98:92": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Entrancecheck9892",
+    "output_hash": "8a96f3502167d6412062325d2413b179e148d87abfb4895898d361e809f932f4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/entrancecheck_98_92.ex",
+    "source_hash": "a346130c34081fa727d49ddbab3fd54323e41b87b9c254575f744b96f56623fd",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "z_agit",
+        "name": "EntranceCheck",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          10,
+          10
+        ],
+        "unique_name": "EntranceCheck#2",
+        "x": 98,
+        "y": 92
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Event Switch#pc|airplane_01:90:63": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.EventSwitch",
+    "output_hash": "dc52940ae3ce9e42dc56e89e493d24de09ebf32956c534ba4b850c32cf8abff7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/event_switch.ex",
+    "source_hash": "81ff5d3f4a059370860efd7ac152a31981ccaf533f211b32103fbf7016a59548",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "airplane_01",
+        "name": "Event Switch",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Event Switch#pc",
+        "x": 90,
+        "y": 63
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Female Follower#em|ra_temin:103:151": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.FemaleFollower",
+    "output_hash": "8274ce206e94d3bcae0e2648f3dee9f9664d6b712b7c30f710c4af46a51c31c1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/female_follower.ex",
+    "source_hash": "8d300644c8ba255db1fe2c873e2857fcdcad4034e3fb107fdcc91bde8d125f42",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "ra_temin",
+        "name": "Female Follower",
+        "scope": "shared",
+        "sprite": 917,
+        "unique_name": "Female Follower#em",
+        "x": 103,
+        "y": 151
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Foreign Merchant#aru1|moc_ruins:77:167": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.ForeignMerchant",
+    "output_hash": "3a82b8bde951e6958b0daee696e7dfb6c9ca39b0ffeff4bc25f52347ba00f0f6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/foreign_merchant.ex",
+    "source_hash": "9bce9f165fa5b8ec45b3ce1523028caf87e528e1b5ad7d4189d27a49661c44da",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "moc_ruins",
+        "name": "Foreign Merchant",
+        "scope": "shared",
+        "sprite": 880,
+        "trigger": [
+          5,
+          5
+        ],
+        "unique_name": "Foreign Merchant#aru1",
+        "x": 77,
+        "y": 167
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Foreign Merchant#aru2|moc_ruins:101:133": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.ForeignMerchant101133",
+    "output_hash": "71cc0cb7df7f1ecbb1e76c9a24a222f21dd1b95321a8c86848a95b2d7056a671",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/foreign_merchant_101_133.ex",
+    "source_hash": "f672991c7c3bceaf1d2c2a1f0308d723eac6cbccee91118cf28cf3d5042fe836",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "moc_ruins",
+        "name": "Foreign Merchant",
+        "scope": "shared",
+        "sprite": 929,
+        "unique_name": "Foreign Merchant#aru2",
+        "x": 101,
+        "y": 133
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Gooho Ahn|payon:192:176": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.GoohoAhn",
+    "output_hash": "be02149f46fec5048c84babad537d48f8c0287d93b93545d62e88409a4a187af",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/gooho_ahn.ex",
+    "source_hash": "4c5de598537ade89b030dbf7e207c9b80c03cce34ec66d1e22c58935819308b7",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "payon",
+        "name": "Gooho Ahn",
+        "scope": "shared",
+        "sprite": 903,
+        "x": 192,
+        "y": 176
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Grass Behind#Aru|nameless_i:129:218": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.GrassBehind",
+    "output_hash": "25e0b9139a622a078b17b423ce7a9d20566ae37a3a1c8e3914a4f47d3cbc48b7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/grass_behind.ex",
+    "source_hash": "e48cbc2795fd9cfb72af85a1a32aaa62527d537bba17f2496fa30cc78ccb3a7d",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "nameless_i",
+        "name": "Grass Behind",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          4,
+          3
+        ],
+        "unique_name": "Grass Behind#Aru",
+        "x": 129,
+        "y": 218
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Heap of Earth|cmd_fild01:55:160": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.HeapOfEarth",
+    "output_hash": "0822e7f7b1103b269b54a03995d3503982d250d922b337953d33ae9b1eb723a9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/heap_of_earth.ex",
+    "source_hash": "2ff31e045157d5252d40aa4561fd1f139c1be85342d15e605f02942a82d4d7d4",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "cmd_fild01",
+        "name": "Heap of Earth",
+        "scope": "shared",
+        "sprite": 844,
+        "x": 55,
+        "y": 160
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Ibrahim|moc_ruins:152:147": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Ibrahim",
+    "output_hash": "ed439dc321d63b90eb8b33f2f652597d27f87298b0a395832cb7e99d68f7e28e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/ibrahim.ex",
+    "source_hash": "a70ccaa48e264ced7d71eb49958da9b64c6acc3d66d5cd07f4e57733ed28ef44",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "moc_ruins",
+        "name": "Ibrahim",
+        "scope": "shared",
+        "sprite": 732,
+        "trigger": [
+          3,
+          3
+        ],
+        "x": 152,
+        "y": 147
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Inside Island#Aru|nameless_in:21:176": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.InsideIsland",
+    "output_hash": "c989112e21214053532c92af0f02498638e2a5371faa994b2a4c910f7c13f43a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/inside_island.ex",
+    "source_hash": "c3fd51d8f4761e142139837d4bcc5ba710f597898d2850369c1a2e7ccd5d1cb4",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "nameless_in",
+        "name": "Inside Island",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "Inside Island#Aru",
+        "x": 21,
+        "y": 176
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Investigator|cmd_in02:94:208": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Investigator",
+    "output_hash": "0b94604961c83c4402212bb43c468105c4e657ebd1abb8632644259ad635f678",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/investigator.ex",
+    "source_hash": "64ff57ff48fce4c1cd5027849418a23f06fa204caf0ca66f17a1420980e9356b",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "cmd_in02",
+        "name": "Investigator",
+        "scope": "shared",
+        "sprite": 828,
+        "x": 94,
+        "y": 208
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Ishmael#em|ra_fild03:139:355": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Ishmael",
+    "output_hash": "f4b13386121b9b79b13243580fc64117e31d497d115b907bfdf5edc280312115",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/ishmael.ex",
+    "source_hash": "8a34a6f50fc3414d83a5cc814bd5d33a64217e0c687f82e841abce97b0ea1464",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "ra_fild03",
+        "name": "Ishmael",
+        "scope": "shared",
+        "sprite": 914,
+        "unique_name": "Ishmael#em",
+        "x": 139,
+        "y": 355
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Jhonnita|alberta:102:80": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Jhonnita",
+    "output_hash": "ae69c00547ec21bd0b05042c36320dc6922249e8d6831db9cf0d5615f016b3da",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/jhonnita.ex",
+    "source_hash": "02a62bb60ab5b6897a1100cf68def9970e14b7d38bc742d4d9a93fa20e08c1c4",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "alberta",
+        "name": "Jhonnita",
+        "scope": "shared",
+        "sprite": 86,
+        "x": 102,
+        "y": 80
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Kimeunbang|payon:69:65": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Kimeunbang",
+    "output_hash": "f2bae928fa3d35e1a5e024a7ac209fb40a8c0887c9950880a6a34631beaf0cb3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/kimeunbang.ex",
+    "source_hash": "572ab7d8a6ec24b0548e0f4f382d6990548d36da1471788436c53a82e41f75fd",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "payon",
+        "name": "Kimeunbang",
+        "scope": "shared",
+        "sprite": 89,
+        "x": 69,
+        "y": 65
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Larjes#Aru|nameless_i:259:218": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Larjes259218",
+    "output_hash": "fa0a02ecbd23155c7b2701c1283751041412d45ffbba73a22e8188456e1304f7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/larjes_259_218.ex",
+    "source_hash": "1af33fbd0a8af6fd1243a59279cd4db1027400389f3d8b2cceb121169e479f80",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "nameless_i",
+        "name": "Larjes",
+        "scope": "shared",
+        "sprite": 97,
+        "unique_name": "Larjes#Aru",
+        "x": 259,
+        "y": 218
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Larjes#Boat1|nameless_n:259:218": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Larjes0",
+    "output_hash": "adab2a21c4802dd35035dde0c6fa8f7092a3197a79cb63703b9084bfcb4258bf",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/larjes_0.ex",
+    "source_hash": "93e984607f4e494479fe8ad98d0106057f1f3413959ec8f47df578a57a33be34",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "nameless_n",
+        "name": "Larjes",
+        "scope": "shared",
+        "sprite": 97,
+        "unique_name": "Larjes#Boat1",
+        "x": 259,
+        "y": 218
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Larjes#Monastery2|nameless_n:166:254": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Larjes166254",
+    "output_hash": "b5a3d1cb4dfc5f68ad42c13a54ed942859eb6577e20b92e7b4955c1db122461f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/larjes_166_254.ex",
+    "source_hash": "fa87741ae7e156bb2761c6c40fb951ffc11bebf99eb2b2badf09141120069ff4",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "nameless_n",
+        "name": "Larjes",
+        "scope": "shared",
+        "sprite": 97,
+        "unique_name": "Larjes#Monastery2",
+        "x": 166,
+        "y": 254
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Larjes#Monastery|nameless_in:13:58": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Larjes",
+    "output_hash": "9c6395e7f840407c4e775f80c8e1706a4199dc4cbba61c2660c31d4faae7074d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/larjes.ex",
+    "source_hash": "4dc371b38f15e7ea9b5f7050278722a34b2ced32975f5ddaffd3a4b66d0c8362",
+    "spawns": [
+      {
+        "dir": 6,
+        "map": "nameless_in",
+        "name": "Larjes",
+        "scope": "shared",
+        "sprite": 97,
+        "unique_name": "Larjes#Monastery",
+        "x": 13,
+        "y": 58
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Leblo|geffen:128:153": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Leblo",
+    "output_hash": "779c425004bed1546b678bc6c095eb597369432987aecedeb0424bb41a1248fd",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/leblo.ex",
+    "source_hash": "e2e079e6d582a28a45c032cd061fe005c1ac86556271e66434f6877410c4af47",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "geffen",
+        "name": "Leblo",
+        "scope": "shared",
+        "sprite": 883,
+        "x": 128,
+        "y": 153
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Louis|z_agit:97:101": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Louis",
+    "output_hash": "c1b7e616f25747428388ef2fdc15b86bdf9a36d4ef8e8ff1dd4f370b14312c5d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/louis.ex",
+    "source_hash": "46ef7d56605e053f53e7449b29941a80cb6f8f532699c34a56af31ef6797c40b",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "z_agit",
+        "name": "Louis",
+        "scope": "shared",
+        "sprite": 931,
+        "x": 97,
+        "y": 101
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Magistrate#Aru|ve_in:78:314": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Magistrate",
+    "output_hash": "c0154e31bf404d38680e8d0a5df1f5c3055106c03e8806757d8d8b762bbbcf09",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/magistrate.ex",
+    "source_hash": "7ce6bdb79f5e8ddb86c717cfe5e99b740166b3c0c076b639ddbec731ddb9d86b",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "ve_in",
+        "name": "Magistrate",
+        "scope": "shared",
+        "sprite": 945,
+        "unique_name": "Magistrate#Aru",
+        "x": 78,
+        "y": 314
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Man from Morocc|prontera:163:204": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.ManFromMorocc",
+    "output_hash": "6b2f5f61dd7c5261137983a4adb7a4bd0635338c6be6cd54b5ded477ae286083",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/man_from_morocc.ex",
+    "source_hash": "c0db38e54a4f9fe17ac97feff9c225655cc7b50dd74997631341d3ac2ff58f76",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "prontera",
+        "name": "Man from Morocc",
+        "scope": "shared",
+        "sprite": 99,
+        "x": 163,
+        "y": 204
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Man in Hiding#nd|comodo:339:224": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.ManInHiding",
+    "output_hash": "f413ad15cae7dcdf0d5d685c05a91500fa29cf203f780f2d6b1ce27383a7455f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/man_in_hiding.ex",
+    "source_hash": "7711b83bd2b696b7b4d4c148e40c880264ac8ab4b54ddc2945e4fde7a14908ff",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "comodo",
+        "name": "Man in Hiding",
+        "scope": "shared",
+        "sprite": 881,
+        "unique_name": "Man in Hiding#nd",
+        "x": 339,
+        "y": 224
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Man#King|abbey03:232:233": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Man",
+    "output_hash": "906fde70b62b1d4931bae8af0991979451c45932f75495b2062311b04e1149c0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/man.ex",
+    "source_hash": "62c8bade373a36171ef83b57ff67e0ab82ee62f7593026a937fc3b3e018974b4",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "abbey03",
+        "name": "Man",
+        "scope": "shared",
+        "sprite": 956,
+        "unique_name": "Man#King",
+        "x": 232,
+        "y": 233
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Man#zgang|morocc:102:298": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Man102298",
+    "output_hash": "5794b075ecf17bd596bc88a9f7bb6d0f1009f9f7bfb785e95b886e7addcf67dd",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/man_102_298.ex",
+    "source_hash": "3aad9fe50fbc9a657154ed7289347de0e669d4723a93e0f8be010468a0e65edf",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "morocc",
+        "name": "Man",
+        "scope": "shared",
+        "sprite": 98,
+        "unique_name": "Man#zgang",
+        "x": 102,
+        "y": 298
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Martha|z_agit:99:101": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Martha",
+    "output_hash": "145baa214514b435507d4a08f2fd8aa370031fa8f115671613f6054f1a08e619",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/martha.ex",
+    "source_hash": "fb4782f4b9742030d8edd4395f0e5aca7aa98b6f2e3eb171aa9d341291f5679c",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "z_agit",
+        "name": "Martha",
+        "scope": "shared",
+        "sprite": 101,
+        "x": 99,
+        "y": 101
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Marybell|in_rogue:359:116": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Marybell",
+    "output_hash": "02a030a8bd5ecd773eb667fcb25f4168d9a477f599d7baa36dcc39387cdf16bf",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/marybell.ex",
+    "source_hash": "5aa14444ecd72e68f55e08c4bbe65a513b3faa022ec14f599440b7c6d701ac33",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "in_rogue",
+        "name": "Marybell",
+        "scope": "shared",
+        "sprite": 747,
+        "x": 359,
+        "y": 116
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|MealConversation Trigger|ra_in01:301:43": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.MealconversationTrigger",
+    "output_hash": "5ed4cdfeab6d1ec8ad04b7183ad7ac2e60372c116b3d990e6534cfa018ceeaa6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/mealconversation_trigger.ex",
+    "source_hash": "5cfa9fabe52a501aa2af832ba7786db18c9f220b8b07abcc2c1db2db8764085f",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ra_in01",
+        "name": "MealConversation Trigger",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          3,
+          3
+        ],
+        "x": 301,
+        "y": 43
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Moonho Ahn|payon:244:62": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.MoonhoAhn",
+    "output_hash": "6d5145b0105ee15e2b017729d70bda39b9ec04a96c9032d00e1a07accacf8c41",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/moonho_ahn.ex",
+    "source_hash": "1d1a828ed26fe1c51a7a9c50fd104a31c1d0c3739f83c984de64324422f7e6b9",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "payon",
+        "name": "Moonho Ahn",
+        "scope": "shared",
+        "sprite": 897,
+        "x": 244,
+        "y": 62
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Muff|comodo:224:187": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Muff",
+    "output_hash": "b3a6a56c19043342f29bb38fbc0aeedc30573dc39869efe57d56fbcc56ca98cc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/muff.ex",
+    "source_hash": "93c23ee5cc915480bbb1b916c00af595ba5c783983272f9135b9d6f165fd737a",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "comodo",
+        "name": "Muff",
+        "scope": "shared",
+        "sprite": 86,
+        "x": 224,
+        "y": 187
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Night#Aru2|nameless_n:169:254": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Night",
+    "output_hash": "1d6bebfc35da241005329fc48fbe445bb9caa1458862c0eae07bd60432aeba64",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/night.ex",
+    "source_hash": "5436b52e2a7a2cabbd2c7eaf0f617ec21c49f88d955afa34ebc5699aa323b2e0",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "nameless_n",
+        "name": "Night",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Night#Aru2",
+        "x": 169,
+        "y": 254
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Niren#em_sky|que_temsky:101:93": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Niren10193",
+    "output_hash": "d7d7fae2d41784d7d43f0d55965e3e73e3cc7e4c8460c4d1cbf0662818180e10",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/niren_101_93.ex",
+    "source_hash": "1d73f4aaf691dda070d5c955028a35af21c98ee7303bc3c0f3a32f252080efea",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "que_temsky",
+        "name": "Niren",
+        "scope": "shared",
+        "sprite": 915,
+        "unique_name": "Niren#em_sky",
+        "x": 101,
+        "y": 93
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Niren#ss|ra_temple:165:57": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Niren",
+    "output_hash": "e4c8e24150cef5ba91f16813a196595eaf3534a1d6354390a8113e37dd748d85",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/niren.ex",
+    "source_hash": "86535a18f94fccfa939e98710088d2e85f1bab2759d05cc1463ba0825217a75d",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "ra_temple",
+        "name": "Niren",
+        "scope": "shared",
+        "sprite": 915,
+        "unique_name": "Niren#ss",
+        "x": 165,
+        "y": 57
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Normal-Looking Man|ra_in01:301:50": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.NormalLookingMan",
+    "output_hash": "f58b19c1a56468cefa444569c70740e1504db4674289e56d8775dd2866f93827",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/normal_looking_man.ex",
+    "source_hash": "9367b0fefd2f0eb0b667be8d57a507f6673fbf0c41acb4ba44e73d1d3d1c7d6d",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ra_in01",
+        "name": "Normal-Looking Man",
+        "scope": "shared",
+        "sprite": 927,
+        "x": 301,
+        "y": 50
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Odd Slab|moc_fild17:209:235": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.OddSlab",
+    "output_hash": "2c8cbc030e3c2f26dc81161dcdc9d36ed4d6d84135096a6f6c3773022b9fde37",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/odd_slab.ex",
+    "source_hash": "d4865309f315e61481e3ccd9746a64d77f444b92cba094dfc8b013e04181b231",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "moc_fild17",
+        "name": "Odd Slab",
+        "scope": "shared",
+        "sprite": 111,
+        "trigger": [
+          4,
+          4
+        ],
+        "x": 209,
+        "y": 235
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Odd Switch#Switch1|cmd_in02:69:196": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.OddSwitch",
+    "output_hash": "dd6d5d8f8a68871a80f6c4a81fbd3c040aebaff6704e5449e2dfaa3884a229e3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/odd_switch.ex",
+    "source_hash": "9349b0b79bb266fe33afe0ec79747b0a7d1d699075e312a1d098d7bce51ac17c",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "cmd_in02",
+        "name": "Odd Switch",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "Odd Switch#Switch1",
+        "x": 69,
+        "y": 196
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Odd Switch#Switch2|cmd_in02:80:189": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.OddSwitch80189",
+    "output_hash": "80033fdb219d1009fcc73cfb4f83b52de1d12f264aba53000cf0197900aab203",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/odd_switch_80_189.ex",
+    "source_hash": "c0adb1aa52e5a890cf28c7c0982aeb95e8380783c112e556989455ba38086a5f",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "cmd_in02",
+        "name": "Odd Switch",
+        "scope": "shared",
+        "sprite": 844,
+        "unique_name": "Odd Switch#Switch2",
+        "x": 80,
+        "y": 189
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Old Soldier|prontera:140:304": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.OldSoldier",
+    "output_hash": "15d76bb8450cfbeb8a0f2b51e4b42e94acd3041464a5a7f3e36bd4cbe0913642",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/old_soldier.ex",
+    "source_hash": "084e408c513431df032bc5ee6b1a07c3a508ca5c19dd4942edc8959dc0c86e17",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "prontera",
+        "name": "Old Soldier",
+        "scope": "shared",
+        "sprite": 901,
+        "x": 140,
+        "y": 304
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Ordinary Man#pc1|cmd_in02:174:89": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.OrdinaryMan",
+    "output_hash": "574fdf46037fa04151913743b0a089f620dc37e693ddc7444ff102bc6570d92b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/ordinary_man.ex",
+    "source_hash": "e2b0870716351a36ec7c72b9fc3aeb7a83221698be17dc90e244001cccf0168a",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "cmd_in02",
+        "name": "Ordinary Man",
+        "scope": "shared",
+        "sprite": 97,
+        "unique_name": "Ordinary Man#pc1",
+        "x": 174,
+        "y": 89
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Ordinary Man#pc2|cmd_in02:111:52": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.OrdinaryMan11152",
+    "output_hash": "aef5ee76a0033da1559f482a4777bea217e3cd325bbcb0651dd7dc50bbbc3fec",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/ordinary_man_111_52.ex",
+    "source_hash": "fd5114c3a5e09b713927d7a8ff3d0d325fb0e3d0a6b005961a3c6c87c99b4040",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "cmd_in02",
+        "name": "Ordinary Man",
+        "scope": "shared",
+        "sprite": 97,
+        "unique_name": "Ordinary Man#pc2",
+        "x": 111,
+        "y": 52
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Out_from_Monastery|nameless_in:12:37": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.OutFromMonastery",
+    "output_hash": "3437275abfb56830b7ea5b9ca80e0e541be3d7560358abf9f3516266c895e9a8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/out_from_monastery.ex",
+    "source_hash": "f476ec5f9fdcf6855cf323ab04641047fb01e4d510e73773f66312fb0fdc80fc",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "nameless_in",
+        "name": "Out_from_Monastery",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ],
+        "x": 12,
+        "y": 37
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Outside Island#Aru|nameless_i:212:184": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.OutsideIsland",
+    "output_hash": "6cc0f21610868efb6f5f075f37ab182932e0f00ac866ea6ae650423ce05eca0c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/outside_island.ex",
+    "source_hash": "02229e891434ec942c9a78d6b02e8827cdb4907abce8b1d1cee02c42299447ae",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "nameless_i",
+        "name": "Outside Island",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          2,
+          3
+        ],
+        "unique_name": "Outside Island#Aru",
+        "x": 212,
+        "y": 184
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Pass Out#Aru|nameless_in:15:61": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.PassOut",
+    "output_hash": "c92bb1f6a18740b8171f3807a18180e733d12fc23d6e3a2a4b6967b5059530d6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/pass_out.ex",
+    "source_hash": "41873b0536bdf5eeb60b6fdd2a066bfc0103acb4511dffa26217ab19882b48eb",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "nameless_in",
+        "name": "Pass Out",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          2,
+          3
+        ],
+        "unique_name": "Pass Out#Aru",
+        "x": 15,
+        "y": 61
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Pope#rachel2|que_temsky:99:100": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Pope",
+    "output_hash": "905e9d3621b46d52d1d8d1883c092f61da735efdbecaba5507588aa88f5cf9cd",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/pope.ex",
+    "source_hash": "26dcdabfd126eb88df6fdac24fb3207e617d1175e85d7f18a58f7eab54634221",
+    "spawns": [
+      {
+        "dir": 6,
+        "map": "que_temsky",
+        "name": "Pope",
+        "scope": "shared",
+        "sprite": 936,
+        "unique_name": "Pope#rachel2",
+        "x": 99,
+        "y": 100
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Ragged Man#nd|morocc:143:63": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.RaggedMan",
+    "output_hash": "59f847302bdeecc1acf8213fe3bf3cb1ec9abb3c9338c85626339423f104ba46",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/ragged_man.ex",
+    "source_hash": "ba4e421f4614c19aa4d1399ff39081c6a2cd45c1d66adef71364087982f266af",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "morocc",
+        "name": "Ragged Man",
+        "scope": "shared",
+        "sprite": 929,
+        "unique_name": "Ragged Man#nd",
+        "x": 143,
+        "y": 63
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Rogue Agent#nd0|aldebaran:114:56": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.RogueAgent11456",
+    "output_hash": "8df65a94079496c7a1f703a57e7ccd4d4908b1f5c92ff26ff8fdadf788a956e9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/rogue_agent_114_56.ex",
+    "source_hash": "2edf7cf6d2d89dc86eb6c60a9afd82b0e67193d39ec3ad0eed6500f219a905d8",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "aldebaran",
+        "name": "Rogue Agent",
+        "scope": "shared",
+        "sprite": 828,
+        "unique_name": "Rogue Agent#nd0",
+        "x": 114,
+        "y": 56
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Rogue Agent|in_rogue:355:28": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.RogueAgent",
+    "output_hash": "634e54ad3e86574d6c22c68275b06c474e7eb04d947bd1ad42fc64f316373012",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/rogue_agent.ex",
+    "source_hash": "739e49b2c5eb3184ebcebcb8d0d4f89f572c423e41758c598ba3c5e1a9fe58c0",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "in_rogue",
+        "name": "Rogue Agent",
+        "scope": "shared",
+        "sprite": 118,
+        "x": 355,
+        "y": 28
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Rogue Guild Agent#nd1|geffen:91:36": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.RogueGuildAgent",
+    "output_hash": "0f5c7669af94a56436328f33391087e2ddf48e005a9fca2b16e578130212df6e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/rogue_guild_agent.ex",
+    "source_hash": "8f49be9a9322eceee28e6700f48226ff2eb9bb65a9e9a5578a7d6063d3ef93cf",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "geffen",
+        "name": "Rogue Guild Agent",
+        "scope": "shared",
+        "sprite": 828,
+        "unique_name": "Rogue Guild Agent#nd1",
+        "x": 91,
+        "y": 36
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Rogue Guild Agent#nd2|payon:209:44": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.RogueGuildAgent20944",
+    "output_hash": "ef45767e64b0f6c936b314e5f9cb8e98aa194f246931ec97a3e95be81c3a1886",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/rogue_guild_agent_209_44.ex",
+    "source_hash": "dcb126c1d52acde39ad9a6791367d7bd78c339ba284b37de88e076fcc21bfd3f",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "payon",
+        "name": "Rogue Guild Agent",
+        "scope": "shared",
+        "sprite": 828,
+        "unique_name": "Rogue Guild Agent#nd2",
+        "x": 209,
+        "y": 44
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Rogue Guild Agent#nd3|comodo:233:199": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.RogueGuildAgent233199",
+    "output_hash": "474ecbcd71fb210ed3b0c3335efe3d2637295eb773821461bf01d056dd0b315f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/rogue_guild_agent_233_199.ex",
+    "source_hash": "006d3052279cb117139a9ef66caaa1e65e481c5768a634c8b6721a1be62441e7",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "comodo",
+        "name": "Rogue Guild Agent",
+        "scope": "shared",
+        "sprite": 810,
+        "unique_name": "Rogue Guild Agent#nd3",
+        "x": 233,
+        "y": 199
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Rogue Guild Agent#nd4|morocc:116:39": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.RogueGuildAgent11639",
+    "output_hash": "2cc7234c934537d962f0e93c2bb9d972ae7229c24b47de2a0a45882c62faa050",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/rogue_guild_agent_116_39.ex",
+    "source_hash": "8bccba64fc54e50d98385e42199864d5cc7e9f922722a4e78656b78f0afa15e6",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "morocc",
+        "name": "Rogue Guild Agent",
+        "scope": "shared",
+        "sprite": 779,
+        "unique_name": "Rogue Guild Agent#nd4",
+        "x": 116,
+        "y": 39
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Rogue Investigator|in_rogue:366:46": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.RogueInvestigator",
+    "output_hash": "03625a5d30e344632535e820092fdab6c7341d7ea64032b625f4f903dce749e4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/rogue_investigator.ex",
+    "source_hash": "a74647d7a81692fc11ed8c58940b58b129ca1958c1be11b5d4d9f8555631a788",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "in_rogue",
+        "name": "Rogue Investigator",
+        "scope": "shared",
+        "sprite": 828,
+        "x": 366,
+        "y": 46
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Scholar#zgang|comodo:139:184": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Scholar",
+    "output_hash": "a7d57046ebccc605c5da3c9e0cfd41c5e30c3a19c006bc4370b6efd0db86cfcf",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/scholar.ex",
+    "source_hash": "39ad3f295395d5416b8624b605eddbfb53c0afdc09acd29790abd438b753e0a8",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "comodo",
+        "name": "Scholar",
+        "scope": "shared",
+        "sprite": 742,
+        "unique_name": "Scholar#zgang",
+        "x": 139,
+        "y": 184
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Secret Agent#Aru|ve_fild07:128:130": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.SecretAgent",
+    "output_hash": "a3d551cd487322131557afca255677cde21bd9a7dd557dd102c0e89fddbdf52b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/secret_agent.ex",
+    "source_hash": "c84a7a60d33e2a9da34153a98ad11b5e3113e4b90bf9bfa839b2f389eac84fc2",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "ve_fild07",
+        "name": "Secret Agent",
+        "scope": "shared",
+        "sprite": 97,
+        "unique_name": "Secret Agent#Aru",
+        "x": 128,
+        "y": 130
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Shaman|alberta_in:70:109": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Shaman",
+    "output_hash": "a75fbc01b52d28d7b58684209f12fc97acc7dff467c0fa7c24601a90f802ef70",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/shaman.ex",
+    "source_hash": "b435a91992f355ceaea43ee9c5c8078f7aa3ac0fb41e08619cce07b4eb76a63c",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "alberta_in",
+        "name": "Shaman",
+        "scope": "shared",
+        "sprite": 788,
+        "x": 70,
+        "y": 109
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Sippie#ss|ra_temple:168:54": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Sippie",
+    "output_hash": "da5afd0ca870b867e83a33894e40022449a239eba30b17f824c44c477d6cd19e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/sippie.ex",
+    "source_hash": "571a96681fa3aca812f2ca19a512d1ffd526e5a4d4e12735015f1f6d2ad84909",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ra_temple",
+        "name": "Sippie",
+        "scope": "shared",
+        "sprite": 917,
+        "unique_name": "Sippie#ss",
+        "x": 168,
+        "y": 54
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Small Safe|cmd_in02:69:188": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.SmallSafe",
+    "output_hash": "4ff4a2b27804b9337a1e7ba8143fa74fb3aa79d61ad47501afc24cf6933fee74",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/small_safe.ex",
+    "source_hash": "ad377047514a7e6cf9ee7d24a0656ec6a6d30fbd2229433aea857ad3e1ff866e",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "cmd_in02",
+        "name": "Small Safe",
+        "scope": "shared",
+        "sprite": 844,
+        "x": 69,
+        "y": 188
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Soldier#Aru|ve_in:81:296": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Soldier",
+    "output_hash": "35afdce2e47a95a39f9b2cb23b328fb91b28d8a8a9001767e7ee0581cd1cef76",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/soldier.ex",
+    "source_hash": "f0881dbeb7273ab3c954ec36a246c4b162dea365faf7fb1c0af1b72daf9a202d",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ve_in",
+        "name": "Soldier",
+        "scope": "shared",
+        "sprite": 946,
+        "unique_name": "Soldier#Aru",
+        "x": 81,
+        "y": 296
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Suspicious Man#1|moc_ruins:90:67": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.SuspiciousMan",
+    "output_hash": "0cc96b5f34abd2b00cff7f66b8b085b6705a6a0b99ee0d287526bd04d8b15053",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/suspicious_man.ex",
+    "source_hash": "27244828bc00f71575b04d9d91e51c6c25f879f8cbdb3dc42d0093889756c6da",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "moc_ruins",
+        "name": "Suspicious Man",
+        "scope": "shared",
+        "sprite": 99,
+        "trigger": [
+          4,
+          4
+        ],
+        "unique_name": "Suspicious Man#1",
+        "x": 90,
+        "y": 67
+      },
+      {
+        "dir": 3,
+        "map": "moc_ruins",
+        "name": "Suspicious Man",
+        "scope": "shared",
+        "sprite": 99,
+        "trigger": [
+          4,
+          4
+        ],
+        "unique_name": "Suspicious Man#2",
+        "x": 75,
+        "y": 171
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Suspicious-Looking Man|ra_in01:297:50": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.SuspiciousLookingMan",
+    "output_hash": "eaa1be0a8075d12cc89e6a9688efda1392286be030bf1068e9e645f6c9aa13cc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/suspicious_looking_man.ex",
+    "source_hash": "01e0d223bc268ddc34c7847416aedb057b81f6c62136997f5b473b5042d689af",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "ra_in01",
+        "name": "Suspicious-Looking Man",
+        "scope": "shared",
+        "sprite": 926,
+        "x": 297,
+        "y": 50
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|The Wanderer|gef_fild08:182:185": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.TheWanderer",
+    "output_hash": "efa22463e946907c55b5fbad55160df0e551dd6de3a2f2ec9f673da1ea23df0d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/the_wanderer.ex",
+    "source_hash": "3ef365db2bbd2354aad9276334d8fe756637b144aa9b3f2444760acd83af604b",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "gef_fild08",
+        "name": "The Wanderer",
+        "scope": "shared",
+        "sprite": 739,
+        "x": 182,
+        "y": 185
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Valdes|prt_in:168:18": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Valdes",
+    "output_hash": "d925777dd6c1a57e37313dae9932157db79a898d30b739dfb2c731fc06873998",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/valdes.ex",
+    "source_hash": "bdfa3f1d73cf1398455349a68c5596cb8b654049b6367ebd695ded424e0071bd",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "prt_in",
+        "name": "Valdes",
+        "scope": "shared",
+        "sprite": 65,
+        "trigger": [
+          2,
+          2
+        ],
+        "x": 168,
+        "y": 18
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Waiter#pc|ra_in01:308:59": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Waiter",
+    "output_hash": "81ea9e5a2694ce7a384d1d27559699ec8787a3d694c6f7c259cfb79b87201d08",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/waiter.ex",
+    "source_hash": "4a4d109fb25393a2312c5890aba94261626a7fea59430c41a5e9757a45365f88",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "ra_in01",
+        "name": "Waiter",
+        "scope": "shared",
+        "sprite": 930,
+        "unique_name": "Waiter#pc",
+        "x": 308,
+        "y": 59
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Wanted Notice#edq|prontera:150:326": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.WantedNotice",
+    "output_hash": "5358d74ac97f4343521e36f260d60ee8b640597b74f296202a0ddef9118ded30",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/wanted_notice.ex",
+    "source_hash": "4ecd27ba36f73639ff138913b0003ee7d3b3b2bab8bcc2a84ba2f6fea2dab622",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "prontera",
+        "name": "Wanted Notice",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Wanted Notice#edq",
+        "x": 150,
+        "y": 326
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Wola|payon_in03:167:149": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Wola",
+    "output_hash": "0f4ba254e646f6ec5073852ce8571a319047363aae214fde13ff9005d1d77c3d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/wola.ex",
+    "source_hash": "8d13b826b36f3880b7da9cce71a768e1fd984ef2c002618c8f195553fefdc551",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "payon_in03",
+        "name": "Wola",
+        "scope": "shared",
+        "sprite": 75,
+        "trigger": [
+          2,
+          2
+        ],
+        "x": 167,
+        "y": 149
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|Zhed#em_sky|que_temsky:98:93": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Zhed",
+    "output_hash": "c8d8382408267601094c1a874db40fac4273fe28332b390cc1e6d89dc864c5d5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/zhed.ex",
+    "source_hash": "69dd72e2fe0059b0e21f147d52b45b3d7d9d69c177dd0cf388cb68805b8696ae",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "que_temsky",
+        "name": "Zhed",
+        "scope": "shared",
+        "sprite": 932,
+        "unique_name": "Zhed#em_sky",
+        "x": 98,
+        "y": 93
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|boss::boss_aru_monas|sec_in02:15:15": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.BossBossAruMonas",
+    "output_hash": "168ab06700c15bb123e8d0bc400c265893ad4bcc113922d9865cb84f919d646d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/boss_boss_aru_monas.ex",
+    "source_hash": "ef9043b71b6c6e8f5ba8ffbf225718f713cff3d012671524bd90eef2b9115e17",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "sec_in02",
+        "name": "boss",
+        "scope": "shared",
+        "sprite": 809,
+        "unique_name": "boss_aru_monas",
+        "x": 15,
+        "y": 15
+      }
+    ]
+  },
+  "quests/quests_nameless.txt|script|outtoin_01#mo|nameless_i:168:257": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Outtoin01",
+    "output_hash": "be176a45dc4b808c9cec709ffb8b34d107af6c0c10feaa2f1f9f0c623b3be0ec",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_nameless/outtoin_01.ex",
+    "source_hash": "74e4540a876791241f0be13ebf7092aafdccca2e80e4b06caa47c3aa02a44f09",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "nameless_i",
+        "name": "outtoin_01",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "outtoin_01#mo",
+        "x": 168,
+        "y": 257
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",

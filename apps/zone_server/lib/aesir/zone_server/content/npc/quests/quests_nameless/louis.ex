@@ -1,0 +1,188 @@
+defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsNameless.Louis do
+  @moduledoc """
+  The Z Gang leader confronts the player in the gang hideout.
+
+  ## Behavior
+
+  - Surrenders the forbidden book and clears the hideout after the gang is defeated.
+  - Returns players outside when they arrive at the wrong quest stage.
+
+  ## Credits
+
+  - Original from rAthena, authors and Contributors
+    - L0ne_W0lf
+    - Koca
+    - Yommy
+    - brianluau
+    - Euphy
+    - Everade
+
+  ## Adaptation
+
+  - Transpiled by mix aesir.import.npcs from rAthena script
+  - LLM-assisted Elixir refactor reviewed by Cλstor
+  """
+
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [%{map: "z_agit", x: 97, y: 101, dir: 3, sprite: 931, name: "Louis", scope: :shared}]
+
+  alias Aesir.ZoneServer.Script.Rathena
+
+  @impl true
+  def on_event("OnInit", ctx) do
+    ev_oninit(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  @impl true
+  def on_talk(ctx) do
+    cond do
+      checkweight(ctx, [{907, 200}]) == 0 ->
+        too_heavy(ctx)
+
+      get_char_var(ctx, :zdan_edq, 0) == 17 ->
+        surrender(ctx)
+
+      true ->
+        return_outside(ctx)
+    end
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  defp too_heavy(ctx) do
+    ctx
+    |> mes("[Louis]")
+    |> mes("You mess with the")
+    |> mes("Z Gang, you--wait.")
+    |> mes("Let's just do this later.")
+    |> mes("You know, when you're carrying")
+    |> mes("fewer items with you. Then,")
+    |> mes("we can rumble in peace.")
+    |> close()
+  end
+
+  defp surrender(ctx) do
+    ctx =
+      ctx
+      |> mes("[Louis]")
+      |> mes("What happened?")
+      |> mes("The big guns were")
+      |> mes("supposed to come out!")
+      |> mes("Why aren't we invisible")
+      |> mes("anymore? What happened?")
+      |> next()
+      |> mes("[Catfoii]")
+      |> mes("You pushed the button")
+      |> mes("to turn off the invisibility,")
+      |> mes("meow! Did you really have")
+      |> mes("to ask?! It's your fault!")
+      |> next()
+      |> mes("[Martha]")
+      |> mes("Argh! I should never")
+      |> mes("have trusted that fool!")
+      |> next()
+
+    ctx =
+      ctx
+      |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
+      |> mes("So... Z Gang...")
+      |> mes("And cat. It's time")
+      |> mes("to turn you in.")
+      |> next()
+      |> mes("[Louis]")
+      |> mes("I... I can't accept")
+      |> mes("our defeat! The Z Gang")
+      |> mes("won't go down so easily!")
+      |> mes("Come forth, my demon")
+      |> mes("spawn minions of doom!")
+      |> next()
+
+    ctx =
+      ctx
+      |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
+      |> mes("I don't think")
+      |> mes("they're coming.")
+      |> next()
+      |> mes("[Louis]")
+      |> mes("...............................")
+      |> mes("We surrender. Argh, but")
+      |> mes("we were so close to")
+      |> mes("conquering the world!")
+      |> next()
+
+    ctx =
+      ctx
+      |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
+      |> mes("Now if you'll just")
+      |> mes("hand over the Book")
+      |> mes("of Forbidden Mystery...")
+      |> next()
+      |> mes("[Catfoii]")
+      |> mes("Louis, meow!")
+      |> mes("Don't do it!")
+      |> next()
+      |> mes("[Martha]")
+      |> mes("Let's just surrender,")
+      |> mes("Louis. It looks like")
+      |> mes("the Z Gang is finished.")
+      |> next()
+
+    ctx
+    |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
+    |> mes("Anyway, the Rogue Guild")
+    |> mes("is on its way to come get")
+    |> mes("you guys. You won't be able")
+    |> mes("to escape this time.")
+    |> next()
+    |> mes("[Louis]")
+    |> mes("Awwww, man!")
+    |> mes("Fine, take the stupid")
+    |> mes("ol' book. I couldn't")
+    |> mes("use it that good anyway.")
+    |> next()
+    |> mes("[Louis]")
+    |> mes("Catfoii, would you")
+    |> mes("lead this adventurer guy")
+    |> mes("to the exit? I can't bear")
+    |> mes("to look at the face that's")
+    |> mes("caused my tragic downfall...")
+    |> next()
+    |> mes("[Catfoii]")
+    |> mes("Fine, meow.")
+    |> mes("I understand.")
+    |> mes("But how did we lose?!")
+    |> close2()
+    |> give_item(7724, 1)
+    |> changequest(3133, 3134)
+    |> set_char_var(:zdan_edq, 18)
+    |> mapwarp("z_agit", "moc_fild17", 209, 235)
+    |> set_server_temp_var("monster_zgang", 0)
+    |> set_server_temp_var("door2", 0)
+    |> hideonnpc("Louis")
+    |> hideonnpc("Martha")
+    |> hideonnpc("Catfoii")
+    |> stopnpctimer()
+    |> close()
+  end
+
+  defp return_outside(ctx) do
+    ctx
+    |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
+    |> mes("Where am I...?")
+    |> mes("Something has gone")
+    |> mes("terribly wrong, hasn't")
+    |> mes("it? Let me go baaaack~! ")
+    |> set_char_var(:zdan_edq, 15)
+    |> set_server_temp_var("monster_zgang", 0)
+    |> set_server_temp_var("door2", 0)
+    |> close2()
+    |> warp("moc_fild17", 209, 235)
+  end
+
+  def ev_oninit(ctx) do
+    hideonnpc(ctx, "Louis")
+  end
+end
