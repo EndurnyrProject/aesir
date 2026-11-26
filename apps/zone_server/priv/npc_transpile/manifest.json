@@ -58362,6 +58362,514 @@
       }
     ]
   },
+  "quests/quests_prontera.txt|script|#gototomb|prt_church:177:113": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.Gototomb",
+    "output_hash": "a99fa7c2a07135f3232ef3bd78af959753e31fa8a3ae39cbfbc674c3635fd876",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/gototomb.ex",
+    "source_hash": "c99f879376532335a017d3169907fe5f9a0f274f4bdf2e510376be43f7e69285",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "prt_church",
+        "name": "",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "#gototomb",
+        "x": 177,
+        "y": 113
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|#prince1|prt_church:19:111": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.Prince1",
+    "output_hash": "925d26310cee11d2acc15d5bb9d37ac692334f96a26a997ae819695d89a6ed55",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/prince1.ex",
+    "source_hash": "f3394e5a2917cb03b488ce004b2435403656a46c8fd306835492d5fd2b229d9a",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "prt_church",
+        "name": "",
+        "scope": "shared",
+        "sprite": 887,
+        "unique_name": "#prince1",
+        "x": 19,
+        "y": 111
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|#prince2|prt_church:21:111": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.Prince2",
+    "output_hash": "8b3e6efb479a586c423c617f67bae19bc4f2931e9952769e7c3bbd530e332bc3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/prince2.ex",
+    "source_hash": "26630dc05b752c0ca28afceed5c001491aea011dbf23e9d81ce3765fda015462",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "prt_church",
+        "name": "",
+        "scope": "shared",
+        "sprite": 887,
+        "unique_name": "#prince2",
+        "x": 21,
+        "y": 111
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|#prince3|prt_church:24:111": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.Prince3",
+    "output_hash": "db539b0fc34cb1a17163fe8d4b11ae9c34108d00ab40b9938e1de64d6a1d59ec",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/prince3.ex",
+    "source_hash": "42f54d81b769f29fc940e9ebabe24e7756cc2195b7991c7dbdb277b8ae9616fc",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "prt_church",
+        "name": "",
+        "scope": "shared",
+        "sprite": 887,
+        "unique_name": "#prince3",
+        "x": 24,
+        "y": 111
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|#prt_poem01|mjolnir_01:298:302": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.PrtPoem01",
+    "output_hash": "e3b7e77905c583d854fbd388da04f1f9dfef89a0ddd9b7f0f32e37651ce88fa0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/prt_poem01.ex",
+    "source_hash": "b566f76a4a5ea2d9290bfff0177c0d1c751ffd22ad60d105fc302b001999da80",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mjolnir_01",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "#prt_poem01",
+        "x": 298,
+        "y": 302
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|#prt_poem02|mjolnir_01:300:297": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.PrtPoem02",
+    "output_hash": "195bf91446068106fd525e65ed2dc51ae2a92f16bdf89f336a3f1ae21fdf3d13",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/prt_poem02.ex",
+    "source_hash": "a4e66b9eb3d095809a6844a4800447a5653ef8babf958ebce56f6fa24cdb911d",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mjolnir_01",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "#prt_poem02",
+        "x": 300,
+        "y": 297
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|#prt_poem03|mjolnir_01:292:288": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.PrtPoem03",
+    "output_hash": "2b782e072b3b2503952781a3ca10ff6d79cd1273c10c0acbaa24c60d15f765b4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/prt_poem03.ex",
+    "source_hash": "f111ef205aa4d3b869931a590146e152e268cf986760cc842bd152bf19310b62",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mjolnir_01",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "#prt_poem03",
+        "x": 292,
+        "y": 288
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|#prt_poem04|mjolnir_01:302:286": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.PrtPoem04",
+    "output_hash": "a9b415a62a010d27b9621de289a033bfa10fbf55cfaba84e9e89b5223af41337",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/prt_poem04.ex",
+    "source_hash": "9bd1d8872d3e9f6e828fb84ccf3c8e0846047d6baeea14a448e185c766775174",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mjolnir_01",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "#prt_poem04",
+        "x": 302,
+        "y": 286
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|#prt_poem05|mjolnir_01:313:279": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.PrtPoem05",
+    "output_hash": "465b7cff1c13808d5230927524139840f8934108e4113c402fe05088d8986ab4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/prt_poem05.ex",
+    "source_hash": "dcf5ba2278de82808480406055ed32125bde4e035532016fee684631278ca323",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "mjolnir_01",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "#prt_poem05",
+        "x": 313,
+        "y": 279
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|#prtcurse|morocc:45:103": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.Prtcurse",
+    "output_hash": "a055fb93a094157af1bb20b93f825f85e5c1825b3f2f11d71788081df11af65e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/prtcurse.ex",
+    "source_hash": "21895c3e7247fcdf7cb5af7be90721557ee001a81136a42751b1b5b25a1c2289",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "morocc",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "#prtcurse",
+        "x": 45,
+        "y": 103
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|Assassin Guildsman#poiso|moc_fild16:201:295": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.AssassinGuildsman",
+    "output_hash": "94e666256bd24cfc31f483f3a8a784421247b8bbf27e0574b876cc3b56bbd2a3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/assassin_guildsman.ex",
+    "source_hash": "8690d03d73884889e843f7d6d8acb36860a84a95665ab6ced29bea768345bc59",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "moc_fild16",
+        "name": "Assassin Guildsman",
+        "scope": "shared",
+        "sprite": 884,
+        "unique_name": "Assassin Guildsman#poiso",
+        "x": 201,
+        "y": 295
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|Busy Boy#prt|prontera:248:212": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.BusyBoy",
+    "output_hash": "ef25fa8b2596bc0b0086e7c231b45a9ad703a997b92e731c28fb20205c1884fb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/busy_boy.ex",
+    "source_hash": "e9f070ce600b84f2a7385bfe28e0d8aea82ccc2a8f8df3e73b2d4664f646b5f1",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "prontera",
+        "name": "Busy Boy",
+        "scope": "shared",
+        "sprite": 706,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "Busy Boy#prt",
+        "x": 248,
+        "y": 212
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|Culvert Guardian|prt_fild05:270:212": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.CulvertGuardian",
+    "output_hash": "5e9dbccee5e5492e4b222ab5283985c23ecac0a196b355b716d0d487de36d980",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/culvert_guardian.ex",
+    "source_hash": "9c1c47026ba67c7f4ffa977aadc14d3dee1ad380bc3d8ce36f03a23c7e3e1cfb",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "prt_fild05",
+        "name": "Culvert Guardian",
+        "scope": "shared",
+        "sprite": 105,
+        "x": 270,
+        "y": 212
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|Dazed Boy#prt|mjolnir_01:313:269": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.DazedBoy",
+    "output_hash": "df761f6b598094749fb01faf8be7e39c68313695e24d9d8b5d9c7a8be342ba9d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/dazed_boy.ex",
+    "source_hash": "84fe3369e0d535e9c5fd0d4b633e13668bdbdd3b2620b7454293e89b21cc366e",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "mjolnir_01",
+        "name": "Dazed Boy",
+        "scope": "shared",
+        "sprite": 706,
+        "unique_name": "Dazed Boy#prt",
+        "x": 313,
+        "y": 269
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|Dog#prt|mjolnir_01:312:269": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.Dog",
+    "output_hash": "b72d91dd5cc55afb242f8b56eb353913186b9bb704718c74f5d26caa5f466e7c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/dog.ex",
+    "source_hash": "d50b98cdb634c0837b3c2f7d971cfbc52d222c1f6f4094560dd7e817132930e0",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "mjolnir_01",
+        "name": "Dog",
+        "scope": "shared",
+        "sprite": 81,
+        "unique_name": "Dog#prt",
+        "x": 312,
+        "y": 269
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|Exhausted-Looking Woman|mjolnir_01:316:268": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.ExhaustedLookingWoman",
+    "output_hash": "9ce78f1763469096bdfb038ca922563993a80f6ed537f3bf3cf233e4fd65eae5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/exhausted_looking_woman.ex",
+    "source_hash": "1b7f187124215db4881b7cb9949bb880ee6e1fe899be7674d8fd850b15b98d80",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mjolnir_01",
+        "name": "Exhausted-Looking Woman",
+        "scope": "shared",
+        "sprite": 879,
+        "x": 316,
+        "y": 268
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|Father Bamph#tomb|prt_church:16:114": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.FatherBamph16114",
+    "output_hash": "7e58ad3a6ef16846b7c15daa25a958b9c2a052b4d5c075403c6ffc44897a9088",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/father_bamph_16_114.ex",
+    "source_hash": "6c7f56af5e94447873261765c6d554013773ed822858f513a7309434dda295d6",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "prt_church",
+        "name": "Father Bamph",
+        "scope": "shared",
+        "sprite": 60,
+        "unique_name": "Father Bamph#tomb",
+        "x": 16,
+        "y": 114
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|Father Bamph|prt_church:185:106": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.FatherBamph",
+    "output_hash": "b2c4b56c142a94f5ae0de7ef4690730a8f8377a27fe8ff8789c280f3ec97d024",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/father_bamph.ex",
+    "source_hash": "7be04e4ecacb641b4837bf55852304d021b3c31119fc12bb628624fe76c3da30",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "prt_church",
+        "name": "Father Bamph",
+        "scope": "shared",
+        "sprite": 60,
+        "x": 185,
+        "y": 106
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|Father Biscuss#tomb|prt_church:23:89": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.FatherBiscuss2389",
+    "output_hash": "96f45dce707110b5aa3a30fd18e966f404d4bb140c415826fb1af0fe33e6d12f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/father_biscuss_23_89.ex",
+    "source_hash": "740bf42afb4473df2d71cc5ffd68cb0bf7f4c0cb6a32db84e9cca619466a95a6",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "prt_church",
+        "name": "Father Biscuss",
+        "scope": "shared",
+        "sprite": 60,
+        "unique_name": "Father Biscuss#tomb",
+        "x": 23,
+        "y": 89
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|Father Biscuss|prt_church:184:110": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.FatherBiscuss",
+    "output_hash": "52975807de03c6f7713eb6f397436a955237ed7119889d37cefd57260db025f4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/father_biscuss.ex",
+    "source_hash": "fee466e6e6afd8b377e25ca20a3caf72992609bf83a83488d94b3231e98228fb",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "prt_church",
+        "name": "Father Biscuss",
+        "scope": "shared",
+        "sprite": 60,
+        "x": 184,
+        "y": 110
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|Historian#prt01|yuno:311:195": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.Historian",
+    "output_hash": "7faea835b9f06e4939a6df773cb787a58fb91287dc87d12552307b2277e5f6ec",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/historian.ex",
+    "source_hash": "7ebf5d3e048abdff663122fd1834b6f88d35e3d5bd8d31322100403e8cc7bbc3",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "yuno",
+        "name": "Historian",
+        "scope": "shared",
+        "sprite": 754,
+        "unique_name": "Historian#prt01",
+        "x": 311,
+        "y": 195
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|Historian#prt02|morocc_in:45:126": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.Historian45126",
+    "output_hash": "7ed99da996ca465590915d70b3140f790e7978a1a645b539a1a57d9b19fdbf59",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/historian_45_126.ex",
+    "source_hash": "05c8e176a104329091e95067c5a2f759372bb03e0b080cb7a208533ba74165a9",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "morocc_in",
+        "name": "Historian",
+        "scope": "shared",
+        "sprite": 702,
+        "unique_name": "Historian#prt02",
+        "x": 45,
+        "y": 126
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|Historian#prt03|mjolnir_01:135:168": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.Historian135168",
+    "output_hash": "c18ff2351f93fde7006990012e8c2e6cf00da598aaba0b23487f3046d9ce2a29",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/historian_135_168.ex",
+    "source_hash": "02d0451539ec8651a36c214e568d1054212841a96cd965a71116286c0bcb1250",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "mjolnir_01",
+        "name": "Historian",
+        "scope": "shared",
+        "sprite": 754,
+        "unique_name": "Historian#prt03",
+        "x": 135,
+        "y": 168
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|Librarian#curse|prt_in:162:99": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.Librarian",
+    "output_hash": "f69331961d27afe838e5e91af7d95f059fa5a04625789aa9d598d4698b6dbc99",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/librarian.ex",
+    "source_hash": "b3fc1ad574284a73c1f65fca7b6a00e26afbcc1aaa063018afc55bbc54b9420b",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "prt_in",
+        "name": "Librarian",
+        "scope": "shared",
+        "sprite": 67,
+        "unique_name": "Librarian#curse",
+        "x": 162,
+        "y": 99
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|Marjana#poison|que_job01:10:16": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.Marjana",
+    "output_hash": "1a014385aeffa86e96653dcf4203656d371db65a4996df120517f21d685535c3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/marjana.ex",
+    "source_hash": "1b29fbb0e7d6b271d9cadec7284c3ec20b4796f042d077ce157f152a32adad23",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "que_job01",
+        "name": "Marjana",
+        "scope": "shared",
+        "sprite": 885,
+        "unique_name": "Marjana#poison",
+        "x": 10,
+        "y": 16
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|Recruiter|prt_in:88:105": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.Recruiter",
+    "output_hash": "ce9e1fe20c97b694479e32c3d940525968a311aa4acba8986c80d7a634fcb871",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/recruiter.ex",
+    "source_hash": "f51676507f1a4c7f4f9e85a22ca8bbf8196b834eab2c56e142f17b5e087547ef",
+    "spawns": [
+      {
+        "dir": 2,
+        "map": "prt_in",
+        "name": "Recruiter",
+        "scope": "shared",
+        "sprite": 105,
+        "x": 88,
+        "y": 105
+      }
+    ]
+  },
+  "quests/quests_prontera.txt|script|Teacher|prt_in:38:108": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsProntera.Teacher",
+    "output_hash": "96d7c917ce32938995424d90eeec24ad5e7c4ad37fe0aaf0c08c8a61ec874449",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_prontera/teacher.ex",
+    "source_hash": "96705e17991bbc4c0951d2091da4d9709c48b0499ac6c480f8c293325296cc9c",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "prt_in",
+        "name": "Teacher",
+        "scope": "shared",
+        "sprite": 53,
+        "x": 38,
+        "y": 108
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
