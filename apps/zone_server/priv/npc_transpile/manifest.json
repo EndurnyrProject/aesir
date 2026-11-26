@@ -60263,6 +60263,187 @@
       }
     ]
   },
+  "quests/quests_umbala.txt|script|#!@#$%|um_in:141:46": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsUmbala.Npc",
+    "output_hash": "8429acbcb58ff9ba83e80b7e5db779d97d313b88238c9d9315fa7015641bd8ef",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_umbala/npc.ex",
+    "source_hash": "2146c25d098798a07d218cf95fdc11ecfd55c47de0be381174c159587e85efc2",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "um_in",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          8,
+          8
+        ],
+        "unique_name": "#!@#$%",
+        "x": 141,
+        "y": 46
+      }
+    ]
+  },
+  "quests/quests_umbala.txt|script|#Skulldoor|umbala:221:193": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsUmbala.Skulldoor",
+    "output_hash": "4a04c8e55ad9ce52cfe15c8df7b3e80859f6a0ca5612a92e90deff8ca19c0058",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_umbala/skulldoor.ex",
+    "source_hash": "a0c33fb10d4841316d7751c625387f5081052a9c1d3ce47187c265257b73b879",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "umbala",
+        "name": "",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "#Skulldoor",
+        "x": 221,
+        "y": 193
+      }
+    ]
+  },
+  "quests/quests_umbala.txt|script|#unpc|umbala:94:181": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsUmbala.Unpc",
+    "output_hash": "2d4758b96cd1239ba9949fe0319b3accacbcee54bae1856db9601f6a15f25b19",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_umbala/unpc.ex",
+    "source_hash": "c74f392144f168297db6f0e7416c9be571c6f94b83a191dfd21436dae63818a3",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "umbala",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "#unpc",
+        "x": 94,
+        "y": 181
+      }
+    ]
+  },
+  "quests/quests_umbala.txt|script|Bertztan|um_in:94:123": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsUmbala.Bertztan",
+    "output_hash": "01f4a4b9f3c45f1a2ae0b0e8ed10b8e3c0660b8fc911a6756f915bda580b108f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_umbala/bertztan.ex",
+    "source_hash": "f2596a11bdfac0652b30307e47e147072e0c517f1738b4930fecd8723f8b5e5d",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "um_in",
+        "name": "Bertztan",
+        "scope": "shared",
+        "sprite": 783,
+        "x": 94,
+        "y": 123
+      }
+    ]
+  },
+  "quests/quests_umbala.txt|script|Chabimatan|umbala:145:217": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsUmbala.Chabimatan",
+    "output_hash": "cc02c26d61b1873c4cfbfeb0b1280dc92da84dd8a7dee0301bf0767ad17ab0b1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_umbala/chabimatan.ex",
+    "source_hash": "08421b9bc5d8fc0cad14886b5100113966bdf89dfd193051a309f04602c57c09",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "umbala",
+        "name": "Chabimatan",
+        "scope": "shared",
+        "sprite": 783,
+        "x": 145,
+        "y": 217
+      }
+    ]
+  },
+  "quests/quests_umbala.txt|script|Phrenetan|um_in:139:48": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsUmbala.Phrenetan",
+    "output_hash": "66dbea75b81f26e4ab521088b949753e1a3e6b5962bc063edeae839fa5892520",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_umbala/phrenetan.ex",
+    "source_hash": "1b9b1a4835e09e30c977f4fdb0f261b0e692f01e4081fe3228df8b0b56ac3162",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "um_in",
+        "name": "Phrenetan",
+        "scope": "shared",
+        "sprite": 783,
+        "x": 139,
+        "y": 48
+      }
+    ]
+  },
+  "quests/quests_umbala.txt|script|Umpokoriohtan|um_in:144:45": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsUmbala.Umpokoriohtan",
+    "output_hash": "6fbfad63678dca6f1462ef5eff4961db55c7d24f1aebf50df955da31176716e4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_umbala/umpokoriohtan.ex",
+    "source_hash": "8236730bfefcb9883f11713c0c57f4da36170d126e326d3d3705b1d960e947b3",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "um_in",
+        "name": "Umpokoriohtan",
+        "scope": "shared",
+        "sprite": 789,
+        "x": 144,
+        "y": 45
+      }
+    ]
+  },
+  "quests/quests_umbala.txt|script|Utan Chief|um_in:39:122": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsUmbala.UtanChief",
+    "output_hash": "fbf689db71d78c61b5d9b0d2fe32d31141447cdf5f1ac3baad4cd17bc5cb9c52",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_umbala/utan_chief.ex",
+    "source_hash": "16d24b78e17cebe7451499230325e906c9517edb6ebdf109200ad0c2cbdc3207",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "um_in",
+        "name": "Utan Chief",
+        "scope": "shared",
+        "sprite": 784,
+        "x": 39,
+        "y": 122
+      }
+    ]
+  },
+  "quests/quests_umbala.txt|script|Utan Shaman|um_in:44:71": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsUmbala.UtanShaman",
+    "output_hash": "185df9c8ce132cb8b01fd60231fe6b372be87f19c63af014bab42692c9c97356",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_umbala/utan_shaman.ex",
+    "source_hash": "aa508e4b38ff97e665be13ee600601f11d868046e6e4cece799cc27bd762ad16",
+    "spawns": [
+      {
+        "dir": 2,
+        "map": "um_in",
+        "name": "Utan Shaman",
+        "scope": "shared",
+        "sprite": 782,
+        "x": 44,
+        "y": 71
+      }
+    ]
+  },
+  "quests/quests_umbala.txt|script|Wainatan|um_in:101:73": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsUmbala.Wainatan",
+    "output_hash": "81fbceb75e772395ddfc27e4b9d529b48869c337c4ec0f9ac128b594bf827e4f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_umbala/wainatan.ex",
+    "source_hash": "8b4e0af7ccc2f34ff992bf9bf243ac108cb57a0dc5ac9057759537c9a8237bdc",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "um_in",
+        "name": "Wainatan",
+        "scope": "shared",
+        "sprite": 783,
+        "x": 101,
+        "y": 73
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
