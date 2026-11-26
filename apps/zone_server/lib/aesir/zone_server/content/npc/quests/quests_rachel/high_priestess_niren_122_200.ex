@@ -1,0 +1,56 @@
+defmodule Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.HighPriestessNiren122200 do
+  @moduledoc """
+  Controls Niren’s appearance in the sanctuary.
+
+  ## Behavior
+
+  - Hides Niren on initialization and after her appearance timer expires.
+
+  ## Credits
+
+  - Original from rAthena, authors and Contributors
+    - L0ne_W0lf
+    - Euphy
+
+  ## Adaptation
+
+  - Transpiled by mix aesir.import.npcs from rAthena script
+  - LLM-assisted Elixir refactor reviewed by Cλstor
+  """
+
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "que_san04",
+        x: 122,
+        y: 200,
+        dir: 4,
+        sprite: 915,
+        name: "High Priestess Niren",
+        scope: :shared,
+        unique_name: "High Priestess Niren#r2"
+      }
+    ]
+
+  @impl true
+  def on_event("OnInit", ctx), do: ev_oninit(ctx)
+  def on_event("OnEnable", ctx), do: ev_onenable(ctx)
+  def on_event("OnTimer120000", ctx), do: ev_ontimer120000(ctx)
+  @impl true
+  def on_talk(ctx) do
+    ctx
+  end
+
+  def ev_oninit(ctx) do
+    hideonnpc(ctx, "High Priestess Niren#r2")
+  end
+
+  def ev_onenable(ctx) do
+    initnpctimer(ctx)
+  end
+
+  def ev_ontimer120000(ctx) do
+    ctx |> stopnpctimer() |> hideonnpc("High Priestess Niren#r2")
+  end
+end

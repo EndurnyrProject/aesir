@@ -58870,6 +58870,1399 @@
       }
     ]
   },
+  "quests/quests_rachel.txt|script|#cave_vos|ice_dun02:120:3": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.CaveVos",
+    "output_hash": "d7627213883022e6943e95d11ff4022d263d238b8c34e6e3ed5e1fb20f27f7fd",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/cave_vos.ex",
+    "source_hash": "f7bb6cf22d1181a8c73db74ddc20bb90cf6170439223de7e76152bd270c3da89",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ice_dun02",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "unique_name": "#cave_vos",
+        "x": 120,
+        "y": 3
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|#ice_4f_1|ice_dun03:150:137": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Ice4f1",
+    "output_hash": "4d7fcead0ba867a7a574cfe528cd048fd4d60433423f91713f023dc26cc24d79",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/ice_4f_1.ex",
+    "source_hash": "03eec8d22263123a26345632b86a91801db19d4757f18a33be71ecd010a38b4b",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ice_dun03",
+        "name": "",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "#ice_4f_1",
+        "x": 150,
+        "y": 137
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|#ice_4f_2|ice_dun03:138:148": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Ice4f2",
+    "output_hash": "69f47795f92cd6d0578967b9ca8f4dc7a7699706e376ea61b01fcaeca414b0c9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/ice_4f_2.ex",
+    "source_hash": "28a09969e90b605fd7a633a730dbfa53094bc0ca753179b610f49f38fa10e4a7",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ice_dun03",
+        "name": "",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "#ice_4f_2",
+        "x": 138,
+        "y": 148
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|#ice_4f_3|ice_dun03:161:148": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Ice4f3",
+    "output_hash": "7401c6ce5445a16ba4d1c36b7212f6abf868290dfb88fc45e5da62c9496d1360",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/ice_4f_3.ex",
+    "source_hash": "19df64f5b3b966c15beca576ce7270e8b4b83a045770703d8f9ec64a79ea0c5e",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ice_dun03",
+        "name": "",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "#ice_4f_3",
+        "x": 161,
+        "y": 148
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|#ice_4f_4|ice_dun03:151:162": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Ice4f4",
+    "output_hash": "e4618d2c820f57d88286a63239a18940e29dd3ab9abdf967335e59711eefc790",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/ice_4f_4.ex",
+    "source_hash": "a7401bcf472d1c921c08ba05cb09ee385aee69e77e27d6ea838ad51c148646ea",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ice_dun03",
+        "name": "",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "#ice_4f_4",
+        "x": 151,
+        "y": 162
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|#ice_sec|ice_dun03:1:175": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.IceSec",
+    "output_hash": "c9f65047fd3f5dfb84bdf8da520d05de5a24a578e5023c87b4001fa31e3ac12a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/ice_sec.ex",
+    "source_hash": "d64424a58eae645bc9eb0933a7fe84c14d172bbda525cc2ddacdc95c79965109",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ice_dun03",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "unique_name": "#ice_sec",
+        "x": 1,
+        "y": 175
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|#rachel33|ra_temin:275:226": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Rachel33",
+    "output_hash": "c5f7dde50dac8c5c6211d5329330380d53ce34271ca49ceb3710ee703279f908",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/rachel33.ex",
+    "source_hash": "f00149ce998f48ca0676ed3b15257d8f59b66dd4d903c2e4c66f1e8b89bd43d6",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ra_temin",
+        "name": "",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "#rachel33",
+        "x": 275,
+        "y": 226
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|#raevent1|rachel:265:47": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Raevent1",
+    "output_hash": "7cc4e1dc4c5a7ac5a1207e241d0c6fdc06111d2e9b511b2ed7142ac569549a71",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/raevent1.ex",
+    "source_hash": "d46cf0db9f9d0e38f81042f842315e4010b881e23726119ad6da09184f3514d0",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "rachel",
+        "name": "",
+        "scope": "shared",
+        "sprite": 111,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "#raevent1",
+        "x": 265,
+        "y": 47
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|#ratrace1|lhz_in02:213:207": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Ratrace1",
+    "output_hash": "c7aac941696c54658a27427399ed46b3fe93863df7cdb636f1f5b643d148808f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/ratrace1.ex",
+    "source_hash": "c4d2b3dd0b0c1983201785db54f88e72cd0e22fb676625805a448276bad49f0a",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "lhz_in02",
+        "name": "",
+        "scope": "shared",
+        "sprite": 111,
+        "trigger": [
+          4,
+          4
+        ],
+        "unique_name": "#ratrace1",
+        "x": 213,
+        "y": 207
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Blazing Fire#ice1|ice_dun03:126:126": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.BlazingFire",
+    "output_hash": "759b32cc21de901de05c8ad94c22feb1c886d8365aba47bc249c087c974ea600",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/blazing_fire.ex",
+    "source_hash": "0a1285bb2077b7edb18b4c9e892809b02f74379b470e432f781debfb823f4c15",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ice_dun03",
+        "name": "Blazing Fire",
+        "scope": "shared",
+        "sprite": 802,
+        "unique_name": "Blazing Fire#ice1",
+        "x": 126,
+        "y": 126
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Blazing Fire#ice2|ice_dun03:172:126": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.BlazingFire172126",
+    "output_hash": "c1acd6c052b9fad800c05ce8c3b435d2b06fbf66b10a9a97d9f41b23e88c9d66",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/blazing_fire_172_126.ex",
+    "source_hash": "9cb1d8905db6964e3db8bfa28fff8fb0010e88b631be93921f36d5e886007f68",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ice_dun03",
+        "name": "Blazing Fire",
+        "scope": "shared",
+        "sprite": 802,
+        "unique_name": "Blazing Fire#ice2",
+        "x": 172,
+        "y": 126
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Blazing Fire#ice3|ice_dun03:172:172": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.BlazingFire172172",
+    "output_hash": "ea4037793f4394727cbe1d8df76758eadeb7a669bcd78967faf24abad4127f56",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/blazing_fire_172_172.ex",
+    "source_hash": "dba4f50a168d20ecd3d030f35b46a665eb2c7b78ac7ead49ca092aedc50ca7aa",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ice_dun03",
+        "name": "Blazing Fire",
+        "scope": "shared",
+        "sprite": 802,
+        "unique_name": "Blazing Fire#ice3",
+        "x": 172,
+        "y": 172
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Blazing Fire#ice4|ice_dun03:127:172": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.BlazingFire127172",
+    "output_hash": "8b86490d8ef7775dd59dc804242b7d780e314aab51adc4295af63ee0c9417952",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/blazing_fire_127_172.ex",
+    "source_hash": "223560c425e9a3812efdc2dded6c1cc93ed91c7c6af7f8c27b568ab08b308f05",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ice_dun03",
+        "name": "Blazing Fire",
+        "scope": "shared",
+        "sprite": 802,
+        "unique_name": "Blazing Fire#ice4",
+        "x": 127,
+        "y": 172
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Bloody Spot|que_rachel:28:315": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.BloodySpot",
+    "output_hash": "dfaa075bb6e1ecdd5b808cf22c5545598be6543a26223582f314810d30fc2110",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/bloody_spot.ex",
+    "source_hash": "2cdf4f188e704eef37d08614aecd717383f4d7ad9eea416b914b0e45ad586747",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_rachel",
+        "name": "Bloody Spot",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          5,
+          5
+        ],
+        "x": 28,
+        "y": 315
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Book#ra_in|ra_in01:255:25": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Book",
+    "output_hash": "36a0bd2cbb732c724a23a769c0fcd2001dd50ae4249c9a91d8794bf5d472d698",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/book.ex",
+    "source_hash": "a4ab2ea40880b475226fd5d37d302ab45bb40bbad2bad0762d2b03a5113e738a",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ra_in01",
+        "name": "Book",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Book#ra_in",
+        "x": 255,
+        "y": 25
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Female Follower#1rachel::rafemale|ra_temsky:106:97": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.FemaleFollower",
+    "output_hash": "d8b0df21c1d948a54deb51bb43e7d7b0f72efb6c0a952ed16db4d4fc743419fd",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/female_follower.ex",
+    "source_hash": "fe0ed88c57508ef6fcc72784d2942bcd686ee21e6bccd7705ced00f62a13b192",
+    "spawns": [
+      {
+        "dir": 4,
+        "hidden_name": "1rachel",
+        "map": "ra_temsky",
+        "name": "Female Follower",
+        "scope": "shared",
+        "sprite": 916,
+        "unique_name": "rafemale",
+        "x": 106,
+        "y": 97
+      },
+      {
+        "dir": 4,
+        "map": "ra_temsky",
+        "name": "Female Follower",
+        "scope": "shared",
+        "sprite": 916,
+        "unique_name": "Female Follower#2rachel",
+        "x": 108,
+        "y": 95
+      },
+      {
+        "dir": 4,
+        "map": "ra_temsky",
+        "name": "Female Follower",
+        "scope": "shared",
+        "sprite": 916,
+        "unique_name": "Female Follower#3rachel",
+        "x": 101,
+        "y": 59
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Grandma#rachel|rachel:266:35": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Grandma",
+    "output_hash": "7f19f6fb698634294fc01bf34ed95590897b92fc387fa8eeae9f34e692d92bab",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/grandma.ex",
+    "source_hash": "42ed86931b230608be9f6668c2b921fc5a4bed14b118780037094499857d1c96",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "rachel",
+        "name": "Grandma",
+        "scope": "shared",
+        "sprite": 918,
+        "unique_name": "Grandma#rachel",
+        "x": 266,
+        "y": 35
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Hamion#aru|rachel:265:98": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Hamion",
+    "output_hash": "b0d2d344c8d9bdf3729461ce10ed7bf827e04ca44a68314cf52b8285bc175fa4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/hamion.ex",
+    "source_hash": "8bc34e9697bdf46a79490e4c081b518416883cb967297e5b089c92bf476e6b3f",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "rachel",
+        "name": "Hamion",
+        "scope": "shared",
+        "sprite": 930,
+        "unique_name": "Hamion#aru",
+        "x": 265,
+        "y": 98
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|High Priest Zhed#rachel|ra_temin:277:159": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.HighPriestZhed",
+    "output_hash": "84ac569fe36d703f3d14e431d770ba2c06a8ded48949709519ab4021c28e4b42",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/high_priest_zhed.ex",
+    "source_hash": "665785e038d5fb3ee9959db6d624fe476a7c4f1d69d4c1b1aa729e496da484fe",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ra_temin",
+        "name": "High Priest Zhed",
+        "scope": "shared",
+        "sprite": 932,
+        "unique_name": "High Priest Zhed#rachel",
+        "x": 277,
+        "y": 159
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|High Priestess Niren#r2|que_san04:122:200": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.HighPriestessNiren122200",
+    "output_hash": "b0fefbf02e3993153a44e8e6799a8894450eba175b5e98271b336158f14bd467",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/high_priestess_niren_122_200.ex",
+    "source_hash": "2cb9804d4054e801d7471b5b4d1e69af56bd50df492268f9bbf64a4e95eaf675",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "que_san04",
+        "name": "High Priestess Niren",
+        "scope": "shared",
+        "sprite": 915,
+        "unique_name": "High Priestess Niren#r2",
+        "x": 122,
+        "y": 200
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|High Priestess Niren#ra|ra_temin:294:149": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.HighPriestessNiren",
+    "output_hash": "53bb9fc19bb4df5f491e5c476d637ca4bdd63b61619b98a366cb271609985159",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/high_priestess_niren.ex",
+    "source_hash": "d46013601b75fbbe15a124f34b037af4c3696b4db44d5396384244d3c8ae3074",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ra_temin",
+        "name": "High Priestess Niren",
+        "scope": "shared",
+        "sprite": 915,
+        "unique_name": "High Priestess Niren#ra",
+        "x": 294,
+        "y": 149
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Idle Merchant#ra_in01_2|rachel:120:47": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.IdleMerchant12047",
+    "output_hash": "9568c1545a8c3e3bd43e1acdf229197fec57f869cc91937a4d5c99989eb9e002",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/idle_merchant_120_47.ex",
+    "source_hash": "846cd6c8c447240e201d0d0c1275f8f1f38802401cba2906d811454e8c8a20ca",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "rachel",
+        "name": "Idle Merchant",
+        "scope": "shared",
+        "sprite": 85,
+        "unique_name": "Idle Merchant#ra_in01_2",
+        "x": 120,
+        "y": 47
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Idle Merchant#ra_in01|rachel:138:73": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.IdleMerchant",
+    "output_hash": "8d4729cdc8aad22499a296201768cf5b70c63209b59884c15a0d64332c68a5bf",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/idle_merchant.ex",
+    "source_hash": "cd41b7f9ad48b1d013f2690af3b615aa717bf1ccd1832133da62c2ed59cb974e",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "rachel",
+        "name": "Idle Merchant",
+        "scope": "shared",
+        "sprite": 85,
+        "unique_name": "Idle Merchant#ra_in01",
+        "x": 138,
+        "y": 73
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Jenny#ra_in01|rachel:48:237": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Jenny",
+    "output_hash": "3c473956b7989430113411cdd23b378b86fc7db2e986ad6aa7d353ac834af4ac",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/jenny.ex",
+    "source_hash": "fdb35e1ac1f36310f120d49edd808653d4ac22566968707444c0e8038f1b0c7e",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "rachel",
+        "name": "Jenny",
+        "scope": "shared",
+        "sprite": 894,
+        "unique_name": "Jenny#ra_in01",
+        "x": 48,
+        "y": 237
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Katinshuell|ra_in01:235:194": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Katinshuell",
+    "output_hash": "38b11f32097897444c2008a8ffc6ce1d72edbd20919d4629d88370412e5c6b28",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/katinshuell.ex",
+    "source_hash": "1adad5c1d4af9fec55e7f86833dd5ede357b656a09f7c08a2f6187e3f0da7fa3",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "ra_in01",
+        "name": "Katinshuell",
+        "scope": "shared",
+        "sprite": 931,
+        "x": 235,
+        "y": 194
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Kid#1rachel|rachel:196:77": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Kid19677",
+    "output_hash": "85bd8db27f933889d65c1bae1deb58d589a17b27275a719d3a9bbdd47392e17b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/kid_196_77.ex",
+    "source_hash": "9d06f9205d44c5c08d1f009cc5ec2577611378092db9e5b79298194ed2ec0fad",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "rachel",
+        "name": "Kid",
+        "scope": "shared",
+        "sprite": 921,
+        "unique_name": "Kid#1rachel",
+        "x": 196,
+        "y": 77
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Kid#2rachel|rachel:151:155": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Kid151155",
+    "output_hash": "a205fa581e5ce20d4ea36fa2cb22b0d21a7ea60e9c09543dbc3c9887837d1eae",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/kid_151_155.ex",
+    "source_hash": "fca478311bad960ae0096b55d962373c513e10d297eb86214ac1897552648f16",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "rachel",
+        "name": "Kid",
+        "scope": "shared",
+        "sprite": 921,
+        "unique_name": "Kid#2rachel",
+        "x": 151,
+        "y": 155
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Kid#Candy Addict|rachel:243:37": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Kid24337",
+    "output_hash": "e5fc9cff524cfdcf2e85c6901f1ce2047b68564805a5d8140b75e663fc0b3311",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/kid_243_37.ex",
+    "source_hash": "ac20b36298ce99873703f5f6b44a56cc18561f0d0cb00d336bc549188aedaac2",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "rachel",
+        "name": "Kid",
+        "scope": "shared",
+        "sprite": 921,
+        "unique_name": "Kid#Candy Addict",
+        "x": 243,
+        "y": 37
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Kid#ra_in01|rachel:263:32": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Kid",
+    "output_hash": "8964b0fb63a1384e1d080fed3f6aa11bc8493489aacec19f7909ab5d8d504ac7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/kid.ex",
+    "source_hash": "adfcd1bafa3d228d975bf9c8cc234cb4844b0215989b90a66fb437148dd90f97",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "rachel",
+        "name": "Kid",
+        "scope": "shared",
+        "sprite": 931,
+        "unique_name": "Kid#ra_in01",
+        "x": 263,
+        "y": 32
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Lachellen|rachel:73:244": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Lachellen",
+    "output_hash": "639e3ba65d4545e29053d8d7ac594df5dc8440bba099ea1ab3d9696d0b0a5ec5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/lachellen.ex",
+    "source_hash": "d4f532450494c2d2d317cc6ea60d2ca8171d10a1ac37772319e23d5540c1284f",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "rachel",
+        "name": "Lachellen",
+        "scope": "shared",
+        "sprite": 919,
+        "x": 73,
+        "y": 244
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Logan#ra_in01|rachel:114:232": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Logan",
+    "output_hash": "69042b198e1ff253f43005d7b1778ee804bb538e01bff605c0d84ba0ccda28d4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/logan.ex",
+    "source_hash": "5086c6b451aac0cc5b6a0ed201550e15bb058f158a1952e7610bd866961a42e1",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "rachel",
+        "name": "Logan",
+        "scope": "shared",
+        "sprite": 869,
+        "unique_name": "Logan#ra_in01",
+        "x": 114,
+        "y": 232
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Male Follower#1rachel::ramale|ra_temsky:93:97": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.MaleFollower",
+    "output_hash": "a13d3fe7ebb366c1bf259c1038b1c325834b6168bc2d48c05b315c7a53a83126",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/male_follower.ex",
+    "source_hash": "405e573ba2d748165b6b3f788b2d826c16a304af78382e28e7ab41bdc755c3cf",
+    "spawns": [
+      {
+        "dir": 6,
+        "hidden_name": "1rachel",
+        "map": "ra_temsky",
+        "name": "Male Follower",
+        "scope": "shared",
+        "sprite": 926,
+        "unique_name": "ramale",
+        "x": 93,
+        "y": 97
+      },
+      {
+        "dir": 6,
+        "map": "ra_temsky",
+        "name": "Male Follower",
+        "scope": "shared",
+        "sprite": 926,
+        "unique_name": "Male Follower#2rachel",
+        "x": 90,
+        "y": 95
+      },
+      {
+        "dir": 6,
+        "map": "ra_temsky",
+        "name": "Male Follower",
+        "scope": "shared",
+        "sprite": 926,
+        "unique_name": "Male Follower#3rachel",
+        "x": 98,
+        "y": 59
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Man Stuck in Ice#cave|ice_dun02:120:105": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.ManStuckInIce",
+    "output_hash": "211a1b004f98c4b8b50d6ee733c9d16296d4f374d21bcccb9d3c7d36a93d254f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/man_stuck_in_ice.ex",
+    "source_hash": "f12bc3ef91dd73493cd270501ef6e94562ade35fc1e46b5550f8c7d7c9b76dbd",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ice_dun02",
+        "name": "Man Stuck in Ice",
+        "scope": "shared",
+        "sprite": 924,
+        "trigger": [
+          5,
+          5
+        ],
+        "unique_name": "Man Stuck in Ice#cave",
+        "x": 120,
+        "y": 105
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Manson#ra_in01|ra_in01:372:200": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Manson",
+    "output_hash": "44e77d1045a31780b9aee55c54bd423c423d015cd9db90af7cc291ea15b75ebd",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/manson.ex",
+    "source_hash": "227bac8215a4c07a6c6689539468650c113fa2227793c3039e6424fc648e869b",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ra_in01",
+        "name": "Manson",
+        "scope": "shared",
+        "sprite": 929,
+        "unique_name": "Manson#ra_in01",
+        "x": 372,
+        "y": 200
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Mohadian|rachel:113:97": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Mohadian",
+    "output_hash": "87e827bddf58ecfb159a2c3ec45ede836dc4cb7d20bed2922639ab28e228520f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/mohadian.ex",
+    "source_hash": "68ded8c522616dec36b3f4975e2247a63575f61e3b0465279fa52aee94847af9",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "rachel",
+        "name": "Mohadian",
+        "scope": "shared",
+        "sprite": 929,
+        "trigger": [
+          10,
+          10
+        ],
+        "x": 113,
+        "y": 97
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Mr. Shendar|ra_in01:250:19": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.MrShendar",
+    "output_hash": "d061f38674687bfa4c150e6f93a2c0901e28491e2b18d2d72bde8f2771a40d21",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/mr_shendar.ex",
+    "source_hash": "103daf86a45ece776a3516cd2ab37be0e01020c516e0e553e76ed07da75d8cfe",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ra_in01",
+        "name": "Mr. Shendar",
+        "scope": "shared",
+        "sprite": 929,
+        "x": 250,
+        "y": 19
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Nemma#ra_temple|ra_temple:116:174": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Nemma",
+    "output_hash": "23f2e8d8a65f969ed851a27dbd50e540664f7e467d49c90d8acc971da3783eb7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/nemma.ex",
+    "source_hash": "62d077fd12ccf3d307ae585e37c6fb32436be949a615056e5eea1a0a680af20f",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ra_temple",
+        "name": "Nemma",
+        "scope": "shared",
+        "sprite": 920,
+        "unique_name": "Nemma#ra_temple",
+        "x": 116,
+        "y": 174
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Panno#rachel|ra_temin:170:46": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Panno",
+    "output_hash": "c807afbe02cbe0b7d7647644e114640c8c8369829a6e413508c5fa703ef311e3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/panno.ex",
+    "source_hash": "5778e907ad0cf82765f663aa58d0ecbc51d3ff19c03b9d82baa9602591ad8435",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ra_temin",
+        "name": "Panno",
+        "scope": "shared",
+        "sprite": 920,
+        "unique_name": "Panno#rachel",
+        "x": 170,
+        "y": 46
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Pope#rachel|ra_temsky:99:99": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Pope",
+    "output_hash": "6f5146405f5021fc6cec25c6f3faa05f9ff003a7d8035f5da653b14e6a8c9cf5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/pope.ex",
+    "source_hash": "d406d04c46918be91f5739754c586d6fb9d4e12dc672fa3e918daa02c2fdeb75",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "ra_temsky",
+        "name": "Pope",
+        "scope": "shared",
+        "sprite": 936,
+        "unique_name": "Pope#rachel",
+        "x": 99,
+        "y": 99
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Pope's Office Guard#rac::raofficeguard|ra_temin:134:128": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.PopeSOfficeGuard",
+    "output_hash": "1f0d65d3e60bafe6c7f860f97f9edf32b691a0d7a0d46ebd4bf0dab4254f07f3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/pope_s_office_guard.ex",
+    "source_hash": "45b653d96524d62dcf35b61e6cae39e194417cfd9cd2382614782ef4195d9947",
+    "spawns": [
+      {
+        "dir": 3,
+        "hidden_name": "rac",
+        "map": "ra_temin",
+        "name": "Pope's Office Guard",
+        "scope": "shared",
+        "sprite": 926,
+        "unique_name": "raofficeguard",
+        "x": 134,
+        "y": 128
+      },
+      {
+        "dir": 3,
+        "map": "ra_temin",
+        "name": "Pope's Office Guard",
+        "scope": "shared",
+        "sprite": 926,
+        "unique_name": "Pope's Office Guard#2ra",
+        "x": 134,
+        "y": 134
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Priest#1rachel|ra_temsky:95:99": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Priest",
+    "output_hash": "22c762582c233906695f0ef055099e7131fe57cfe912aecafdfdd3542c48263f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/priest.ex",
+    "source_hash": "7f5dcdb07afb1d076cba089dded535df91919a81b0282d23789d6ba4ebc41aa9",
+    "spawns": [
+      {
+        "dir": 6,
+        "map": "ra_temsky",
+        "name": "Priest",
+        "scope": "shared",
+        "sprite": 935,
+        "unique_name": "Priest#1rachel",
+        "x": 95,
+        "y": 99
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Priestess#1rachel|ra_temsky:104:99": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Priestess",
+    "output_hash": "81fb5c3a30fcad1c81f19a85a69d1465ae2fcc586b779fa53107c29566901450",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/priestess.ex",
+    "source_hash": "87706b4fe2e86cbc991ca951bc423113991237592ad13ca9d6bc871fbe1c7fff",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "ra_temsky",
+        "name": "Priestess",
+        "scope": "shared",
+        "sprite": 920,
+        "unique_name": "Priestess#1rachel",
+        "x": 104,
+        "y": 99
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Quest Temple Exit#ra_tem|que_rachel:169:18": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.QuestTempleExit",
+    "output_hash": "b7eec4fccef81aaf4136f00ec94dfee5f86eb9e8bae0977630b4c85492367683",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/quest_temple_exit.ex",
+    "source_hash": "491f0625d85cac30fa6a7a267a29d8c80aeda63558d269f476646e63fb861e6e",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_rachel",
+        "name": "Quest Temple Exit",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "Quest Temple Exit#ra_tem",
+        "x": 169,
+        "y": 18
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Seeking Follower#rachel|rachel:142:167": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.SeekingFollower",
+    "output_hash": "f2f4f6ba80e296f587955f771d6537f4332b49cbd24df8474d0f111bddd55bf4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/seeking_follower.ex",
+    "source_hash": "31d4a63ec70fab3e57039859190d78c16d36a69ca222e49b51afdf44b34163f4",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "rachel",
+        "name": "Seeking Follower",
+        "scope": "shared",
+        "sprite": 916,
+        "trigger": [
+          6,
+          6
+        ],
+        "unique_name": "Seeking Follower#rachel",
+        "x": 142,
+        "y": 167
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Sincere Follower Urstia|rachel:157:183": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.SincereFollowerUrstia",
+    "output_hash": "cc487c32d30bebf081a290a49a7c7b492acf9a1c2d88b417b0c3fbf1e61107c8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/sincere_follower_urstia.ex",
+    "source_hash": "040c5796cf55e2ce1f20724c73878106d5334cbe60b0f31d9b3db0a498ed658c",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "rachel",
+        "name": "Sincere Follower Urstia",
+        "scope": "shared",
+        "sprite": 916,
+        "x": 157,
+        "y": 183
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Suspicious Man#ra_in01|ra_fild01:245:325": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.SuspiciousMan",
+    "output_hash": "5309d50b496bd1509cd06616da0709c01b6a63a04d1711d8a2969488688c2556",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/suspicious_man.ex",
+    "source_hash": "dd9a5796a0c05c25d34e1cd6be6b22bed6d86b1728186000ec74f58775e9eb5b",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ra_fild01",
+        "name": "Suspicious Man",
+        "scope": "shared",
+        "sprite": 934,
+        "unique_name": "Suspicious Man#ra_in01",
+        "x": 245,
+        "y": 325
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Temple Entrance#ra_tem|ra_temple:119:180": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.TempleEntrance",
+    "output_hash": "0462a183ce94e119b6adb98176602ce2d7dd52ab9340e12d215b597009f33ab5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/temple_entrance.ex",
+    "source_hash": "93822eb56661cbfc279a78aeba32942bb3211596a448c7640093001c779ee533",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ra_temple",
+        "name": "Temple Entrance",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "Temple Entrance#ra_tem",
+        "x": 119,
+        "y": 180
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Vincent#ra_in01|ra_in01:384:246": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Vincent",
+    "output_hash": "8187a4a17c063b1154a3b36d8193f2a7a59f5a163b79f8f545e206dfe4493274",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/vincent.ex",
+    "source_hash": "0097951740ba1e1092234b0d5d191322a41f4056c3a4a85f9e86bfffc7242dc3",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ra_in01",
+        "name": "Vincent",
+        "scope": "shared",
+        "sprite": 47,
+        "unique_name": "Vincent#ra_in01",
+        "x": 384,
+        "y": 246
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|Window#ra_temple|que_rachel:63:82": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Window",
+    "output_hash": "0530cafb9c77d81b9c441ff689955ae8702b2e65a305c3121f93088e58245641",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/window.ex",
+    "source_hash": "fca4dcfec5ed8f3c15b90c2db8b2ebe6b6078454aa4dd50666a453c8632e09c7",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_rachel",
+        "name": "Window",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Window#ra_temple",
+        "x": 63,
+        "y": 82
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|gyoin1#rachel|ra_temin:134:131": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Gyoin1",
+    "output_hash": "ce8c05dfc80beab9e544151c8cec60d06e006e572288a5dfb1e9e29650dced5d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/gyoin1.ex",
+    "source_hash": "059646cdd41e59801435d85611c3e486bd4ec9912ed892752c0a07dc591097bf",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ra_temin",
+        "name": "gyoin1",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "gyoin1#rachel",
+        "x": 134,
+        "y": 131
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|hidden1#rachel|ra_temin:288:151": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Hidden1",
+    "output_hash": "907a5cbeb2b68704cb961fd6b09a519745fe1efdc420a948340ac246956463a3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/hidden1.ex",
+    "source_hash": "4b06d795dfb4ad2a9ddfe8b761ff76e10bec56d20e5b8298a5697da6e1fcc574",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ra_temin",
+        "name": "hidden1",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          1,
+          6
+        ],
+        "unique_name": "hidden1#rachel",
+        "x": 288,
+        "y": 151
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|ice_boss#broad|ice_dun03:1:173": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.IceBoss",
+    "output_hash": "4ec6721ab02796c2ccbdc0622f73d5a14e8e0208fc8cb59be81a18db8628bd2f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/ice_boss.ex",
+    "source_hash": "dc39210309b7e9cf0bd6f328a91b6042a5630673ff34cc01b5e93a761f5401f6",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "ice_dun03",
+        "name": "ice_boss",
+        "scope": "shared",
+        "sprite": -1,
+        "unique_name": "ice_boss#broad",
+        "x": 1,
+        "y": 173
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|ice_boss#on|ice_dun03:1:174": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.IceBoss1174",
+    "output_hash": "6d3fd784d72dba434de8e3efc97e8c545c84ceb7b47419e9939584806b929928",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/ice_boss_1_174.ex",
+    "source_hash": "30619048ce8b425ec79c45e45c727710266626ac365691f4895af5dc5851706e",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ice_dun03",
+        "name": "ice_boss",
+        "scope": "shared",
+        "sprite": -1,
+        "unique_name": "ice_boss#on",
+        "x": 1,
+        "y": 174
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|imir1#rachel|que_san04:119:115": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Imir1",
+    "output_hash": "fd3d358f0fa9ab714e3166e8150ad4c2b9fee606ee09d3eeed3ecdb679629af3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/imir1.ex",
+    "source_hash": "0bcad07d916ae9945bb4a7c1f7d82b903717979094e24d873e8f434fae1368b5",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_san04",
+        "name": "imir1",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "imir1#rachel",
+        "x": 119,
+        "y": 115
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|imir2#rachel|que_san04:119:133": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Imir2",
+    "output_hash": "b9baaa84c17cf82d808a739c6655001f3c706a9f0a6d3b637be9001b2645ee8c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/imir2.ex",
+    "source_hash": "e023784e413f58446cd77a3be3de29592b3dbb63580df0e55d13c0a01ae2c2df",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_san04",
+        "name": "imir2",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          20,
+          5
+        ],
+        "unique_name": "imir2#rachel",
+        "x": 119,
+        "y": 133
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|imir3#rachel2|rachel:163:152": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Imir3163152",
+    "output_hash": "19440971f3e8777d9b6c7a0350220263c6491a098fa2f481d167c50408981867",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/imir3_163_152.ex",
+    "source_hash": "cb0c5f7e75fcd9094d20cdc03e1a1e148cbe959a200419366421c87a2ef6dc17",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "rachel",
+        "name": "imir3",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "imir3#rachel2",
+        "x": 163,
+        "y": 152
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|imir3#rachel|que_san04:119:203": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Imir3",
+    "output_hash": "fd12a024fbb46d53955035f192c9ceefc8851ba1130718d4d7eef6f2d4ec5c62",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/imir3.ex",
+    "source_hash": "6448ae8ccecc4224c701b801955ada4803cf46fddaa626862d5416c1cd161ead",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_san04",
+        "name": "imir3",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          7,
+          7
+        ],
+        "unique_name": "imir3#rachel",
+        "x": 119,
+        "y": 203
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|key1#rachel|ra_temin:272:143": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Key1",
+    "output_hash": "c32f960e0fc3408a5d744107cf34c851809dd4bdb75a6e81240099902456c1c0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/key1.ex",
+    "source_hash": "fe18a78e5ed5daf6db3f536b699bda1187637b05182e8e2ff390cbb37de6e5e0",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ra_temin",
+        "name": "key1",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "key1#rachel",
+        "x": 272,
+        "y": 143
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|nemma01::nemma01|que_rachel:170:37": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Nemma01Nemma01",
+    "output_hash": "79b476277dd04a5e787adddb2eab6845ba1a96da5003d40f20e9886fc7432c20",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/nemma01_nemma01.ex",
+    "source_hash": "93707dccc8f642d6f8f64cd7b31087e66d0e10d795219f1c57be4e7a374f49f4",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_rachel",
+        "name": "nemma01",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          5,
+          5
+        ],
+        "x": 170,
+        "y": 37
+      },
+      {
+        "dir": 0,
+        "map": "que_rachel",
+        "name": "nemma02",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          5,
+          5
+        ],
+        "x": 175,
+        "y": 37
+      },
+      {
+        "dir": 0,
+        "map": "que_rachel",
+        "name": "nemma03",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          5,
+          5
+        ],
+        "x": 180,
+        "y": 37
+      },
+      {
+        "dir": 0,
+        "map": "que_rachel",
+        "name": "nemma04",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          5,
+          5
+        ],
+        "x": 165,
+        "y": 37
+      },
+      {
+        "dir": 0,
+        "map": "que_rachel",
+        "name": "nemma05",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          5,
+          5
+        ],
+        "x": 160,
+        "y": 37
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|out1#rachel|ra_temin:293:144": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Out1",
+    "output_hash": "334f0d09976030730243a61ca39ef05dc8185229f6050431172dfb6b00bc87bc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/out1.ex",
+    "source_hash": "9562d725cfe3567c685f8bd5e6690a18b7cb762c72cf829dcc872d9f70c0fd15",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ra_temin",
+        "name": "out1",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "out1#rachel",
+        "x": 293,
+        "y": 144
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|saint1#rachel|ra_temin:28:319": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Saint1",
+    "output_hash": "980067378f487314b44f759b6997075e6208975ffd3b78517718f094d936fa14",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/saint1.ex",
+    "source_hash": "83b81cbaf6c679a0dddcda29a43c991ab5a06734c24bc9fd04d43ef23c15cf22",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ra_temin",
+        "name": "saint1",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          4,
+          2
+        ],
+        "unique_name": "saint1#rachel",
+        "x": 28,
+        "y": 319
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|zawa00|ra_temple:67:209": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Zawa00",
+    "output_hash": "358cbd887803a1ca77bb264a0fb9462a26611bcb699bc716b2f0160639d7c266",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/zawa00.ex",
+    "source_hash": "aba5e56e8376d34ec1ce7ee020c923ea24517711820466adc00b5b59249e31a4",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ra_temple",
+        "name": "zawa00",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          3,
+          3
+        ],
+        "x": 67,
+        "y": 209
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|zawa01|que_rachel:60:80": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Zawa01",
+    "output_hash": "c917acf48493214d3b3f92fdfa442ab0c5d2235d0d12b51b736379566299d270",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/zawa01.ex",
+    "source_hash": "4595c105f4f5b4c55b138e4e6d6bf3efcb5d4ec1fdbb0c848bdf6b16d64869a5",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_rachel",
+        "name": "zawa01",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          5,
+          5
+        ],
+        "x": 60,
+        "y": 80
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|zawa02|que_rachel:59:112": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Zawa02",
+    "output_hash": "c52f0f2c4506e936e5ff5d35558ef477e367bda71035b96bc8438780e1f5b20b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/zawa02.ex",
+    "source_hash": "c6c5788d28864af219daee7b38d504fd22f6405cf922c234abc55adcde27ec72",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_rachel",
+        "name": "zawa02",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          10,
+          10
+        ],
+        "x": 59,
+        "y": 112
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|zawa03|que_rachel:94:139": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Zawa03",
+    "output_hash": "8985d2223d48415bdd96ea00e09bcd76b084fd5a6ff38d9ddb132c0798241ef2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/zawa03.ex",
+    "source_hash": "9630d6ad8a96253d9308f4d442b19aed0c6806e214bb582f10406dfdbac90eaf",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_rachel",
+        "name": "zawa03",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          10,
+          10
+        ],
+        "x": 94,
+        "y": 139
+      }
+    ]
+  },
+  "quests/quests_rachel.txt|script|zawa04|que_rachel:132:70": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsRachel.Zawa04",
+    "output_hash": "d31f9c725e5fa69fda3b338bda6b5db17135e53784a8e77b06eca12e5eb63ac9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_rachel/zawa04.ex",
+    "source_hash": "c67942534f3dbf2e655cc1201b3ac577bd632fabc8ddc2ca48d3a6b1a69bc3b2",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_rachel",
+        "name": "zawa04",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          10,
+          10
+        ],
+        "x": 132,
+        "y": 70
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
