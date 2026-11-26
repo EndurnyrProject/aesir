@@ -64939,6 +64939,1838 @@
       }
     ]
   },
+  "quests/the_sign_quest.txt|floating|Sign::TheSign|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.TheSignQuest.SignThesign",
+    "output_hash": "c5c1c166f1e05bab975df74538c188bbc84bffed923de300126f7d1907e0d9af",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/the_sign_quest/sign_thesign.ex",
+    "source_hash": "370f41e4081c3b86dd6bf5cf29d4e45344b7f6b9666b34b1af342fbc4058f246",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "prontera",
+        "name": "Sign",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Sign#prontera",
+        "x": 147,
+        "y": 305
+      },
+      {
+        "dir": 0,
+        "map": "geffen",
+        "name": "Sign",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Sign#geffen",
+        "x": 168,
+        "y": 175
+      },
+      {
+        "dir": 0,
+        "map": "morocc",
+        "name": "Sign",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Sign#morocc",
+        "x": 168,
+        "y": 265
+      },
+      {
+        "dir": 0,
+        "map": "payon",
+        "name": "Sign",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Sign#payon",
+        "x": 160,
+        "y": 183
+      },
+      {
+        "dir": 0,
+        "map": "aldebaran",
+        "name": "Sign",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Sign#aldebaran",
+        "x": 54,
+        "y": 223
+      },
+      {
+        "dir": 0,
+        "map": "alberta",
+        "name": "Sign",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Sign#alberta",
+        "x": 35,
+        "y": 241
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|floating|Soldier#s11_|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.TheSignQuest.Soldier",
+    "output_hash": "0709e9d793ea92eb76ec90997613a3e7da95e0223fb7e4a8c66cca4ad363ee15",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/the_sign_quest/soldier.ex",
+    "source_hash": "9e32bb23f8be60b59da138b3e143380e706b6a814099c9c06f85429aee98864b",
+    "spawns": []
+  },
+  "quests/the_sign_quest.txt|function|F_SignSeal|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Functions.FSignseal",
+    "output_hash": "0570a498bcd6dd48dbe3858aa609f3b4695b87a07d137a7df298165adbdbfd31",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_signseal.ex",
+    "source_hash": "35f03ce78bcdebd278291eaeac7e9d3f62c6e7414da93e569aed8a5546ec1c8d",
+    "spawns": []
+  },
+  "quests/the_sign_quest.txt|function|F_UpdateSignVars|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Functions.FUpdatesignvars",
+    "output_hash": "8618070e243a6e0db50cd924fbe79601a3674c645f4e7cb32b9a1022dfeb683a",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_updatesignvars.ex",
+    "source_hash": "43d9920fc6a37528f134929babe04e754c34430903133e75e995ed662d6d144d",
+    "spawns": []
+  },
+  "quests/the_sign_quest.txt|script|#Crayu|nif_in:102:81": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Crayu",
+    "output_hash": "d4e8f8100711e544299c0b497d3cf45666404d9078f20d2c51a4cb2d5949cb44",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/crayu.ex",
+    "source_hash": "497ac5697251317b0ddf69187f47c6a7e958d9af2f3dcdbacd77022f29551558",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "nif_in",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "#Crayu",
+        "x": 102,
+        "y": 81
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|#Cursed Soul|niflheim:348:257": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.CursedSoul",
+    "output_hash": "2dd760470db74de09fc16ee1db3ba5e428756b652e1d7daf4b3ef80113aeb0fb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/cursed_soul.ex",
+    "source_hash": "668b662863eb1ba1c25ab870c64a5c0e5f1015a65fde50e4ab991e8548012d64",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "niflheim",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "#Cursed Soul",
+        "x": 348,
+        "y": 257
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|#Switch|nif_in:140:177": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Switch",
+    "output_hash": "143b7b78d64387cf1189d8444d4ac9a0e473ed4dd1d3a3bae09dc904fe11a8d6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/switch.ex",
+    "source_hash": "39af7202b685efae576cf16e60f2a0fc1f981cf39ac5bf8787215107449c8f00",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "nif_in",
+        "name": "",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "#Switch",
+        "x": 140,
+        "y": 177
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|#Valkyrie Warp|gef_fild07:182:241": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.ValkyrieWarp",
+    "output_hash": "6d80af823c703a34728afb2f9eef934791553a02f895743e7e39978d8a535812",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/valkyrie_warp.ex",
+    "source_hash": "2a6a848948389a95f9df931b0f78581878c26c83a367501ccc7395ab812ef265",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "gef_fild07",
+        "name": "",
+        "scope": "shared",
+        "sprite": 111,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "#Valkyrie Warp",
+        "x": 182,
+        "y": 241
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|#kidniff|nif_in:156:91": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Kidniff",
+    "output_hash": "391c9e4de5842ab262419fad14a3a752d9011d5a362757210374a0a6b67e5781",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/kidniff.ex",
+    "source_hash": "c86b6fd1080d8fd457f53c9ae3a94bc84ecc8357c41b4f83a4ba2e99f51f7001",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "nif_in",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "#kidniff",
+        "x": 156,
+        "y": 91
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|#mazewarp|prt_maze02:18:126": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Mazewarp",
+    "output_hash": "480f738fd44855604fd1e0f0dfa5e188479f0588b1ac46873634a2a016f0c869",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/mazewarp.ex",
+    "source_hash": "d0892c899b4e0c478c7731dc2f6a2292f9441427c40b6ff6e10d66f11a05a3ef",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "prt_maze02",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "#mazewarp",
+        "x": 18,
+        "y": 126
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|#movesign|prt_maze02:58:150": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Movesign",
+    "output_hash": "543e5620993488943ed2c500faf1d13d946e74afa4251837ea41d4ea7130d034",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/movesign.ex",
+    "source_hash": "0c0f9f3e571d629435df1369c17d3c1ab7dd732345212c828fbb69b37ac84a34",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "prt_maze02",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          5,
+          5
+        ],
+        "unique_name": "#movesign",
+        "x": 58,
+        "y": 150
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|#music|prt_maze02:25:161": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Music",
+    "output_hash": "2a5a4cf8a7db40e2ecffb45d9576637969d4fda012d15218931b671962717137",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/music.ex",
+    "source_hash": "b8a012714bd8106f25bf9e21f2d391cdfe0283025864d5171b7bf48a2f2c072d",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "prt_maze02",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          7,
+          7
+        ],
+        "unique_name": "#music",
+        "x": 25,
+        "y": 161
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|#skill|prt_maze02:132:132": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Skill",
+    "output_hash": "19266754fb95bbe0998450ad16a25917e568f0598026a5f5bb1d1a46fb3d1ce2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/skill.ex",
+    "source_hash": "f20831b87aeb18ecc5be6bd633466c05b6c14688cc079897661e97b8f8424b46",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "prt_maze02",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "unique_name": "#skill",
+        "x": 132,
+        "y": 132
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|#witch|nif_in:186:168": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Witch186168",
+    "output_hash": "8e11b3f83c3746e830990b738cc8de4f7300e56e3aaea2872290a3f14a721b92",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/witch_186_168.ex",
+    "source_hash": "97cc29ac8d765e3a69ad67cee00b6ffd80d77d9fa631968d5d86ef7ca0320cf5",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "nif_in",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "#witch",
+        "x": 186,
+        "y": 168
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Aaron#sign|geffen_in:61:72": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Aaron",
+    "output_hash": "7d98b3cba9684bbfcabaf65c1cad13d212f4ac20b2bbd7483b634bc1821a0681",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/aaron.ex",
+    "source_hash": "bdfe5f2320964938477da163c9b2e923926aa26f52d1e9050c41c69c29022ce5",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "geffen_in",
+        "name": "Aaron",
+        "scope": "shared",
+        "sprite": 754,
+        "unique_name": "Aaron#sign",
+        "x": 61,
+        "y": 72
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Alchemist#sign|alde_alche:169:162": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Alchemist",
+    "output_hash": "f9b398ed9d6d131f3d2bdf6877a996c637b5ebc42be2be4b29941197e475a7eb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/alchemist.ex",
+    "source_hash": "9887a3548773ba2a87b94dbae55ccf4041cf321a54ce4389cff388f922ae33aa",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "alde_alche",
+        "name": "Alchemist",
+        "scope": "shared",
+        "sprite": 749,
+        "unique_name": "Alchemist#sign",
+        "x": 169,
+        "y": 162
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Annoyed Man|gef_tower:118:36": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.AnnoyedMan",
+    "output_hash": "9e16744f35451714dc0d8df1d9c9796b3de6262992450b2a2968d3ff58078a6b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/annoyed_man.ex",
+    "source_hash": "dcef4903d09255bd96379fbc155a4a2198a3e1dea5db3edd4ad8d0b06a5a535a",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "gef_tower",
+        "name": "Annoyed Man",
+        "scope": "shared",
+        "sprite": 64,
+        "x": 118,
+        "y": 36
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Archeologist#sign|prt_in:227:45": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Archeologist",
+    "output_hash": "b272b21e7283473a7fee40747b20aaf480570b26ad5f8c780d106436567fa68e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/archeologist.ex",
+    "source_hash": "1c55da221669b0225a57cbd4544ef10c9eff84d9b34d57aee058e961b2da4a43",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "prt_in",
+        "name": "Archeologist",
+        "scope": "shared",
+        "sprite": 804,
+        "unique_name": "Archeologist#sign",
+        "x": 227,
+        "y": 45
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|CallMonster#serin|que_sign01:50:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Callmonster",
+    "output_hash": "b5547851acb5ba4d366adbe8eca9cd770d771e12371ab0f27e589680a336b451",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/callmonster.ex",
+    "source_hash": "21ac4256fc8702479d1a2fde74343d3141dc4477a0fed612f0dcc3f2a8b03ed8",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_sign01",
+        "name": "CallMonster",
+        "scope": "shared",
+        "sprite": -1,
+        "unique_name": "CallMonster#serin",
+        "x": 50,
+        "y": 1
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|CallMonster#witch|que_sign01:1:2": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Callmonster12",
+    "output_hash": "5c36f7699408e2c1cd4993314fdca81c5bc91802927452346850a60b8930a4b6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/callmonster_1_2.ex",
+    "source_hash": "6bc0df8e05c41d4f7f6f9e242d9a9782dee2db79a12e097d6ee361bcdb0b4cc5",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_sign01",
+        "name": "CallMonster",
+        "scope": "shared",
+        "sprite": -1,
+        "unique_name": "CallMonster#witch",
+        "x": 1,
+        "y": 2
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Cute Girl|geffen_in:171:42": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.CuteGirl",
+    "output_hash": "8c3cf05c02b7a845e91c3722f7673d9abe89ff7662d5c2cc01393de9d961a117",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/cute_girl.ex",
+    "source_hash": "6c2217e3ae207c3259d41052af3e7879121724b55c93707adae734dea03f52cf",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "geffen_in",
+        "name": "Cute Girl",
+        "scope": "shared",
+        "sprite": 703,
+        "x": 171,
+        "y": 42
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Daewoon#sign|payon_in03:11:31": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Daewoon",
+    "output_hash": "75c73dafcf7aafa75f2a57e67da5a1b942f845699cd54b5efe1c399999cb0488",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/daewoon.ex",
+    "source_hash": "a4d7f8acdc648bd71cf7a3f4fa757f4b433d2442b99bab28a58785c7875aadc4",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "payon_in03",
+        "name": "Daewoon",
+        "scope": "shared",
+        "sprite": 808,
+        "unique_name": "Daewoon#sign",
+        "x": 11,
+        "y": 31
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Dark Lord#serin|que_sign01:196:44": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.DarkLord",
+    "output_hash": "d3f93f1a1019198a1750e4692d3caefc24ea35f770df4a9add95b87e2a3be2e4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/dark_lord.ex",
+    "source_hash": "e774a25bddfb042c2990bfda9237c4109ee8678531340d1798b252a89430f230",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "que_sign01",
+        "name": "Dark Lord",
+        "scope": "shared",
+        "sprite": 737,
+        "unique_name": "Dark Lord#serin",
+        "x": 196,
+        "y": 44
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Depressing Man|niflheim:146:241": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.DepressingMan",
+    "output_hash": "ab676a9373685eb1b16f5f9aa27ba3bcc1206de869650905ae8f8b939e36aeaa",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/depressing_man.ex",
+    "source_hash": "aa66e7ce6c77ff98822f92f89cd906d71526de8a3d3d31e206b49c33789d2340",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "niflheim",
+        "name": "Depressing Man",
+        "scope": "shared",
+        "sprite": 735,
+        "x": 146,
+        "y": 241
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Emergency Exit|cmd_in01:16:24": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.EmergencyExit",
+    "output_hash": "ba8c23b9c722518de55aff9d81576fc4040fc4d0114fa526db0b43e14611de20",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/emergency_exit.ex",
+    "source_hash": "37b036bbf856b7d56e36fa407e1ba892b00b8ef54dbdcb61571ff8f46b32917e",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "cmd_in01",
+        "name": "Emergency Exit",
+        "scope": "shared",
+        "sprite": 111,
+        "x": 16,
+        "y": 24
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Examiner#sd|cmd_in01:14:14": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Examiner1414",
+    "output_hash": "1ffeae9ea15d12e92f9b2c8e62cfe626f38815092d83d86529e080bfa6a816a8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/examiner_14_14.ex",
+    "source_hash": "0746eff87d28dca61a673fdedd09bb5ab713e5ff71d0c91a35b979245cb21ae7",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "cmd_in01",
+        "name": "Examiner",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          6,
+          6
+        ],
+        "unique_name": "Examiner#sd",
+        "x": 14,
+        "y": 14
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Examiner#sign|cmd_in01:33:25": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Examiner",
+    "output_hash": "24cf6f1da68cd48ab0c483f6c8bf77e1f3328fe0f783829c881fb84bb62ae753",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/examiner.ex",
+    "source_hash": "70e2a792c7a8fcbfaee7e5debc250b3e31cb1fa6422793184c9ba3eca82fe405",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "cmd_in01",
+        "name": "Examiner",
+        "scope": "shared",
+        "sprite": 724,
+        "unique_name": "Examiner#sign",
+        "x": 33,
+        "y": 25
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Fastidious Old Man|alberta:165:83": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.FastidiousOldMan",
+    "output_hash": "9d0d394778891af3c84ce6514d0caf2211b84c71e554f35bf3f8e27bcdefccff",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/fastidious_old_man.ex",
+    "source_hash": "d1ded7a13e7b39a3a1e7c860b87df074a93f5dfcf2044d4d2888650854a7abed",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "alberta",
+        "name": "Fastidious Old Man",
+        "scope": "shared",
+        "sprite": 755,
+        "x": 165,
+        "y": 83
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Fastidious-Looking Guy|um_in:27:23": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.FastidiousLookingGuy",
+    "output_hash": "ced1d8e61cf68cfda23b0cec79548ac6c84072412875f204f62f07d1672294b1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/fastidious_looking_guy.ex",
+    "source_hash": "238afa45fdaf0d5def6ebf0ad976a51fe6fe63f5cfb9c9c67c97f51f8c11ccbc",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "um_in",
+        "name": "Fastidious-Looking Guy",
+        "scope": "shared",
+        "sprite": 121,
+        "x": 27,
+        "y": 23
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Flaming Spirit Man|mjo_dun02:88:295": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.FlamingSpiritMan",
+    "output_hash": "9377466ff455064aa1320ab7e0e12ee90cc03746f07f192700d29af21e0b4b72",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/flaming_spirit_man.ex",
+    "source_hash": "5501e265597f4dcb29fb794bd2683282f29f2502d86de453232a0b05b1f0f64e",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "mjo_dun02",
+        "name": "Flaming Spirit Man",
+        "scope": "shared",
+        "sprite": 85,
+        "x": 88,
+        "y": 295
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Fountain#sign|que_sign01:46:56": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Fountain",
+    "output_hash": "39c6d531c7bd111098f00badad56381495d8f9cd6181fc3acbf5807187f642f0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/fountain.ex",
+    "source_hash": "405725b0dfaa298f1a49e1e79a5f52e7f21fc5be37b92458e1f8d9907b9a029a",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_sign01",
+        "name": "Fountain",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Fountain#sign",
+        "x": 46,
+        "y": 56
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Fountain#s|geffen:119:48": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Fountain11948",
+    "output_hash": "f58f2c2b8019e4ddab208fdcc081b6c554696812dc468251f821ecebe1f6ee78",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/fountain_119_48.ex",
+    "source_hash": "5587a3a3bcb3d104d366118166120d4541a02776f0b759f524748b05e6d6d620",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "geffen",
+        "name": "Fountain",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Fountain#s",
+        "x": 119,
+        "y": 48
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Geffenia Warp|geffen:119:55": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.GeffeniaWarp",
+    "output_hash": "fd4c4cbe58b13d046574862a0d99714703c58e7decdf35a4e8b024f8f61bbc3d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/geffenia_warp.ex",
+    "source_hash": "3b5d9e7d16fd53d9ba8354d5de6f894a70c388d3f6861170e9f80390e69b0943",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "geffen",
+        "name": "Geffenia Warp",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ],
+        "x": 119,
+        "y": 55
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Gordon#sign|prt_maze02:14:183": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Gordon",
+    "output_hash": "4581efe049a2d16dfc6af9edd9fa92ee15537cd522386cf1aab480b1538a8861",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/gordon.ex",
+    "source_hash": "b567f86a69413993bf468a275efbff9a872744bdec982935b19f77ca417134ea",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "prt_maze02",
+        "name": "Gordon",
+        "scope": "shared",
+        "sprite": 51,
+        "unique_name": "Gordon#sign",
+        "x": 14,
+        "y": 183
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Guard#s10|alberta:98:202": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Guard",
+    "output_hash": "b2a838b395ffa9ae333971bce621cb0bea160dcf6a665780aa6d81846a671576",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/guard.ex",
+    "source_hash": "faaed4192e36de1c08d95571b70de42783d4e6b8d5e192743ecd949bf17a5dc9",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "alberta",
+        "name": "Guard",
+        "scope": "shared",
+        "sprite": 105,
+        "unique_name": "Guard#s10",
+        "x": 98,
+        "y": 202
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Hagin#sign|payon:154:170": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Hagin",
+    "output_hash": "a67abc781cc790bdd20c78900ce67259577b4bdb38bc6a3129f23feb03ee7007",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/hagin.ex",
+    "source_hash": "9f5b6abb97704aff9d3716ea6243a8a71e068d13178adbb878ef658e822d3ff2",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "payon",
+        "name": "Hagin",
+        "scope": "shared",
+        "sprite": 78,
+        "unique_name": "Hagin#sign",
+        "x": 154,
+        "y": 170
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Jesqurienne#sign|geffen_in:59:74": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Jesqurienne",
+    "output_hash": "cd797ac634771467d962ad808cadb2fcb7eca3df2afaad7f6dcdaf0d6f540711",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/jesqurienne.ex",
+    "source_hash": "7246856316055375f25d0c0b90897376783b1484406c8cc692dd3597763276d1",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "geffen_in",
+        "name": "Jesqurienne",
+        "scope": "shared",
+        "sprite": 803,
+        "unique_name": "Jesqurienne#sign",
+        "x": 59,
+        "y": 74
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Knight#ss|yuno:330:100": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Knight",
+    "output_hash": "04da91ed23186c0a60f52cf2e79fff9985a126adb8a927ddc4f174591067a89b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/knight.ex",
+    "source_hash": "89701c4c66034642490efc79a554879098471a1bd5edb3c4c5dfde0d484a78cc",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "yuno",
+        "name": "Knight",
+        "scope": "shared",
+        "sprite": 734,
+        "unique_name": "Knight#ss",
+        "x": 330,
+        "y": 100
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Lonely-looking Woman|geffen_in:159:48": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.LonelyLookingWoman",
+    "output_hash": "c87d85ac158266e208c229202bb876a770cca2ffdc35d9a3c3ad39a013c6c354",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/lonely_looking_woman.ex",
+    "source_hash": "073be96abac1e2bfca316971ca517db948daef3748d27a320b5a99c752fff81c",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "geffen_in",
+        "name": "Lonely-looking Woman",
+        "scope": "shared",
+        "sprite": 711,
+        "x": 159,
+        "y": 48
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Mad Man#s|niflheim:102:54": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.MadMan",
+    "output_hash": "1f262d203e8ab5065889af430a3e29a14e3652d65445b8da6e57c78396ba78aa",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/mad_man.ex",
+    "source_hash": "29b1464768fb1a2a5682c361d241223f0ed25a6155a3a1f94f57e04f8f76772b",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "niflheim",
+        "name": "Mad Man",
+        "scope": "shared",
+        "sprite": 739,
+        "unique_name": "Mad Man#s",
+        "x": 102,
+        "y": 54
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Maid#a1|payon_in03:81:22": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Maid8122",
+    "output_hash": "bc09981baa31541e0f73e7206108eb91c481a4702e2c4ca50650cf7efb7a3b1d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/maid_81_22.ex",
+    "source_hash": "4e7ee434964e48ab2402e0a4afb7b1e637a473c2a920f3cb3fdbf250427de6d1",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "payon_in03",
+        "name": "Maid",
+        "scope": "shared",
+        "sprite": 1170,
+        "unique_name": "Maid#a1",
+        "x": 81,
+        "y": 22
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Maid#a2|payon_in03:81:22": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Maid0",
+    "output_hash": "b27e6cf4255d80193ac237f2c83f3ccb6e5952cddf558380db21ee2685d6aa57",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/maid_0.ex",
+    "source_hash": "3bd3b38c8101ab9be474242e0a2bec9d71ba70d75304341cd7bb9b59279b2207",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "payon_in03",
+        "name": "Maid",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Maid#a2",
+        "x": 81,
+        "y": 22
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Maid#b1|payon_in03:79:22": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Maid7922",
+    "output_hash": "bd6cfde244bd4bfb8aa83afbfd94c4975a52bdd6a7b7c26c6024417cc88f6512",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/maid_79_22.ex",
+    "source_hash": "6109f7aee550caefe74e0363ee2944592ba4f18772b43199955dce81cfb3ad48",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "payon_in03",
+        "name": "Maid",
+        "scope": "shared",
+        "sprite": 1404,
+        "unique_name": "Maid#b1",
+        "x": 79,
+        "y": 22
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Maid#b2|payon_in03:79:22": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Maid1",
+    "output_hash": "9ff00869a3b3f1bbaf2a1561771ae78d612b97d4752baf89431b714528133faa",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/maid_1.ex",
+    "source_hash": "4a51a4e02e16a867740e14ae2646a3fca18f2f6c17e1c7594d768cc5416e5b0f",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "payon_in03",
+        "name": "Maid",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Maid#b2",
+        "x": 79,
+        "y": 22
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Maid#c1|payon_in03:81:15": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Maid8115",
+    "output_hash": "97c3fa296240924d07c4fea9edc8942cc011dc9516ee1af696ba8eedf07b74b3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/maid_81_15.ex",
+    "source_hash": "b83f4b53d93d5a20af8c81d06839340444f25e101fe7be7a2ab9e64167456a77",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "payon_in03",
+        "name": "Maid",
+        "scope": "shared",
+        "sprite": 1170,
+        "unique_name": "Maid#c1",
+        "x": 81,
+        "y": 15
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Maid#c2|payon_in03:81:15": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Maid2",
+    "output_hash": "c161eb7d6447338653d3f74ed5412a094cec11348ba2865773d1bc6d1bc90ab3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/maid_2.ex",
+    "source_hash": "1fcec4d7729c75c29bc0b92c57373d7f22d115bae39f53df237721ad76f6a131",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "payon_in03",
+        "name": "Maid",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Maid#c2",
+        "x": 81,
+        "y": 15
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Maid#d1|payon_in03:79:15": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Maid7915",
+    "output_hash": "0dba2725e6b8a54e870f211df3933dfbea7ec5ec5c9051f94dc737a727fa9cac",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/maid_79_15.ex",
+    "source_hash": "78295dae935c96d977734874aa1fb3afe8de6e3e384efb360b6816a17284efdc",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "payon_in03",
+        "name": "Maid",
+        "scope": "shared",
+        "sprite": 1404,
+        "unique_name": "Maid#d1",
+        "x": 79,
+        "y": 15
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Maid#d2|payon_in03:79:15": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Maid3",
+    "output_hash": "c6979ce289e368d32f5237d5e35a4a91663031c1c1d4447f64bc5a434a2c903a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/maid_3.ex",
+    "source_hash": "fc4a6f32a8dc3be08d47743d71347f9db5667827de6aaf9ba151496b1ddb3365",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "payon_in03",
+        "name": "Maid",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Maid#d2",
+        "x": 79,
+        "y": 15
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Maid#e1|payon_in03:8:31": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Maid831",
+    "output_hash": "d8370d464c80a1051a6d05ec113304c96f081e225dfbbea114c7afafa791b03b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/maid_8_31.ex",
+    "source_hash": "d759281dae4c83146030b6f252c70561bf68177a9d0cc498742b666cc4d0bc51",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "payon_in03",
+        "name": "Maid",
+        "scope": "shared",
+        "sprite": 1416,
+        "unique_name": "Maid#e1",
+        "x": 8,
+        "y": 31
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Maid#e2|payon_in03:8:31": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Maid4",
+    "output_hash": "9c077474a7f2dbe97819dd6178aeddf332904b3233c8979cdf0f5aa6115c4d33",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/maid_4.ex",
+    "source_hash": "0b01b17560b609ee4904dad5d322c6cebeacb2a44ee9587ae97c537f2cacd286",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "payon_in03",
+        "name": "Maid",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Maid#e2",
+        "x": 8,
+        "y": 31
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Maid#f1|payon_in03:13:31": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Maid1331",
+    "output_hash": "f7f193c15d6da0cbe2a004390278ad689bb65f2fa4de0e204e9847b6ba3d15ab",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/maid_13_31.ex",
+    "source_hash": "bd5234cd7bf5cfbebd0841ee3a291511469107f65eb7913ffe8ab4eaa014b697",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "payon_in03",
+        "name": "Maid",
+        "scope": "shared",
+        "sprite": 1416,
+        "unique_name": "Maid#f1",
+        "x": 13,
+        "y": 31
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Maid#f2|payon_in03:13:31": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Maid5",
+    "output_hash": "a11f485ca09b70f579def98bba421a97a663f062b2bb6c640ad3a40df322141a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/maid_5.ex",
+    "source_hash": "a0109b4fef2840e5d6c0f7d178852628613833e98230230d188ff98f50a7da02",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "payon_in03",
+        "name": "Maid",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Maid#f2",
+        "x": 13,
+        "y": 31
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Maid#s10|alberta_in:154:171": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Maid154171",
+    "output_hash": "1a3ffce7b28c23f9a3e7a78d6dc4cfbd4656beae8a7af40305ce0557b3316f6c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/maid_154_171.ex",
+    "source_hash": "b98224ad96b4a31d2ae668f83f3825eed9f3a0bb42f074eb379b4e4f52079e3c",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "alberta_in",
+        "name": "Maid",
+        "scope": "shared",
+        "sprite": 758,
+        "unique_name": "Maid#s10",
+        "x": 154,
+        "y": 171
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Maid#sign2|prt_in:248:23": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Maid24823",
+    "output_hash": "633f1ac24e566311ae382ba527a5cbdc748cf9108eea8fa8a6ee9cf8b34c001b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/maid_248_23.ex",
+    "source_hash": "585ff7be6cd0e70e19ac164fa6aceb800d994a4fd92e605715a6831375a0561b",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "prt_in",
+        "name": "Maid",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Maid#sign2",
+        "x": 248,
+        "y": 23
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Maid#sign|prt_in:248:23": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Maid",
+    "output_hash": "b12d51cbaf13bdb941321d6ef914d22524f1260f9f3211955b85155a029ee994",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/maid.ex",
+    "source_hash": "a8166e2f44904f2d11c839b5ea972ed7750131b538a84c20ac0cd8d8e125080b",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "prt_in",
+        "name": "Maid",
+        "scope": "shared",
+        "sprite": 1275,
+        "unique_name": "Maid#sign",
+        "x": 248,
+        "y": 23
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Monograph#sign|aldeba_in:139:103": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Monograph",
+    "output_hash": "1be350554f119f667003139380e34920a31314e613bd4cd9dc0954d5a85cff19",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/monograph.ex",
+    "source_hash": "40ff1d7745325957991f36623d7bfa1560aa5124b90032f570d824a8ab53e749",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "aldeba_in",
+        "name": "Monograph",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Monograph#sign",
+        "x": 139,
+        "y": 103
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Mysterious Energy#1|gl_dun02:262:265": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.MysteriousEnergy",
+    "output_hash": "90ecfe5cfdf2357801872ef5aa44041c4c1d3bbefc4210ec5cb866088a96310a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/mysterious_energy.ex",
+    "source_hash": "b5f20bf2eea512fed3e6b86c69db1f021818a705f8fb87f7154c7958c954ce40",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "gl_dun02",
+        "name": "Mysterious Energy",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Mysterious Energy#1",
+        "x": 262,
+        "y": 265
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Mysterious Energy#2|gl_dun02:271:100": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.MysteriousEnergy271100",
+    "output_hash": "2e550b5bb97d8d01b932de3f7ac5097d359ae8d00cf4d21c13a87ff132b2f52a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/mysterious_energy_271_100.ex",
+    "source_hash": "3ecbdcf8deeaa7d1dd2ad8064e963872174ba2c89cd326bdae777c34b58fd471",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "gl_dun02",
+        "name": "Mysterious Energy",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Mysterious Energy#2",
+        "x": 271,
+        "y": 100
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Mysterious Energy#3|gl_dun02:268:32": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.MysteriousEnergy26832",
+    "output_hash": "0338af7c024d60db0405d1950046bd6e874445933786d3e96976654e8ecefc4c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/mysterious_energy_268_32.ex",
+    "source_hash": "ae7632a8ad592f71042fb6c224b2ee3f3ec833e13f844027012500457676ec73",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "gl_dun02",
+        "name": "Mysterious Energy",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Mysterious Energy#3",
+        "x": 268,
+        "y": 32
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Mysterious Energy#4|gl_dun02:16:26": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.MysteriousEnergy1626",
+    "output_hash": "f2cb99d2b8da4c9287ba1b7bd99321cee5e58301edfe7a38cac8708bb66cba6a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/mysterious_energy_16_26.ex",
+    "source_hash": "3a63636bf2c005f728ea026113ef27212fc307d623838ae75ddf9b259b0e0911",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "gl_dun02",
+        "name": "Mysterious Energy",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Mysterious Energy#4",
+        "x": 16,
+        "y": 26
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Mysterious Energy#5|gl_dun02:42:251": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.MysteriousEnergy42251",
+    "output_hash": "45ac833e89062299c4554c6677f1bd2c5f76bab27ec9e22f141529827eb06055",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/mysterious_energy_42_251.ex",
+    "source_hash": "fc75d54c780485f0cea75150d1543ee4ab65c09eae9ea9e7c1a410f5a203cbd7",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "gl_dun02",
+        "name": "Mysterious Energy",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Mysterious Energy#5",
+        "x": 42,
+        "y": 251
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Mysterious Energy#6|gl_dun02:123:234": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.MysteriousEnergy123234",
+    "output_hash": "3925c123e19196538255f617a077d30481c76f63783d6b84069258514c35e535",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/mysterious_energy_123_234.ex",
+    "source_hash": "db92f0f262c9bdf4613319203fd56acbff87a271c88696b020028174c28fcf2a",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "gl_dun02",
+        "name": "Mysterious Energy",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Mysterious Energy#6",
+        "x": 123,
+        "y": 234
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Mysterious Energy#7|gl_dun02:140:72": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.MysteriousEnergy14072",
+    "output_hash": "990a3e5ed43ad63fad1b677a68043671cef28bda7024b55db7d006b4c4b64cb3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/mysterious_energy_140_72.ex",
+    "source_hash": "4933be4724085b22dc3ece662bb958562428f86ea2936a4df1c41a57c3a054c3",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "gl_dun02",
+        "name": "Mysterious Energy",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Mysterious Energy#7",
+        "x": 140,
+        "y": 72
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Mysterious Energy#8|gl_dun02:119:182": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.MysteriousEnergy119182",
+    "output_hash": "ec1fc0aa13cba9daa08091c6e109f93e088d2e36fbf1d9f5ec8296048e7f7ed2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/mysterious_energy_119_182.ex",
+    "source_hash": "f699e88177e7f93ba575c4f95106eb32a6f1a97ef118610db71e00900ac85a7d",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "gl_dun02",
+        "name": "Mysterious Energy",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Mysterious Energy#8",
+        "x": 119,
+        "y": 182
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Native#_s|umbala:163:256": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Native",
+    "output_hash": "9f86d83061971af89a0c1b08e9bd3e093bf7b5ccfdbfd79d7aca097b34a28de5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/native.ex",
+    "source_hash": "06e3384b6ffd790a85e1a8a42f8db191159c08dece4c3deab1782d670f523e98",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "umbala",
+        "name": "Native",
+        "scope": "shared",
+        "sprite": 781,
+        "unique_name": "Native#_s",
+        "x": 163,
+        "y": 256
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Piru Piru#sign|aldeba_in:156:118": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.PiruPiru",
+    "output_hash": "e5bc55a3042376d2567ff97b2d973a09a3edaf1df1d2ac82ed99cb4f0552ba64",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/piru_piru.ex",
+    "source_hash": "c902890e7689686a53c5f1a1d12cda609bc625ab81f6f8b910a238060d3ae213",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "aldeba_in",
+        "name": "Piru Piru",
+        "scope": "shared",
+        "sprite": 102,
+        "unique_name": "Piru Piru#sign",
+        "x": 156,
+        "y": 118
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Pleasant-Featured Lady#s|niflheim:313:70": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.PleasantFeaturedLady",
+    "output_hash": "a36a3c15d8aac1b427b5d3f7a8e7132dc6df8031145dceb078166314e2eae27a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/pleasant_featured_lady.ex",
+    "source_hash": "908103eb8eb805e1c163dbd63af64095708b918ead13d166100f1c6e6396a720",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "niflheim",
+        "name": "Pleasant-Featured Lady",
+        "scope": "shared",
+        "sprite": 90,
+        "unique_name": "Pleasant-Featured Lady#s",
+        "x": 313,
+        "y": 70
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Pleur#sign|prt_maze02:16:183": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Pleur16183",
+    "output_hash": "c46fa18457e1f50429d0366d1e71df67b5cfc6d9a8d059e196eb660255fa391a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/pleur_16_183.ex",
+    "source_hash": "f8a167b1bcdd6bf3de239182aa7da708fe5c2fd901bcbfefec5dabc77014cd0c",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "prt_maze02",
+        "name": "Pleur",
+        "scope": "shared",
+        "sprite": 91,
+        "unique_name": "Pleur#sign",
+        "x": 16,
+        "y": 183
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Pleur#warp|prt_maze02:57:151": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Pleur",
+    "output_hash": "2a726f71cbf7575af02e1c749ebdaee3fc6e9705b9630bb03650011f7e25faeb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/pleur.ex",
+    "source_hash": "85d8da60fa9537a04cc0e8f42b386e0589a2d124f8d0717c52111ed0b39b4fa8",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "prt_maze02",
+        "name": "Pleur",
+        "scope": "shared",
+        "sprite": 91,
+        "unique_name": "Pleur#warp",
+        "x": 57,
+        "y": 151
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Poor-looking Merchant|alberta:43:49": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.PoorLookingMerchant",
+    "output_hash": "c0b189792c1a0f48e469fbf870fccbf1135ba65189e84ff7c002ef34d6976d5a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/poor_looking_merchant.ex",
+    "source_hash": "c497e82c75efa8abd61edb4a68c49c650c8e44212d04c2d94548f2a6c1e117a2",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "alberta",
+        "name": "Poor-looking Merchant",
+        "scope": "shared",
+        "sprite": 89,
+        "x": 43,
+        "y": 49
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Queen of the Dead|que_sign01:45:227": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.QueenOfTheDead",
+    "output_hash": "cf3baa54c9f468c504ef0cc813cc865603d863f5aab1cb9016241c813a8e1f5d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/queen_of_the_dead.ex",
+    "source_hash": "fba27f4dc1e644bee2e1b75f46b11bdd4c6d6b0467e9c4bb4ee2539390601796",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "que_sign01",
+        "name": "Queen of the Dead",
+        "scope": "shared",
+        "sprite": 856,
+        "x": 45,
+        "y": 227
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Refined Steward|alberta_in:114:178": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.RefinedSteward",
+    "output_hash": "137c2223f96e08332bdbb89346e19e5ce4a568c9a5bea4ff76aee9ed1dde36e6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/refined_steward.ex",
+    "source_hash": "cf5b06bb58c0be03134c670192e968b007b7e3ea68f8e5723193b61318efef8f",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "alberta_in",
+        "name": "Refined Steward",
+        "scope": "shared",
+        "sprite": 109,
+        "x": 114,
+        "y": 178
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Rogue#sign|morocc_in:115:154": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Rogue",
+    "output_hash": "399d2c3330fbb21fe869e858ad734a71619ae12d3089112a2515adee5f76f2be",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/rogue.ex",
+    "source_hash": "3ba19388812ea8607c8c9fbf79b543e943d5fc9e63afe8b27e2ec839c32400ff",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "morocc_in",
+        "name": "Rogue",
+        "scope": "shared",
+        "sprite": 810,
+        "unique_name": "Rogue#sign",
+        "x": 115,
+        "y": 154
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Serin#dummy|que_sign01:196:39": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Serin",
+    "output_hash": "0e4664e90f56b1c22d733fc020cae33377b0c14704e7661c43485e3f5afc0e2d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/serin.ex",
+    "source_hash": "68cba1db43a849992cbf869fb72cd01e225348bbc4aba31b33affbef38c1a3ca",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "que_sign01",
+        "name": "Serin",
+        "scope": "shared",
+        "sprite": 90,
+        "unique_name": "Serin#dummy",
+        "x": 196,
+        "y": 39
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Serin#serin|que_sign01:196:39": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Serin19639",
+    "output_hash": "a0b1e1db3028682f028c632bee9753086a55dad2cf56d6083d136fc050bc19d0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/serin_196_39.ex",
+    "source_hash": "6b92f74420b2cffe168e51a86b98a71feae5a6740794ad632ac317d9b9f1abb2",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "que_sign01",
+        "name": "Serin",
+        "scope": "shared",
+        "sprite": 90,
+        "unique_name": "Serin#serin",
+        "x": 196,
+        "y": 39
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Serin#witch|que_sign01:197:195": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Serin197195",
+    "output_hash": "46583b5cf6832e214f74936058aaaa3c81262d9edc21995622a6a275d3c3863f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/serin_197_195.ex",
+    "source_hash": "e74ed0a1ee4a4306fcf953bd8e017c2b4102fd2ac379f9dbe624e7576df37193",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "que_sign01",
+        "name": "Serin",
+        "scope": "shared",
+        "sprite": 90,
+        "unique_name": "Serin#witch",
+        "x": 197,
+        "y": 195
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Sir Jore#sign|aldeba_in:155:101": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.SirJore",
+    "output_hash": "aff260083c7e2e7c24ef89afbbceed1bb6898c93b86b127a614110df0250439b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/sir_jore.ex",
+    "source_hash": "8a2029d9be1845ffeecef64865c68b5f82a067de710726723717904e04742716",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "aldeba_in",
+        "name": "Sir Jore",
+        "scope": "shared",
+        "sprite": 805,
+        "trigger": [
+          7,
+          7
+        ],
+        "unique_name": "Sir Jore#sign",
+        "x": 155,
+        "y": 101
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Standby Room#sign|cmd_in01:33:33": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.StandbyRoom",
+    "output_hash": "f8157a3c1b989d5d3057ff249037fbf0e868388dd524402c3b55dcee7adbe3f8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/standby_room.ex",
+    "source_hash": "49cb45c340fe80f477f0cce5b9e1c8ae01f888a992f92c3f51b035edb4c634e4",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "cmd_in01",
+        "name": "Standby Room",
+        "scope": "shared",
+        "sprite": 66,
+        "unique_name": "Standby Room#sign",
+        "x": 33,
+        "y": 33
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Starter#serin|que_sign01:196:44": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Starter",
+    "output_hash": "b1cdea46c0eff43a4af7e36d777a3ea92b5516f89147449bef8862353cb1b2e6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/starter.ex",
+    "source_hash": "d9abdfe2b667bafb2d33460197bbc7bd3e89e18efa1711fdd03380d5fdc29296",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_sign01",
+        "name": "Starter",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          32,
+          32
+        ],
+        "unique_name": "Starter#serin",
+        "x": 196,
+        "y": 44
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Starter#witch|que_sign01:197:195": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Starter197195",
+    "output_hash": "2c00fc54d969a51619e31686b798d233053dffe08443bd5fc0b19057ea405291",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/starter_197_195.ex",
+    "source_hash": "19f00b64d2919b0dd81b9e886b614f05b241c9a20adae03b530f91b4c8390325",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_sign01",
+        "name": "Starter",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          32,
+          32
+        ],
+        "unique_name": "Starter#witch",
+        "x": 197,
+        "y": 195
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Steward#sign|prt_in:228:26": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Steward",
+    "output_hash": "247db22b97e7a15750a18462de0db70d55255443c1ae1875eb38bc8992dc1eb6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/steward.ex",
+    "source_hash": "a20404e1d0290ebf91fd534909a7fcec1414a47d98822540204f94ff34c7dd67",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "prt_in",
+        "name": "Steward",
+        "scope": "shared",
+        "sprite": 55,
+        "unique_name": "Steward#sign",
+        "x": 228,
+        "y": 26
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Strange Guy#sign|cmd_in02:88:51": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.StrangeGuy",
+    "output_hash": "c2c2c7db90c60ac8cfa227c438eaf484a23f00f4a3eae554d35469b8673d7b12",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/strange_guy.ex",
+    "source_hash": "36a95b20419a45d3dde1414f1354928e9b1c16a661e69908ea5f8c7417921c44",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "cmd_in02",
+        "name": "Strange Guy",
+        "scope": "shared",
+        "sprite": 806,
+        "unique_name": "Strange Guy#sign",
+        "x": 88,
+        "y": 51
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Timer#serin|que_sign01:1:0": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Timer",
+    "output_hash": "3fc43f6002fc4cf927d1f00ec9a90e1352403b357d68fcee76ba373fbda3eebc",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/timer.ex",
+    "source_hash": "8d9e225a7c4037df578ec6afdba1e7e6cf40830eda56bff0f35f6436f0efb67c",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_sign01",
+        "name": "Timer",
+        "scope": "shared",
+        "sprite": -1,
+        "unique_name": "Timer#serin",
+        "x": 1,
+        "y": 0
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Timer#witch|que_sign01:1:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Timer11",
+    "output_hash": "f8f9adbdb9c338c1f531ad12506decbc32fe7280765890201d1c8e0d653c3043",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/timer_1_1.ex",
+    "source_hash": "3ce57aeb5111d11135217f7250114b47925e659c36278fabbc298677ff415626",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_sign01",
+        "name": "Timer",
+        "scope": "shared",
+        "sprite": -1,
+        "unique_name": "Timer#witch",
+        "x": 1,
+        "y": 1
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Valkyrie#sign|himinn:48:86": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Valkyrie",
+    "output_hash": "ff8d18651b0e3053c0348bb899c6a579e53798d5e1a92162b5f621f81931b324",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/valkyrie.ex",
+    "source_hash": "6379314df0ffe1d98abbf8d2df733b029de75932846321c6ccdb75ba748c8fbc",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "himinn",
+        "name": "Valkyrie",
+        "scope": "shared",
+        "sprite": 811,
+        "unique_name": "Valkyrie#sign",
+        "x": 48,
+        "y": 86
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Warp#serin|que_sign01:196:44": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Warp",
+    "output_hash": "04903fbd72372ba47753b3bce1a1bbd365fc0cffbfee512b9da193c5f19a7f13",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/warp.ex",
+    "source_hash": "8be24b806a1bc387749da4dc3c5db1befee3883976cce7e570ca618f6278de31",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_sign01",
+        "name": "Warp",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          35,
+          35
+        ],
+        "unique_name": "Warp#serin",
+        "x": 196,
+        "y": 44
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Warp#witch|que_sign01:197:195": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Warp197195",
+    "output_hash": "dda97b5c3704f331516b3137989ae98844541de4f5f3c888a91203885416d7f1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/warp_197_195.ex",
+    "source_hash": "f9fb7182c303b1412b37f002d9212aae45259e364f526729bf4d2461492025ea",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_sign01",
+        "name": "Warp",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          35,
+          35
+        ],
+        "unique_name": "Warp#witch",
+        "x": 197,
+        "y": 195
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Wealthy-looking Merchant|alberta_in:125:101": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.WealthyLookingMerchant",
+    "output_hash": "d2bf91c7e5bca66d8dd24140a654a1da3733ac2fe7b221391562b5181d92d534",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/wealthy_looking_merchant.ex",
+    "source_hash": "cea5c58e59fe0519736865d421f96289f0fa369e0e53e714194a301e972876d6",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "alberta_in",
+        "name": "Wealthy-looking Merchant",
+        "scope": "shared",
+        "sprite": 807,
+        "x": 125,
+        "y": 101
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Witch#s|que_sign01:122:141": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.Witch",
+    "output_hash": "8400a509d4e2430a7b22be74eb61fbbcc3bb9b46101672fb3b83b27756b86a15",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/witch.ex",
+    "source_hash": "b64a90f830a7c27b0817457e0893638b923ee5757017f171bff0c4aa54490815",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "que_sign01",
+        "name": "Witch",
+        "scope": "shared",
+        "sprite": 792,
+        "unique_name": "Witch#s",
+        "x": 122,
+        "y": 141
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|Young Man#sign|morocc_in:114:162": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.YoungMan",
+    "output_hash": "aaa8baea6d911b7d94749682bdd6fa1bc3a41d01097f5e5a13e29075bf6b5f1f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/young_man.ex",
+    "source_hash": "1c12b4de3954f47d0099608de6a95bd7ca8d22905f6aec981cf100a97f688a4d",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "morocc_in",
+        "name": "Young Man",
+        "scope": "shared",
+        "sprite": 118,
+        "unique_name": "Young Man#sign",
+        "x": 114,
+        "y": 162
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|s_dance#cen|cmd_in01:16:16": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.SDance1616",
+    "output_hash": "5d503bbdf2fe93f5ca3997c154d7b2c99b471955ad674a07566f3cb09df78080",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/s_dance_16_16.ex",
+    "source_hash": "60a5a5bd8f95bfd001c51cdfad2ce7768fb0cd7bbf73e124a3f2fef3a25753ce",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "cmd_in01",
+        "name": "s_dance",
+        "scope": "shared",
+        "sprite": 139,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "s_dance#cen",
+        "x": 16,
+        "y": 16
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|s_dance#down|cmd_in01:16:11": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.SDance1611",
+    "output_hash": "77e7102178f05fab21b9adf559e6630ac21c0b174634d1ae1ad67014e24d3799",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/s_dance_16_11.ex",
+    "source_hash": "8e2c76c6efe083b0441964e7e366aad019c8e8aaaaea79837d2be244db797b7f",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "cmd_in01",
+        "name": "s_dance",
+        "scope": "shared",
+        "sprite": 139,
+        "trigger": [
+          1,
+          3
+        ],
+        "unique_name": "s_dance#down",
+        "x": 16,
+        "y": 11
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|s_dance#left|cmd_in01:11:16": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.SDance1116",
+    "output_hash": "812e5841ace42773c1be82dac15d11cd3f390aa34a560784fa8fd9d3a4d13eca",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/s_dance_11_16.ex",
+    "source_hash": "af7f752f3e82f5020a508506972a44c0a3c6008dc08ed7d8886cb10e14dcc93b",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "cmd_in01",
+        "name": "s_dance",
+        "scope": "shared",
+        "sprite": 139,
+        "trigger": [
+          3,
+          1
+        ],
+        "unique_name": "s_dance#left",
+        "x": 11,
+        "y": 16
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|s_dance#right|cmd_in01:21:16": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.SDance2116",
+    "output_hash": "d70e5919e5c590656014ff6a118760e65258de61046d627dd9967c369068fe22",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/s_dance_21_16.ex",
+    "source_hash": "bbaa089d7f450787a525191209bbb7f3b382feba4e9a314106930f1c51af087f",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "cmd_in01",
+        "name": "s_dance",
+        "scope": "shared",
+        "sprite": 139,
+        "trigger": [
+          3,
+          1
+        ],
+        "unique_name": "s_dance#right",
+        "x": 21,
+        "y": 16
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|s_dance#up|cmd_in01:16:21": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.SDance",
+    "output_hash": "6edd97024cd77ca9c65e726f2de984c8ea231e5a0c818e2d4f7e24367451dc0a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/s_dance.ex",
+    "source_hash": "a249f50422ceb5e6bd395be3cbfa8306f4c4e5e25fdfd33e5385711e57f99f68",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "cmd_in01",
+        "name": "s_dance",
+        "scope": "shared",
+        "sprite": 139,
+        "trigger": [
+          1,
+          3
+        ],
+        "unique_name": "s_dance#up",
+        "x": 16,
+        "y": 21
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|s_dance_timer|cmd_in01:1:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.SDanceTimer",
+    "output_hash": "a1652d8867b494a81650e272cddab94075ee1e377b44d3c75925a37c59d5fa41",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/s_dance_timer.ex",
+    "source_hash": "79d620054b60ad62e1a6a99eeeda9eb783dc51162c1325de2fd402464c7575dc",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "cmd_in01",
+        "name": "s_dance_timer",
+        "scope": "shared",
+        "sprite": -1,
+        "x": 1,
+        "y": 1
+      }
+    ]
+  },
+  "quests/the_sign_quest.txt|script|sign_w6|que_sign02:378:235": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.TheSignQuest.SignW6",
+    "output_hash": "6f5e8319930b1c73d79a25a59d392ff7884014685c8175fdd7d2fef98a2180e3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/the_sign_quest/sign_w6.ex",
+    "source_hash": "9e64fda08aee7b1bd5d480b6c163b4ac92cd1f1b0a701cc50acae9a95bb04f45",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_sign02",
+        "name": "sign_w6",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ],
+        "x": 378,
+        "y": 235
+      }
+    ]
+  },
   "re/cities/comodo.txt|script|Adventurer#pa0829_01|cmd_fild07:50:271": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Comodo.Adventurer",
     "output_hash": "5213a5fee700c495335ae96ef6ca1596bce22f3a73e1c4d838ddd49e0b198ab3",

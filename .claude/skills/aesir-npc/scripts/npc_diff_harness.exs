@@ -347,12 +347,16 @@ defmodule H.Core do
   def call(:sex, [_ctx]), do: pick(:sex, [0, 1])
   def call(:base_class, [_ctx]), do: pick(:base_class, atoms() ++ @base_classes)
   def call(:job_level, [_ctx]), do: pick(:job_level, [10, 39, 40, 41, 50] ++ ints())
-  def call(:base_level, [_ctx]), do: pick(:base_level, [10, 39, 40, 41, 50, 60, 70, 80, 90, 95, 99])
+
+  def call(:base_level, [_ctx]),
+    do: pick(:base_level, [10, 39, 40, 41, 50, 60, 70, 80, 90, 95, 99])
+
   def call(:skill_point, [_ctx]), do: pick(:skill_point, [0, 0, 0, 1])
   # Materials-heavy quests gate on quantities the fixed domain never reaches, so the file's own
   # literals widen both the purse and the item counts; otherwise every expensive path is a dead end.
   def call(:zeny, [_ctx]), do: pick(:zeny, Enum.uniq([0, 9999, 10_000, 50_000] ++ ints()))
   def call(:weight, [_ctx]), do: pick(:weight, [0, 100, 5000, 20_000])
+
   # Free-capacity gates spell `max_weight - weight < N`; both sides of 2000/4000/5000 are reachable.
   def call(:max_weight, [_ctx]), do: pick(:max_weight, [8000, 24_000])
   def call(:char_name, [_ctx | args]), do: "Name#{inspect(args)}"
@@ -519,6 +523,11 @@ defmodule H.Core do
 
   # Episode 13.2 jewel/find helpers hand back the `{ctx, value}` pair their callers destructure.
   def call(name, [ctx | args]) when name in [:jewel132, :find132],
+    do: {log(ctx, {name, args}), nil}
+
+  # The Sign quest helpers: one migrates quest vars, the other may end the script on a failed
+  # seal; callers destructure the `{ctx, value}` pair and branch on their own vars afterwards.
+  def call(name, [ctx | args]) when name in [:fupdatesignvars, :fsignseal],
     do: {log(ctx, {name, args}), nil}
 
   def call(name, [%Ctx{} = ctx | args]) do
