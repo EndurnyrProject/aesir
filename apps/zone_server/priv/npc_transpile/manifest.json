@@ -60444,6 +60444,2106 @@
       }
     ]
   },
+  "quests/quests_veins.txt|floating|::WincingOldMan_veins|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Quests.QuestsVeins.WincingoldmanVeins",
+    "output_hash": "b9dc9a86b313653b6ef943f6e96f0277ff2e5a1bf12f9e6d63d061f635c2c8e3",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/quests/quests_veins/wincingoldman_veins.ex",
+    "source_hash": "f07f56f4563cca273cd7915de6f4adb035cf1b8a2b1328deb1612cc0252f1c04",
+    "spawns": []
+  },
+  "quests/quests_veins.txt|script|#Colonel1|thor_camp:194:220": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Colonel1",
+    "output_hash": "a8acedc0ef14032dee42c5869e54ceca8b5b5b1350c55ab4f5d9a9052a90a97f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/colonel1.ex",
+    "source_hash": "e6cfe783d63debf6e2e63a1f2a1e956fa0fa457ad1cd8eef07f3c8bcbbd89ff1",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "thor_camp",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          5,
+          5
+        ],
+        "unique_name": "#Colonel1",
+        "x": 194,
+        "y": 220
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|#Colonel2|thor_camp:162:182": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Colonel2",
+    "output_hash": "0e6a960acfa7ffa599554f9e21d6e480cc29a915687dcaadddc81c55e59952b7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/colonel2.ex",
+    "source_hash": "8ff7c0c65303a99edf5a5a278b6c69582ae6db26be6af41e4c7557046a8413cf",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "thor_camp",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          7,
+          7
+        ],
+        "unique_name": "#Colonel2",
+        "x": 162,
+        "y": 182
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|#buki_vol|thor_camp:148:310": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.BukiVol",
+    "output_hash": "68db9707cc36770d4b014968200f45165c231a1caba709094991b190c7dc63ed",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/buki_vol.ex",
+    "source_hash": "404c8219b562833d519a380f074c495c5e10d4d69710139af26e4adec2830644",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "thor_camp",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          5,
+          5
+        ],
+        "unique_name": "#buki_vol",
+        "x": 148,
+        "y": 310
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|#sita_vol|thor_camp:172:132": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.SitaVol",
+    "output_hash": "942884ec2d10d27e9264304a784afd1c6c7d648c61a63c027c85ab0130f51c48",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/sita_vol.ex",
+    "source_hash": "38d28da5e7cc3a3614cc228003cc49c727212b51635d2b82d125e04799d9724b",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "thor_camp",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "#sita_vol",
+        "x": 172,
+        "y": 132
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|#totcamp|thor_v02:143:78": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Totcamp",
+    "output_hash": "43ab202296e611415ce18ae56c8d570244447e0222e811cb796716fb94495c1b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/totcamp.ex",
+    "source_hash": "22b031910d6116a9eb8fc221aeca9730a3db3703bc566690b4b80d572a64c9a0",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "thor_v02",
+        "name": "",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "#totcamp",
+        "x": 143,
+        "y": 78
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|#tov_1|que_thor:69:56": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Tov1",
+    "output_hash": "eed7a5d722e615738e47ac66dced96ea9d922aac336d1621ef9648f6211f6d85",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/tov_1.ex",
+    "source_hash": "bc3bf2baa474dd1e2e281ca875f0cbf9160c72f31d26ad034c3fe11bb0ae82eb",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_thor",
+        "name": "",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "#tov_1",
+        "x": 69,
+        "y": 56
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|#tov_2|que_thor:187:56": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Tov2",
+    "output_hash": "0313e096d8a8ce9b6069cf30c52250c5ae8546714f0456cdc17f466fc988bd99",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/tov_2.ex",
+    "source_hash": "f9f1b0df5fe29d33552c330310eee5ec67b99e8f80db2885da035686a1e5cd44",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "que_thor",
+        "name": "",
+        "scope": "shared",
+        "sprite": 45,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "#tov_2",
+        "x": 187,
+        "y": 56
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|#vol_study1::VeinsWarp|thor_camp:141:62": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.VolStudy1Veinswarp",
+    "output_hash": "3688c98bde26ba487ac3056d0e2b867c9eda2b68d8ddcedae375ec7f326ce47a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/vol_study1_veinswarp.ex",
+    "source_hash": "3cadee9d1ca9ee02146da2c4e0eb8b992902509642fb83140226f542abeeada4",
+    "spawns": [
+      {
+        "dir": 0,
+        "hidden_name": "vol_study1",
+        "map": "thor_camp",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "VeinsWarp",
+        "x": 141,
+        "y": 62
+      },
+      {
+        "dir": 0,
+        "map": "thor_camp",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "#vol_study2",
+        "x": 172,
+        "y": 72
+      },
+      {
+        "dir": 0,
+        "map": "thor_camp",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          3,
+          3
+        ],
+        "unique_name": "#vol_study3",
+        "x": 172,
+        "y": 38
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|#volbq|thor_camp:62:98": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Volbq",
+    "output_hash": "ea75caf50963ce539afe6862ecd95165123490f636c42be0ca9378b93f58df98",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/volbq.ex",
+    "source_hash": "8af9cf945f67085bf96390e075443e851c8fd0569f070b7b4c8f640cc95c1429",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "thor_camp",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          5,
+          5
+        ],
+        "unique_name": "#volbq",
+        "x": 62,
+        "y": 98
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|#volroom|ve_in:280:223": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Volroom",
+    "output_hash": "8d9bde2d989809b7d2070df504c4e6e2b11dd688e5732aa036429548162c6caf",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/volroom.ex",
+    "source_hash": "d6acc99a63f98217a781ad4d0db59443f2b08af587a613629bfe877848d50038",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ve_in",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "#volroom",
+        "x": 280,
+        "y": 223
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|#whoau|veins:302:166": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Whoau",
+    "output_hash": "815fcee0209678fda79b7c176bca4f4d87d8a4ddc431c10d6d8f2396007cc391",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/whoau.ex",
+    "source_hash": "3a5df144d15e648a7a435191d902c218faf15961af5250e6749a4fa356bb19cf",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "veins",
+        "name": "",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          2,
+          2
+        ],
+        "unique_name": "#whoau",
+        "x": 302,
+        "y": 166
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|????#sch1|morocc:294:152": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Sch1",
+    "output_hash": "407fc96922046927ca4ad3efe7c1b7163df9aca13821dbb62c079f95fd95e223",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/sch1.ex",
+    "source_hash": "b2bdfd5e32db74470c630fddff0e129c1badd3bb27c3ab38d2ca4a40085dbafe",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "morocc",
+        "name": "????",
+        "scope": "shared",
+        "sprite": 899,
+        "unique_name": "????#sch1",
+        "x": 294,
+        "y": 152
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|????#sch2|morocc:293:155": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Sch2",
+    "output_hash": "cf81abddbad8c8d6b1f548c8834aea02d453e28dc0f61dbf63e27e7dca07e760",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/sch2.ex",
+    "source_hash": "8a4f680bb69878b9ebb6f93811e3bd563a8f27034e46d408da8a03ea2713c88c",
+    "spawns": [
+      {
+        "dir": 6,
+        "map": "morocc",
+        "name": "????",
+        "scope": "shared",
+        "sprite": 899,
+        "unique_name": "????#sch2",
+        "x": 293,
+        "y": 155
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|????#sch3|morocc:298:150": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Sch3",
+    "output_hash": "05d869756822780122bcb1ac99dfc012b7e8902aaa8e137035ef061fec16e2ee",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/sch3.ex",
+    "source_hash": "5f69fdd4102540a1b86b62ea87eb129d68d4538f66db5295155a2ea59170f788",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "morocc",
+        "name": "????",
+        "scope": "shared",
+        "sprite": 899,
+        "unique_name": "????#sch3",
+        "x": 298,
+        "y": 150
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Aitra#vol|thor_camp:248:104": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Aitra",
+    "output_hash": "64b43d83cb695a5c3b488dd16c606a216cf188c9832e1b934fe23593e57ab7b6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/aitra.ex",
+    "source_hash": "7bc9522da64f315974f2e575b6bcb6f230311970c4fd852a3c3ecfafdfb4f0e0",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "thor_camp",
+        "name": "Aitra",
+        "scope": "shared",
+        "sprite": 939,
+        "unique_name": "Aitra#vol",
+        "x": 248,
+        "y": 104
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Arunafeltz Figure#sch|ein_in01:170:284": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.ArunafeltzFigure170284",
+    "output_hash": "589e79d531c2108cb49d82d093ee99218032272f7aaa20d62229aba47c6f1093",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/arunafeltz_figure_170_284.ex",
+    "source_hash": "3e99af0d936d1401918c05dd6c262706ed4b90e58cb816d2c5c28e34d63ea221",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "ein_in01",
+        "name": "Arunafeltz Figure",
+        "scope": "shared",
+        "sprite": 920,
+        "unique_name": "Arunafeltz Figure#sch",
+        "x": 170,
+        "y": 284
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Arunafeltz Figure|ein_in01:181:285": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.ArunafeltzFigure",
+    "output_hash": "70915202c5134184a8b3e2e9c61f091b83f508e8f8c7bc357c75c40b53d90b1c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/arunafeltz_figure.ex",
+    "source_hash": "b8b5821b8ffb588885c2bdb2ad2397f36c47e88ea306ec9848226d0cf4de788c",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ein_in01",
+        "name": "Arunafeltz Figure",
+        "scope": "shared",
+        "sprite": 920,
+        "x": 181,
+        "y": 285
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Bard Trigger#sch|ein_in01:176:285": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.BardTrigger",
+    "output_hash": "02ff0e4519e6c06d4e566da3487e2ed527067ab264d908cc5dc4675a5686cf8c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/bard_trigger.ex",
+    "source_hash": "6ba8736e0ca1e9cb122ced8617415005c35206c816ea6532c53662b52693a5da",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ein_in01",
+        "name": "Bard Trigger",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          1,
+          1
+        ],
+        "unique_name": "Bard Trigger#sch",
+        "x": 176,
+        "y": 285
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Bard#sch|prt_church:89:108": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Bard",
+    "output_hash": "b390f69dd155d17d641221fe446ecb21df89bd029ef60c89b39fd927cf330873",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/bard.ex",
+    "source_hash": "95e1a1d534fb9a0e276703d5e826cac28e8b06f7cf20119ed7b0eeca4fb387e7",
+    "spawns": [
+      {
+        "dir": 6,
+        "map": "prt_church",
+        "name": "Bard",
+        "scope": "shared",
+        "sprite": 741,
+        "unique_name": "Bard#sch",
+        "x": 89,
+        "y": 108
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Bartender#ve|ve_in:235:135": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Bartender",
+    "output_hash": "347d4c2056fa6dbf17844c3ba78cf106ad6db81c0588b19bd932ee5f36d28e97",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/bartender.ex",
+    "source_hash": "2933cfd3f94ebab921aee066fc55f4fd1d7b5df6c82003145df0d41e19c0a750",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "ve_in",
+        "name": "Bartender",
+        "scope": "shared",
+        "sprite": 947,
+        "unique_name": "Bartender#ve",
+        "x": 235,
+        "y": 135
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Bookshelf#vol|ve_in:281:214": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Bookshelf",
+    "output_hash": "db1bcf945bb68bedfdad1eb25b231ede8018d4eab9e2cdad3acf3d0ea53aea72",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/bookshelf.ex",
+    "source_hash": "13aef11701a6eb4988c9f5b4676384d8b504d3ded03fbf978ef77eae6295bffd",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ve_in",
+        "name": "Bookshelf",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Bookshelf#vol",
+        "x": 281,
+        "y": 214
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Camel#camelcc1::VeinsCamel|veins:78:226": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Camel",
+    "output_hash": "a90e73df1c20104aa0bec719acbc99d87784df20d8630745be850f09e4cf05e1",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/camel.ex",
+    "source_hash": "05981b860d78fdde9de59993d869742f840b669f437106d509751d3bc5298f18",
+    "spawns": [
+      {
+        "dir": 5,
+        "hidden_name": "camelcc1",
+        "map": "veins",
+        "name": "Camel",
+        "scope": "shared",
+        "sprite": 938,
+        "unique_name": "VeinsCamel",
+        "x": 78,
+        "y": 226
+      },
+      {
+        "dir": 3,
+        "map": "veins",
+        "name": "Camel",
+        "scope": "shared",
+        "sprite": 938,
+        "unique_name": "Camel#camelcc3",
+        "x": 72,
+        "y": 227
+      },
+      {
+        "dir": 1,
+        "map": "veins",
+        "name": "Camel",
+        "scope": "shared",
+        "sprite": 938,
+        "unique_name": "Camel#camelcc4",
+        "x": 81,
+        "y": 222
+      },
+      {
+        "dir": 5,
+        "map": "veins",
+        "name": "Camel",
+        "scope": "shared",
+        "sprite": 938,
+        "unique_name": "Camel#camelcc5",
+        "x": 77,
+        "y": 219
+      },
+      {
+        "dir": 8,
+        "map": "veins",
+        "name": "Camel",
+        "scope": "shared",
+        "sprite": 938,
+        "unique_name": "Camel#camelcc6",
+        "x": 73,
+        "y": 215
+      },
+      {
+        "dir": 5,
+        "map": "veins",
+        "name": "Camel",
+        "scope": "shared",
+        "sprite": 938,
+        "unique_name": "Camel#camelcc7",
+        "x": 68,
+        "y": 215
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Cheerful Dancer#sch1|job_duncer:83:52": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.CheerfulDancer",
+    "output_hash": "6381750a51f0d7de1d5256fb03f63d72aee3c52ea1d351c5e938e07f0dfb1cea",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/cheerful_dancer.ex",
+    "source_hash": "f14091cdba35341b8191efa9a1bfb652f73a7c5cf0c86b4aba91b18b1b2a86da",
+    "spawns": [
+      {
+        "dir": 6,
+        "map": "job_duncer",
+        "name": "Cheerful Dancer",
+        "scope": "shared",
+        "sprite": 724,
+        "unique_name": "Cheerful Dancer#sch1",
+        "x": 83,
+        "y": 52
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Cheerful Dancer#sch2|airplane:75:53": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.CheerfulDancer7553",
+    "output_hash": "210f80f03134121c9baa344d53dc35ab9f0af397a69800dbfe931080752eedf7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/cheerful_dancer_75_53.ex",
+    "source_hash": "eb74d51c5c03714de04c7b8e68a0a1afed64a1d44430cea373c372cdba6dd5d3",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "airplane",
+        "name": "Cheerful Dancer",
+        "scope": "shared",
+        "sprite": 724,
+        "unique_name": "Cheerful Dancer#sch2",
+        "x": 75,
+        "y": 53
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Cheerful Dancer#sch3|ein_in01:172:266": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.CheerfulDancer172266",
+    "output_hash": "2f491b84a7c01a857cb091a58a635214e73f0462cca36b0fa2147dcda7eff068",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/cheerful_dancer_172_266.ex",
+    "source_hash": "84874819f9cb5f1d45654c493ae3246189f04d13d420b76acde43281da7350dd",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ein_in01",
+        "name": "Cheerful Dancer",
+        "scope": "shared",
+        "sprite": 724,
+        "unique_name": "Cheerful Dancer#sch3",
+        "x": 172,
+        "y": 266
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Colonel Vito#1|thor_camp:187:228": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.ColonelVito",
+    "output_hash": "a9bcb189abeb6c082140bd16b5e0c541ab1ccca53e7f69346bda64f1873f0187",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/colonel_vito.ex",
+    "source_hash": "932cc8ca4b2a519f32cf8f0edf525b0ccab0806d997adb09c99d82fc16530454",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "thor_camp",
+        "name": "Colonel Vito",
+        "scope": "shared",
+        "sprite": 946,
+        "unique_name": "Colonel Vito#1",
+        "x": 187,
+        "y": 228
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Colonel Vito#2|thor_camp:155:175": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.ColonelVito155175",
+    "output_hash": "1470e744fccfa54b15baf62b1b1e53e1ad52f1505801976e44e8726315954f0d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/colonel_vito_155_175.ex",
+    "source_hash": "a7243e26b404a8a3ed07bbf4c97596bf841c3964ea73361c2e5bc0ac87a8a251",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "thor_camp",
+        "name": "Colonel Vito",
+        "scope": "shared",
+        "sprite": 946,
+        "unique_name": "Colonel Vito#2",
+        "x": 155,
+        "y": 175
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Colonel Vito#3|thor_camp:159:74": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.ColonelVito15974",
+    "output_hash": "bab7f7606a4dcbc2ff821481c0c2a1fc6756efbb92556d28414811d3be53f988",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/colonel_vito_159_74.ex",
+    "source_hash": "51049f4f765cd882df964c389bd931915cc56746a2081c0a0c06291d4a57f940",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "thor_camp",
+        "name": "Colonel Vito",
+        "scope": "shared",
+        "sprite": 946,
+        "unique_name": "Colonel Vito#3",
+        "x": 159,
+        "y": 74
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Control Panel#vol|thor_camp:109:167": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.ControlPanel",
+    "output_hash": "20a7f4f2caa56a33a91729cc69ae83fb0deed45c05b843425122bafd9e72627b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/control_panel.ex",
+    "source_hash": "bc202bc0fb4b6299187f2beeeaac1f2c904cd40426391e06a6786c7f4edc31a0",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "thor_camp",
+        "name": "Control Panel",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Control Panel#vol",
+        "x": 109,
+        "y": 167
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Corporate Figure#sch|ein_in01:168:274": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.CorporateFigure168274",
+    "output_hash": "bca67537ce6d3c05ef5f72bfe09188bb9ba658bd82fc91a4c463e5e586b9df54",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/corporate_figure_168_274.ex",
+    "source_hash": "2b553180217d2313d43c2aecbb73ae626e0c8c73bb229d8eaa5326631fc17a36",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ein_in01",
+        "name": "Corporate Figure",
+        "scope": "shared",
+        "sprite": 109,
+        "unique_name": "Corporate Figure#sch",
+        "x": 168,
+        "y": 274
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Corporate Figure|ein_in01:181:284": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.CorporateFigure",
+    "output_hash": "4848d339d0927dac46e511a5f6dbe6bd167092e31da5e10585721228c1c84504",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/corporate_figure.ex",
+    "source_hash": "dfcfb3ffd6436dde22819b012e559900aeb85afc25613d3624b8e8dffd2bc5a7",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ein_in01",
+        "name": "Corporate Figure",
+        "scope": "shared",
+        "sprite": 109,
+        "x": 181,
+        "y": 284
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Dance Instructor#sch|job_duncer:93:106": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.DanceInstructor",
+    "output_hash": "98aea1c4c2ea0ef972ceea4cd0dd4e1ebfdda6d3f6f1c2fd0df6ebfe1ca91b00",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/dance_instructor.ex",
+    "source_hash": "183b56a8941d0cf89bcd1ac0525d21865942e1c148b230856553c8c0fb05cf9f",
+    "spawns": [
+      {
+        "dir": 6,
+        "map": "job_duncer",
+        "name": "Dance Instructor",
+        "scope": "shared",
+        "sprite": 892,
+        "unique_name": "Dance Instructor#sch",
+        "x": 93,
+        "y": 106
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Drawer#vol1::VeinsDrawer|ra_temin:87:118": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Drawer",
+    "output_hash": "08617a6f190e65511fced2799da6e7cbe95d23bbf793f04ba7f6282dc00d0027",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/drawer.ex",
+    "source_hash": "e26477e6da14d35da659d4f212699970228088c93bfea918638f363edbf60bc5",
+    "spawns": [
+      {
+        "dir": 3,
+        "hidden_name": "vol1",
+        "map": "ra_temin",
+        "name": "Drawer",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "VeinsDrawer",
+        "x": 87,
+        "y": 118
+      },
+      {
+        "dir": 3,
+        "map": "ra_temin",
+        "name": "Drawer",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Drawer#vol2",
+        "x": 83,
+        "y": 118
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Drawer#vol3|ra_temin:85:118": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Drawer85118",
+    "output_hash": "7f8b706ca3ad246eff4ce5cf1ebe3c4cfbe1d1e61e7dc100db0c6dd6976695fe",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/drawer_85_118.ex",
+    "source_hash": "3d56bbdac309598bd65b6191063cf65157cf45c2ae7a1c35bcfbe256ca2c5108",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ra_temin",
+        "name": "Drawer",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Drawer#vol3",
+        "x": 85,
+        "y": 118
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Drunken Lady#1|ve_in:232:117": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.DrunkenLady",
+    "output_hash": "cb148a4de77269efd85f1b630fe16e22b6e3bcd250d51f669bf6f18791dd3549",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/drunken_lady.ex",
+    "source_hash": "a90035e58ff77f2063f396d045d4f24b7b14e82977992a82544a2bc66018dd8d",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "ve_in",
+        "name": "Drunken Lady",
+        "scope": "shared",
+        "sprite": 940,
+        "unique_name": "Drunken Lady#1",
+        "x": 232,
+        "y": 117
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Drunken Lady#2|ve_in:234:115": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.DrunkenLady234115",
+    "output_hash": "7ce82fc641ebfa48153f06ab558c45840eefcdc4778bb2f5e7a77eb6431c6ce6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/drunken_lady_234_115.ex",
+    "source_hash": "7f9f8f921318259ab2d203c31de4566ac9e7dfa8ca38f5e265dbd6175444be55",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ve_in",
+        "name": "Drunken Lady",
+        "scope": "shared",
+        "sprite": 940,
+        "unique_name": "Drunken Lady#2",
+        "x": 234,
+        "y": 115
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Drunken Man#vol|ve_in:233:116": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.DrunkenMan",
+    "output_hash": "97436d38629267baddb169e7dc8609a192acfdf87f8a38721899f1c5eeac68ad",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/drunken_man.ex",
+    "source_hash": "031bfd6eb06c16746c06fc79f555fe9a3cb949c3574f17431bdc36748a1247e2",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ve_in",
+        "name": "Drunken Man",
+        "scope": "shared",
+        "sprite": 901,
+        "unique_name": "Drunken Man#vol",
+        "x": 233,
+        "y": 116
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Dummy#1::VeinsDummy|thor_camp:150:65": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Dummy",
+    "output_hash": "37e28dbba3b80c7d7d8dc9a6f51438f8cd4f9a597e724dae9c148cae8ae634ce",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/dummy.ex",
+    "source_hash": "fa7301d0b7dc6ac4f4b7a6af4d3892f21799e7bd98ff486b06064b436caf8314",
+    "spawns": [
+      {
+        "dir": 3,
+        "hidden_name": "1",
+        "map": "thor_camp",
+        "name": "Dummy",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "VeinsDummy",
+        "x": 150,
+        "y": 65
+      },
+      {
+        "dir": 3,
+        "map": "thor_camp",
+        "name": "Dummy",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Dummy#2",
+        "x": 156,
+        "y": 65
+      },
+      {
+        "dir": 3,
+        "map": "thor_camp",
+        "name": "Dummy",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Dummy#3",
+        "x": 162,
+        "y": 65
+      },
+      {
+        "dir": 3,
+        "map": "thor_camp",
+        "name": "Dummy",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Dummy#4",
+        "x": 150,
+        "y": 57
+      },
+      {
+        "dir": 3,
+        "map": "thor_camp",
+        "name": "Dummy",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Dummy#5",
+        "x": 156,
+        "y": 57
+      },
+      {
+        "dir": 3,
+        "map": "thor_camp",
+        "name": "Dummy",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Dummy#6",
+        "x": 162,
+        "y": 57
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Employee#sch|ein_in01:166:282": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Employee",
+    "output_hash": "ffe8f381d41840ffbbb0da94290264ace0de63f8d20a445da8fc9af8f693e3b7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/employee.ex",
+    "source_hash": "6ed96e5dc93b817e9772ca215cf9a4349b6e478aee7e83710b1bcfaaf802c254",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "ein_in01",
+        "name": "Employee",
+        "scope": "shared",
+        "sprite": 904,
+        "unique_name": "Employee#sch",
+        "x": 166,
+        "y": 282
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Extra Story Patch|sec_in02:10:43": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.ExtraStoryPatch",
+    "output_hash": "b4ed0c120ca5148d0a776de7e3a5a17067f7544ba5f17aed8df5c32cfe3d9ca9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/extra_story_patch.ex",
+    "source_hash": "67f39f2cc86ab0ea5a1ec6d9889012d68339869ee2dd3a6f64c5ae2f4baadeac",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "sec_in02",
+        "name": "Extra Story Patch",
+        "scope": "shared",
+        "sprite": 809,
+        "x": 10,
+        "y": 43
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Factory Manager|ve_in02:37:28": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.FactoryManager",
+    "output_hash": "9001452c94a28092cbe88f9b6b9e41bca334888e6e3846fe1e27b6744b2ad428",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/factory_manager.ex",
+    "source_hash": "2ce3a271c3cc333aa4a0ed14ef91ce8447b81760555c940eb8d0ba09e1ff3350",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "ve_in02",
+        "name": "Factory Manager",
+        "scope": "shared",
+        "sprite": 898,
+        "x": 37,
+        "y": 28
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Factory Worker#ve1|ve_in02:54:49": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.FactoryWorker",
+    "output_hash": "8b8e3792c8f4d9afc32c4687e6349e716938d4cec5283084887cd7cd623d6b42",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/factory_worker.ex",
+    "source_hash": "374b4625c3b2e8866f209f5a54ab8c1070e253d570fe14636c1c7393338b93ac",
+    "spawns": [
+      {
+        "dir": 2,
+        "map": "ve_in02",
+        "name": "Factory Worker",
+        "scope": "shared",
+        "sprite": 943,
+        "unique_name": "Factory Worker#ve1",
+        "x": 54,
+        "y": 49
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Factory Worker#ve2|ve_in02:68:39": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.FactoryWorker6839",
+    "output_hash": "7e48edfa7eb365c5f1ca5909ff90fa83f6a43599dfb04897e4eb3e110d52291c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/factory_worker_68_39.ex",
+    "source_hash": "2d058b71fb5917eaff047c727157069e0aa241b3faef06a0b51d02c51e36a95a",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "ve_in02",
+        "name": "Factory Worker",
+        "scope": "shared",
+        "sprite": 943,
+        "unique_name": "Factory Worker#ve2",
+        "x": 68,
+        "y": 39
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Female Customer#ve1|ve_in:237:131": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.FemaleCustomer",
+    "output_hash": "d3730fb610f90acd5f79bb8001a71652604e35c925c91c4007f3218b4800c236",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/female_customer.ex",
+    "source_hash": "9199b58277dbfc473b31d5af7139a004e3d9cf80dc97191a17ba928e5c0d1b69",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "ve_in",
+        "name": "Female Customer",
+        "scope": "shared",
+        "sprite": 940,
+        "unique_name": "Female Customer#ve1",
+        "x": 237,
+        "y": 131
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Female Follower#vol|ra_temin:40:124": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.FemaleFollower",
+    "output_hash": "6751e304af4e740f1099f26ec2484fbad07f37c843c6082dc703e142f1657af5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/female_follower.ex",
+    "source_hash": "25de1db5c9f04bb8ffe4747f8f1674c4da4c275a40121d22566dfe512e50e2b3",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ra_temin",
+        "name": "Female Follower",
+        "scope": "shared",
+        "sprite": 920,
+        "unique_name": "Female Follower#vol",
+        "x": 40,
+        "y": 124
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Flower Vase#vol|ra_temin:115:140": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.FlowerVase",
+    "output_hash": "bdf79ffcff4a8ce7049bbc79ba71f73bb6f83119f6ac9c5c3814af0aeba7ac3b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/flower_vase.ex",
+    "source_hash": "8ca05472fb31213fc437b8e3e42d9c415c685df71cf851dbf8e09250bc6fe434",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "ra_temin",
+        "name": "Flower Vase",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Flower Vase#vol",
+        "x": 115,
+        "y": 140
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Goddess Statue#vol1|ra_temin:88:117": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.GoddessStatue",
+    "output_hash": "6ad53ed260f80c144e7e430d5a01ed364bd8d5af79dc872c03bd760461dc7e11",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/goddess_statue.ex",
+    "source_hash": "cc4eb6a217ad1391c1464e9436b792e514c4a96c5f34161694181f7b2acaa1ca",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ra_temin",
+        "name": "Goddess Statue",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Goddess Statue#vol1",
+        "x": 88,
+        "y": 117
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Guant Prisoner#sch|ra_in01:58:389": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.GuantPrisoner",
+    "output_hash": "944b1be3d9e8ac654fa7ef3f16ad32d477a8ec16b1a09fac432fb5ac8ef5ec50",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/guant_prisoner.ex",
+    "source_hash": "d49d7d21269d19aa3ad503a332177ac2db96419ea9c348f8e3a6e292070f905b",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ra_in01",
+        "name": "Guant Prisoner",
+        "scope": "shared",
+        "sprite": 929,
+        "unique_name": "Guant Prisoner#sch",
+        "x": 58,
+        "y": 389
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Guard#goto|thor_camp:246:191": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Guard246191",
+    "output_hash": "e54eadaa16dacb07fd32cd349078163a51d3a0a0132f591f2521aa9e59017e06",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/guard_246_191.ex",
+    "source_hash": "7ad0ee6806b2ba8e0aed6f1ee40b9c88434332c82ead8271bf9b816613a307bb",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "thor_camp",
+        "name": "Guard",
+        "scope": "shared",
+        "sprite": 939,
+        "unique_name": "Guard#goto",
+        "x": 246,
+        "y": 191
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Guard#vol::VeinsGuard|que_thor:145:66": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Guard",
+    "output_hash": "620ee2125791f38a56850fb45962dc4ada909133c26f53e9c8f54901ccf9e990",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/guard.ex",
+    "source_hash": "43df981797c87d20f4e0dbc7e6cd80714c1527ddc134a446cdac88dc9fb0e283",
+    "spawns": [
+      {
+        "dir": 3,
+        "hidden_name": "vol",
+        "map": "que_thor",
+        "name": "Guard",
+        "scope": "shared",
+        "sprite": 939,
+        "unique_name": "VeinsGuard",
+        "x": 145,
+        "y": 66
+      },
+      {
+        "dir": 3,
+        "map": "que_thor",
+        "name": "Guard",
+        "scope": "shared",
+        "sprite": 939,
+        "unique_name": "Guard#vol2",
+        "x": 136,
+        "y": 66
+      },
+      {
+        "dir": 5,
+        "map": "que_thor",
+        "name": "Guard",
+        "scope": "shared",
+        "sprite": 939,
+        "unique_name": "Guard#vol3",
+        "x": 127,
+        "y": 60
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Guardian#vol_7|thor_camp:181:231": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Guardian",
+    "output_hash": "22e3747e63c6e8167382535746480837f46ec05b146ea469bddd08876414a142",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/guardian.ex",
+    "source_hash": "3b6ec30f3ee52cdef168762169e43209a80f13b51439660ffaeed426f2c14e8c",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "thor_camp",
+        "name": "Guardian",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Guardian#vol_7",
+        "x": 181,
+        "y": 231
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|High Priest#vol|thor_camp:49:97": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.HighPriest",
+    "output_hash": "9def7b087f726662abad38c39f5659cc31b5d44ed004091591ac6e27d5bccb6c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/high_priest.ex",
+    "source_hash": "69202914267e75e8a3698c6dbcb1f17243adc5feda190de58809908c539dfb4c",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "thor_camp",
+        "name": "High Priest",
+        "scope": "shared",
+        "sprite": 933,
+        "unique_name": "High Priest#vol",
+        "x": 49,
+        "y": 97
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Hot Land Surface#1|thor_v01:37:234": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.HotLandSurface",
+    "output_hash": "a123da988bdc6f44990e3ea84002ce856276026cd6c0175437dc1b3fb1c7f090",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/hot_land_surface.ex",
+    "source_hash": "b5113ae7d158d584dc19c787b8ba96747bc9470eee4a495cfe4fe4bd1674f7a8",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "thor_v01",
+        "name": "Hot Land Surface",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Hot Land Surface#1",
+        "x": 37,
+        "y": 234
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Hot Land Surface#2|thor_v02:165:37": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.HotLandSurface16537",
+    "output_hash": "767af7d278428ec1bc9040a3793b78322cd742c7f3635067118aa9bce7bb040a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/hot_land_surface_165_37.ex",
+    "source_hash": "c5e01fd5998f9edf9e9ffc88686ab32f88caef42285ebab72924b94a4804b8e3",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "thor_v02",
+        "name": "Hot Land Surface",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Hot Land Surface#2",
+        "x": 165,
+        "y": 37
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Hot Land Surface#3|thor_v02:170:100": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.HotLandSurface170100",
+    "output_hash": "ef0e1dcb1f0e7cfc5590ba75c4ef16c00b5d28294dad83b47a1dfe445b88d9e0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/hot_land_surface_170_100.ex",
+    "source_hash": "5c687d5f57af93d89328c2d23447e07a2f165dc2eb68f232ae5c9b62e84f4399",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "thor_v02",
+        "name": "Hot Land Surface",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Hot Land Surface#3",
+        "x": 170,
+        "y": 100
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Hotel Manager#sch|ein_in01:279:221": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.HotelManager",
+    "output_hash": "0775528ebad25803d49c3d45732d26ec7ee98012b9406046547c87a68021b9a8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/hotel_manager.ex",
+    "source_hash": "8720f65f514b9bf025afd451ee0d0d62a451ce72faaf6129763f9a5826793b79",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ein_in01",
+        "name": "Hotel Manager",
+        "scope": "shared",
+        "sprite": 903,
+        "trigger": [
+          5,
+          5
+        ],
+        "unique_name": "Hotel Manager#sch",
+        "x": 279,
+        "y": 221
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Ivory|veins:227:127": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Ivory",
+    "output_hash": "22b059ea0e5021c4889097efec995b41ba6563ebeb491d38cd124791d878569e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/ivory.ex",
+    "source_hash": "1c9f07f8ceb9366f8117aeb31c745ee0d51610d972a703486e7c0735c1daccd6",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "veins",
+        "name": "Ivory",
+        "scope": "shared",
+        "sprite": 940,
+        "x": 227,
+        "y": 127
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Jesse#sch|ra_in01:58:389": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Jesse",
+    "output_hash": "27f7dea7cc8ce2d9fc0a11dbb30808bbca53eb00cc1adbfdd0a0824203cb866f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/jesse.ex",
+    "source_hash": "1d59c78e85ef29edb5e109ae2f5fd4f8266f3eeccb1d5ff315ec1c02243beddf",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ra_in01",
+        "name": "Jesse",
+        "scope": "shared",
+        "sprite": 707,
+        "unique_name": "Jesse#sch",
+        "x": 58,
+        "y": 389
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Kid#camelcamel|veins:327:185": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Kid327185",
+    "output_hash": "48ed9662e502ec0c414a1f0118cc4425ab98422772b72c501ac066dd73aeca45",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/kid_327_185.ex",
+    "source_hash": "6b3cb0abad4e0e0c4909c4364d79333d567ce197e2980a82a54fef6fa97dc628",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "veins",
+        "name": "Kid",
+        "scope": "shared",
+        "sprite": 944,
+        "unique_name": "Kid#camelcamel",
+        "x": 327,
+        "y": 185
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Kid#sch|prontera:202:122": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Kid",
+    "output_hash": "5c9c363a0470c59e4f3f0361230aa4d4bdaac2bfe91493023da42fdb4ad4e4ec",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/kid.ex",
+    "source_hash": "6f17023f6282799b632c77048c3ccad9d794202790b652e61ba4777210f31d61",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "prontera",
+        "name": "Kid",
+        "scope": "shared",
+        "sprite": 703,
+        "unique_name": "Kid#sch",
+        "x": 202,
+        "y": 122
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Ladder#vol1|ra_temin:73:126": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Ladder",
+    "output_hash": "947e5b97282197565261d4fe9a532f0d836f86eb9cd920691e27314ea6a0380b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/ladder.ex",
+    "source_hash": "bb7d1952c7f3367f0651d6b34ef4ac99aaf36d3291dace243c33e814aaca35f7",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "ra_temin",
+        "name": "Ladder",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Ladder#vol1",
+        "x": 73,
+        "y": 126
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Little Curdie|que_thor:36:66": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.LittleCurdie",
+    "output_hash": "e62c8e4a30d263270996b65bce5692c955644a2c7ef3921f7a39154927ea44e7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/little_curdie.ex",
+    "source_hash": "e440add5a1cbd3f2da8ebb85d779d287d1a9a68c42e9b6e9116c208f409110b3",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "que_thor",
+        "name": "Little Curdie",
+        "scope": "shared",
+        "sprite": 941,
+        "x": 36,
+        "y": 66
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Lockenlock|veins:181:166": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Lockenlock",
+    "output_hash": "f800ac62a4e85a9782f6a798d903cfebb305103cc5059100419b0bf963d0e582",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/lockenlock.ex",
+    "source_hash": "23496a755470a3e957ee308ed4255418431cb0cd63a10946dc4402829a36246b",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "veins",
+        "name": "Lockenlock",
+        "scope": "shared",
+        "sprite": 900,
+        "x": 181,
+        "y": 166
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Male Customer#ve2|ve_in:239:107": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.MaleCustomer",
+    "output_hash": "84ea0b41c34bcf99c2dcc5dcf23c5740829a54e557fb6b8db0cfa784cbebbf3a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/male_customer.ex",
+    "source_hash": "c9ae67c6fb61aceb4ffea7b4085a6bce96e53e487fb54596a1181f78a8927f1b",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "ve_in",
+        "name": "Male Customer",
+        "scope": "shared",
+        "sprite": 943,
+        "unique_name": "Male Customer#ve2",
+        "x": 239,
+        "y": 107
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Mature Looking Dancer#s1|job_duncer:87:50": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.MatureLookingDancer",
+    "output_hash": "0ec6b7ced4877be68b5a95fa73360bb5ca35536f460609c049e2f6856fc8579a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/mature_looking_dancer.ex",
+    "source_hash": "461a06adc8cff7c23d19202756fd5817cdbdd3f6e4816e5c1473c1b07aab99ae",
+    "spawns": [
+      {
+        "dir": 2,
+        "map": "job_duncer",
+        "name": "Mature Looking Dancer",
+        "scope": "shared",
+        "sprite": 724,
+        "unique_name": "Mature Looking Dancer#s1",
+        "x": 87,
+        "y": 50
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Mature Looking Dancer#s2|airplane:79:55": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.MatureLookingDancer7955",
+    "output_hash": "9f52067282057100b564f2d5a78bf4a56e9aa205df7d1afb490d3217107b9908",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/mature_looking_dancer_79_55.ex",
+    "source_hash": "4a58a95536934096e78faae74996013d6b78d444228280e2487cfc57d53eac8c",
+    "spawns": [
+      {
+        "dir": 2,
+        "map": "airplane",
+        "name": "Mature Looking Dancer",
+        "scope": "shared",
+        "sprite": 724,
+        "unique_name": "Mature Looking Dancer#s2",
+        "x": 79,
+        "y": 55
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Mature Looking Dancer#s3|ein_in01:170:266": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.MatureLookingDancer170266",
+    "output_hash": "bed73c9aa93fa4ef02bb3c4a727314b28f512270d3f7f75280dd8f4e7957925a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/mature_looking_dancer_170_266.ex",
+    "source_hash": "9d1c1377f2f08553e359b0acc56241b519cb768e66d7a01285912e9c60d17111",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ein_in01",
+        "name": "Mature Looking Dancer",
+        "scope": "shared",
+        "sprite": 724,
+        "unique_name": "Mature Looking Dancer#s3",
+        "x": 170,
+        "y": 266
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Prison Ward#sch|morocc:53:87": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.PrisonWard",
+    "output_hash": "b99b364e4e92c87b9e71f22863c6f322c8396992d0f1fbf8c310c9b26c5f19ad",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/prison_ward.ex",
+    "source_hash": "0dad5d4d7f1ae851b9f9bf12e5b945d73d12203fa64484843f680873fb3142b3",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "morocc",
+        "name": "Prison Ward",
+        "scope": "shared",
+        "sprite": 707,
+        "unique_name": "Prison Ward#sch",
+        "x": 53,
+        "y": 87
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Public Security Officer|morocc_in:79:163": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.PublicSecurityOfficer",
+    "output_hash": "7177a930b2c27e5d40bd745dfc0e745e0826d377067e89d774956bdc3139c185",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/public_security_officer.ex",
+    "source_hash": "9ff25134397a787beeadf3deb0aaa0701165349c69b98ad275c4bbf09665771d",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "morocc_in",
+        "name": "Public Security Officer",
+        "scope": "shared",
+        "sprite": 748,
+        "x": 79,
+        "y": 163
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Rachel Guard#vol1_1|ra_temin:42:124": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.RachelGuard42124",
+    "output_hash": "552e93e53cbf8349ae3efffe753015d669b5f706a095862f4160525406b3ec82",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/rachel_guard_42_124.ex",
+    "source_hash": "1fae913225b132d5ed246b16db7fa3e981621eac815e186054d7776bdcfc3741",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ra_temin",
+        "name": "Rachel Guard",
+        "scope": "shared",
+        "sprite": 934,
+        "unique_name": "Rachel Guard#vol1_1",
+        "x": 42,
+        "y": 124
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Rachel Guard#vol1|ra_temin:87:133": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.RachelGuard",
+    "output_hash": "d7366d6816ef85bfe21cf365c895fd9bcf68d89f5dd308a2c9c4ca8ad983bd8f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/rachel_guard.ex",
+    "source_hash": "4c7f0559fe7a80f1aede9c7d33d7912463cbd529c5c99bcabf25deb9d21cd558",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "ra_temin",
+        "name": "Rachel Guard",
+        "scope": "shared",
+        "sprite": 934,
+        "trigger": [
+          5,
+          2
+        ],
+        "unique_name": "Rachel Guard#vol1",
+        "x": 87,
+        "y": 133
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Rachel Guard#vol2_1|ra_temin:113:140": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.RachelGuard113140",
+    "output_hash": "fa5b18bbb6025abcfc9955859ff0345640d48a3272f3dc8dc883f35b56ff5560",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/rachel_guard_113_140.ex",
+    "source_hash": "f7e0d275caeeec9346768bf691062e5133ad2aec5290ed1ed71dfe98a7660e9e",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "ra_temin",
+        "name": "Rachel Guard",
+        "scope": "shared",
+        "sprite": 934,
+        "unique_name": "Rachel Guard#vol2_1",
+        "x": 113,
+        "y": 140
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Rachel Guard#vol2|ra_temin:82:133": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.RachelGuard82133",
+    "output_hash": "a344a5e0d9e1b0cdda5d2b4ef184eae6ddc8e37183be4301c05776809cd46ca2",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/rachel_guard_82_133.ex",
+    "source_hash": "913c0bceeb77b5a632a358b01a876351b4c3bb32111e60bbadd7294f990212e7",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "ra_temin",
+        "name": "Rachel Guard",
+        "scope": "shared",
+        "sprite": 934,
+        "trigger": [
+          5,
+          2
+        ],
+        "unique_name": "Rachel Guard#vol2",
+        "x": 82,
+        "y": 133
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Sahedi#vol|thor_camp:250:104": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Sahedi",
+    "output_hash": "99591c5b45006e989880c818a44401d9d6ee7fa261e2f03ab592e99d2ef2009d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/sahedi.ex",
+    "source_hash": "fc3cc25eda21bb1f6fdc36efdc45a20c6b891126a3cc1dc6e001b2d124de66f3",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "thor_camp",
+        "name": "Sahedi",
+        "scope": "shared",
+        "sprite": 934,
+        "unique_name": "Sahedi#vol",
+        "x": 250,
+        "y": 104
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Saraman|veins:115:59": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Saraman",
+    "output_hash": "e59ef99aa839475fd629a4a39a96baba2871d5b48361de7d4134bf87e2500106",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/saraman.ex",
+    "source_hash": "68b7f947dc3ce6ca228902fd5bb7a1bd320e774eaa145c1eb774dcda55049135",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "veins",
+        "name": "Saraman",
+        "scope": "shared",
+        "sprite": 847,
+        "x": 115,
+        "y": 59
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Silk Sand Camel|ve_fild07:235:42": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.SilkSandCamel",
+    "output_hash": "fb91f9deba329518fc1d66bdab687ad3f6c871dd6e764ca6d23677b2e9db6414",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/silk_sand_camel.ex",
+    "source_hash": "cf2affabfdd0e0b6534730220ea364a797b96f9f2d0391cf8dd0eaee609d7130",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ve_fild07",
+        "name": "Silk Sand Camel",
+        "scope": "shared",
+        "sprite": 938,
+        "x": 235,
+        "y": 42
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Soldier#vol1|thor_camp:124:314": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Soldier",
+    "output_hash": "5653a5a28825be2f043c8774605f4c92716eecbc57cfad5e4505ab55e59388a9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/soldier.ex",
+    "source_hash": "c29d1d04b07f7a6e26eee148799975aa4a8a1d8fdebca3301357d5995ad5b92f",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "thor_camp",
+        "name": "Soldier",
+        "scope": "shared",
+        "sprite": 939,
+        "unique_name": "Soldier#vol1",
+        "x": 124,
+        "y": 314
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Soldier#vol2|thor_camp:134:309": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Soldier134309",
+    "output_hash": "51fe0cf0dcd807f33fcff378ec57da3e89281a833a1e912b462c23c0a9441a72",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/soldier_134_309.ex",
+    "source_hash": "8d75387ede95c367ac54b2ede470ba45b171e0e9b9d541bcb929632e83b7c1da",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "thor_camp",
+        "name": "Soldier",
+        "scope": "shared",
+        "sprite": 939,
+        "unique_name": "Soldier#vol2",
+        "x": 134,
+        "y": 309
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Strange Old Man#ve|ve_in:169:310": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.StrangeOldMan",
+    "output_hash": "f467967cefad49b5ddd8996cc8a48dd0ae5b3ae16f2e6d2c0e137b2e28b005a4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/strange_old_man.ex",
+    "source_hash": "da00215d76a17cf14098f2e1c1ba42358081578258e912de440e2f15ace2d37b",
+    "spawns": [
+      {
+        "dir": 6,
+        "map": "ve_in",
+        "name": "Strange Old Man",
+        "scope": "shared",
+        "sprite": 121,
+        "unique_name": "Strange Old Man#ve",
+        "x": 169,
+        "y": 310
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Thin-Faced Bard#sch|morocc:297:154": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.ThinFacedBard",
+    "output_hash": "98305584e73924e407239e6966c92212003e13c7db2039c2541074e9e8b5f7a7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/thin_faced_bard.ex",
+    "source_hash": "dde72a64d0932fc9ba8a32bba35b04f4368e45ecf6c4662fec773a2a54ce281d",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "morocc",
+        "name": "Thin-Faced Bard",
+        "scope": "shared",
+        "sprite": 51,
+        "unique_name": "Thin-Faced Bard#sch",
+        "x": 297,
+        "y": 154
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Thor Volcano Soldier#vo1|thor_camp:49:122": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.ThorVolcanoSoldier",
+    "output_hash": "d0458614c8c36df3cf1c912ca34c84c97306df68b2f93863e1e5023445089d33",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/thor_volcano_soldier.ex",
+    "source_hash": "b9f73694d029239d32afb0646aec497c572ebf14c716523609145be6aa0dc17c",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "thor_camp",
+        "name": "Thor Volcano Soldier",
+        "scope": "shared",
+        "sprite": 939,
+        "unique_name": "Thor Volcano Soldier#vo1",
+        "x": 49,
+        "y": 122
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Thor Volcano Soldier#vo2|thor_camp:31:93": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.ThorVolcanoSoldier3193",
+    "output_hash": "afe64aa87b792256f7d4f0a2a5486ef58c38c46a79862a4258c978d7924fe99d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/thor_volcano_soldier_31_93.ex",
+    "source_hash": "2c4db7529054fe488b5a13223226f07c189c14017e80988c006d37feb04c39b4",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "thor_camp",
+        "name": "Thor Volcano Soldier",
+        "scope": "shared",
+        "sprite": 939,
+        "unique_name": "Thor Volcano Soldier#vo2",
+        "x": 31,
+        "y": 93
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Thor Volcano Soldier#vo3|thor_camp:59:79": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.ThorVolcanoSoldier5979",
+    "output_hash": "e630fb08c009c1e59fe94e02376437e98a569ede93a3577ee2c4fbd0fe93bd8a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/thor_volcano_soldier_59_79.ex",
+    "source_hash": "b27b23a6915fa631eb8ea4cb3c470bdbe9a21f100eb7ff127717ca93e92bd3b2",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "thor_camp",
+        "name": "Thor Volcano Soldier",
+        "scope": "shared",
+        "sprite": 939,
+        "unique_name": "Thor Volcano Soldier#vo3",
+        "x": 59,
+        "y": 79
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Thor Volcano Soldier#vo4|thor_camp:143:114": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.ThorVolcanoSoldier143114",
+    "output_hash": "b04c0f9996a993c1f33bc5474a47b9f9c4893849601bd7a289c853a11a677a48",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/thor_volcano_soldier_143_114.ex",
+    "source_hash": "6e0c9a3e3cdb58b5f13de85807e07d6bed53fed44395f57a408f9abb81631b9a",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "thor_camp",
+        "name": "Thor Volcano Soldier",
+        "scope": "shared",
+        "sprite": 939,
+        "unique_name": "Thor Volcano Soldier#vo4",
+        "x": 143,
+        "y": 114
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Thor Volcano Soldier#vo5|thor_camp:206:92": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.ThorVolcanoSoldier20692",
+    "output_hash": "4b4677ddb9fdce0aca08121307a0dc6f5f401d7b4de59f2a7c319020d85cf9db",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/thor_volcano_soldier_206_92.ex",
+    "source_hash": "4df0308fd4272d3ffb15407e96a7c0b928cdbf55b92eb2c6829087d38c2d2f8c",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "thor_camp",
+        "name": "Thor Volcano Soldier",
+        "scope": "shared",
+        "sprite": 939,
+        "unique_name": "Thor Volcano Soldier#vo5",
+        "x": 206,
+        "y": 92
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Thor Volcano Soldier#vo6|thor_camp:201:321": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.ThorVolcanoSoldier201321",
+    "output_hash": "dede8d0e5aae1b726a40c547e7cb23592b40fb862cc9a4637d8f0fb586988836",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/thor_volcano_soldier_201_321.ex",
+    "source_hash": "92033d2a594785fc6de0e79a83dc809b5eabaabf6e015e12ee7a6a9e61d664a1",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "thor_camp",
+        "name": "Thor Volcano Soldier",
+        "scope": "shared",
+        "sprite": 939,
+        "unique_name": "Thor Volcano Soldier#vo6",
+        "x": 201,
+        "y": 321
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Thor Volcano Soldier#vo7|thor_camp:196:315": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.ThorVolcanoSoldier196315",
+    "output_hash": "486bb4e9413a7553a59a0b37c7496dbff720c7ab83917e06fd19c52fbe2e7109",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/thor_volcano_soldier_196_315.ex",
+    "source_hash": "f748ca48f7f689261ce99d8c25d9f5a719a2ceb8cd611c057963355760510760",
+    "spawns": [
+      {
+        "dir": 7,
+        "map": "thor_camp",
+        "name": "Thor Volcano Soldier",
+        "scope": "shared",
+        "sprite": 939,
+        "unique_name": "Thor Volcano Soldier#vo7",
+        "x": 196,
+        "y": 315
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Thor Volcano Soldier#vo8|thor_camp:98:213": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.ThorVolcanoSoldier98213",
+    "output_hash": "1d9c50127b1f48a17ae09e61614222dca7cbc4e623cefabf571ca0c081d0b379",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/thor_volcano_soldier_98_213.ex",
+    "source_hash": "9900c17f81e14a893f575fd098b430aab3d479c22d69caeb7e57398d70e4de43",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "thor_camp",
+        "name": "Thor Volcano Soldier",
+        "scope": "shared",
+        "sprite": 939,
+        "unique_name": "Thor Volcano Soldier#vo8",
+        "x": 98,
+        "y": 213
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Thor Volcano Soldier#vo9|thor_camp:98:209": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.ThorVolcanoSoldier98209",
+    "output_hash": "6efeb3c0a2b6d2ffc17e2f1bc854c1de737b75887b2210c7f032c8103e1eee93",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/thor_volcano_soldier_98_209.ex",
+    "source_hash": "38b3b8d36e8d87a403c93e071d2bb7e464605580e38c27d2a3a0440c89a9a608",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "thor_camp",
+        "name": "Thor Volcano Soldier",
+        "scope": "shared",
+        "sprite": 939,
+        "unique_name": "Thor Volcano Soldier#vo9",
+        "x": 98,
+        "y": 209
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Towner#vol|veins:159:171": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.Towner",
+    "output_hash": "fc3a1fd6c3eb3bda7d667ceeb2346d2fe5b109461ec6b00791427a8480b30806",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/towner.ex",
+    "source_hash": "efa9dfe0a21edfda251065537238d6bbd3b20d78f6035a7180de5339ce03c231",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "veins",
+        "name": "Towner",
+        "scope": "shared",
+        "sprite": 945,
+        "unique_name": "Towner#vol",
+        "x": 159,
+        "y": 171
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Upset Looking Bard#sch|ra_in01:50:387": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.UpsetLookingBard",
+    "output_hash": "81ca8a564dadc105361d7068db869f74132e008582424a16f4cd67ca196a78c9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/upset_looking_bard.ex",
+    "source_hash": "8e95a665c6e0c1f77f1d42bc144dee1c447019f35019082f707c7e5a0e9ae469",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "ra_in01",
+        "name": "Upset Looking Bard",
+        "scope": "shared",
+        "sprite": 51,
+        "unique_name": "Upset Looking Bard#sch",
+        "x": 50,
+        "y": 387
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Wall Closet#vol|ve_in:277:229": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.WallCloset",
+    "output_hash": "49f4568a4290e484c11bee20251922597f28476eae52dac0f028e4d1d805cb9c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/wall_closet.ex",
+    "source_hash": "d15ea3817b9427b03891a01e2f2e1b0ffdb241b5208556d2fc3b453b835d7c99",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ve_in",
+        "name": "Wall Closet",
+        "scope": "shared",
+        "sprite": 111,
+        "unique_name": "Wall Closet#vol",
+        "x": 277,
+        "y": 229
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Young Dancer#sch1|job_duncer:85:49": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.YoungDancer",
+    "output_hash": "77ebe3843b109ae9b8102db2da1ee04a685436c6fe572dcd26c902689531005f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/young_dancer.ex",
+    "source_hash": "e2acdaaef365dc956066d12630280db1cd7f159c6d9a85485a1efdecd596bd2e",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "job_duncer",
+        "name": "Young Dancer",
+        "scope": "shared",
+        "sprite": 724,
+        "unique_name": "Young Dancer#sch1",
+        "x": 85,
+        "y": 49
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Young Dancer#sch2|airplane:76:56": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.YoungDancer7656",
+    "output_hash": "71c0d9b4b507587ef9d8ece69db285125810b4baad07610e5e749f3e9f90b402",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/young_dancer_76_56.ex",
+    "source_hash": "5e4f050425e28750e604e2f02ecf5f5505db4817dd7cd540663349c96210ead2",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "airplane",
+        "name": "Young Dancer",
+        "scope": "shared",
+        "sprite": 724,
+        "unique_name": "Young Dancer#sch2",
+        "x": 76,
+        "y": 56
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Young Dancer#sch3|ein_in01:174:266": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.YoungDancer174266",
+    "output_hash": "52ddc2cbc17ed4364f33d76956f68c5f61f57c8829ed27750acf42c1ad2a5f90",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/young_dancer_174_266.ex",
+    "source_hash": "d38324d09d404276233185f718a0443ee97793529b3cc5102efdf462e249f451",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ein_in01",
+        "name": "Young Dancer",
+        "scope": "shared",
+        "sprite": 724,
+        "unique_name": "Young Dancer#sch3",
+        "x": 174,
+        "y": 266
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Young Man#sch2|comodo:135:299": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.YoungMan135299",
+    "output_hash": "3c72d148bf995b04130332348b7856e7a06d8d05e3a000063ea7e3f5d4a07ada",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/young_man_135_299.ex",
+    "source_hash": "4772f9ef892cc21df64beed93c7f7cdec2ed815a7053c4f691e6217f4742293b",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "comodo",
+        "name": "Young Man",
+        "scope": "shared",
+        "sprite": 809,
+        "unique_name": "Young Man#sch2",
+        "x": 135,
+        "y": 299
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Young Man#sch|prontera:109:161": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.YoungMan",
+    "output_hash": "54de23b150e306031624640e0c88057aeecef66b5d2273e569f375ed87bb7110",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/young_man.ex",
+    "source_hash": "effe5d68e6a28ce22d8dc9f867c6b9e0c238ae2fee58816da30a429895994a7f",
+    "spawns": [
+      {
+        "dir": 6,
+        "map": "prontera",
+        "name": "Young Man",
+        "scope": "shared",
+        "sprite": 83,
+        "unique_name": "Young Man#sch",
+        "x": 109,
+        "y": 161
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Young Town Native|veins:221:120": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.YoungTownNative",
+    "output_hash": "02d86cd70aa7a3833903f8e9398d2001a6c67b0fb74d11bd8ebee8341da0f132",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/young_town_native.ex",
+    "source_hash": "77d064a5553a9ffa5603724fc375d7fc14c7d4fff0508a1a1a0f2c5c517640b5",
+    "spawns": [
+      {
+        "dir": 5,
+        "map": "veins",
+        "name": "Young Town Native",
+        "scope": "shared",
+        "sprite": 943,
+        "x": 221,
+        "y": 120
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|Young Woman#sch|geffen:196:167": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.YoungWoman",
+    "output_hash": "1725acc80da665bca1bf88580f28cd3477c6c19735eb6c4aa47d6dc2dbfe7e19",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/young_woman.ex",
+    "source_hash": "896bf6d24bf6b7629ee952798cbfe4c787ca91e97d9991952265de4e55837009",
+    "spawns": [
+      {
+        "dir": 4,
+        "map": "geffen",
+        "name": "Young Woman",
+        "scope": "shared",
+        "sprite": 101,
+        "unique_name": "Young Woman#sch",
+        "x": 196,
+        "y": 167
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|path_vol1#2|ra_temin:82:131": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.PathVol182131",
+    "output_hash": "6480d35a9423b1252246151d6e9de73146ca7405ed8b0c48202d999f2473b4a4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/path_vol1_82_131.ex",
+    "source_hash": "788253128fa298528fd001854a68f36ae2d8edf2bf755822c9dfe58e7a91475f",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ra_temin",
+        "name": "path_vol1",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          5,
+          0
+        ],
+        "unique_name": "path_vol1#2",
+        "x": 82,
+        "y": 131
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|path_vol1#3|ra_temin:82:127": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.PathVol182127",
+    "output_hash": "aff37815a6eea5e6ae4b6acc61f29ef0766faff83ba5b2b8c96b1dcfadc065d7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/path_vol1_82_127.ex",
+    "source_hash": "46403f2ba0f9bb89a253840a75aa59fbc8320a169aedb015598873407415c487",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ra_temin",
+        "name": "path_vol1",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          5,
+          1
+        ],
+        "unique_name": "path_vol1#3",
+        "x": 82,
+        "y": 127
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|path_vol1|ra_temin:85:131": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.PathVol1",
+    "output_hash": "531b63b648d929764fdcbba5e47cc4ffb5721e9dfb1cf7d4b7c9cece4168592b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/path_vol1.ex",
+    "source_hash": "ece7a40addf9e59746881030aeaa95a9621238a6fe0a1fbc72f9d6dda884298d",
+    "spawns": [
+      {
+        "dir": 0,
+        "map": "ra_temin",
+        "name": "path_vol1",
+        "scope": "shared",
+        "sprite": -1,
+        "trigger": [
+          5,
+          0
+        ],
+        "x": 85,
+        "y": 131
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|vol_time2|ra_temin:5:5": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.VolTime2",
+    "output_hash": "8f03adee6e748ea303c01b0977ea8cbbfff47fcdfeea7b5211dc8570f4b3768a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/vol_time2.ex",
+    "source_hash": "6617a3d3ba43e52d93fb0426fc51c2a10b1ef1fceadf8f1bc01fab18dd64c395",
+    "spawns": [
+      {
+        "dir": 1,
+        "map": "ra_temin",
+        "name": "vol_time2",
+        "scope": "shared",
+        "sprite": 844,
+        "x": 5,
+        "y": 5
+      }
+    ]
+  },
+  "quests/quests_veins.txt|script|vol_time|ra_temin:5:5": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.QuestsVeins.VolTime",
+    "output_hash": "8ac4a65c029a6e1d50c06a7bf3d51c4f4b3fcdc2afa892bf45e6555ed4ee98c6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/quests_veins/vol_time.ex",
+    "source_hash": "026d4536d2041aac0e6c0f257a1d70656bb5dc906dd947f62203ebfa7ef51924",
+    "spawns": [
+      {
+        "dir": 3,
+        "map": "ra_temin",
+        "name": "vol_time",
+        "scope": "shared",
+        "sprite": 844,
+        "x": 5,
+        "y": 5
+      }
+    ]
+  },
   "quests/skills/acolyte_skills.txt|script|Cleric|prt_church:173:23": {
     "module": "Aesir.ZoneServer.Content.Npc.Quests.Skills.AcolyteSkills.Cleric",
     "output_hash": "e61d540f762d7f8a9743957731a62e0673d29686282b075258007fac6108e6e0",
