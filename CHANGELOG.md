@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.19.0...aesir-v0.20.0) (2026-11-27)
+
+
+### Features
+
+* **npc:** implement readbook ([e45b9a6](https://github.com/EndurnyrProject/aesir/commit/e45b9a6c55ada14efa787a34d7fc6500c440aa2d))
+
 ## [0.19.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.18.0...aesir-v0.19.0) (2026-11-25)
 
 
